@@ -969,3 +969,699 @@ onBeforeUnload(callback: Callback<OnBeforeUnloadEvent, boolean>): WebAttribute;
   * [onTitleReceive](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-events.md#ontitlereceive)接口在回调时，isRealTitle始终为false。
   * [onBeforeUnload](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-events.md#onBeforeUnload)接口在回调时，isReload始终为false。
 
+#### SslErrorHandler相关接口
+
+```
+declare class SslErrorHandler {
+...
+/**
+ * ArkWeb has encountered an SSL certificate error, and this interface indicates whether to terminate or
+ * continue displaying the error to users.
+ *
+ * @param { boolean } abortLoading If abortLoading is true, the current request will be canceled and the
+ *                                 user will remain on the current page. If it is false, the SSL error
+ *                                 will not be ignored, and a blank page will be displayed. If a default
+ *                                 error page is enabled, the default error page will be shown instead.
+ *                                 The default value is false.
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ */
+handleCancel(abortLoading: boolean): void;
+}
+
+declare interface SslErrorEvent {
+  handler: SslErrorHandler;
+  ...
+  /**
+   * Certificate chain data in DER format.
+   *
+   * @type { ?Array<Uint8Array> }
+   * @syscap SystemCapability.Web.Webview.Core
+   * @since 20
+   */
+  certChainData?: Array<Uint8Array>;
+}
+type OnSslErrorEventCallback = (sslErrorEvent: SslErrorEvent) => void;
+
+onSslErrorEvent(callback: OnSslErrorEventCallback): WebAttribute;
+
+declare interface OnSslErrorEventReceiveEvent {
+  /**
+   * Notifies the user of the operation behavior of the web component.
+   *
+   * @type { SslErrorHandler }
+   * @syscap SystemCapability.Web.Webview.Core
+   * @atomicservice
+   * @since 12
+   */
+  handler: SslErrorHandler;
+  ...
+}
+onSslErrorEventReceive(callback: Callback<OnSslErrorEventReceiveEvent>): WebAttribute;
+```
+
+* **接口作用说明**:
+  * [onSslErrorEvent](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-events.md#onSslErrorEvent12): 通知用户加载资源（主资源+子资源）时发生SSL错误
+  * [onSslErrorEventReceive](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-events.md#onSslErrorEventReceive9): 通知用户加载主资源时发生SSL错误
+* **接口在M114遗留内核上的行为**:
+  * onSslErrorEvent: `certChainData`始终为undefined。
+  * onSslErrorEventReceive: [handleCancel](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-SslErrorHandler.md#handlecancel20)的`abortLoading`参数不生效。
+
+#### bypassVsyncCondition 接口
+
+```
+/**
+ * Enum type supplied to {@link bypassVsyncCondition} for setting the bypass vsync condition.
+ *
+ * @enum { number }
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ */
+declare enum WebBypassVsyncCondition {
+  /**
+   * Not bypass vsync.
+   *
+   * @syscap SystemCapability.Web.Webview.Core
+   * @since 20
+   */
+  NONE = 0,
+
+  /**
+   * bypass vsync.
+   *
+   * @syscap SystemCapability.Web.Webview.Core
+   * @since 20
+   */
+  SCROLLBY_FROM_ZERO_OFFSET = 1
+}
+
+/**
+ * Set up a condition that bypass vsync
+ * If the condition is matched, the drawing schedule does not reply on Vsync scheduling 
+ * and directly rendering and drawing
+ *
+ * @param { WebBypassVsyncCondition } condition - The condition to bypass render vsync.
+ * @returns { WebAttribute }
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ */
+bypassVsyncCondition(condition: WebBypassVsyncCondition): WebAttribute;
+```
+
+* **接口作用说明**:
+  [WebBypassVsyncCondition](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-e.md#webbypassvsynccondition20)枚举只提供给bypassVsyncCondition接口传参使用，用以设置是否跳过渲染vsync的条件。
+  | 名称                       | 值 | 说明                                                                                        |
+  | ------------------------- | -- | ------------------------------------------------------------------------------------------- |
+  | NONE                      | 0  | 默认值，按vsync调度流程绘制。                                                               |
+  | SCROLLBY_FROM_ZERO_OFFSET | 1  | 在使用scrollby（只支持带滚动偏移量）且Web页面滚动偏移量为0，渲染流程跳过vsync调度直接绘制。 |
+
+当开发者调用scrollBy接口进行页面滚动时，可以通过bypassVsyncCondition接口设置渲染流程跳过vsync（垂直同步）调度，直接触发绘制。
+
+* **接口在M114遗留内核上的行为**:
+  [ bypassVsyncCondition](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-attributes.md#bypassvsynccondition20)在M114遗留内核上设置不生效，不会抛异常，也不会返回错误码。
+  不建议开发者在M114内核中使用以上接口。
+
+#### onContextMenuShow相关新增接口
+
+```
+declare class WebContextMenuResult {
+  ...
+  /**
+   * Executes the redo operation related to this context menu.
+   *
+   * @syscap SystemCapability.Web.Webview.Core
+   * @since 20
+   */
+  redo(): void;
+
+  /**
+   * Executes the undo operation related to this context menu.
+   *
+   * @syscap SystemCapability.Web.Webview.Core
+   * @since 20
+   */
+  undo(): void;
+
+  /**
+   * Executes the paste and match style operation related to this context menu.
+   *
+   * @syscap SystemCapability.Web.Webview.Core
+   * @since 20
+   */
+  pasteAndMatchStyle(): void;
+}
+
+declare interface OnContextMenuShowEvent {
+  result: WebContextMenuResult;
+}
+
+onContextMenuShow(callback: Callback<OnContextMenuShowEvent, boolean>): WebAttribute;
+```
+
+* **接口作用说明**:
+  WebContextMenuResult用于响应在编辑区上下文菜单操作，新增了以下接口：
+
+  * undo：在编辑区调用该接口会撤销用户上一步的修改
+  * redo：在编辑区调用该接口会重做用户上一步的修改
+  * pasteAndMatchStyle：在编辑区调用该接口会将剪贴板中的数据粘贴为纯文本
+* **接口在M114遗留内核上的行为**:
+  在M114上，WebContextMenuResult新增的接口调用后不生效，且系统不报错、不抛异常、无错误码。
+
+#### bindSelectionMenu新增LINK枚举支持
+
+```
+declare enum WebElementType {
+  IMAGE = 1,
+
+  /**
+   * Link,corresponding link type.
+   *
+   * @syscap SystemCapability.Web.Webview.Core
+   * @since 20
+  */
+  LINK = 2
+}
+
+bindSelectionMenu(elementType: WebElementType, content: CustomBuilder, responseType: WebResponseType,
+    options?: SelectionMenuOptionsExt): WebAttribute;
+```
+
+* **接口作用说明**:
+  如果设置bindSelectionMenu下的WebElementType为LINK时，开发者可自定义超链接菜单功能；长按元素类型为超链接时，会展示开发者自定义的菜单。
+* **接口在M114遗留内核上的行为**:
+  开发者无法自定义超链接菜单，若开发者配置WebElementType为LINK，自定义超链接菜单功能不生效，且系统不报错、不抛异常、无错误码，不执行自定义超链接菜单展示。
+
+#### DataDetector相关接口
+
+```
+/**
+ * Enable data detector.
+ *
+ * @param { boolean } enable - {@code true} means enable data detector in Web;{@code false} otherwise.
+ *    The default value is false.
+ * @returns { WebAttribute } The attribute of the web.
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ */
+enableDataDetector(enable: boolean): WebAttribute;
+
+/**
+ * Data detector with config.
+ *
+ * @param { TextDataDetectorConfig } config - The config of text data detector.
+ * @returns { WebAttribute } The attribute of the web.
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ */
+dataDetectorConfig(config: TextDataDetectorConfig): WebAttribute;
+```
+
+* **接口作用说明**:
+  DataDetector用于AI提供智能分词能力，支持5种类型（电话号码、链接、邮箱、地址、时间）的智能分词识别。dataDetectorConfig和enableDataDetector接口可以配置文本识别的类型、颜色、样式，以及是否识别长按显示AI菜单能力，并提供点击、长按、选中出AI菜单的能力。
+* **接口在M114遗留内核上的行为**:
+  调用此接口无效，且系统不报错、不抛异常、无错误码，不执行，系统保持默认无AI智能分词能力。
+  不建议开发者在M114内核中使用以上接口。
+
+#### gestureFocusMode接口
+
+```
+/**
+ * Set the gesture focus acquisition mode.
+ * When users interact with the web using different gestures,
+ * this determines whether and when focus is acquired based on the configured mode.
+ * Default value: DEFAULT, where all gestures acquire focus on touch down.
+ *
+ * @param { GestureFocusMode } mode - The gesture focus mode, which can be {@link GestureFocusMode}.
+ *    The default value is FocusMode.DEFAULT.
+ * @returns { WebAttribute }
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ */
+gestureFocusMode(mode: GestureFocusMode): WebAttribute;
+
+/**
+ * Enum type supplied to {@link gestureFocusMode} for setting the web gesture focus mode.
+ *
+ * @enum { number }
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ * @arkts 1.1&1.2
+ */
+ declare enum GestureFocusMode {
+   /**
+    * Any action on a web component, such as tapping, long-pressing, scrolling, zooming, etc.,
+    * will cause the web component to acquire focus on touch down.
+    *
+    * @syscap SystemCapability.Web.Webview.Core
+    * @since 20
+    * @arkts 1.1&1.2
+    */
+   DEFAULT = 0,
+
+   /**
+    * Tap and long-press gestures will cause the web component to acquire focus after touch up,
+    * while gestures such as scrolling, zooming, etc., do not request focus.
+    *
+    * @syscap SystemCapability.Web.Webview.Core
+    * @since 20
+    * @arkts 1.1&1.2
+    */
+   GESTURE_TAP_AND_LONG_PRESS = 1
+ }
+```
+
+* **接口作用说明**:
+  支持配置手势获焦模式。DEFAULT模式下，任何手势操作都可在Touch Down时使web获焦；GESTURE_TAP_AND_LONG_PRESS模式下，仅长按和点击手势可使web获焦；默认为DEFAULT模式。
+* **接口在M114遗留内核上的行为**:
+  开发者设置gestureFocusMode属性接口配置不生效，且系统不报错、不抛异常、无错误码，Web组件默认为DEFAULT获焦模式。
+  不建议开发者在M114内核中使用以上接口。
+
+#### Pdf加载滚动回调接口
+
+```
+/**
+ * Triggered when the PDF in web page scrolling at bottom with pdf scroll event.
+ * @param { Callback<OnPdfScrollEvent> } callback Function Triggered when the scrolling to bottom.
+ * @returns { WebAttribute }
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ * @arkts 1.1&1.2
+ */
+onPdfScrollAtBottom(callback: Callback<OnPdfScrollEvent>): WebAttribute;
+
+/**
+ * Triggered when the PDF page load finish.
+ * @param { Callback<OnPdfLoadEvent> } callback
+ * @returns { WebAttribute }
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ * @arkts 1.1&1.2
+ */
+onPdfLoadEvent(callback: Callback<OnPdfLoadEvent>): WebAttribute;
+```
+
+* **接口作用说明**:
+  上述新增接口用于通知宿主应用PDF页面已加载到底部以及加载完成事件。
+* **接口在M114遗留内核上的行为**:
+  应用在M114内核上为组件设置上述回调不生效，不报错、不抛异常、无错误码；设置后系统不会触发此回调。
+
+#### 同层渲染新增接口
+
+```
+declare interface EmbedOptions {
+  supportDefaultIntrinsicSize?: boolean;
+
+  /**
+   * Whether the {@link onNativeEmbedVisibilityChange} event supports display-related attributes
+   * of the embed element.
+   * <br>Default value is false. If true, the changes of the display-related attributes of the
+   * embed element will be reported through the {@link onNativeEmbedVisibilityChange} event.
+   *
+   * @type { ?boolean }
+   * @default false
+   * @syscap SystemCapability.Web.Webview.Core
+   * @since 20
+   */
+  supportCssDisplayChange?: boolean;
+}
+
+nativeEmbedOptions(options?: EmbedOptions): WebAttribute;
+
+/**
+ * Defines the user mouse info on embed layer.
+ *
+ * @typedef NativeEmbedMouseInfo
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ */
+declare interface NativeEmbedMouseInfo {
+  /**
+   * The native embed id.
+   *
+   * @type { ?string }
+   * @syscap SystemCapability.Web.Webview.Core
+   * @since 20
+   */
+  embedId?: string;
+
+  /**
+   * An event sent when the state of contacts with a mouse-sensitive surface changes.
+   *
+   * @type { ?MouseEvent }
+   * @syscap SystemCapability.Web.Webview.Core
+   * @since 20
+   */
+  mouseEvent?: MouseEvent;
+
+  /**
+   * Handle the user's mouse result.
+   *
+   * @type { ?EventResult }
+   * @syscap SystemCapability.Web.Webview.Core
+   * @since 20
+   */
+  result?: EventResult;
+}
+
+/**
+ * The callback when mouse event is triggered in native embed area
+ *
+ * @typedef { function } MouseInfoCallback
+ * @param { NativeEmbedMouseInfo } event - callback information of mouse event in native embed area.
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ */
+type MouseInfoCallback = (event: NativeEmbedMouseInfo) => void;
+
+/**
+ * Triggered when mouse effect on embed tag.
+ *
+ * @param { MouseInfoCallback } callback - callback Triggered when mouse effect on embed tag.
+ * @returns { WebAttribute }
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ */
+onNativeEmbedMouseEvent(callback: MouseInfoCallback): WebAttribute;
+
+declare class EventResult {
+  ...
+  /**
+   * Sets the mouse event consumption result.
+   *
+   * @param { boolean } result -  Whether to consume the mouse event.
+   *    {@code true} Indicates the consumption of the mouse event.
+   *    {@code false} Indicates the non-consumption of the mouse event.
+   *    Default value: true.
+   * @param { boolean } stopPropagation - Whether to stop propagation.
+   *    This parameter is valid only when result is set to true. 
+   *    {@code true} Indicates stops the propagation of events farther along.
+   *    {@code false} Indicates the propagation of events farther along.
+   *    Default value: true.
+   * @syscap SystemCapability.Web.Webview.Core
+   * @since 20
+   */
+  setMouseEventResult(result: boolean, stopPropagation?: boolean): void;
+}
+declare interface NativeEmbedTouchInfo {
+  embedId?: string;
+  touchEvent?: TouchEvent;
+  result?: EventResult;
+}
+onNativeEmbedGestureEvent(callback: (event: NativeEmbedTouchInfo) => void): WebAttribute;
+```
+
+* **接口作用说明**:
+  同层组件新增了以下三个接口：
+  * `supportCssDisplayChange`：可见性支持display属性
+  * `onNativeEmbedMouseEvent`：同层组件支持鼠标事件
+  * `setMouseEventResult`：onNativeEmbedGestureEvent回调时，设置鼠标事件的消费结果
+* **接口在M114遗留内核上的行为**:
+  * `supportCssDisplayChange`在M114遗留内核上设置不生效，不会抛异常，也不会返回错误码。
+  * `onNativeEmbedMouseEvent`在M114遗留内核上设置后会不生效，内核不会触发鼠标事件，只触发 `onNativeEmbedGestureEvent`
+  * `setMouseEventResult`在M114遗留内核上设置不生效，不会抛异常，也不会返回错误码。
+
+### 4.4 NDK接口
+
+#### OH_NativeArkWeb_SetBlanklessLoadingWithKey接口
+
+```
+typedef enum ArkWeb_BlanklessErrorCode {
+/*
+ * @brief Success.
+ *
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ */
+ARKWEB_BLANKLESS_SUCCESS = 0,
+
+/*
+ * @brief Unknown error.
+ *
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ */
+ARKWEB_BLANKLESS_ERR_UNKNOWN = -1,
+
+/*
+ * @brief Invalid args.
+ *
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ */
+ARKWEB_BLANKLESS_ERR_INVALID_ARGS = -2,
+
+/*
+ * @brief Init error. The web controller is not binded with the component.
+ *
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ */
+ARKWEB_BLANKLESS_ERR_CONTROLLER_NOT_INITED = -3,
+
+/*
+ * @brief The key of blankless was not matched.
+ *
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ */
+ARKWEB_BLANKLESS_KEY_NOT_MATCH = -4,
+
+/*
+ * @brief There are significant changes for the loading page.
+ *
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ */
+ARKWEB_BLANKLESS_SIGNIFICANT_CHANGE = -5,
+
+/*
+ * @brief Device not support.
+ *
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ */
+ARKWEB_BLANKLESS_ERR_DEVICE_NOT_SUPPORT = 801,
+} ArkWeb_BlanklessErrorCode;
+
+/**
+ * @brief Sets whether to enable blankless page loading. This API must be used in pair with the
+ * OH_NativeArkWeb_GetBlanklessInfoWithKey API.
+ *
+ * @param webTag webTag used when the webviewController is created.
+ * @param key Key value that uniquely identifies the current page. It must be the same as the key value of the
+ * OH_NativeArkWeb_GetBlanklessInfoWithKey API.
+ * @param isStarted Whether to enable frame interpolation. The value true indicates to enable frame
+ * interpolation, and the value false indicates the opposite.
+ * The default value is false.
+ * The value can be true or false.
+ * Action for setting an invalid value: N/A.
+ * @return Whether the API is successfully called. For details, see ArkWeb_BlanklessErrorCode.
+ * @since 20
+ */
+ArkWeb_BlanklessErrorCode OH_NativeArkWeb_SetBlanklessLoadingWithKey(const char* webTag, const char* key, bool isStarted);
+```
+
+* **接口作用说明**:
+  设置Blankless加载是否使能
+* **接口在M114遗留内核上的行为**:
+  接口功能在M114内核不支持，返回错误码 `801`
+
+#### OH_NativeArkWeb_ClearBlanklessLoadingCache接口
+
+```
+/**
+ * @brief Clears the blankless loading cache of the page with a specified key value.
+ *
+ * @param key The list of key values of pages cached in the blankless loading solution. These key values are
+ * specified in OH_NativeArkWeb_GetBlanklessInfoWithKey.
+ * The default value is the list of key values of all pages cached in the blankless loading solution.
+ * The key length cannot exceed 2048 characters, and the number of keys must be less than or equal to 100. The
+ * URL is the same as that input to the Web component during page loading.
+ * When the key length exceeds 2048 characters, the key does not take effect. When the number of keys exceeds
+ * 100, the first 100 keys are used. If this parameter is set to NULL, the default value is used.
+ * @param size Size of the key list.
+ * @since 20
+ */
+void OH_NativeArkWeb_ClearBlanklessLoadingCache(const char* key[], uint32_t size);
+```
+
+* **接口作用说明**:
+  清除指定key值页面Blankless优化缓存，本接口只清除缓存。
+* **接口在M114遗留内核上的行为**:
+  接口功能在M114内核不支持，无效果
+
+#### OH_NativeArkWeb_GetBlanklessInfoWithKey接口
+
+```
+/**
+ * @brief Defines the blankless information.
+ *
+ * @since 20
+ */
+typedef struct {
+    /** The errCode of the blankless. */
+    ArkWeb_BlanklessErrorCode errCode;
+    /** The estimated similarity of the history snapshots. */
+    double similarity;
+    /** The loadingTime of the history loading. */
+    int32_t loadingTime;
+} ArkWeb_BlanklessInfo;
+
+/**
+ * @brief Obtains the prediction information about the blankless loading solution and enables the generation
+ * of the transition frame for the current loading. The application determines whether to enable the blankless
+ * loading solution based on the information.
+ * This API applies to pages in an applet or web application whose URLs are not fixed or cannot be uniquely
+ * identified.
+ *
+ * @param webTag webTag used when the webviewController is created.
+ * Default value: N/A.
+ * The value cannot be empty.
+ * When an invalid value is set, the error code is returned, and the API does not take effect.
+ * @param key Key value that uniquely identifies the current page.
+ * @return Return value of the ArkWeb_BlanklessInfo type.
+ * @since 20
+ */
+ArkWeb_BlanklessInfo OH_NativeArkWeb_GetBlanklessInfoWithKey(const char* webTag, const char* key);
+```
+
+* **接口作用说明**:
+  获取页面首屏加载预测信息，并使能本次加载过渡帧生成，应用根据此信息确定是否需要使能Blankless加载
+* **接口在M114遗留内核上的行为**:
+  接口功能在M114内核不支持，返回ArkWeb_BlanklessInfo类型变量的ArkWeb_BlanklessErrorCode错误码是 `801`
+
+#### OH_NativeArkWeb_SetBlanklessLoadingCacheCapacity接口
+
+```
+/**
+ * @brief Sets the cache capacity of the blankless loading solution and returns the value that takes effect.
+ *
+ * @param capacity Cache capacity, in MB. The maximum value is 100 MB.
+ * The default value is 30 MB.
+ * The value ranges from 0 to 100. If this parameter is set to 0, no cache capacity is available and the
+ * functionality is disabled globally.
+ * When the value is set to a number smaller than 0, the value 0 takes effect. When the value is set to a
+ * number greater than 100, the value 100 takes effect.
+ * @return The effective value that ranges from 0 MB to 100 MB.
+ * @since 20
+ */
+uint32_t OH_NativeArkWeb_SetBlanklessLoadingCacheCapacity(uint32_t capacity);
+```
+
+* **接口作用说明**:
+  设置Blankless加载方案持久缓存容量，返回实际生效的值
+* **接口在M114遗留内核上的行为**:
+  接口功能在M114内核不支持，无效果，返回值是0
+
+#### OH_ArkWebResourceHandler_DidFailWithErrorV2接口
+
+```
+/*
+ * @brief Notify the ArkWeb that this request should be failed.
+ * @param resourceHandler The ArkWeb_ResourceHandler for the request.
+ * @param errorCode The error code for this request. Refer to arkweb_net_error_list.h.
+ * @param completeIfNoResponse If true, will construct a response when haven't received a response.
+ * @return {@link ARKWEB_NET_OK} 0 - Success.
+ *         {@link ARKWEB_INVALID_PARAM} 17100101 - Invalid param.
+ *
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ */
+int32_t OH_ArkWebResourceHandler_DidFailWithErrorV2(const ArkWeb_ResourceHandler* resourceHandler,
+                                                    ArkWeb_NetError errorCode,
+                                                    bool completeIfNoResponse);
+```
+
+* **接口作用说明**:
+  通知ArkWeb内核，被拦截请求应返回失败。若completeIfNoResponse为false，调用前需优先调用didReceiveResponse，将构造的响应头传递给被拦截的请求。若completeIfNoResponse为true，且调用前未调用didReceiveResponse，则自动生成一个响应头，网络错误码为 `-104`。
+* **接口在M114遗留内核上的行为**:
+  接口行为跟 `OH_ArkWebResourceHandler_DidFailWithError`一致，completeIfNoResponse参数不生效。
+
+#### OH_NativeArkWeb_RegisterAsyncThreadJavaScriptProxy 接口
+
+```
+/**
+ * @brief Register a JavaScript object with callback methods, which may return values. This object will be injected
+ *        into all frames of the current page, including all iframes, and will be accessible using the specified
+ *        name in ArkWeb_ProxyObjectWithResult. The object will only be available in JavaScript after the next
+ *        load or reload.
+ *        These methods will be executed in the ArkWeb worker thread.
+ *
+ * @param webTag The name of the web component.
+ * @param proxyObject The JavaScript object to register, the object has callback functions with return value.
+ * @param permission The JSON string, which defaults to null, is used to configure the permission control for
+ *                   JSBridge, allowing for the definition of URL whitelists at the object and method levels.
+ *
+ * @since 20
+ */
+void OH_NativeArkWeb_RegisterAsyncThreadJavaScriptProxy(const char* webTag,
+    const ArkWeb_ProxyObjectWithResult* proxyObject, const char* permission);
+```
+
+* **接口作用说明**:
+  ndk接口支持在工作线程执行JavaScriptProxy注册对象的方法，避免ui线程繁忙导致的阻塞。
+* **接口在M114遗留内核上的行为**:
+  设置不生效，不会抛异常，也不会返回错误码。
+  不建议开发者在M114内核中使用以上接口。
+
+#### ArkWebHttpBodyStream AsyncRead 接口
+
+```
+/**
+* @brief Callback when the read operation done.
+* @param httpBodyStream The ArkWeb_HttpBodyStream.
+* @param buffer The buffer to receive data.
+* @param bytesRead Callback after OH_ArkWebHttpBodyStream_AsyncRead. bytesRead greater than 0 means that
+* the buffer is filled with data of bytesRead size. Caller can read from the buffer, and if
+* OH_ArkWebHttpBodyStream_IsEOF is false, caller can continue to read the remaining data.
+* 
+* @syscap SystemCapability.Web.Webview.Core
+* @since 20
+  */
+
+  typedef void (*ArkWeb_HttpBodyStreamAsyncReadCallback)(const ArkWeb_HttpBodyStream *httpBodyStream,
+uint8_t *buffer,
+int bytesRead);
+/**
+* @brief Set the callback for OH_ArkWebHttpBodyStream_AsyncRead.
+* 
+* The result of OH_ArkWebHttpBodyStream_AsyncRead will be notified to caller through the\n
+* readCallback. The callback will runs in the ArkWeb worker thread.\n
+* 
+* @param httpBodyStream The ArkWeb_HttpBodyStream.
+* @param readCallback The callback of read function.
+* @return {@link ARKWEB_NET_OK} 0 - Success.
+* {@link ARKWEB_INVALID_PARAM} 17100101 - Invalid param.
+* 
+* @syscap SystemCapability.Web.Webview.Core
+* @since 20
+  */
+
+  int32_t OH_ArkWebHttpBodyStream_SetAsyncReadCallback(ArkWeb_HttpBodyStream *httpBodyStream,
+  ArkWeb_HttpBodyStreamAsyncReadCallback readCallback);
+
+/**
+
+* @brief Read the http body to the buffer.
+* 
+* The buffer must be larger than the bufLen. We will read data from a worker thread to the buffer,\n
+* so should not use the buffer in other threads before the callback to avoid concurrency issues.\n
+* 
+* @param httpBodyStream The ArkWeb_HttpBodyStream.
+* @param buffer The buffer to receive data.
+* @param bufLen The size of bytes to read.
+* 
+* @syscap SystemCapability.Web.Webview.Core
+* @since 20
+  */
+  void OH_ArkWebHttpBodyStream_AsyncRead(const ArkWeb_HttpBodyStream *httpBodyStream, uint8_t *buffer, int bufLen);
+```
+
+* **接口作用说明**:
+  ArkWebHttpBodyStream_AsyncRead 支持异步读取数据，常用于性能优化 。
+* **接口在M114遗留内核上的行为**:
+  OH_ArkWebHttpBodyStream_SetAsyncReadCallback 设置不生效，返回错误码17100100。
+  OH_ArkWebHttpBodyStream_AsyncRead 不执行操作。
+  ArkWeb_HttpBodyStreamAsyncReadCallback 不会触发回调。
+  不建议开发者在M114内核中使用以上接口。
+

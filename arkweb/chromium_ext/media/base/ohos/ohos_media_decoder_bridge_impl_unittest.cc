@@ -36,7 +36,7 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/adapter_base.h"
-
+#include "third_party/ohos_ndk/includes/ohos_adapter/surface_control_adapter.h"
 
 using ::testing::_;
 using ::testing::AtLeast;
@@ -392,6 +392,12 @@ class MockOhosAdapterHelper : public OhosAdapterHelper {
               GetHiAppeventAdapterInstance,
               (),
               (override));
+  MOCK_METHOD(SurfaceControlAdapter&,
+              GetSurfaceControlAdapter,
+              ());
+   MOCK_METHOD(SurfaceTransactionAdapter&,
+              GetSurfaceTransactionAdapter,
+              ());
   static MockOhosAdapterHelper& GetInstance() {
     static MockOhosAdapterHelper instance;
     return instance;

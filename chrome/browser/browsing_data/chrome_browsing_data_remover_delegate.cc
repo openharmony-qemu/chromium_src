@@ -982,7 +982,8 @@ void ChromeBrowsingDataRemoverDelegate::RemoveEmbedderData(
                 TracingDataType::kHttpAuthCache));
 
 #if BUILDFLAG(IS_CHROMEOS)
-    if (ash::SystemProxyManager::Get()) {
+    if (ash::SystemProxyManager::Get() &&
+        filter_builder->MatchesMostOriginsAndDomains()) {
       // Sends a request to the System-proxy daemon to clear the proxy user
       // credentials. System-proxy retrieves proxy username and password from
       // the NetworkService, but not the creation time of the credentials. The

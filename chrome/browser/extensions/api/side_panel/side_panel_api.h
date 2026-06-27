@@ -115,6 +115,7 @@ class SidePanelGetLayoutFunction : public SidePanelApiFunction {
   ResponseAction RunFunction() override;
 };
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 class SidePanelCloseFunction : public SidePanelApiFunction {
  public:
   DECLARE_EXTENSION_FUNCTION("sidePanel.close", SIDEPANEL_CLOSE)
@@ -126,6 +127,7 @@ class SidePanelCloseFunction : public SidePanelApiFunction {
   ~SidePanelCloseFunction() override = default;
   ResponseAction RunFunction() override;
 };
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 }  // namespace extensions
 

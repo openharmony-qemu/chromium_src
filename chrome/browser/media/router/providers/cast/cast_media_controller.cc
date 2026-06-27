@@ -15,6 +15,9 @@
 #include "chrome/browser/media/router/providers/cast/cast_internal_message_util.h"
 #include "components/media_router/common/providers/cast/channel/cast_message_util.h"
 #include "components/media_router/common/providers/cast/channel/enum_table.h"
+#include "net/base/ip_address.h"
+#include "net/base/url_util.h"
+#include "url/url_constants.h"
 
 using cast_channel::V2MessageType;
 
@@ -250,7 +253,15 @@ void CastMediaController::UpdateMediaStatus(
       if (!url_string) {
         continue;
       }
-      media_status_.images.emplace_back(std::in_place, GURL(*url_string),
+
+      GURL url(*url_string);
+
+      // Ensure the URL is valid and uses a safe scheme (HTTP/HTTPS).
+      if (!url.is_valid() || !url.SchemeIsHTTPOrHTTPS()) {
+        continue;
+      }
+
+      media_status_.images.emplace_back(std::in_place, url,
                                         GetValidSize(image_dict));
     }
   }

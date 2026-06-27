@@ -337,6 +337,9 @@ class CONTENT_EXPORT ChildProcessLauncher
   // Dumps the stack of the child process without crashing it.
   void DumpProcessStack();
 #endif
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  base::TimeTicks GetProcessStartTime() const { return process_start_time_; }
+#endif
  private:
   friend class internal::ChildProcessLauncherHelper;
 

@@ -30,6 +30,7 @@ void ProxyInfo::Use(const ProxyInfo& other) {
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   used_fallback_proxy_ = other.used_fallback_proxy_;
   use_fallback_proxy_direct_ = other.use_fallback_proxy_direct_;
+  is_accelerate_proxy_ = other.is_accelerate_proxy_;
 #endif
 }
 
@@ -113,6 +114,7 @@ void ProxyInfo::Reset() {
   did_bypass_proxy_ = false;
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   used_fallback_proxy_ = false;
+  is_accelerate_proxy_ = false;
 #endif
 }
 

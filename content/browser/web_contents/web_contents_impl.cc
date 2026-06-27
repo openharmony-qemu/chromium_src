@@ -8690,6 +8690,10 @@ void WebContentsImpl::OnFirstVisuallyNonEmptyPaint(PageImpl& page) {
     return;
   }
 
+#if BUILDFLAG(ARKWEB_NETWORK_DFX) && BUILDFLAG(ARKWEB_NWEB_EX)
+  AsWebContentsImplExt()->RecordFirstVisuallyNonEmptyPaint();
+#endif
+
   {
     SCOPED_UMA_HISTOGRAM_TIMER(
         "WebContentsObserver.DidFirstVisuallyNonEmptyPaint");
@@ -8815,6 +8819,10 @@ void WebContentsImpl::SendChangeLoadProgress() {
   OPTIONAL_TRACE_EVENT1("content", "WebContentsImpl::SendChangeLoadProgress",
                         "load_progress", GetLoadProgress());
   loading_last_progress_update_ = base::TimeTicks::Now();
+
+#if BUILDFLAG(ARKWEB_NETWORK_DFX) && BUILDFLAG(ARKWEB_NWEB_EX)
+  AsWebContentsImplExt()->RecordFullLoadingProgress();
+#endif
 
   SCOPED_UMA_HISTOGRAM_TIMER("WebContentsObserver.LoadProgressChanged");
   observers_.NotifyObservers(&WebContentsObserver::LoadProgressChanged,
@@ -9832,6 +9840,10 @@ void WebContentsImpl::DidStopLoading() {
   if (IsBeingDestroyed()) {
     return;
   }
+
+#if BUILDFLAG(ARKWEB_NETWORK_DFX) && BUILDFLAG(ARKWEB_NWEB_EX)
+  AsWebContentsImplExt()->RecordPageFinished();
+#endif
 
   // Use the last committed entry rather than the active one, in case a
   // pending entry has been created.

@@ -939,6 +939,10 @@ class CONTENT_EXPORT RenderProcessHostImpl
     return renderer_host_receiver_;
   }
 
+#if BUILDFLAG(ARKWEB_NETWORK_DFX) && BUILDFLAG(ARKWEB_NWEB_EX)
+  base::TimeTicks GetChildProcessStartTime() const override;
+#endif
+
   // Override the default subframe process reuse memory threshold, in bytes.
   static void SetSubframeProcessReuseThresholdForTesting(uint64_t threshold);
 

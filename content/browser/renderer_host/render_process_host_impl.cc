@@ -6430,4 +6430,13 @@ bool RenderProcessHostImpl::IsOnlyHostingPrerenderedFramesOrEmpty() {
          render_frame_host_id_set_.size();
 }
 
+#if BUILDFLAG(ARKWEB_NETWORK_DFX) && BUILDFLAG(ARKWEB_NWEB_EX)
+base::TimeTicks RenderProcessHostImpl::GetChildProcessStartTime() const {
+  if (child_process_launcher_) {
+    return child_process_launcher_->GetProcessStartTime();
+  }
+  return base::TimeTicks();
+}
+#endif
+
 }  // namespace content

@@ -187,6 +187,12 @@ class NET_EXPORT ProxyInfo {
   }
 
   bool use_fallback_proxy_direct() { return use_fallback_proxy_direct_; }
+
+  void set_is_accelerate_proxy(bool is_accelerate_proxy) {
+    is_accelerate_proxy_ = is_accelerate_proxy;
+  }
+ 
+  bool is_accelerate_proxy() const { return is_accelerate_proxy_; }
 #endif
 
  private:
@@ -214,6 +220,7 @@ class NET_EXPORT ProxyInfo {
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   bool used_fallback_proxy_ = false;
   bool use_fallback_proxy_direct_ = false;
+  bool is_accelerate_proxy_ = false;
 #endif
 
   // Whether the request that uses this proxy config caused a match with the

@@ -1422,8 +1422,9 @@ component("net") {
       "//arkweb/chromium_ext/net/base/platform_mime_util_ohos.cc",
     ]
 
+    import("//arkweb/chromium_ext/net/base/arkweb_net_base_ext.gni")
+    sources += arkweb_net_base_ext_host_sources
     if (arkweb_prp_preload) {
-      import("//arkweb/chromium_ext/net/base/arkweb_net_base_ext.gni")
       sources += arkweb_net_base_ext_sources
     }
 

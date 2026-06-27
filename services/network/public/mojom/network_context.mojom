@@ -123,6 +123,10 @@ struct CustomProxyConfig {
   // to the CONNECT request. Headers here will overwrite matching headers on
   // the CONNECT request if a custom proxy is used.
   HttpRequestHeaders connect_tunnel_headers;
+
+  // Whether this proxy config is for accelerate proxy mode.
+  [EnableIf=arkweb_ex_fallback_proxy]
+  bool is_accelerate_proxy = false;
 };
 
 // Observer of custom proxy connections, especially for when errors occur.

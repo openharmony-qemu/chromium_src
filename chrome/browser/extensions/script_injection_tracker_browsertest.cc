@@ -164,6 +164,62 @@ class ScriptInjectionTrackerBrowserTest : public ExtensionBrowserTest {
     return original_web_contents->GetPrimaryMainFrame()->GetProcess() !=
            new_web_contents->GetPrimaryMainFrame()->GetProcess();
   }
+
+  // Opens a new tab to `parent_url` and adds a subframe, which will point to
+  // `child_url` -- but ensures the child frame fails to load and instead is an
+  // error page. `response` is a controllable response for the `parent_url`
+  // (sadly, this must be passed in, because these need to be instantiated
+  // before the test server starts).
+  // Returns the child frame.
+  content::RenderFrameHost* OpenPageWithErrorSubFrame(
+      net::test_server::ControllableHttpResponse& response,
+      const GURL& parent_url,
+      const GURL& child_url) {
+    // Navigate to the parent URL.
+    content::TestNavigationObserver nav_observer(parent_url);
+    nav_observer.StartWatchingNewWebContents();
+    ui_test_utils::NavigateToURLWithDisposition(
+        browser(), parent_url, WindowOpenDisposition::NEW_FOREGROUND_TAB,
+        ui_test_utils::BROWSER_TEST_WAIT_FOR_TAB);
+    response.WaitForRequest();
+
+    // Respond with a CSP that will block an iframe loading the child URL.
+    static constexpr char kHtmlTemplate[] =
+        R"(<html>
+             <body>
+               <iframe src="%s"></iframe>
+             </body>
+           </html>)";
+    std::string response_body =
+        base::StringPrintf(kHtmlTemplate, child_url.spec().c_str());
+    std::vector<std::string> headers = {
+        "Content-Security-Policy: frame-src 'none'"};
+    response.Send(net::HTTP_OK, "text/html", response_body, {}, headers);
+    response.Done();
+    nav_observer.WaitForNavigationFinished();
+
+    content::WebContents* tab = GetActiveWebContents();
+    content::WaitForLoadStop(tab);
+    content::RenderFrameHost* main_frame = tab->GetPrimaryMainFrame();
+
+    // Find the child frame.
+    content::RenderFrameHost* child_frame =
+        content::ChildFrameAt(main_frame, 0);
+    if (!child_frame) {
+      ADD_FAILURE() << "Failed to navigate to child: " << child_url;
+      return nullptr;
+    }
+
+    // The child frame should have failed to navigate to victim.com and
+    // committed an error page instead.
+    EXPECT_TRUE(child_frame->IsErrorDocument());
+    EXPECT_EQ(child_url, child_frame->GetLastCommittedURL());
+
+    // The child frame is hosted in the same process as the main frame.
+    EXPECT_EQ(main_frame->GetProcess(), child_frame->GetProcess());
+
+    return child_frame;
+  }
 };
 
 // Helper class for executing a content script right before handling a DidCommit

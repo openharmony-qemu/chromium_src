@@ -201,6 +201,16 @@ class Handler : public content::WebContentsObserver {
       return content::RenderFrameHost::FrameIterationAction::kContinue;
     }
 
+    // Avoid injecting into error documents (e.g. frames blocked by CSP) and
+    // their subtrees, matching the explicit-frameId execution path validation.
+    // This prevents compromised renderers from tricking ScriptInjectionTracker
+    // into believing an extension is executing scripts inside an
+    // attacker-controlled process.
+    // See https://crbug.com/517153117.
+    if (frame->IsErrorDocument()) {
+      return content::RenderFrameHost::FrameIterationAction::kSkipChildren;
+    }
+
     PushPendingRenderFrame(frame, ExtensionApiFrameIdMap::GetFrameId(frame));
     return content::RenderFrameHost::FrameIterationAction::kContinue;
   }

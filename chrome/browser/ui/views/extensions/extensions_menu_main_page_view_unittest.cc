@@ -800,7 +800,10 @@ TEST_F(ExtensionsMenuMainPageViewUnitTest, ActiveTabRequested_DynamicUpdates) {
       extensions::ActiveTabPermissionGranter::FromWebContents(
           browser()->tab_strip_model()->GetActiveWebContents());
   ASSERT_TRUE(active_tab_permission_granter);
+  PermissionsManagerWaiter waiter(
+      extensions::PermissionsManager::Get(browser()->profile()));
   active_tab_permission_granter->GrantIfRequested(extension.get());
+  waiter.WaitForActiveTabPermissionGranted(extension->id());
   EXPECT_TRUE(menu_item->site_permissions_button_for_testing()->GetVisible());
   EXPECT_TRUE(menu_item->site_permissions_button_for_testing()->GetEnabled());
   EXPECT_EQ(menu_item->site_permissions_button_for_testing()->GetText(),

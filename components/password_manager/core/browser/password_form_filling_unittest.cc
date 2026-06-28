@@ -1077,4 +1077,40 @@ TEST_F(PasswordFormFillingTest, PasswordIsNotLeaked) {
   EXPECT_FALSE(fill_data.notify_browser_of_successful_filling);
 }
 
+TEST(PasswordFormFillDataTest, MaybeClearPasswordValues) {
+  using autofill::PasswordAndMetadata;
+
+  PasswordFormFillData data;
+  data.preferred_login.password_value = u"preferred_password";
+  data.password_element_renderer_id = FieldRendererId(123);
+
+  PasswordAndMetadata exact_additional;
+  exact_additional.realm = "";
+  exact_additional.password_value = u"exact_password";
+  data.additional_logins.push_back(exact_additional);
+
+  PasswordAndMetadata grouped_additional;
+  grouped_additional.realm = "https://grouped.com";
+  grouped_additional.password_value = u"grouped_password";
+  data.additional_logins.push_back(grouped_additional);
+
+  {
+    data.wait_for_username = false;
+    PasswordFormFillData result = autofill::MaybeClearPasswordValues(data);
+
+    EXPECT_EQ(u"preferred_password", result.preferred_login.password_value);
+    EXPECT_EQ(u"exact_password", result.additional_logins[0].password_value);
+    EXPECT_TRUE(result.additional_logins[1].password_value.empty());
+  }
+
+  {
+    data.wait_for_username = true;
+    PasswordFormFillData result = autofill::MaybeClearPasswordValues(data);
+
+    EXPECT_TRUE(result.preferred_login.password_value.empty());
+    EXPECT_TRUE(result.additional_logins[0].password_value.empty());
+    EXPECT_TRUE(result.additional_logins[1].password_value.empty());
+  }
+}
+
 }  // namespace password_manager

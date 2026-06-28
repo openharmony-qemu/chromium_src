@@ -94,14 +94,16 @@ PasswordFormFillData MaybeClearPasswordValues(
   // field), credentials from |additional_logins| could be used for filling
   // on load. So in case of filling on load nor |password_field| nor
   // |additional_logins| can't be cleared
-  bool is_fallback = data.password_element_renderer_id.is_null();
-  if (!data.wait_for_username && !is_fallback) {
-    return data;
-  }
+  bool no_fill_on_page_load =
+      data.wait_for_username || data.password_element_renderer_id.is_null();
   PasswordFormFillData result(data);
-  result.preferred_login.password_value.clear();
+  if (no_fill_on_page_load) {
+    result.preferred_login.password_value.clear();
+  }
   for (auto& credentials : result.additional_logins) {
-    credentials.password_value.clear();
+    if (!credentials.realm.empty() || no_fill_on_page_load) {
+      credentials.password_value.clear();
+    }
   }
   return result;
 }

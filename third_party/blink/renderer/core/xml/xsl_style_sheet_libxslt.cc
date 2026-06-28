@@ -201,6 +201,11 @@ void XSLStyleSheet::LoadChildSheets() {
             xsltGetNsProp(curr, (const xmlChar*)"href", XSLT_NAMESPACE);
         LoadChildSheet(String::FromUTF8((const char*)uri_ref));
         xmlFree(uri_ref);
+
+        // LoadChildSheet() can synchronously tear down the backing xmlDoc.
+        if (stylesheet_doc_taken_) {
+          return;
+        }
       } else {
         break;
       }
@@ -215,6 +220,11 @@ void XSLStyleSheet::LoadChildSheets() {
             xsltGetNsProp(curr, (const xmlChar*)"href", XSLT_NAMESPACE);
         LoadChildSheet(String::FromUTF8((const char*)uri_ref));
         xmlFree(uri_ref);
+
+        // LoadChildSheet() can synchronously tear down the backing xmlDoc.
+        if (stylesheet_doc_taken_) {
+          return;
+        }
       }
       curr = curr->next;
     }

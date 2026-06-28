@@ -1565,7 +1565,7 @@ void NavigationURLLoaderImpl::OnReceiveResponse(
   // When a plugin intercepted the response, we don't want to download it.
   bool is_download =
       !head->intercepted_by_plugin && (must_download || !known_mime_type);
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   LOG_FEEDBACK(INFO, kNavigation)
       << "OnReceiveResponse isDownload:" << is_download
       << " mustDownload:" << must_download
@@ -1586,6 +1586,12 @@ void NavigationURLLoaderImpl::CheckPluginAndCallOnReceiveResponse(
       browser_context_, resource_request_->url, head->mime_type);
 
   bool is_download = !has_plugin;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  LOG_FEEDBACK(INFO, kNavigation)
+      << "OnReceiveResponse isDownload:" << is_download
+      << " mimeType:" << head->mime_type
+      << " url:" << url::LogUtils::ConvertUrlWithMask(url_.spec());
+#endif
   CallOnReceivedResponse(std::move(head),
                          std::move(url_loader_client_endpoints), is_download);
 }

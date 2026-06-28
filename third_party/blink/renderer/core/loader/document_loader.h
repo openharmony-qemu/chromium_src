@@ -418,6 +418,9 @@ class CORE_EXPORT DocumentLoader : public GarbageCollected<DocumentLoader>,
   // Returns the value of the text fragment token and then resets it to false
   // to ensure the token can only be used to invoke a single text fragment.
   bool ConsumeTextFragmentToken();
+  bool HasInternalScrollToTextFragment() const {
+    return has_text_fragment_token_;
+  }
 
   // Notifies that the prerendering document this loader is working for is
   // activated.

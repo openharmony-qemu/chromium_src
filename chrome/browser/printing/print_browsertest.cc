@@ -1615,13 +1615,13 @@ IN_PROC_BROWSER_TEST_F(PrintExtensionBrowserTest,
   content::WebContents* web_contents =
       browser()->tab_strip_model()->GetActiveWebContents();
   ASSERT_TRUE(web_contents);
-  TestPrintViewManager print_view_manager(web_contents);
-  PrintViewManager::SetReceiverImplForTesting(&print_view_manager);
+  TestPrintViewManager* print_view_manager =
+      TestPrintViewManager::CreateForWebContents(web_contents);
 
   PrintAndWaitUntilPreviewIsReady();
 
   const mojom::PrintPagesParamsPtr& snooped_params =
-      print_view_manager.snooped_params();
+      print_view_manager->snooped_params();
   ASSERT_TRUE(snooped_params);
   EXPECT_EQ(gfx::Size(kDefaultPdfDpi, kDefaultPdfDpi),
             snooped_params->params->dpi);
@@ -1662,13 +1662,13 @@ IN_PROC_BROWSER_TEST_F(
   content::WebContents* web_contents =
       browser()->tab_strip_model()->GetActiveWebContents();
   ASSERT_TRUE(web_contents);
-  TestPrintViewManager print_view_manager(web_contents);
-  PrintViewManager::SetReceiverImplForTesting(&print_view_manager);
+  TestPrintViewManager* print_view_manager =
+      TestPrintViewManager::CreateForWebContents(web_contents);
 
   PrintAndWaitUntilPreviewIsReady();
 
   const mojom::PrintPagesParamsPtr& snooped_params =
-      print_view_manager.snooped_params();
+      print_view_manager->snooped_params();
   ASSERT_TRUE(snooped_params);
   EXPECT_EQ(gfx::Size(kDefaultPdfDpi, kDefaultPdfDpi),
             snooped_params->params->dpi);
@@ -1698,14 +1698,11 @@ IN_PROC_BROWSER_TEST_F(PrintBrowserTest, DISABLED_PrintNup) {
   content::WebContents* web_contents =
       browser()->tab_strip_model()->GetActiveWebContents();
   ASSERT_TRUE(web_contents);
-  TestPrintViewManager print_view_manager(web_contents);
-  PrintViewManager::SetReceiverImplForTesting(&print_view_manager);
+  TestPrintViewManager::CreateForWebContents(web_contents);
 
   // Override print parameters to do N-up, specify 4 pages per sheet.
   const PrintParams kParams{.pages_per_sheet = 4};
   PrintAndWaitUntilPreviewIsReady(kParams);
-
-  PrintViewManager::SetReceiverImplForTesting(nullptr);
 
   // With 4 pages per sheet requested by `GetPrintParams()`, a 7 page input
   // will result in 2 pages in the print preview.
@@ -1722,14 +1719,11 @@ IN_PROC_BROWSER_TEST_F(SitePerProcessPrintBrowserTest, DISABLED_PrintNup) {
   content::WebContents* web_contents =
       browser()->tab_strip_model()->GetActiveWebContents();
   ASSERT_TRUE(web_contents);
-  TestPrintViewManager print_view_manager(web_contents);
-  PrintViewManager::SetReceiverImplForTesting(&print_view_manager);
+  TestPrintViewManager::CreateForWebContents(web_contents);
 
   // Override print parameters to do N-up, specify 4 pages per sheet.
   const PrintParams kParams{.pages_per_sheet = 4};
   PrintAndWaitUntilPreviewIsReady(kParams);
-
-  PrintViewManager::SetReceiverImplForTesting(nullptr);
 
   // With 4 pages per sheet requested by `GetPrintParams()`, a 7 page input
   // will result in 2 pages in the print preview.

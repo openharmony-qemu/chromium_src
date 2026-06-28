@@ -661,10 +661,9 @@ void PrintPreviewHandler::HandleGetPreview(const base::Value::List& args) {
                print_preview_ui()->GetIDForPrintPreviewUI().value());
 
   WebContents* initiator = GetInitiator();
-  RenderFrameHost* rfh =
-      initiator
-          ? PrintViewManager::FromWebContents(initiator)->print_preview_rfh()
-          : nullptr;
+  auto* manager =
+      initiator ? PrintViewManager::FromWebContents(initiator) : nullptr;
+  RenderFrameHost* rfh = manager ? manager->print_preview_rfh() : nullptr;
   if (!rfh) {
     ReportUserActionHistogram(UserActionBuckets::kInitiatorClosed);
     print_preview_ui()->OnClosePrintPreviewDialog();
@@ -699,6 +698,8 @@ void PrintPreviewHandler::HandleGetPreview(const base::Value::List& args) {
         print_preview_ui()->BindPrintPreviewUI());
   }
   print_render_frame_->PrintPreview(settings.Clone());
+  manager->AppendPrintPreviewSettings(settings.Clone(),
+                                      rfh->GetProcess()->IsPdf());
   last_preview_settings_ = std::move(settings);
 }
 

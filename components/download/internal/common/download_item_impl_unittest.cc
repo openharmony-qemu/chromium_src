@@ -21,6 +21,7 @@
 #include "base/functional/callback_helpers.h"
 #include "base/memory/ptr_util.h"
 #include "base/memory/raw_ptr.h"
+#include "base/run_loop.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/test/gmock_move_support.h"
@@ -45,6 +46,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 using ::testing::_;
+using ::testing::AnyNumber;
 using ::testing::ByMove;
 using ::testing::DoAll;
 using ::testing::InvokeWithoutArgs;
@@ -2513,6 +2515,46 @@ TEST_P(DownloadItemDestinationUpdateRaceTest, IntermediateRenameSucceeds) {
 
   item_->Cancel(true);
   task_environment_.RunUntilIdle();
+}
+
+TEST_F(DownloadItemTest, ResumptionClampingClearsHashState) {
+  base::test::ScopedFeatureList feature_list;
+  std::map<std::string, std::string> params;
+  params["download_validation_length"] = "1024";
+  feature_list.InitAndEnableFeatureWithParameters(
+      features::kAllowDownloadResumptionWithoutStrongValidators, params);
+
+  create_info()->etag.clear();
+  create_info()->last_modified.clear();
+  DownloadItemImpl* item = CreateDownloadItem();
+
+  MockDownloadFile* download_file =
+      DoIntermediateRename(item, DOWNLOAD_DANGER_TYPE_NOT_DANGEROUS);
+  ASSERT_EQ(DownloadItem::IN_PROGRESS, item->GetState());
+
+  std::unique_ptr<crypto::SecureHash> hash_state =
+      crypto::SecureHash::Create(crypto::SecureHash::SHA256);
+  hash_state->Update(kHashOfTestData1);
+
+  int64_t captured_offset = -1;
+  bool captured_has_hash_state = false;
+  base::RunLoop run_loop;
+  EXPECT_CALL(*mock_delegate(), MockResumeInterruptedDownload(_))
+      .WillOnce([&](DownloadUrlParameters* params) {
+        captured_offset = params->offset();
+        captured_has_hash_state =
+            (params->TakeSaveInfo().hash_state != nullptr);
+        run_loop.Quit();
+      });
+
+  EXPECT_CALL(*download_file, Cancel()).Times(AnyNumber());
+  EXPECT_CALL(*download_file, Detach()).Times(AnyNumber());
+  item->DestinationObserverAsWeakPtr()->DestinationError(
+      DOWNLOAD_INTERRUPT_REASON_FILE_TOO_SHORT, 500, std::move(hash_state));
+  run_loop.Run();
+
+  EXPECT_EQ(0, captured_offset);
+  EXPECT_FALSE(captured_has_hash_state);
 }
 
 }  // namespace

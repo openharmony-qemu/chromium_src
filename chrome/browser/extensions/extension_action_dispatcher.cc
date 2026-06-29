@@ -104,7 +104,8 @@ void ExtensionActionDispatcher::DispatchExtensionActionClicked(
 
     DispatchEventToExtension(web_contents->GetBrowserContext(),
                              extension_action.extension_id(), histogram_value,
-                             event_name, std::move(args));
+                             event_name, std::move(args),
+                             EventRouter::UserGestureState::kEnabled);
   }
 }
 
@@ -141,21 +142,23 @@ ExtensionPrefs* ExtensionActionDispatcher::GetExtensionPrefs() {
   return extension_prefs_;
 }
 
+// Forwards events to the `context`'s event router.
 void ExtensionActionDispatcher::DispatchEventToExtension(
     content::BrowserContext* context,
     const ExtensionId& extension_id,
     events::HistogramValue histogram_value,
     const std::string& event_name,
-    base::Value::List event_args) {
-  if (!EventRouter::Get(context)) {
+    base::Value::List event_args,
+    EventRouter::UserGestureState user_gesture_state) {
+  auto* event_router = EventRouter::Get(context);
+  if (!event_router) {
     return;
   }
 
   auto event = std::make_unique<Event>(histogram_value, event_name,
                                        std::move(event_args), context);
-  event->user_gesture = EventRouter::UserGestureState::kEnabled;
-  EventRouter::Get(context)->DispatchEventToExtension(extension_id,
-                                                      std::move(event));
+  event->user_gesture = user_gesture_state;
+  event_router->DispatchEventToExtension(extension_id, std::move(event));
 }
 
 void ExtensionActionDispatcher::Shutdown() {
@@ -180,7 +183,8 @@ void ExtensionActionDispatcher::OnActionPinnedStateChanged(
   args.Append(std::move(change));
   DispatchEventToExtension(browser_context_, extension_id,
                            events::ACTION_ON_USER_SETTINGS_CHANGED,
-                           "action.onUserSettingsChanged", std::move(args));
+                           "action.onUserSettingsChanged", std::move(args),
+                           EventRouter::UserGestureState::kNotEnabled);
 }
 
 }  // namespace extensions

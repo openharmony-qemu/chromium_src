@@ -37,6 +37,7 @@
 <translation id="3280172912113104877">بۇ كېڭەيتمە باشقا بېكەتلەرنى زىيارەت قىلالمايدۇ.</translation>
 <translation id="330270904988027475">ھەمكارلاشقان ساپ ئەپ تەلەپ قىلغاندا ئارقا سۇپىدا يۈرۈش</translation>
 <translation id="3341703758641437857">ھۆججەت ئادرېسىنى زىيارەت قىلىش</translation>
+<translation id="3515335817498313144">{NUM_EXTENSIONS,plural, =1{قارا تىزىملىكتىكى {NUM_EXTENSIONS} كېڭەيتمە ئۆچۈرۈلگەن}other{قارا تىزىملىكتىكى {NUM_EXTENSIONS} كېڭەيتمە ئۆچۈرۈلگەن}}</translation>
 <translation id="3555812735919707620">كېڭەيتمە ئۆچۈرۈش</translation>
 <translation id="3559702738171272112">توربېكەت قوشۇش</translation>
 <translation id="3654045516529121250">توسالغۇسىزلىق تەڭشىكىنى ئوقۇش</translation>
@@ -48,6 +49,7 @@
 <translation id="3927932062596804919">چەكلەش</translation>
 <translation id="3970114302595058915">ID</translation>
 <translation id="399788104667917863">قورالبالداققا مىخلاش</translation>
+<translation id="404470635103712779">{NUM_EXTENSIONS,plural, =1{قارا تىزىملىكتىكى {NUM_EXTENSIONS} كېڭەيتمە بايقالغان}other{قارا تىزىملىكتىكى {NUM_EXTENSIONS} كېڭەيتمە بايقالغان}}</translation>
 <translation id="407173827865827707">چەككەندە</translation>
 <translation id="4107048419833779140">بوشلۇق ئۈسكۈنىسى تونۇش ۋە سەكرىمە كۆرسىتىش</translation>
 <translation id="4165986682804962316">بېكەت تەڭشەكلىرى</translation>
@@ -69,6 +71,7 @@
 <translation id="5244466461749935369">ھازىرچە ساقلاپ قېلىش</translation>
 <translation id="5299558715747014286">بەتكۈچ گۇرۇپپىسى كۆرۈش ۋە باشقۇرۇش</translation>
 <translation id="5414566801737831689">سىز كۆرگەن توربېكەت سىنبەلگىسىنى ئوقۇش</translation>
+<translation id="5534604768231683173">{NUM_EXTENSIONS,plural, =1{بۇ كېڭەيتمىلەر قارا تىزىملىكتە، سىستېما ئۇلارنى ئۆزلۈكىدىن توسقان، ئەمدى ئېچىلمايدۇ.}other{بۇ كېڭەيتمىلەر قارا تىزىملىكتە، سىستېما ئۇلارنى ئۆزلۈكىدىن توسقان، ئەمدى ئېچىلمايدۇ.}}</translation>
 <translation id="5556459405103347317">قايتا يۈكلەش</translation>
 <translation id="5804241973901381774">ئىجازەت</translation>
 <translation id="5860033963881614850">ئېتىك</translation>
@@ -119,6 +122,7 @@
 <translation id="8712637175834984815">بىلدىم</translation>
 <translation id="8722605400356471529">بىخەتەرلىك تەكشۈرۈش</translation>
 <translation id="8811923271770626905">بۇ كېڭەيتمە ئارقا سۇپىدا يۈرۈشى مۇمكىن.</translation>
+<translation id="8863852141506257401">ئېتىك • قارا تىزىملىكتە</translation>
 <translation id="9064735624474258556">بۇ كېڭەيتمە توربېكەت ئۇچۇرىنى ئوقۇيالمايدۇ ۋە ئۆزگەرتەلمەيدۇ ھەمدە ئارقا سۇپىدا يۈرمەيدۇ.</translation>
 <translation id="9065203028668620118">ئۆزگەرتىش</translation>
 </translationbundle>

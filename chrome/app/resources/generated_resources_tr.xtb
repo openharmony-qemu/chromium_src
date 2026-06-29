@@ -3692,6 +3692,7 @@ Sunucunun mesajı: <ph name="SERVER_MSG" /></translation>
 <translation id="3514335087372914653">Oyun Kontrolü</translation>
 <translation id="3514647716686280777">Standart güvenlik korumasına sahipsiniz. Tehlikeli web siteleri, indirmeler ve uzantılara karşı daha fazla koruma elde etmek için Chrome ayarlarında Gelişmiş Güvenli Tarama'yı etkinleştirin.</translation>
 <translation id="3514681096978190000">Bu arşiv dosyası, kötü amaçlı yazılımın gizlenmiş olabileceği başka dosyalar içeriyor</translation>
+<translation id="3515335817498313144">{NUM_EXTENSIONS,plural, =1{{NUM_EXTENSIONS} engellenen uzantı kaldırıldı}other{{NUM_EXTENSIONS} engellenen uzantı kaldırıldı}}</translation>
 <translation id="3515983984924808886">Sıfırlamayı onaylamak için güvenlik anahtarınıza tekrar dokunun. PIN'i de dahil olmak üzere güvenlik anahtarında depolanan tüm bilgiler silinir.</translation>
 <translation id="3518866566087677312">Daha sonra geri dönmek istediğiniz öğelere yer işareti koyun</translation>
 <translation id="3519014757432845220">Bildirim içeriğini ve sitenin URL'sini Google ile paylaşarak spam korumasını iyileştirmeye yardımcı olun. İçerik, gerçek kişiler tarafından incelenebilir.</translation>
@@ -4515,6 +4516,7 @@ Sunucunun mesajı: <ph name="SERVER_MSG" /></translation>
 <translation id="4042941173059740150"><ph name="SITE_ETLD_PLUS_ONE" /> sitesinde <ph name="IDENTITY_PROVIDER_ETLD_PLUS_ONE" /> kimliğinizle devam edin</translation>
 <translation id="4043267180218562935">İmleç boyutu</translation>
 <translation id="4043620984511647481">Yazıcıyı manuel olarak ekleyin</translation>
+<translation id="404470635103712779">{NUM_EXTENSIONS,plural, =1{{NUM_EXTENSIONS} engellenen uzantı tespit edildi}other{{NUM_EXTENSIONS} engellenen uzantı tespit edildi}}</translation>
 <translation id="4044708573046946214">Ekran kilidi şifresi</translation>
 <translation id="4044883420905480380">Android telefonunuzla kablosuz ağa bağlanıp <ph name="USER_EMAIL" /> adresinde oturum açtınız</translation>
 <translation id="404493185430269859">Varsayılan arama motoru</translation>
@@ -6640,6 +6642,7 @@ Bu işleme birden fazla anahtar atayabilirsiniz.</translation>
 <translation id="5532223876348815659">Evrensel</translation>
 <translation id="5533001281916885985"><ph name="SITE_NAME" /> şunu yapmak istiyor:</translation>
 <translation id="5533343601674003130">PDF Hizmeti</translation>
+<translation id="5534604768231683173">{NUM_EXTENSIONS,plural, =1{Bu uzantı otomatik olarak devre dışı bırakıldı ve engellenenler listesinde oldukları için tekrar açılamazlar.}other{Bu uzantılar otomatik olarak devre dışı bırakıldı ve engellenenler listesinde oldukları için tekrar açılamazlar.}}</translation>
 <translation id="5535769176698670170">Üst görünümle değiştir</translation>
 <translation id="5537725057119320332">Yayınla</translation>
 <translation id="5539070192556911367">Google'a erişilemiyor</translation>
@@ -11482,6 +11485,7 @@ Yüklü yazılımlar, dosyalar, tarayıcınız, cihazın işletim sistemi ve IP 
 <translation id="8861568709166518036">Ana sayfaya ya da geriye gitmek ve uygulamalar arasında geçiş yapmak için ekrandaki düğmeleri kullanın. ChromeVox veya otomatik tıklamalar açıksa bu ayar otomatik olarak etkinleştirilir.</translation>
 <translation id="8862171793076850931">Yayınlama izni reddedildi. Daha fazla bilgi edinmek için Yardım Merkezi makalesini yeni bir sekmede açın.</translation>
 <translation id="8863753581171631212">Bağlantıyı yeni <ph name="APP" /> uygulamasında aç</translation>
+<translation id="8863852141506257401">Kapalı · Engellenenler listesi tarafından devre dışı bırakıldı</translation>
 <translation id="8864055848767439877"><ph name="TAB_NAME" />, <ph name="APP_NAME" /> ile paylaşılıyor</translation>
 <translation id="8864104359314908853">Şifreniz kaydedildi</translation>
 <translation id="8864458770072227512"><ph name="EMAIL" /> bu cihazdan kaldırıldı</translation>

@@ -3697,6 +3697,7 @@ Quer pará-lo?</translation>
 <translation id="3514335087372914653">Controlo de jogos</translation>
 <translation id="3514647716686280777">Vai obter a proteção de segurança padrão. Para obter mais proteção contra Websites, transferências e extensões perigosos, ative a Navegação segura melhorada nas definições do Chrome.</translation>
 <translation id="3514681096978190000">Este ficheiro de arquivo inclui outros ficheiros que podem ocultar software malicioso</translation>
+<translation id="3515335817498313144">{NUM_EXTENSIONS,plural, =1{Eliminada {NUM_EXTENSIONS} extensão na lista de bloqueio}other{Eliminadas {NUM_EXTENSIONS} extensões na lista de bloqueio}}</translation>
 <translation id="3515983984924808886">Toque novamente na chave de segurança para confirmar a reposição. Todas as informações armazenadas na chave de segurança, incluindo o respetivo PIN, serão eliminadas.</translation>
 <translation id="3518866566087677312">Adicione itens aos marcadores para acedê-los mais tarde</translation>
 <translation id="3519014757432845220">Ajude a melhorar a proteção contra spam partilhando o conteúdo da notificação e o URL do site com a Google. O conteúdo pode ser revisto por humanos.</translation>
@@ -4520,6 +4521,7 @@ Quer pará-lo?</translation>
 <translation id="4042941173059740150">Continue para o <ph name="SITE_ETLD_PLUS_ONE" /> com o fornecedor <ph name="IDENTITY_PROVIDER_ETLD_PLUS_ONE" /></translation>
 <translation id="4043267180218562935">Tamanho do cursor</translation>
 <translation id="4043620984511647481">Adicione a impressora manualmente</translation>
+<translation id="404470635103712779">{NUM_EXTENSIONS,plural, =1{Detetada {NUM_EXTENSIONS} extensão incluída na lista de bloqueio}other{Detetadas {NUM_EXTENSIONS} extensões incluídas na lista de bloqueio}}</translation>
 <translation id="4044708573046946214">Palavra-passe do bloqueio de ecrã</translation>
 <translation id="4044883420905480380">Ligou-se ao Wi-Fi e iniciou sessão em <ph name="USER_EMAIL" /> com o seu telemóvel Android</translation>
 <translation id="404493185430269859">Motor de pesquisa predefinido</translation>
@@ -6646,6 +6648,7 @@ Pode atribuir vários interruptores a esta ação.</translation>
 <translation id="5532223876348815659">Global</translation>
 <translation id="5533001281916885985"><ph name="SITE_NAME" /> quer</translation>
 <translation id="5533343601674003130">Serviço de PDF</translation>
+<translation id="5534604768231683173">{NUM_EXTENSIONS,plural, =1{Esta extensão foi desativada automaticamente e não é possível ativá-la novamente devido a estar na lista de bloqueio.}other{Estas extensões foram desativadas automaticamente e não é possível ativá-las novamente devido a estarem na lista de bloqueio.}}</translation>
 <translation id="5535769176698670170">Trocar com vista superior</translation>
 <translation id="5537725057119320332">Transmitir</translation>
 <translation id="5539070192556911367">Não é possível aceder ao Google</translation>
@@ -11489,6 +11492,7 @@ Pode incluir informações sobre o software instalado, os ficheiros, o navegador
 <translation id="8861568709166518036">Use os botões no ecrã para navegar para a página inicial, voltar atrás e alternar entre apps. Ativa-se automaticamente se o ChromeVox ou os cliques automáticos estiverem ativados.</translation>
 <translation id="8862171793076850931">A autorização para transmitir foi rejeitada. Abra um artigo do Centro de Ajuda num novo separador para saber mais.</translation>
 <translation id="8863753581171631212">Abrir link numa nova janela da aplicação <ph name="APP" /></translation>
+<translation id="8863852141506257401">Desativado · Desativado pela lista de bloqueio</translation>
 <translation id="8864055848767439877">A partilhar <ph name="TAB_NAME" /> com o <ph name="APP_NAME" />…</translation>
 <translation id="8864104359314908853">A sua palavra-passe foi guardada</translation>
 <translation id="8864458770072227512">O email <ph name="EMAIL" /> foi removido deste dispositivo.</translation>

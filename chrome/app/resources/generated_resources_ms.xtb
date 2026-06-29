@@ -3709,6 +3709,7 @@ Anda boleh mengurus tetapan akaun ini dengan memasang apl Family Link pada peran
 <translation id="3514335087372914653">Kawalan Permainan</translation>
 <translation id="3514647716686280777">Anda mendapat perlindungan keselamatan standard. Untuk mendapatkan lebih perlindungan daripada laman web, muat turun dan sambungan berbahaya, hidupkan Penyemakan Imbas Selamat Dipertingkat dalam tetapan Chrome.</translation>
 <translation id="3514681096978190000">Fail arkib ini merangkumi fail lain yang mungkin menyembunyikan perisian hasad</translation>
+<translation id="3515335817498313144">{NUM_EXTENSIONS,plural, =1{Sudah mengeluarkan {NUM_EXTENSIONS} sambungan senarai sekatan}other{Sudah mengeluarkan {NUM_EXTENSIONS} sambungan senarai sekatan}}</translation>
 <translation id="3515983984924808886">Sentuh kunci keselamatan anda sekali lagi untuk mengesahkan penetapan semula. Semua maklumat yang disimpan pada kunci keselamatan, termasuk PIN kunci keselamatan akan dipadamkan.</translation>
 <translation id="3518866566087677312">Tandai halaman bagi perkara yang ingin anda lawati semula kemudian</translation>
 <translation id="3519014757432845220">Tingkatkan perlindungan spam dengan berkongsi kandungan pemberitahuan dan URL laman dengan Google. Kandungan mungkin akan disemak oleh jurusemak.</translation>
@@ -4532,6 +4533,7 @@ Anda boleh mengurus tetapan akaun ini dengan memasang apl Family Link pada peran
 <translation id="4042941173059740150">Terus kepada <ph name="SITE_ETLD_PLUS_ONE" /> dengan <ph name="IDENTITY_PROVIDER_ETLD_PLUS_ONE" /></translation>
 <translation id="4043267180218562935">Saiz kursor</translation>
 <translation id="4043620984511647481">Tambahkan pencetak secara manual</translation>
+<translation id="404470635103712779">{NUM_EXTENSIONS,plural, =1{{NUM_EXTENSIONS} sambungan senarai sekatan dikesan}other{{NUM_EXTENSIONS} sambungan senarai sekatan dikesan}}</translation>
 <translation id="4044708573046946214">Kata laluan kunci skrin</translation>
 <translation id="4044883420905480380">Anda disambungkan kepada Wi-Fi dan dilog masuk ke <ph name="USER_EMAIL" /> menggunakan telefon Android anda</translation>
 <translation id="404493185430269859">Enjin carian lalai</translation>
@@ -6658,6 +6660,7 @@ Anda boleh menetapkan berbilang suis kepada tindakan ini.</translation>
 <translation id="5532223876348815659">Global</translation>
 <translation id="5533001281916885985"><ph name="SITE_NAME" /> ingin</translation>
 <translation id="5533343601674003130">Perkhidmatan PDF</translation>
+<translation id="5534604768231683173">{NUM_EXTENSIONS,plural, =1{Sambungan-sambungan ini sudah dinyahdayakan secara automatik dan tidak boleh dihidupkan lagi kerana pada senarai sekatan.}other{Sambungan-sambungan ini sudah dinyahdayakan secara automatik dan tidak boleh dihidupkan lagi kerana pada senarai sekatan.}}</translation>
 <translation id="5535769176698670170">Tukar dengan paparan atas</translation>
 <translation id="5537725057119320332">Cast</translation>
 <translation id="5539070192556911367">Tidak dapat menghubungi Google</translation>
@@ -11502,6 +11505,7 @@ Maklumat ini termasuk maklumat tentang perisian yang dipasang, fail, penyemak im
 <translation id="8861568709166518036">Gunakan butang pada skrin untuk menavigasi laman utama, kembali dan menukar apl. Dihidupkan secara automatik jika ChromeVox atau klik automatik dihidupkan.</translation>
 <translation id="8862171793076850931">Kebenaran untuk menghantar ditolak. Buka artikel pusat bantuan dalam tab baharu untuk mengetahui lebih lanjut.</translation>
 <translation id="8863753581171631212">Buka pautan dalam <ph name="APP" /> baharu</translation>
+<translation id="8863852141506257401">Dimatikan · Dinyahdayakan oleh senarai sekatan</translation>
 <translation id="8864055848767439877">Berkongsi <ph name="TAB_NAME" /> ke <ph name="APP_NAME" /></translation>
 <translation id="8864104359314908853">Kata laluan anda telah disimpan</translation>
 <translation id="8864458770072227512"><ph name="EMAIL" /> telah dialih keluar daripada peranti ini</translation>

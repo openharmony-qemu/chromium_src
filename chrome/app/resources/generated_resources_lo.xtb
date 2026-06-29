@@ -3708,6 +3708,7 @@
 <translation id="3514335087372914653">ການຄວບຄຸມເກມ</translation>
 <translation id="3514647716686280777">ທ່ານຈະໄດ້ຮັບການປົກປ້ອງຄວາມປອດໄພມາດຕະຖານ. ເພື່ອຮັບການປົກປ້ອງເພີ່ມເຕີມຈາກເວັບໄຊ, ການດາວໂຫຼດ ແລະ ສ່ວນຂະຫຍາຍທີ່ເປັນອັນຕະລາຍ, ໃຫ້ເປີດ Safe Browsing ທີ່ປັບປຸງດີຂຶ້ນໃນການຕັ້ງຄ່າ Chrome.</translation>
 <translation id="3514681096978190000">ໄຟລ໌ທີ່ເກັບໄວ້ໃນແຟ້ມນີ້ມີໄຟລ໌ອື່ນໆທີ່ອາດເຊື່ອງເມົາແວໄວ້</translation>
+<translation id="3515335817498313144">{NUM_EXTENSIONS,plural, =1{ເອົາ {NUM_EXTENSIONS} ສ່ວນຂະຫຍາຍທີ່ເປັນບັນຊີບລັອກອອກແລ້ວ}other{ເອົາ {NUM_EXTENSIONS} ສ່ວນຂະຫຍາຍທີ່ເປັນບັນຊີບລັອກອອກແລ້ວ}}</translation>
 <translation id="3515983984924808886">ສຳຜັດກະແຈຄວາມປອດໄພຂອງທ່ານອີກຄັ້ງເພື່ອຢືນຢັນການຣີເຊັດ. ລະບົບຈະລຶບຂໍ້ມູນທັງໝົດທີ່ເກັບໄວ້ໃນກະແຈຄວາມປອດໄພ, ຮວມທັງ PIN ຂອງມັນ.</translation>
 <translation id="3518866566087677312">ບຸກມາກສິ່ງທີ່ທ່ານຕ້ອງການກັບມາເບິ່ງໃນພາຍຫຼັງ</translation>
 <translation id="3519014757432845220">ຊ່ວຍປັບປຸງການປ້ອງກັນສະແປມໂດຍການແບ່ງປັນເນື້ອຫາການແຈ້ງເຕືອນ ແລະ URL ຂອງເວັບໄຊກັບ Google. ເນື້ອຫາອາດຖືກກວດສອບໂດຍມະນຸດ.</translation>
@@ -4531,6 +4532,7 @@
 <translation id="4042941173059740150">ໃຊ້ <ph name="SITE_ETLD_PLUS_ONE" /> ດ້ວຍ <ph name="IDENTITY_PROVIDER_ETLD_PLUS_ONE" /> ຕໍ່ໄປ</translation>
 <translation id="4043267180218562935">ຂະໜາດເຄີເຊີ</translation>
 <translation id="4043620984511647481">ເພີ່ມເຄື່ອງພິມດ້ວຍຕົນເອງ</translation>
+<translation id="404470635103712779">{NUM_EXTENSIONS,plural, =1{ກວດພົບ {NUM_EXTENSIONS} ສ່ວນຂະຫຍາຍທີ່ເປັນບັນຊີບລັອກແລ້ວ}other{ກວດພົບ {NUM_EXTENSIONS} ສ່ວນຂະຫຍາຍທີ່ເປັນບັນຊີບລັອກແລ້ວ}}</translation>
 <translation id="4044708573046946214">ລະຫັດຜ່ານລັອກໜ້າຈໍ</translation>
 <translation id="4044883420905480380">ທ່ານເຊື່ອມຕໍ່ຫາ Wi-Fi ແລະ ເຂົ້າສູ່ລະບົບຫາ <ph name="USER_EMAIL" /> ແລ້ວໂດຍໃຊ້ໂທລະສັບ Android ຂອງທ່ານ</translation>
 <translation id="404493185430269859">ເວັບໄຊຊອກຫາເລີ່ມຕົ້ນ</translation>
@@ -6656,6 +6658,7 @@
 <translation id="5532223876348815659">ທົ່ວໄປ</translation>
 <translation id="5533001281916885985"><ph name="SITE_NAME" /> ຕ້ອງການ</translation>
 <translation id="5533343601674003130">ບໍລິການ PDF</translation>
+<translation id="5534604768231683173">{NUM_EXTENSIONS,plural, =1{ສ່ວນຂະຫຍາຍນີ້ໄດ້ຖືກປິດໃຊ້ງານໂດຍອັດຕະໂນມັດແລ້ວ ແລະ ບໍ່ສາມາດເປີດໄດ້ອີກຄັ້ງ ຍ້ອນວ່າພວກມັນຢູ່ໃນບັນຊີບລັອກ.}other{ສ່ວນຂະຫຍາຍນີ້ໄດ້ຖືກປິດໃຊ້ງານໂດຍອັດຕະໂນມັດແລ້ວ ແລະ ບໍ່ສາມາດເປີດໄດ້ອີກຄັ້ງ ຍ້ອນວ່າພວກມັນຢູ່ໃນບັນຊີບລັອກ.}}</translation>
 <translation id="5535769176698670170">ສະຫຼັບກັບມຸມມອງທາງເທິງ</translation>
 <translation id="5537725057119320332">ຄາສທ໌</translation>
 <translation id="5539070192556911367">ບໍ່ສາມາດຕິດຕໍ່ຫາ Google ໄດ້</translation>
@@ -11495,6 +11498,7 @@
 <translation id="8861568709166518036">ໃຊ້ປຸ່ມໃນໜ້າຈໍເພື່ອນໍາທາງໄປຫາໜ້າຫຼັກ, ກັບຄືນ ແລະ ສະຫຼັບແອັບ. ເປີດໂດຍອັດຕະໂນມັດຖ້າ ChromeVox ຫຼື ການຄລິກອັດຕະໂນມັດເປີດຢູ່.</translation>
 <translation id="8862171793076850931">ການອະນຸຍາດເພື່ອສົ່ງສັນຍານຖືກປະຕິເສດ. ກະລຸນາເປີດບົດຄວາມສູນຊ່ວຍເຫຼືອໃນແຖບໃໝ່ເພື່ອສຶກສາເພີ່ມເຕີມ.</translation>
 <translation id="8863753581171631212">ເປີດລິ້ງໃນ <ph name="APP" /> ໃໝ່</translation>
+<translation id="8863852141506257401">ປິດ · ປິດໃຊ້ງານໂດຍບັນຊີບລັອກ</translation>
 <translation id="8864055848767439877">ກຳລັງແບ່ງປັນ <ph name="TAB_NAME" /> ໄປໃສ່ <ph name="APP_NAME" /></translation>
 <translation id="8864104359314908853">ບັນທຶກລະຫັດຜ່ານຂອງທ່ານແລ້ວ</translation>
 <translation id="8864458770072227512">ລຶບ <ph name="EMAIL" /> ອອກຈາກອຸປະກອນນີ້ແລ້ວ</translation>

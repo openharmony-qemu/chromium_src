@@ -3689,6 +3689,7 @@
 <translation id="3514335087372914653">ゲームの管理</translation>
 <translation id="3514647716686280777">標準のセキュリティ機能で保護します。危険なウェブサイト、ダウンロード、拡張機能からの保護を強化するには、Chrome の設定でセーフ ブラウジング保護強化機能をオンにしてください。</translation>
 <translation id="3514681096978190000">このアーカイブ ファイルには、マルウェアが潜んでいる可能性がある別のファイルが含まれています</translation>
+<translation id="3515335817498313144">{NUM_EXTENSIONS,plural, =1{{NUM_EXTENSIONS}件のブロックリスト追加済み拡張機能が削除されました}other{{NUM_EXTENSIONS}件のブロックリスト追加済み拡張機能が削除されました}}</translation>
 <translation id="3515983984924808886">リセットを確定するには、セキュリティ キーをもう一度タップしてください。セキュリティ キーに保存されているすべての情報（PIN を含む）が削除されます。</translation>
 <translation id="3518866566087677312">後で確認するページをブックマークに登録</translation>
 <translation id="3519014757432845220">通知の内容とサイトの URL を Google と共有して、スパム対策の改善にご協力ください。人間のレビュアーがコンテンツを確認する場合があります。</translation>
@@ -4511,6 +4512,7 @@
 <translation id="4042941173059740150">引き続き <ph name="IDENTITY_PROVIDER_ETLD_PLUS_ONE" /> を使用して <ph name="SITE_ETLD_PLUS_ONE" /> を利用</translation>
 <translation id="4043267180218562935">カーソルのサイズ</translation>
 <translation id="4043620984511647481">プリンタを手動で追加</translation>
+<translation id="404470635103712779">{NUM_EXTENSIONS,plural, =1{{NUM_EXTENSIONS}件のブロックリスト追加済み拡張機能が検出されました}other{{NUM_EXTENSIONS}件のブロックリスト追加済み拡張機能が検出されました}}</translation>
 <translation id="4044708573046946214">画面ロックのパスワード</translation>
 <translation id="4044883420905480380">Wi-Fi に接続し、Android スマートフォンを使用して <ph name="USER_EMAIL" /> にログインしました</translation>
 <translation id="404493185430269859">デフォルトの検索エンジン</translation>
@@ -6630,6 +6632,7 @@
 <translation id="5532223876348815659">グローバル</translation>
 <translation id="5533001281916885985"><ph name="SITE_NAME" /> が次の許可を求めています</translation>
 <translation id="5533343601674003130">PDF サービス</translation>
+<translation id="5534604768231683173">{NUM_EXTENSIONS,plural, =1{これらの拡張機能は自動的に無効化されており、ブロックリストに登録されているため、再度有効にすることはできません。}other{これらの拡張機能は自動的に無効化されており、ブロックリストに登録されているため、再度有効にすることはできません。}}</translation>
 <translation id="5535769176698670170">上のビューと入れ替え</translation>
 <translation id="5537725057119320332">キャスト</translation>
 <translation id="5539070192556911367">Google に接続できません</translation>
@@ -11469,6 +11472,7 @@
 <translation id="8861568709166518036">画面上のボタンを使用して、ホームに移動したり、戻ったり、アプリを切り替えたりできます。ChromeVox または自動クリックがオンになっている場合は、自動的にオンになります。</translation>
 <translation id="8862171793076850931">キャストの権限が拒否されました。新しいタブでヘルプセンター記事を開いて詳細を確認します。</translation>
 <translation id="8863753581171631212">新しい <ph name="APP" /> でリンクを開く</translation>
+<translation id="8863852141506257401">オフ・ブロックリストにより無効化</translation>
 <translation id="8864055848767439877"><ph name="TAB_NAME" /> を <ph name="APP_NAME" /> に共有しています</translation>
 <translation id="8864104359314908853">パスワードを保存しました</translation>
 <translation id="8864458770072227512"><ph name="EMAIL" /> はこのデバイスから削除されました</translation>

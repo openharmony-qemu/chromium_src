@@ -3709,6 +3709,7 @@ Anda dapat mengelola setelan akun ini dengan menginstal aplikasi Family Link di 
 <translation id="3514335087372914653">Kontrol Game</translation>
 <translation id="3514647716686280777">Anda mendapatkan perlindungan keamanan standar. Untuk mendapatkan perlindungan lebih terhadap situs, download, dan ekstensi berbahaya, aktifkan Safe Browsing yang Disempurnakan di setelan Chrome.</translation>
 <translation id="3514681096978190000">File arsip ini mencakup file lain yang dapat menyembunyikan malware</translation>
+<translation id="3515335817498313144">{NUM_EXTENSIONS,plural, =1{Telah menghapus {NUM_EXTENSIONS} ekstensi yang ada dalam daftar blokir}other{Telah menghapus {NUM_EXTENSIONS} ekstensi yang ada dalam daftar blokir}}</translation>
 <translation id="3515983984924808886">Sentuh kunci keamanan Anda sekali lagi untuk mengonfirmasi peresetan. Semua informasi yang tersimpan di kunci keamanan, termasuk PIN-nya, akan dihapus.</translation>
 <translation id="3518866566087677312">Bookmark halaman yang ingin Anda lihat lagi nanti</translation>
 <translation id="3519014757432845220">Bantu tingkatkan kualitas perlindungan dari spam dengan membagikan konten notifikasi dan URL situs dengan Google. Konten mungkin akan ditinjau secara manual.</translation>
@@ -4532,6 +4533,7 @@ Anda dapat mengelola setelan akun ini dengan menginstal aplikasi Family Link di 
 <translation id="4042941173059740150">Lanjutkan ke <ph name="SITE_ETLD_PLUS_ONE" /> dengan <ph name="IDENTITY_PROVIDER_ETLD_PLUS_ONE" /></translation>
 <translation id="4043267180218562935">Ukuran kursor</translation>
 <translation id="4043620984511647481">Tambahkan printer secara manual</translation>
+<translation id="404470635103712779">{NUM_EXTENSIONS,plural, =1{{NUM_EXTENSIONS} ekstensi yang ada dalam daftar blokir terdeteksi}other{{NUM_EXTENSIONS} ekstensi yang ada dalam daftar blokir terdeteksi}}</translation>
 <translation id="4044708573046946214">Sandi kunci layar</translation>
 <translation id="4044883420905480380">Anda terhubung ke Wi-Fi dan login ke <ph name="USER_EMAIL" /> menggunakan ponsel Android</translation>
 <translation id="404493185430269859">Mesin telusur default</translation>
@@ -6658,6 +6660,7 @@ Anda dapat menetapkan beberapa tombol akses untuk tindakan ini.</translation>
 <translation id="5532223876348815659">Global</translation>
 <translation id="5533001281916885985"><ph name="SITE_NAME" /> ingin</translation>
 <translation id="5533343601674003130">Layanan PDF</translation>
+<translation id="5534604768231683173">{NUM_EXTENSIONS,plural, =1{Ekstensi ini telah dinonaktifkan secara otomatis dan tidak dapat dihidupkan lagi karena ada di daftar blokir.}other{Ekstensi ini telah dinonaktifkan secara otomatis dan tidak dapat dihidupkan lagi karena ada di daftar blokir.}}</translation>
 <translation id="5535769176698670170">Tukar dengan tampilan atas</translation>
 <translation id="5537725057119320332">Transmisikan</translation>
 <translation id="5539070192556911367">Tidak dapat terhubung ke Google</translation>
@@ -11499,6 +11502,7 @@ Informasi ini dapat mencakup informasi tentang software yang diinstal, file, bro
 <translation id="8861568709166518036">Gunakan tombol di layar untuk membuka layar utama, kembali, dan beralih aplikasi. Setelan ini akan otomatis aktif jika ChromeVox atau klik otomatis diaktifkan.</translation>
 <translation id="8862171793076850931">Izin untuk melakukan transmisi ditolak. Buka artikel pusat bantuan di tab baru untuk mempelajari lebih lanjut.</translation>
 <translation id="8863753581171631212">Buka link di <ph name="APP" /> baru</translation>
+<translation id="8863852141506257401">Mati · Dinonaktifkan berdasarkan daftar blokir</translation>
 <translation id="8864055848767439877">Membagikan <ph name="TAB_NAME" /> ke <ph name="APP_NAME" /></translation>
 <translation id="8864104359314908853">Sandi Anda disimpan</translation>
 <translation id="8864458770072227512"><ph name="EMAIL" /> dihapus dari perangkat ini</translation>

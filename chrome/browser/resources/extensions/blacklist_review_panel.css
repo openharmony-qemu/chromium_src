@@ -49,6 +49,18 @@ cr-icon[icon='cr:check'] {
   margin-inline-start: auto;
 }
 
+/* #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) */
+.panel-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.bulk-action-button {
+  flex-shrink: 0;
+  margin-inline-start: 16px;
+}
+/* #endif */
+
 .cr-row {
   padding: 0;
 }

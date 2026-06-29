@@ -459,6 +459,13 @@ gl::ScopedEGLImage EGLImageBacking::GenEGLImageSibling(
                         pixel_data.data());
   }
 
+  const GLenum error = api->glGetErrorFn();
+  if (error != GL_NO_ERROR) {
+    LOG(ERROR) << "EGLImageBacking: initial pixel upload failed (GL error 0x"
+               << std::hex << error << ")";
+    return gl::ScopedEGLImage();
+  }
+
   // Use service id of the texture as a source to create the EGLImage.
   const EGLint egl_attrib_list[] = {
       EGL_GL_TEXTURE_LEVEL_KHR, 0, EGL_IMAGE_PRESERVED_KHR, EGL_TRUE, EGL_NONE};
@@ -485,6 +492,8 @@ EGLImageBacking::GenEGLImageSiblings(base::span<const uint8_t> pixel_data) {
     AutoLock auto_lock(this);
     create_egl_images = egl_images_.empty();
     if (create_egl_images) {
+      while (api->glGetErrorFn() != GL_NO_ERROR) {
+      }
       for (int plane = 0; plane < num_planes; plane++) {
         gl::ScopedEGLImage egl_image =
             GenEGLImageSibling(pixel_data, service_ids, plane);

@@ -751,7 +751,7 @@ xmlEscapeText(const xmlChar *text, int flags) {
 
         if (totalSize > size - used) {
             xmlChar *tmp;
-            int newSize;
+            size_t newSize;
 
             if ((size > (SIZE_MAX - 1) / 2) ||
                 (totalSize > (SIZE_MAX - 1) / 2 - size)) {

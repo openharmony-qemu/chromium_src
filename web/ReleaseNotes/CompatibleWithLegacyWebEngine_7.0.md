@@ -241,31 +241,50 @@ ArkWeb常青内核是新系统默认的配套内核，在功能、标准遵循�
 
 OH7.0版本ArkWeb由M132内核升级到M144内核，详细变化及收益参考《[ArkWeb版本的差异总结](./ArkWeb_132_144.md)》。
 
+以下ArkWeb接口从API version 26开始支持，且仅在M144常青内核上实现：
+
+| **类型** | **接口** |
+| -------- | -------- |
+| WebviewController | [enableAdvancedSecurityMode](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#enableadvancedsecuritymode) |
+| WebviewController | [executeAIPageCommand](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#executeaipagecommand) |
+| Web组件 | [aiSessionOptions](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-attributes.md#aisessionoptions) |
+| Web组件 | [enableDrag](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-attributes.md#enabledrag) |
+| Web组件 | [enableFullscreenVideoOverlay](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-attributes.md#enablefullscreenvideooverlay) |
+| Web组件 | [keyboardAppearance](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-attributes.md#keyboardappearance) |
+| Web组件 | [onInputmethodAttached](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-events.md#oninputmethodattached) |
+| Web组件 | [scrollbarLayoutPolicy](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-attributes.md#scrollbarlayoutpolicy) |
+
+应用如需使用上述接口，请使用M144常青内核。在M132遗留内核上调用上述接口可能不生效或无法获得预期结果，存在业务功能和使用体验的兼容性风险。
+
 应用使用遗留内核前，需要评估以下信息：
 
-* 双内核兼容性：ArkWeb新增的API依赖常青内核，应用开发者需结合下列章节新增API在遗留内核上的行为进行兼容性保障。
+* 双内核兼容性：部分ArkWeb新增API仅支持常青内核，应用开发者需评估这些API在遗留内核上的行为，做好兼容性保障。
 * 数据一致性：应用在由常青内核降级回滚到遗留内核时，WEB相关的缓存数据可能不被遗留内核支持；在降级回滚时，必须先清理应用沙箱中/data/storage/el2/base/cache/web目录下的WEB缓存数据，确保回滚后可正常工作。
 
 ## 3. 使用遗留内核的代码隔离方式
 
-## 4. M132遗留内核API兼容指南
+应用如果支持切换至M132遗留内核，需要在调用仅M144常青内核支持的接口前判断当前内核类型。
 
-以下是OpenHarmony 7.0新增依赖M144内核的ArkWeb API，如果应用需要在OpenHarmony 7.0上兼容M132遗留内核，可参考以下接口说明，做好代码适配。
+以[executeAIPageCommand](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#executeaipagecommand)接口为例，该接口仅在M144常青内核上实现，可按以下方式进行代码隔离：
 
-### 4.1 内核navigator标识信息变化说明
+```ts
+/* 判断当前应用是否使用了M132遗留内核 */
+if (webview.WebviewController.getActiveWebEngineVersion() > webview.ArkWebEngineVersion.M132) {
+  /* 仅在M132版本之上的内核才调用executeAIPageCommand接口 */
+  const result = await controller.executeAIPageCommand(command);
+}
+```
 
-应用会使用W3C中navigator的[userAgent](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/userAgent)和[platform](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/platform)属性进行业务隔离，这些字段的值如下所示：
+## 4. 内核navigator标识信息变化说明
+
+应用会使用W3C中navigator的[userAgent](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/userAgent)和[platform](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/platform)属性进行业务隔离，这些字段的值示例如下：
 
 | **类型**      | **[platform](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/platform)** | **[userAgent](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/userAgent)**                                                       |
-| ------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| M114 on OH5.1 | Linux x86_64                                                                        | Mozilla/5.0 (Phone; OpenHarmony 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/**114.0.0.0** Safari/537.36 ArkWeb/*5.1.0.207* Mobile |
-| M114 on OH6.0 | Linux x86_64                                                                        | Mozilla/5.0 (Phone; OpenHarmony 6.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/**114.0.0.0** Safari/537.36 ArkWeb/*6.0.0.44* Mobile  |
-| M132 on OH6.0 | Linux x86_64                                                                        | Mozilla/5.0 (Phone; OpenHarmony 6.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/**132.0.0.0** Safari/537.36 ArkWeb/*6.0.0.44* Mobile  |
+| - | - | - |
+| M132 on OH6.0 | Linux x86_64 | Mozilla/5.0 (Phone; OpenHarmony 6.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/**132.0.0.0** Safari/537.36 ArkWeb/*6.0.0.44* Mobile  |
+| M132 on OH6.1 | Linux x86_64 | Mozilla/5.0 (Phone; OpenHarmony 6.1; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/**132.0.0.0** Safari/537.36 ArkWeb/*6.1.0.125* Mobile |
+| M132 on OH7.0 | Linux x86_64 | Mozilla/5.0 (Phone; OpenHarmony 7.0; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/**132.0.0.0** Safari/537.36  ArkWeb/*6.1.0.28* Mobile |
+| M144 on OH7.0 | Linux x86_64 | Mozilla/5.0 (Phone; OpenHarmony 7.0; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/**144.0.0.0** Safari/537.36 ArkWeb/*7.0.0.30* Mobile  |
+
 
 > 注意：不推荐使用[platform](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/platform)属性，该属性已废弃。
-
-### 4.2 webview接口
-
-### 4.3 web组件接口
-
-### 4.4 NDK接口

@@ -14,6 +14,8 @@
 #include "extensions/browser/browser_context_keyed_api_factory.h"
 #include "extensions/buildflags/buildflags.h"
 #include "extensions/common/extension_id.h"
+#include "extensions/browser/event_router.h"
+#include "extensions/browser/extension_event_histogram_value.h"
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "ohos_nweb/src/capi/web_extension_tab_items.h"
@@ -107,12 +109,16 @@ class ExtensionActionDispatcher : public BrowserContextKeyedAPI {
   // Returns the associated extension prefs.
   ExtensionPrefs* GetExtensionPrefs();
 
-  // The DispatchEvent methods forward events to the `context`'s event router.
-  void DispatchEventToExtension(content::BrowserContext* context,
-                                const ExtensionId& extension_id,
-                                events::HistogramValue histogram_value,
-                                const std::string& event_name,
-                                base::Value::List event_args);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+// Forwards events to the context's event router.
+void DispatchEventToExtension(
+    content::BrowserContext* context,
+    const ExtensionId& extension_id,
+    events::HistogramValue histogram_value,
+    const std::string& event_name,
+    base::Value::List event_args,
+    EventRouter::UserGestureState user_gesture_state);
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
   // BrowserContextKeyedAPI implementation.
   void Shutdown() override;

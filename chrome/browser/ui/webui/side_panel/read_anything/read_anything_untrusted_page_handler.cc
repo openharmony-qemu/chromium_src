@@ -742,6 +742,11 @@ void ReadAnythingUntrustedPageHandler::OnReadAloudAudioStateChange(
 void ReadAnythingUntrustedPageHandler::OnLinkClicked(
     const ui::AXTreeID& target_tree_id,
     ui::AXNodeID target_node_id) {
+  if (!ui::IsValidAXNodeIDFromRenderer(target_node_id)) {
+    VLOG(1) << "Received link click request with invalid target_node_id "
+            << target_node_id;
+    return;
+  }
   ui::AXActionData action_data;
   action_data.target_tree_id = target_tree_id;
   action_data.action = ax::mojom::Action::kDoDefault;
@@ -753,6 +758,11 @@ void ReadAnythingUntrustedPageHandler::OnLinkClicked(
 void ReadAnythingUntrustedPageHandler::OnImageDataRequested(
     const ui::AXTreeID& target_tree_id,
     ui::AXNodeID target_node_id) {
+  if (!ui::IsValidAXNodeIDFromRenderer(target_node_id)) {
+    VLOG(1) << "Received image data request with invalid target_node_id "
+            << target_node_id;
+    return;
+  }
   main_observer_->web_contents()->DownloadImageFromAxNode(
       target_tree_id, target_node_id,
       /*preferred_size=*/gfx::Size(),
@@ -770,6 +780,11 @@ void ReadAnythingUntrustedPageHandler::OnImageDataDownloaded(
     const GURL& image_url,
     const std::vector<SkBitmap>& bitmaps,
     const std::vector<gfx::Size>& sizes) {
+  if (!ui::IsValidAXNodeIDFromRenderer(node_id)) {
+    VLOG(1) << "Received image data download notification with invalid node_id "
+            << node_id;
+    return;
+  }
   bool download_was_successful =
       network::IsSuccessfulStatus(http_status_code) || http_status_code == 0;
 
@@ -789,6 +804,11 @@ void ReadAnythingUntrustedPageHandler::OnImageDataDownloaded(
 void ReadAnythingUntrustedPageHandler::ScrollToTargetNode(
     const ui::AXTreeID& target_tree_id,
     ui::AXNodeID target_node_id) {
+  if (!ui::IsValidAXNodeIDFromRenderer(target_node_id)) {
+    VLOG(1) << "Received scroll request with invalid target_node_id "
+            << target_node_id;
+    return;
+  }
   ui::AXActionData action_data;
   action_data.target_tree_id = target_tree_id;
   action_data.target_node_id = target_node_id;
@@ -818,6 +838,16 @@ void ReadAnythingUntrustedPageHandler::OnSelectionChange(
     int anchor_offset,
     ui::AXNodeID focus_node_id,
     int focus_offset) {
+  if (!ui::IsValidAXNodeIDFromRenderer(anchor_node_id)) {
+    VLOG(1) << "Received selection request with invalid anchor_node_id "
+            << anchor_node_id;
+    return;
+  }
+  if (!ui::IsValidAXNodeIDFromRenderer(focus_node_id)) {
+    VLOG(1) << "Received selection request with invalid focus_node_id "
+            << focus_node_id;
+    return;
+  }
   ui::AXActionData action_data;
   action_data.target_tree_id = target_tree_id;
   action_data.action = ax::mojom::Action::kSetSelection;

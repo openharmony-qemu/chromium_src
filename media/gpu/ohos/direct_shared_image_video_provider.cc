@@ -197,7 +197,7 @@ bool GpuSharedImageVideoFactory::CreateImageInternal(
 }
 
 NOINLINE void GpuSharedImageVideoFactory::OnWillDestroyStub(bool have_context) {
-  LOG(ERROR) << "DirectSharedImageVideoProvider::OnWillDestroyStub";
+  LOG(INFO) << "DirectSharedImageVideoProvider::OnWillDestroyStub";
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   DCHECK(stub_);
   stub_ = nullptr;

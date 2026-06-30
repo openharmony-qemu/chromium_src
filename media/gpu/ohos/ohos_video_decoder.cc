@@ -522,14 +522,22 @@ bool OhosVideoDecoder::QueueInput() {
 }
 
 bool OhosVideoDecoder::DequeueOutput() {
-  if (!codec_ || codec_->IsDrained()) {
-    LOG(ERROR) << "[VideoDecoder] OhosVideoDecoder::DequeueOutput failed";
+  if (!codec_) {
+    LOG(ERROR) << "[VideoDecoder] OhosVideoDecoder::DequeueOutput failed since "
+                  "codec_ is null.";
+    return false;
+  }
+
+  if (codec_->IsDrained()) {
+    LOG(WARNING) << "[VideoDecoder] OhosVideoDecoder::DequeueOutput failed "
+                    "since drained.";
     return false;
   }
 
 #if BUILDFLAG(ENABLE_WISEPLAY)
   if (waiting_for_key_) {
-    LOG(ERROR) << "[WiseplayDRM] OhosVideoDecoder::DequeueOutput failed";
+    LOG(WARNING) << "[WiseplayDRM] OhosVideoDecoder::DequeueOutput failed "
+                    "since waiting_for_key_.";
     return false;
   }
 #endif  // BUILDFLAG(ENABLE_WISEPLAY)
@@ -562,7 +570,8 @@ bool OhosVideoDecoder::DequeueOutput() {
     if (drain_type_) {
       OnCodecDrained();
     }
-    LOG(ERROR) << " [VideoDecoder] OhosVideoDecoder::DequeueOutput is drained";
+    LOG(INFO)
+        << " [VideoDecoder] OhosVideoDecoder::DequeueOutput encountered EOS.";
     return false;
   }
 

@@ -1104,7 +1104,13 @@ void WebMediaPlayerImpl::OnFrozen() {
 
   // This may be the last chance `main_task_runner_` gets to execute, so we
   // should kick off release of all media resources.
-  if (base::FeatureList::IsEnabled(media::kSuspendMediaForFrozenFrames)) {
+  if (base::FeatureList::IsEnabled(media::kSuspendMediaForFrozenFrames)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+      // Hosting scenario bypass:Suspend->DestroyRenderer->Relase
+      // will destroy the native player.
+      && !should_create_custom_renderer_
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+  ) {
     if (demuxer_manager_->HasDataSource()) {
       demuxer_manager_->StopPreloading();
     }
@@ -2637,6 +2643,10 @@ void WebMediaPlayerImpl::OnPageHidden(bool storing_in_bfcache) {
             << " delegate_id_:" << delegate_id_;
 #endif // ARKWEB_MEDIA
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  was_playing_when_entering_bfcache_ = storing_in_bfcache && !paused_;
+#endif // ARKWEB_BFCACHE
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (AsWebMediaPlayerImplExt()) {
     AsWebMediaPlayerImplExt()->SaveLastFrameTimeStamp();
@@ -2749,6 +2759,15 @@ void WebMediaPlayerImpl::OnPageShown(bool restoring_in_bfcache) {
   // decide if we should resume playback.
   bool was_paused_because_page_hidden = IsPausedBecausePageHidden();
   UpdateBackgroundVideoOptimizationState();
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  if (restoring_in_bfcache && was_playing_when_entering_bfcache_ &&
+      AsWebMediaPlayerImplExt()) {
+    was_playing_when_entering_bfcache_ = false;
+    AsWebMediaPlayerImplExt()->MediaResumeFromBFCachePage(restoring_in_bfcache);
+    return;
+  }
+#endif // ARKWEB_BFCACHE
 
   if (!visibility_pause_reason_ && was_paused_because_page_hidden) {
 #if BUILDFLAG(ARKWEB_MEDIA)

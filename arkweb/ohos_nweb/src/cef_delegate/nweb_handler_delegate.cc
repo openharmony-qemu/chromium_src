@@ -3783,12 +3783,17 @@ bool NWebHandlerDelegate::OnFileDialog(
     render_handler_->EnableVirtualKeyboardRequestFocus(false);
   }
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  std::string default_name = default_file_path.ToString();
-  std::string default_path = start_in.ToString();
-  size_t pos = default_name.find_last_of('/');
-  if (pos != std::string::npos) {
-    default_path = default_name.substr(0, pos + 1);
-    default_name = default_name.substr(pos + 1);
+  std::string default_path = default_file_path.ToString().empty() ? start_in.ToString() : default_file_path.ToString();
+  std::string default_name = "";
+  if (file_mode == NWebFileSelectorParams::FileSelectorMode::FILE_SAVE_MODE) {
+    size_t pos = default_path.find_last_of('/');
+    if (pos != std::string::npos) {
+        default_name = default_path.substr(pos + 1);
+        default_path = default_path.substr(0, pos + 1);
+    } else {
+        default_name = default_file_path.ToString();
+        default_path = start_in.ToString();
+    }
   }
   std::shared_ptr<NWebFileSelectorParams> param =
       std::make_shared<FileSelectorParamsImpl>(

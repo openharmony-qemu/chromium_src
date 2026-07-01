@@ -160,7 +160,10 @@ class TouchBarNotificationBridge : public CommandObserver,
 
   ~TouchBarNotificationBridge() override {
     BrowserList::RemoveObserver(this);
-    browser_->tab_strip_model()->RemoveObserver(this);
+    if (browser_) {
+      browser_->tab_strip_model()->RemoveObserver(this);
+      browser_->command_controller()->RemoveCommandObserver(this);
+    }
     UpdateWebContents(nullptr);
   }
 
@@ -218,6 +221,11 @@ class TouchBarNotificationBridge : public CommandObserver,
   }
 
   void OnBrowserRemoved(Browser* browser) override {
+    if (browser == browser_) {
+      browser_->tab_strip_model()->RemoveObserver(this);
+      browser_->command_controller()->RemoveCommandObserver(this);
+      browser_ = nullptr;
+    }
     if (browser == owner_.browser) {
       owner_.browser = nullptr;
     }

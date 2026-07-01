@@ -77,6 +77,9 @@ mojom("mojom") {
   if (arkweb_throttle_frame) {
     enabled_features += ["arkweb_throttle_frame"]
   }
+  if (arkweb_video_assistant) {
+    enabled_features += ["arkweb_render_video_view"]
+  }
 
   public_deps = [
     ":shared_image_format",

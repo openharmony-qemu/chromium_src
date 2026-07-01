@@ -100,6 +100,9 @@ bool StructTraits<media::mojom::VideoFrameMetadataDataView,
   output->copy_required = input.copy_required();
   output->end_of_stream = input.end_of_stream();
   output->in_surface_view = input.in_surface_view();
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  output->render_video_view = input.render_video_view();
+#endif
   output->wants_promotion_hint = input.wants_promotion_hint();
   output->protected_video = input.protected_video();
   output->hw_protected = input.hw_protected();

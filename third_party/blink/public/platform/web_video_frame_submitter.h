@@ -85,6 +85,10 @@ class BLINK_PLATFORM_EXPORT WebVideoFrameSubmitter
 
   virtual void ResetDroppedFrameMetrics() = 0;
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  virtual void SetRenderVideoView(bool) {}
+#endif
+
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   virtual void SetHasNativeLayer(bool has_native_layer) {}
   virtual void SetDeviceScaleFactor(float device_scale_factor) {}

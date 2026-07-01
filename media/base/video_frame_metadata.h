@@ -140,6 +140,13 @@ struct MEDIA_EXPORT VideoFrameMetadata {
   // hints, but will still composite video.
   bool in_surface_view = false;
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  // ArkWeb OHOS: when true, the video frame is rendered directly by the
+  // OHOS Rosen render service. Drives frame-level skip_present in viz so the
+  // fully-occluded web surface is not presented.
+  bool render_video_view = false;
+#endif
+
   // Android & Windows only: if set, then this frame's resource would like to
   // be notified about its promotability to an overlay.
   bool wants_promotion_hint = false;

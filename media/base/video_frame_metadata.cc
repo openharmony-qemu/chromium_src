@@ -47,6 +47,9 @@ void VideoFrameMetadata::MergeMetadataFrom(
   MERGE_VALUE_FIELD(read_lock_fences_enabled, metadata_source);
   MERGE_OPTIONAL_FIELD(transformation, metadata_source);
   MERGE_VALUE_FIELD(in_surface_view, metadata_source);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  MERGE_VALUE_FIELD(render_video_view, metadata_source);
+#endif
   MERGE_VALUE_FIELD(wants_promotion_hint, metadata_source);
   MERGE_VALUE_FIELD(dcomp_surface, metadata_source);
   MERGE_VALUE_FIELD(protected_video, metadata_source);
@@ -81,6 +84,9 @@ void VideoFrameMetadata::MergeMetadataFrom(
 void VideoFrameMetadata::ClearTextureFrameMetadata() {
   is_webgpu_compatible = false;
   read_lock_fences_enabled = false;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  render_video_view = false;
+#endif
 }
 
 }  // namespace media

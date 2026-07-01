@@ -1190,6 +1190,7 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
 
 #if BUILDFLAG(ARKWEB_PIP)
   bool skip_surface_recover_ = false;
+  bool pip_enabled_ = false;
 #endif // ARKWEB_PIP
 
   base::WeakPtr<WebMediaPlayerImpl> weak_this_;

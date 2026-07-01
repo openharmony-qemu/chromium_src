@@ -1139,6 +1139,14 @@ ScriptPromise<IDLUndefined> Fullscreen::ExitFullscreen(
     return EmptyPromise();
   }
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(FullscreenElementFrom(doc))) {
+    if (video_element->IsCustomMediaPlayerEnabled()) {
+      video_element->SetRenderVideoView(false);
+    }
+  }
+#endif // ARKWEB_VIDEO_ASSISTANT
+
   if (script_state) {
     resolver =
         MakeGarbageCollected<ScriptPromiseResolver<IDLUndefined>>(script_state);

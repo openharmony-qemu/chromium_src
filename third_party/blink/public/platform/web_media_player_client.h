@@ -107,6 +107,7 @@ class BLINK_PLATFORM_EXPORT WebMediaPlayerClient {
   virtual bool IsCustomMediaPlayerEnabled() const { return false; }
   virtual void OnSupportVideoSurfaceChanged(
       bool support, std::string decoder_name) {}
+  virtual void SetRenderVideoView(bool render_video_view) {}
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)

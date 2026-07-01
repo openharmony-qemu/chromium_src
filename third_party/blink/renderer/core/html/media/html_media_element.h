@@ -469,6 +469,7 @@ class CORE_EXPORT HTMLMediaElement
   bool IsCustomMediaPlayerEnabled() const override;
   void OnSupportVideoSurfaceChanged(
       bool support, std::string decoder_name) override;
+  void SetRenderVideoView(bool render_video_view) override;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
   bool IsFullscreenVideoOverlayEnabled() const override;

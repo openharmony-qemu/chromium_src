@@ -177,6 +177,9 @@ bool StructTraits<viz::mojom::TextureQuadStateDataView, viz::DrawQuad>::Read(
   quad->nearest_neighbor = data.nearest_neighbor();
   quad->secure_output_only = data.secure_output_only();
   quad->is_video_frame = data.is_video_frame();
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  quad->render_video_view = data.render_video_view();
+#endif
   quad->force_rgbx = data.force_rgbx();
 
   if (!data.ReadDamageRect(&quad->damage_rect))

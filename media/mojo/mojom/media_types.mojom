@@ -406,6 +406,9 @@ struct VideoFrameMetadata {
 
   bool in_surface_view;
 
+  [EnableIf=arkweb_render_video_view]
+  bool render_video_view;
+
   bool wants_promotion_hint;
 
   bool protected_video;

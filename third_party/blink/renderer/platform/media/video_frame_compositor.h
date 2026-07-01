@@ -201,6 +201,10 @@ class PLATFORM_EXPORT VideoFrameCompositor : public media::VideoRendererSink,
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetRenderVideoView(bool render_video_view);
+#endif
+
  private:
   // TracingCategory name for |auto_open_close_|.
   static constexpr const char kTracingCategory[] = "media,rail";

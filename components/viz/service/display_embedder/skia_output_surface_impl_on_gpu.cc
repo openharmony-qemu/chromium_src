@@ -2332,6 +2332,11 @@ void SkiaOutputSurfaceImplOnGpu::SwapBuffersInternal(
   // If drawing to any render pass failed then skip presenting incorrect
   // content.
   bool skip_present = draw_render_pass_failed_;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (frame) {
+    skip_present = skip_present || frame->skip_present;
+  }
+#endif
   draw_render_pass_failed_ = false;
 
   if (!skip_present && frame) {

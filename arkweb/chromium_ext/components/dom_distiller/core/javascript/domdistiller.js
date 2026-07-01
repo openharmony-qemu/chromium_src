@@ -17,6 +17,9 @@
 // DomDistillerResults (as a javascript object/dict).
 (function(options, stringify_output, extract_catalog_info) {
 try {
+  const originalSetTimeout = window.setTimeout
+  const originalClearTimeout = window.clearTimeout
+
   function initialize() {
   $$DOMDISTILLERJS
   }
@@ -39,6 +42,9 @@ try {
   if (stringify_output) {
   return JSON.stringify(res);
   }
+
+  window.setTimeout = originalSetTimeout
+  window.clearTimeout = originalClearTimeout
   return res;
 } catch (e) {
   window.console.error('Error during distillation: ' + e);

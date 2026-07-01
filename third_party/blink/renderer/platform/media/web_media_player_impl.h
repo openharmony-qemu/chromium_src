@@ -1176,6 +1176,10 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
   media::MediaPlayerUrlParams media_player_url_params_;
 #endif
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  bool was_playing_when_entering_bfcache_ = false;
+#endif // ARKWEB_BFCACHE
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   media::SurfaceCreatedCB surface_created_cb_;
   int32_t video_surface_id_ = -1;

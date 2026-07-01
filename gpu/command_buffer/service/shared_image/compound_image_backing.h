@@ -292,9 +292,14 @@ class GPU_GLES2_EXPORT CompoundImageBacking
   // Runs CreateSharedImage() on `factory` and stores the result in `backing`.
   // If successful this will update the estimated size of compound backing.
   void CreateBackingFromBackingFactory(
-      base::WeakPtr<SharedImageBackingFactory> factory,
+      SharedImageBackingFactory* factory,
       std::string debug_label,
       std::unique_ptr<SharedImageBacking>& backing);
+
+  void LazyCreateBacking(SharedImageBackingType factory_type,
+                         base::WeakPtr<SharedImageBackingFactory> test_factory,
+                         std::string debug_label,
+                         std::unique_ptr<SharedImageBacking>& backing);
 
   void OnCopyToGpuMemoryBufferComplete(bool success);
 

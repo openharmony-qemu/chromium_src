@@ -6,6 +6,7 @@
 #define CHROME_BROWSER_UI_EXCLUSIVE_ACCESS_EXCLUSIVE_ACCESS_MANAGER_H_
 
 #include "base/memory/raw_ptr.h"
+#include "base/memory/weak_ptr.h"
 #include "chrome/browser/ui/exclusive_access/exclusive_access_bubble_type.h"
 #include "chrome/browser/ui/exclusive_access/exclusive_access_permission_manager.h"
 #include "chrome/browser/ui/exclusive_access/fullscreen_controller.h"
@@ -107,6 +108,7 @@ class ExclusiveAccessManager {
   base::flat_set<raw_ptr<ExclusiveAccessControllerBase>>
       exclusive_access_controllers_;
   ExclusiveAccessPermissionManager permission_manager_;
+  base::WeakPtrFactory<ExclusiveAccessManager> weak_ptr_factory_{this};
 };
 
 #endif  // CHROME_BROWSER_UI_EXCLUSIVE_ACCESS_EXCLUSIVE_ACCESS_MANAGER_H_

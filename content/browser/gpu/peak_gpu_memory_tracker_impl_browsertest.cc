@@ -70,6 +70,7 @@ class TestGpuService : public viz::StubGpuService {
   void ReportSlidingFrameRate(int32_t frame_rate) override {}
   void SetLTPOStrategy(int32_t strategy) override {}
   void SetWebComponentVisible(int nweb_id, bool visible) override {}
+  void InitInvisibleThrottle(int strategy, int timeout, int ratio) override {}
   void DumpGpuInfo(DumpGpuInfoCallback callback) override {}
   void StartMonitor(int32_t nweb_id) override {}
   void StopMonitor() override {}

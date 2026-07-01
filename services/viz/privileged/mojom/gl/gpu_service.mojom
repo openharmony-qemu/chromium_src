@@ -251,6 +251,10 @@ interface GpuService {
   [EnableIf=arkweb_invisible_render_throttle]
   SetWebComponentVisible(int32 nweb_id, bool visible);
 
+  // Initialize invisible render throttle with configuration from browser process
+  [EnableIf=arkweb_invisible_render_throttle]
+  InitInvisibleThrottle(int32 strategy, int32 timeout, int32 ratio);
+
   // get gpu total size
   [EnableIf=arkweb_dfx_dump]
   DumpGpuInfo() => (float totalSize);

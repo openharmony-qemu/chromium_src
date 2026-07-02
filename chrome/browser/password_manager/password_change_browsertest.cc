@@ -553,8 +553,8 @@ IN_PROC_BROWSER_TEST_F(PasswordChangeBrowserTest, OldPasswordIsUpdated) {
 
   // Add an existing password for this site.
   ASSERT_TRUE(content::NavigateToURL(
-      WebContents(),
-      embedded_test_server()->GetURL("/password/simple_password.html")));
+      WebContents(), embedded_test_server()->GetURL(
+                         kMainHost, "/password/simple_password.html")));
   password_manager::PasswordStoreInterface* password_store =
       ProfilePasswordStoreFactory::GetForProfile(
           browser()->profile(), ServiceAccessType::IMPLICIT_ACCESS)
@@ -737,6 +737,7 @@ IN_PROC_BROWSER_TEST_F(PasswordChangeBrowserTest, CancelFromToast) {
   password_change_service()->OfferPasswordChangeUi(
       CreatePasswordForm(WebContents()->GetLastCommittedURL(), u"test",
                          u"pa$$word"),
+
       WebContents());
   PasswordChangeDelegate* delegate =
       password_change_service()->GetPasswordChangeDelegate(WebContents());
@@ -816,6 +817,11 @@ IN_PROC_BROWSER_TEST_F(PasswordChangeBrowserTest,
   EXPECT_TRUE(toast->action_button());
   EXPECT_TRUE(toast->action_button()->GetVisible());
 
+  // Navigate away to a different host.
+  ASSERT_TRUE(content::NavigateToURL(
+      WebContents(), https_test_server().GetURL(
+                         kDifferentHost, "/password/simple_password.html")));
+
   // Click action button, this should open Password Management.
   views::test::ButtonTestApi clicker(toast->action_button());
   delegate = nullptr;
@@ -837,8 +843,8 @@ IN_PROC_BROWSER_TEST_F(PasswordChangeBrowserTest,
 
 IN_PROC_BROWSER_TEST_F(PasswordChangeBrowserTest, ViewPasswordBubbleFromToast) {
   ASSERT_TRUE(content::NavigateToURL(
-      WebContents(),
-      embedded_test_server()->GetURL("/password/simple_password.html")));
+      WebContents(), embedded_test_server()->GetURL(
+                         kMainHost, "/password/simple_password.html")));
 
   SetPrivacyNoticeAcceptedPref();
   SetChangePasswordUrl("/password/update_form_empty_fields.html");
@@ -1289,7 +1295,7 @@ IN_PROC_BROWSER_TEST_F(PasswordChangeBrowserTest, OpenTabWhenLoggedOut) {
       browser()->tab_strip_model()->GetWebContentsAt(1);
   ASSERT_EQ(change_password_contents->GetVisibleURL(),
             embedded_test_server()->GetURL(
-                "/password/update_form_empty_fields.html"));
+                kMainHost, "/password/update_form_empty_fields.html"));
 }
 
 IN_PROC_BROWSER_TEST_F(PasswordChangeBrowserTest,

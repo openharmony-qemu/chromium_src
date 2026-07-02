@@ -607,6 +607,9 @@ void VideoResourceUpdater::AppendQuad(
       }
 #endif
       texture_quad->is_video_frame = true;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      texture_quad->render_video_view = frame->metadata().render_video_view;
+#endif // ARKWEB_VIDEO_ASSISTANT
       resource_provider_->ValidateResource(texture_quad->resource_id);
       break;
     }

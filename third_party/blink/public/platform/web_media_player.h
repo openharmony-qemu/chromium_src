@@ -488,6 +488,7 @@ class WebMediaPlayer {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   virtual void SetVideoSurface(int32_t widget_id) {}
   virtual bool SupportVideoSurface() { return false; }
+  virtual void SetRenderVideoView(bool render_video_view) {}
 #endif // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_PIP)
   virtual void PipEnable(bool enable) {}

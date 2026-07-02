@@ -520,6 +520,10 @@ mojom("media_types") {
     enabled_features += ["arkweb_media_hls"]
   }
 
+  if (arkweb_video_assistant) {
+    enabled_features += ["arkweb_render_video_view"]
+  }
+
   shared_typemaps = [
     {
       types = [

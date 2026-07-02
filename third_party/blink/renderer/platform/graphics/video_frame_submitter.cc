@@ -771,9 +771,15 @@ bool VideoFrameSubmitter::SubmitFrame(
   // not building up unused remote side resources. See https://crbug.com/830828.
   //
   // Similarly we don't submit the same frame multiple times.
+#if !BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (last_frame_id_ == video_frame->unique_id()) {
     return false;
   }
+#else
+  if (last_frame_id_ == video_frame->unique_id() && !force_resubmit_) {
+    return false;
+  }
+#endif
 
   gfx::Size frame_size(video_frame->natural_size());
 
@@ -802,9 +808,17 @@ bool VideoFrameSubmitter::SubmitFrame(
 
   // We can't delay frame size changes even if we have a pending compositor ACK
   // because a relayout signal is already in flight on the main thread.
+#if !BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (waiting_for_compositor_ack_ > 0 && !frame_size_changed) {
     return false;
   }
+#else
+  if (waiting_for_compositor_ack_ > 0 && !frame_size_changed &&
+      !force_resubmit_) {
+    return false;
+  }
+  force_resubmit_ = false;
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   last_frame_id_ = video_frame->unique_id();
 
@@ -819,6 +833,9 @@ bool VideoFrameSubmitter::SubmitFrame(
     roughness_reporter_->FrameSubmitted(frame_token, *video_frame.get(),
                                         last_begin_frame_args_.interval);
   }
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  video_frame->metadata().render_video_view = render_video_view_;
+#endif
   auto compositor_frame = CreateCompositorFrame(
       frame_token, begin_frame_ack, std::move(video_frame), transform);
 

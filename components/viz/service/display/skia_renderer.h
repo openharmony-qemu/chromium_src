@@ -374,6 +374,13 @@ class VIZ_SERVICE_EXPORT SkiaRenderer : public DirectRenderer {
 
   gfx::Rect swap_buffer_rect_;
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  // True when the current frame contains a render_video_view quad (video is
+  // composited by the OHOS Rosen surface). Drives frame-level skip_present so
+  // the fully-occluded web surface is not presented, while
+  // FinishPaintCurrentFrame still runs to flush the video to the native surface.
+  bool frame_should_skip_present_ = false;
+#endif
   // State common to all quads in a batch. Draws that require an SkPaint not
   // captured by this state cannot be batched.
   struct BatchedQuadState {

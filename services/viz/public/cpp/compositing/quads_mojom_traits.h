@@ -459,6 +459,14 @@ struct StructTraits<viz::mojom::TextureQuadStateDataView, viz::DrawQuad> {
     return quad->is_video_frame;
   }
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  static bool render_video_view(const viz::DrawQuad& input) {
+    const viz::TextureDrawQuad* quad =
+        viz::TextureDrawQuad::MaterialCast(&input);
+    return quad->render_video_view;
+  }
+#endif
+
   static gfx::ProtectedVideoType protected_video_type(
       const viz::DrawQuad& input) {
     const viz::TextureDrawQuad* quad =

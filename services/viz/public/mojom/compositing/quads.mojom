@@ -94,6 +94,8 @@ struct TextureQuadState {
   bool nearest_neighbor;
   bool secure_output_only;
   bool is_video_frame;
+  [EnableIf=arkweb_render_video_view]
+  bool render_video_view;
   bool force_rgbx;
   ProtectedVideoState protected_video_type;
   gfx.mojom.Rect? damage_rect;

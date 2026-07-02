@@ -89,6 +89,9 @@ void TextureDrawQuad::ExtendValue(base::trace_event::TracedValue* value) const {
   value->SetBoolean("nearest_neighbor", nearest_neighbor);
   value->SetBoolean("secure_output_only", secure_output_only);
   value->SetBoolean("is_video_frame", is_video_frame);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  value->SetBoolean("render_video_view", render_video_view);
+#endif // ARKWEB_VIDEO_ASSISTANT
   value->SetBoolean("force_rgbx", force_rgbx);
   value->SetInteger("protected_video_type",
                     static_cast<int>(protected_video_type));

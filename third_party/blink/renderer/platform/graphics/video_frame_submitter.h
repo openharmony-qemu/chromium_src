@@ -273,6 +273,12 @@ class PLATFORM_EXPORT VideoFrameSubmitter
   float device_scale_factor_ = 1.0f;
 #endif
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetRenderVideoView(bool render_video_view) override;
+  bool render_video_view_ = false;
+  bool force_resubmit_  = false;
+#endif
+
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
   void UpdateDroppedFrameMetrics(const viz::BeginFrameArgs& args);
   void SubmitDroppedFrameMetricsToMetadata(viz::CompositorFrame& compositor_frame);

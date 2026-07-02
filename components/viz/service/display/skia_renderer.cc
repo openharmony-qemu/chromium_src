@@ -1129,6 +1129,10 @@ void SkiaRenderer::SwapBuffers(SwapFrameData swap_frame_data) {
     buffer_queue_->SwapBuffers(damage_rect);
   }
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  output_frame.skip_present = frame_should_skip_present_;
+  frame_should_skip_present_ = false;
+#endif
   skia_output_surface_->SwapBuffers(std::move(output_frame));
   swap_buffer_rect_ = gfx::Rect();
 
@@ -1159,6 +1163,9 @@ void SkiaRenderer::SwapBuffers(SwapFrameData swap_frame_data) {
 }
 
 void SkiaRenderer::SwapBuffersSkipped() {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  frame_should_skip_present_ = false;
+#endif
   gfx::Rect root_pass_damage_rect = gfx::Rect(surface_size_for_swap_buffers());
   if (use_partial_swap_)
     root_pass_damage_rect.Intersect(swap_buffer_rect_);
@@ -2600,6 +2607,16 @@ void SkiaRenderer::DrawTextureQuad(const TextureDrawQuad* quad,
                                    DrawQuadParams* params) {
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("viz.quads"),
                "SkiaRenderer::DrawTextureQuad");
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  // Signal frame-level skip_present. Do NOT return here - ScopedSkImageBuilder
+  // below must run so the video image enters images_in_current_paint_; only
+  // then can FinishPaintCurrentFrame's BeginAccess trigger ReleaseToSurface to
+  // flush the frame to the XComponent surface.
+  if (quad->render_video_view) {
+    frame_should_skip_present_ = true;
+  }
+#endif
 
   // Sometimes we use different color space for overlays to make sure we stay on
   // hardware path for power efficiency even if it's slightly incorrect. To

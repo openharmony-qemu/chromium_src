@@ -6,6 +6,7 @@
 #define UI_TOUCH_SELECTION_TOUCH_SELECTION_CONTROLLER_H_
 
 #include "base/memory/raw_ptr.h"
+#include "base/memory/weak_ptr.h"
 #include "base/time/time.h"
 #include "ui/events/types/event_type.h"
 #include "ui/gfx/geometry/point.h"
@@ -325,6 +326,7 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
 #if BUILDFLAG(IS_ARKWEB)
   std::unique_ptr<TouchSelectionControllerUtils> utils_;
 #endif
+  base::WeakPtrFactory<TouchSelectionController> weak_factory_{this};
 };
 
 }  // namespace ui

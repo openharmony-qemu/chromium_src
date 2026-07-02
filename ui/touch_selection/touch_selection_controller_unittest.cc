@@ -253,6 +253,9 @@ class TouchSelectionControllerTest : public testing::Test,
 
   TouchSelectionController& controller() { return *controller_; }
 
+ protected:
+  std::unique_ptr<TouchSelectionController> controller_;
+
  private:
   gfx::PointF last_event_start_;
   gfx::PointF last_event_end_;
@@ -268,7 +271,6 @@ class TouchSelectionControllerTest : public testing::Test,
   bool needs_animate_ = false;
   bool animation_enabled_ = true;
   bool dragging_enabled_ = false;
-  std::unique_ptr<TouchSelectionController> controller_;
 };
 
 TEST_F(TouchSelectionControllerTest, InsertionBasic) {
@@ -1916,6 +1918,28 @@ TEST_F(TouchSelectionControllerTest, SwipeToMoveCursor_HandleWasNotShown) {
   // Step 5: Swipe-to-move-cursor ends: show handles.
   controller().OnSwipeToMoveCursorEnd();
   EXPECT_TRUE(test_controller.GetStartVisible());
+}
+
+class TouchSelectionControllerUAFTest : public TouchSelectionControllerTest {
+ public:
+  void OnSelectionEvent(SelectionEventType event) override {
+    TouchSelectionControllerTest::OnSelectionEvent(event);
+    if (event == SELECTION_HANDLES_SHOWN) {
+      controller_.reset();
+    }
+  }
+};
+
+TEST_F(TouchSelectionControllerUAFTest, AutoResetWriteAfterFree) {
+  OnLongPressEvent();
+
+  gfx::RectF start_rect(0, 0, 0, 10);
+  gfx::RectF end_rect(50, 0, 0, 10);
+  bool visible = true;
+
+  ChangeSelection(start_rect, visible, end_rect, visible);
+
+  EXPECT_EQ(nullptr, controller_.get());
 }
 
 }  // namespace

@@ -389,8 +389,12 @@ WebInputEventResult TypeTool::CreateAndDispatchKeyEvent(
   key_event.text[0] = key_params.text;
   key_event.unmodified_text[0] = key_params.unmodified_text;
 
+  base::WeakPtr<TypeTool> weak_this = weak_ptr_factory_.GetWeakPtr();
   WebInputEventResult result = widget.HandleInputEvent(
       WebCoalescedInputEvent(key_event, ui::LatencyInfo()));
+  if (!weak_this) {
+    return result;
+  }
   journal_->Log(task_id_, WebInputEvent::GetName(type),
                 JournalDetailsBuilder()
                     .Add("key", key_params.dom_key)
@@ -410,8 +414,12 @@ mojom::ActionResultPtr TypeTool::SimulateKeyPress(
                       "No widget during simulate key down");
   }
 
+  base::WeakPtr<TypeTool> weak_this = weak_ptr_factory_.GetWeakPtr();
   WebInputEventResult down_result = CreateAndDispatchKeyEvent(
       *widget, WebInputEvent::Type::kRawKeyDown, params);
+  if (!weak_this) {
+    return nullptr;
+  }
 
   // Only the KeyDown event will check for and report failure. The reason the
   // other events don't is that if the KeyDown event was dispatched to the page,

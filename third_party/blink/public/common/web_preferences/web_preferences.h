@@ -558,6 +558,7 @@ struct BLINK_COMMON_EXPORT WebPreferences {
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   bool error_page_enabled = false;
+  bool subframe_error_page_enabled = false;
 #endif
 
 #if BUILDFLAG(ARKWEB_BFCACHE)

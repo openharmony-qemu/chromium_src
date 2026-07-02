@@ -65,7 +65,9 @@ class OhosAudioOutputStream : public AudioOutputStream {
 
   void ReleaseRender();
 
-  bool StartRender();
+  bool StartRender() EXCLUSIVE_LOCKS_REQUIRED(lock_);
+
+  void ReportErrorInternal() EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
   void FlushData();
 
@@ -123,6 +125,8 @@ class OhosAudioOutputStream : public AudioOutputStream {
   base::OneShotTimer timer_;
 
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
+
+  scoped_refptr<base::SingleThreadTaskRunner> audio_task_runner_;
 
   // hardware latency
   base::TimeDelta delay_ = base::Milliseconds(0);

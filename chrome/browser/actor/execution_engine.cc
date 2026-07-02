@@ -548,6 +548,10 @@ void ExecutionEngine::RemoveObserver(StateObserver* observer) {
   observers_.RemoveObserver(observer);
 }
 
+base::WeakPtr<ExecutionEngine> ExecutionEngine::GetWeakPtr() {
+  return weak_ptr_factory_.GetWeakPtr();
+}
+
 void ExecutionEngine::CancelOngoingActions(mojom::ActionResultCode reason) {
   TRACE_EVENT0("actor", "ExecutionEngine::CancelOngoingActions");
   if (tool_controller_) {
@@ -681,7 +685,7 @@ void ExecutionEngine::SafetyChecksForNextAction() {
   ActorKeyedService::Get(profile_)->GetPolicyChecker().MayActOnTab(
       *tab, *journal_, task_->id(), allowed_navigation_origins_,
       base::BindOnce(
-          &ExecutionEngine::OnMayActOnTabDecision, GetWeakPtr(),
+          &ExecutionEngine::OnMayActOnTabDecision, GetActionSequenceWeakPtr(),
           tab->GetContents()->GetPrimaryMainFrame()->GetLastCommittedOrigin()));
 }
 
@@ -790,8 +794,8 @@ void ExecutionEngine::ExecuteNextAction() {
 
   SetState(State::kToolCreateAndVerify);
   tool_controller_->CreateToolAndValidate(
-      GetInProgressAction(),
-      base::BindOnce(&ExecutionEngine::PostToolCreate, GetWeakPtr()));
+      GetInProgressAction(), base::BindOnce(&ExecutionEngine::PostToolCreate,
+                                            GetActionSequenceWeakPtr()));
 }
 
 void ExecutionEngine::PostToolCreate(mojom::ActionResultPtr result) {
@@ -803,7 +807,8 @@ void ExecutionEngine::PostToolCreate(mojom::ActionResultPtr result) {
   SetState(State::kUiPreInvoke);
   ui_event_dispatcher_->OnPreTool(
       GetInProgressAction(),
-      base::BindOnce(&ExecutionEngine::FinishedUiPreInvoke, GetWeakPtr()));
+      base::BindOnce(&ExecutionEngine::FinishedUiPreInvoke,
+                     GetActionSequenceWeakPtr()));
 }
 
 void ExecutionEngine::FinishedUiPreInvoke(mojom::ActionResultPtr result) {
@@ -815,8 +820,8 @@ void ExecutionEngine::FinishedUiPreInvoke(mojom::ActionResultPtr result) {
   }
 
   SetState(State::kToolInvoke);
-  tool_controller_->Invoke(
-      base::BindOnce(&ExecutionEngine::FinishedToolInvoke, GetWeakPtr()));
+  tool_controller_->Invoke(base::BindOnce(&ExecutionEngine::FinishedToolInvoke,
+                                          GetActionSequenceWeakPtr()));
 }
 
 void ExecutionEngine::FinishedToolInvoke(mojom::ActionResultPtr result) {
@@ -844,7 +849,8 @@ void ExecutionEngine::FinishedToolInvoke(mojom::ActionResultPtr result) {
   SetState(State::kUiPostInvoke);
   ui_event_dispatcher_->OnPostTool(
       GetInProgressAction(),
-      base::BindOnce(&ExecutionEngine::FinishedUiPostInvoke, GetWeakPtr()));
+      base::BindOnce(&ExecutionEngine::FinishedUiPostInvoke,
+                     GetActionSequenceWeakPtr()));
 }
 
 void ExecutionEngine::FinishedUiPostInvoke(mojom::ActionResultPtr result) {
@@ -898,7 +904,7 @@ void ExecutionEngine::CompleteActions(mojom::ActionResultPtr result,
   actions_weak_ptr_factory_.InvalidateWeakPtrs();
 }
 
-base::WeakPtr<ExecutionEngine> ExecutionEngine::GetWeakPtr() {
+base::WeakPtr<ExecutionEngine> ExecutionEngine::GetActionSequenceWeakPtr() {
   return actions_weak_ptr_factory_.GetWeakPtr();
 }
 
@@ -971,8 +977,9 @@ void ExecutionEngine::SetUserSelectedCredential(
     affiliation_service->GetAffiliationsAndBranding(
         affiliations::FacetURI::FromPotentiallyInvalidSpec(
             origin.GetURL().GetWithEmptyPath().spec()),
-        base::BindOnce(&ExecutionEngine::OnAffiliationsReceived, GetWeakPtr(),
-                       origin, std::move(affiliations_fetched)));
+        base::BindOnce(&ExecutionEngine::OnAffiliationsReceived,
+                       GetActionSequenceWeakPtr(), origin,
+                       std::move(affiliations_fetched)));
   } else {
     std::move(affiliations_fetched).Run();
   }

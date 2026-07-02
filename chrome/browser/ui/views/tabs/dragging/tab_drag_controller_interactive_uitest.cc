@@ -5829,10 +5829,60 @@ IN_PROC_BROWSER_TEST_P(DetachToBrowserTabDragControllerTest,
   {
     gfx::Rect tab_bounds = tab_strip->tab_at(1)->GetLocalBounds();
     views::View::ConvertRectToScreen(tab_strip->tab_at(1), &tab_bounds);
-    ASSERT_TRUE(
-        DragInputTo(tab_bounds.right_center(), GetWindowHint(tab_strip)));
+  ASSERT_TRUE(
+      DragInputTo(tab_bounds.right_center(), GetWindowHint(tab_strip)));
   }
   ASSERT_TRUE(ReleaseInput());
+}
+
+// Regression test for http://crbug.com/505371980.
+// Verifies that the correct tab is detached even if the selection changes
+// mid-drag.
+#if BUILDFLAG(IS_WIN)
+#define MAYBE_SelectTabDuringDragAndDetach SelectTabDuringDragAndDetach
+#else
+#define MAYBE_SelectTabDuringDragAndDetach DISABLED_SelectTabDuringDragAndDetach
+#endif
+IN_PROC_BROWSER_TEST_P(DetachToBrowserTabDragControllerTest,
+                       MAYBE_SelectTabDuringDragAndDetach) {
+  TabStripModel* model = browser()->tab_strip_model();
+  TabStrip* tab_strip = GetTabStripForBrowser(browser());
+
+  AddTabsAndResetBrowser(browser(), 1);
+  ASSERT_EQ(2, model->count());
+  ASSERT_EQ(1, model->active_index());
+
+  content::WebContents* tab0_contents = model->GetWebContentsAt(0);
+  content::WebContents* tab1_contents = model->GetWebContentsAt(1);
+
+  test::QuitDraggingObserver observer(tab_strip);
+
+  ASSERT_TRUE(PressInputAtCenter(tab_strip->tab_at(0)));
+  ASSERT_TRUE(DragInputToCenterNotifyWhenDone(
+      tab_strip->tab_at(0), base::BindLambdaForTesting([&]() {
+        ui::ListSelectionModel new_selection;
+        new_selection.SetSelectedIndex(1);
+        model->SetSelectionFromModel(std::move(new_selection));
+
+        DragInputToCenterAsync(tab_strip->tab_at(0),
+                               gfx::Vector2d(0, GetDetachY(tab_strip) + 20));
+        ReleaseInput(0, true);
+      }),
+      gfx::Vector2d(0, 5)));
+
+  observer.Wait();
+
+  ASSERT_EQ(2u, GetAllBrowserWindowInterfaces().size());
+  BrowserWindowInterface* new_browser =
+      ui_test_utils::GetBrowserNotInSet({browser()});
+  ASSERT_TRUE(new_browser);
+
+  EXPECT_EQ(1, new_browser->GetTabStripModel()->count());
+  EXPECT_EQ(tab0_contents,
+            new_browser->GetTabStripModel()->GetWebContentsAt(0));
+
+  EXPECT_EQ(1, model->count());
+  EXPECT_EQ(tab1_contents, model->GetWebContentsAt(0));
 }
 
 #if BUILDFLAG(IS_CHROMEOS)

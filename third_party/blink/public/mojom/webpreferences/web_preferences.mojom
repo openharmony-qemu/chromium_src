@@ -701,6 +701,9 @@ struct WebPreferences {
   [EnableIf=arkweb_error_page]
   bool error_page_enabled;
 
+  [EnableIf=arkweb_error_page]
+  bool subframe_error_page_enabled;
+
   [EnableIf=arkweb_bfcache]
   bool media_resume_from_bfcache_page = true;
 

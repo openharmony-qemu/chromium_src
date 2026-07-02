@@ -8194,8 +8194,12 @@ AXObject* AXNodeObject::AccessibilityHitTest(const gfx::Point& point) const {
   DCHECK(GetLayoutObject()->IsLayoutView());
   PaintLayer* layer = To<LayoutBox>(GetLayoutObject())->Layer();
   DCHECK(layer);
-
+#if !BUILDFLAG(ARKWEB_ACCESSIBILITY)
   HitTestRequest request(HitTestRequest::kReadOnly | HitTestRequest::kActive);
+#else
+  HitTestRequest request(HitTestRequest::kReadOnly | HitTestRequest::kActive |
+                         HitTestRequest::kIgnorePointerEventsNone);
+#endif
   HitTestLocation location(point);
   HitTestResult hit_test_result = HitTestResult(request, location);
   layer->HitTest(location, hit_test_result, PhysicalRect(InfiniteIntRect()));

@@ -30,6 +30,26 @@ std::string InspectUI::GetTypeFromHost(const std::string& hostType) {
   return host_type;
 }
 
+void InspectUI::RequestOpenDevByTargetId(const std::string& source_id,
+                                         const std::string& target_id,
+                                         const std::string& panel) {
+  content::DevToolsAgentHost::List targets =
+      content::DevToolsAgentHost::GetOrCreateAll();
+  for (const scoped_refptr<content::DevToolsAgentHost>& host : targets) {
+    if (host->GetId() == target_id) {
+      RequestOpenDevToolsParams params = {
+        .type = GetTypeFromHost(host->GetType()),
+        .source_id = host->GetURL().spec(),
+        .target_id = host->GetId(),
+        .extension_id = "",
+        .panel = panel
+      };
+      RequestOpenDevToolsHandler::GetInstance()->OnRequestOpenDevTools(params);
+      break;
+    }
+  }
+}
+
 bool InspectUI::InspectInclude(const std::string& source_id,
                                const std::string& target_id,
                                const std::string& panel) {
@@ -38,6 +58,7 @@ bool InspectUI::InspectInclude(const std::string& source_id,
   scoped_refptr<DevToolsAgentHost> target = FindTarget(source_id, target_id);
   if (!target) {
     LOG(INFO) << " func:" << __func__ << "Couldn't find.";
+    InspectUI::RequestOpenDevByTargetId(source_id, target_id, panel);
     return ret;
   }
   RequestOpenDevToolsParams params {

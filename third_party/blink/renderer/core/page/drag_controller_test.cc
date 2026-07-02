@@ -835,5 +835,5 @@ TEST_F(DragControllerTest, ResumeCaretBlinkingAfterDrag) {
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/page/drag_controller_ext_unittest_for_include.cc"
-#include "third_party/blink/renderer/core/page/drag_controller_utils_unittest_for_include.cc"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/page/drag_controller_utils_unittest_for_include.cc"
 #endif

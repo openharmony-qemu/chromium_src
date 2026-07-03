@@ -22,6 +22,14 @@ if (build_with_chromium) {
 }
 import("//third_party/xnnpack/build_defs.gni")
 
+if (is_arkweb) {
+  import("//build/config/arm.gni")
+
+  declare_args() {
+    xnn_control_flow_integrity = current_cpu == "arm64" && arm_control_flow_integrity != "none"
+  }
+}
+
 config("xnnpack_public_config") {
   include_dirs = [
     "//third_party/pthreadpool/src/include",
@@ -31,7 +39,7 @@ config("xnnpack_public_config") {
     "src",
   ]
 
-  if (is_android && current_cpu == "arm64") {
+  if (is_android && current_cpu == "arm64" || (xnn_control_flow_integrity && is_arkweb)) {
     asmflags = [ "-mmark-bti-property" ]
   }
 

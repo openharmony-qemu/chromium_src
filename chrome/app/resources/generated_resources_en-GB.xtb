@@ -4445,6 +4445,7 @@ You can manage this account’s settings by installing the Family Link app on yo
 <translation id="3975201861340929143">Explanation</translation>
 <translation id="3975565978598857337">Contacting server for realm failed</translation>
 <translation id="3976108569178263973">There are no available printers.</translation>
+<translation id="3976453919940566636">"<ph name="EXTENSION_NAME" />" has requested additional permissions</translation>
 <translation id="397703832102027365">Finalising...</translation>
 <translation id="3977886311744775419">Automatic updates don't download on this network type, but you can check for updates manually.</translation>
 <translation id="3978325380690188371">Sticky keys is not available when ChromeVox is on</translation>
@@ -7565,6 +7566,7 @@ You can assign multiple switches to this action.</translation>
 <translation id="6164393601566177235">Add sites</translation>
 <translation id="6164832038898943453">Add languages to automatically translate</translation>
 <translation id="6165508094623778733">Learn more</translation>
+<translation id="6168969225840255250">It could:</translation>
 <translation id="6169040057125497443">Please check your microphone.</translation>
 <translation id="6169967265765719844">Permissions for games and apps installed via Steam can be managed in the <ph name="LINK_BEGIN" />Steam app settings<ph name="LINK_END" />.</translation>
 <translation id="6170313103929479668">Arrange split view</translation>

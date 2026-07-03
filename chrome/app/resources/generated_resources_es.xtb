@@ -4425,6 +4425,7 @@ Puedes gestionar la configuración de esta cuenta instalando la aplicación Fami
 <translation id="3975201861340929143">Explicación</translation>
 <translation id="3975565978598857337">Se ha producido un error al contactar con el servidor del dominio</translation>
 <translation id="3976108569178263973">No hay impresoras disponibles.</translation>
+<translation id="3976453919940566636">“<ph name="EXTENSION_NAME" />” ha solicitado permisos adicionales</translation>
 <translation id="397703832102027365">Finalizando...</translation>
 <translation id="3977886311744775419">Este tipo de red no admite que se descarguen actualizaciones de forma automática, pero puedes buscar actualizaciones manualmente.</translation>
 <translation id="3978325380690188371">Las teclas persistentes no están disponibles cuando ChromeVox está activado</translation>
@@ -7540,6 +7541,7 @@ Exponente público (<ph name="PUBLIC_EXPONENT_NUM_BITS" /> bits):
 <translation id="6164393601566177235">Añadir sitios</translation>
 <translation id="6164832038898943453">Añadir idiomas para traducirlos automáticamente</translation>
 <translation id="6165508094623778733">Más información</translation>
+<translation id="6168969225840255250">Podrá hacer lo siguiente:</translation>
 <translation id="6169040057125497443">Comprueba el micrófono.</translation>
 <translation id="6169967265765719844">Los permisos para juegos y aplicaciones instalados a través de Steam pueden gestionarse en los <ph name="LINK_BEGIN" />ajustes de la aplicación Steam<ph name="LINK_END" />.</translation>
 <translation id="6170313103929479668">Disponer vista dividida</translation>

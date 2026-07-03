@@ -4440,6 +4440,7 @@
 <translation id="3975201861340929143">설명</translation>
 <translation id="3975565978598857337">영역 서버에 연락을 취하지 못했습니다.</translation>
 <translation id="3976108569178263973">사용 가능한 프린터가 없습니다.</translation>
+<translation id="3976453919940566636">"<ph name="EXTENSION_NAME" />"에서 추가 권한을 요청함</translation>
 <translation id="397703832102027365">완료 중...</translation>
 <translation id="3977886311744775419">이러한 네트워크 유형에서는 자동 업데이트가 다운로드되지 않지만 수동으로 업데이트를 확인할 수 있습니다.</translation>
 <translation id="3978325380690188371">ChromeVox가 사용 설정된 경우 고정키를 사용할 수 없음</translation>
@@ -7556,6 +7557,7 @@ https://support.google.com/chromebook/?p=tpm</translation>
 <translation id="6164393601566177235">사이트 추가</translation>
 <translation id="6164832038898943453">자동 번역할 언어 추가</translation>
 <translation id="6165508094623778733">자세히 알아보기</translation>
+<translation id="6168969225840255250">요청된 권한:</translation>
 <translation id="6169040057125497443">마이크를 확인하세요.</translation>
 <translation id="6169967265765719844">Steam을 통해 설치된 게임 및 앱에 대한 권한은 <ph name="LINK_BEGIN" />Steam 앱 설정<ph name="LINK_END" />에서 관리할 수 있습니다.</translation>
 <translation id="6170313103929479668">분할 뷰 정렬</translation>

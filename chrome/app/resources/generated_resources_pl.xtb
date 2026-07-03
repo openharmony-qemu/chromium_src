@@ -4405,6 +4405,7 @@ Domena <ph name="DOMAIN" /> wymaga, by karta inteligentna pozostała w gnieźdz
 <translation id="3975201861340929143">Objaśnienie</translation>
 <translation id="3975565978598857337">Nie udało się połączyć z serwerem obszaru</translation>
 <translation id="3976108569178263973">Brak dostępnych drukarek.</translation>
+<translation id="3976453919940566636"><ph name="EXTENSION_NAME" /> żąda dodatkowych uprawnień</translation>
 <translation id="397703832102027365">Kończę...</translation>
 <translation id="3977886311744775419">W sieci tego typu aktualizacje nie są pobierane automatycznie, możesz jednak sprawdzić ręcznie, czy są dostępne.</translation>
 <translation id="3978325380690188371">Gdy włączony jest ChromeVox, klawisze trwałe są niedostępne.</translation>
@@ -7519,6 +7520,7 @@ Aby pomniejszyć, naciśnij Ctrl + Alt + zmniejsz jasność.</translation>
 <translation id="6164393601566177235">Dodaj witryny</translation>
 <translation id="6164832038898943453">Dodaj języki, które mają być tłumaczone automatycznie</translation>
 <translation id="6165508094623778733">Dowiedz się więcej</translation>
+<translation id="6168969225840255250">Może:</translation>
 <translation id="6169040057125497443">Sprawdź mikrofon.</translation>
 <translation id="6169967265765719844">Uprawnieniami gier i aplikacji zainstalowanych za pomocą aplikacji Steam można zarządzać w <ph name="LINK_BEGIN" />jej ustawieniach<ph name="LINK_END" />.</translation>
 <translation id="6170313103929479668">Uporządkuj widok podzielony</translation>

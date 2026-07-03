@@ -4438,6 +4438,7 @@ Anda dapat mengelola setelan akun ini dengan menginstal aplikasi Family Link di 
 <translation id="3975201861340929143">Penjelasan</translation>
 <translation id="3975565978598857337">Menghubungi server untuk area yang gagal</translation>
 <translation id="3976108569178263973">Tidak ada printer yang tersedia.</translation>
+<translation id="3976453919940566636">"<ph name="EXTENSION_NAME" />" telah meminta izin tambahan</translation>
 <translation id="397703832102027365">Mengakhiri...</translation>
 <translation id="3977886311744775419">Update otomatis tidak didownload pada jenis jaringan ini, namun Anda dapat memeriksa update secara manual.</translation>
 <translation id="3978325380690188371">Tombol lekat tidak tersedia saat ChromeVox diaktifkan</translation>
@@ -7555,6 +7556,7 @@ Anda dapat menetapkan beberapa tombol akses untuk tindakan ini.</translation>
 <translation id="6164393601566177235">Tambahkan situs</translation>
 <translation id="6164832038898943453">Tambahkan bahasa ke daftar bahasa yang otomatis diterjemahkan</translation>
 <translation id="6165508094623778733">Pelajari selengkapnya</translation>
+<translation id="6168969225840255250">Ekstensi tersebut dapat:</translation>
 <translation id="6169040057125497443">Harap periksa mikrofon Anda.</translation>
 <translation id="6169967265765719844">Izin untuk game dan aplikasi yang diinstal melalui Steam dapat dikelola di <ph name="LINK_BEGIN" />setelan aplikasi Steam<ph name="LINK_END" />.</translation>
 <translation id="6170313103929479668">Atur tampilan terpisah</translation>

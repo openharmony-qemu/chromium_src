@@ -4438,6 +4438,7 @@ Bạn có thể quản lý các tùy chọn cài đặt của tài khoản này 
 <translation id="3975201861340929143">Thông tin giải thích</translation>
 <translation id="3975565978598857337">Không kết nối được với máy chủ của vùng</translation>
 <translation id="3976108569178263973">Không có máy in nào.</translation>
+<translation id="3976453919940566636">"<ph name="EXTENSION_NAME" />" đã yêu cầu thêm quyền</translation>
 <translation id="397703832102027365">Đang hoàn tất...</translation>
 <translation id="3977886311744775419">Các bản cập nhật tự động không tải xuống trên loại mạng này, nhưng bạn có thể kiểm tra các bản cập nhật theo cách thủ công.</translation>
 <translation id="3978325380690188371">Bạn không thể sử dụng phím cố định khi đang bật ChromeVox</translation>
@@ -7555,6 +7556,7 @@ Bạn có thể gán nhiều công tắc cho thao tác này.</translation>
 <translation id="6164393601566177235">Thêm trang web</translation>
 <translation id="6164832038898943453">Thêm ngôn ngữ cần tự động dịch</translation>
 <translation id="6165508094623778733">Tìm hiểu thêm</translation>
+<translation id="6168969225840255250">Tiện ích mở rộng này có thể:</translation>
 <translation id="6169040057125497443">Vui lòng kiểm tra micrô của bạn.</translation>
 <translation id="6169967265765719844">Bạn có thể quản lý quyền cho trò chơi và ứng dụng cài đặt qua Steam trong phần <ph name="LINK_BEGIN" />cài đặt ứng dụng Steam<ph name="LINK_END" />.</translation>
 <translation id="6170313103929479668">Sắp xếp chế độ xem chia đôi màn hình</translation>

@@ -4417,6 +4417,7 @@
 <translation id="3975201861340929143">説明</translation>
 <translation id="3975565978598857337">レルムのサーバーに接続できませんでした</translation>
 <translation id="3976108569178263973">利用できるプリンタがありません。</translation>
+<translation id="3976453919940566636">「<ph name="EXTENSION_NAME" />」が追加の権限を求めています</translation>
 <translation id="397703832102027365">最終処理中...</translation>
 <translation id="3977886311744775419">このネットワーク タイプでは自動更新はダウンロードされませんが、手動で更新を確認できます。</translation>
 <translation id="3978325380690188371">ChromeVox が有効になっている場合、固定キーは利用できません</translation>
@@ -7527,6 +7528,7 @@
 <translation id="6164393601566177235">サイトの追加</translation>
 <translation id="6164832038898943453">自動翻訳する言語を追加</translation>
 <translation id="6165508094623778733">詳細</translation>
+<translation id="6168969225840255250">以下が可能になります。</translation>
 <translation id="6169040057125497443">マイクを確認してください。</translation>
 <translation id="6169967265765719844">Steam 経由でインストールしたゲームやアプリの権限は、<ph name="LINK_BEGIN" />Steam アプリの設定<ph name="LINK_END" />で管理できます。</translation>
 <translation id="6170313103929479668">分割表示を変更</translation>

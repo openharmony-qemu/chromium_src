@@ -4437,6 +4437,7 @@
 <translation id="3975201861340929143">ຄຳອະທິບາຍ</translation>
 <translation id="3975565978598857337">ການຕິດຕໍ່ຫາເຊີບເວີສຳລັບ realm ບໍ່ສຳເລັດ</translation>
 <translation id="3976108569178263973">ບໍ່ມີເຄື່ອງພິມທີ່ສາມາດໃຊ້ໄດ້.</translation>
+<translation id="3976453919940566636">"<ph name="EXTENSION_NAME" />" ໄດ້ຂໍການອະນຸຍາດເພີ່ມເຕີມແລ້ວ</translation>
 <translation id="397703832102027365">ກໍາລັງເຮັດໃຫ້ແລ້ວ...</translation>
 <translation id="3977886311744775419">ການດາວໂຫຼດອັດຕະໂນມັດບໍ່ດາວໂຫຼດໃນເຄືອຂ່າຍປະເພດນີ້, ແຕ່ທ່ານສາມາດກວດຫາການອັບເດດດ້ວຍຕົນເອງໄດ້.</translation>
 <translation id="3978325380690188371">ປຸ່ມກົດຄ້າງບໍ່ມີໃຫ້ໃຊ້ເມື່ອ ChromeVox ເປີດຢູ່</translation>
@@ -7553,6 +7554,7 @@
 <translation id="6164393601566177235">ເພີ່ມເວັບໄຊ</translation>
 <translation id="6164832038898943453">ເພີ່ມພາສາເພື່ອແປພາສາໂດຍອັດຕະໂນມັດ</translation>
 <translation id="6165508094623778733">ສຶກສາ​ເພີ່ມ​ເຕີມ</translation>
+<translation id="6168969225840255250">ມັນອາດ:</translation>
 <translation id="6169040057125497443">ກະລຸນາກວດເບິ່ງໄມໂຄຣໂຟນຂອງທ່ານ.</translation>
 <translation id="6169967265765719844">ການອະນຸຍາດສຳລັບເກມ ແລະ ແອັບທີ່ຕິດຕັ້ງຜ່ານ Steam ແມ່ນສາມາດຈັດການໄດ້ໃນ <ph name="LINK_BEGIN" />ການຕັ້ງຄ່າແອັບ Steam<ph name="LINK_END" />.</translation>
 <translation id="6170313103929479668">ຈັດຮຽງມຸມມອງແຍກ</translation>

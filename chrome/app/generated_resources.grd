@@ -5301,6 +5301,9 @@ are declared in tools/grit/grit_args.gni.
       <message name="IDS_EXTENSION_PERMISSIONS_PROMPT_TITLE" desc="Titlebar of the extension or app permissions prompt. Asks the user if they want to grant the permissions to the particular extension or app.">
         "<ph name="EXTENSION_NAME">$1<ex>Gmail Checker</ex></ph>" has requested additional permissions.
       </message>
+      <message name="IDS_EXTENSION_PERMISSIONS_PROMPT_TITLE_V2" desc="Titlebar of the extension or app permissions prompt. Asks the user if they want to grant the permissions to the particular extension or app.">
+        "<ph name="EXTENSION_NAME">$1<ex>Gmail Checker</ex></ph>" has requested additional permissions
+      </message>
       <message name="IDS_EXTENSION_REMOTE_INSTALL_PROMPT_TITLE" desc="Titlebar of the extension or app installation prompt. Asks the user if they want to enable a particular extension or app that was installed remotely.">
         Enable "<ph name="EXTENSION_NAME">$1<ex>Gmail Checker</ex></ph>"?
       </message>
@@ -5379,6 +5382,9 @@ are declared in tools/grit/grit_args.gni.
         It can now:
       </message>
       <message name="IDS_EXTENSION_PROMPT_WANTS_ACCESS_TO" desc="Second line in the content area of the extension or app permissions prompt. Note that the exact wording is important. This should mean that the extension _wants to_ access the listed privileges, but not necessarily that it will or needs to. This message appeared because the user must approve new permissions of the extension or app.">
+        It could:
+      </message>
+      <message name="IDS_EXTENSION_PROMPT_WANTS_ACCESS_TO_V2" desc="Second line in the content area of the extension or app permissions prompt. Note that the exact wording is important. This should mean that the extension _wants to_ access the listed privileges, but not necessarily that it will or needs to. This message appeared because the user must approve new permissions of the extension or app." meaning="V2">
         It could:
       </message>
       <message name="IDS_EXTENSION_PROMPT_CAN_ACCESS" desc="Second line in the content area of the extension or app permissions view dialog. Note that the exact wording is important. This should mean that the extension _can now_ access the listed privileges, because it has already been installed. This message appeared because the user must approve new permissions of the extension or app.">

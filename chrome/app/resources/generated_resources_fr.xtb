@@ -4424,6 +4424,7 @@ Souhaitez-vous lancer <ph name="CONTROL_PANEL_APPLET_NAME" /> ?</translation>
 <translation id="3975201861340929143">Explication</translation>
 <translation id="3975565978598857337">Échec de la tentative de contact du serveur correspondant à ce domaine</translation>
 <translation id="3976108569178263973">Aucune imprimante n'est disponible.</translation>
+<translation id="3976453919940566636">"<ph name="EXTENSION_NAME" />" a demandé des autorisations supplémentaires</translation>
 <translation id="397703832102027365">Finalisation en cours…</translation>
 <translation id="3977886311744775419">Les mises à jour automatiques ne sont pas téléchargées sur ce type de réseau. Cependant, vous pouvez rechercher les mises à jour manuellement.</translation>
 <translation id="3978325380690188371">Touches rémanentes non disponibles quand ChromeVox est activé</translation>
@@ -7540,6 +7541,7 @@ Assurez-vous de ne pas dévoiler d'informations sensibles.</translation>
 <translation id="6164393601566177235">Ajouter des sites</translation>
 <translation id="6164832038898943453">Ajoutez des langues à traduire automatiquement</translation>
 <translation id="6165508094623778733">En savoir plus</translation>
+<translation id="6168969225840255250">Pour :</translation>
 <translation id="6169040057125497443">Veuillez vérifier votre micro.</translation>
 <translation id="6169967265765719844">Les autorisations pour les jeux et applis installés via Steam peuvent être gérées dans les <ph name="LINK_BEGIN" />paramètres de l'appli Steam<ph name="LINK_END" />.</translation>
 <translation id="6170313103929479668">Organiser la vue fractionnée</translation>

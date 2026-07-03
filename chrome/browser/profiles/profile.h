@@ -539,6 +539,14 @@ class Profile : public content::BrowserContext {
   bool new_guest_profile_impl_;
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void ClearOffTheRecordProfile(Profile* otr_profile) {
+    if (off_the_record_ == otr_profile) {
+      off_the_record_ = nullptr;
+    }
+  }
+#endif
+
  private:
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   Profile* off_the_record_ = nullptr;

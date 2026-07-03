@@ -1042,6 +1042,9 @@ void ProfileImpl::DestroyOffTheRecordProfile(Profile* otr_profile) {
   CHECK(otr_profile);
   OTRProfileID profile_id = otr_profile->GetOTRProfileID();
   DCHECK(HasOffTheRecordProfile(profile_id));
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  ClearOffTheRecordProfile(otr_profile);
+#endif
   otr_profiles_.erase(profile_id);
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
   // Extensions are only supported on primary OTR profile.

@@ -251,13 +251,27 @@ component("printing") {
     ]
   }
 
-  if (is_linux || is_ohos) {
+  if (is_linux) {
     sources += [
       "printing_context_linux.cc",
       "printing_context_linux.h",
     ]
 
     deps += [ "//ui/linux:linux_ui" ]
+  }
+
+  if(is_ohos) {
+    sources += [
+      "print_settings_initializer_ohos.cc",
+      "print_settings_initializer_ohos.h",
+      "printing_context_ohos.cc",
+      "printing_context_ohos.h",
+    ]
+ 
+    deps += [
+      "//third_party/aki:aki_jsbind",
+      "//printing/backend"
+    ]
   }
 
   if (is_mac) {

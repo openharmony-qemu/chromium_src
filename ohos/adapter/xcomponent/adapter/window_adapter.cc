@@ -54,7 +54,7 @@ static WindowWidgetType ConvertWindowIdToWidgetId(WindowIdType window_id) {
   return std::stoi(window_id_string);
 }
 
-WindowType WindowAdapter::GetWindow(WindowIdType index) {
+NativeWindowType WindowAdapter::GetWindow(WindowIdType index) {
   std::lock_guard<std::mutex> lock_protect(windows_mutex_);
   auto search = windows_.find(index);
   if (search != windows_.end()) {
@@ -80,7 +80,7 @@ WindowIdType WindowAdapter::GetWindowId(const WindowWidgetType index) {
 WindowIdType WindowAdapter::GetWindowIdByNativeWindow(const WindowType window) {
   WindowIdType window_id;
   for (const auto& [index, window_info] : windows_) {
-    if (window_info.window == window) {
+    if (window_info.window && window_info.window->Get() == window) {
       window_id = window_info.window_id;
     }
   }
@@ -91,7 +91,7 @@ WindowWidgetType WindowAdapter::GetWidgetId(const WindowType window) {
   std::lock_guard<std::mutex> lock_protect(windows_mutex_);
   WindowWidgetType widget_id = -1;
   for (const auto& [index, window_info] : windows_) {
-    if (window_info.window == window) {
+    if (window_info.window && window_info.window->Get() == window) {
       widget_id = window_info.widget_id;
     }
   }
@@ -102,7 +102,8 @@ void WindowAdapter::AddWindow(WindowIdType index, WindowType window) {
   std::lock_guard<std::mutex> lock_protect(windows_mutex_);
 
   WindowInfo window_info;
-  window_info.window = window;
+  window_info.window =
+    std::make_shared<NativeWindowWrapper>((OHNativeWindow*)window);
   window_info.window_id = index;
   window_info.widget_id = ConvertWindowIdToWidgetId(index);
   windows_.emplace(index, window_info);
@@ -134,7 +135,7 @@ void WindowAdapter::SetWindowWidget(WindowType window,
   std::lock_guard<std::mutex> lock_protect(windows_mutex_);
 
   for (auto& [index, window_info] : windows_) {
-    if (window_info.window == window) {
+    if (window_info.window && window_info.window->Get() == window) {
       window_info.widget_id = widget_id;
     }
   }
@@ -229,8 +230,10 @@ CrossProcessSyncResult WindowAdapter::SyncWindowToGpuProcess() {
 
   std::vector<std::pair<std::string, void*>> windows;
   for (auto& [window_id, window_info] : windows_) {
-    windows.emplace_back(
-        std::pair<std::string, void*>(window_id, window_info.window));
+    if (window_info.window && window_info.window->IsValid()) {
+      windows.emplace_back(
+          std::pair<std::string, void*>(window_id, window_info.window->Get()));
+    }
   }
   if (ohos::adapter::multiprocess::GpuNativeProcessHost::GetInstance()
       .InitializeWindowAdapter(windows) != 0) {

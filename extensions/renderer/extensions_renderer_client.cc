@@ -152,11 +152,13 @@ bool ExtensionsRendererClient::AllowPopup() {
     case mojom::ContextType::kLockscreenExtension:
       return false;
     case mojom::ContextType::kPrivilegedExtension:
-      return !current_context->IsForServiceWorker();
+      return !current_context->IsForServiceWorker() &&
+             current_context->extension()->is_extension();
     case mojom::ContextType::kContentScript:
       return true;
     case mojom::ContextType::kPrivilegedWebPage:
-      return current_context->web_frame()->IsOutermostMainFrame();
+      return current_context->web_frame()->IsOutermostMainFrame() &&
+             current_context->extension()->is_hosted_app();
   }
 }
 

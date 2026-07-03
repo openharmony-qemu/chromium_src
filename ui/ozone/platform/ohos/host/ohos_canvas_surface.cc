@@ -79,8 +79,8 @@ void OhosCanvasSurface::PresentCanvas(const gfx::Rect& damage) {
     return;
   }
 
-  window_ = (OHNativeWindow*)util::GetWindowFromWidget(widget_);
-  if (window_ == nullptr) {
+  auto window = util::GetWindowFromWidget(widget_);
+  if (window == nullptr || !window->IsValid()) {
     LOG(ERROR) << "OhosCanvasSurface::PresentCanvas window null";
     return;
   }
@@ -95,7 +95,7 @@ void OhosCanvasSurface::PresentCanvas(const gfx::Rect& damage) {
   }
 
   int32_t code = SET_BUFFER_GEOMETRY;
-  int ret = OH_NativeWindow_NativeWindowHandleOpt((OHNativeWindow*)window_,
+  int ret = OH_NativeWindow_NativeWindowHandleOpt(window->Get(),
                                                   code,
                                                   width_,
                                                   height_);
@@ -103,7 +103,7 @@ void OhosCanvasSurface::PresentCanvas(const gfx::Rect& damage) {
   OHNativeWindowBuffer* nativeWindowBuffer = nullptr;
   int fenceFd = -1;
   ret = OH_NativeWindow_NativeWindowRequestBuffer(
-      (OHNativeWindow*)window_, &nativeWindowBuffer, &fenceFd);
+      window->Get(), &nativeWindowBuffer, &fenceFd);
   if (ret != 0) {
     LOG(ERROR) << "OH_NativeWindow_NativeWindowRequestBuffer fail ret=" << ret;
     return;
@@ -116,7 +116,7 @@ void OhosCanvasSurface::PresentCanvas(const gfx::Rect& damage) {
   uint32_t width = UINT32_MAX;
   uint32_t height = UINT32_MAX;
   code = GET_BUFFER_GEOMETRY;
-  ret = OH_NativeWindow_NativeWindowHandleOpt((OHNativeWindow*)window_,
+  ret = OH_NativeWindow_NativeWindowHandleOpt(window->Get(),
                                               code,
                                               &height,
                                               &width);
@@ -154,7 +154,7 @@ void OhosCanvasSurface::PresentCanvas(const gfx::Rect& damage) {
   }
  
   Region region{nullptr, 0};
-  OH_NativeWindow_NativeWindowFlushBuffer((OHNativeWindow*)window_,
+  OH_NativeWindow_NativeWindowFlushBuffer(window->Get(),
                                           nativeWindowBuffer, fenceFd, region);
   if (munmap(mappedAddr, bufferHandle->size) < 0) {
     LOG(ERROR) << ("munmap failed");

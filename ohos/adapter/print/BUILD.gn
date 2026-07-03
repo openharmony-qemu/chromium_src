@@ -29,6 +29,8 @@ import("//build/config/ohos/config.gni")
 
 component("print") {
   sources = [
+    "ohos_print_common.cc",
+    "ohos_print_common.h",
     "ohos_print_adapter.cc",
     "ohos_print_adapter.h"
   ]

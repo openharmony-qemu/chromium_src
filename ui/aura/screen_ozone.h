@@ -70,7 +70,7 @@ class AURA_EXPORT ScreenOzone : public display::Screen {
       const std::set<gfx::NativeWindow>& ignore,
       const int32_t display_id) override;
   gfx::Point GetCursorScreenPoint(const int32_t display_id) override;
-  void OnDisplayAvailableAreaChange(uint64_t display_id);
+  void OnDisplayAvailableAreaChange(uint64_t display_id) override;
 #endif
 
  protected:

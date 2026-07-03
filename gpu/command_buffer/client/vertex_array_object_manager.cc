@@ -39,6 +39,7 @@ static T RoundUpToMultipleOf4(T size) {
 // an attrib is a client side buffer we pass the info back the user expects.
 
 class GLES2_IMPL_EXPORT VertexArrayObject {
+
  public:
   // Info about Vertex Attributes. This is used to track what the user currently
   // has bound on each Vertex Attribute so we can simulate client side buffers

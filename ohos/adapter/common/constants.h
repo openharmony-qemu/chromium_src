@@ -35,11 +35,11 @@
   { name, 0, func, 0, 0, 0, napi_default, 0 }
 #endif
 
+constexpr const char kCrashPadHandlerType[] = "CrashpadHandler";
+
 enum ProcessType {
-  kMainProcess = 0,
-  kRenderProcess,
-  kCrashpadHandler,
-  kGpuProcess,
+  kChromeMain = 0,
+  kCrashPadHandler,
 };
 
 #endif  // OHOS_ADAPTER_COMMON_CONSTANTS_H_

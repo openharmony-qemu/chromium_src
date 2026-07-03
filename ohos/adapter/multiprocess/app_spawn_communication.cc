@@ -26,122 +26,159 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ * may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "app_spawn_communication.h"
 
+#include <fcntl.h>
+#include <sys/file.h>
 #include <unistd.h>
 
 #include <algorithm>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <utility>
-#include <vector>
 
+#include "fd_remap_types.h"
 #include "ohos/adapter/common/logging.h"
+#include "ohos/adapter/multiprocess/command_line/command_line.h"
+#include "ohos/adapter/multiprocess/global_file_descriptor_mappings.h"
+#include "ohos/adapter/multiprocess/message_helper.h"
 #include "ohos/adapter/multiprocess/scoped_socket.h"
-#include "ohos/adapter/multiprocess/unix_domain_socket_helper.h"
+#include "ohos/adapter/multiprocess/unix_domain_socket.h"
 
 namespace ohos::adapter::multiprocess {
 namespace {
-AppSpawnCommunication::FdRemapVector g_fd_id_remap;
-}
+constexpr const char* kLockFilePath =
+    "/data/storage/el2/base/files/start.sock.lock";
+const std::string kDomainSocketPath = "/data/storage/el2/base/files/start.sock";
+constexpr size_t kLengthHeaderSize = 4;
 
-enum class RequstCommandType {
+enum class RequestCommandType {
   kRequestUnknown = -1,
-  kRequestLength = 1,
-  kRequestData,
-  kRequestEnd
+  kRequestData = 1
 };
 
-const std::vector<RequstCommandType> RequstCommandList = {
-  RequstCommandType::kRequestLength,
-  RequstCommandType::kRequestData,
-  RequstCommandType::kRequestEnd
-};
-
-const int kDefaultBufferSize = 16;
-const std::string kFdRemapCommand = "--fds_to_remap=";
-const std::string kFdSeparator = ",";
-const std::string kCommandSeparator = "#";
-const std::string kDomainSocketPath =
-    "/data/storage/el2/base/files/start.sock";
-
-int RecvRequest(int fd, pid_t pid) {
+bool RecvRequestWithType(int fd, pid_t pid, RequestCommandType& out_type) {
   char buff[8] = {0};
   std::vector<int> ret_fds;
   pid_t ret_pid = -1;
 
-  if (UnixDomainSocketHelper::RecvMsgWithPid(fd,
-                                             buff,
-                                             sizeof(buff),
-                                             ret_fds,
-                                             &ret_pid) == -1) {
-    LOGE("RecvMsgWithPid failed, pid = %{public}d, ret_pid = %{public}d, sizeof(buff) = %{public}lu",
-         pid, ret_pid, sizeof(buff));
-    return -1;
+  if (MessageHelper::RecvMsgWithPid(fd, buff, sizeof(buff), ret_fds,
+                                    &ret_pid) == -1) {
+    LOGE(
+        "RecvMsgWithPid failed, pid = %{public}d, ret_pid = %{public}d, "
+        "sizeof(buff) = %{public}lu",
+        pid, ret_pid, sizeof(buff));
+    return false;
   }
 
   if (pid != ret_pid) {
-    LOGE("pid error, pid = %{public}d, ret_pid = %{public}d",
-         pid, ret_pid);
-    return -1;
+    LOGE("pid error, pid = %{public}d, ret_pid = %{public}d", pid, ret_pid);
+    return false;
   }
 
-  return std::stoi(buff);
-}
-
-std::string BuildSharedFDCommand(
-    const std::vector<std::string>& commands,
-    const AppSpawnCommunication::FdRemapVector& fds,
-    std::vector<int>& share_fds) {
-  std::string shared_fd_command = kFdRemapCommand;
-  for (auto& [rawfd, remap_fd] : fds) {
-    LOGI("HandleRequest fd %{public}d => %{public}d", rawfd, remap_fd);
-    share_fds.push_back(rawfd);
-    shared_fd_command += std::to_string(remap_fd) + kFdSeparator;
+  int cmd_value = 0;
+  memcpy(&cmd_value, buff, sizeof(cmd_value));
+  if (cmd_value != static_cast<int>(RequestCommandType::kRequestData)) {
+    LOGE("%{public}s Invalid command type: %{public}d", __func__, cmd_value);
+    out_type = RequestCommandType::kRequestUnknown;
+    return false;
   }
-  shared_fd_command.pop_back();
-  return shared_fd_command;
-}
 
-void FixInitClientFdForCrashDumpHandler(
-    std::vector<std::string>& cmds,
-    const AppSpawnCommunication::FdRemapVector& id_fds) {
-  std::string init_fd;
-  for (auto& [id, fd] : id_fds) {
-    // refer to content/public/common/content_descriptors.h
-    // id 0, is for crashdump
-    if (id == 0) {
-      init_fd = std::to_string((int)fd);
-      break;
+  out_type = static_cast<RequestCommandType>(cmd_value);
+  return true;
+}
+} // namespace
+
+FileLocker::FileLocker(const std::string& path) {
+  fd_ = open(path.c_str(), O_RDWR | O_CREAT, 0666);
+  if (fd_ >= 0) {
+    if (flock(fd_, LOCK_EX) < 0) {
+      close(fd_);
+      fd_ = -1;
     }
   }
-  for (int i = cmds.size() - 1; i >= 0; i--) {
-    auto cmd = cmds[i];
-    if (cmd.npos != cmd.find("--initial-client-fd=")) {
-      std::string rep("--initial-client-fd=");
-      rep.append(init_fd);
-      cmds[i] = rep;
-      return;
-    }
+}
+
+FileLocker::~FileLocker() {
+  if (fd_ >= 0) {
+    flock(fd_, LOCK_UN);
+    close(fd_);
   }
+}
+
+FileLocker::FileLocker(FileLocker&& other) noexcept
+    : fd_(other.fd_) {
+    other.fd_ = -1;
+}
+
+FileLocker& FileLocker::operator=(FileLocker&& other) noexcept {
+    if (this != &other) {
+        if (fd_ >= 0) {
+            close(fd_);
+        }
+
+        fd_ = other.fd_;
+        other.fd_ = -1;
+    }
+    return *this;
 }
 
 bool AppSpawnCommunication::PrepareHandleRequest(
-    const std::vector<std::string>& commands, const FdRemapVector& fds) {
-  if (!PrepareResponseData(commands, fds)) {
-    LOGE("%{public}s, PrepareResponseData failed", __FUNCTION__);
+    const std::vector<std::string>& commands,
+    const FdRemapVector& fd_mappings) {
+  if (!PrepareResponseData(commands, fd_mappings)) {
+    LOGE("%{public}s, PrepareResponseData failed", __func__);
     return false;
   }
   return PrepareCommunication();
 }
 
 bool AppSpawnCommunication::PrepareResponseData(
-    const std::vector<std::string>& commands, const FdRemapVector& fds) {
+    const std::vector<std::string>& commands,
+    const FdRemapVector& fd_mappings) {
   std::vector<int> share_fds;
-  auto shared_fd_command = BuildSharedFDCommand(commands, fds, share_fds);
-  auto commandlines = BuildCommands(commands, {shared_fd_command});
+  std::string shared_fd_command = CommandLine::BuildFdRemapCommand(fd_mappings);
+  for (auto& [rawfd, remap_fd] : fd_mappings) {
+    LOGI("%{public}s fd %{public}d => %{public}d", __func__, rawfd, remap_fd);
+    share_fds.push_back(rawfd);
+  }
+
+  std::vector<std::string> extra_commands = { "--ohos-args-begin" };
+  if (!shared_fd_command.empty()) {
+    extra_commands.push_back(shared_fd_command);
+  }
+  auto commandlines = CommandLine::Join(commands);
+  commandlines += CommandLine::kArgSeparator;
+  commandlines += CommandLine::Join(extra_commands);
   if (commandlines.size() >
       static_cast<size_t>(std::numeric_limits<int>::max())) {
     LOGE("send data length error");
@@ -153,212 +190,122 @@ bool AppSpawnCommunication::PrepareResponseData(
 }
 
 bool AppSpawnCommunication::PrepareCommunication() {
-  ScopedSocket server_socket =
-      UnixDomainSocketHelper::CreateServerUnixDomainSocket(kDomainSocketPath);
-  if (!server_socket.Valid()) {
-    LOGE("%{public}s, create server socket failed", __FUNCTION__);
+  server_socket_ = UnixDomainSocket::CreateServer(kDomainSocketPath);
+  if (!server_socket_.IsValid()) {
+    LOGE("%{public}s, create server socket failed", __func__);
     return false;
   }
-  if (!UnixDomainSocketHelper::EnableReceiveProcessId(
-          server_socket.GetSocket())) {
-    LOGE("EnableReceiveProcessId Failed");
+  if (!server_socket_.SetPassCredentials(true)) {
+    LOGE("%{public}s SetPassCredentials failed.", __func__);
     return false;
   }
-  this->server_socket_ = std::make_unique<ScopedSocket>(server_socket);
   return true;
 }
 
 bool AppSpawnCommunication::HandleRequestAfterChildProcStart(pid_t child_pid) {
   ScopedSocket cs = this->GetClientSocket();
-  auto commandType = RequstCommandType::kRequestUnknown;
-  bool send_msg_result = false;
-  do {
-    commandType = (RequstCommandType)RecvRequest(cs.GetSocket(), child_pid);
-    switch (commandType) {
-      case RequstCommandType::kRequestLength: {
-        // step 1: Handle Requst Data Length Command and Send Data Length
-        std::string length = std::to_string(this->GetCmdLinesSize());
-        send_msg_result = UnixDomainSocketHelper::SendMsg(cs.GetSocket(),
-                                                          length.data(),
-                                                          length.size(),
-                                                          {});
-        if (!send_msg_result) {
-          LOGE("[%{public}s#%{public}s], send request data failed",
-               __FILE__, __FUNCTION__);
-        }
-        break;
-      }
-      case RequstCommandType::kRequestData:
-        // step 2: Handle Requst Data Command and Send Data
-        send_msg_result = UnixDomainSocketHelper::SendMsg(cs.GetSocket(),
-                                                          this->GetCmdLinesData(),
-                                                          this->GetCmdLinesSize(),
-                                                          this->share_fds_);
-        if (!send_msg_result) {
-          LOGE("[%{public}s#%{public}s], send request data failed",
-               __FILE__, __FUNCTION__);
-        }
-        break;
-      case RequstCommandType::kRequestUnknown:
-        LOGE("[%{public}s#%{public}s] Unknow Request: %{public}d", __FILE__,
-             __FUNCTION__, static_cast<int>(commandType));
-        return false;
-      default:
-        break;
-    }
-  } while (commandType != RequstCommandType::kRequestEnd);
-  return send_msg_result;
+  auto commandType = RequestCommandType::kRequestUnknown;
+
+  if (!RecvRequestWithType(cs.GetSocket(), child_pid, commandType)) {
+    LOGE("%{public}s RecvRequestWithType failed.", __func__);
+    return false;
+  }
+
+  if (commandType != RequestCommandType::kRequestData) {
+    LOGE("%{public}s Invalid request type: %{public}d", __func__,
+         static_cast<int>(commandType));
+    return false;
+  }
+
+  uint32_t data_len = static_cast<uint32_t>(this->GetCmdLinesSize());
+  char length_header[kLengthHeaderSize] = {0};
+  memcpy(length_header, &data_len, sizeof(data_len));
+
+  bool send_length_result = MessageHelper::SendMsg(
+      cs.GetSocket(), length_header, sizeof(length_header), {});
+  if (!send_length_result) {
+    LOGE("%{public}s send length header failed", __func__);
+    return false;
+  }
+
+  bool send_data_result =
+      MessageHelper::SendMsg(cs.GetSocket(), this->GetCmdLinesData(),
+                             this->GetCmdLinesSize(), this->share_fds_);
+  if (!send_data_result) {
+    LOGE("%{public}s send request data failed", __func__);
+  }
+  return send_data_result;
 }
 
+AppSpawnCommunication::AppSpawnCommunication() : file_locker_(kLockFilePath) {}
+
 AppSpawnCommunication::~AppSpawnCommunication() {
-  if (this->server_socket_) {
-    this->server_socket_->Close();
-  }
-  UnixDomainSocketHelper::DeleteFile(kDomainSocketPath);
+  server_socket_.Close();
+  unlink(kDomainSocketPath.c_str());
 }
 
 bool AppSpawnCommunication::RequestCommandline(
-    std::vector<std::string>& commands) {
-  auto remote_fd =
-      UnixDomainSocketHelper::CreateClientUnixDomainSocket(kDomainSocketPath);
+    std::vector<std::string>& commands,
+    multiprocess::FdRemapVector& fd_mappings) {
+  auto remote_socket = UnixDomainSocket::CreateClient(kDomainSocketPath);
+  if (!remote_socket.IsValid()) {
+    LOGE("%{public}s CreateClient failed.", __func__);
+    return false;
+  }
+  int remote_fd = remote_socket.GetFd();
 
-  size_t mem_length = kDefaultBufferSize;
+  int request = static_cast<int>(RequestCommandType::kRequestData);
+  if (!MessageHelper::SendMsg(remote_fd, &request, sizeof(request), {})) {
+    LOGE("%{public}s SendMsg request failed.", __func__);
+    return false;
+  }
+
+  char length_header[kLengthHeaderSize] = {0};
   std::vector<int> fds;
-  for (size_t i = 0; i < RequstCommandList.size(); i++) {
-    auto command = RequstCommandList[i];
-    auto request = std::to_string((int)command);
-    std::vector<char> mem_buf(mem_length);
-    UnixDomainSocketHelper::SendMsg(remote_fd.GetSocket(), request.data(),
-                                    request.size(), {});
-    int recv_result = UnixDomainSocketHelper::KRecvMsgFailed;
-    switch (command) {
-      case RequstCommandType::kRequestLength:
-        // step 1: Requst data length
-        recv_result = UnixDomainSocketHelper::RecvMsg(remote_fd.GetSocket(),
-                                                      &mem_buf[0],
-                                                      mem_length,
-                                                      fds);
-        if (recv_result == UnixDomainSocketHelper::KRecvMsgFailed) {
-          LOGE("receivce data length error, recvMsg failed");
-          remote_fd.Close();
-          return false;
-        }
-        mem_length = std::stoi(&mem_buf[0]) + 1;
-        if (mem_length > static_cast<size_t>(std::numeric_limits<int>::max())) {
-          LOGE("receivce data length error");
-          remote_fd.Close();
-          return false;
-        }
-        break;
-      case RequstCommandType::kRequestData: {
-        // step 2: Requst command data and call dup2
-        recv_result = UnixDomainSocketHelper::RecvMsg(remote_fd.GetSocket(),
-                                                      &mem_buf[0],
-                                                      mem_length,
-                                                      fds);
-        if (recv_result == UnixDomainSocketHelper::KRecvMsgFailed) {
-          LOGE("receivce data error, recvMsg failed");
-          remote_fd.Close();
-          return false;
-        }
-        LOGI("receivce commandlines length: %{public}zu, data: %{public}s",
-              mem_length,
-              &mem_buf[0]);
-        commands = Split(&mem_buf[0], kCommandSeparator);
-        auto fd_map_ids = GetRemapFd(commands);
-        if (fds.size() != fd_map_ids.size()) {
-          LOGE("RequestCommandline fd size not fit, %{public}lu "
-               "%{public}lu",
-               fds.size(),
-               fd_map_ids.size());
-          remote_fd.Close();
-          return false;
-        }
-        for (size_t j = 0; j < fds.size(); j++) {
-          g_fd_id_remap.push_back(std::make_pair(fd_map_ids[j], fds[j]));
-        }
-        FixInitClientFdForCrashDumpHandler(commands, g_fd_id_remap);
-        break;
-      }
-      default:
-        break;
-    }
+  ssize_t recv_result = MessageHelper::RecvMsg(remote_fd, length_header,
+                                               sizeof(length_header), fds);
+  if (recv_result < 0) {
+    LOGE("%{public}s Receive length header failed.", __func__);
+    return false;
   }
-  remote_fd.Close();
+
+  uint32_t data_len = 0;
+  memcpy(&data_len, length_header, sizeof(data_len));
+  if (data_len > static_cast<uint32_t>(std::numeric_limits<int>::max())) {
+    LOGE("%{public}s Invalid data length: %{public}u", __func__, data_len);
+    return false;
+  }
+
+  std::vector<char> data_buf(data_len);
+  recv_result =
+      MessageHelper::RecvMsg(remote_fd, data_buf.data(), data_len, fds);
+  if (recv_result < 0) {
+    LOGE("%{public}s Receive data failed.", __func__);
+    return false;
+  }
+
+  LOGI("%{public}s Receive commandlines length: %{public}u, data: %{public}s",
+       __func__, data_len, data_buf.data());
+
+  commands = CommandLine::Split(std::string(data_buf.data(), data_len),
+                                CommandLine::kArgSeparator);
+  auto fd_ids = GetRemapFd(commands);
+  if (fds.size() != fd_ids.size()) {
+    LOGE(
+        "%{public}s fd size not fit, fds size: %{public}zu ids size: "
+        "%{public}zu",
+        __func__, fds.size(), fd_ids.size());
+    return false;
+  }
+  for (size_t j = 0; j < fds.size(); j++) {
+    fd_mappings.emplace_back(std::make_pair(fds[j], fd_ids[j]));
+  }
+
   return true;
-}
-
-std::string AppSpawnCommunication::BuildCommands(
-    const std::vector<std::string>& commands,
-    const std::vector<std::string>& extra_commands) {
-  const size_t min_commands_size = 1;
-  if (commands.size() < min_commands_size) {
-    return "";
-  }
-  std::stringstream argv_ss;
-  for (size_t i = 0; i < commands.size() - 1; ++i) {
-    argv_ss << commands[i] << kCommandSeparator;
-  }
-  argv_ss << commands[commands.size() - 1];
-  if (extra_commands.size() != 0) {
-    argv_ss << kCommandSeparator;
-  }
-  for (size_t i = 0; i < extra_commands.size() - 1; ++i) {
-    argv_ss << extra_commands[i] << kCommandSeparator;
-  }
-  argv_ss << extra_commands[extra_commands.size() - 1];
-  return argv_ss.str();
-}
-
-std::vector<std::string> AppSpawnCommunication::Split(
-    const std::string& src,
-    const std::string& separator) {
-  const size_t limit = 64;
-  std::vector<std::string> res;
-  if (src.empty()) {
-    return res;
-  }
-  size_t start = 0;
-  size_t end = 0;
-  while (start < src.size() && (limit == 0 || res.size() < limit)) {
-    end = src.find(separator, start);
-    if (end == std::string::npos) {
-      res.push_back(src.substr(start));
-      return res;
-    }
-    res.push_back(src.substr(start, end - start));
-    start = end + separator.length();
-  }
-  return res;
 }
 
 std::vector<int> AppSpawnCommunication::GetRemapFd(
     const std::vector<std::string>& commands) {
-  std::string fd_string;
-  for (size_t i = 0; i < commands.size(); i++) {
-    auto command = commands[i];
-    if (command.starts_with(kFdRemapCommand)) {
-      fd_string = command.substr(kFdRemapCommand.size(),
-                                 command.size() - kFdRemapCommand.size());
-    }
-  }
-  LOGD("fd string %{public}s", fd_string.c_str());
-  auto fs_strs = Split(fd_string, kFdSeparator);
-  std::vector<int> res;
-  for (auto& fd_str : fs_strs) {
-    if (fd_str.empty()) {
-      continue;
-    }
-    res.push_back(std::stoi(fd_str));
-  }
-  return res;
-}
-
-AppSpawnCommunication::FdRemapVector AppSpawnCommunication::GetFdIdsRemap() {
-  return g_fd_id_remap;
-}
-
-void AppSpawnCommunication::SetFdIdsRemap(FdRemapVector& fds) {
-  g_fd_id_remap = fds;
+  return CommandLine::ParseFdRemapIds(commands);
 }
 }  // namespace ohos::adapter::multiprocess

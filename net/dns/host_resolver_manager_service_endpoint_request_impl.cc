@@ -418,6 +418,13 @@ int HostResolverManager::ServiceEndpointRequestImpl::DoResolveLocally() {
     CHECK(parameters_.source != HostResolverSource::LOCAL_ONLY);
   }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  if (base::FeatureList::IsEnabled(
+          network::features::kEnableNwebExHttpDnsFallback)) {
+    MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(results, dns_status);
+  }
+#endif
+
   if (is_stale && stale_allowed_while_refreshing) {
     // Allow using stale results only when there is no network change.
     // TODO(crbug.com/383174960): This also exclude results that are obtained

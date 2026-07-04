@@ -420,8 +420,10 @@ void PictureInPictureControllerImpl::CreateDocumentPictureInPictureWindow(
       WebLocalFrameImpl::FromFrame(opener.GetFrame())->View();
   bool allow_without_activation =
       opener_frame_view->AllowPictureInPictureWithoutUserActivation();
+  // Note that PiP should consume activation in the window creation path, not
+  // here. This keeps PiP gated by generic popup blocking protections.
   if (!allow_without_activation &&
-      !LocalFrame::ConsumeTransientUserActivation(opener.GetFrame())) {
+      !LocalFrame::HasTransientUserActivation(opener.GetFrame())) {
     resolver->RejectWithDOMException(DOMExceptionCode::kNotAllowedError,
                                      "Document PiP requires user activation");
     return;

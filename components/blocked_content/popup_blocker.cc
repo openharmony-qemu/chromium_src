@@ -97,7 +97,8 @@ bool ConsiderForPopupBlocking(WindowOpenDisposition disposition) {
   return disposition == WindowOpenDisposition::NEW_POPUP ||
          disposition == WindowOpenDisposition::NEW_FOREGROUND_TAB ||
          disposition == WindowOpenDisposition::NEW_BACKGROUND_TAB ||
-         disposition == WindowOpenDisposition::NEW_WINDOW;
+         disposition == WindowOpenDisposition::NEW_WINDOW ||
+         disposition == WindowOpenDisposition::NEW_PICTURE_IN_PICTURE;
 }
 
 std::unique_ptr<PopupNavigationDelegate> MaybeBlockPopup(

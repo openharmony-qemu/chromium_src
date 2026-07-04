@@ -36,6 +36,10 @@ namespace dom_distiller {
 
 namespace {
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+const char* kResultKey = "result";
+#endif
+
 // Counts the number of words in the text_content portion, used to record how
 // many words are present for a readability distillation. Note this won't work
 // as well on languages like Chinese where the space separation isn't the
@@ -165,9 +169,20 @@ void DistillerPage::OnDistillationDone(const GURL& page_url,
             *value, distiller_result.get());
         break;
       case DistillerType::kDOMDistiller:
+#if BUILDFLAG(ARKWEB_READER_MODE)
+        if (value->is_dict() && value->GetDict().FindDict(kResultKey) != nullptr) {
+          parsed_successfully = dom_distiller::proto::json::DomDistillerResult::ReadFromValue(
+                base::Value(value->GetDict().FindDict(kResultKey)->Clone()), distiller_result.get());
+        } else {
+          parsed_successfully =
+              dom_distiller::proto::json::DomDistillerResult::ReadFromValue(
+                  *value, distiller_result.get());
+        }
+#else
         parsed_successfully =
             dom_distiller::proto::json::DomDistillerResult::ReadFromValue(
                 *value, distiller_result.get());
+#endif
         break;
     }
 

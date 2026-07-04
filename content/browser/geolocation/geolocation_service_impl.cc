@@ -175,7 +175,7 @@ void GeolocationServiceImpl::CreateGeolocationWithPermissionResult(
   bool has_precise_permission =
       permission_level == GeolocationPermissionLevel::kPrecise;
   geolocation_context_->BindGeolocation(
-      std::move(receiver), requesting_url,
+      std::move(receiver), requesting_origin_,
       device::mojom::GeolocationClientId::kGeolocationServiceImpl,
       has_precise_permission);
   subscription_id_ =

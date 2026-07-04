@@ -48,6 +48,17 @@ StyleRuleKeyframes::StyleRuleKeyframes()
 
 StyleRuleKeyframes::StyleRuleKeyframes(const StyleRuleKeyframes& o) = default;
 
+StyleRuleKeyframes::StyleRuleKeyframes(
+    HeapVector<Member<StyleRuleKeyframe>>&& keyframes,
+    const AtomicString& name,
+    unsigned version,
+    bool is_vendor_prefixed)
+    : StyleRuleBase(kKeyframes),
+      keyframes_(std::move(keyframes)),
+      name_(name),
+      version_(version),
+      is_prefixed_(is_vendor_prefixed) {}
+
 StyleRuleKeyframes::~StyleRuleKeyframes() = default;
 
 void StyleRuleKeyframes::ParserAppendKeyframe(StyleRuleKeyframe* keyframe) {

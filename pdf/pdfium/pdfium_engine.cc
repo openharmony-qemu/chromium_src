@@ -4367,6 +4367,16 @@ void PDFiumEngine::OnSelectionTextChanged() {
   client_->SetSelectedText(GetSelectedText());
 }
 
+#if BUILDFLAG(ARKWEB_PDF)
+bool PDFiumEngine::ShouldSuppressInvalidSelectionPositionForArkWeb(
+    bool has_selection_bounds) const {
+  if (is_finding_result_ || !range_moved_) {
+    return false;
+  }
+  return !has_selection_bounds;
+}
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
 void PDFiumEngine::OnSelectionPositionChanged() {
   // We need to determine the top-left and bottom-right points of the selection
   // in order to report those to the embedder. This code assumes that the
@@ -4381,10 +4391,16 @@ void PDFiumEngine::OnSelectionPositionChanged() {
     return;
   }
   gfx::Rect clipped_selection_bounds(0, 0, 0, 0);
+  bool has_selection_bounds = true;
   // When searching for results, do not calculate the selection position to
   // hide the menu and handles.
   if (!is_finding_result_) {
-    UpdateSelectionBoundsAndPositions(left, right, clipped_selection_bounds, selection_);
+    has_selection_bounds = UpdateSelectionBoundsAndPositions(
+      left, right, clipped_selection_bounds, selection_);
+  }
+  if (ShouldSuppressInvalidSelectionPositionForArkWeb(has_selection_bounds)) {
+    LOG(DEBUG) << __func__ << ", suppress invalid selection position while dragging.";
+    return;
   }
 #else
   for (const auto& sel : selection_) {

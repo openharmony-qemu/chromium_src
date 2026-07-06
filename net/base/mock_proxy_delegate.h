@@ -145,6 +145,10 @@ class MockProxyDelegate : public ProxyDelegate {
               IsFallbackProxyServer,
               (const net::ProxyChain& proxy_chain),
               (override));
+  MOCK_METHOD(bool,
+              IsAccelerateProxyConfig,
+              (),
+              (override));
 #endif
 };
 

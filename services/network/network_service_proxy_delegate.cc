@@ -191,6 +191,7 @@ void NetworkServiceProxyDelegate::OnResolveProxy(
         fallback_proxy_status_ == net::FallbackProxyStatus::NORMAL) {
       result->set_used_fallback_proxy(true);
     }
+    result->set_is_accelerate_proxy(proxy_config_->is_accelerate_proxy);
 #endif
   }
 }

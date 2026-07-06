@@ -2024,6 +2024,7 @@ int HttpCache::Transaction::DoSendRequestComplete(int result) {
     response_.used_fallback_proxy = response->used_fallback_proxy;
     response_.fallback_proxy_response_code =
         response->fallback_proxy_response_code;
+    response_.is_accelerate_proxy = response->is_accelerate_proxy;
   }
 #endif
 

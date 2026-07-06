@@ -922,6 +922,11 @@ class CONTENT_EXPORT RenderProcessHost : public IPC::Listener,
     {RenderType::kWebUI, 0},
   };
 #endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_DFX) && BUILDFLAG(ARKWEB_NWEB_EX)
+  virtual base::TimeTicks GetChildProcessStartTime() const = 0;
+#endif
+
 };
 
 }  // namespace content

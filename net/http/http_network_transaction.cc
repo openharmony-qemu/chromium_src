@@ -2710,6 +2710,7 @@ void HttpNetworkTransaction::SetProxyInfoInResponse(
 
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   response_info->used_fallback_proxy = proxy_info.used_fallback_proxy();
+  response_info->is_accelerate_proxy = proxy_info.is_accelerate_proxy();
 #endif
 }
 

@@ -92,6 +92,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkServiceProxyDelegate
   int GetProxyTunnelTimeout() override;
   net::FallbackProxyStatus GetFallbackProxyStatus() override;
   bool IsFallbackProxyServer(const net::ProxyChain& proxy_chain) override;
+  bool IsAccelerateProxyConfig() override;
 #endif
   bool AliasRequiresProxyOverride(
       const std::string scheme,

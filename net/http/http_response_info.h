@@ -180,6 +180,7 @@ class NET_EXPORT HttpResponseInfo {
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   bool used_fallback_proxy{false};
   int fallback_proxy_response_code{0};
+  bool is_accelerate_proxy{false};
 #endif
 
 #if BUILDFLAG(IS_ARKWEB_EXT) // BUILDFLAG(ARKWEB_EXT_NAVIGATION)

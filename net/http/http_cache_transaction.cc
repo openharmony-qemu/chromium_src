@@ -3084,6 +3084,7 @@ ValidationType HttpCache::Transaction::RequiresValidation() {
                           response_.request_time, response_.response_time,
                           cache_->clock_->Now());
 
+#if BUILDFLAG(IS_ARKWEB)
   base::TimeDelta response_time_in_cache =
       cache_->clock_->Now() - response_.response_time;
 
@@ -3101,6 +3102,7 @@ ValidationType HttpCache::Transaction::RequiresValidation() {
       return VALIDATION_NONE;
     }
   }
+#endif
   
   if (validate_flag) {
     return VALIDATION_SYNCHRONOUS;

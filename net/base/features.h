@@ -343,9 +343,11 @@ NET_EXPORT BASE_DECLARE_FEATURE(kAvoidEntryCreationForNoStore);
 NET_EXPORT extern const base::FeatureParam<int>
     kAvoidEntryCreationForNoStoreCacheSize;
 
+#if BUILDFLAG(IS_ARKWEB)
 // Prefetch to follow normal semantics instead of 5-minute rule
 // https://crbug.com/1345207
 NET_EXPORT BASE_DECLARE_FEATURE(kPrefetchFollowsNormalCacheSemantics);
+#endif
 
 // A flag for new Kerberos feature, that suggests new UI
 // when Kerberos authentication in browser fails on ChromeOS.

@@ -140,7 +140,7 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
   mutable base::Lock dns_server_lock_;
   std::vector<std::string> dns_servers_;
 #endif
-  bool vpn_in_place_{false};
+  std::atomic<bool> vpn_in_place_{false};
 #if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   std::vector<std::string> addr_list_for_binded_network_;
   std::vector<std::string> default_address_list_;

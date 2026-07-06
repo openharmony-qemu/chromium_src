@@ -3696,6 +3696,7 @@ Puoi gestire le impostazioni dell'account installando l'app Family Link su quest
 <translation id="3514335087372914653">Controllo dei giochi</translation>
 <translation id="3514647716686280777">È attiva la protezione standard. Per aumentare la protezione da estensioni, download e siti web pericolosi, attiva Navigazione sicura avanzata nelle impostazioni di Chrome.</translation>
 <translation id="3514681096978190000">Questo file di archivio include altri file che potrebbero nascondere malware</translation>
+<translation id="3515335817498313144">{NUM_EXTENSIONS,plural, =1{{NUM_EXTENSIONS} estensione nella lista bloccati rimossa}other{{NUM_EXTENSIONS} estensioni nella lista bloccati rimosse}}</translation>
 <translation id="3515983984924808886">Tocca nuovamente il token di sicurezza per confermare la reimpostazione. Tutte le informazioni memorizzate sul token di sicurezza, nonché il suo PIN, verranno eliminate.</translation>
 <translation id="3518866566087677312">Aggiungi ai preferiti i contenuti a cui vuoi tornare in un secondo momento</translation>
 <translation id="3519014757432845220">Contribuisci a migliorare la protezione antispam condividendo con Google i contenuti delle notifiche e l'URL del sito. I contenuti potrebbero essere esaminati da persone.</translation>
@@ -4519,6 +4520,7 @@ Puoi gestire le impostazioni dell'account installando l'app Family Link su quest
 <translation id="4042941173059740150">Continua su <ph name="SITE_ETLD_PLUS_ONE" /> con <ph name="IDENTITY_PROVIDER_ETLD_PLUS_ONE" /></translation>
 <translation id="4043267180218562935">Dimensioni cursore</translation>
 <translation id="4043620984511647481">Aggiungi manualmente stampante</translation>
+<translation id="404470635103712779">{NUM_EXTENSIONS,plural, =1{Rilevata {NUM_EXTENSIONS} estensione nella lista bloccati}other{Rilevate {NUM_EXTENSIONS} estensioni nella lista bloccati}}</translation>
 <translation id="4044708573046946214">Password del blocco schermo</translation>
 <translation id="4044883420905480380">Hai effettuato il collegamento alla rete Wi-Fi e hai eseguito l'accesso a <ph name="USER_EMAIL" /> usando il tuo smartphone Android</translation>
 <translation id="404493185430269859">Motore di ricerca predefinito</translation>
@@ -6644,6 +6646,7 @@ Puoi assegnare più sensori a questa azione.</translation>
 <translation id="5532223876348815659">Generali</translation>
 <translation id="5533001281916885985"><ph name="SITE_NAME" /> vorrebbe</translation>
 <translation id="5533343601674003130">Servizio PDF</translation>
+<translation id="5534604768231683173">{NUM_EXTENSIONS,plural, =1{Questa estensione è stata disabilitata automaticamente e non può essere riattivata perché è nella lista bloccati.}other{Queste estensioni sono state disabilitate automaticamente e non possono essere riattivate perché sono nella lista bloccati.}}</translation>
 <translation id="5535769176698670170">Passa alla visualizzazione dall'alto</translation>
 <translation id="5537725057119320332">Trasmetti</translation>
 <translation id="5539070192556911367">Impossibile accedere a Google</translation>
@@ -11483,6 +11486,7 @@ Potrebbero essere incluse informazioni su software installati, file, browser, si
 <translation id="8861568709166518036">Utilizza i pulsanti sullo schermo per andare alla schermata Home, tornare indietro e cambiare app. Si attiva automaticamente se ChromeVox o i clic automatici sono attivi.</translation>
 <translation id="8862171793076850931">Autorizzazione a trasmettere rifiutata. Apri un articolo del Centro assistenza in una nuova scheda per saperne di più.</translation>
 <translation id="8863753581171631212">Apri link in nuova finestra di <ph name="APP" /></translation>
+<translation id="8863852141506257401">Non attiva · Disabilitata dalla lista bloccati</translation>
 <translation id="8864055848767439877">Condivisione di <ph name="TAB_NAME" /> con <ph name="APP_NAME" /></translation>
 <translation id="8864104359314908853">La password è stata salvata</translation>
 <translation id="8864458770072227512">L'account <ph name="EMAIL" /> è stato rimosso da questo dispositivo</translation>

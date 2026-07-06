@@ -3692,6 +3692,7 @@
 <translation id="3514335087372914653">游戏控制</translation>
 <translation id="3514647716686280777">Chrome 正在为您提供标准安全保护。为了进一步防范危险的网站、下载内容和扩展程序，请在 Chrome 设置中开启“增强型安全浏览”功能。</translation>
 <translation id="3514681096978190000">此归档文件包含可能隐藏恶意软件的其他文件</translation>
+<translation id="3515335817498313144">{NUM_EXTENSIONS,plural, =1{已删除 {NUM_EXTENSIONS} 个黑名单扩展程序}other{已删除 {NUM_EXTENSIONS} 个黑名单扩展程序}}</translation>
 <translation id="3515983984924808886">请再次轻触安全密钥以确认重置。安全密钥上存储的所有信息（包括它的 PIN 码）都会被删除。</translation>
 <translation id="3518866566087677312">为您暂不需要的内容添加书签以备后用</translation>
 <translation id="3519014757432845220">与 Google 分享通知内容和网站网址，帮助我们改进垃圾信息防范功能。您分享的内容可能会经过人工审核。</translation>
@@ -4516,6 +4517,7 @@
 <translation id="4043267180218562935">光标大小</translation>
 <translation id="4043620984511647481">手动添加打印机</translation>
 <translation id="4044017060430402757">确认</translation>
+<translation id="404470635103712779">{NUM_EXTENSIONS,plural, =1{检测到 {NUM_EXTENSIONS} 个被黑名单禁用的扩展程序}other{检测到 {NUM_EXTENSIONS} 个被黑名单禁用的扩展程序}}</translation>
 <translation id="4044708573046946214">屏幕锁定密码</translation>
 <translation id="4044883420905480380">您已使用 Android 手机连接到 Wi-Fi 并以 <ph name="USER_EMAIL" /> 的身份登录</translation>
 <translation id="404493185430269859">默认搜索引擎</translation>
@@ -6642,6 +6644,7 @@
 <translation id="5532223876348815659">全局</translation>
 <translation id="5533001281916885985"><ph name="SITE_NAME" /> 想要</translation>
 <translation id="5533343601674003130">PDF 服务</translation>
+<translation id="5534604768231683173">{NUM_EXTENSIONS,plural, =1{这些扩展程序已被列入黑名单，系统已自动禁用，且无法重新开启。}other{这些扩展程序已被列入黑名单，系统已自动禁用，且无法重新开启。}}</translation>
 <translation id="5535769176698670170">与顶部视图交换</translation>
 <translation id="5537725057119320332">投放</translation>
 <translation id="5539070192556911367">无法连接到 Google</translation>
@@ -11488,6 +11491,7 @@
 <translation id="8861568709166518036">使用屏幕按钮转到主屏幕、返回以及切换应用。如果开启了 ChromeVox 或自动点击功能，系统会自动开启此设置。</translation>
 <translation id="8862171793076850931">投放权限遭拒。在新标签页中打开帮助中心文章，了解详情。</translation>
 <translation id="8863753581171631212">在<ph name="APP" />的新窗口中打开链接</translation>
+<translation id="8863852141506257401">已关闭 • 已被黑名单禁用</translation>
 <translation id="8864055848767439877">正在与 <ph name="APP_NAME" /> 共享“<ph name="TAB_NAME" />”</translation>
 <translation id="8864104359314908853">您的密码已保存</translation>
 <translation id="8864458770072227512"><ph name="EMAIL" /> 已从此设备中移除</translation>

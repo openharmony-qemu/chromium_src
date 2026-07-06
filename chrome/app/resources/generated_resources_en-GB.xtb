@@ -3715,6 +3715,7 @@ You can manage this account’s settings by installing the Family Link app on yo
 <translation id="3514335087372914653">Game control</translation>
 <translation id="3514647716686280777">You're getting standard security protection. To get more protection against dangerous websites, downloads and extensions, turn on Enhanced Safe Browsing in Chrome settings.</translation>
 <translation id="3514681096978190000">This archive file includes other files that may hide malware</translation>
+<translation id="3515335817498313144">{NUM_EXTENSIONS,plural, =1{Removed {NUM_EXTENSIONS} blocklisted extension}other{Removed {NUM_EXTENSIONS} blocklisted extensions}}</translation>
 <translation id="3515983984924808886">Touch your security key again to confirm reset. All information stored on the security key, including its PIN, will be deleted.</translation>
 <translation id="3518866566087677312">Bookmark things you want to come back to later</translation>
 <translation id="3519014757432845220">Help improve spam protection by sharing notification content and the site's URL with Google. Content may be reviewed by humans.</translation>
@@ -4540,6 +4541,7 @@ You can manage this account’s settings by installing the Family Link app on yo
 <translation id="4043267180218562935">Cursor size</translation>
 <translation id="4043620984511647481">Add printer manually</translation>
 <translation id="4044017060430402757">Confirm</translation>
+<translation id="404470635103712779">{NUM_EXTENSIONS,plural, =1{{NUM_EXTENSIONS} blocklisted extension detected}other{{NUM_EXTENSIONS} blocklisted extensions detected}}</translation>
 <translation id="4044708573046946214">Screen lock password</translation>
 <translation id="4044883420905480380">You connected to Wi-Fi and signed in to <ph name="USER_EMAIL" /> using your Android phone</translation>
 <translation id="404493185430269859">Default search engine</translation>
@@ -6668,6 +6670,7 @@ You can assign multiple switches to this action.</translation>
 <translation id="5532223876348815659">Global</translation>
 <translation id="5533001281916885985"><ph name="SITE_NAME" /> wants to</translation>
 <translation id="5533343601674003130">PDF service</translation>
+<translation id="5534604768231683173">{NUM_EXTENSIONS,plural, =1{This extension has been automatically disabled and cannot be turned on again because it is on the blocklist.}other{These extensions have been automatically disabled and cannot be turned on again because they are on the blocklist.}}</translation>
 <translation id="5535769176698670170">Swap with top view</translation>
 <translation id="5537725057119320332">Cast</translation>
 <translation id="5539070192556911367">Can't reach Google</translation>
@@ -11517,6 +11520,7 @@ This can include information about installed software, files, your browser, the 
 <translation id="8861568709166518036">Use on-screen buttons to navigate home, back and switch apps. Turns on automatically if ChromeVox or automatic clicks is turned on.</translation>
 <translation id="8862171793076850931">Permission to cast is rejected. Open a Help Centre article in a new tab to learn more.</translation>
 <translation id="8863753581171631212">Open link in new <ph name="APP" /></translation>
+<translation id="8863852141506257401">Off · Disabled by blocklist</translation>
 <translation id="8864055848767439877">Sharing <ph name="TAB_NAME" /> to <ph name="APP_NAME" /></translation>
 <translation id="8864104359314908853">Your password is saved</translation>
 <translation id="8864458770072227512"><ph name="EMAIL" /> was removed from this device</translation>

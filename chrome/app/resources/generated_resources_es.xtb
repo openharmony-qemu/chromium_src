@@ -3697,6 +3697,7 @@ Puedes gestionar la configuración de esta cuenta instalando la aplicación Fami
 <translation id="3514335087372914653">Control de juego</translation>
 <translation id="3514647716686280777">Estás usando la protección de seguridad estándar. Para aumentar la protección contra las descargas, las extensiones y los sitios web peligrosos, activa Navegación segura mejorada en la configuración de Chrome.</translation>
 <translation id="3514681096978190000">Este archivo incluye otros archivos que pueden ocultar malware</translation>
+<translation id="3515335817498313144">{NUM_EXTENSIONS,plural, =1{Se ha eliminado {NUM_EXTENSIONS} extensión de la lista de bloqueo}other{Se han eliminado {NUM_EXTENSIONS} extensiones de la lista de bloqueo}}</translation>
 <translation id="3515983984924808886">Vuelve a tocar tu llave de seguridad para confirmar el restablecimiento. Se eliminará toda la información guardada en la llave de seguridad, incluido el PIN.</translation>
 <translation id="3518866566087677312">Añade a marcadores lo que quieras volver a ver más adelante</translation>
 <translation id="3519014757432845220">Ayuda a mejorar la protección contra el spam compartiendo con Google el contenido de la notificación y la URL del sitio. Es posible que el contenido lo revisen personas.</translation>
@@ -4519,6 +4520,7 @@ Puedes gestionar la configuración de esta cuenta instalando la aplicación Fami
 <translation id="4042941173059740150">Sigue usando <ph name="SITE_ETLD_PLUS_ONE" /> con <ph name="IDENTITY_PROVIDER_ETLD_PLUS_ONE" /></translation>
 <translation id="4043267180218562935">Tamaño del cursor</translation>
 <translation id="4043620984511647481">Añadir impresora manualmente</translation>
+<translation id="404470635103712779">{NUM_EXTENSIONS,plural, =1{{NUM_EXTENSIONS} extensión de la lista de bloqueo detectada}other{{NUM_EXTENSIONS} extensiones de la lista de bloqueo detectadas}}</translation>
 <translation id="4044708573046946214">Contraseña de bloqueo de pantalla</translation>
 <translation id="4044883420905480380">Te has conectado a una red Wi-Fi y has iniciado sesión con <ph name="USER_EMAIL" /> usando tu teléfono Android</translation>
 <translation id="404493185430269859">Motor de búsqueda predeterminado</translation>
@@ -6643,6 +6645,7 @@ Puedes asignar esta acción a varios interruptores.</translation>
 <translation id="5532223876348815659">Global</translation>
 <translation id="5533001281916885985"><ph name="SITE_NAME" /> quiere</translation>
 <translation id="5533343601674003130">Servicio de PDF</translation>
+<translation id="5534604768231683173">{NUM_EXTENSIONS,plural, =1{Esta extensión se ha deshabilitado automáticamente y no se puede volver a activar porque está en la lista de bloqueo.}other{Estas extensiones se han deshabilitado automáticamente y no se pueden volver a activar porque están en la lista de bloqueo.}}</translation>
 <translation id="5535769176698670170">Intercambiar con vista superior</translation>
 <translation id="5537725057119320332">Enviar</translation>
 <translation id="5539070192556911367">No se puede acceder a Google</translation>
@@ -11485,6 +11488,7 @@ Puede tratarse de información sobre el software instalado, los archivos, el nav
 <translation id="8861568709166518036">Usa los botones de la pantalla para ir a la pantalla de inicio, volver atrás y cambiar de aplicación. Se habilita automáticamente si se han activado ChromeVox o los clics automáticos.</translation>
 <translation id="8862171793076850931">Se ha rechazado el permiso para enviar contenido. Abre un artículo del Centro de Ayuda en una pestaña nueva para obtener más información.</translation>
 <translation id="8863753581171631212">Abrir enlace en una ventana nueva de <ph name="APP" /></translation>
+<translation id="8863852141506257401">Desactivada · Deshabilitada por lista de bloqueo</translation>
 <translation id="8864055848767439877">Compartiendo <ph name="TAB_NAME" /> con <ph name="APP_NAME" /></translation>
 <translation id="8864104359314908853">Se ha guardado tu contraseña</translation>
 <translation id="8864458770072227512">Se ha eliminado <ph name="EMAIL" /> del dispositivo</translation>

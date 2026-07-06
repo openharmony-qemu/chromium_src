@@ -3678,6 +3678,7 @@ Domena <ph name="DOMAIN" /> wymaga, by karta inteligentna pozostała w gnieźdz
 <translation id="3514335087372914653">Sterowanie grą</translation>
 <translation id="3514647716686280777">Korzystasz ze standardowej ochrony. Aby lepiej chronić się przed niebezpiecznymi stronami, pobieranymi plikami i rozszerzeniami, włącz Ulepszone Bezpieczne przeglądanie w ustawieniach Chrome.</translation>
 <translation id="3514681096978190000">Ten plik archiwum zawiera inne pliki, które mogą ukrywać złośliwe oprogramowanie</translation>
+<translation id="3515335817498313144">{NUM_EXTENSIONS,plural, =1{Usunięto {NUM_EXTENSIONS} rozszerzenie listy zablokowanych}one{Usunięto {NUM_EXTENSIONS} rozszerzenie listy zablokowanych}few{Usunięto {NUM_EXTENSIONS} rozszerzenia listy zablokowanych}many{Usunięto {NUM_EXTENSIONS} rozszerzeń listy zablokowanych}other{Usunięto {NUM_EXTENSIONS} rozszerzenia listy zablokowanych}}</translation>
 <translation id="3515983984924808886">Jeszcze raz dotknij klucza bezpieczeństwa, by potwierdzić resetowanie. Wszystkie informacje zapisane w kluczu, w tym jego kod PIN, zostaną usunięte.</translation>
 <translation id="3518866566087677312">Twórz zakładki do treści, aby wrócić do nich później</translation>
 <translation id="3519014757432845220">Pomóż nam poprawić ochronę przed spamem, udostępniając Google treść powiadomień i adres URL witryny. Treści mogą sprawdzić weryfikatorzy.</translation>
@@ -4499,6 +4500,7 @@ Domena <ph name="DOMAIN" /> wymaga, by karta inteligentna pozostała w gnieźdz
 <translation id="4042941173059740150">Przejdź do witryny <ph name="SITE_ETLD_PLUS_ONE" />, używając: <ph name="IDENTITY_PROVIDER_ETLD_PLUS_ONE" /></translation>
 <translation id="4043267180218562935">Rozmiar kursora</translation>
 <translation id="4043620984511647481">Dodaj drukarkę ręcznie</translation>
+<translation id="404470635103712779">{NUM_EXTENSIONS,plural, =1{Wykryto {NUM_EXTENSIONS} rozszerzenie na liście zablokowanych}one{Wykryto {NUM_EXTENSIONS} rozszerzenie na liście zablokowanych}few{Wykryto {NUM_EXTENSIONS} rozszerzenia na liście zablokowanych}many{Wykryto {NUM_EXTENSIONS} rozszerzeń na liście zablokowanych}other{Wykryto {NUM_EXTENSIONS} rozszerzenia na liście zablokowanych}}</translation>
 <translation id="4044708573046946214">Hasło blokady ekranu</translation>
 <translation id="4044883420905480380">Masz połączenie z Wi-Fi i jesteś zalogowany(-a) na konto <ph name="USER_EMAIL" /> przy użyciu telefonu z Androidem</translation>
 <translation id="404493185430269859">Domyślna wyszukiwarka</translation>
@@ -6622,6 +6624,7 @@ Aby pomniejszyć, naciśnij Ctrl + Alt + zmniejsz jasność.</translation>
 <translation id="5532223876348815659">Globalne</translation>
 <translation id="5533001281916885985"><ph name="SITE_NAME" /> prosi o pozwolenie na:</translation>
 <translation id="5533343601674003130">Usługa PDF</translation>
+<translation id="5534604768231683173">{NUM_EXTENSIONS,plural, =1{To rozszerzenie zostało wyłączone automatycznie i nie można go włączyć ponownie, ponieważ znajduje się na liście zablokowanych.}one{To rozszerzenie zostało wyłączone automatycznie i nie można go włączyć ponownie, ponieważ znajduje się na liście zablokowanych.}few{Te rozszerzenia zostały wyłączone automatycznie i nie można ich włączyć ponownie, ponieważ znajdują się na liście zablokowanych.}many{Te rozszerzenia zostały wyłączone automatycznie i nie można ich włączyć ponownie, ponieważ znajdują się na liście zablokowanych.}other{Te rozszerzenia zostały wyłączone automatycznie i nie można ich włączyć ponownie, ponieważ znajdują się na liście zablokowanych.}}</translation>
 <translation id="5535769176698670170">Zamień z widokiem u góry</translation>
 <translation id="5537725057119320332">Przesyłaj</translation>
 <translation id="5539070192556911367">Brak połączenia z Google</translation>
@@ -11463,6 +11466,7 @@ Domena <ph name="DOMAIN" /> wymaga, by karta inteligentna pozostała w gnieźdz
 <translation id="8861568709166518036">Za pomocą przycisków ekranowych możesz przechodzić do strony głównej i wstecz oraz przełączać się między aplikacjami. Funkcja włącza się automatycznie po włączeniu ChromeVoksa lub automatycznych kliknięć.</translation>
 <translation id="8862171793076850931">Uprawnienia do przesyłania zostały odrzucone. Aby dowiedzieć się więcej, otwórz artykuł w Centrum pomocy na nowej karcie.</translation>
 <translation id="8863753581171631212">Otwórz link w nowym oknie aplikacji <ph name="APP" /></translation>
+<translation id="8863852141506257401">Wyłączono · Wyłączone przez listę zablokowanych</translation>
 <translation id="8864055848767439877">Udostępniam kartę <ph name="TAB_NAME" /> aplikacji <ph name="APP_NAME" /></translation>
 <translation id="8864104359314908853">Hasło zostało zapisane</translation>
 <translation id="8864458770072227512">Konto <ph name="EMAIL" /> zostało usunięte z tego urządzenia</translation>

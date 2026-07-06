@@ -3711,6 +3711,7 @@
 <translation id="3514335087372914653">게임 컨트롤</translation>
 <translation id="3514647716686280777">표준 보호 조치를 사용하고 있습니다. 위험한 웹사이트, 다운로드 항목, 확장 프로그램에 대응하여 보안을 강화하려면 Chrome 설정에서 향상된 세이프 브라우징을 사용 설정하세요.</translation>
 <translation id="3514681096978190000">이 보관 파일에는 멀웨어를 숨길 수 있는 기타 파일이 포함되어 있습니다.</translation>
+<translation id="3515335817498313144">{NUM_EXTENSIONS,plural, =1{차단 목록에 포함된 {NUM_EXTENSIONS}개의 확장 프로그램이 제거됨}other{차단 목록에 포함된 {NUM_EXTENSIONS}개의 확장 프로그램이 제거됨}}</translation>
 <translation id="3515983984924808886">보안 키를 다시 터치하여 초기화 여부를 확인하세요. PIN을 비롯하여 보안 키에 저장된 모든 정보가 삭제됩니다.</translation>
 <translation id="3518866566087677312">나중에 다시 보고 싶은 항목을 북마크에 추가하세요.</translation>
 <translation id="3519014757432845220">알림 콘텐츠와 사이트 URL을 Google과 공유하여 스팸 보호 기능을 개선하는 데 도움을 주세요. 콘텐츠가 사람에 의해 검토될 수 있습니다.</translation>
@@ -4534,6 +4535,7 @@
 <translation id="4042941173059740150"><ph name="IDENTITY_PROVIDER_ETLD_PLUS_ONE" />(으)로 <ph name="SITE_ETLD_PLUS_ONE" /> 계속하기</translation>
 <translation id="4043267180218562935">커서 크기</translation>
 <translation id="4043620984511647481">수동으로 프린터 추가</translation>
+<translation id="404470635103712779">{NUM_EXTENSIONS,plural, =1{차단 목록에 포함된 {NUM_EXTENSIONS}개의 확장 프로그램이 감지됨}other{차단 목록에 포함된 {NUM_EXTENSIONS}개의 확장 프로그램이 감지됨}}</translation>
 <translation id="4044708573046946214">화면 잠금 비밀번호</translation>
 <translation id="4044883420905480380">Wi-Fi에 연결되어 있으며 Android 휴대전화를 사용하여 <ph name="USER_EMAIL" />에 로그인했습니다</translation>
 <translation id="404493185430269859">기본 검색엔진</translation>
@@ -6659,6 +6661,7 @@ https://support.google.com/chromebook/?p=tpm</translation>
 <translation id="5532223876348815659">전체</translation>
 <translation id="5533001281916885985"><ph name="SITE_NAME" />에서 다음 권한을 요청합니다.</translation>
 <translation id="5533343601674003130">PDF 서비스</translation>
+<translation id="5534604768231683173">{NUM_EXTENSIONS,plural, =1{해당 확장 프로그램은 차단 목록에 포함되어 있으므로 자동으로 종료되었으며 다시 켤 수 없습니다.}other{해당 확장 프로그램은 차단 목록에 포함되어 있으므로 자동으로 종료되었으며 다시 켤 수 없습니다.}}</translation>
 <translation id="5535769176698670170">상단 뷰와 바꾸기</translation>
 <translation id="5537725057119320332">전송</translation>
 <translation id="5539070192556911367">Google에 연결할 수 없음</translation>
@@ -11501,6 +11504,7 @@ https://support.google.com/chromebook/?p=sm</translation>
 <translation id="8861568709166518036">화면 버튼을 사용하여 홈이나 뒤로 이동하고 앱 간에 전환할 수 있습니다. ChromeVox 또는 자동 클릭이 사용 설정되어 있으면 자동으로 사용 설정됩니다.</translation>
 <translation id="8862171793076850931">전송 권한이 거부되었습니다. 새 탭에서 고객센터 도움말을 열어 자세히 알아보세요.</translation>
 <translation id="8863753581171631212">새 <ph name="APP" />에서 링크 열기</translation>
+<translation id="8863852141506257401">꺼짐 · 차단 목록에 의해 종료됨</translation>
 <translation id="8864055848767439877"><ph name="TAB_NAME" /> 탭을 <ph name="APP_NAME" /> 앱과 공유하는 중</translation>
 <translation id="8864104359314908853">비밀번호가 저장됨</translation>
 <translation id="8864458770072227512">기기에서 <ph name="EMAIL" />이(가) 삭제되었습니다.</translation>

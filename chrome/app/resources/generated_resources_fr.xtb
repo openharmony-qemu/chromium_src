@@ -3695,6 +3695,7 @@ Vous pouvez gérer les paramètres de ce compte en installant l'application Fami
 <translation id="3514335087372914653">Contrôle du jeu</translation>
 <translation id="3514647716686280777">Vous allez bénéficier de la protection standard. Pour une protection renforcée contre les téléchargements, les extensions et les sites Web dangereux, activez la navigation sécurisée avec protection renforcée dans les paramètres de Chrome.</translation>
 <translation id="3514681096978190000">Ce fichier d'archive contient d'autres fichiers susceptibles de dissimuler des logiciels malveillants</translation>
+<translation id="3515335817498313144">{NUM_EXTENSIONS,plural, =1{{NUM_EXTENSIONS} extension bloquée supprimée}other{{NUM_EXTENSIONS} extensions bloquées ont été supprimées}}</translation>
 <translation id="3515983984924808886">Appuyez à nouveau sur votre clé de sécurité pour confirmer la réinitialisation. Cette opération effacera toutes les informations stockées sur la clé de sécurité, y compris son code.</translation>
 <translation id="3518866566087677312">Ajoutez à vos favoris les contenus que vous souhaitez consulter plus tard</translation>
 <translation id="3519014757432845220">Contribuez à améliorer la protection contre le spam en partageant le contenu de la notification et l'URL du site avec Google. Le contenu pourra être examiné manuellement.</translation>
@@ -4518,6 +4519,7 @@ Souhaitez-vous lancer <ph name="CONTROL_PANEL_APPLET_NAME" /> ?</translation>
 <translation id="4042941173059740150">Continuez vers <ph name="SITE_ETLD_PLUS_ONE" /> avec <ph name="IDENTITY_PROVIDER_ETLD_PLUS_ONE" /></translation>
 <translation id="4043267180218562935">Taille du curseur</translation>
 <translation id="4043620984511647481">Ajouter une imprimante manuellement</translation>
+<translation id="404470635103712779">{NUM_EXTENSIONS,plural, =1{{NUM_EXTENSIONS} extension bloquée détectée}other{{NUM_EXTENSIONS} extensions bloquées détectées}}</translation>
 <translation id="4044708573046946214">Mot de passe de verrouillage de l'écran</translation>
 <translation id="4044883420905480380">Vous vous êtes connecté au Wi-Fi et à <ph name="USER_EMAIL" /> avec votre téléphone Android</translation>
 <translation id="404493185430269859">Moteur de recherche par défaut</translation>
@@ -6642,6 +6644,7 @@ Vous pouvez associer plusieurs contacteurs à cette action.</translation>
 <translation id="5532223876348815659">Raccourcis globaux</translation>
 <translation id="5533001281916885985"><ph name="SITE_NAME" /> souhaite</translation>
 <translation id="5533343601674003130">Service PDF</translation>
+<translation id="5534604768231683173">{NUM_EXTENSIONS,plural, =1{Cette extension a été automatiquement désactivée et ne peut pas être réactivée en raison de sa présence sur la liste de blocage.}other{Ces extensions ont été automatiquement désactivées et ne peuvent pas être réactivées en raison de leur présence sur la liste de blocage.}}</translation>
 <translation id="5535769176698670170">Remplacer par la vue du haut</translation>
 <translation id="5537725057119320332">Caster</translation>
 <translation id="5539070192556911367">Impossible de joindre Google</translation>
@@ -11488,6 +11491,7 @@ Cela peut inclure des informations sur les logiciels installés, les fichiers, v
 <translation id="8861568709166518036">Utilisez les boutons à l'écran pour accéder à l'accueil, revenir en arrière et changer d'appli. S'active automatiquement si ChromeVox ou les clics automatiques sont activés.</translation>
 <translation id="8862171793076850931">Autorisation de diffusion refusée. Ouvrez un article du centre d'aide dans un nouvel onglet pour en savoir plus.</translation>
 <translation id="8863753581171631212">Ouvrir le lien dans une nouvelle fenêtre <ph name="APP" /></translation>
+<translation id="8863852141506257401">Désactivé par la liste de blocage</translation>
 <translation id="8864055848767439877">Partage de <ph name="TAB_NAME" /> avec <ph name="APP_NAME" />…</translation>
 <translation id="8864104359314908853">Votre mot de passe est enregistré</translation>
 <translation id="8864458770072227512">Le compte <ph name="EMAIL" /> a été supprimé de cet appareil</translation>

@@ -405,6 +405,15 @@ class CONTENT_EXPORT MediaSessionImpl : public MediaSession,
   void PutWebMediaAVSessionEnabled(bool enable);
 #endif // ARKWEB_MEDIA_AVSESSION
 
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+  // HLS network-proxy-download enable flag, propagated from NWeb preference
+  // PutWebMediaNetworkProxyEnabled. Stored per-WebContents and read by
+  // OHOSMediaPlayerRenderer when creating each HLS media bridge. Default true
+  // keeps the existing behavior when the preference is never set.
+  void SetMediaNetworkProxyEnabled(bool enable) { media_network_proxy_enabled_ = enable; }
+  bool IsMediaNetworkProxyEnabled() const { return media_network_proxy_enabled_; }
+#endif // ARKWEB_MEDIA_HLS
+
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
  public:
   enum NWebPlaybackState { NONE, PLAYING, PAUSED, STOP };
@@ -848,6 +857,9 @@ class CONTENT_EXPORT MediaSessionImpl : public MediaSession,
   std::optional<media::PictureInPictureEventsInfo::AutoPipInfo>
       last_auto_picture_in_picture_info_;
   bool pause_avcast_ = false;
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+  bool media_network_proxy_enabled_ = false;
+#endif // ARKWEB_MEDIA_HLS
   base::WeakPtrFactory<MediaSessionImpl> weak_factory_{this};
 
   WEB_CONTENTS_USER_DATA_KEY_DECL();

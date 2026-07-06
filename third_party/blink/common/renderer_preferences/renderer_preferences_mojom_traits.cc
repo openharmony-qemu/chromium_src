@@ -129,6 +129,7 @@ bool StructTraits<blink::mojom::RendererPreferencesDataView,
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
   out->is_reader_mode_enabled = data.is_reader_mode_enabled();
+  out->is_custom_reader_mode_enabled = data.is_custom_reader_mode_enabled();
 #endif
 
 #if BUILDFLAG(IS_ANDROID)

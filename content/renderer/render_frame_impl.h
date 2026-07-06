@@ -1325,6 +1325,7 @@ class CONTENT_EXPORT RenderFrameImpl
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
   bool IsReaderModeEnabled() override;
+  bool IsCustomReaderModeEnabled() override;
   void ReportDistillableResult(const std::string& event_type,
                                const std::string& value) override;
 #endif

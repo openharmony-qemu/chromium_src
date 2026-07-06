@@ -258,19 +258,6 @@ void DistillabilityAgent::DidMeaningfulLayout(
   }
 
   DCHECK(render_frame());
-#if BUILDFLAG(ARKWEB_READER_MODE)
-  // check config "reader mode enabled"
-  const auto* config = blink::Platform::Current()->GetReaderModeConfig();
-  if (!config) {
-    LOG(WARNING) << "[Distiller] ReaderModeConfig is null.";
-    return;
-  }
-  if ((config->is_v2 && !render_frame()->IsReaderModeEnabled())
-      || (!config->is_v2 && !config->reader_mode_enabled)) {
-    LOG(INFO) << "[Distiller] reader mode disabled.";
-    return;
-  }
-#endif
   DCHECK(render_frame()->GetWebFrame());
   if (!render_frame()->GetWebFrame()->IsOutermostMainFrame())
     return;
@@ -293,6 +280,25 @@ void DistillabilityAgent::DidMeaningfulLayout(
     return;
   bool is_long_article = false;
   bool is_mobile_friendly = false;
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  if (render_frame()->IsCustomReaderModeEnabled()) {
+    LOG(DEBUG) << "[Distiller] custom reader mode is enabled";
+    distillability_service->NotifyDidMeaningfulLayout(doc.Url().GetString().Utf8());
+  }
+
+  // check config "reader mode enabled"
+  const auto* config = blink::Platform::Current()->GetReaderModeConfig();
+  if (!config) {
+    LOG(WARNING) << "[Distiller] ReaderModeConfig is null.";
+    return;
+  }
+  if ((config->is_v2 && !render_frame()->IsReaderModeEnabled())
+      || (!config->is_v2 && !config->reader_mode_enabled)) {
+    LOG(INFO) << "[Distiller] reader mode disabled.";
+    return;
+  }
+#endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
 #include "arkweb/chromium_ext/components/dom_distiller/content/renderer/distillability_agent_for_include_after.cc"

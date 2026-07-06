@@ -106,6 +106,7 @@ struct BLINK_COMMON_EXPORT RendererPreferences {
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
   bool is_reader_mode_enabled{false};
+  bool is_custom_reader_mode_enabled{false};
 #endif
 
   // The default value must be false to avoid performance problems on very large

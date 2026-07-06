@@ -70,6 +70,7 @@
 #include "url/gurl.h"
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/browser/extension_log_reporter.h"
 #include "components/embedder_support/user_agent_utils.h"
 #endif
 
@@ -334,7 +335,11 @@ void WebstoreInstaller::OnInstallerDone(
   crx_installer_ = nullptr;
   // ReportFailure releases a reference to this object so it must be the
   // last operation in this method.
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   ReportFailure(utf8_error, FAILURE_REASON_OTHER);
+#else
+  ReportFailure(utf8_error, FAILURE_REASON_OTHER, false);
+#endif
 }
 
 void WebstoreInstaller::OnExtensionInstalled(
@@ -706,16 +711,24 @@ void WebstoreInstaller::StartCrxInstaller(const DownloadItem& download) {
   crx_installer_->InstallCrx(download.GetFullPath());
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void WebstoreInstaller::ReportFailure(const std::string& error,
                                       FailureReason reason) {
+#else
+void WebstoreInstaller::ReportFailure(const std::string& error,
+                                      FailureReason reason,
+                                      bool report_flag) {
+#endif
   CHECK(failure_callback_);
   std::move(failure_callback_).Run(id_, error, reason);
   success_callback_ = base::NullCallback();
   extension_registry_observation_.Reset();
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  LOG_FEEDBACK(INFO) << "failed to install extension " << id_ << ",error is "
-                     << error;
+  if (report_flag) {
+    ExtensionLogReporter::ReportInstallationFailure(
+        InstallerType::INSTALLER_TYPE_CRX, id_, base::FilePath(), error);
+  }
 #endif
 
   extensions::InstallTracker* tracker =
@@ -730,10 +743,6 @@ void WebstoreInstaller::ReportSuccess() {
   std::move(success_callback_).Run(id_);
   failure_callback_ = base::NullCallback();
   extension_registry_observation_.Reset();
-
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  LOG_FEEDBACK(INFO) << "succeed to install extension " << id_;
-#endif
 
   Release();  // Balanced in Start().
 }

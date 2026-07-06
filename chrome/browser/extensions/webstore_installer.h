@@ -151,7 +151,13 @@ class WebstoreInstaller : public ExtensionRegistryObserver,
 
   // Reports an install `error` to the delegate for the given extension if this
   // managed its installation. This also removes the associated PendingInstall.
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   void ReportFailure(const std::string& error, FailureReason reason);
+#else
+  void ReportFailure(const std::string& error,
+                     FailureReason reason,
+                     bool report_flag = true);
+#endif
 
   // Reports a successful install to the delegate for the given extension if
   // this managed its installation. This also removes the associated

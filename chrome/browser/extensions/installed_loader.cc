@@ -70,6 +70,10 @@
 #include "components/user_manager/user.h"
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/browser/extension_log_reporter.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 using content::BrowserThread;
@@ -310,6 +314,10 @@ void InstalledLoader::Load(const ExtensionInfo& info, bool write_to_prefs) {
   }
 
   if (!extension.get()) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    ExtensionLogReporter::ReportStartupFailure(
+        info.extension_id, info.extension_path, base::UTF16ToUTF8(error));
+#endif
     LoadErrorReporter::GetInstance()->ReportLoadError(info.extension_path,
                                                       error, profile_,
                                                       false);  // Be quiet.
@@ -350,6 +358,11 @@ void InstalledLoader::Load(const ExtensionInfo& info, bool write_to_prefs) {
   }
 
   ExtensionRegistrar::Get(profile_)->AddExtension(extension.get());
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  ExtensionLogReporter::ReportStartupSuccess(info.extension_id,
+                                             info.extension_path);
+#endif
 }
 
 void InstalledLoader::LoadAllExtensions() {
@@ -392,6 +405,10 @@ void InstalledLoader::LoadAllExtensions(Profile* profile) {
 
       if (!extension.get() || extension->id() != info.extension_id) {
         invalid_extensions_.insert(info.extension_path);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        ExtensionLogReporter::ReportStartupFailure(
+            info.extension_id, info.extension_path, base::UTF16ToUTF8(error));
+#endif
         LoadErrorReporter::GetInstance()->ReportLoadError(info.extension_path,
                                                           error, profile,
                                                           false);  // Be quiet.

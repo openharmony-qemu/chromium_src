@@ -1875,4 +1875,9 @@ interface NetworkContext {
   // origins.
   AddQuicHints(array<url.mojom.SchemeHostPort> origins,
                NetworkAnonymizationKey network_anonymization_key);
+
+  [EnableIf=arkweb_media]
+  LookupServerBasicAuthCredentials(
+      url.mojom.Url url, NetworkAnonymizationKey network_anonymization_key)
+      => (AuthCredentials? credentials);
 };

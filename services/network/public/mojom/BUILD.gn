@@ -1835,6 +1835,10 @@ mojom("mojom") {
     enabled_features += [ "arkweb_ext_http_dns_fallback" ]
   }
 
+  if (arkweb_media) {
+    enabled_features += [ "arkweb_media" ]
+  }
+
   if (arkweb_ext_http_dns_fallback_on_dns_hijacking) {
     enabled_features += [ "arkweb_ext_http_dns_fallback_on_dns_hijacking" ]
   }

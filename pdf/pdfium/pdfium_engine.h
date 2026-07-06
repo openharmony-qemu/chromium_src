@@ -589,7 +589,7 @@ class PDFiumEngine : public DocumentLoader::Client,
   virtual void SetFormHighlight(bool enable_form);
 
 #if BUILDFLAG(ARKWEB_PDF)
-  void UpdateSelectionBoundsAndPositions(gfx::Rect& left,
+  bool UpdateSelectionBoundsAndPositions(gfx::Rect& left,
                                         gfx::Rect& right,
                                         gfx::Rect& clipped_selection_bounds,
                                         const std::vector<PDFiumRange>& selections);
@@ -1007,6 +1007,11 @@ class PDFiumEngine : public DocumentLoader::Client,
   // Called when the selection changes.
   void OnSelectionTextChanged();
   void OnSelectionPositionChanged();
+  
+#if BUILDFLAG(ARKWEB_PDF)
+  bool ShouldSuppressInvalidSelectionPositionForArkWeb(
+      bool has_selection_bounds) const;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // Sets text selection status of document. This does not include text
   // within form text fields.

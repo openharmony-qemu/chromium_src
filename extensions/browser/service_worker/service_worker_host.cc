@@ -405,4 +405,12 @@ void ServiceWorkerHost::RenderProcessExited(
   // This instance has now been deleted.
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void ServiceWorkerHost::RenderProcessHostDestroyed(
+    content::RenderProcessHost* host) {
+  CHECK_EQ(host, render_process_host_);
+  Destroy();
+  // This instance has now been deleted.
+}
+#endif
 }  // namespace extensions

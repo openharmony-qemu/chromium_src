@@ -128,6 +128,10 @@ class ServiceWorkerHost :
       content::RenderProcessHost* host,
       const content::ChildProcessTerminationInfo& info) override;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void RenderProcessHostDestroyed(content::RenderProcessHost* host) override;
+#endif
+
  private:
   // Returns the browser context associated with the render process this
   // `ServiceWorkerHost` belongs to.

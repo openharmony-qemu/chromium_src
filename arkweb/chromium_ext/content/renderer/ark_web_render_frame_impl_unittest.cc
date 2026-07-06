@@ -252,11 +252,11 @@ TEST_F(ArkWebRenderFrameImplTest, DidSubresourceFiltered) {
 }
 
 TEST_F(ArkWebRenderFrameImplTest, OnUpdateAdBlockEnabledToRender_NoUserFilter) {
-  EXPECT_EQ(GetMainRenderFrame()->GetWebView()->GetAdBlockEnableForSite(), false);
+  EXPECT_EQ(GetMainRenderFrame()->GetWebFrame()->GetAdBlockEnabled(), false);
+  TestOnUpdateAdBlockEnabledToRender(true);
+  EXPECT_EQ(GetMainRenderFrame()->GetWebFrame()->GetAdBlockEnabled(), true);
   TestOnUpdateAdBlockEnabledToRender(false);
-  EXPECT_EQ(GetMainRenderFrame()->GetWebView()->GetAdBlockEnableForSite(), true);
-  TestOnUpdateAdBlockEnabledToRender(false);
-  EXPECT_EQ(GetMainRenderFrame()->GetWebView()->GetAdBlockEnableForSite(), true);
+  EXPECT_EQ(GetMainRenderFrame()->GetWebFrame()->GetAdBlockEnabled(), false);
 }
 
 TEST_F(ArkWebRenderFrameImplTest, OnUpdateAdBlockEnabledToRender_NoDocumentLoader) {

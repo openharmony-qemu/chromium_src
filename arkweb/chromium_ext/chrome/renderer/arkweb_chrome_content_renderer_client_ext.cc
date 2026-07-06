@@ -345,29 +345,23 @@ void ArkWebChromeContentRendererClientExt::
 bool ArkWebChromeContentRendererClientExt::GetAdBlockEnabledByFrame(
     content::RenderFrame* render_frame) {
   if (!render_frame) {
+    LOG(DEBUG) << "render_frame null";
     return false;
   }
-  // check global switch
   if (!render_frame->GetGlobalAdblockEnabled()) {
+    LOG(DEBUG) << "global switch false";
     return false;
   }
-  if (render_frame->IsMainFrame()) {
-    blink::WebLocalFrame* main_web_frame = render_frame->GetWebFrame();
-    if (main_web_frame) {
-      return main_web_frame->GetAdBlockEnabled();
-    }
+  // GetAdBlockEnabled() reads from LocalFrameRoot(), which works for both
+  // main frame and subframe (including cross-site iframes in strict site
+  // isolation mode where the main frame may be in a different process).
+  blink::WebLocalFrame* web_frame = render_frame->GetWebFrame();
+  if (!web_frame) {
+    LOG(DEBUG) << "web_frame null";
+    return false;
   }
-
-  // Subframe should get adblock switch from MainFrame
-  auto* main_render_frame = render_frame->GetMainRenderFrame();
-  if (main_render_frame) {
-    blink::WebLocalFrame* main_web_frame = main_render_frame->GetWebFrame();
-    if (!main_web_frame) {
-      return false;
-    }
-    return main_web_frame->GetAdBlockEnabled();
-  }
-  return false;
+  LOG(DEBUG) << "adblock enabled: " << web_frame->GetAdBlockEnabled();
+  return web_frame->GetAdBlockEnabled();
 }
 
 void ArkWebChromeContentRendererClientExt::TriggerElementHidingInFrame(

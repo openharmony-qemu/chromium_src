@@ -3173,10 +3173,11 @@ void RenderFrameImpl::CommitNavigationWithParams(
   }
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-  if (is_main_frame_) {
-    // All subframes share the main frame's adblock switch
-    OnUpdateAdBlockEnabledToRender(site_adblock_enabled);
-  }
+  // Navigation-time renderer-side application: apply the adblock state received
+  // from the browser via commit params (commit_params->site_adblock_enabled).
+  // In strict site isolation mode, each process's local frame receives and
+  // applies its own copy of the state.
+  OnUpdateAdBlockEnabledToRender(site_adblock_enabled);
 #endif
 
   ResetMembersUsedForDurationOfCommit();

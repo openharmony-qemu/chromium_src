@@ -281,4 +281,93 @@ TEST_F(UserSubresourceFilterAgentTest, DidSubresourceFiltered) {
   agent->did_load_finished_ = true;
   EXPECT_NO_FATAL_FAILURE(agent->DidSubresourceFiltered());
 }
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+// 测试iframe继承主帧的adblock状态
+TEST_F(UserSubresourceFilterAgentTest,
+       UpdateAdBlockEnabledToRender_IframeInheritsMainFrameState) {
+  UserSubresourceFilterAgentTester tester;
+  TestRenderFrameCondition cond;
+  cond.is_main_frame = false;  // iframe
+  cond.has_parent_frame = true;
+  tester.CreateSubresourceFilterAgent(cond, "http://example.com/iframe");
+  auto agent = tester.GetAgent();
+  EXPECT_NE(agent, nullptr);
+
+  auto web_frame = tester.GetWebLocalFrame();
+  EXPECT_NE(web_frame, nullptr);
+
+  // 初始状态应为false
+  EXPECT_FALSE(web_frame->GetAdBlockEnabled());
+
+  // 更新adblock状态并验证
+  web_frame->UpdateAdBlockEnabledToRender(true);
+  EXPECT_TRUE(web_frame->GetAdBlockEnabled());
+
+  web_frame->UpdateAdBlockEnabledToRender(false);
+  EXPECT_FALSE(web_frame->GetAdBlockEnabled());
+}
+
+// 测试主帧的adblock状态更新
+TEST_F(UserSubresourceFilterAgentTest,
+       UpdateAdBlockEnabledToRender_MainFrame) {
+  UserSubresourceFilterAgentTester tester;
+  TestRenderFrameCondition cond;
+  cond.is_main_frame = true;
+  tester.CreateSubresourceFilterAgent(cond, "http://example.com/main");
+  auto agent = tester.GetAgent();
+  EXPECT_NE(agent, nullptr);
+
+  auto web_frame = tester.GetWebLocalFrame();
+  EXPECT_NE(web_frame, nullptr);
+
+  // 初始状态应为false
+  EXPECT_FALSE(web_frame->GetAdBlockEnabled());
+
+  // 更新adblock状态并验证
+  web_frame->UpdateAdBlockEnabledToRender(true);
+  EXPECT_TRUE(web_frame->GetAdBlockEnabled());
+
+  web_frame->UpdateAdBlockEnabledToRender(false);
+  EXPECT_FALSE(web_frame->GetAdBlockEnabled());
+}
+
+// 测试多进程场景下iframe的adblock状态继承
+TEST_F(UserSubresourceFilterAgentTest,
+       UpdateAdBlockEnabledToRender_MultiProcessIframe) {
+  UserSubresourceFilterAgentTester tester;
+  TestRenderFrameCondition cond;
+  cond.is_main_frame = false;
+  cond.has_parent_frame = true;
+  cond.has_local_frame = true;
+  tester.CreateSubresourceFilterAgent(cond, "http://example.com/iframe");
+  auto agent = tester.GetAgent();
+  EXPECT_NE(agent, nullptr);
+
+  // 获取父帧和当前帧
+  auto parent_frame = tester.GetWebParentFrame();
+  auto current_frame = tester.GetWebLocalFrame();
+  EXPECT_NE(parent_frame, nullptr);
+  EXPECT_NE(current_frame, nullptr);
+
+  // 初始状态均应为false
+  EXPECT_FALSE(parent_frame->GetAdBlockEnabled());
+  EXPECT_FALSE(current_frame->GetAdBlockEnabled());
+
+  // 分别更新父帧和当前帧的adblock状态并验证
+  parent_frame->UpdateAdBlockEnabledToRender(true);
+  EXPECT_TRUE(parent_frame->GetAdBlockEnabled());
+  EXPECT_FALSE(current_frame->GetAdBlockEnabled());
+
+  current_frame->UpdateAdBlockEnabledToRender(true);
+  EXPECT_TRUE(current_frame->GetAdBlockEnabled());
+
+  // 关闭adblock并验证
+  parent_frame->UpdateAdBlockEnabledToRender(false);
+  EXPECT_FALSE(parent_frame->GetAdBlockEnabled());
+
+  current_frame->UpdateAdBlockEnabledToRender(false);
+  EXPECT_FALSE(current_frame->GetAdBlockEnabled());
+}
+#endif
 }  // namespace subresource_filter

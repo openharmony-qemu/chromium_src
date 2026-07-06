@@ -86,14 +86,18 @@ bool RenderFrameImpl::GetGlobalAdblockEnabled() {
 
 void RenderFrameImpl::OnUpdateAdBlockEnabledToRender(
     bool site_adblock_enabled) {
-  // send switch to render by RenderViewImpl
-  site_adblock_enabled = true;
-  if (GetWebView()) {
-    LOG(INFO) << "[Adblock] render frame update adblock:"
-              << site_adblock_enabled;
-    GetWebView()->OnSetAdBlockEnable(site_adblock_enabled);
+  LOG(DEBUG) << "[Adblock] render frame OnUpdateAdBlockEnabledToRender: "
+             << site_adblock_enabled;
+  // 1) Persist the adblock site switch into the LocalFrameRoot via the WebLocalFrame
+  //    layer. In strict site isolation mode the subframe lives in a separate
+  //    process, so each frame must apply its own copy of the state.
+  if (GetWebFrame()) {
+    GetWebFrame()->UpdateAdBlockEnabledToRender(site_adblock_enabled);
   }
 
+  // 2) Refresh the subresource filter activation state for the already-loaded
+  //    document so that in-flight subresource requests honor the new switch
+  //    without requiring a reload.
   if (!frame_) {
     return;
   }

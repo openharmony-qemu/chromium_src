@@ -179,8 +179,9 @@ bool LocalFrame::GetGlobalAdblockEnabled() {
 }
 
 void LocalFrame::SetAdBlockEnableForSite(bool site_adblock_enabled) {
-  LOG(WARNING) << "[Adblock] Set adblock enable for site: "
-               << site_adblock_enabled;
+  LOG(DEBUG) << "[Adblock] Set adblock enable for site: "
+               << site_adblock_enabled
+               << ", is LocalFrameRoot: " << (this == &LocalFrameRoot());
   adblock_enabled_for_site_ = site_adblock_enabled;
 }
 

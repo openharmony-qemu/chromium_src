@@ -394,6 +394,7 @@ void SkiaOutputDeviceVulkan::OnPostSubBufferFinished(OutputSurfaceFrame frame,
   if (!vulkan_surface_->swap_chain()) [[unlikely]] {
     LOG(ERROR) << "[SWAPCHAIN] swap_chain_ null in OnPostSubBufferFinished"
                << " - stale callback. Returning SWAP_FAILED.";
+    result = gfx::SwapResult::SWAP_FAILED;
   }
 #endif
   if (result == gfx::SwapResult::SWAP_ACK) [[likely]] {

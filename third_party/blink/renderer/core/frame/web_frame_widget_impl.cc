@@ -3970,7 +3970,7 @@ bool WebFrameWidgetImpl::SetComposition(
   WebInputMethodController* controller = GetActiveWebInputMethodController();
   if (!controller)
     return false;
-
+  LOG(INFO) << "ime_text_spans.size:" << ime_text_spans.size();
   return controller->SetComposition(
       text, base::ToVector(ime_text_spans),
       replacement_range.IsValid()

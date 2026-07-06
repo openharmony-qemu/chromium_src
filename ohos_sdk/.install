@@ -20,11 +20,11 @@ prebuilts_sdk_path="../../prebuilts/ohos-sdk/linux"
 target_dir=$(find "$prebuilts_sdk_path" -maxdepth 1 -type d -name '[0-9]*' | sort -V | tail -n 1)
 max_api_version=$(basename "$target_dir")
 
-prebuilts_native_path="native-linux-x64-6.1.0.27-Beta1.zip"
-prebuilts_ets_path="ets-linux-x64-6.1.0.27-Beta1.zip"
-prebuilts_js_path="js-linux-x64-6.1.0.27-Beta1.zip"
-prebuilts_previewer_path="previewer-linux-x64-6.1.0.27-Beta1.zip"
-prebuilts_toolchains_path="toolchains-linux-x64-6.1.0.27-Beta1.zip"
+prebuilts_native_path="native-linux-x64-6.1.1.125-Release.zip"
+prebuilts_ets_path="ets-linux-x64-6.1.1.125-Release.zip"
+prebuilts_js_path="js-linux-x64-6.1.1.125-Release.zip"
+prebuilts_previewer_path="previewer-linux-x64-6.1.1.125-Release.zip"
+prebuilts_toolchains_path="toolchains-linux-x64-6.1.1.125-Release.zip"
 prebuilts_pac_path="../../prebuilts/llvm/pac/PAC.zip"
 
 if [ -d "../../prebuilts" ]; then
@@ -43,6 +43,18 @@ sdk_upgrade() {
     "$prebuilts_previewer_path"
     "$prebuilts_toolchains_path"
   )
+  pushd $prebuilts_sdk_path
+    if [ -d "24" ]; then
+      rm -rf "24"
+    fi
+    mkdir -p "24"
+  popd
+ 
+  unzip "$prebuilts_ets_path" -d "$prebuilts_sdk_path/24"
+  unzip "$prebuilts_native_path" -d "$prebuilts_sdk_path/24"
+  unzip "$prebuilts_js_path" -d "$prebuilts_sdk_path/24"
+  unzip "$prebuilts_previewer_path" -d "$prebuilts_sdk_path/24"
+  unzip "$prebuilts_toolchains_path" -d "$prebuilts_sdk_path/24"
 
   need_reinstall=false
 

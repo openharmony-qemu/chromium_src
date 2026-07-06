@@ -58,6 +58,9 @@ class InspectUI : public content::WebUIController,
                       const std::string& target_id,
                       const std::string& panel = "");
   static std::string GetTypeFromHost(const std::string& hostType);
+  static void RequestOpenDevByTargetId(const std::string& source_id,
+                                       const std::string& target_id,
+                                       const std::string& panel);
 #endif // ARKWEB_DEVTOOLS
 
   void InspectFallback(const std::string& source_id,

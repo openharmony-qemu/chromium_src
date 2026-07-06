@@ -108,9 +108,7 @@ ExtensionFunction::ResponseAction SidePanelOpenFunction::RunFunction() {
   }
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#if BUILDFLAG(ARKWEB_NWEB_EX)
   return RunOpenFunctionForInclude(params);
-#endif
 #else
   SidePanelService* service = GetService();
   base::expected<bool, std::string> open_panel_result;

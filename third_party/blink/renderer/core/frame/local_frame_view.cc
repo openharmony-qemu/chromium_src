@@ -802,10 +802,6 @@ void LocalFrameView::PerformLayout() {
     }
   }
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  utils_->PerformLayoutOnPreload(document);
-#endif
-
   Lifecycle().AdvanceTo(DocumentLifecycle::kAfterPerformLayout);
 
   TRACE_EVENT_END0(PERFORM_LAYOUT_TRACE_CATEGORIES,
@@ -3365,6 +3361,10 @@ void LocalFrameView::UpdateStyleAndLayout() {
         (new_visual_viewport_size != visual_viewport_size);
     SetNeedsUpdateGeometries();
     PerformPostLayoutTasks(visual_viewport_size_changed);
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+    utils_->PerformLayoutOnPreload(GetFrame().GetDocument());
+#endif
     GetFrame().GetDocument()->LayoutUpdated();
   }
   UpdateGeometriesIfNeeded();

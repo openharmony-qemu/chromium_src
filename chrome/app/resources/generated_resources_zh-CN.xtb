@@ -4421,6 +4421,7 @@
 <translation id="3975201861340929143">说明</translation>
 <translation id="3975565978598857337">无法连接到指定领域的服务器</translation>
 <translation id="3976108569178263973">没有找到可用的打印机。</translation>
+<translation id="3976453919940566636">“<ph name="EXTENSION_NAME" />”请求获得更多权限。</translation>
 <translation id="397703832102027365">正在完成...</translation>
 <translation id="3977886311744775419">使用此网络类型时无法下载自动更新，但您可以手动检查是否有更新。</translation>
 <translation id="3978325380690188371">开启 ChromeVox 后，无法使用粘滞键</translation>
@@ -7536,6 +7537,7 @@
 <translation id="6164393601566177235">添加网站</translation>
 <translation id="6164832038898943453">添加可自动翻译的语言</translation>
 <translation id="6165508094623778733">了解详情</translation>
+<translation id="6168969225840255250">该扩展程序想要：</translation>
 <translation id="6169040057125497443">请检查您的麦克风。</translation>
 <translation id="6169967265765719844">您可以在 <ph name="LINK_BEGIN" />Steam 应用设置<ph name="LINK_END" />中管理通过 Steam 安装的游戏和应用的权限。</translation>
 <translation id="6170313103929479668">调整拆分视图</translation>

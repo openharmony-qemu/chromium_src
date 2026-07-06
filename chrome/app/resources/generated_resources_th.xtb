@@ -4423,6 +4423,7 @@
 <translation id="3975201861340929143">คำอธิบาย</translation>
 <translation id="3975565978598857337">ติดต่อเซิร์ฟเวอร์ของขอบเขตไม่สำเร็จ</translation>
 <translation id="3976108569178263973">ไม่มีเครื่องพิมพ์พร้อมใช้งาน</translation>
+<translation id="3976453919940566636">"<ph name="EXTENSION_NAME" />" ได้ขอการอนุญาตเพิ่มเติม</translation>
 <translation id="397703832102027365">กำลังสิ้นสุดการทำงาน...</translation>
 <translation id="3977886311744775419">เครือข่ายประเภทนี้จะไม่ดาวน์โหลดอัปเดตอัตโนมัติ แต่คุณตรวจหาอัปเดตได้ด้วยตนเอง</translation>
 <translation id="3978325380690188371">คีย์ติดหนึบไม่พร้อมใช้งานเมื่อ ChromeVox เปิดอยู่</translation>
@@ -7535,6 +7536,7 @@
 <translation id="6164393601566177235">เพิ่มเว็บไซต์</translation>
 <translation id="6164832038898943453">เพิ่มภาษาที่จะให้แปลโดยอัตโนมัติ</translation>
 <translation id="6165508094623778733">ดูข้อมูลเพิ่มเติม</translation>
+<translation id="6168969225840255250">สามารถทำได้ดังนี้:</translation>
 <translation id="6169040057125497443">โปรดตรวจสอบไมโครโฟน</translation>
 <translation id="6169967265765719844">คุณสามารถจัดการสิทธิ์สำหรับเกมและแอปที่ติดตั้งผ่าน Steam ได้ใน<ph name="LINK_BEGIN" />การตั้งค่าแอป Steam<ph name="LINK_END" /></translation>
 <translation id="6170313103929479668">จัดเรียงมุมมองแบบแยก</translation>

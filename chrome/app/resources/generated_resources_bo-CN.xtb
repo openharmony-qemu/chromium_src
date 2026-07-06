@@ -48,6 +48,7 @@
 <translation id="3903882377278268878">ཁྱེད་ཀྱི་བཤར་ཆས་ཁྲོད་ཀྱི་ Cookies ལ་ལྟ་སྤྱོད་དང་སྒྲིག་བཀོལ་བྱ།</translation>
 <translation id="3927932062596804919">དང་ལེན་མི་བྱེད།</translation>
 <translation id="3970114302595058915">ID</translation>
+<translation id="3976453919940566636">༼<ph name="EXTENSION_NAME" />༽ཡིས་དབང་ཚད་དེ་བས་མང་བ་འཐོབ་པར་རེ་ཞུ་བྱེད།</translation>
 <translation id="399788104667917863">ལག་ཆའི་ཚན་བྱང་ལ་གཏན་འཇགས།</translation>
 <translation id="404470635103712779">{NUM_EXTENSIONS,plural, =1{མིང་ཐོ་ནག་པོས་བཀག་པའི་རྒྱ་སྐྱེད་བྱ་རིམ་ {NUM_EXTENSIONS} ཞིབ་དཔྱད་བྱུང་།}other{མིང་ཐོ་ནག་པོས་བཀག་པའི་རྒྱ་སྐྱེད་བྱ་རིམ་ {NUM_EXTENSIONS} ཞིབ་དཔྱད་བྱུང་།}}</translation>
 <translation id="407173827865827707">རྡེབ་སྐབས།</translation>
@@ -76,6 +77,7 @@
 <translation id="5804241973901381774">དབང་ཚད།</translation>
 <translation id="5860033963881614850">ཁ་རྒྱག</translation>
 <translation id="5916664084637901428">ཁ་ཕྱེ་ཡོད།</translation>
+<translation id="6168969225840255250">རྒྱ་སྐྱེད་བྱ་རིམ་དེར་དགོས་པ།</translation>
 <translation id="623736835601262897">རྒྱ་སྐྱེད་བྱ་རིམ་འདིར་དམིགས་བསལ་དབང་ཚད་གང་ཡང་མི་དགོས།</translation>
 <translation id="6341850831632289108">ཁྱེད་རང་གནས་སའི་ས་ཁམས་གནས་ཡུལ་ལ་ཞིབ་དཔྱད་བྱེད་པ།</translation>
 <translation id="6370021412472292592">གསལ་ཐོ་སྣོན་འཇུག་བྱེད་མི་ཐུབ།</translation>

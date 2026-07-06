@@ -4425,6 +4425,7 @@ Puoi gestire le impostazioni dell'account installando l'app Family Link su quest
 <translation id="3975201861340929143">Spiegazione</translation>
 <translation id="3975565978598857337">Tentativo di contatto del server per area di autenticazione non riuscito</translation>
 <translation id="3976108569178263973">Non ci sono stampanti disponibili.</translation>
+<translation id="3976453919940566636">"<ph name="EXTENSION_NAME" />" ha richiesto autorizzazioni aggiuntive</translation>
 <translation id="397703832102027365">Finalizzazione in corso...</translation>
 <translation id="3977886311744775419">Gli aggiornamenti automatici non vengono scaricati su questo tipo di rete, ma puoi verificare la presenza di aggiornamenti manualmente.</translation>
 <translation id="3978325380690188371">I tasti permanenti non sono disponibili quando è attivo ChromeVox</translation>
@@ -7538,6 +7539,7 @@ Puoi assegnare più sensori a questa azione.</translation>
 <translation id="6164393601566177235">Aggiungi siti</translation>
 <translation id="6164832038898943453">Aggiungi lingue da tradurre automaticamente</translation>
 <translation id="6165508094623778733">Scopri di più</translation>
+<translation id="6168969225840255250">Potrebbe:</translation>
 <translation id="6169040057125497443">Controlla il microfono.</translation>
 <translation id="6169967265765719844">È possibile gestire le autorizzazioni per app e giochi installati tramite Steam nelle <ph name="LINK_BEGIN" />impostazioni dell'app Steam<ph name="LINK_END" />.</translation>
 <translation id="6170313103929479668">Organizza visualizzazione divisa</translation>

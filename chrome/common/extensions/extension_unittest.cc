@@ -147,7 +147,11 @@ TEST(ExtensionTest, RTLNameInLTRLocale) {
     scoped_refptr<const Extension> extension =
         ExtensionBuilder().SetManifest(std::move(manifest)).Build();
     ASSERT_TRUE(extension);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    const int kResourceId = IDS_EXTENSION_PERMISSIONS_PROMPT_TITLE_V2;
+#else
     const int kResourceId = IDS_EXTENSION_PERMISSIONS_PROMPT_TITLE;
+#endif
     const std::u16string expected_utf16 = base::WideToUTF16(expected);
     EXPECT_EQ(l10n_util::GetStringFUTF16(kResourceId, expected_utf16),
               l10n_util::GetStringFUTF16(kResourceId,

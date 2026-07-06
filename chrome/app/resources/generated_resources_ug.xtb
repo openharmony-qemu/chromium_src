@@ -48,6 +48,7 @@
 <translation id="3903882377278268878">تور كۆرگۈچتە ساقلانما (Cookie) مەشغۇلاتى قىلىدۇ ۋە تىزگىنلەيدۇ.</translation>
 <translation id="3927932062596804919">چەكلەش</translation>
 <translation id="3970114302595058915">ID</translation>
+<translation id="3976453919940566636"><ph name="EXTENSION_NAME" /> ئۈچۈن ئىجازەت كېرەك</translation>
 <translation id="399788104667917863">قورالبالداققا مىخلاش</translation>
 <translation id="404470635103712779">{NUM_EXTENSIONS,plural, =1{قارا تىزىملىكتىكى {NUM_EXTENSIONS} كېڭەيتمە بايقالغان}other{قارا تىزىملىكتىكى {NUM_EXTENSIONS} كېڭەيتمە بايقالغان}}</translation>
 <translation id="407173827865827707">چەككەندە</translation>
@@ -76,6 +77,7 @@
 <translation id="5804241973901381774">ئىجازەت</translation>
 <translation id="5860033963881614850">ئېتىك</translation>
 <translation id="5916664084637901428">ئوچۇق</translation>
+<translation id="6168969225840255250">بۇ كېڭەيتمە ئۈچۈن كېرەكلىك ئىجازەت:</translation>
 <translation id="623736835601262897">بۇ كېڭەيتمىگە ئالاھىدە ئىجازەت كېرەك ئەمەس.</translation>
 <translation id="6341850831632289108">سىز تۇرۇشلۇق جۇغراپىيەلىك ئورۇننى ئېنىقلاش</translation>
 <translation id="6370021412472292592">تىزىملىك يۈكلەنمىدى.</translation>

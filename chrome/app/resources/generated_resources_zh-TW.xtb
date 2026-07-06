@@ -4428,6 +4428,7 @@
 <translation id="3975201861340929143">說明</translation>
 <translation id="3975565978598857337">無法連線至指定領域的伺服器</translation>
 <translation id="3976108569178263973">沒有可用的印表機。</translation>
+<translation id="3976453919940566636">「<ph name="EXTENSION_NAME" />」要求獲得更多權限。</translation>
 <translation id="397703832102027365">即將完成...</translation>
 <translation id="3977886311744775419">這個網路類型無法下載自動更新，但你可以手動檢查更新。</translation>
 <translation id="3978325380690188371">ChromeVox 開啟時無法使用相黏鍵</translation>
@@ -7538,6 +7539,7 @@
 <translation id="6164393601566177235">新增網站</translation>
 <translation id="6164832038898943453">新增要自動翻譯的語言</translation>
 <translation id="6165508094623778733">瞭解詳情</translation>
+<translation id="6168969225840255250">此擴充程式想要：</translation>
 <translation id="6169040057125497443">請檢查麥克風。</translation>
 <translation id="6169967265765719844">你可以在 <ph name="LINK_BEGIN" />Steam 應用程式設定<ph name="LINK_END" />中，管理透過 Steam 安裝的遊戲和應用程式權限。</translation>
 <translation id="6170313103929479668">調整分割畫面</translation>

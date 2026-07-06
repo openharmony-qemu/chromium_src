@@ -162,7 +162,11 @@ std::u16string ExtensionInstallPrompt::Prompt::GetDialogTitle() const {
       id = IDS_EXTENSION_RE_ENABLE_PROMPT_TITLE;
       break;
     case PERMISSIONS_PROMPT:
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      id = IDS_EXTENSION_PERMISSIONS_PROMPT_TITLE_V2;
+#else
       id = IDS_EXTENSION_PERMISSIONS_PROMPT_TITLE;
+#endif
       break;
     case EXTERNAL_INSTALL_PROMPT:
       if (extension_->is_app()) {
@@ -310,7 +314,11 @@ std::u16string ExtensionInstallPrompt::Prompt::GetPermissionsHeading() const {
       id = IDS_EXTENSION_PROMPT_WILL_NOW_HAVE_ACCESS_TO;
       break;
     case PERMISSIONS_PROMPT:
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      id = IDS_EXTENSION_PROMPT_WANTS_ACCESS_TO_V2;
+#else
       id = IDS_EXTENSION_PROMPT_WANTS_ACCESS_TO;
+#endif
       break;
     case REPAIR_PROMPT:
       id = IDS_EXTENSION_PROMPT_CAN_ACCESS;

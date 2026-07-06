@@ -4427,6 +4427,7 @@
 <translation id="3975201861340929143">Описание</translation>
 <translation id="3975565978598857337">Не удалось связаться с областью сервера.</translation>
 <translation id="3976108569178263973">Нет доступных принтеров.</translation>
+<translation id="3976453919940566636">Расширение "<ph name="EXTENSION_NAME" />" запрашивает дополнительные права</translation>
 <translation id="397703832102027365">Завершение…</translation>
 <translation id="3977886311744775419">Скачать обновления в вашей сети можно только вручную.</translation>
 <translation id="3978325380690188371">Режим залипания клавиш недоступен при включенной программе ChromeVox</translation>
@@ -7543,6 +7544,7 @@
 <translation id="6164393601566177235">Добавление сайтов</translation>
 <translation id="6164832038898943453">Добавить языки, страницы на которых будут автоматически переводиться</translation>
 <translation id="6165508094623778733">Подробнее</translation>
+<translation id="6168969225840255250">Оно может:</translation>
 <translation id="6169040057125497443">Проверьте микрофон.</translation>
 <translation id="6169967265765719844">Вы можете управлять разрешениями для игр и приложений, установленных через Steam, <ph name="LINK_BEGIN" />в настройках этой платформы<ph name="LINK_END" />.</translation>
 <translation id="6170313103929479668">Упорядочить параллельный просмотр</translation>

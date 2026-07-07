@@ -23,6 +23,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/aura/client/aura_constants.h"
 #include "ui/aura/client/drag_drop_client.h"
+#include "ui/aura/env.h"
 #include "ui/aura/test/test_windows.h"
 #include "ui/aura/test/window_test_api.h"
 #include "ui/aura/window.h"
@@ -96,6 +97,8 @@ class TestDragDropClient : public aura::client::DragDropClient {
                                  ui::mojom::DragEventSource source) override {
     drag_in_progress_ = true;
     drag_drop_data_ = std::move(data);
+    last_screen_location_ = screen_location;
+    last_source_ = source;
     return DragOperation::kCopy;
   }
 #if BUILDFLAG(IS_LINUX)
@@ -109,10 +112,18 @@ class TestDragDropClient : public aura::client::DragDropClient {
   }
 
   ui::OSExchangeData* GetDragDropData() { return drag_drop_data_.get(); }
+  const gfx::Point& last_screen_location() const {
+    return last_screen_location_;
+  }
+  std::optional<ui::mojom::DragEventSource> last_source() const {
+    return last_source_;
+  }
 
  private:
   bool drag_in_progress_ = false;
   std::unique_ptr<ui::OSExchangeData> drag_drop_data_;
+  gfx::Point last_screen_location_;
+  std::optional<ui::mojom::DragEventSource> last_source_;
 };
 
 }  // namespace

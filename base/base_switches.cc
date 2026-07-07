@@ -123,7 +123,9 @@ const char kVModule[] = "vmodule";
 // Will wait for 60 seconds for a debugger to come to attach to the process.
 const char kWaitForDebugger[] = "wait-for-debugger";
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
 #include "arkweb/chromium_ext/base/base_switches_for_include.cc"
+#endif  // BUILDFLAG(ARKWEB_LOGGER_REPORT)
 
 #if BUILDFLAG(IS_WIN)
 // Disable high-resolution timer on Windows.

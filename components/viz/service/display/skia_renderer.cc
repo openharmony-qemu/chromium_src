@@ -111,6 +111,10 @@
 
 #include "arkweb/chromium_ext/components/viz/service/display/skia_renderer_ext.h"
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 namespace viz {
 
 namespace {
@@ -1019,6 +1023,10 @@ SkiaRenderer::SkiaRenderer(const RendererSettings* settings,
       skia_output_surface_, skia_output_surface_->GetSurfaceHandle(), 3,
       /*is_protected=*/true);
 #endif
+
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  is_delegated_enabled_ = base::ohos::IsDelegatedCompositingEnabledOhos();
+#endif
 }
 
 SkiaRenderer::~SkiaRenderer() = default;
@@ -1252,6 +1260,13 @@ void SkiaRenderer::SwapBuffersComplete(
        lock_iter != read_fence_lock_iter; ++lock_iter) {
     awaiting_release_overlay_locks_.insert(std::move(*lock_iter));
   }
+#elif BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  if (is_delegated_enabled_) {
+    for (auto lock_iter = committed_overlay_locks_.begin();
+        lock_iter != read_fence_lock_iter; ++lock_iter) {
+      awaiting_release_overlay_locks_.insert(std::move(*lock_iter));
+    }
+  }
 #endif  // BUILDFLAG(IS_APPLE)
 
   // Current pending locks should have been committed by the next time
@@ -1286,6 +1301,22 @@ void SkiaRenderer::DidReceiveReleasedOverlays(
       continue;
     }
     awaiting_release_overlay_locks_.erase(iter);
+  }
+#elif BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  if (is_delegated_enabled_) {
+    DisplayResourceProvider::ScopedBatchReturnResources returner(
+        resource_provider_.get(), /*allow_access_to_gpu_thread=*/true);
+    for (const auto& mailbox : released_overlays) {
+      auto iter = awaiting_release_overlay_locks_.find(mailbox);
+      if (iter == awaiting_release_overlay_locks_.end()) {
+        // The released overlay should always be found as awaiting to be released.
+        DLOG(FATAL) << "Got an unexpected mailbox";
+        continue;
+      }
+      awaiting_release_overlay_locks_.erase(iter);
+    }
+  } else {
+    NOTREACHED();
   }
 #else
   // Only macOS has the requirement of polling the OS compositor to check if the
@@ -2861,6 +2892,12 @@ void SkiaRenderer::ScheduleOverlays() {
       auto root_pass_backing =
           render_pass_backings_.find(current_frame()->root_render_pass->id);
       // The root pass backing should always exist.
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+      if (is_delegated_enabled_ && root_pass_backing == render_pass_backings_.end()) {
+        LOG(WARNING) << "Render pass backing for root pass not found. Skipping current frame drawing.";
+        continue;
+      }
+#endif
       DCHECK(root_pass_backing != render_pass_backings_.end());
       overlay.mailbox = root_pass_backing->second.mailbox;
       overlay.damage_rect = gfx::RectF(swap_buffer_rect_);
@@ -4106,6 +4143,36 @@ void SkiaRenderer::PrepareRenderPassOverlay(
   // Adjust |bounds_rect| to contain the whole buffer and at the right location.
   overlay->display_rect.set_origin(gfx::PointF(filter_bounds.origin()));
   overlay->display_rect.set_size(gfx::SizeF(buffer_size));
+#elif BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  if (is_delegated_enabled_) {
+    overlay->display_rect.set_origin(gfx::PointF(filter_bounds.origin()));
+    overlay->display_rect.set_size(gfx::SizeF(buffer_size));
+  } else {
+    overlay->uv_rect = gfx::RectF(filter_bounds.size());
+    overlay->uv_rect.InvScale(buffer_size.width(), buffer_size.height());
+
+    if (std::holds_alternative<gfx::OverlayTransform>(overlay->transform)) {
+      // When using an OverlayTransform, the transform should be baked into the
+      // display_rect.
+      overlay->display_rect =
+          quad->shared_quad_state->quad_to_target_transform.MapRect(
+              gfx::RectF(filter_bounds));
+      // Apply all clipping because we may not always delegate quads that extend
+      // beyond window bounds.
+      gfx::Rect apply_clip = gfx::Rect(current_frame()->device_viewport_size);
+      if (overlay->clip_rect.has_value()) {
+        apply_clip.Intersect(overlay->clip_rect.value());
+      }
+      OverlayCandidate::ApplyClip(*overlay, gfx::RectF(apply_clip));
+      overlay->clip_rect = std::nullopt;
+    } else {
+      overlay->display_rect = gfx::RectF(filter_bounds);
+    }
+
+    // Fill in |format| and |color_space| information based on selected backing.
+    overlay->color_space = color_space;
+    overlay->format = si_format;
+  }
 #else   // BUILDFLAG(IS_OZONE) || BUILDFLAG(IS_WIN)
   // TODO(fangzhoug): Merge Ozone and Apple code paths of delegated compositing.
 
@@ -4461,7 +4528,7 @@ SkiaRenderer::OverlayLock::OverlayLock(SkiaRenderer* renderer,
 }
 #endif  // BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_OZONE) || BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(IS_APPLE)
+#if BUILDFLAG(IS_APPLE) || BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
 std::size_t SkiaRenderer::OverlayLockHash::operator()(
     const OverlayLock& o) const {
   return std::hash<gpu::Mailbox>{}(o.mailbox());

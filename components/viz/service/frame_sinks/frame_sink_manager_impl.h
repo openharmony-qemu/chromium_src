@@ -515,6 +515,13 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
   void SetIsOfflineWebComponentInactive(bool is_inactive, const FrameSinkId& frame_sink_id) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  void DiscardCompositingResources(
+    const FrameSinkId& root_frame_sink_id) override;
+  void UpdateFocusAndScreenStatus(bool is_focused,
+                                  bool is_single_screen,
+                                  const FrameSinkId& frame_sink_id) override;
+#endif
   // Clears throttling operation on the frame sink with |id| and all its
   // descendants.
   void ClearThrottling(const FrameSinkId& id);

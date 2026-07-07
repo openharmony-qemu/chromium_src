@@ -523,7 +523,7 @@ class VIZ_SERVICE_EXPORT SkiaRenderer : public DirectRenderer {
   base::circular_deque<std::vector<OverlayLock>>
       read_lock_release_fence_overlay_locks_;
 
-#if BUILDFLAG(IS_APPLE)
+#if BUILDFLAG(IS_APPLE) || BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
   struct OverlayLockHash {
     using is_transparent = void;
     std::size_t operator()(const OverlayLock& o) const;
@@ -577,6 +577,11 @@ class VIZ_SERVICE_EXPORT SkiaRenderer : public DirectRenderer {
   gpu::Mailbox GetProtectedSharedImage(bool is_10bit);
   void MaybeFreeProtectedPool();
 #endif
+
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  bool is_delegated_enabled_ = false;
+#endif
+
 };
 
 }  // namespace viz

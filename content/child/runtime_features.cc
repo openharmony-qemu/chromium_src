@@ -64,10 +64,13 @@
 #include "device/vr/public/cpp/features.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 using blink::WebRuntimeFeatures;
 
 namespace {
-
 // Sets blink runtime features for specific platforms.
 // This should be a last resort vs runtime_enabled_features.json5.
 void SetRuntimeFeatureDefaultsForPlatform(
@@ -88,6 +91,14 @@ void SetRuntimeFeatureDefaultsForPlatform(
       !command_line.HasSwitch(switches::kDisable2dCanvasImageChromium) &&
       !command_line.HasSwitch(switches::kDisableGpu) &&
       base::FeatureList::IsEnabled(features::kCanvas2DImageChromium);
+#elif BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  const bool enable_canvas_2d_image_chromium =
+      command_line.HasSwitch(
+          blink::switches::kEnableGpuMemoryBufferCompositorResources) &&
+      !command_line.HasSwitch(switches::kDisable2dCanvasImageChromium) &&
+      !command_line.HasSwitch(switches::kDisableGpu) &&
+      (base::FeatureList::IsEnabled(features::kCanvas2DImageChromium) ||
+       base::ohos::IsDelegatedCompositingEnabledOhos());
 #else
   constexpr bool enable_canvas_2d_image_chromium = false;
 #endif
@@ -100,6 +111,16 @@ void SetRuntimeFeatureDefaultsForPlatform(
           blink::switches::kEnableGpuMemoryBufferCompositorResources) &&
       !command_line.HasSwitch(switches::kDisableWebGLImageChromium) &&
       !command_line.HasSwitch(switches::kDisableGpu);
+#elif BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  bool enable_web_gl_image_chromium =
+      command_line.HasSwitch(switches::kEnableWebGLImageChromium);
+  if (base::ohos::IsDelegatedCompositingEnabledOhos()) {
+    enable_web_gl_image_chromium =
+        command_line.HasSwitch(
+            blink::switches::kEnableGpuMemoryBufferCompositorResources) &&
+        !command_line.HasSwitch(switches::kDisableWebGLImageChromium) &&
+        !command_line.HasSwitch(switches::kDisableGpu);
+  }
 #else
   const bool enable_web_gl_image_chromium =
       command_line.HasSwitch(switches::kEnableWebGLImageChromium);

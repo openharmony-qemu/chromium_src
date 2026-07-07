@@ -9,7 +9,11 @@
 namespace content {
 
 ScreenChangeMonitor::ScreenChangeMonitor(
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+    base::RepeatingCallback<void(bool, int)> callback)
+#else
     base::RepeatingCallback<void(bool)> callback)
+#endif
     : callback_(callback) {
   if (display::Screen* screen = display::Screen::Get()) {
     cached_displays_ = screen->GetAllDisplays();
@@ -27,7 +31,11 @@ void ScreenChangeMonitor::OnScreensChange() {
     const bool is_multi_screen_changed =
         (cached_displays_.size() > 1) != (displays.size() > 1);
     cached_displays_ = displays;
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+    callback_.Run(is_multi_screen_changed, displays.size());
+#else
     callback_.Run(is_multi_screen_changed);
+#endif
   }
 }
 

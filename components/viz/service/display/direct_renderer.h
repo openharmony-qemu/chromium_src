@@ -118,6 +118,9 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
   void SetOutputSurfaceClipRect(const gfx::Rect& clip_rect);
   void SetVisible(bool visible);
   void ReallocatedFrameBuffers();
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  void UpdateFocusAndScreenStatus(bool is_focused, bool is_single_screen);
+#endif
   void DecideRenderPassAllocationsForFrame(
       const AggregatedRenderPassList& render_passes_in_draw_order,
       bool skip_root_render_pass_allocation);
@@ -522,6 +525,11 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
 
 #if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
   bool next_frame_skips_draw_render_passes_ = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  bool is_focused_ = false;
+  bool is_single_screen_ = false;
 #endif
 };
 

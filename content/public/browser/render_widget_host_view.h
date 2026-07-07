@@ -148,6 +148,12 @@ class CONTENT_EXPORT RenderWidgetHostView {
   virtual void SetIsOfflineWebComponentInactive(bool is_inactive) {}
 #endif
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  virtual void DiscardCompositingResources() {}
+  virtual void UpdateFocusAndScreenStatus(
+      bool is_focus, bool is_single_screen) {}
+#endif
+
   // Whether the view is showing.
   virtual bool IsShowing() = 0;
 

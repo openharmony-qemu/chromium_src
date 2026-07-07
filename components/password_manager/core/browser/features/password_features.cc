@@ -91,6 +91,11 @@ BASE_FEATURE(kFetchChangePasswordUrlForPasswordChange,
 #endif
 );
 
+// Shows a confirmation dialog before filling grouped credentials from the
+// manual fallback popup on Desktop.
+BASE_FEATURE(kShowConfirmationForGroupedCredentials,
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
 BASE_FEATURE(kFillChangePasswordFormByTyping,
              base::FEATURE_DISABLED_BY_DEFAULT);
 

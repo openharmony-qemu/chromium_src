@@ -955,6 +955,9 @@ Chromium is unable to recover your settings.
       <message name="IDS_PENDING_CHANGE_WARNING" desc="The message shown to users when an extension setting change will ba applied after Chrome restarts.">
         Changes to this setting will be applied once Chromium restarts.
       </message>
+      <message name="IDS_PENDING_CHANGE_WARNING_V2" desc="The message shown to users when an extension setting change will ba applied after Browser restarts.">
+        Changes to this setting will take effect after Browser restarts.
+      </message>
 
       <if expr="enable_extensions">
         <message name="IDS_EXTENSIONS_MULTIPLE_UNSUPPORTED_DISABLED_BODY" desc="Body of the dialog shown when multiple unsupported extensions have been disabled.">

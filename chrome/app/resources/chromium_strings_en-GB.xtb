@@ -356,6 +356,7 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
 <translation id="4987820182225656817">Guests can use Chromium without leaving anything behind.</translation>
 <translation id="4992938037305302429">Your account in Chromium</translation>
 <translation id="4994636714258228724">Add yourself to Chromium</translation>
+<translation id="5123338831436904301">Changes to this setting will take effect after Browser restarts.</translation>
 <translation id="5123973130450702873">Chromium needs permission to track your hands</translation>
 <translation id="5141988424377517949">You haven't visited recently. Chromium removed <ph name="PERMISSION_1" />, <ph name="PERMISSION_2" />, <ph name="PERMISSION_3" />.</translation>
 <translation id="5167819546851111585">What's on your mind today?</translation>

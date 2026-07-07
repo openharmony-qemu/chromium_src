@@ -4745,6 +4745,7 @@ void HTMLMediaElement::ConfigureTextTrackDisplay() {
 void HTMLMediaElement::ResetMediaPlayerAndMediaSource() {
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
   if (is_logger_export_ && !html_media_element_utils_.IsFeedsPage()) {
+    page_url_ = html_media_element_utils_.GetMainUrl();
     ReportVideoExperienceToBI();
   }
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE

@@ -45,6 +45,10 @@
 #include "ui/ozone/public/ozone_platform.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 #if DCHECK_IS_ON()
 #define CALLED_ON_VALID_THREAD()                      \
   do {                                                \
@@ -771,6 +775,8 @@ scoped_refptr<gfx::NativePixmap> SharedImageManager::GetNativePixmap(
 bool SharedImageManager::SupportsScanoutImages() {
 #if BUILDFLAG(IS_APPLE)
   return true;
+#elif BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  return base::ohos::IsDelegatedCompositingEnabledOhos();
 #elif BUILDFLAG(IS_ANDROID)
   return true;
 #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)

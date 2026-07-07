@@ -40,6 +40,10 @@
 #include "ui/ozone/public/ozone_platform.h"
 #endif  // BUILDFLAG(IS_OZONE)
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 namespace {
 BASE_FEATURE(kRestartReadAccessForConcurrentReadWrite,
              base::FEATURE_ENABLED_BY_DEFAULT);
@@ -55,6 +59,7 @@ NOINLINE void CheckForLoopFailuresBufferQueue() {
   }
   g_last_reshape_failure = now;
 }
+
 }  // namespace
 
 namespace viz {
@@ -81,6 +86,19 @@ class SkiaOutputDeviceBufferQueue::OverlayData {
 
   bool IsInUseByWindowServer() const {
 #if BUILDFLAG(IS_APPLE)
+    if (!scoped_read_access_) {
+      return false;
+    }
+    // The root render pass buffers are managed by SkiaRenderer so we don't care
+    // if they're in use by the window server.
+    if (is_root_render_pass_) {
+      return false;
+    }
+    return scoped_read_access_->IsInUseByWindowServer();
+#elif BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+    if (!base::ohos::IsDelegatedCompositingEnabledOhos()) {
+      return false;
+    }
     if (!scoped_read_access_) {
       return false;
     }
@@ -395,6 +413,14 @@ void SkiaOutputDeviceBufferQueue::DoFinishSwapBuffers(
     if (!overlay.IsRootRenderPass()) {
       released_overlays.push_back(overlay.mailbox());
     }
+#elif BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+    if (base::ohos::IsDelegatedCompositingEnabledOhos()) {
+      if (!overlay.IsRootRenderPass()) {
+        released_overlays.push_back(overlay.mailbox());
+      }
+    } else {
+      (void)released_overlays;
+    }
 #else
     (void)released_overlays;
 #endif
@@ -504,6 +530,14 @@ bool SkiaOutputDeviceBufferQueue::Reshape(const ReshapeParams& params) {
 
   return true;
 }
+
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+void SkiaOutputDeviceBufferQueue::DiscardCompositingResources(bool is_clean_all) {
+  if (presenter_) {
+    presenter_->DiscardCompositingResources(is_clean_all);
+  }
+}
+#endif
 
 SkSurface* SkiaOutputDeviceBufferQueue::BeginPaint(
     std::vector<GrBackendSemaphore>* end_semaphores) {

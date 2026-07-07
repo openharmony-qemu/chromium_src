@@ -253,6 +253,10 @@ interface FrameSinkManager {
   // Set is offline web component inactive.
   [EnableIf=arkweb_offline_web_evict_back_buffers]
   SetIsOfflineWebComponentInactive(bool is_inactive, FrameSinkId frame_sink_id);
+  [EnableIf=arkweb_delegate_compositing]
+  UpdateFocusAndScreenStatus(
+      bool is_focused, bool is_single_screen, FrameSinkId frame_sink_id);
+  DiscardCompositingResources(FrameSinkId frame_sink_id);
 
   // Set pip enable.
   [EnableIf=arkweb_pip]

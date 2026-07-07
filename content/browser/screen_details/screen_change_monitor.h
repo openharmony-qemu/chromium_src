@@ -17,7 +17,12 @@ class ScreenChangeMonitor : public display::DisplayObserver {
  public:
   // The callback is run on any screen changes; the bool parameter is true iff
   // the plurality of connected screens changed (e.g. 1 screen <-> 2 screens).
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  explicit ScreenChangeMonitor(
+      base::RepeatingCallback<void(bool, int)> callback);
+#else
   explicit ScreenChangeMonitor(base::RepeatingCallback<void(bool)> callback);
+#endif
   ~ScreenChangeMonitor() override;
 
   ScreenChangeMonitor(const ScreenChangeMonitor&) = delete;
@@ -36,7 +41,11 @@ class ScreenChangeMonitor : public display::DisplayObserver {
   display::ScopedOptionalDisplayObserver display_observer_{this};
 
   // The callback to run on screen change events.
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  base::RepeatingCallback<void(bool, int)> callback_;
+#else
   base::RepeatingCallback<void(bool)> callback_;
+#endif
 
   // The most recent display information, cached to detect meaningful changes.
   std::vector<display::Display> cached_displays_;

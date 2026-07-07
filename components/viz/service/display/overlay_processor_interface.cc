@@ -33,6 +33,12 @@
 #include "ui/ozone/public/ozone_platform.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "base/trace_event/trace_event.h"
+#include "components/viz/service/display/overlay_processor_ohos.h"
+#endif
+
 namespace viz {
 namespace {
 
@@ -109,6 +115,14 @@ OverlayProcessorInterface::CreateOverlayProcessor(
   // If we are offscreen, we don't have overlay support.
   // TODO(vasilyt): WebView would have a kNullSurfaceHandle. Make sure when
   // overlay for WebView is enabled, this check still works.
+
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  if (base::ohos::IsDelegatedCompositingEnabledOhos()) {
+    TRACE_EVENT0("viz", "create OverlayProcessorOhos");
+    return std::make_unique<OverlayProcessorOhos>();
+  }
+#endif
+
   if (surface_handle == gpu::kNullSurfaceHandle)
     return std::make_unique<OverlayProcessorStub>();
 

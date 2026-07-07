@@ -133,20 +133,32 @@ url::Origin ExclusiveAccessManager::GetExclusiveAccessBubbleOrigin() const {
 
 
 void ExclusiveAccessManager::OnTabDeactivated(WebContents* web_contents) {
+  auto weak_ptr = weak_ptr_factory_.GetWeakPtr();
   for (auto controller : exclusive_access_controllers_) {
     controller->OnTabDeactivated(web_contents);
+    if (!weak_ptr) {
+      return;
+    }
   }
 }
 
 void ExclusiveAccessManager::OnTabDetachedFromView(WebContents* web_contents) {
+  auto weak_ptr = weak_ptr_factory_.GetWeakPtr();
   for (auto controller : exclusive_access_controllers_) {
     controller->OnTabDetachedFromView(web_contents);
+    if (!weak_ptr) {
+      return;
+    }
   }
 }
 
 void ExclusiveAccessManager::OnTabClosing(WebContents* web_contents) {
+  auto weak_ptr = weak_ptr_factory_.GetWeakPtr();
   for (auto controller : exclusive_access_controllers_) {
     controller->OnTabClosing(web_contents);
+    if (!weak_ptr) {
+      return;
+    }
   }
 }
 
@@ -167,6 +179,7 @@ bool ExclusiveAccessManager::HandleUserKeyEvent(
         event.GetModifiers() != blink::WebInputEvent::kNoModifiers);
   }
 
+  auto weak_ptr = weak_ptr_factory_.GetWeakPtr();
   if (base::FeatureList::IsEnabled(
           features::kPressAndHoldEscToExitBrowserFullscreen)) {
     if (event.GetType() == input::NativeWebKeyboardEvent::Type::kKeyUp &&
@@ -175,6 +188,9 @@ bool ExclusiveAccessManager::HandleUserKeyEvent(
       show_exit_bubble_timer_.Stop();
       for (auto controller : exclusive_access_controllers_) {
         controller->HandleUserReleasedEscapeEarly();
+        if (!weak_ptr) {
+          return false;
+        }
       }
     } else if (IsUnmodifiedEscKeyDownEvent(event) &&
                !esc_key_hold_timer_.IsRunning()) {
@@ -209,6 +225,9 @@ bool ExclusiveAccessManager::HandleUserKeyEvent(
     if (controller->HandleUserPressedEscape()) {
       handled = true;
     }
+    if (!weak_ptr) {
+      return handled;
+    }
   }
   return handled;
 }
@@ -218,13 +237,21 @@ void ExclusiveAccessManager::OnUserInput() {
 }
 
 void ExclusiveAccessManager::ExitExclusiveAccess() {
+  auto weak_ptr = weak_ptr_factory_.GetWeakPtr();
   for (auto controller : exclusive_access_controllers_) {
     controller->ExitExclusiveAccessToPreviousState();
+    if (!weak_ptr) {
+      return;
+    }
   }
 }
 
 void ExclusiveAccessManager::HandleUserHeldEscape() {
+  auto weak_ptr = weak_ptr_factory_.GetWeakPtr();
   for (auto controller : exclusive_access_controllers_) {
     controller->HandleUserHeldEscape();
+    if (!weak_ptr) {
+      return;
+    }
   }
 }

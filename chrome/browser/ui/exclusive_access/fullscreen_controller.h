@@ -137,7 +137,7 @@ class FullscreenController : public ExclusiveAccessControllerBase {
   void ExitFullscreenModeForTab(content::WebContents* web_contents);
 
   base::WeakPtr<FullscreenController> GetWeakPtr() {
-    return ptr_factory_.GetWeakPtr();
+    return weak_ptr_factory_.GetWeakPtr();
   }
 
 #if !BUILDFLAG(IS_ANDROID)
@@ -277,7 +277,7 @@ class FullscreenController : public ExclusiveAccessControllerBase {
   // This is used for accessing HistoryService.
   base::CancelableTaskTracker task_tracker_;
 
-  base::WeakPtrFactory<FullscreenController> ptr_factory_{this};
+  base::WeakPtrFactory<FullscreenController> weak_ptr_factory_{this};
 };
 
 #endif  // CHROME_BROWSER_UI_EXCLUSIVE_ACCESS_FULLSCREEN_CONTROLLER_H_

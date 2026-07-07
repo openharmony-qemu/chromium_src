@@ -85,7 +85,7 @@ class FormFiller {
   class RefillOptions {
    public:
     static RefillOptions NotRefill();
-    static RefillOptions Refill(DenseSet<FieldTypeGroup> originally_filled);
+    static RefillOptions Refill(FieldTypeSet originally_filled);
 
     bool is_refill() const;
     bool may_refill(const FieldTypeSet& field_type) const;
@@ -93,7 +93,7 @@ class FormFiller {
    private:
     RefillOptions();
 
-    std::optional<DenseSet<FieldTypeGroup>> originally_filled_;
+    std::optional<FieldTypeSet> originally_filled_;
   };
 
   // Given `field`, the corresponding `autofill_field` to fill, and the

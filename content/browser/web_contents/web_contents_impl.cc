@@ -2082,9 +2082,20 @@ WebContentsView* WebContentsImpl::GetView() const {
   return view_.get();
 }
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+void WebContentsImpl::OnScreensChange(bool is_multi_screen_changed,
+                                      int screen_count) {
+  OPTIONAL_TRACE_EVENT2("content", "WebContentsImpl::OnScreensChange",
+                        "is_multi_screen_changed", is_multi_screen_changed,
+                        "screen_count", screen_count);
+  if (implUtils_) {
+    implUtils_->NotifyScreenCountChanged(screen_count);
+  }
+#else
 void WebContentsImpl::OnScreensChange(bool is_multi_screen_changed) {
   OPTIONAL_TRACE_EVENT1("content", "WebContentsImpl::OnScreensChange",
                         "is_multi_screen_changed", is_multi_screen_changed);
+#endif
   // Mac display info may originate from a remote process hosting the NSWindow;
   // this local process display::Screen signal should not trigger updates.
   // TODO(crbug.com/40165350): Unify screen info plumbing, caching, etc.
@@ -5226,6 +5237,12 @@ void WebContentsImpl::SetIsOfflineWebComponent() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+void WebContentsImpl::DiscardCompositingResources() {
+  implUtils_->DiscardCompositingResources();
+}
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 void WebContentsImpl::UpdateUserGestureCarryoverInfo() {
   OPTIONAL_TRACE_EVENT0("content",
@@ -7112,6 +7129,11 @@ void WebContentsImpl::NotifyWebContentsFocused(
                         "render_widget_host", render_widget_host);
   observers_.NotifyObservers(&WebContentsObserver::OnWebContentsFocused,
                              render_widget_host);
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  if (implUtils_) {
+    implUtils_->NotifyFocusStatus(true);
+  }
+#endif
 }
 
 void WebContentsImpl::NotifyWebContentsLostFocus(
@@ -7121,6 +7143,11 @@ void WebContentsImpl::NotifyWebContentsLostFocus(
                         "render_widget_host", render_widget_host);
   observers_.NotifyObservers(&WebContentsObserver::OnWebContentsLostFocus,
                              render_widget_host);
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  if (implUtils_) {
+    implUtils_->NotifyFocusStatus(false);
+  }
+#endif
 }
 
 void WebContentsImpl::SystemDragEnded(RenderWidgetHost* source_rwh) {

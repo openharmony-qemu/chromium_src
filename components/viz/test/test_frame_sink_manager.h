@@ -120,6 +120,12 @@ class TestFrameSinkManagerImpl : public mojom::FrameSinkManager {
   void SetIsOfflineWebComponentInactive(
     bool is_inactive,
     const ::viz::FrameSinkId& frame_sink_id) override {}
+  void UpdateFocusAndScreenStatus(
+      bool is_focused,
+      bool is_single_screen,
+      const ::viz::FrameSinkId& frame_sink_id) override {}
+  void DiscardCompositingResources(
+      const ::viz::FrameSinkId& frame_sink_id) override {}
 #endif
 #if BUILDFLAG(ARKWEB_PIP)
   void SetPipActive(bool active, const FrameSinkId& frame_sink_id) override {}

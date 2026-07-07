@@ -183,6 +183,14 @@ void DirectRenderer::ReallocatedFrameBuffers() {
   next_frame_needs_full_frame_redraw_ = true;
 }
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+void DirectRenderer::UpdateFocusAndScreenStatus(bool is_focused,
+                                                bool is_single_screen) {
+  is_focused_ = is_focused;
+  is_single_screen_ = is_single_screen;
+}
+#endif
+
 void DirectRenderer::Reshape(
     const OutputSurface::ReshapeParams& reshape_params) {
   output_surface_->Reshape(reshape_params);
@@ -326,6 +334,10 @@ void DirectRenderer::DrawFrame(
     overlay_processor_->SetDisplayTransformHint(
         output_surface_->GetDisplayTransform());
     overlay_processor_->SetViewportSize(device_viewport_size);
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+    overlay_processor_->UpdateFocusAndScreenStatus(is_focused_,
+                                                   is_single_screen_);
+#endif
 
     // Before ProcessForOverlay calls into the hardware to ask about whether the
     // overlay setup can be handled, we need to set up the primary plane.

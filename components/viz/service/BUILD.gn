@@ -439,7 +439,7 @@ viz_component("service") {
     ]
   }
 
-  if (is_android || use_ozone) {
+  if (is_android || use_ozone || is_ohos) {
     sources += [
       "display/overlay_combination_cache.cc",
       "display/overlay_combination_cache.h",
@@ -509,6 +509,13 @@ viz_component("service") {
   }
 
   if (enable_arkweb) {
+    sources += [
+      "display/overlay_processor_ohos.cc",
+      "display/overlay_processor_ohos.h",
+      "display_embedder/output_presenter_ohos.cc",
+      "display_embedder/output_presenter_ohos.h",
+    ]
+
     deps += [ "//arkweb//build/features"]
   }
 

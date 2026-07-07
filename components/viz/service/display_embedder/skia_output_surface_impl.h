@@ -107,6 +107,10 @@ class VIZ_SERVICE_EXPORT SkiaOutputSurfaceImpl : public SkiaOutputSurface {
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
   void CleanBufferAfterSwapBuffer(bool delay_clean) override;
 #endif
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  void DiscardCompositingResources() override;
+#endif
+
   void Reshape(const ReshapeParams& params) override;
   void SetUpdateVSyncParametersCallback(
       UpdateVSyncParametersCallback callback) override;

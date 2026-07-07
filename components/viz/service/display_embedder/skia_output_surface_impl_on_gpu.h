@@ -185,6 +185,10 @@ class SkiaOutputSurfaceImplOnGpu
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
   void CleanBufferAfterSwapBuffer(bool delay_clean);
 #endif
+
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  void DiscardCompositingResources();
+#endif
   // |update_rect| is in buffer space.
   // If is |is_overlay| is true, the ScopedWriteAccess will be saved and kept
   // open until PostSubmit().
@@ -657,6 +661,10 @@ class SkiaOutputSurfaceImplOnGpu
     BUILDFLAG(USE_V4L2_CODEC)
   std::unique_ptr<media::VulkanOverlayAdaptor> vulkan_overlay_adaptor_ =
       nullptr;
+#endif
+
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  bool is_delegated_enabled_ = false;
 #endif
 
   std::shared_ptr<SkiaOutputSurfaceImplOnGpuUtils> impl_utils_ = nullptr;

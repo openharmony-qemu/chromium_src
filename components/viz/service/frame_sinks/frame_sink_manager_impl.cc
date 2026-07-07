@@ -1144,6 +1144,20 @@ void FrameSinkManagerImpl::SetIsOfflineWebComponentInactive(bool is_inactive,
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+void FrameSinkManagerImpl::DiscardCompositingResources(
+    const FrameSinkId& root_frame_sink_id) {
+  managerImplUtils->DiscardCompositingResources(root_frame_sink_id);
+}
+
+void FrameSinkManagerImpl::UpdateFocusAndScreenStatus(
+    bool is_focused, bool is_single_screen, const FrameSinkId& frame_sink_id) {
+  managerImplUtils->UpdateFocusAndScreenStatus(is_focused,
+                                               is_single_screen,
+                                               frame_sink_id);
+}
+#endif
+
 void FrameSinkManagerImpl::UpdateThrottling() {
   // Clear previous throttling effect on all frame sinks.
   for (auto& support_map_item : support_map_) {

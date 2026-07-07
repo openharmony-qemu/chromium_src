@@ -43,6 +43,10 @@ class VIZ_SERVICE_EXPORT OutputPresenter {
 
   virtual void SetVSyncDisplayID(int64_t display_id) {}
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  virtual void DiscardCompositingResources(bool is_clean_all) {}
+#endif
+
 #if BUILDFLAG(IS_APPLE)
   virtual void SetMaxPendingSwaps(int max_pending_swaps) {}
 #endif

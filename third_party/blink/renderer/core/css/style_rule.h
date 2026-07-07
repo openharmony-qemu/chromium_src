@@ -885,7 +885,8 @@ struct DowncastTraits<StyleRuleGroup> {
     return rule.IsMediaRule() || rule.IsSupportsRule() ||
            rule.IsContainerRule() || rule.IsLayerBlockRule() ||
            rule.IsScopeRule() || rule.IsStartingStyleRule() ||
-           rule.IsFunctionRule();
+           rule.IsFunctionRule() ||
+           rule.IsMixinRule();
   }
 };
 

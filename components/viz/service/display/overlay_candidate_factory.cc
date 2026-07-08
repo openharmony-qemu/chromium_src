@@ -636,7 +636,7 @@ OverlayCandidate::CandidateStatus OverlayCandidateFactory::FromTextureQuad(
     const TextureDrawQuad* quad,
     OverlayCandidate& candidate) const {
 #if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
-  if (base::ohos::IsDelegatedCompositingEnabledOhos() && !quad->is_video_frame ) {
+  if (base::ohos::IsDelegatedCompositingEnabledOhos() && !quad->is_video_frame) {
     LOG(DEBUG) << "OverlayCandidateFactory::FromTextureQuad is not video frame";
     return CandidateStatus::kFailNotOverlay;
   }

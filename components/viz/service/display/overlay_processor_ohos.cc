@@ -44,14 +44,13 @@ gfx::RectF ClipFromOrigin(gfx::RectF input) {
     input.set_x(0.f);
   }
 
-  if (input.y() < 0) {
+  if (input.y() < 0.f) {
     input.set_height(input.height() + input.y());
     input.set_y(0.f);
   }
 
   return input;
 }
-
 }  // namespace
 
 OverlayProcessorOhos::OverlayProcessorOhos() {
@@ -61,8 +60,6 @@ OverlayProcessorOhos::OverlayProcessorOhos() {
   // Therefore, our damage tracking for overlays is incorrect and we must ignore
   // the thresholding of prioritization.
 
-  // TODO(crbug.com/40236858): We should take issue into account when trying to
-  // find a replacement for number-of-scanouts.
   prioritization_config_.changing_threshold = false;
   prioritization_config_.damage_rate_threshold = false;
 
@@ -108,14 +105,14 @@ void OverlayProcessorOhos::CheckOverlaySupportImpl(
       TRACE_EVENT0("viz", "CheckOverlaySupportImpl reject due to lost focus");
       LOG(DEBUG) << "Overlay rejected due to candidates unfocus";
       candidate.overlay_handled = false;
-      return;
+      continue;
     }
 
     if (!is_single_screen_) {
       TRACE_EVENT0("viz", "CheckOverlaySupportImpl reject due to multi screen");
       LOG(DEBUG) << "Overlay rejected due to multi screen";
       candidate.overlay_handled = false;
-      return;
+      continue;
     }
     // Aggregator adds `display_transform_` to all quads, which is then added to
     // `candidate.transform` here. `display_transform_` only applies to content
@@ -131,7 +128,7 @@ void OverlayProcessorOhos::CheckOverlaySupportImpl(
       TRACE_EVENT0("viz", "CheckOverlaySupportImpl due to transform invalid");
       LOG(DEBUG) << "Overlay rejected due to transform invalid";
       candidate.overlay_handled = false;
-      return;
+      continue;
     }
     candidate.transform = candidate_overlay_transform;
 
@@ -145,7 +142,7 @@ void OverlayProcessorOhos::CheckOverlaySupportImpl(
     if (display_rect.IsEmpty()) {
       LOG(DEBUG) << "Overlay rejected due to display_rect empty";
       candidate.overlay_handled = false;
-      return;
+      continue;
     }
 
     // The display rect above includes the |display_transform_| while the rects
@@ -180,7 +177,7 @@ void OverlayProcessorOhos::CheckOverlaySupportImpl(
       LOG(DEBUG) << "Overlay rejected due to size limits. " <<
         "Display: " << displayWidth << "x" << displayHeight;
       candidate.overlay_handled = false;
-      return;
+      continue;
     }
     auto src_rect = gfx::ScaleRect(candidate.uv_rect,
                                    candidate.resource_size_in_pixels);
@@ -193,7 +190,7 @@ void OverlayProcessorOhos::CheckOverlaySupportImpl(
       LOG(DEBUG) << "Overlay rejected due to size limits. "
                  << "Src: " << srcWidth << " x " << srcHeight;
       candidate.overlay_handled = false;
-      return;
+      continue;
     }
 
     auto x_scale = displayWidth / srcWidth;
@@ -203,7 +200,7 @@ void OverlayProcessorOhos::CheckOverlaySupportImpl(
       TRACE_EVENT2("viz", "CheckOverlaySupportImpl reject",
                    "x_scale", x_scale, "y_scale", y_scale);
       candidate.overlay_handled = false;
-      return;
+      continue;
     }
 
     candidate.overlay_handled = true;
@@ -233,8 +230,8 @@ void OverlayProcessorOhos::InsertPrimaryPlane(
     OverlayCandidateList& candidates) {
   AdjustPrimaryPlaneForDisplayTransform(primary_plane);
 
-  const auto insert_positon = candidates.begin();
-  candidates.insert(insert_positon, std::move(primary_plane));
+  const auto insert_position = candidates.begin();
+  candidates.insert(insert_position, std::move(primary_plane));
 }
 
 bool OverlayProcessorOhos::IsOverlaySupported() const {

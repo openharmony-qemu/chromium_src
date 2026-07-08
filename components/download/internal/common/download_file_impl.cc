@@ -307,6 +307,16 @@ void DownloadFileImpl::AddInputStream(std::unique_ptr<InputStream> stream,
       SCOPED_CRASH_KEY_NUMBER("AddInputStream", "existing_bytes_written", it->second->bytes_written());
       SCOPED_CRASH_KEY_NUMBER("AddInputStream", "existing_length", it->second->length());
       SCOPED_CRASH_KEY_NUMBER("AddInputStream", "download_id", download_id_);
+      LOG(INFO) << "AddInputStream offset_insert_failed: offset=" << offset
+                << ", stream_count=" << source_streams_.size()
+                << ", existing_bytes_read=" << it->second->bytes_read()
+                << ", num_active_streams=" << num_active_streams_
+                << ", total_received=" << TotalBytesReceived()
+                << ", potential_length=" << potential_file_length_
+                << ", existing_finished=" << it->second->is_finished()
+                << ", existing_bytes_written=" << it->second->bytes_written()
+                << ", existing_length=" << it->second->length()
+                << ", download_id=" << download_id_;
       base::debug::DumpWithoutCrashing();
       CancelRequest(offset);
       return;

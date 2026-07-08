@@ -984,6 +984,8 @@ class BLINK_EXPORT WebLocalFrame : public WebFrame {
   virtual bool GetHasGenericHideTypeOption() const = 0;
 
   virtual bool GetAdBlockEnabled() = 0;
+
+  virtual void UpdateAdBlockEnabledToRender(bool site_adblock_enabled) = 0;
 #endif
 
   virtual void SetTargetToCurrentHistoryItem(const WebString& target) = 0;

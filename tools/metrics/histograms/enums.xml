@@ -13061,6 +13061,9 @@ Called by update_permissions_policy_enum.py.-->
     A client tries to enter BFCache while it has an ongoing transaction blocking
     other transactions.
   </int>
+  <int value="43" label="kDidChangeOpener">
+    A request was received to change window.opener to a frame in BFCache.
+  </int>
 </enum>
 
 <enum name="IncidentType">

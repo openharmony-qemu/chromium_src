@@ -180,6 +180,7 @@
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/content_browser_client.h"
 #include "content/public/browser/context_menu_params.h"
+#include "content/public/browser/devtools_agent_host.h"
 #include "content/public/browser/disallow_activation_reason.h"
 #include "content/public/browser/document_ref.h"
 #include "content/public/browser/document_service_internal.h"
@@ -6223,10 +6224,19 @@ void RenderFrameHostImpl::OnUnloadACK() {
   // it makes its renderer send this message. `owner_` is non null since this
   // attachment can only happen for subframes and pending deletion is the only
   // case where subframes may have a null `owner_`.
+  //
+  // Note that for MimeHandlerView specifically, the unload ACK can only be
+  // legitimately received after the inner delegate has already been attached by
+  // `RFH::SwapOuterDelegateFrame()`, and should be ignored if it's received
+  // during an earlier MimeHandlerView-specific preparation phase invoked via
+  // `RFH::PrepareForInnerContentsAttach()` (because not ignoring it would later
+  // disrupt the attachment, e.g. by causing the Unload IPC not to be sent).
+  // Hence, it's important to check for `is_inner_delegate_attached()` rather
+  // than `is_attaching_inner_delegate()`.
   RenderFrameHostOwner* owner =
       IsPendingDeletion() ? GetFrameTreeNodeForUnload() : owner_;
   if (!is_main_frame() &&
-      owner->GetRenderFrameHostManager().is_attaching_inner_delegate()) {
+      owner->GetRenderFrameHostManager().is_inner_delegate_attached()) {
     // This RFH was unloaded while attaching an inner delegate. The RFH
     // will stay around but it will no longer be associated with a RenderFrame.
     RenderFrameDeleted();
@@ -8720,6 +8730,8 @@ void RenderFrameHostImpl::DidChangeOpener(
   if (!owner_)
     return;
 
+  // Note that this call internally protects against `opener_frame_token`
+  // referring to an inactive frame.
   owner_->GetRenderFrameHostManager().DidChangeOpener(
       opener_frame_token, GetSiteInstance()->group());
 }
@@ -9537,17 +9549,12 @@ void RenderFrameHostImpl::CreateFencedFrame(
     return;
   }
 
-  // Ensure the devtools frame token doesn't exist in the FrameTree for
-  // this tab.
-  for (FrameTreeNode* node :
-       GetOutermostMainFrame()->frame_tree()->NodesIncludingInnerTreeNodes()) {
-    if (node->current_frame_host()->devtools_frame_token() ==
-        devtools_frame_token) {
-      bad_message::ReceivedBadMessage(
-          GetProcess(),
-          bad_message::RFHI_CREATE_FENCED_FRAME_BAD_DEVTOOLS_FRAME_TOKEN);
-      return;
-    }
+  // Ensure the devtools frame token doesn't exist globally.
+  if (DevToolsAgentHost::GetForId(devtools_frame_token.ToString())) {
+    bad_message::ReceivedBadMessage(
+        GetProcess(),
+        bad_message::RFHI_CREATE_FENCED_FRAME_BAD_DEVTOOLS_FRAME_TOKEN);
+    return;
   }
 
   // Inactive pages cannot create fenced frames. If the page is in the BFCache,

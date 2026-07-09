@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 
@@ -54,7 +29,7 @@ static WindowWidgetType ConvertWindowIdToWidgetId(WindowIdType window_id) {
   return std::stoi(window_id_string);
 }
 
-WindowType WindowAdapter::GetWindow(WindowIdType index) {
+NativeWindowType WindowAdapter::GetWindow(WindowIdType index) {
   std::lock_guard<std::mutex> lock_protect(windows_mutex_);
   auto search = windows_.find(index);
   if (search != windows_.end()) {
@@ -80,7 +55,7 @@ WindowIdType WindowAdapter::GetWindowId(const WindowWidgetType index) {
 WindowIdType WindowAdapter::GetWindowIdByNativeWindow(const WindowType window) {
   WindowIdType window_id;
   for (const auto& [index, window_info] : windows_) {
-    if (window_info.window == window) {
+    if (window_info.window && window_info.window->Get() == window) {
       window_id = window_info.window_id;
     }
   }
@@ -91,7 +66,7 @@ WindowWidgetType WindowAdapter::GetWidgetId(const WindowType window) {
   std::lock_guard<std::mutex> lock_protect(windows_mutex_);
   WindowWidgetType widget_id = -1;
   for (const auto& [index, window_info] : windows_) {
-    if (window_info.window == window) {
+    if (window_info.window && window_info.window->Get() == window) {
       widget_id = window_info.widget_id;
     }
   }
@@ -102,7 +77,8 @@ void WindowAdapter::AddWindow(WindowIdType index, WindowType window) {
   std::lock_guard<std::mutex> lock_protect(windows_mutex_);
 
   WindowInfo window_info;
-  window_info.window = window;
+  window_info.window =
+    std::make_shared<NativeWindowWrapper>((OHNativeWindow*)window);
   window_info.window_id = index;
   window_info.widget_id = ConvertWindowIdToWidgetId(index);
   windows_.emplace(index, window_info);
@@ -134,7 +110,7 @@ void WindowAdapter::SetWindowWidget(WindowType window,
   std::lock_guard<std::mutex> lock_protect(windows_mutex_);
 
   for (auto& [index, window_info] : windows_) {
-    if (window_info.window == window) {
+    if (window_info.window && window_info.window->Get() == window) {
       window_info.widget_id = widget_id;
     }
   }
@@ -229,8 +205,10 @@ CrossProcessSyncResult WindowAdapter::SyncWindowToGpuProcess() {
 
   std::vector<std::pair<std::string, void*>> windows;
   for (auto& [window_id, window_info] : windows_) {
-    windows.emplace_back(
-        std::pair<std::string, void*>(window_id, window_info.window));
+    if (window_info.window && window_info.window->IsValid()) {
+      windows.emplace_back(
+          std::pair<std::string, void*>(window_id, window_info.window->Get()));
+    }
   }
   if (ohos::adapter::multiprocess::GpuNativeProcessHost::GetInstance()
       .InitializeWindowAdapter(windows) != 0) {
@@ -285,7 +263,6 @@ bool WindowAdapter::WindowHasInit(WindowWidgetType widget_id) {
 }
 
 void WindowAdapter::SetWindowPrivacyMode(WindowWidgetType widget_id, bool is_privacy_mode) {
-  // get ohos window id form widget_id
   std::vector<int32_t> ids = AppWindowAdapter::GetInstance().GetOriginWindowIds({widget_id});
   if (!ids.empty()) {
     LOGI(
@@ -294,10 +271,9 @@ void WindowAdapter::SetWindowPrivacyMode(WindowWidgetType widget_id, bool is_pri
         widget_id, is_privacy_mode);
     int32_t result = OH_WindowManager_SetWindowPrivacyMode(ids[0], is_privacy_mode);
     if (result != 0) {
-      LOGE(
-          "OH_WindowManager_SetWindowPrivacyMode result: %{public}d, "
-          "widget_id:%{public}d ",
-          result, widget_id);
+      LOGE("[WindowAdapter] %{public}s:"
+           "call OH_WindowManager_SetWindowPrivacyMode failed, error=%{public}d, widget_id=%{public}d",
+           __func__, result, widget_id);
     }
   }
 }

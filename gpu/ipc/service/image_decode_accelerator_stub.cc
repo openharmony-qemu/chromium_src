@@ -62,10 +62,15 @@
 #include "ui/gfx/linux/native_pixmap_dmabuf.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "gpu/ipc/service/shared_image_stub.h"
+#include "ui/gfx/linux/native_pixmap_dmabuf.h"
+#endif
+
 namespace gpu {
 class Buffer;
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_OHOS)
 namespace {
 
 struct CleanUpContext {
@@ -149,10 +154,16 @@ void ImageDecodeAcceleratorStub::ScheduleImageDecode(
   const SyncToken decode_sync_token(CommandBufferNamespace::GPU_IO,
                                     command_buffer_id_, release_count);
 
+  bool ohos_acceleration_enabled = false;
+#if BUILDFLAG(IS_OHOS)
+  ohos_acceleration_enabled = base::FeatureList::IsEnabled(
+      features::kOhosImageDecodeAcceleration);
+#endif
   if (!base::FeatureList::IsEnabled(
           features::kVaapiJpegImageDecodeAcceleration) &&
       !base::FeatureList::IsEnabled(
-          features::kVaapiWebPImageDecodeAcceleration)) {
+          features::kVaapiWebPImageDecodeAcceleration) &&
+      !ohos_acceleration_enabled) {
     ScheduleSyncTokenRelease(decode_sync_token);
     return;
   }
@@ -217,6 +228,12 @@ void ImageDecodeAcceleratorStub::ProcessCompletedDecode(
     DLOG(ERROR) << "The image could not be decoded";
     return;
   }
+
+#if BUILDFLAG(IS_OHOS)
+  base::ScopedClosureRunner event_finalizer(
+      base::BindOnce(&ImageDecodeAcceleratorStub::ReleasePixmapData,
+                     base::Unretained(this), completed_decode->event));
+#endif
 
   // TODO(crbug.com/40641220): the output_size parameter is going away, so this
   // validation is not needed. Checking if the size is too small should happen
@@ -402,6 +419,149 @@ void ImageDecodeAcceleratorStub::ProcessCompletedDecode(
   }
   DCHECK(notify_gl_state_changed);
   notify_gl_state_changed->RunAndReset();
+#elif BUILDFLAG(IS_OHOS)
+
+  // We should notify the SharedContextState that we or Skia may have modified
+  // the driver's GL state. We put this in a ScopedClosureRunner so that if we
+  // return early, the SharedContextState ends up in a consistent state.
+  notify_gl_state_changed.emplace(base::BindOnce(
+      [](scoped_refptr<SharedContextState> scs) {
+        scs->set_need_context_state_reset(true);
+      },
+      shared_context_state));
+
+  // Create an SkImage for each plane.
+  const size_t num_planes =
+      completed_decode->handle.native_pixmap_handle.planes.size();
+  plane_sk_images.resize(num_planes);
+  for (size_t plane = 0u; plane < num_planes; plane++) {
+    gfx::Size plane_size = params.output_size;
+    // Extract the plane out of |completed_decode->handle| and put it in its own
+    // gfx::GpuMemoryBufferHandle so that we can create a SharedImage for the
+    // plane.
+    gfx::GpuMemoryBufferHandle plane_handle;
+    plane_handle.type = completed_decode->handle.type;
+    plane_handle.native_pixmap_handle.planes.push_back(
+        std::move(completed_decode->handle.native_pixmap_handle.planes[plane]));
+    const auto plane_format = gfx::BufferFormat::RGBA_8888;
+
+    // NOTE: The SurfaceHandle would typically be used to know what gpu adapter
+    // the buffer belongs to, but here we already have the buffer handle, so it
+    // should be OK to pass a null SurfaceHandle (it's not clear what
+    // SurfaceHandle was used to create the original buffers).
+    gpu::Mailbox mailbox = gpu::Mailbox::Generate();
+    if (!channel_->shared_image_stub()->CreateSharedImage(
+            mailbox, std::move(plane_handle), plane_format,
+            gfx::BufferPlane::DEFAULT, plane_size, gfx::ColorSpace(),
+            kTopLeft_GrSurfaceOrigin, kOpaque_SkAlphaType,
+            SHARED_IMAGE_USAGE_RASTER_READ |
+                SHARED_IMAGE_USAGE_OOP_RASTERIZATION,
+            completed_decode->window_buffer)) {
+      LOG(ERROR) << "[OhosImageDecode] Could not create SharedImage";
+      return;
+    }
+
+    // Create the SkiaRepresentation::ScopedReadAccess from the SharedImage.
+    // There is a need to be careful here as the SkiaRepresentation can outlive
+    // the channel: the representation is effectively owned by the transfer
+    // cache, which is owned by SharedContextState, which is destroyed by
+    // GpuChannelManager *after* GpuChannelManager destroys the channels. Hence,
+    // we cannot supply the channel's SharedImageStub as a MemoryTracker to
+    // create a SharedImageRepresentationFactory here (the factory creates a
+    // MemoryTypeTracker instance backed by that MemoryTracker that needs to
+    // outlive the representation). Instead, we create the Skia representation
+    // directly using the SharedContextState's MemoryTypeTracker instance.
+    std::unique_ptr<SkiaImageRepresentation> skia_representation =
+        channel_->gpu_channel_manager()->shared_image_manager()->ProduceSkia(
+            mailbox, shared_context_state->memory_type_tracker(),
+            shared_context_state);
+
+    // Note that per the above reasoning, we have to make sure that the factory
+    // representation doesn't outlive the channel (since it *was* created via
+    // the channel). We can destroy it now that the skia representation is
+    // alive.
+    channel_->shared_image_stub()->factory()->DestroySharedImage(mailbox);
+    if (!skia_representation) {
+      DLOG(ERROR) << "Could not create a SkiaImageRepresentation";
+      return;
+    }
+
+    std::vector<GrBackendSemaphore> begin_semaphores;
+    std::vector<GrBackendSemaphore> end_semaphores;
+    auto skia_scoped_access = skia_representation->BeginScopedReadAccess(
+        &begin_semaphores, &end_semaphores);
+    if (!skia_scoped_access) {
+      LOG(ERROR) << "[OhosImageDecode] Could not get scoped access to "
+                    "SkiaImageRepresentation";
+      return;
+    }
+
+    // As this SharedImage has just been created, there should not be any
+    // semaphores.
+    DCHECK(begin_semaphores.empty());
+    DCHECK(end_semaphores.empty());
+
+    // Create the SkImage, handing over lifetime management of the
+    // skia image representation and scoped access.
+    CleanUpContext* resource = new CleanUpContext(
+        channel_->task_runner(), shared_context_state.get(),
+        std::move(skia_representation), std::move(skia_scoped_access));
+    plane_sk_images[plane] = resource->skia_scoped_access_->CreateSkImage(
+        shared_context_state.get(), CleanUpResource, resource);
+    if (!plane_sk_images[plane]) {
+      LOG(ERROR) << "[OhosImageDecode] Could not create planar SkImage";
+      return;
+    }
+  }
+
+  // Insert the cache entry in the transfer cache. Note that this section
+  // validates several of the IPC parameters: |params.raster_decoder_route_id|,
+  // |params.transfer_cache_entry_id|, |params.discardable_handle_shm_id|, and
+  // |params.discardable_handle_shm_offset|.
+  CommandBufferStub* command_buffer =
+      channel_->LookupCommandBuffer(params.raster_decoder_route_id);
+  if (!command_buffer) {
+    LOG(ERROR) << "[OhosImageDecode] Could not find the command buffer";
+    return;
+  }
+  scoped_refptr<Buffer> handle_buffer =
+      command_buffer->GetTransferBuffer(params.discardable_handle_shm_id);
+  if (!DiscardableHandleBase::ValidateParameters(
+          handle_buffer.get(), params.discardable_handle_shm_offset)) {
+    LOG(ERROR) << "[OhosImageDecode] Could not validate the discardable handle "
+                  "parameters";
+    return;
+  }
+  DCHECK(command_buffer->decoder_context());
+  if (command_buffer->decoder_context()->GetRasterDecoderId() < 0) {
+    LOG(ERROR) << "[OhosImageDecode] Could not get the raster decoder ID";
+    return;
+  }
+  {
+    auto* gr_shader_cache = channel_->gpu_channel_manager()->gr_shader_cache();
+    std::optional<raster::GrShaderCache::ScopedCacheUse> cache_use;
+    if (gr_shader_cache) {
+      cache_use.emplace(gr_shader_cache,
+                        base::strict_cast<int32_t>(channel_->client_id()));
+    }
+    DCHECK(shared_context_state->transfer_cache());
+    if (!shared_context_state->transfer_cache()
+             ->CreateLockedRGBAHardwareDecodedImageEntry(
+                 command_buffer->decoder_context()->GetRasterDecoderId(),
+                 params.transfer_cache_entry_id,
+                 ServiceDiscardableHandle(std::move(handle_buffer),
+                                          params.discardable_handle_shm_offset,
+                                          params.discardable_handle_shm_id),
+                 shared_context_state->gr_context(), std::move(plane_sk_images),
+                 completed_decode->buffer_byte_size)) {
+      LOG(ERROR)
+          << "[OhosImageDecode] Could not create and insert the transfer "
+             "cache entry";
+      return;
+    }
+  }
+  DCHECK(notify_gl_state_changed);
+  notify_gl_state_changed->RunAndReset();
 #else
   // Right now, we only support Chrome OS because we need to use the
   // |native_pixmap_handle| member of a GpuMemoryBufferHandle.
@@ -445,5 +605,17 @@ void ImageDecodeAcceleratorStub::ScheduleSyncTokenRelease(
                                            base::OnceClosure(base::DoNothing()),
                                            /*sync_token_fences=*/{}, release));
 }
+
+#if BUILDFLAG(IS_OHOS)
+void ImageDecodeAcceleratorStub::ReleasePixmapData(
+    base::WaitableEvent* finish_event) {
+  DCHECK(main_task_runner_->BelongsToCurrentThread());
+  lock_.AssertAcquired();
+  worker_->ReleaseDecodedPixelMap();
+  if (finish_event) {
+    finish_event->Signal();
+  }
+}
+#endif
 
 }  // namespace gpu

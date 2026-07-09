@@ -80,6 +80,20 @@ class GPU_GLES2_EXPORT OzoneImageBackingFactory
       bool is_thread_safe,
       gfx::BufferUsage buffer_usage) override;
 
+#if BUILDFLAG(IS_OHOS)
+  std::unique_ptr<SharedImageBacking> CreateSharedImage(
+      const Mailbox& mailbox,
+      gfx::GpuMemoryBufferHandle handle,
+      gfx::BufferFormat format,
+      gfx::BufferPlane plane,
+      const gfx::Size& size,
+      const gfx::ColorSpace& color_space,
+      GrSurfaceOrigin surface_origin,
+      SkAlphaType alpha_type,
+      uint32_t usage,
+      void* window_buffer) override;
+#endif
+
   bool IsSupported(SharedImageUsageSet usage,
                    viz::SharedImageFormat format,
                    const gfx::Size& size,

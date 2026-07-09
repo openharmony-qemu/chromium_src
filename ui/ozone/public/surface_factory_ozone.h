@@ -172,6 +172,17 @@ class COMPONENT_EXPORT(OZONE_BASE) SurfaceFactoryOzone {
       gfx::BufferFormat format,
       gfx::NativePixmapHandle handle);
 
+#if BUILDFLAG(IS_OHOS)
+  // Create a single native buffer from an existing handle. Takes ownership of
+  // |handle| and can be called on any thread.
+  virtual scoped_refptr<gfx::NativePixmap> CreateNativePixmapFromHandle(
+      gfx::AcceleratedWidget widget,
+      gfx::Size size,
+      gfx::BufferFormat format,
+      gfx::NativePixmapHandle handle,
+      void* window_buffer);
+#endif
+
   // A temporary solution that allows protected NativePixmap management to be
   // handled outside the Ozone platform (crbug.com/771863).
   // The current implementation uses dummy NativePixmaps as transparent handles

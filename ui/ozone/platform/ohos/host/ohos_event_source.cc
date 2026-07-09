@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2023 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ui/ozone/platform/ohos/host/ohos_event_source.h"
 
@@ -292,6 +267,9 @@ EventPointerType OhosEventSource::ConvertOHToolTypeToEventPointerType(
       pointer_type = EventPointerType::kMouse;
       break;
     default:
+      LOG(WARNING) << "[OhosEventSource] " << __func__
+                   << ": Unknown OH_NativeXComponent_ToolType=" << ohos_touch_point_tool_type
+                   << ", defaulting to kTouch";
       pointer_type = EventPointerType::kTouch;
       break;
   }
@@ -395,7 +373,7 @@ void OhosEventSource::SendWindowMouseEventForTabDrag(
     const int32_t display_id,
     const EventFlags key_flags) {
   if (xcomponent_mouse_event == nullptr) {
-    LOG(ERROR) << "[OhosTabDrag] " << __FUNCTION__
+    LOG(ERROR) << "[OhosTabDrag] " << __func__
                << ", xcomponent_mouse_event is null";
     return;
   }
@@ -425,7 +403,7 @@ void OhosEventSource::SendWindowTouchEventForTabDrag(
     const TouchPointCoordinate& coordinate,
     const int32_t display_id) {
   if (xcomponent_touch_event == nullptr) {
-    LOG(ERROR) << "[OhosTabDrag] " << __FUNCTION__
+    LOG(ERROR) << "[OhosTabDrag] " << __func__
                << ", xcomponent_touch_event is null";
     return;
   }
@@ -439,7 +417,7 @@ void OhosEventSource::SendWindowTouchEventForTabDrag(
     // When the tab page drag is complete, the tab page drag parameter is
     // cleared
     if (xcomponent_touch_event->type == OH_NATIVEXCOMPONENT_UP) {
-      LOG(WARNING) << "[OhosTabDrag] " << __FUNCTION__
+      LOG(WARNING) << "[OhosTabDrag] " << __func__
                    << " tab dragging is ended"
                       ", widget_id:"
                    << widget_id;

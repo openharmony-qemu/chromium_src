@@ -653,6 +653,13 @@ source_set("memory_buffer_sources") {
     deps += [ "//build/config/linux/libdrm" ]
   }
 
+  if (is_ohos) {
+    sources += [
+      "linux/native_pixmap_dmabuf.cc",
+      "linux/native_pixmap_dmabuf.h",
+    ]
+  }
+
   if (is_linux || is_chromeos || is_android || is_ohos) {
     deps += [ "//third_party/libsync" ]
   }

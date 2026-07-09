@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2023 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ui/ozone/platform/ohos/gpu/ohos_surface_factory.h"
 
@@ -49,18 +24,20 @@
 #include "ui/gfx/buffer_format_util.h"
 #include "ui/gfx/codec/png_codec.h"
 #include "ui/gfx/geometry/skia_conversions.h"
+#include "ui/gfx/linux/native_pixmap_dmabuf.h"
 #include "ui/gfx/native_pixmap.h"
 #include "ui/gfx/vsync_provider.h"
 #include "ui/gl/gl_surface_egl.h"
 #include "ui/ozone/common/egl_util.h"
 #include "ui/ozone/common/gl_ozone_egl.h"
 #include "ui/ozone/common/gl_surface_egl_readback.h"
+#include "ui/ozone/common/native_pixmap_egl_binding.h"
 #include "ui/ozone/platform/ohos/common/ohos_util.h"
+#include "ui/ozone/platform/ohos/gpu/gl_surface_egl_ohos.h"
+#include "ui/ozone/platform/ohos/gpu/gl_surface_egl_readback_ohos.h"
 #include "ui/ozone/platform/ohos/host/ohos_canvas_surface.h"
 #include "ui/ozone/platform/ohos/host/ohos_window.h"
 #include "ui/ozone/platform/ohos/host/ohos_window_manager.h"
-#include "ui/ozone/platform/ohos/gpu/gl_surface_egl_ohos.h"
-#include "ui/ozone/platform/ohos/gpu/gl_surface_egl_readback_ohos.h"
 #include "ui/ozone/public/surface_ozone_canvas.h"
 
 namespace ui {
@@ -92,7 +69,7 @@ class GLOzoneEGLOhos : public GLOzoneEGL {
     } else {
       auto temp = util::GetWindowFromWidget(window);
       // TODO Check why the temp is null.
-      if (!temp) {
+      if (!temp || !temp->IsValid()) {
         LOG(ERROR) << "CreateViewGLSurface window is not exists, window:"
                    << window;
         return gl::InitializeGLSurface(
@@ -102,7 +79,7 @@ class GLOzoneEGLOhos : public GLOzoneEGL {
       return gl::InitializeGLSurface(
           base::MakeRefCounted<gl::NativeViewGLSurfaceEGLOhos>(
               display->GetAs<gl::GLDisplayEGL>(),
-              reinterpret_cast<EGLNativeWindowType>(temp), nullptr));
+              reinterpret_cast<EGLNativeWindowType>(temp->Get()), nullptr));
     }
   }
 
@@ -112,6 +89,19 @@ class GLOzoneEGLOhos : public GLOzoneEGL {
     return gl::InitializeGLSurface(
         base::MakeRefCounted<gl::PbufferGLSurfaceEGL>(
             display->GetAs<gl::GLDisplayEGL>(), size));
+  }
+
+  std::unique_ptr<NativePixmapGLBinding> ImportNativePixmap(
+      scoped_refptr<gfx::NativePixmap> pixmap,
+      gfx::BufferFormat plane_format,
+      gfx::BufferPlane plane,
+      gfx::Size plane_size,
+      const gfx::ColorSpace& color_space,
+      GLenum target,
+      GLuint texture_id) override {
+    return NativePixmapEGLBinding::Create(pixmap, plane_format, plane,
+                                          plane_size, color_space, target,
+                                          texture_id);
   }
 
  protected:
@@ -177,5 +167,17 @@ OhosSurfaceFactory::CreateVulkanImplementation(bool use_swiftshader,
   return nullptr;
 }
 #endif  // BUILDFLAG(ENABLE_VULKAN)
+
+scoped_refptr<gfx::NativePixmap>
+OhosSurfaceFactory::CreateNativePixmapFromHandle(gfx::AcceleratedWidget widget,
+                                                 gfx::Size size,
+                                                 gfx::BufferFormat format,
+                                                 gfx::NativePixmapHandle handle,
+                                                 void* window_buffer) {
+  scoped_refptr<gfx::NativePixmapDmaBuf> pixmap =
+      base::MakeRefCounted<gfx::NativePixmapDmaBuf>(
+          size, format, std::move(handle), window_buffer);
+  return pixmap;
+}
 
 }  // namespace ui

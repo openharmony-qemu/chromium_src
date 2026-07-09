@@ -1,18 +1,18 @@
 /*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
  *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ * may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -35,41 +35,18 @@
 #include "ohos/adapter/common/constants.h"
 #include "ohos/adapter/common/logging.h"
 #include "ohos/adapter/common/trace.h"
-#include "ohos/adapter/multiprocess/app_spawn_communication.h"
-#include "ohos/adapter/multiprocess/command_line/command_line_helper.h"
+#include "ohos/adapter/multiprocess/command_line/command_line.h"
+#include "ohos/adapter/multiprocess/fd_remap_types.h"
+#include "ohos/adapter/multiprocess/global_file_descriptor_mappings.h"
 #include "ohos/adapter/web_entry/web_entry.h"
 
 using namespace std::chrono_literals;
 using namespace ohos::adapter;
 using namespace ohos::adapter::multiprocess;
 
-namespace {
-void FixInitClientFdForCrashDumpHandler(
-    std::vector<std::string>& cmds,
-    const AppSpawnCommunication::FdRemapVector& id_fds) {
-  std::string init_fd;
-  for (auto& [id, fd] : id_fds) {
-    // refer to content/public/common/content_descriptors.h
-    // id 0, is for crashdump
-    if (id == 0) {
-      init_fd = std::to_string((int)fd);
-      break;
-    }
-  }
-  for (int i = cmds.size() - 1; i >= 0; i--) {
-    auto cmd = cmds[i];
-    if (cmd.npos != cmd.find("--initial-client-fd=")) {
-      std::string rep("--initial-client-fd=");
-      rep.append(init_fd);
-      cmds[i] = rep;
-      return;
-    }
-  }
-}
-}
-
 void ChildMain(NativeChildProcess_Args args) {
   if (args.entryParams == nullptr) {
+    LOGE("[NativeChildProcess] %{public}s: args.entryParams is null", __func__);
     return;
   }
   {
@@ -77,19 +54,18 @@ void ChildMain(NativeChildProcess_Args args) {
   }
   LOGD("[ChildProcess] ChildMain %{public}s", args.entryParams);
   std::vector<std::string> commandlines =
-      CommandLineHelper::Split(args.entryParams);
+      CommandLine::Split(args.entryParams, CommandLine::kArgSeparator);
   if (commandlines.size() == 0) {
+    LOGE("[NativeChildProcess] %{public}s: commandlines is empty after split, entryParams=%{public}s",
+         __func__, args.entryParams);
     return;
   }
   for (const auto& commandline : commandlines) {
     LOGD("[ChildProcess] ChildMain %{public}s", commandline.c_str());
   }
   std::vector<std::string> commands;
-  std::vector<std::pair<int32_t, int32_t>> fds;
-  NativeChildProcessArgsWrapper::Parse(args, commands, fds);
-  AppSpawnCommunication::SetFdIdsRemap(fds);
-  FixInitClientFdForCrashDumpHandler(commandlines, fds);
-  int ret = web_entry::RunIsolateProcessType(ProcessType::kRenderProcess,
-                                             commandlines);
+  FdRemapVector fd_mappings;
+  NativeChildProcessArgsWrapper::Parse(args, commands, fd_mappings);
+  int ret = web_entry::RunNativeProcess(commandlines, fd_mappings);
   LOGI("[ChildProcess] ChildMain exited with return: %{public}d", ret);
 }

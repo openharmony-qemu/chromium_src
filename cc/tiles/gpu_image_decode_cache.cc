@@ -1215,11 +1215,19 @@ GpuImageDecodeCache::GpuImageDecodeCache(
   allow_accelerated_jpeg_decodes_ =
       use_transfer_cache &&
       context_->ContextSupport()->IsJpegDecodeAccelerationSupported() &&
-      base::FeatureList::IsEnabled(features::kVaapiJpegImageDecodeAcceleration);
+      (base::FeatureList::IsEnabled(features::kVaapiJpegImageDecodeAcceleration)
+#if BUILDFLAG(IS_OHOS)
+       || base::FeatureList::IsEnabled(features::kOhosImageDecodeAcceleration)
+#endif
+      );
   allow_accelerated_webp_decodes_ =
       use_transfer_cache &&
       context_->ContextSupport()->IsWebPDecodeAccelerationSupported() &&
-      base::FeatureList::IsEnabled(features::kVaapiWebPImageDecodeAcceleration);
+      (base::FeatureList::IsEnabled(features::kVaapiWebPImageDecodeAcceleration)
+#if BUILDFLAG(IS_OHOS)
+       || base::FeatureList::IsEnabled(features::kOhosImageDecodeAcceleration)
+#endif
+      );
 
   {
     // TODO(crbug.com/40141944): We shouldn't need to lock to get capabilities.

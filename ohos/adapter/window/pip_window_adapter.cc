@@ -46,21 +46,21 @@ bool PipWindowAdapter::IsSupportNativePipWindow() const {
 PipWindowAdapter::PipWindowAdapter()
     : native_pip_lib_("native_window_manager") {
   if (is_support_native_pip_window_) {
-    LOGE("Native pip window is already supported");
+    LOGI("[PipWindowAdapter] %{public}s: Native pip window is already supported", __func__);
     return;
   }
 
   if (!native_pip_lib_.IsLoaded()) {
-    LOGE("PipWindowAdapter load libnative_window_manager.so failed");
+    LOGE("[PipWindowAdapter] %{public}s: load libnative_window_manager.so failed", __func__);
     return;
   }
 
   if (!LoadAllPipWindowFunctions()) {
-    LOGE("PipWindowAdapter load functions failed");
+    LOGE("[PipWindowAdapter] %{public}s: load functions failed", __func__);
     return;
   }
 
-  LOGI("PipWindowAdapter Initialize success, support native pip window");
+  LOGI("[PipWindowAdapter] %{public}s: Initialize success, support native pip window", __func__);
   is_support_native_pip_window_ = true;
 }
 

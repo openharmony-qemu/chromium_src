@@ -12,10 +12,15 @@
 #include "base/logging.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/notreached.h"
+#include "build/build_config.h"
 #include "ui/gfx/buffer_format_util.h"
 #include "ui/gl/gl_bindings.h"
 #include "ui/gl/gl_surface_egl.h"
 #include "ui/gl/scoped_binders.h"
+
+#if BUILDFLAG(IS_OHOS)
+#include <EGL/egl.h>
+#endif
 
 namespace ui {
 
@@ -120,6 +125,20 @@ std::unique_ptr<NativePixmapGLBinding> NativePixmapEGLBinding::Create(
   return binding;
 }
 
+#if BUILDFLAG(IS_OHOS)
+#define EGL_NATIVE_BUFFER_OHOS 0x34E1
+
+gl::ScopedEGLImage CreateOhosEGLImage(EGLClientBuffer egl_client_buffer) {
+  EGLint attrs[] = {
+      EGL_IMAGE_PRESERVED,
+      EGL_TRUE,
+      EGL_NONE,
+  };
+  return gl::MakeScopedEGLImage(EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_OHOS,
+                                egl_client_buffer, attrs);
+}
+#endif
+
 bool NativePixmapEGLBinding::InitializeFromNativePixmap(
     scoped_refptr<gfx::NativePixmap> pixmap,
     const gfx::ColorSpace& color_space,
@@ -135,6 +154,15 @@ bool NativePixmapEGLBinding::InitializeFromNativePixmap(
     LOG(ERROR) << "Pixmap doesn't have valid dma bufs";
     return false;
   }
+
+#if BUILDFLAG(IS_OHOS)
+  egl_image_ = CreateOhosEGLImage(
+      static_cast<EGLClientBuffer>(pixmap->GetWindowBuffer()));
+  if (egl_image_ == EGL_NO_IMAGE_KHR) {
+    LOG(ERROR) << "[HeifSupport] egl_image_ is EGL_NO_IMAGE_KHR.";
+    return false;
+  }
+#else
 
   // Note: If eglCreateImageKHR is successful for a EGL_LINUX_DMA_BUF_EXT
   // target, the EGL will take a reference to the dma_buf.
@@ -259,6 +287,7 @@ bool NativePixmapEGLBinding::InitializeFromNativePixmap(
   egl_image_ =
       gl::MakeScopedEGLImage(EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
                              static_cast<EGLClientBuffer>(nullptr), &attrs[0]);
+#endif
   if (!egl_image_.get()) {
     return false;
   }

@@ -193,7 +193,11 @@ class COMPONENT_EXPORT(OZONE) OzonePlatform {
     bool supports_single_pixel_buffer = false;
 
     // Indicates whether the platform supports native pixmaps.
+#if BUILDFLAG(IS_OHOS)
+    bool supports_native_pixmaps = true;
+#else
     bool supports_native_pixmaps = false;
+#endif
 
     // Wayland only: determines whether BufferQueue needs a background image to
     // be stacked below an AcceleratedWidget to make a widget opaque.

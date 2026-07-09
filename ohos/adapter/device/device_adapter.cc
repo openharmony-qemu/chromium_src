@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ohos/adapter/device/device_adapter.h"
 #include "ohos/adapter/aki_hook/aki_hook.h"
@@ -36,7 +11,7 @@ namespace ohos::adapter::device {
 void ConvertEndpoint(aki::Value endpoints,
                      std::vector<USBEndpoint>& ohos_endpoints) {
   if (endpoints.IsNull() || endpoints.IsUndefined()) {
-    LOGE("ConvertEndpoint, endpoints is nullptr");
+    LOGE("[DeviceAdapter] %{public}s: endpoints is nullptr", __func__);
     return;
   }
   for (uint32_t index = 0; index < GetArrayLength(endpoints); index++) {
@@ -59,7 +34,7 @@ void ConvertEndpoint(aki::Value endpoints,
 void ConvertInterface(aki::Value interfaces,
                       std::vector<USBInterface>& ohos_interfaces) {
   if (interfaces.IsNull() || interfaces.IsUndefined()) {
-    LOGE("ConvertInterface, interfaces is nullptr");
+    LOGE("[DeviceAdapter] %{public}s: interfaces is nullptr", __func__);
     return;
   }
   for (uint32_t index = 0; index < GetArrayLength(interfaces); index++) {
@@ -75,7 +50,7 @@ void ConvertInterface(aki::Value interfaces,
 
     std::vector<USBEndpoint> endpoints;
     if (!interface["endpoints"].IsArray()) {
-      LOGE("ConvertInterface, USBEndpoint data formate error");
+      LOGE("[DeviceAdapter] %{public}s: USBEndpoint data format error", __func__);
       return;
     }
     ConvertEndpoint(interface["endpoints"], ohos_interface.endpoints);
@@ -86,7 +61,7 @@ void ConvertInterface(aki::Value interfaces,
 void ConvertConfiguration(aki::Value configs,
                           std::vector<USBConfiguration>& ohos_configs) {
   if (configs.IsNull() || configs.IsUndefined()) {
-    LOGE("ConvertConfiguration, configs is nullptr");
+    LOGE("[DeviceAdapter] %{public}s: configs is nullptr", __func__);
     return;
   }
   for (uint32_t index = 0; index < GetArrayLength(configs); index++) {
@@ -101,7 +76,7 @@ void ConvertConfiguration(aki::Value configs,
     ohos_config.isSelfPowered = GetValue<bool>(config["isSelfPowered"], false);
 
     if (!config["interfaces"].IsArray()) {
-      LOGE("ConvertConfiguration, USBInterface data formate error");
+      LOGE("[DeviceAdapter] %{public}s: USBInterface data format error", __func__);
       return;
     }
     ConvertInterface(config["interfaces"], ohos_config.interfaces);
@@ -125,7 +100,7 @@ void ConvertDevice(aki::Value device, USBDevice& ohos_device) {
   ohos_device.protocol = GetValue<int32_t>(device["protocol"], -1);
 
   if (!device["configs"].IsArray()) {
-    LOGE("ConvertDevice, usbconfiguration data formate error");
+    LOGE("[DeviceAdapter] %{public}s: USBConfiguration data format error", __func__);
     return;
   }
   ConvertConfiguration(device["configs"], ohos_device.configs);
@@ -135,14 +110,14 @@ bool DeviceAdapter::GetDevices(std::vector<USBDevice>& device_list) const {
   auto get_devices_call =
       ohos::adapter::GetJSFunction("DeviceAdapter.GetDevices");
   if (!get_devices_call) {
-    LOGE("DeviceAdapter GetDevices js binding error: function undefined.");
+    LOGE("[DeviceAdapter] %{public}s: GetDevices js binding error, function undefined", __func__);
     return false;
   }
 
   std::function<void(aki::Value, int32_t)> get_devices_cb =
       [&](aki::Value devices, int32_t len) {
         if (!devices.IsArray()) {
-          LOGE("GetDevices input param err, devices is not array.");
+          LOGE("[DeviceAdapter] %{public}s: input param error, devices is not array", __func__);
           return;
         }
         for (int32_t i = 0; i < len; i++) {
@@ -158,7 +133,7 @@ void HotplugCallback::ParseEvent(int32_t event_type,
                                  aki::Value event_data,
                                  int32_t len) {
   if (!event_data.IsArray()) {
-    LOGE("Failed to get device list: data format error.");
+    LOGE("[DeviceAdapter] %{public}s: failed to get device list, data format error", __func__);
     return;
   }
 
@@ -178,9 +153,8 @@ void DeviceAdapter::RegisterHotplugCallback(HotplugCallback* hotplug_cb) const {
   auto device_update_func =
       ohos::adapter::GetJSFunction("DeviceAdapter.RegisterHotplugCallback");
   if (!device_update_func) {
-    LOGE(
-        "DeviceAdapter RegisterHotplugCallback js binding error: function "
-        "undefined.");
+    LOGE("[DeviceAdapter] %{public}s: RegisterHotplugCallback js binding error, function undefined",
+         __func__);
     return;
   }
 
@@ -198,9 +172,8 @@ void DeviceAdapter::UnregisterHotplugCallback() const {
   auto unregister_hotplug_func =
       ohos::adapter::GetJSFunction("DeviceAdapter.UnregisterHotplugCallback");
   if (!unregister_hotplug_func) {
-    LOGE(
-        "DeviceAdapter UnregisterHotplugCallback js binding error: function "
-        "undefined.");
+    LOGE("[DeviceAdapter] %{public}s: UnregisterHotplugCallback js binding error, function undefined",
+         __func__);
     return;
   }
   unregister_hotplug_func->Invoke<void>();

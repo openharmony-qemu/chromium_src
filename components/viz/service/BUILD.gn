@@ -499,6 +499,10 @@ viz_component("service") {
     deps += [ "//media/gpu/vaapi" ]
   }
 
+  if (is_ohos) {
+    deps += [ "//media/gpu/ohos" ]
+  }
+
   if (enable_vulkan) {
     deps += [ "//gpu/vulkan" ]
 

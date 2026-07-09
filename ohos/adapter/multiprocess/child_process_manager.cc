@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -29,14 +29,15 @@
 
 #include "child_process_manager.h"
 
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <cctype>
 #include <cerrno>
 #include <filesystem>
 #include <iostream>
 #include <memory>
 #include <string>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <vector>
 
 #include <AbilityKit/native_child_process.h>
@@ -45,6 +46,7 @@
 
 #include "aki/jsbind.h"
 #include "app_spawn_communication.h"
+#include "command_line/command_line.h"
 #include "gpu/gpu_native_process_host.h"
 #include "native_child_process/native_child_process_args_wrapper.h"
 #include "native_child_process/native_child_process_configs_wrapper.h"
@@ -54,90 +56,41 @@
 #include "ohos/adapter/aki_hook/aki_hook.h"
 #include "ohos/adapter/common/logging.h"
 #include "ohos/adapter/common/trace.h"
+#include "ohos/adapter/native_messaging/native_messaging_adapter.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 
 namespace ohos::adapter::multiprocess {
-
-static constexpr const char* kGpuProcessLib = "libadapter.so";
-static constexpr const char* kGpuProcessName = "GPU";
-static constexpr const char* kDefaultEntryPoint = "libadapter.so:ChildMain";
-static const std::string kProcessTypePrefix = "--type=";
-static const std::string kProcessSubTypePrefix = "--utility-sub-type=";
-constexpr int32_t kInvalidPid = -1;
-static constexpr int kProcessStartIntervalUs = 200000;
-// Maximum wait time is 5 seconds, cannot wait indefinitely
-static constexpr std::chrono::milliseconds kWait = std::chrono::milliseconds(5000);
-// Maximum sleep time per iteration is 256 ms
-static const uint32_t kMaxSleepInMicroseconds = 1 << 18;  // ~256 ms
-// Initial sleep time is 1 ms
-static const uint32_t kInitialSleepTime = 1 << 10;        // ~1 ms
-// Adjust sleep time after every 4 sleep iterations
-static const int kSleepTimeMultiplier = 4;
-// Each adjustment doubles the sleep time
-static const int kSleepTimeDouble = 2;
-static constexpr const char* kPidPathDir = "/proc/";
 
 using ohos::adapter::xcomponent::CrossProcessSyncResult;
 using ohos::adapter::xcomponent::WindowAdapter;
 
 namespace {
+// Defualt entry point for ArkChildProcess.
+// Path pattern: <module>/<ets filepath relative to src/main>
+constexpr const char* kDefaultArkProcessEntry =
+    "chromium/ets/process/CustomChildProcess.ets";
+constexpr const char* kRendererProcess = "renderer";
+constexpr const char* kGpuProcessLib = "libadapter.so";
+constexpr const char* kGpuProcessName = "GPU";
+constexpr const char* kDefaultEntryPoint = "libadapter.so:ChildMain";
+constexpr int32_t kInvalidPid = -1;
+constexpr int kProcessStartIntervalUs = 200000;
+// Maximum wait time is 5 seconds, cannot wait indefinitely
+constexpr std::chrono::milliseconds kWait = std::chrono::milliseconds(5000);
+// Maximum sleep time per iteration is 256 ms
+const uint32_t kMaxSleepInMicroseconds = 1 << 18;  // ~256 ms
+// Initial sleep time is 1 ms
+const uint32_t kInitialSleepTime = 1 << 10;        // ~1 ms
+// Adjust sleep time after every 4 sleep iterations
+const int kSleepTimeMultiplier = 4;
+// Each adjustment doubles the sleep time
+const int kSleepTimeDouble = 2;
+constexpr const char* kPidPathDir = "/proc/";
+
 void LogStartChildProcessFixesCommands(
     const std::vector<std::string>& commands) {
-  for (auto& command : commands) {
-    LOGI("[ChildProcess] StartChildProcess command %{public}s",
-         command.c_str());
-  }
-}
-
-std::string NormalizedType(std::string value) {
-  if (value.empty()) {
-    return value;
-  }
-
-  // Remove parts before the last dot.
-  if (auto pos = value.find_last_of('.'); pos != std::string::npos) {
-    value.erase(0, pos + 1);
-  }
-
-  // Turn the first letter into uppercase.
-  for (char& ch : value) {
-    unsigned char uch = static_cast<unsigned char>(ch);
-    if (std::isalpha(uch)) {
-      if (std::islower(uch)) {
-          ch = static_cast<char>(std::toupper(uch));
-      }
-      break;
-    }
-  }
-  return value;
-}
-
-std::string GetProcessType(const std::string& arg, const std::string key) {
-  if (arg.substr(0, key.length()) == key) {
-    return NormalizedType(arg.substr(key.length()));
-  }
-  return "";
-}
-
-std::string GetProcessName(const std::vector<std::string>& commands) {
-  std::string process_type;
-  std::string process_sub_type;
-  for (const std::string& command : commands) {
-    if (process_type.empty()) {
-      process_type = GetProcessType(command, kProcessTypePrefix);
-    }
-    if (process_sub_type.empty()) {
-      process_sub_type = GetProcessType(command, kProcessSubTypePrefix);
-    }
-  }
-
-  if (!process_sub_type.empty()) {
-    return process_sub_type;
-  }
-  if (!process_type.empty()) {
-    return process_type;
-  }
-  return "ChildProcess";
+  std::string arg_str = CommandLine::Join(commands, ' ');
+  LOGI("[ChildProcess] Command line args: %{public}s", arg_str.c_str());
 }
 
 // Starts the child process by calling OH_Ability_CreateNativeChildProcess(),
@@ -247,39 +200,90 @@ int32_t ChildProcessManager::WaitChildPid(const int32_t pid,
                                           int* status,
                                           const bool can_block) {
   if (!monitor_) {
+    LOGE("[ChildProcessManager] %{public}s: monitor is null, pid=%{public}d", __func__, pid);
     return -1;
   }
 
   return monitor_->WaitChildPid(pid, status, can_block);
 }
 
+std::string ChildProcessManager::ParseProcessTypeFromCommands(
+    const std::vector<std::string>& commands) {
+  static const std::string kTypePrefix = "--type=";
+
+  for (const auto& cmd : commands) {
+    if (cmd.compare(0, kTypePrefix.size(), kTypePrefix) == 0) {
+      return cmd.substr(kTypePrefix.size());
+    }
+  }
+  return "";
+}
+
+ProcessSpawnType ChildProcessManager::GetSpawnType(
+    const std::string& process_type) {
+  if (process_type == "gpu-process") {
+    return ProcessSpawnType::kGpu;
+  }
+  return ProcessSpawnType::kNative;
+}
+
 int32_t ChildProcessManager::StartChildProcess(
     const std::vector<std::string>& commands,
     const std::vector<std::pair<int, int>>& fds_to_remap,
-    const std::string& entry_point,
-    bool is_isolated) {
+    const std::optional<std::string>& entry_point,
+    ProcessSpawnType spawn_type) {
   TRACE_EVENT_0("ChildProcessManager::StartChildProcess");
 
   LogStartChildProcessFixesCommands(commands);
 
+  std::string process_type = ParseProcessTypeFromCommands(commands);
+  bool is_isolated = (process_type == kRendererProcess);
+
 #if !defined(ENABLE_ISOLATED_CHILD_PROCESS)
   if (is_isolated) {
-    LOGW(
-        "[ChildProcess] StartChildProcess | Isolated child process not enabled,"
-        " fallback to normal process.");
+    LOGW("[ChildProcess] Isolated child process not enabled, "
+         "fallback to normal process.");
     is_isolated = false;
   }
 #endif
-  std::string child_entry =
-      entry_point.empty() ? kDefaultEntryPoint : entry_point;
+  
   int32_t child_pid = kInvalidPid;
 
+  switch (spawn_type) {
+    case ProcessSpawnType::kGpu:
+      child_pid = StartGpuProcess(commands, fds_to_remap);
+      break;
+    case ProcessSpawnType::kNativeMessaging:
+      child_pid = StartNativeMessagingProcess(commands, fds_to_remap);
+      break;
+    case ProcessSpawnType::kNative: {
 #if defined(ENABLE_NATIVE_CHILD_PROCESS)
-  child_pid = TryStartNativeChildProcess(commands, fds_to_remap, child_entry,
-                                         is_isolated);
+      std::string child_entry = entry_point.value_or(kDefaultEntryPoint);
+      child_pid = TryStartNativeChildProcess(commands, fds_to_remap,
+                                             child_entry, is_isolated);
+      if (child_pid == kInvalidPid) {
+        LOGW("[ChildProcess] Native child process failed, fallback to Ark.");
+        child_pid = StartArkChildProcess(kDefaultArkProcessEntry, commands,
+                                         fds_to_remap, false);
+      }
+      break;
 #else
-  child_pid = StartLegacyChildProcess(commands, fds_to_remap);
-#endif
+      LOGW(
+          "[ChildProcess] Native child process not enabled, fallback to Ark.");
+      child_pid = StartArkChildProcess(kDefaultArkProcessEntry, commands,
+                                       fds_to_remap, false);
+      break;
+#endif  // defined(ENABLE_NATIVE_CHILD_PROCESS)
+    }
+    case ProcessSpawnType::kArk:
+    default: {
+      std::string src_entry = entry_point.value_or(kDefaultArkProcessEntry);
+      child_pid =
+          StartArkChildProcess(src_entry, commands, fds_to_remap, false);
+      break;
+    }
+  }
+
   return child_pid;
 }
 
@@ -288,62 +292,94 @@ int32_t ChildProcessManager::StartGpuProcess(
     const std::vector<std::pair<int, int>>& fds_to_remap) {
   TRACE_EVENT_0("ChildProcessManager::StartGpuProcess");
 
-  LogStartChildProcessFixesCommands(commands);
-
-  std::function<void(StartCallbackFunc)> start_func =
-      [this](StartCallbackFunc callback) {
-        CreateGpuProcessInternal(callback);
-      };
-
-  return StartChildProcessInternal(start_func, commands, fds_to_remap);
-}
-
-int32_t ChildProcessManager::StartChildProcessInternal(
-    std::function<void(StartCallbackFunc)> start_func,
-    const std::vector<std::string>& commands,
-    const std::vector<std::pair<int, int>>& fds_to_remap) {
   std::promise<int32_t> child_pid;
   StartCallbackFunc set_child_pid = [&child_pid](int32_t pid) -> void {
     child_pid.set_value(pid);
   };
 
-  std::lock_guard<std::mutex> auto_lock(mutex_);
-  // Must establish socket listen before start child process
-  // if not, child process request will be "Connection failed"
+  int32_t result = kInvalidPid;
   AppSpawnCommunication appspawn_server;
   if (appspawn_server.PrepareHandleRequest(commands, fds_to_remap)) {
-    start_func(set_child_pid);
+    CreateGpuProcessInternal(set_child_pid);
     int cpid = child_pid.get_future().get();
     appspawn_server.HandleRequestAfterChildProcStart(cpid);
-    LOGI("[ChildProcess] StartChildProcessInternal | Child process started, "
+    LOGI("[ChildProcess] StartGpuProcess | Child process started, "
          "pid: %{public}d", cpid);
-    return cpid;
+    result = cpid;
+  } else {
+    LOGE("[ChildProcess] StartGpuProcess | "
+         "appspawn_server.PrepareHandleRequest failed");
   }
 
-  LOGE("[ChildProcess] StartChildProcessInternal | "
-       "appspawn_server.PrepareHandleRequest failed");
-  return kInvalidPid;
+  return result;
 }
 
-int32_t ChildProcessManager::StartLegacyChildProcess(
+int32_t ChildProcessManager::StartNativeMessagingProcess(
     const std::vector<std::string>& commands,
     const std::vector<std::pair<int, int>>& fds_to_remap) {
-  TRACE_EVENT_0("ChildProcessManager::StartLegacyChildProcess");
+  TRACE_EVENT_0("ChildProcessManager::StartNativeMessagingProcess");
+
+  ohos::adapter::nativemessaging::NativeMessagingAdapter& adapter =
+      ohos::adapter::nativemessaging::NativeMessagingAdapter::GetInstance();
+
+  int32_t pid = adapter.ConnectNative(commands, fds_to_remap);
+  if (pid < 0) {
+    LOGE("[ChildProcess] StartNativeMessagingProcess | ConnectNative failed");
+    return kInvalidPid;
+  }
+
+  LOGI("[ChildProcess] StartNativeMessagingProcess | Child process started, "
+       "pid: %{public}d", pid);
+  return pid;
+}
+
+int32_t ChildProcessManager::StartArkChildProcess(
+    const std::string& src_entry,
+    const std::vector<std::string>& args,
+    const std::vector<std::pair<int, int>>& fds_to_remap,
+    bool is_isolated) {
+  TRACE_EVENT_0("ChildProcessManager::StartArkChildProcess");
+
+  if (src_entry.empty()) {
+    LOGE("[ChildProcess] StartArkChildProcess | src_entry is empty");
+    return kInvalidPid;
+  }
+
   auto start_child_process_func = ohos::adapter::GetJSFunction(
       "ChromiumChildProcessStarter.StartChildProcess");
   if (!start_child_process_func) {
     LOGE(
-        "[ChildProcess] StartLegacyChildProcess | "
+        "[ChildProcess] StartArkChildProcess | "
         "ChromiumChildProcessStarter.StartChildProcess not defined");
     return kInvalidPid;
   }
 
-  std::function<void(StartCallbackFunc)> start_func =
-      [start_child_process_func](StartCallbackFunc callback) {
-        start_child_process_func->Invoke<void>(callback);
-      };
+  std::string entry_params = CommandLine::Join(args);
 
-  return StartChildProcessInternal(start_func, commands, fds_to_remap);
+  std::vector<int32_t> fds_id;
+  std::vector<int32_t> fds;
+  for (const auto& [fd, id] : fds_to_remap) {
+    fds_id.push_back(id);
+    fds.push_back(fd);
+  }
+
+  std::promise<int32_t> child_pid;
+  StartCallbackFunc set_child_pid = [&child_pid](int32_t pid) -> void {
+    child_pid.set_value(pid);
+  };
+
+  start_child_process_func->Invoke<void>(
+      src_entry, entry_params, fds_id, fds, is_isolated, set_child_pid);
+
+  int cpid = child_pid.get_future().get();
+  if (cpid == kInvalidPid) {
+    LOGE("[ChildProcess] StartArkChildProcess | Child process start failed");
+    return kInvalidPid;
+  }
+
+  LOGI("[ChildProcess] StartArkChildProcess | Child process started, "
+       "pid: %{public}d", cpid);
+  return cpid;
 }
 
 int32_t ChildProcessManager::StartNativeChildProcess(

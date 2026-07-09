@@ -75,6 +75,23 @@ component("backend") {
     deps += [ "//services/data_decoder/public/cpp:safe_xml_parser" ]
   }
 
+  if (is_ohos) {
+    # PRINT_BACKEND_AVAILABLE disables the default dummy implementation of the
+    # print backend and enables a custom implementation instead.
+    defines += [ "PRINT_BACKEND_AVAILABLE" ]
+    sources += [
+      "ohos_helper.cc",
+      "ohos_helper.h",
+      "print_backend_ohos.cc",
+      "print_backend_ohos.h",
+    ]
+ 
+    libs = [
+      "deviceinfo_ndk.z",
+      "ohprint"
+    ]
+  }
+
   if (use_cups) {
     public_configs += [ "//printing:cups" ]
 

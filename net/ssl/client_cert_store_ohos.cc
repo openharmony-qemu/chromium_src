@@ -410,6 +410,7 @@ void ClientCertStoreOHOS::GetPlatformCertsOnWorkerThread(
 
 ClientCertIdentityList ClientCertStoreOHOS::GetAndFilterCertsOnWorkerThread(
     scoped_refptr<const SSLCertRequestInfo> request) {
+  is_huks_ = CertManagerAdapter::GetInstance().IsSdk22();
   // This method may acquire the BoringSSL lock or reenter this code via
   // extension hooks (such as smart card UI). To ensure threads are not starved
   // or deadlocked, the base::ScopedBlockingCall below increments the thread

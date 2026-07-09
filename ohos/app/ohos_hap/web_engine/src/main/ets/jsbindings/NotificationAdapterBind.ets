@@ -48,10 +48,15 @@ async function getAllNotification(callback: Function) {
   await implNotificationAdapter().getAllNotification(callback);
 }
 
+async function setBadgeNumber(badgeNumber: number) {
+  await implNotificationAdapter().setBadgeNumber(badgeNumber);
+}
+
 export class NotificationAdapterBind {
   static bind() {
     JsBindingUtils.bindFunction('NotificationAdapter.SendNotification', sendNotification);
     JsBindingUtils.bindFunction("NotificationAdapter.CloseNotification", closeNotification);
     JsBindingUtils.bindFunction("NotificationAdapter.GetAllNotification", getAllNotification);
+    JsBindingUtils.bindFunction("NotificationAdapter.SetBadgeNumber", setBadgeNumber);
   }
 }

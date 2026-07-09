@@ -40,11 +40,13 @@
 
 #include "ohos/adapter/export.h"
 #include "ohos/adapter/window/window_common.h"
+#include "ohos/adapter/xcomponent/adapter/native_window_wrapper.h"
 #include "ohos/adapter/xcomponent/event/window_event_common.h"
 
 namespace ohos::adapter::xcomponent {
 
 using WindowType = void*;
+using NativeWindowType = std::shared_ptr<NativeWindowWrapper>;
 using WindowIdType = std::string;
 using WindowWidgetType = int32_t;
 using namespace ohos::adapter::window;
@@ -52,7 +54,7 @@ using WindowKeyboardHeightCallBack = std::function<void(int32_t, int32_t)>;
 
 class WindowInfo {
  public:
-  WindowType window;
+  NativeWindowType window;
   WindowIdType window_id;
   WindowWidgetType widget_id;
   bool initialized = false;
@@ -95,7 +97,7 @@ class ADAPTER_EXPORT_API WindowAdapter {
  public:
   static WindowAdapter& GetInstance();
 
-  WindowType GetWindow(WindowIdType index);
+  NativeWindowType GetWindow(WindowIdType index);
   WindowWidgetType GetWidgetId(const WindowIdType index);
   WindowIdType GetWindowId(const WindowWidgetType index);
   void AddWindow(WindowIdType index, WindowType window);

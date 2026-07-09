@@ -106,6 +106,17 @@ export class NotificationAdapter extends BaseAdapter {
     });
   }
 
+  @LogMethod
+  setBadgeNumber(badgeNumber: number) {
+    notificationManager.setBadgeNumber(badgeNumber, (err: Base.BusinessError) => {
+      if (err) {
+        LogUtil.error(TAG, `setBadgeNumber failed, code: ${err.code}, message: ${err.message}`);
+      } else {
+        LogUtil.info(TAG, `setBadgeNumber success, badgeNumber: ${badgeNumber}`);
+      }
+    });
+  }
+
   private checkNotificationAuthorization(callback: (grant: boolean)=>void) {
     notificationManager.isNotificationEnabled().then((enable) => {
       if (enable) {

@@ -430,10 +430,9 @@ void DirectRenderer::DrawFrame(
   if (frame_color_space.IsHDR() != previous_frame_is_hdr_) {
     previous_frame_is_hdr_ = frame_color_space.IsHDR();
     gpu::SurfaceHandle surface_handle = output_surface_->GetSurfaceHandle();
-    OHNativeWindow* window = reinterpret_cast<OHNativeWindow*>(
-        ui::util::GetWindowFromWidget(surface_handle));
-    if (window) {
-      ui::util::UpdateOhNativeWindow(frame_color_space, window);
+    auto window = ui::util::GetWindowFromWidget(surface_handle);
+    if (window && window->IsValid()) {
+      ui::util::UpdateOhNativeWindow(frame_color_space, window->Get());
     }
   }
 #endif  // BUILDFLAG(IS_OHOS)

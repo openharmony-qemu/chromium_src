@@ -114,55 +114,54 @@ std::unique_ptr<VideoEncodeAccelerator> CreateOhosVEA() {
 using VEAFactoryFunction =
     base::RepeatingCallback<std::unique_ptr<VideoEncodeAccelerator>()>;
 
-std::vector<VEAFactoryFunction> GetVEAFactoryFunctions(
+std::vector<VEAFactoryFunction> CreateVEAFactoryFunctions(
     const gpu::GpuPreferences& gpu_preferences,
     const gpu::GpuDriverBugWorkarounds& gpu_workarounds,
     const gpu::GPUInfo::GPUDevice& gpu_device) {
-  // Array of VEAFactoryFunctions potentially usable on the current platform.
-  // This list is ordered by priority, from most to least preferred, if
-  // applicable. This list is composed once and then reused.
-  static std::vector<VEAFactoryFunction> vea_factory_functions;
-  if (gpu_preferences.disable_accelerated_video_encode)
-    return vea_factory_functions;
-  if (!vea_factory_functions.empty())
-    return vea_factory_functions;
-
+  std::vector<VEAFactoryFunction> funcs;
 #if BUILDFLAG(USE_VAAPI)
-#if BUILDFLAG(IS_LINUX)
-  if (base::FeatureList::IsEnabled(kAcceleratedVideoEncodeLinux)) {
-    vea_factory_functions.push_back(base::BindRepeating(&CreateVaapiVEA));
-  }
-#else
-  vea_factory_functions.push_back(base::BindRepeating(&CreateVaapiVEA));
-#endif
+  funcs.push_back(base::BindRepeating(&CreateVaapiVEA));
 #elif BUILDFLAG(USE_V4L2_CODEC)
-#if BUILDFLAG(IS_LINUX)
-  if (base::FeatureList::IsEnabled(kAcceleratedVideoEncodeLinux)) {
-    vea_factory_functions.push_back(base::BindRepeating(&CreateV4L2VEA));
-  }
-#else
-  vea_factory_functions.push_back(base::BindRepeating(&CreateV4L2VEA));
-#endif
+  funcs.push_back(base::BindRepeating(&CreateV4L2VEA));
 #endif
 
 #if BUILDFLAG(IS_ANDROID)
-  vea_factory_functions.push_back(base::BindRepeating(&CreateAndroidVEA));
+  funcs.push_back(base::BindRepeating(&CreateAndroidVEA, gpu_workarounds));
 #endif
 #if BUILDFLAG(IS_MAC)
-  vea_factory_functions.push_back(base::BindRepeating(&CreateVTVEA));
+  funcs.push_back(base::BindRepeating(&CreateVTVEA));
 #endif
 #if BUILDFLAG(IS_WIN)
-  vea_factory_functions.push_back(base::BindRepeating(
+  funcs.push_back(
+      base::BindRepeating(&CreateD3D12VEA, gpu_workarounds, gpu_device));
+  funcs.push_back(base::BindRepeating(
       &CreateMediaFoundationVEA, gpu_preferences, gpu_workarounds, gpu_device));
 #endif
 #if BUILDFLAG(IS_FUCHSIA)
-  if (base::FeatureList::IsEnabled(kFuchsiaMediacodecVideoEncoder)) {
-    vea_factory_functions.push_back(base::BindRepeating(&CreateFuchsiaVEA));
-  }
+  funcs.push_back(base::BindRepeating(&CreateFuchsiaVEA));
 #endif
 #if BUILDFLAG(IS_OHOS)
-  vea_factory_functions.push_back(base::BindRepeating(&CreateOhosVEA));
+  funcs.push_back(base::BindRepeating(&CreateOhosVEA));
 #endif
+  return funcs;
+}
+
+const std::vector<VEAFactoryFunction>& GetVEAFactoryFunctions(
+    const gpu::GpuPreferences& gpu_preferences,
+    const gpu::GpuDriverBugWorkarounds& gpu_workarounds,
+    const gpu::GPUInfo::GPUDevice& gpu_device) {
+  if (gpu_preferences.disable_accelerated_video_encode) {
+    static const base::NoDestructor<std::vector<VEAFactoryFunction>>
+        empty_vector;
+    return *empty_vector;
+  }
+
+  // Array of VEAFactoryFunctions potentially usable on the current platform.
+  // This list is ordered by priority, from most to least preferred, if
+  // applicable. This list is composed once and then reused.
+  static std::vector<VEAFactoryFunction>
+      vea_factory_functions(CreateVEAFactoryFunctions(
+          gpu_preferences, gpu_workarounds, gpu_device));
   return vea_factory_functions;
 }
 
@@ -183,6 +182,34 @@ VideoEncodeAccelerator::SupportedProfiles GetSupportedProfilesInternal(
     GpuVideoAcceleratorUtil::InsertUniqueEncodeProfiles(vea_profiles,
                                                         &profiles);
   }
+
+  if (gpu_workarounds.disable_accelerated_av1_encode) {
+    std::erase_if(profiles, [](const auto& vea_profile) {
+      return vea_profile.profile >= AV1PROFILE_PROFILE_MAIN &&
+             vea_profile.profile <= AV1PROFILE_PROFILE_PRO;
+    });
+  }
+
+  if (gpu_workarounds.disable_accelerated_vp8_encode) {
+    std::erase_if(profiles, [](const auto& vea_profile) {
+      return vea_profile.profile == VP8PROFILE_ANY;
+    });
+  }
+
+  if (gpu_workarounds.disable_accelerated_vp9_encode) {
+    std::erase_if(profiles, [](const auto& vea_profile) {
+      return vea_profile.profile >= VP9PROFILE_PROFILE0 &&
+             vea_profile.profile <= VP9PROFILE_PROFILE3;
+    });
+  }
+
+  if (gpu_workarounds.disable_accelerated_h264_encode) {
+    std::erase_if(profiles, [](const auto& vea_profile) {
+      return vea_profile.profile >= H264PROFILE_MIN &&
+             vea_profile.profile <= H264PROFILE_MAX;
+    });
+  }
+
   return profiles;
 }
 
@@ -242,36 +269,16 @@ GpuVideoEncodeAcceleratorFactory::GetSupportedProfiles(
   // (e.g. via udev) has happened instead.
   if (profiles.empty()) {
     VLOGF(1) << "Supported profiles empty, querying again...";
-    profiles = GetSupportedProfilesInternal(gpu_preferences, gpu_workarounds, gpu_device);
+    static base::NoDestructor<VideoEncodeAccelerator::SupportedProfiles>
+        second_try_profiles(GetSupportedProfilesInternal(
+            gpu_preferences, gpu_workarounds, gpu_device));
+    if (second_try_profiles->empty()) {
+      return GetSupportedProfilesInternal(gpu_preferences, gpu_workarounds,
+                                          gpu_device);
+    }
+    return *second_try_profiles;
   }
 #endif
-
-  if (gpu_workarounds.disable_accelerated_av1_encode) {
-    std::erase_if(profiles, [](const auto& vea_profile) {
-      return vea_profile.profile >= AV1PROFILE_PROFILE_MAIN &&
-             vea_profile.profile <= AV1PROFILE_PROFILE_PRO;
-    });
-  }
-
-  if (gpu_workarounds.disable_accelerated_vp8_encode) {
-    std::erase_if(profiles, [](const auto& vea_profile) {
-      return vea_profile.profile == VP8PROFILE_ANY;
-    });
-  }
-
-  if (gpu_workarounds.disable_accelerated_vp9_encode) {
-    std::erase_if(profiles, [](const auto& vea_profile) {
-      return vea_profile.profile >= VP9PROFILE_PROFILE0 &&
-             vea_profile.profile <= VP9PROFILE_PROFILE3;
-    });
-  }
-
-  if (gpu_workarounds.disable_accelerated_h264_encode) {
-    std::erase_if(profiles, [](const auto& vea_profile) {
-      return vea_profile.profile >= H264PROFILE_MIN &&
-             vea_profile.profile <= H264PROFILE_MAX;
-    });
-  }
 
   return profiles;
 }

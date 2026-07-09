@@ -70,8 +70,7 @@ class CONTENT_EXPORT FileSystemManagerImpl
       mojo::PendingReceiver<blink::mojom::FileSystemManager> receiver);
 
   // blink::mojom::FileSystem
-  void Open(const url::Origin& origin,
-            blink::mojom::FileSystemType file_system_type,
+  void Open(blink::mojom::FileSystemType file_system_type,
             OpenCallback callback) override;
   void ResolveURL(const GURL& filesystem_url,
                   ResolveURLCallback callback) override;
@@ -137,8 +136,7 @@ class CONTENT_EXPORT FileSystemManagerImpl
   struct WriteSyncCallbackEntry;
   struct ReadDirectorySyncCallbackEntry;
 
-  void ContinueOpen(const url::Origin& origin,
-                    blink::mojom::FileSystemType file_system_type,
+  void ContinueOpen(blink::mojom::FileSystemType file_system_type,
                     mojo::ReportBadMessageCallback bad_message_callback,
                     OpenCallback callback,
                     const blink::StorageKey& storage_key,

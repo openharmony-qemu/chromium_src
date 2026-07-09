@@ -36,6 +36,7 @@
 
 #include <string>
 
+#include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 #include "ui/display/display.h"
 #include "ui/gfx/native_widget_types.h"
 
@@ -43,9 +44,11 @@ namespace ui {
 
 namespace util {
 
-void* GetWindow(std::string& window_id);
+using NativeWindowType = ohos::adapter::xcomponent::NativeWindowType;
 
-void* GetWindowFromWidget(gfx::AcceleratedWidget widget_id);
+NativeWindowType GetWindow(std::string& window_id);
+
+NativeWindowType GetWindowFromWidget(gfx::AcceleratedWidget widget_id);
 
 int32_t GetNextWindowWidgetId();
 

@@ -292,6 +292,8 @@ static_library("test_support") {
       "test_support_ohos.h",
       "test_support_ohos.cc",
     ]
+
+    libs = [ "deviceinfo_ndk.z" ]
   }
 
   if (is_ios) {

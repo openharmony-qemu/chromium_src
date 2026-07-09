@@ -206,8 +206,7 @@ void FileSystemManagerImpl::BindReceiver(
   receivers_.Add(this, std::move(receiver), storage_key);
 }
 
-void FileSystemManagerImpl::Open(const url::Origin& origin,
-                                 blink::mojom::FileSystemType file_system_type,
+void FileSystemManagerImpl::Open(blink::mojom::FileSystemType file_system_type,
                                  OpenCallback callback) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
 
@@ -216,15 +215,14 @@ void FileSystemManagerImpl::Open(const url::Origin& origin,
       base::BindOnce(
           &ChildProcessSecurityPolicyImpl::CanAccessDataForOrigin,
           base::Unretained(ChildProcessSecurityPolicyImpl::GetInstance()),
-          process_id_, origin),
+          process_id_, receivers_.current_context().origin()),
       base::BindOnce(&FileSystemManagerImpl::ContinueOpen,
-                     weak_factory_.GetWeakPtr(), origin, file_system_type,
+                     weak_factory_.GetWeakPtr(), file_system_type,
                      receivers_.GetBadMessageCallback(), std::move(callback),
                      receivers_.current_context()));
 }
 
 void FileSystemManagerImpl::ContinueOpen(
-    const url::Origin& origin,
     blink::mojom::FileSystemType file_system_type,
     mojo::ReportBadMessageCallback bad_message_callback,
     OpenCallback callback,

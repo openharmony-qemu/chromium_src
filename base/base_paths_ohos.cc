@@ -60,6 +60,33 @@ bool ParseAssetsOHOS(FilePath* result) {
   return true;
 }
 
+inline bool IsBrowserProcess(const base::CommandLine& command_line) {
+  return command_line.GetSwitchValueASCII(switches::kOhosProcessType).empty();
+}
+
+bool GetTempDirOhos(FilePath* result) {
+  const base::CommandLine* command_line =
+      base::CommandLine::ForCurrentProcess();
+  if (command_line == nullptr) {
+    LOG(ERROR) << __func__ << ", can't get command line";
+    *result = FilePath(::ohos::adapter::ContextPathAdapter::kDefaultTempDir);
+    return true;
+  }
+
+  if (IsBrowserProcess(*command_line)) {
+    *result = FilePath(::ohos::adapter::ContextPathAdapter::GetTempDir());
+  } else if (command_line->HasSwitch(switches::kOhosTempDir)) {
+    *result = command_line->GetSwitchValuePath(switches::kOhosTempDir);
+  }
+  if (!result->empty()) {
+    return true;
+  }
+
+  // fallback
+  *result = FilePath(::ohos::adapter::ContextPathAdapter::kDefaultTempDir);
+  return true;
+}
+
 bool PathProviderOHOS(int key, FilePath* result) {
   FilePath bin_dir;
   switch (key) {
@@ -83,8 +110,7 @@ bool PathProviderOHOS(int key, FilePath* result) {
       *result = FilePath(::ohos::adapter::ContextPathAdapter::GetCacheDir());
       return !result->empty();
     case base::DIR_TEMP:
-      *result = FilePath(::ohos::adapter::ContextPathAdapter::GetTempDir());
-      return !result->empty();
+      return GetTempDirOhos(result);
     case base::DIR_ASSETS:
       // TODO: temporary solution to load resources for multiple processes
       // resource file packed to system images

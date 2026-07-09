@@ -35,6 +35,7 @@
 
 #include "base/strings/utf_string_conversions.h"
 #include "ohos/adapter/browser/browser_adapter.h"
+#include "ohos/adapter/context/context_adapter.h"
 #include "ohos/adapter/device_info/device_info.h"
 #include "ohos/adapter/ime_adapter/input_method_ohos_adapter.h"
 #include "ohos/adapter/node_handle/node_handle_impl.h"
@@ -504,7 +505,8 @@ void OhosToplevelWindow::OnWindowStatusChangeEvent(
     std::shared_ptr<XCEvent> event) {
   auto window_event = static_pointer_cast<WindowStatusChangeEvent>(event);
   is_split_screen_ = window_event->status == WindowStatusType::SPLIT_SCREEN;
-  if (window_event->status == WindowStatusType::FULL_SCREEN) {
+  if (!ohos::adapter::ContextAdapter::GetInstance().IsNormalWindowMode() &&
+      window_event->status == WindowStatusType::FULL_SCREEN) {
     delegate()->OnFullscreenSwitched(true);
   }
 }

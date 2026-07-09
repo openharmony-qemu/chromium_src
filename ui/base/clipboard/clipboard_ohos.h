@@ -31,6 +31,7 @@
 #define UI_BASE_CLIPBOARD_CLIPBOARD_OHOS_H_
 
 #include "ui/base/clipboard/clipboard.h"
+#include "ui/base/clipboard/clipboard_data.h"
 
 namespace ui {
 class ClipboardData;
@@ -57,6 +58,12 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardOHOS : public Clipboard {
   static ClipboardOHOS* GetForCurrentThread();
   std::unique_ptr<ClipboardData> WriteClipboardData(
       std::unique_ptr<ClipboardData> data);
+  using IsReadAllowedFuncPtr = bool (*)(const DataTransferEndpoint*,
+                                        std::optional<ClipboardInternalFormat>,
+                                        const std::optional<ClipboardFormatType>&);
+  COMPONENT_EXPORT(UI_BASE_CLIPBOARD)
+  static void SetIsReadAllowedFuncForTest(IsReadAllowedFuncPtr func);
+
 
   // Clipboard overrides:
   std::optional<DataTransferEndpoint> GetSource(

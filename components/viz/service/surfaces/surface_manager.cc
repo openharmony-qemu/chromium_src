@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "components/viz/service/surfaces/surface.h"
+
 #include "components/viz/service/surfaces/surface_manager.h"
 
 #include <stddef.h>
@@ -21,10 +23,10 @@
 #include "base/task/sequenced_task_runner.h"
 #include "base/time/default_tick_clock.h"
 #include "base/trace_event/trace_event.h"
+#include "base/unguessable_token.h"
 #include "components/viz/common/features.h"
 #include "components/viz/common/surfaces/parent_local_surface_id_allocator.h"
 #include "components/viz/common/surfaces/surface_info.h"
-#include "components/viz/service/surfaces/surface.h"
 #include "components/viz/service/surfaces/surface_allocation_group.h"
 #include "components/viz/service/surfaces/surface_client.h"
 #include "components/viz/service/surfaces/surface_manager_delegate.h"
@@ -164,7 +166,9 @@ void SurfaceManager::MarkSurfaceForDestruction(const SurfaceId& surface_id) {
 void SurfaceManager::InvalidateFrameSinkId(const FrameSinkId& frame_sink_id) {
   auto it = frame_sink_id_to_allocation_groups_.find(frame_sink_id);
   if (it != frame_sink_id_to_allocation_groups_.end()) {
-    for (SurfaceAllocationGroup* group : it->second) {
+    // Copy allocation group vector since it can be modified while iterating.
+    auto allocation_groups = it->second;
+    for (SurfaceAllocationGroup* group : allocation_groups) {
       group->WillNotRegisterNewSurfaces();
     }
   }

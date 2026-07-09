@@ -27,27 +27,43 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ohos/adapter/web_entry/web_entry.h"
-#include "ohos/adapter/web_entry/web_loader.h"
+#include "web_entry.h"
 
 #include <atomic>
 #include <chrono>
 #include <thread>
+#include <vector>
 
 #include "ohos/adapter/aki_hook/aki_hook.h"
 #include "ohos/adapter/common/constants.h"
 #include "ohos/adapter/common/logging.h"
 #include "ohos/adapter/multiprocess/app_spawn_communication.h"
 #include "ohos/adapter/multiprocess/command_line/command_line.h"
+#include "ohos/adapter/multiprocess/fd_remap_types.h"
+#include "ohos/adapter/multiprocess/global_file_descriptor_mappings.h"
+#include "ohos/adapter/web_entry/web_loader.h"
 
 using namespace std::chrono_literals;
 namespace ohos::adapter::web_entry {
+using ohos::adapter::multiprocess::AppSpawnCommunication;
+using ohos::adapter::multiprocess::GlobalFileDescriptorMappings;
+using ohos::adapter::multiprocess::CommandLine;
 
-const std::string kFdRemapCommand = "--fds_to_remap";
-const std::string kCrashpadHandler = "CrashpadHandler";
+namespace {
 
-static bool g_initialized = false;
-static std::atomic<bool> g_destroyed(false);
+bool g_initialized = false;
+std::atomic<bool> g_destroyed(false);
+
+static int GetEntryType() {
+  int entry_type = ProcessType::kChromeMain;
+  auto* cmd = CommandLine::ForCurrentProcess();
+  std::string type = cmd ? cmd->GetSwitchValue("type") : "";
+  if (type == kCrashPadHandlerType) {
+    entry_type = ProcessType::kCrashPadHandler;
+  }
+  return entry_type;
+}
+} // namespace
 
 void DestroyBrowser() {
   LOGE("The browser process has exited");
@@ -64,9 +80,9 @@ bool BrowserDestroyed() {
   return g_destroyed.load();
 }
 
-void RunBrowser(const std::vector<std::string>& args) {
+void RunBrowser(std::vector<std::string>& args) {
   LOGI("RunBrowser in g_initialized: %{public}d", g_initialized);
-  ohos::adapter::multiprocess::CommandLine::InitForCurrentProcess(args);
+  CommandLine::InitForCurrentProcess(args);
 
   if (!g_initialized) {
     std::thread chromiumMainthread([args]() {
@@ -84,66 +100,62 @@ void RunBrowser(const std::vector<std::string>& args) {
   LOGI("RunBrowser out g_initialized: %{public}d", g_initialized);
 }
 
-int RunOtherProcessType(int process_type) {
+int RunChildProcess() {
   std::vector<std::string> commands;
-  multiprocess::AppSpawnCommunication::RequestCommandline(commands);
-  std::vector<const char*> cstrs;
+  FdRemapVector fd_mappings;
+  AppSpawnCommunication::RequestCommandline(commands, fd_mappings);
+  GlobalFileDescriptorMappings::SetFdIdsRemap(fd_mappings);
+  CommandLine::FixCrashpadClientFd(commands, fd_mappings);
+  CommandLine::InitForCurrentProcess(commands);
+
   auto loader = BasicLoader::Create(USE_LOADER_TARGET);
-  for (size_t i = 0; i < commands.size(); ++i) {
-    if (commands[i].find("--type") != std::string::npos) {
-      auto pos = commands[i].find_last_of("=");
-      auto proc_type = commands[i].substr(pos + 1);
-      if (proc_type == kCrashpadHandler) {
-        process_type = ProcessType::kCrashpadHandler;
-        continue;
-      }
-    }
-    if (process_type == ProcessType::kCrashpadHandler &&
-        commands[i].starts_with(kFdRemapCommand)) {
-      continue;
-    }
+  int entry_type = GetEntryType();
+  auto argc_argv = CommandLine::BuildArgcArgv(commands);
 
-    cstrs.push_back(commands[i].data());
-  }
-  ohos::adapter::multiprocess::CommandLine::InitForCurrentProcess(commands);
-
-  int result = -1;
-  switch (process_type) {
-    case ProcessType::kRenderProcess:
-    case ProcessType::kGpuProcess:
-    case ProcessType::kCrashpadHandler:
-      result = loader->StartChildProcess(process_type, cstrs.size(), cstrs.data());
-      break;
-    default:
-      LOGI("RunOtherProcessType nothing to do");
-      break;
-  }
+  int result = loader->StartChildProcess(entry_type, argc_argv.argc,
+                                         argc_argv.argv.data());
+  LOGI("RunChildProcess ret = %{public}d", result);
   return result;
 }
 
-int RunIsolateProcessType(int process_type,
-                          const std::vector<std::string>& commands) {
-  LOGI("RunIsolateProcessType begin process_type: %{public}d", process_type);
-  auto loader = BasicLoader::Create(USE_LOADER_TARGET);
-  std::vector<const char*> cstrs;
-  for (size_t i = 0; i < commands.size(); ++i) {
-    if (commands[i].find("--type") != std::string::npos) {
-      auto pos = commands[i].find_last_of("=");
-      auto proc_type = commands[i].substr(pos + 1);
-      if (proc_type == kCrashpadHandler) {
-        process_type = ProcessType::kCrashpadHandler;
-        continue;
-      }
-    }
-    if (process_type == ProcessType::kCrashpadHandler &&
-        commands[i].starts_with(kFdRemapCommand)) {
-      continue;
-    }
+int RunNativeProcess(std::vector<std::string>& commands,
+                     FdRemapVector fd_mappings) {
+  GlobalFileDescriptorMappings::SetFdIdsRemap(fd_mappings);
+  CommandLine::FixCrashpadClientFd(commands, fd_mappings);
+  CommandLine::InitForCurrentProcess(commands);
 
-    cstrs.push_back(commands[i].data());
+  auto loader = BasicLoader::Create(USE_LOADER_TARGET);
+  int entry_type = GetEntryType();
+  auto argc_argv = CommandLine::BuildArgcArgv(commands);
+
+  auto result = loader->StartChildProcess(entry_type, argc_argv.argc,
+                                          argc_argv.argv.data());
+  LOGI("RunNativeProcess ret = %{public}d", result);
+  return result;
+}
+
+int RunArkProcess(const char* entry_params,
+                  size_t entry_params_len,
+                  const std::vector<int32_t>& fds_id,
+                  const std::vector<int32_t>& fds) {
+  std::string entry_params_str(entry_params, entry_params_len);
+  std::vector<std::string> commands = CommandLine::Split(
+      entry_params_str, CommandLine::kArgSeparator);
+
+  FdRemapVector fd_mappings;
+  for (size_t i = 0; i < fds_id.size() && i < fds.size(); ++i) {
+    fd_mappings.push_back(std::make_pair(fds[i], fds_id[i]));
   }
-  auto result = loader->StartChildProcess(process_type, cstrs.size(), cstrs.data());
-  LOGI("RunIsolateProcessType ret = %{public}d", result);
+  GlobalFileDescriptorMappings::SetFdIdsRemap(fd_mappings);
+  CommandLine::FixCrashpadClientFd(commands, fd_mappings);
+  CommandLine::InitForCurrentProcess(commands);
+
+  auto loader = BasicLoader::Create(USE_LOADER_TARGET);
+  int entry_type = GetEntryType();
+  auto argc_argv = CommandLine::BuildArgcArgv(commands);
+  auto result = loader->StartChildProcess(entry_type, argc_argv.argc,
+                                          argc_argv.argv.data());
+  LOGI("RunArkProcess ret = %{public}d", result);
   return result;
 }
 

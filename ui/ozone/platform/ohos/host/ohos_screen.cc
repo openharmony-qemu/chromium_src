@@ -39,7 +39,6 @@
 #include "base/strings/string_util.h"
 #include "ohos/adapter/context/context_adapter.h"
 #include "ohos/adapter/device_info/device_info.h"
-#include "ui/aura/screen_ozone.h"
 #include "ui/display/display_finder.h"
 #include "ui/display/screen.h"
 #include "ui/display/util/display_util.h"
@@ -627,8 +626,7 @@ void OhosScreen::OnAvailableAreaChange(uint64_t display_id) {
 }
 
 void AvailableAreaChangeCallback(uint64_t display_id) {
-  aura::ScreenOzone* screen =
-      static_cast<aura::ScreenOzone*>(display::Screen::GetScreen());
+  auto screen = display::Screen::GetScreen();
   if (screen != nullptr) {
     screen->OnDisplayAvailableAreaChange(display_id);
   }

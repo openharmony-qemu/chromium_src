@@ -54,9 +54,9 @@ void GpuNativeProcess::AddWindow(const std::string& window_id, void* window) {
 void GpuNativeProcess::RemoveWindow(const std::string& window_id) {
   auto window = WindowAdapter::GetInstance().GetWindow(window_id);
   WindowAdapter::GetInstance().RemoveWindow(window_id);
-  if (window) {
+  if (window && window->IsValid()) {
     // The native window added by the gpu process needs to be released.
-    OH_NativeWindow_DestroyNativeWindow((OHNativeWindow*)window);
+    OH_NativeWindow_DestroyNativeWindow((OHNativeWindow*)(window->Get()));
   }
 }
 

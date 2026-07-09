@@ -840,20 +840,6 @@ class CONTENT_EXPORT ContentBrowserClient {
       const GURL& scope,
       BrowserContext* browser_context);
 
-  // Allows the embedder to enable process-wide blink features before starting a
-  // service worker. This is similar to
-  // `blink.mojom.CommitNavigationParams.force_enabled_origin_trials` but for
-  // RuntimeFeatures instead of Origin Trials.
-  //
-  // This method is only called when the process that will run the Service
-  // Worker is isolated. These features can be highly privileged, so the
-  // renderer process with such features enabled shouldn't be used for other
-  // sites.
-  virtual void UpdateEnabledBlinkRuntimeFeaturesInIsolatedWorker(
-      BrowserContext* context,
-      const GURL& script_url,
-      std::vector<std::string>& out_forced_enabled_runtime_features);
-
   // Allow the embedder to control if a Shared Worker can be connected from a
   // given tab.
   // This is called on the UI thread.
@@ -1332,6 +1318,10 @@ class CONTENT_EXPORT ContentBrowserClient {
   // threads are destroyed.  Its interface will always be called from the same
   // sequence.
   virtual FeatureObserverClient* GetFeatureObserverClient();
+
+  // Returns true if the given render frame host is allowed to bypass the popup
+  // blocker.
+  virtual bool IsPopupBypassAllowed(RenderFrameHost* render_frame_host);
 
   // Returns true if the given page is allowed to open a window of the given
   // type. If true is returned, |no_javascript_access| will indicate whether

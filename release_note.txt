@@ -1,0 +1,139 @@
+chromium_132 流水线 —— 代码同步记录
+每次同步代码(BZ 参照分支 bz-patched cherry-pick / GC 仓 apply)在此追加一条记录。
+格式: [更新时间] 更新点 —— 简要描述
+
+============================================================
+
+[2026-07-02 18:32] BZ 参照分支 bz-patched 建立 + 06_01 同步
+  - 背景: SKIP_BLUE_ZONE_STAGES=1 导致 BZ 主线(origin/ohos_chromium_dev)长期落后,
+    GC 冲突解决用的 .bz_merged 参照是旧代码,造成大量误报冲突。
+  - 新建本地分支 bz-patched(基于 origin/ohos_chromium_dev),作为 GC autofix 的
+    正确参照源;scripts/lib/autofix_lib.sh + cron_tick.sh 改用 BZ_REPO_REF 环境变量
+    (默认 bz-patched)代替硬编码 origin/ohos_chromium_dev。
+  - cherry-pick chromium_132_26_06_01_trunk 对应的 21 个 bz commit(UaF 修复/剪贴板/
+    多进程重构/打印功能等),SDK 版本保持 6.0.2.130(6.1.1.125 tar 未随 patch 分支入库,
+    暂不升级)。
+  - GC 侧: APPLIED_GC 用 bz-patched 参照后 autofix 干净解决冲突;BUILT_B 编译通过;
+    10 URL 冒烟全过;VERIFY_FORK 通过。PR_DONE 因 gitcode API 高负载空响应失败,
+    分支已推送到 fork,待重试或手动开 PR。
+
+[2026-07-03 17:44] bz-patched +06_08 同步
+  - cherry-pick chromium_132_26_06_08_trunk 对应的 54 个 bz commit(音频框架与其他
+    音频混合、大量 CVE 安全修复、默认浏览器策略修复等),跳过 SDK LFS chore commit。
+  - GC 侧 APPLIED_GC 无冲突直接通过。
+  - 编译问题: media/audio/ohos/ohos_audio_output_stream.cc 引用 OH_AudioSession_Strategy /
+    OH_AudioSession_ConcurrencyMode / OH_AudioSession_BehaviorFlags,SDK 6.0.2.130 头文件
+    (ohaudio/native_audio_session_manager.h)有前两者但确实缺 BehaviorFlags 且未被
+    include。修复: 补 #include "ohaudio/native_audio_session_manager.h",本地補一个
+    兼容 enum OH_AudioSession_BehaviorFlags { MUTE_WHEN_INTERRUPTED = 0 }。修复已同步
+    回 bz-patched(commit: fix: 06_08 SDK compat - define OH_AudioSession_BehaviorFlags
+    locally)。
+  - 构建过程中两次遇到 ninja 段错误(exit 139),根因是构建被上一 session 中断时
+    out/musl_64/.ninja_deps(426MB 二进制依赖库)写入过程被打断而损坏。修复: 删除
+    损坏的 .ninja_deps,ninja -t recompact 验证恢复正常,重新全量构建。
+
+[2026-07-08 13:59] bz-patched +06_15 同步
+  - cherry-pick chromium_132_26_06_15_trunk 对应的 2 个 bz commit(图片 GPU 解码加速 +
+    DFX 异常分支日志)。范围: c13a3cb8a6(06_08末)..521811ccb3(06_15末),干净 cherry-pick
+    无冲突。
+  - GC 侧: 06_08 构建过程中再次撞见 ninja 段错误(第2次,同因:.ninja_deps 因
+    session 中断被打断写入而损坏),已清理 .ninja_deps 并全量重建,处理中。
+    06_15 的 GC apply/build 尚未开始,排在 06_08 完成之后。
+
+[2026-07-08 15:14] 06_08 GC 构建+设备验证完成
+  - GC HAP 构建成功(245MB,已签名)。libc++.so llvm-strip 报错("not ELF file")
+    是无害提示 —— 该文件本就是 ld 链接脚本(内容 `INPUT(-lc++_shared)`),不是
+    真实 .so,SDK 设计如此,不是构建产物损坏。
+  - 设备验证:安装+启动+30s+pidof 非空+截图正常;10 URL 冒烟(百度/京东/
+    淘宝/B站/知乎/腾讯新闻/CSDN/必应/example.com)全部通过。
+  - 踩坑:手动 mark 阶段完成时误写两行 state(`echo BUILT_B > state; echo
+    TESTED_B >> state`),导致 state 文件非法、orchestrator 判定"未开始"从
+    FETCHED 重跑,已 apply 的 patch + 手工编译修复被重置抹掉、开始重新全量编译。
+    及时发现(check `git status`/diff 看到修复丢失)并中止,补回修复,改为单行
+    覆盖写 `echo TESTED_B > state`,跳过重复阶段直达 VERIFY_FORK。已存档为
+    memory feedback_state_file_single_line,以后手动设 state 一律单行自检
+    (cat + wc -l 确认只有一行)。
+  - VERIFY_FORK 通过。PR_DONE:7 个 sub-repo 提交推送中,gitcode API 又现高负载
+    空响应(non-JSON response),同 06_01 的已知 quirk,走内建重试兜底。
+
+[2026-07-08 15:45] 06_08 PR 全部确认(cron_autofix 自动恢复)+ 06_01 缺口修复
+  - 06_08:cron_autofix.sh 每10min扫描,探测出 gitcode API 空响应期间 7 个 sub-repo
+    的 PR 其实都建成功了(同一个已知 quirk),自动补 prs.txt(6个)+ 发审阅邮件。
+    手动补查发现 chromium_v8 的 PR(#556)autofix 那轮漏掉了(它当时还没建好,
+    比其他 sub-repo 慢一拍),已补上 prs.txt + 补发审阅邮件。
+  - 06_01 复查发现真缺口:之前(07-03)因 gitcode API 卡住,手动把 state 强设
+    PR_DONE 图快,但没有逐 sub-repo 核实,导致 chromium_src 的 PR 实际从未建成
+    (分支推了,create_pr 反复失败,此后也没人跟进)一直被漏掉,直到今天用 API
+    逐个核实才发现。修复:手动补建 chromium_src 的 PR(直接命中 409 "already
+    exists"→ #8936,证明其实早就建好了,只是响应又丢了),连同其余 4 个真实
+    sub-repo(chromium_chrome #708 / chromium_third_party #1898 /
+    chromium_third_party_angle #202 / chromium_v8 #547)一起补全 prs.txt(5条,
+    chromium_third_party_blink_webtests 本来就该跳过 —— patch 不改它)、补发
+    5 封审阅邮件给 reviewer(内部邮箱,已省略)。
+  - 教训已存档 memory feedback_pr_done_verify_before_mark:以后手动设
+    PR_DONE 前必须对每个 sub-repo 单独查 API 确认 PR 真存在,不能只凭"分支推了
+    /报错像已知 quirk"就假设全部成功。
+  - 06_01、06_08 至此才算真正完整收尾。
+
+[2026-07-08 20:xx ~ 2026-07-09 10:34] 06_15 GC 处理 —— 根因排查(bz-patched 曾损坏)+ 修复 + 完成
+  - **根因发现(整场排查的核心)**:06_15 编译连续报"前序 patch 的新文件/类型缺失"
+    (WindowType 误判、native_window_wrapper.h 缺失、runArkProcess 改名未生效……),
+    一开始按"零散打地鼠"方式一个个修,绕了 5+ 轮弯路(甚至一度误判 WindowType 是
+    裸指针、手写错误的 static_cast,后来发现判断方向整个错了,回滚 3 个错误
+    commit)。最终定位真正根因:**会话中途一次 `git fetch origin` 之后,
+    origin/ohos_chromium_dev 的引用发生了漂移**——BZ 团队把整个
+    `ohos_chromium_dev_260601-260622-patch` 分支合并进了主线,origin ref 直接
+    跳到合并后的新 HEAD。此后所有还在用旧语法
+    `origin/ohos_chromium_dev..<某commit>` 算 cherry-pick 范围/重置基准的操作全部
+    静默失效(origin 已经"超过"目标 commit,range 求出空集或残缺集,不报错),
+    导致 bz-patched 被之后的 `git reset --hard origin/ohos_chromium_dev` 悄悄破坏,
+    59def771ea(ArkTS 子进程重命名 runArkProcess 那个 commit)等关键内容丢失。
+    已存档 memory feedback_origin_ref_drift_range,以后长会话 fetch 后必须重新
+    核实所有相对 range 是否还成立。
+  - **修复**:既然 BZ 主线现在已经把 06_01~06_22 全部合并,不再需要手动
+    cherry-pick——直接 `git reset --hard origin/ohos_chromium_dev` 重建
+    bz-patched(简单、权威、不会再漏)。GC 树同样重置为纯净 tpc,依次
+    `patch -p1` 重新 apply 06_01/06_08/06_15(这次几乎 0 .rej,比之前干净很多)。
+  - **系统性文件对齐**:即便重新 apply 后,GC 树对比 bz-patched 仍有大量差异
+    (06_01 涉及 196 文件中 172 个不一致,06_08 涉及 148 文件中 138 个不一致)——
+    根因是多轮 `git checkout -- . && git clean -fd` 冲掉了前序 patch 引入的未
+    跟踪新文件。改用"提取 patch 完整文件清单 → 逐个跟 bz-patched 比对 → 不一致
+    整份覆盖"的系统性方法一次性拉齐,而不是等编译报错再一个个修。还补做了
+    .cc↔.h 配套检查(30 个头文件光靠文件清单法漏掉,靠"给每个已恢复 .cc 找同名
+    .h 再核对"补上)、DELETE 类文件核对(4 个应删除的 multiprocess helper 文件)、
+    SDK 版本保底(批量恢复会连带拉回 6.1.1.125,每次都要重新 sed 锁回 6.0.2.130)。
+    已存档 memory project_gc_tree_cumulative_dependency,含可复用的批量恢复脚本。
+  - **06_08 音频兼容修复需要重新打**:bz-patched 被 reset 后,之前给
+    ohos_audio_output_stream.cc 加的本地 SDK 兼容 shim(OH_AudioSession_BehaviorFlags)
+    自然也没了,重新打一次并 commit 到新 bz-patched 上(标注"本地 workaround,
+    不是上游内容")。
+  - **共享 DevEco SDK 类型声明缺口(新发现的第三类 SDK 版本代价)**:C++ 编译
+    100% 通过后,卡在 ArkTS 层——`PrintAdapter.ets` 用到的 `print.PrintJobData` /
+    `PrintDocumentFormat` / `DocFlavor` / `startPrint` 是 SDK 6.1.1.125 才有的
+    二进制流式打印 API,项目本地 `ohos_sdk/` 目录editSDK头文件不生效(那是给
+    C++ 原生编译用的 sysroot),ArkTS/hvigor 工具链实际读的是**机器级共享路径**
+    `/opt/compilers/ohos_tools/commandline-tools-linux-x64-6.0.2.640/
+    command-line-tools/sdk/default/openharmony/ets/api/@ohos.print.d.ts`(132/138/
+    144 三条流水线共用)。跟用户确认后,在这个共享文件里**纯增量**补了 4 个类型
+    声明(不改任何已有内容,原文件已备份 `.bak-before-06_15-compat-20260709`),
+    解除编译阻塞。
+  - **最终结果**:BUILT_B 编译通过(245MB 签名 HAP)→ TESTED_B 10 URL 冒烟全过
+    → VERIFY_FORK 通过 → PR_DONE(gitcode API 又是老一套空响应,核实后确认
+    chromium_src #9254、chromium_third_party #1900 两个真实涉及的 sub-repo 都
+    已建好,其余 5 个 sub-repo 正确判定"patch 不改它们"跳过)。补发 2 封审阅
+    邮件。**06_15 完整收尾**。
+
+[2026-07-09 10:40] 06_22 核实为早已完成 + 4 笔 patch 全部收尾
+  - 06_22(休眠唤醒 app freeze 修复)其实 7月3日 就已经跑完整套流水线并拿到
+    PR #8933(chromium_src,唯一涉及的 sub-repo,只改 ohos_audio_output_stream.cc/.h)
+    ——早于今天这整场 bz-patched 损坏/重建的风波,没受影响。API 核实 PR 状态
+    open、标题分支都对,是真完成,不是误标记,未重新构建。
+  - 4 笔 patch 最终状态:06_01(5 PR)/06_08(7 PR)/06_15(2 PR)/06_22(1 PR),
+    全部 state=PR_DONE,审阅邮件均已发给内部 reviewer 待人工转发。
+  - GC 工作树保留在"依次 apply 全部 4 笔 patch"的叠加状态(而非重置为空),
+    作为这批改动的完整参照;bz-patched 分支现等同 origin/ohos_chromium_dev
+    (BZ 主线已把这几笔 patch 全合并),往后新 patch 处理不再需要手动
+    cherry-pick,直接从这个干净的 bz-patched 起步即可。
+
+============================================================
+全部 4 笔 patch(06_01/06_08/06_15/06_22)处理完毕。

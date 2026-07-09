@@ -36,6 +36,22 @@
 #include "media/base/audio_bus.h"
 #include "media/base/audio_sample_types.h"
 #include "media/base/audio_timestamp_helper.h"
+#include "ohaudio/native_audio_session_manager.h"
+#include "ohos/adapter/device_info/device_info.h"
+
+// OH_AudioSession_BehaviorFlags 不存在于 SDK 6.0.2.130(API 24+),
+// 但 ohos_audio_output_stream.cc 引用它。本地定义兼容枚举。
+namespace {
+enum OH_AudioSession_BehaviorFlags : uint32_t { MUTE_WHEN_INTERRUPTED = 0 };
+}  // namespace
+
+extern "C" {
+// since API 24
+__attribute__((weak_import)) OH_AudioStream_Result OH_AudioRenderer_SetIndependentAudioSessionStrategy(
+    OH_AudioRenderer* renderer,
+    const OH_AudioSession_Strategy* strategy,
+    uint32_t behavior);
+}
 
 namespace media {
 
@@ -171,6 +187,8 @@ static int32_t AudioRendererOnInterruptEvent(OH_AudioRenderer* renderer,
                                              void* user_data,
                                              OH_AudioInterrupt_ForceType type,
                                              OH_AudioInterrupt_Hint hint) {
+  LOG(INFO) << __func__ << " [AudioStream] hint: " << static_cast<int>(hint)
+            << " type: " << static_cast<int>(type);
   AudioRenderDestructionHelper* destruction_helper =
       reinterpret_cast<AudioRenderDestructionHelper*>(user_data);
   OhosAudioOutputStream* output_stream = destruction_helper->GetAndLockStream();
@@ -400,6 +418,30 @@ bool OhosAudioOutputStream::InitRender() {
     LOG(ERROR) << "AudioStreamBuilder GenerateRenderer failed.";
     return false;
   }
+  if (ohos::adapter::device_info::DeviceInfo::GetInstance().SdkApi() >=
+      ohos::adapter::device_info::SdkVersion::SDK_VERSION_24) {
+    if (!OH_AudioRenderer_SetIndependentAudioSessionStrategy) {
+      LOG(WARNING) << __func__
+                   << " [AudioStream] "
+                      "OH_AudioRenderer_SetIndependentAudioSessionStrategy API "
+                      "not exist.";
+    } else {
+      OH_AudioSession_Strategy strategy = {};
+      strategy.concurrencyMode =
+          OH_AudioSession_ConcurrencyMode::CONCURRENCY_MIX_WITH_OTHERS;
+      audio_stream_result = OH_AudioRenderer_SetIndependentAudioSessionStrategy(
+          audio_renderer_, &strategy,
+          OH_AudioSession_BehaviorFlags::MUTE_WHEN_INTERRUPTED);
+      if (audio_stream_result != AUDIOSTREAM_SUCCESS) {
+        LOG(WARNING)
+            << __func__
+            << " [AudioStream] failed to "
+               "OH_AudioRenderer_SetIndependentAudioSessionStrategy, result: "
+            << static_cast<int>(audio_stream_result);
+      }
+    }
+  }
+
   return true;
 }
 

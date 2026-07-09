@@ -251,7 +251,12 @@ void SecurePaymentConfirmationController::OnCancel() {
   base::UmaHistogramEnumeration("SecurePaymentRequest.Transaction.Outcome",
                                 SecurePaymentRequestOutcome::kAnotherWay);
 
+  // CloseDialog() can potentially delete `this`. See OnConfirm() above.
+  auto weak_this = weak_ptr_factory_.GetWeakPtr();
   CloseDialog();
+  if (!weak_this) {
+    return;
+  }
 
   if (!request_)
     return;
@@ -267,7 +272,12 @@ void SecurePaymentConfirmationController::OnOptOut() {
   // Set the opt out clicked state on the model so that the view knows not to
   // call back to OnCancel when the dialog is closed.
   model_.set_opt_out_clicked(true);
+  // CloseDialog() can potentially delete `this`. See OnConfirm() above.
+  auto weak_this = weak_ptr_factory_.GetWeakPtr();
   CloseDialog();
+  if (!weak_this) {
+    return;
+  }
 
   if (!request_)
     return;

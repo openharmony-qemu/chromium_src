@@ -73,28 +73,17 @@ bool ChildProcessLauncherHelper::IsUsingLaunchOptions() {
   return true;
 }
 
-int GetSandboxFD() {
-  return kSandboxIPCChannel;
-}
-
 bool ChildProcessLauncherHelper::BeforeLaunchOnLauncherThread(
     PosixFileDescriptorInfo& files_to_register,
     base::LaunchOptions* options) {
   if (options) {
-    // Convert FD mapping to FileHandleMappingVector
-    options->fds_to_remap = files_to_register.GetMapping();
-
     if (GetProcessType() == switches::kRendererProcess) {
       const int sandbox_fd = SandboxHostLinux::GetInstance()->GetChildSocket();
-      options->fds_to_remap.emplace_back(sandbox_fd, GetSandboxFD());
-      options->is_isolated_process = true;
+      files_to_register.Share(kSandboxIPCChannel, sandbox_fd);
     }
-
+    // Convert FD mapping to FileHandleMappingVector
+    options->fds_to_remap = files_to_register.GetMapping();
     options->environment = delegate_->GetEnvironment();
-    options->enable_native_spawn = true;
-    if (GetProcessType() == switches::kGpuProcess) {
-      options->is_gpu_process = true;
-    }
   } else {
     // Environment variables could be supported in the future, but are not
     // currently supported when launching with the zygote.

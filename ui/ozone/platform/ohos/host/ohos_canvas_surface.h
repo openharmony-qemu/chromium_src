@@ -56,7 +56,6 @@ class OhosCanvasSurface : public ui::SurfaceOzoneCanvas {
  private:
   sk_sp<SkSurface> surface_;
   gfx::AcceleratedWidget widget_;
-  OHNativeWindow* window_;
   uint32_t width_;
   uint32_t height_;
   void CopyAndFlushBuffer(SkPixmap skia_pixmap,

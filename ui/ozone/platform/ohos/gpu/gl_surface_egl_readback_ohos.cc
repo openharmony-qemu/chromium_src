@@ -121,8 +121,11 @@ bool GLSurfaceEglReadbackOhos::HandlePixels(uint8_t* pixels) {
     return false;
   }
 
+  OHNativeWindow* native_window = nullptr;
   auto temp = util::GetWindowFromWidget(window_);
-  OHNativeWindow* native_window = static_cast<OHNativeWindow*>(temp);
+  if (temp) {
+    native_window = temp->Get();
+  }
   if (native_window == nullptr) {
     LOG(ERROR) << "native_window == nullptr";
     return false;

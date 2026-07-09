@@ -45,6 +45,10 @@
 #include "base/mac/process_requirement.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/multiprocess/child_process_manager.h"
+#endif
+
 namespace base {
 
 #if BUILDFLAG(IS_POSIX)
@@ -93,6 +97,10 @@ typedef std::vector<std::pair<int, int>> FileHandleMappingVector;
 #elif BUILDFLAG(IS_POSIX)
 typedef std::vector<std::pair<int, int>> FileHandleMappingVector;
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(IS_OHOS)
+using OhosProcessSpawnType = ohos::adapter::multiprocess::ProcessSpawnType;
+#endif // BUILDFLAG(IS_OHOS)
 
 // Options for launching a subprocess that are passed to LaunchProcess().
 // The default constructor constructs the object with default options.
@@ -374,20 +382,12 @@ struct BASE_EXPORT LaunchOptions {
   // specified process entry point
   // will be set to "<lib_name>:<function_name>".
   // Example (including literal quotes)
-  //  process_entry_point = "libadapter.so:IsolateMain"
-  std::string process_entry_point;
+  //  process_entry_point = "libadapter.so:ChildMain"
+  // For ArkTS child process：<module>/<ets filepath relative to src/main>
+  //  process_entry_point = "chromium/ets/process/CustomChildProcess.ets"
+  std::optional<std::string> process_entry_point;
 
-  // creating a process via native_spawn
-  bool enable_native_spawn = false;
-
-  // gpu process startup requires special handling to establish IPC channel
-  bool is_gpu_process = false;
-
-  // isolated process startup requires special handling to establish IPC channel
-  bool is_isolated_process = false;
-
-  // native message host process startup requires special handling
-  bool is_native_message = false;
+  std::optional<OhosProcessSpawnType> spawn_type;
 #endif  // BUILDFLAG(IS_OHOS)
 };
 

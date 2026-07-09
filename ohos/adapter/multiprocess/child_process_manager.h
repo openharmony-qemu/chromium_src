@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -33,6 +33,7 @@
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -41,6 +42,13 @@
 #include "ohos/adapter/export.h"
 
 namespace ohos::adapter::multiprocess {
+
+enum class ProcessSpawnType {
+  kArk,
+  kNative,
+  kGpu,
+  kNativeMessaging,
+};
 
 class ADAPTER_EXPORT_API ChildProcessManager {
  public:
@@ -55,27 +63,33 @@ class ADAPTER_EXPORT_API ChildProcessManager {
   int32_t StartChildProcess(
       const std::vector<std::string>& commands,
       const std::vector<std::pair<int, int>>& fds_to_remap,
-      const std::string& entry_point,
-      bool is_isolated);
+      const std::optional<std::string>& entry_point,
+      ProcessSpawnType spawn_type);
 
-  int32_t StartLegacyChildProcess(
-      const std::vector<std::string>& commands,
-      const std::vector<std::pair<int, int>>& fds_to_remap);
+  static std::string ParseProcessTypeFromCommands(
+      const std::vector<std::string>& commands);
+
+  static ProcessSpawnType GetSpawnType(const std::string& process_type);
+
+  int32_t StartArkChildProcess(
+      const std::string& src_entry,
+      const std::vector<std::string>& args,
+      const std::vector<std::pair<int, int>>& fds_to_remap,
+      bool is_isolated = false);
 
   int32_t StartGpuProcess(const std::vector<std::string>& commands,
                           const std::vector<std::pair<int, int>>& fds_to_remap);
   void GpuProcessStarted(int32_t child_pid);
+
+  int32_t StartNativeMessagingProcess(
+      const std::vector<std::string>& commands,
+      const std::vector<std::pair<int, int>>& fds_to_remap);
 
   ChildProcessManager(const ChildProcessManager&) = delete;
   ChildProcessManager& operator=(const ChildProcessManager&) = delete;
  private:
   ChildProcessManager();
   ~ChildProcessManager();
-
-  int32_t StartChildProcessInternal(
-      std::function<void(StartCallbackFunc)> start_func,
-      const std::vector<std::string>& commands,
-      const std::vector<std::pair<int, int>>& fds_to_remap);
 
   int32_t StartNativeChildProcess(
       const std::string& process_name,
@@ -108,9 +122,6 @@ class ADAPTER_EXPORT_API ChildProcessManager {
 
   NativeChildProcessLibrary native_api_;
   std::unique_ptr<NativeChildProcessMonitor> monitor_;
-
-  // protect for AppSpawnCommunication
-  std::mutex mutex_;
 };
 
 pid_t ADAPTER_EXPORT_API Waitpid(pid_t handle, int *status, int nonBlocking);

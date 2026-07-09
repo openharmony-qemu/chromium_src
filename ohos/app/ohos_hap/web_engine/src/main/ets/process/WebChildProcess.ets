@@ -26,8 +26,8 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
-import ChildProcess from '@ohos.app.ability.ChildProcess';
+
+import { ChildProcess, ChildProcessArgs } from '@kit.AbilityKit';
 import { ContextType } from '../common/Constants';
 import { NativeContext } from '../interface/CommonInterface';
 import JsBindingUtils from '../utils/JsBindingUtils';
@@ -36,8 +36,18 @@ import LogUtil from '../utils/LogUtil';
 export class WebChildProcess extends ChildProcess {
   private nativeContext: NativeContext = JsBindingUtils.getNativeContext(ContextType.kRenderProcess);
 
-  onStart(): void {
-    LogUtil.info("childProcess", "WebChildProcess onStart");
-    this.nativeContext.runOtherProcessType(ContextType.kRenderProcess);
+  onStart(args?: ChildProcessArgs): void {
+    LogUtil.info("childProcess", "WebChildProcess onStart, args: " + JSON.stringify(args));
+    const entryParams = args?.entryParams || '';
+    const fd_mappings = args?.fds || {};
+    const fdsId: number[] = [];
+    const fds: number[] = [];
+    const keys: string[] = Object.keys(fd_mappings);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      fdsId.push(parseInt(key));
+      fds.push(fd_mappings[key]);
+    }
+    this.nativeContext.runArkProcess(entryParams, fdsId, fds);
   }
 }

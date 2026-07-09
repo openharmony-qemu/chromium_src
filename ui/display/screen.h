@@ -227,6 +227,7 @@ class DISPLAY_EXPORT Screen {
       const std::set<gfx::NativeWindow>& ignore,
       const int32_t display_id);
   virtual gfx::Point GetCursorScreenPoint(const int32_t display_id) = 0;
+  virtual void OnDisplayAvailableAreaChange(uint64_t display_id) = 0;
 #endif
 
  protected:

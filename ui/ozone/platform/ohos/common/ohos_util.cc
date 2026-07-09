@@ -42,17 +42,17 @@ namespace util {
 
 const std::string kWindowPrefix = "browser";
 
-void* GetWindow(std::string& window_id) {
+NativeWindowType GetWindow(std::string& window_id) {
   auto window = WindowAdapter::GetInstance().GetWindow(window_id);
   DCHECK(window);
-  if (!window) {
+  if (!window || !window->IsValid()) {
     LOG(ERROR) << "Get window is not exists, windowId:" << window_id;
     return nullptr;
   }
   return window;
 }
 
-void* GetWindowFromWidget(gfx::AcceleratedWidget widget_id) {
+NativeWindowType GetWindowFromWidget(gfx::AcceleratedWidget widget_id) {
   DCHECK(widget_id);
   std::string window_id(kWindowPrefix);
   window_id += std::to_string(widget_id);

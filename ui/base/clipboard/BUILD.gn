@@ -179,7 +179,7 @@ component("clipboard") {
     }
   }
 
-  if(is_ohos){
+  if (is_ohos) {
     deps += [
       "//ohos/adapter:adapter",
     ]
@@ -280,6 +280,10 @@ source_set("clipboard_test") {
 
   if (is_win) {
     sources += [ "clipboard_util_win_unittest.cc" ]
+  }
+
+  if (is_ohos) {
+    sources += [ "clipboard_ohos_unittest.cc" ]
   }
 
   deps = [

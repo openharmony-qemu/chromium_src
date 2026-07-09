@@ -255,12 +255,13 @@ void* GpuNativeIpcStub::GetWindowFromAdapter(const OHIPCParcel* data) {
     return nullptr;
   }
 
-  void* window = WindowAdapter::GetInstance().GetWindow(window_id);
-  if (window == nullptr) {
+  auto window = WindowAdapter::GetInstance().GetWindow(window_id);
+  if (!window || !window->IsValid()) {
     LOGE("NOTIFY_WINDOW_CHANGE Native window not found, window_id: %{public}s",
          window_id);
+    return nullptr;
   }
-  return window;
+  return window->Get();
 }
 
 OH_IPC_ErrorCode GpuNativeIpcStub::HandleRemoteRequest(GpuNativeIpcOpCode code,

@@ -92,7 +92,7 @@ class GLOzoneEGLOhos : public GLOzoneEGL {
     } else {
       auto temp = util::GetWindowFromWidget(window);
       // TODO Check why the temp is null.
-      if (!temp) {
+      if (!temp || !temp->IsValid()) {
         LOG(ERROR) << "CreateViewGLSurface window is not exists, window:"
                    << window;
         return gl::InitializeGLSurface(
@@ -102,7 +102,7 @@ class GLOzoneEGLOhos : public GLOzoneEGL {
       return gl::InitializeGLSurface(
           base::MakeRefCounted<gl::NativeViewGLSurfaceEGLOhos>(
               display->GetAs<gl::GLDisplayEGL>(),
-              reinterpret_cast<EGLNativeWindowType>(temp), nullptr));
+              reinterpret_cast<EGLNativeWindowType>(temp->Get()), nullptr));
     }
   }
 

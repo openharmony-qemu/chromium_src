@@ -230,6 +230,16 @@ chromium-metrics-reviews@google.com.
   </int>
 </enum>
 
+<enum name="PopupBypassType">
+  <int value="0"
+      label="The process has previously run an injected extension content
+             script"/>
+  <int value="1" label="The process is an authorized extension process"/>
+  <int value="2"
+      label="The process is a privileged web page (e.g., a hosted app) in an
+             outermost main frame"/>
+</enum>
+
 <enum name="PrivateNetworkAccessCheckResult">
   <int value="0" label="AllowedMissingClientSecurityState"/>
   <int value="1" label="AllowedNoLessPublic"/>

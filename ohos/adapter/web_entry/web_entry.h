@@ -33,11 +33,20 @@
 #include <string>
 #include <vector>
 
+#include "ohos/adapter/multiprocess/fd_remap_types.h"
+
 namespace ohos::adapter::web_entry {
 
-void RunBrowser(const std::vector<std::string>& args);
-int RunOtherProcessType(int process_type);
-int RunIsolateProcessType(int process_type, const std::vector<std::string>& args);
+using ohos::adapter::multiprocess::FdRemapVector;
+
+void RunBrowser(std::vector<std::string>& args);
+int RunChildProcess();
+int RunNativeProcess(std::vector<std::string>& commands,
+                     FdRemapVector fd_mappings);
+int RunArkProcess(const char* entry_params,
+                  size_t entry_params_len,
+                  const std::vector<int32_t>& fds_id,
+                  const std::vector<int32_t>& fds);
 
 }  // namespace ohos::adapter::web_entry
 #endif  // OHOS_ADAPTER_WEB_ENTRY_H_

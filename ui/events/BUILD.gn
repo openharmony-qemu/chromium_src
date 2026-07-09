@@ -162,6 +162,13 @@ component("events_base") {
     sources += arkweb_native_scroller_sources
   }
 
+  if (is_arkweb) {
+    sources += [
+      "//arkweb/chromium_ext/ui/events/features_ext.cpp",
+      "//arkweb/chromium_ext/ui/events/features_ext.h",
+    ]
+  }
+
   if (is_android) {
     sources += [
       "keycodes/keyboard_code_conversion_android.cc",

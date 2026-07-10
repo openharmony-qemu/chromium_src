@@ -169,15 +169,12 @@ class HostResolverManager::RequestImpl
   ClientSocketFactory* GetClientSocketFactory();
 
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-  void MaybeModifyResolveLocallyResults(HostCache::Entry& out_results);
-#if defined(ARKWEB_EXT_NAVIGATION_TODO)
   void MaybeModifyResolveLocallyResults(
       HostCache::Entry& out_results,
       std::vector<IPEndPoint>& truncation_results);
   void MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
       HostCache::Entry& out_results,
       int dns_status);
-#endif
 #endif
 
   const NetLogWithSource source_net_log_;

@@ -904,7 +904,7 @@ void HostResolverDnsTask::HandleTransactionResults(
     }
     utils->MaybeModifyInsecureDnsTaskResolveResults(
         std::string(host_.GetHostnameWithoutBrackets()),
-        secure_dns_fallback_available, transaction_results);
+        secure_dns_fallback_available, transaction_results, truncation_results_);
   }
 #endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 

@@ -41,12 +41,12 @@ ScreenCaptureAdapter& ScreenCaptureAdapter::GetInstance() {
 ScreenCaptureAdapter::ScreenCaptureAdapter()
     : native_screen_capture_lib_("native_avscreen_capture") {
   if (!native_screen_capture_lib_.IsLoaded()) {
-    LOGE("ScreenCaptureAdapter load libnative_avscreen_capture.so failed");
+    LOGE("[ScreenCaptureAdapter] %{public}s: load libnative_avscreen_capture.so failed", __func__);
     return;
   }
 
   if (!LoadAllFunctions()) {
-    LOGE("ScreenCaptureAdapter load functions failed");
+    LOGE("[ScreenCaptureAdapter] %{public}s: load functions failed", __func__);
     return;
   }
 

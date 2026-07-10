@@ -87,6 +87,10 @@
 #include "media/gpu/vaapi/vaapi_image_decode_accelerator_worker.h"
 #endif  // BUILDFLAG(USE_VAAPI)
 
+#if BUILDFLAG(IS_OHOS)
+#include "media/gpu/ohos/ohos_image_decode_accelerator_worker.h"
+#endif // BUILDFLAG(IS_OHOS)
+
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/build_info.h"
 #include "components/viz/service/gl/throw_uncaught_exception.h"
@@ -419,6 +423,11 @@ GpuServiceImpl::GpuServiceImpl(
   image_decode_accelerator_worker_ =
       media::VaapiImageDecodeAcceleratorWorker::Create();
 #endif  // BUILDFLAG(USE_VAAPI_IMAGE_CODECS)
+
+#if BUILDFLAG(IS_OHOS)
+  image_decode_accelerator_worker_ =
+      media::OhosImageDecodeAcceleratorWorker::Create();
+#endif  // BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_WIN)
   if (media::SupportMediaFoundationClearPlayback()) {

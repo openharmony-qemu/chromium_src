@@ -572,6 +572,32 @@ ServiceImageTransferCacheEntry::ServiceImageTransferCacheEntry(
 ServiceImageTransferCacheEntry& ServiceImageTransferCacheEntry::operator=(
     ServiceImageTransferCacheEntry&& other) = default;
 
+#if BUILDFLAG(IS_OHOS)
+bool ServiceImageTransferCacheEntry::BuildFromRGBAHardwareDecodedImage(
+    GrDirectContext* context,
+    std::vector<sk_sp<SkImage>> plane_images,
+    size_t buffer_byte_size) {
+  if (!context) {
+    LOG(ERROR) << __func__ << " [OhosImageDecode] GrDirectContext is null.";
+    return false;
+  }
+  if (plane_images.empty() || !plane_images[0]) {
+    LOG(ERROR) << __func__
+               << " [OhosImageDecode] Invalid or empty plane_images.";
+    return false;
+  }
+  if (buffer_byte_size == 0) {
+    LOG(ERROR) << __func__
+               << " [OhosImageDecode] Buffer byte size cannot be zero.";
+    return false;
+  }
+  gr_context_ = context;
+  image_ = std::move(plane_images[0]);
+  size_ = buffer_byte_size;
+  return true;
+}
+#endif
+
 bool ServiceImageTransferCacheEntry::BuildFromHardwareDecodedImage(
     GrDirectContext* gr_context,
     std::vector<sk_sp<SkImage>> plane_images,

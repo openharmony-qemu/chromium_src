@@ -89,8 +89,7 @@ export class WebAppAdapter extends BaseAdapter {
               callback(true);
             }).catch((error: BusinessError) => {
             const msg = this.getErrorMessage(error.code);
-            // const msg = `${JSON.stringify(error)}`;
-            console.error(`requestNewPinShortcut error. code is ${msg}`);
+            LogUtil.error(TAG, `requestNewPinShortcut: call productViewManager.requestNewPinShortcut failed, code=${msg}`);
             promptAction.showToast({
               message: msg,
               duration: 2000

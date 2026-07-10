@@ -13,7 +13,20 @@ namespace gfx {
 NativePixmapDmaBuf::NativePixmapDmaBuf(const gfx::Size& size,
                                        gfx::BufferFormat format,
                                        gfx::NativePixmapHandle handle)
-    : size_(size), format_(format), handle_(std::move(handle)) {}
+    : size_(size), format_(format), handle_(std::move(handle)) {
+}
+
+#if BUILDFLAG(IS_OHOS)
+NativePixmapDmaBuf::NativePixmapDmaBuf(const gfx::Size& size,
+                                       gfx::BufferFormat format,
+                                       gfx::NativePixmapHandle handle,
+                                       void* window_buffer)
+    : size_(size),
+      format_(format),
+      handle_(std::move(handle)),
+      native_window_buffer_(window_buffer) {
+}
+#endif
 
 NativePixmapDmaBuf::~NativePixmapDmaBuf() {}
 

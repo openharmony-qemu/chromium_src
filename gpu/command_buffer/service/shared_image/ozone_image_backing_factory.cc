@@ -36,6 +36,10 @@
 #include "gpu/vulkan/vulkan_device_queue.h"
 #endif  // BUILDFLAG(ENABLE_VULKAN)
 
+#if BUILDFLAG(IS_OHOS)
+#include "gpu/command_buffer/common/gpu_memory_buffer_support.h"
+#endif  // BUILDFLAG(IS_OHOS)
+
 namespace gpu {
 namespace {
 
@@ -182,6 +186,43 @@ std::unique_ptr<SharedImageBacking> OzoneImageBackingFactory::CreateSharedImage(
   return backing;
 }
 
+#if BUILDFLAG(IS_OHOS)
+std::unique_ptr<SharedImageBacking> OzoneImageBackingFactory::CreateSharedImage(
+    const Mailbox& mailbox,
+    gfx::GpuMemoryBufferHandle handle,
+    gfx::BufferFormat buffer_format,
+    gfx::BufferPlane plane,
+    const gfx::Size& size,
+    const gfx::ColorSpace& color_space,
+    GrSurfaceOrigin surface_origin,
+    SkAlphaType alpha_type,
+    uint32_t usage,
+    void* window_buffer) {
+  DCHECK_EQ(handle.type, gfx::NATIVE_PIXMAP);
+  ui::SurfaceFactoryOzone* surface_factory =
+      ui::OzonePlatform::GetInstance()->GetSurfaceFactoryOzone();
+  scoped_refptr<gfx::NativePixmap> pixmap =
+      surface_factory->CreateNativePixmapFromHandle(
+          kNullSurfaceHandle, size, buffer_format,
+          std::move(handle.native_pixmap_handle), window_buffer);
+  if (!pixmap) {
+    LOG(ERROR)
+        << "[OhosImageDecode] OzoneImageBackingFactory::CreateSharedImage "
+           "pixmap is null.";
+    return nullptr;
+  }
+  const gfx::Size plane_size = gpu::GetPlaneSize(plane, size);
+  auto si_format =
+      viz::GetSharedImageFormat(GetPlaneBufferFormat(plane, buffer_format));
+  auto backing = std::make_unique<OzoneImageBacking>(
+      mailbox, si_format, plane_size, color_space, surface_origin, alpha_type,
+      SharedImageUsageSet(usage), /*debug_label=*/"GPUImageDecode",
+      shared_context_state_, std::move(pixmap), workarounds_);
+  backing->SetCleared();
+  return backing;
+}
+#endif
+
 std::unique_ptr<SharedImageBacking> OzoneImageBackingFactory::CreateSharedImage(
     const Mailbox& mailbox,
     viz::SharedImageFormat format,
@@ -271,10 +312,12 @@ bool OzoneImageBackingFactory::IsSupported(
   }
 
   ui::GLOzone* gl_ozone = factory->GetCurrentGLOzone();
+#if !BUILDFLAG(IS_OHOS)
   if (used_by_gl &&
       (!gl_ozone || !gl_ozone->CanImportNativePixmap(ToBufferFormat(format)))) {
     return false;
   }
+#endif
 
   bool platform_supports_overlays = ui::OzonePlatform::GetInstance()
                                         ->GetPlatformRuntimeProperties()

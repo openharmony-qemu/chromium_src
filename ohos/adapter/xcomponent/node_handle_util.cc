@@ -27,6 +27,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "ohos/adapter/common/logging.h"
 #include "ohos/adapter/xcomponent/node_handle_util.h"
 
 #include <arkui/native_gesture.h>
@@ -39,6 +40,11 @@ ArkUI_NativeNodeAPI_1* GetNativeNodeAPI() {
     node_api = reinterpret_cast<ArkUI_NativeNodeAPI_1*>(
         OH_ArkUI_QueryModuleInterfaceByName(ARKUI_NATIVE_NODE,
                                             "ArkUI_NativeNodeAPI_1"));
+    if (node_api == nullptr) {
+      LOGE("[NodeHandleUtil] %{public}s:"
+           "call OH_ArkUI_QueryModuleInterfaceByName(ARKUI_NATIVE_NODE) failed, returned nullptr",
+           __func__);
+    }
   }
 
   return node_api;
@@ -50,6 +56,11 @@ ArkUI_NativeGestureAPI_1* GetGestureAPI() {
     gesture_api = reinterpret_cast<ArkUI_NativeGestureAPI_1*>(
         OH_ArkUI_QueryModuleInterfaceByName(ARKUI_NATIVE_GESTURE,
                                             "ArkUI_NativeGestureAPI_1"));
+    if (gesture_api == nullptr) {
+      LOGE("[NodeHandleUtil] %{public}s:"
+           "call OH_ArkUI_QueryModuleInterfaceByName(ARKUI_NATIVE_GESTURE) failed, returned nullptr",
+           __func__);
+    }
   }
 
   return gesture_api;

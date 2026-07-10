@@ -41,7 +41,7 @@ bool IsImageSizeValidForGpuMemoryBufferFormat(const gfx::Size& size,
     case gfx::BufferFormat::YUV_420_BIPLANAR:
     case gfx::BufferFormat::YUVA_420_TRIPLANAR:
     case gfx::BufferFormat::P010:
-#if BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
       // Allow odd size for CrOS.
       // TODO(https://crbug.com/1208788, https://crbug.com/1224781): Merge this
       // with the path that uses gfx::IsOddHeightMultiPlanarBuffersAllowed.
@@ -58,5 +58,67 @@ bool IsImageSizeValidForGpuMemoryBufferFormat(const gfx::Size& size,
 
   NOTREACHED();
 }
+
+#if BUILDFLAG(IS_OHOS)
+gfx::Size GetPlaneSize(gfx::BufferPlane plane, const gfx::Size& size) {
+  switch (plane) {
+    case gfx::BufferPlane::DEFAULT:
+    case gfx::BufferPlane::Y:
+    case gfx::BufferPlane::A:
+      return size;
+    case gfx::BufferPlane::U:
+    case gfx::BufferPlane::V:
+    case gfx::BufferPlane::UV:
+      return gfx::ScaleToCeiledSize(size, 0.5);
+    default:
+      NOTREACHED();
+  }
+}
+
+gfx::BufferFormat GetPlaneBufferFormat(gfx::BufferPlane plane,
+                                       gfx::BufferFormat format) {
+  switch (plane) {
+    case gfx::BufferPlane::DEFAULT:
+      return format;
+    case gfx::BufferPlane::Y:
+      if (format == gfx::BufferFormat::YVU_420 ||
+          format == gfx::BufferFormat::YUV_420_BIPLANAR ||
+          format == gfx::BufferFormat::YUVA_420_TRIPLANAR) {
+        return gfx::BufferFormat::R_8;
+      }
+      if (format == gfx::BufferFormat::P010) {
+        return gfx::BufferFormat::R_16;
+      }
+      break;
+    case gfx::BufferPlane::UV:
+      if (format == gfx::BufferFormat::YUV_420_BIPLANAR ||
+          format == gfx::BufferFormat::YUVA_420_TRIPLANAR) {
+        return gfx::BufferFormat::RG_88;
+      }
+      if (format == gfx::BufferFormat::P010) {
+        return gfx::BufferFormat::RG_1616;
+      }
+      break;
+    case gfx::BufferPlane::U:
+      if (format == gfx::BufferFormat::YVU_420) {
+        return gfx::BufferFormat::R_8;
+      }
+      break;
+    case gfx::BufferPlane::V:
+      if (format == gfx::BufferFormat::YVU_420) {
+        return gfx::BufferFormat::R_8;
+      }
+      break;
+    case gfx::BufferPlane::A:
+      if (format == gfx::BufferFormat::YUVA_420_TRIPLANAR) {
+        return gfx::BufferFormat::R_8;
+      }
+      break;
+    default:
+      NOTREACHED();
+  }
+  NOTREACHED();
+}
+#endif
 
 }  // namespace gpu

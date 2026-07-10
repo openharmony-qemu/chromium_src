@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2023 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ui/ozone/platform/ohos/host/ohos_canvas_surface.h"
 
@@ -76,6 +51,8 @@ SkCanvas* OhosCanvasSurface::GetCanvas() {
 
 void OhosCanvasSurface::PresentCanvas(const gfx::Rect& damage) {
   if ((width_ == 1 && height_ == 1) || width_ <= 0 || height_ <= 0) {
+    LOG(ERROR) << "[OhosCanvasSurface] " << __func__
+               << ": Invalid canvas size, width=" << width_ << ", height=" << height_;
     return;
   }
 
@@ -105,11 +82,12 @@ void OhosCanvasSurface::PresentCanvas(const gfx::Rect& damage) {
   ret = OH_NativeWindow_NativeWindowRequestBuffer(
       window->Get(), &nativeWindowBuffer, &fenceFd);
   if (ret != 0) {
-    LOG(ERROR) << "OH_NativeWindow_NativeWindowRequestBuffer fail ret=" << ret;
+    LOG(ERROR) << "[OhosCanvasSurface] " << __func__
+               << ": call OH_NativeWindow_NativeWindowRequestBuffer failed, error=" << ret;
     return;
   }
   if (!nativeWindowBuffer) {
-    LOG(ERROR) << "OhosCanvasSurface::PresentCanvas nativeWindowBuffer is null";
+    LOG(ERROR) << "[OhosCanvasSurface] " << __func__ << ": nativeWindowBuffer is null";
     return;
   }
   OH_NativeWindow_NativeObjectReference(nativeWindowBuffer);
@@ -121,17 +99,19 @@ void OhosCanvasSurface::PresentCanvas(const gfx::Rect& damage) {
                                               &height,
                                               &width);
   if (ret != 0) {
-    LOG(ERROR) << "OH_NativeWindow_NativeWindowHandleOpt fail ret=" << ret;
+    LOG(ERROR) << "[OhosCanvasSurface] " << __func__
+               << ": call OH_NativeWindow_NativeWindowHandleOpt(GET_BUFFER_GEOMETRY) failed, error=" << ret;
     OH_NativeWindow_NativeObjectUnreference(nativeWindowBuffer);
     return;
   }
   width = std::min(width, width_);
   height = std::min(height, height_);
- 
+
   BufferHandle* bufferHandle =
       OH_NativeWindow_GetBufferHandleFromNative(nativeWindowBuffer);
   if (!bufferHandle) {
-    LOG(ERROR) << "OhosCanvasSurface::PresentCanvas bufferHandle is null";
+    LOG(ERROR) << "[OhosCanvasSurface] " << __func__
+               << ": call OH_NativeWindow_GetBufferHandleFromNative returned nullptr";
     OH_NativeWindow_NativeObjectUnreference(nativeWindowBuffer);
     return;
   }
@@ -139,7 +119,7 @@ void OhosCanvasSurface::PresentCanvas(const gfx::Rect& damage) {
       mmap(bufferHandle->virAddr, bufferHandle->size, PROT_READ | PROT_WRITE,
            MAP_SHARED, bufferHandle->fd, 0);
   if (mappedAddr == MAP_FAILED) {
-    LOG(ERROR) << "mmap failed";
+    LOG(ERROR) << "[OhosCanvasSurface] " << __func__ << ": mmap failed, errno=" << errno;
     OH_NativeWindow_NativeObjectUnreference(nativeWindowBuffer);
     return;
   }
@@ -154,10 +134,14 @@ void OhosCanvasSurface::PresentCanvas(const gfx::Rect& damage) {
   }
  
   Region region{nullptr, 0};
-  OH_NativeWindow_NativeWindowFlushBuffer(window->Get(),
-                                          nativeWindowBuffer, fenceFd, region);
+  int32_t flush_result = OH_NativeWindow_NativeWindowFlushBuffer(window->Get(),
+                                                                 nativeWindowBuffer, fenceFd, region);
+  if (flush_result != 0) {
+    LOG(ERROR) << "[OhosCanvasSurface] " << __func__
+               << ": call OH_NativeWindow_NativeWindowFlushBuffer failed, error=" << flush_result;
+  }
   if (munmap(mappedAddr, bufferHandle->size) < 0) {
-    LOG(ERROR) << ("munmap failed");
+    LOG(ERROR) << "[OhosCanvasSurface] " << __func__ << ": munmap failed, errno=" << errno;
   }
   OH_NativeWindow_NativeObjectUnreference(nativeWindowBuffer);
 }

@@ -95,6 +95,22 @@ class GPU_GLES2_EXPORT SharedImageBackingFactory {
       bool is_thread_safe,
       gfx::BufferUsage buffer_usage);
 
+#if BUILDFLAG(IS_OHOS)
+  virtual std::unique_ptr<SharedImageBacking> CreateSharedImage(
+      const Mailbox& mailbox,
+      gfx::GpuMemoryBufferHandle handle,
+      gfx::BufferFormat format,
+      gfx::BufferPlane plane,
+      const gfx::Size& size,
+      const gfx::ColorSpace& color_space,
+      GrSurfaceOrigin surface_origin,
+      SkAlphaType alpha_type,
+      uint32_t usage,
+      void* window_buffer) {
+    return nullptr;
+  }
+#endif
+
   // Returns true if the factory is supported
   bool CanCreateSharedImage(SharedImageUsageSet usage,
                             viz::SharedImageFormat format,

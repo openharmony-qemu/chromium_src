@@ -217,6 +217,8 @@ component("gpu") {
       "ohos/video_frame_factory_impl.cc",
       "ohos/video_frame_factory_impl.h",
     ]
+
+    public_deps += [ "//media/gpu/ohos" ]
   }
 
   if (use_v4l2_codec) {

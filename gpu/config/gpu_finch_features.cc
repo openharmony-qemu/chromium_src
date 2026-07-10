@@ -223,6 +223,14 @@ BASE_FEATURE(kVaapiWebPImageDecodeAcceleration,
              "VaapiWebPImageDecodeAcceleration",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+#if BUILDFLAG(IS_OHOS)
+// Controls the decode acceleration of JPEG, PNG, WebP images on OHOS
+// using the platform's native image decoder.
+BASE_FEATURE(kOhosImageDecodeAcceleration,
+             "OhosImageDecodeAcceleration",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif  // BUILDFLAG(IS_OHOS)
+
 // Enable Vulkan graphics backend for compositing and rasterization. Defaults to
 // native implementation if --use-vulkan flag is not used. Otherwise
 // --use-vulkan will be followed.

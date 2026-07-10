@@ -22,6 +22,11 @@
 #include "gpu/ipc/service/image_decode_accelerator_worker.h"
 #include "ui/gfx/geometry/size.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "gpu/command_buffer/service/shared_context_state.h"
+#include "third_party/skia/include/core/SkImage.h"
+#endif
+
 namespace base {
 class SingleThreadTaskRunner;
 }  // namespace base
@@ -79,6 +84,10 @@ class GPU_IPC_SERVICE_EXPORT ImageDecodeAcceleratorStub
 
   // Disables |sequence_| if there are no more decodes to process for now.
   void FinishCompletedDecode() EXCLUSIVE_LOCKS_REQUIRED(lock_);
+
+#if BUILDFLAG(IS_OHOS)
+  void ReleasePixmapData(base::WaitableEvent* finish_event);
+#endif
 
   // The |worker_| calls this when a decode is completed. |result| is enqueued
   // and |sequence_| is enabled so that ProcessCompletedDecode() picks it up.

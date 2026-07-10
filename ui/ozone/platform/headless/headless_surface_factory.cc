@@ -188,6 +188,7 @@ class GLOzoneEGLHeadless : public GLOzoneEGL {
   ~GLOzoneEGLHeadless() override = default;
 
   // GLOzone:
+
   scoped_refptr<gl::GLSurface> CreateViewGLSurface(
       gl::GLDisplay* display,
       gfx::AcceleratedWidget window) override {

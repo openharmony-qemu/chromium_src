@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "permission_manager_adapter.h"
 
@@ -84,10 +59,11 @@ PermissionActivationResult GetPermissionActivationResult(const int32_t& code) {
     case 13900001:
       return PermissionActivationResult::OPERATION_NOT_PERMITTED;
     case 13900042:
-      LOGE("The interface used for activation returned an unknown error");
+      LOGE("[PermissionManagerAdapter] %{public}s: interface returned unknown error, code=%{public}d",
+           __func__, code);
       return PermissionActivationResult::UNKNOWN_ERROR;
     default:
-      LOGE("Invalid error code: %{public}d", code);
+      LOGE("[PermissionManagerAdapter] %{public}s: invalid error code=%{public}d", __func__, code);
       return PermissionActivationResult::UNKNOWN_ERROR;
   }
 }
@@ -113,7 +89,8 @@ int PermissionManagerAdapter::RequestPermissionCode(
     jsFunc->Invoke<void>(ConvertTypeEnumToTypeString(type), callback);
     return future.get();
   }
-  LOGE("RequestPermissions js binding error: function undefined");
+  LOGE("[PermissionManagerAdapter] %{public}s: RequestPermissions js binding error, function undefined",
+       __func__);
   return K_REQUEST_PERMISSION_FAIL;
 }
 
@@ -126,7 +103,8 @@ bool PermissionManagerAdapter::CheckPermission(
   if (auto jsFunc = ohos::adapter::GetJSFunction("PermissionManagerAdapter.CheckPermissions")) {
     jsFunc->Invoke<void>(ConvertTypeEnumToTypeString(type), is_permitted);
   } else {
-    LOGE("CheckPermissions js binding error: function undefined");
+    LOGE("[PermissionManagerAdapter] %{public}s: CheckPermissions js binding error, function undefined",
+         __func__);
     return false;
   }
 
@@ -150,7 +128,8 @@ void PermissionManagerAdapter::FileAccessPersist(const std::string &url) {
   if (auto jsFunc = ohos::adapter::GetJSFunction("PermissionManagerAdapter.FileAccessPersist")) {
     jsFunc->Invoke<void>(std::move(urls));
   } else {
-    LOGE("FileAccessPersist js binding error: function undefined");
+    LOGE("[PermissionManagerAdapter] %{public}s: FileAccessPersist js binding error, function undefined",
+         __func__);
   }
 }
 
@@ -166,7 +145,8 @@ PermissionActivationResult PermissionManagerAdapter::ActivateFileAccessPersist(
       "PermissionManagerAdapter.ActivateFileAccessPersist")) {
       jsFunc->Invoke<void>(std::move(urls), result_code);
   } else {
-      LOGE("ActivateFileAccessPersist js binding error: function undefined");
+      LOGE("[PermissionManagerAdapter] %{public}s: ActivateFileAccessPersist js binding error, function undefined",
+           __func__);
       return PermissionActivationResult::JS_BINDING_ERROR;
   }
   return GetPermissionActivationResult(promise.get_future().get());
@@ -177,7 +157,8 @@ void PermissionManagerAdapter::SaveUris(const std::vector<std::string>& urls) {
           ohos::adapter::GetJSFunction("PermissionManagerAdapter.SaveUris")) {
       jsFunc->Invoke<void>(std::move(urls));
   } else {
-      LOGE("SaveUris js binding error: function undefined");
+      LOGE("[PermissionManagerAdapter] %{public}s: SaveUris js binding error, function undefined",
+           __func__);
   }
 }
 
@@ -192,12 +173,13 @@ int PermissionManagerAdapter::OpenPermissionConfirm(const OHOSPermissionType& ty
     getDirFunc->Invoke<void>(ConvertTypeEnumToTypeString(type), callback);
     auto status = future.wait_for(std::chrono::seconds(3));
     if (status == std::future_status::timeout) {
-      LOGE("PermissionManagerAdapter::OpenPermissionConfirm Wait timeout");
+      LOGE("[PermissionManagerAdapter] %{public}s: OpenPermissionConfirm wait timeout", __func__);
       return K_REQUEST_PERMISSION_FAIL;
     }
     return future.get();
   }
-  LOGE("PermissionManagerAdapter OpenPermissionConfirm js function failed.");
+  LOGE("[PermissionManagerAdapter] %{public}s: OpenPermissionConfirm js function undefined",
+       __func__);
   return K_REQUEST_PERMISSION_FAIL;
 }
 

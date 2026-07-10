@@ -19,6 +19,11 @@
 #include "gpu/vulkan/vulkan_instance.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "ui/gfx/linux/native_pixmap_dmabuf.h"
+#include "ui/ozone/common/native_pixmap_egl_binding.h"
+#endif
+
 namespace ui {
 
 SurfaceFactoryOzone::SurfaceFactoryOzone() = default;
@@ -111,6 +116,20 @@ SurfaceFactoryOzone::CreateNativePixmapFromHandle(
     gfx::NativePixmapHandle handle) {
   return nullptr;
 }
+
+#if BUILDFLAG(IS_OHOS)
+scoped_refptr<gfx::NativePixmap> SurfaceFactoryOzone::CreateNativePixmapFromHandle(
+    gfx::AcceleratedWidget widget,
+    gfx::Size size,
+    gfx::BufferFormat format,
+    gfx::NativePixmapHandle handle,
+    void* window_buffer) {
+  scoped_refptr<gfx::NativePixmapDmaBuf> pixmap =
+      base::MakeRefCounted<gfx::NativePixmapDmaBuf>(
+          size, format, std::move(handle), window_buffer);
+  return pixmap;
+}
+#endif
 
 scoped_refptr<gfx::NativePixmap>
 SurfaceFactoryOzone::CreateNativePixmapForProtectedBufferHandle(

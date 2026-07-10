@@ -532,12 +532,14 @@ TEST_F(ExtensionInfoGeneratorUnitTest, ExtensionInfoGenerateSafetyHubData) {
     // Test that an offstore extension returns the proper information.
     std::unique_ptr<developer::ExtensionInfo> info =
         GenerateExtensionInfo(extension->id());
-    EXPECT_EQ(l10n_util::GetStringUTF8(IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE),
-              info->safety_check_text->detail_string);
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    EXPECT_EQ(l10n_util::GetStringUTF8(IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_V2),
+              info->safety_check_text->detail_string);
     EXPECT_EQ(l10n_util::GetStringUTF8(IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_ON_V2),
               info->safety_check_text->panel_string);
 #else
+    EXPECT_EQ(l10n_util::GetStringUTF8(IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE),
+              info->safety_check_text->detail_string);
     EXPECT_EQ(l10n_util::GetStringUTF8(IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_ON),
               info->safety_check_text->panel_string);
 #endif

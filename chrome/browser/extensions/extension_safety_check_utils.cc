@@ -316,12 +316,13 @@ api::developer_private::SafetyCheckStrings GetSafetyCheckWarningStrings(
               : IDS_EXTENSIONS_SAFETY_CHECK_NO_PRIVACY_PRACTICES_OFF;
       break;
     case developer::SafetyCheckWarningReason::kOffstore:
-      detail_string_id = IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE;
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      detail_string_id = IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_V2;
       panel_string_id = state == developer::ExtensionState::kEnabled
                             ? IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_ON_V2
                             : IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_OFF_V2;
 #else
+      detail_string_id = IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE;
       panel_string_id = state == developer::ExtensionState::kEnabled
                             ? IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_ON
                             : IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_OFF;

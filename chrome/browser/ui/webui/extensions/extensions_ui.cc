@@ -159,8 +159,13 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       {"anonymousFunction", IDS_EXTENSIONS_ERROR_ANONYMOUS_FUNCTION},
       {"errorContext", IDS_EXTENSIONS_ERROR_CONTEXT},
       {"errorContextUnknown", IDS_EXTENSIONS_ERROR_CONTEXT_UNKNOWN},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"safetyCheckExtensionsDetailPagePrimaryLabel",
+       IDS_EXTENSIONS_SAFETY_CHECK_PRIMARY_LABEL_V2},
+#else
       {"safetyCheckExtensionsDetailPagePrimaryLabel",
        IDS_EXTENSIONS_SAFETY_CHECK_PRIMARY_LABEL},
+#endif
       {"safetyCheckExtensionsKeep", IDS_CONFIRM_DOWNLOAD},
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
       {"stackTrace", IDS_EXTENSIONS_ERROR_STACK_TRACE_V2},

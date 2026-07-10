@@ -504,7 +504,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       {"toolbarDevModeConfirm", IDS_EXTENSIONS_DEVELOPER_MODE_CONFIRM},
       {"toolbarDevModeCancel", IDS_EXTENSIONS_DEVELOPER_MODE_CANCEL},
 #endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"pendingChangeWarning", IDS_PENDING_CHANGE_WARNING_V2},
+#else
       {"pendingChangeWarning", IDS_PENDING_CHANGE_WARNING},
+#endif
   };
   source->AddLocalizedStrings(kLocalizedStrings);
 

@@ -50,10 +50,6 @@ class CORE_EXPORT StyleRuleCounterStyle : public StyleRuleBase {
     return false;
   }
 
-  StyleRuleCounterStyle* Copy() const {
-    return MakeGarbageCollected<StyleRuleCounterStyle>(*this);
-  }
-
   void TraceAfterDispatch(blink::Visitor*) const;
 
  private:

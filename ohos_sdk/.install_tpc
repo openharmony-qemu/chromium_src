@@ -16,11 +16,11 @@ base_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 cd ${base_dir}
 echo ${base_dir}
 
-prebuilts_native_path="native-linux-x64-6.1.0.31-Release.zip"
-prebuilts_ets_path="ets-linux-x64-6.1.0.31-Release.zip"
-prebuilts_js_path="js-linux-x64-6.1.0.31-Release.zip"
-prebuilts_previewer_path="previewer-linux-x64-6.1.0.31-Release.zip"
-prebuilts_toolchains_path="toolchains-linux-x64-6.1.0.31-Release.zip"
+prebuilts_native_path="native-linux-x64-6.1.1.125-Release.zip"
+prebuilts_ets_path="ets-linux-x64-6.1.1.125-Release.zip"
+prebuilts_js_path="js-linux-x64-6.1.1.125-Release.zip"
+prebuilts_previewer_path="previewer-linux-x64-6.1.1.125-Release.zip"
+prebuilts_toolchains_path="toolchains-linux-x64-6.1.1.125-Release.zip"
 prebuilts_llvm_path="llvm-linux-x86_64_stripped.tar.gz"
 prebuilts_rust_path="rust-toolchain.tar.gz"
 

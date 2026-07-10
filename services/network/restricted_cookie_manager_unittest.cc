@@ -878,7 +878,7 @@ TEST_P(RestrictedCookieManagerTest,
   }
 }
 
-TEST_P(RestrictedCookieManagerTest, GetCookieStringFromWrongOrigin) {
+TEST_P(RestrictedCookieManagerTest, GetCookiesStringFromWrongOrigin) {
   SetSessionCookie("cookie-name", "cookie-value", "example.com", "/");
   SetSessionCookie("cookie-name-2", "cookie-value-2", "example.com", "/");
   SetSessionCookie("other-cookie-name", "other-cookie-value", "notexample.com",
@@ -898,6 +898,8 @@ TEST_P(RestrictedCookieManagerTest, GetCookieStringFromWrongOrigin) {
       &cookies_out));
   EXPECT_TRUE(received_bad_message());
   EXPECT_THAT(cookies_out, IsEmpty());
+  EXPECT_EQ(version, mojo::shared_memory_version::kInvalidVersion);
+  EXPECT_FALSE(mapped_region.IsValid());
 
   // One more time but also requesting some shared memory.
   EXPECT_TRUE(backend()->GetCookiesString(
@@ -909,6 +911,8 @@ TEST_P(RestrictedCookieManagerTest, GetCookieStringFromWrongOrigin) {
       &cookies_out));
   EXPECT_TRUE(received_bad_message());
   EXPECT_THAT(cookies_out, IsEmpty());
+  EXPECT_EQ(version, mojo::shared_memory_version::kInvalidVersion);
+  EXPECT_FALSE(mapped_region.IsValid());
 }
 
 TEST_P(RestrictedCookieManagerTest, GetAllAdTagged) {

@@ -140,6 +140,7 @@ class ContentPasswordManagerDriver
   int GetFrameId() const override;
   const GURL& GetLastCommittedURL() const override;
   const url::Origin& GetLastCommittedOrigin() const override;
+  bool HasCrossOriginAncestor() const override;
   void AnnotateFieldsWithParsingResult(
       const autofill::ParsingResult& parsing_result) override;
   void CheckViewAreaVisible(autofill::FieldRendererId field_id,

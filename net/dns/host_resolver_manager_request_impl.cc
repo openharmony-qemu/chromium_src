@@ -382,10 +382,8 @@ int HostResolverManager::RequestImpl::DoResolveLocally() {
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   if (base::FeatureList::IsEnabled(
           network::features::kEnableNwebExHttpDnsFallback)) {
-    MaybeModifyResolveLocallyResults(results);
+    MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(results, dns_status);
   }
-#if defined(ARKWEB_EXT_NAVIGATION_TODO)
-#endif
 #endif
 
   if (results.error() != ERR_DNS_CACHE_MISS ||

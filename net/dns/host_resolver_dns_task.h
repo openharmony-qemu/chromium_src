@@ -139,7 +139,7 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
 
   bool https_disabled() const { return https_disabled_; }
 
-#if defined(ARKWEB_EXT_NAVIGATION_TODO)
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   void MaybeModifyInsecureDnsTaskResolveResults(
       const std::string& host,
       Results& transaction_results,

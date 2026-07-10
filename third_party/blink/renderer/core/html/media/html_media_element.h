@@ -970,6 +970,7 @@ class CORE_EXPORT HTMLMediaElement
   void ReportVideoExperienceToBI() override;
   void SetVideoExperienceMojo();
   String GetMediaPlayerType() const;
+  std::string page_url_ = "";
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
   // Timers used to schedule one-shot tasks with no delay.

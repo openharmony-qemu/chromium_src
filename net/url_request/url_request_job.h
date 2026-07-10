@@ -305,6 +305,10 @@ class NET_EXPORT URLRequestJob {
   virtual int GetOriginalNetErrorCode() const { return net::OK; }
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_PROXY_AUTH_RETRY)
+  virtual void NotifyNetworkServiceAuthRequired(std::unique_ptr<AuthChallengeInfo> auth_info);
+#endif
+
  protected:
   // Notifies the job that we are connected.
   int NotifyConnected(const TransportInfo& info,
@@ -394,6 +398,10 @@ class NET_EXPORT URLRequestJob {
   // On return, |this| may be deleted.
   void ReadRawDataComplete(int bytes_read);
 
+#if BUILDFLAG(ARKWEB_NETWORK_PROXY_AUTH_RETRY)
+  void NotifyAuthRequiredForRequest(std::unique_ptr<AuthChallengeInfo> auth_info);
+#endif
+
   // The request that initiated this job. This value will never be nullptr.
   const raw_ptr<URLRequest> request_;
 
@@ -475,6 +483,10 @@ class NET_EXPORT URLRequestJob {
   // Non-null if ReadRawData() returned ERR_IO_PENDING, and the read has not
   // completed.
   CompletionOnceCallback read_raw_callback_;
+
+#if BUILDFLAG(ARKWEB_NETWORK_PROXY_AUTH_RETRY)
+  bool is_network_proxy_auth_retried_{false};
+#endif
 
   base::WeakPtrFactory<URLRequestJob> weak_factory_{this};
 };

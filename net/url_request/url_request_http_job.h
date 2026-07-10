@@ -101,6 +101,10 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   std::vector<net::RequestAttempt> GetRequestAttempts() const override;
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_PROXY_AUTH_RETRY)
+  void NotifyNetworkServiceAuthRequired(std::unique_ptr<AuthChallengeInfo> auth_info) override;
+#endif
+
  protected:
   URLRequestHttpJob(URLRequest* request,
                     const HttpUserAgentSettings* http_user_agent_settings);
@@ -327,6 +331,10 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   void ContinueDespiteLastErrorInternal(
       scoped_refptr<X509Certificate> client_cert,
       scoped_refptr<SSLPrivateKey> client_private_key);
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_PROXY_AUTH_RETRY)
+  void RestartTransactionAfterProxyAuth();
 #endif
 
   RequestPriority priority_ = DEFAULT_PRIORITY;

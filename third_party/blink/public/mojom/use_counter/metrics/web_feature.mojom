@@ -3189,6 +3189,7 @@ enum WebFeature {
   kHiddenBackfaceWith3D = 3927,
   kMainFrameNonSecurePrivateAddressSpace = 3928,
   kHTMLMediaElementControlsListNoPlaybackRate = 3930,
+  kHTMLMediaElementControlsListNoFullscreenTitle = 5733,
   kOBSOLETE_DocumentTransition = 3931,
   kSpeculationRules = 3932,
   kV8AbortSignal_Abort_Method = 3933,

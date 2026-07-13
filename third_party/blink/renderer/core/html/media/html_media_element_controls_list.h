@@ -5,6 +5,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_HTML_MEDIA_HTML_MEDIA_ELEMENT_CONTROLS_LIST_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_HTML_MEDIA_HTML_MEDIA_ELEMENT_CONTROLS_LIST_H_
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/dom/dom_token_list.h"
 
@@ -21,6 +22,9 @@ class CORE_EXPORT HTMLMediaElementControlsList final : public DOMTokenList {
   bool ShouldHideFullscreen() const;
   bool ShouldHidePlaybackRate() const;
   bool ShouldHideRemotePlayback() const;
+#if BUILDFLAG(ARKWEB_MEDIA)
+  bool ShouldHideFullscreenTitle() const;
+#endif
 
   bool CanShowAllControls() const;
 

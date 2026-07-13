@@ -1111,6 +1111,9 @@ class CORE_EXPORT Element : public ContainerNode, public Animatable {
   void Focus(const FocusOptions*);
 
   virtual void SetFocused(bool received, mojom::blink::FocusType);
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  bool SetInputElementFocusedByPenTouch();
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   virtual void SetHasFocusWithinUpToAncestor(bool has_focus_within,
                                              Element* ancestor,
                                              bool need_snap_container_search);

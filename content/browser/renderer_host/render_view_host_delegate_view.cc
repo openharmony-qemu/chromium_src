@@ -20,10 +20,23 @@ content::RenderViewHostDelegateView::GetOverscrollRefreshHandler() const {
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-int RenderViewHostDelegateView::GetTopControlsHeight() {
+float RenderViewHostDelegateView::GetTopControlsHeight() {
+  return 0;
+}
+
+float RenderViewHostDelegateView::GetTopControlsMinHeight() const {
+  return 0;
+}
+
+float RenderViewHostDelegateView::GetBottomControlsHeight() const {
+  return 0;
+}
+
+float RenderViewHostDelegateView::GetBottomControlsMinHeight() const {
+  return 0;
+}
 #else
 int RenderViewHostDelegateView::GetTopControlsHeight() const {
-#endif
   return 0;
 }
 
@@ -38,6 +51,7 @@ int RenderViewHostDelegateView::GetBottomControlsHeight() const {
 int RenderViewHostDelegateView::GetBottomControlsMinHeight() const {
   return 0;
 }
+#endif
 
 bool RenderViewHostDelegateView::ShouldAnimateBrowserControlsHeightChanges()
     const {

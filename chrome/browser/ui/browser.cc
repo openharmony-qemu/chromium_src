@@ -1838,7 +1838,11 @@ void Browser::SetTopControlsShownRatio(content::WebContents* web_contents,
   window_->SetTopControlsShownRatio(web_contents, ratio);
 }
 
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+float Browser::GetTopControlsHeight() {
+#else
 int Browser::GetTopControlsHeight() {
+#endif
   return window_->GetTopControlsHeight();
 }
 

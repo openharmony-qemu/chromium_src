@@ -49,6 +49,11 @@ bool StructTraits<
 #endif
 #if BUILDFLAG(IS_ARKWEB)
   out->root_overflow_y_hidden = data.root_overflow_y_hidden();
+  out->bottom_controls_height = data.bottom_controls_height();
+  out->bottom_controls_shown_ratio = data.bottom_controls_shown_ratio();
+  out->top_controls_min_height_offset = data.top_controls_min_height_offset();
+  out->bottom_controls_min_height_offset =
+      data.bottom_controls_min_height_offset();
 #endif
   return data.ReadRootScrollOffset(&out->root_scroll_offset) &&
          data.ReadSelection(&out->selection) &&

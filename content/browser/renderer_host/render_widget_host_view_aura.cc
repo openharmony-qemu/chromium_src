@@ -2259,7 +2259,12 @@ void RenderWidgetHostViewAura::OnBoundsChanged(const gfx::Rect& old_bounds,
   SetSize(new_bounds.size());
 
   if (GetInputMethod()) {
+    auto weak_this = weak_ptr_factory_.GetWeakPtr();
     GetInputMethod()->OnCaretBoundsChanged(this);
+    // `this` may have been deleted inside the IME callout.
+    if (!weak_this) {
+      return;
+    }
     UpdateInsetsWithVirtualKeyboardEnabled();
   }
 }
@@ -2436,8 +2441,13 @@ void RenderWidgetHostViewAura::FocusedNodeChanged(
   last_pointer_type_before_focus_ = last_pointer_type_;
 
   auto* input_method = GetInputMethod();
-  if (input_method)
+  if (input_method) {
+    auto weak_this = weak_ptr_factory_.GetWeakPtr();
     input_method->CancelComposition(this);
+    if (!weak_this) {
+      return;
+    }
+  }
   has_composition_text_ = false;
 
 #if BUILDFLAG(IS_WIN)
@@ -2646,7 +2656,11 @@ void RenderWidgetHostViewAura::OnWindowFocused(aura::Window* gained_focus,
     if (input_method) {
       // Ask the system-wide IME to send all TextInputClient messages to |this|
       // object.
+      auto weak_this = weak_ptr_factory_.GetWeakPtr();
       input_method->SetFocusedTextInputClient(this);
+      if (!weak_this) {
+        return;
+      }
     }
 
     ui::BrowserAccessibilityManager* manager =
@@ -3118,6 +3132,9 @@ void RenderWidgetHostViewAura::AddedToRootWindow() {
   window_->GetHost()->AddObserver(this);
   UpdateScreenInfo();
 
+  base::WeakPtr<RenderWidgetHostViewAura> weak_this(
+      weak_ptr_factory_.GetWeakPtr());
+
   aura::client::CursorClient* cursor_client =
       aura::client::GetCursorClient(window_->GetRootWindow());
   if (cursor_client) {
@@ -3126,8 +3143,12 @@ void RenderWidgetHostViewAura::AddedToRootWindow() {
   }
   if (HasFocus()) {
     ui::InputMethod* input_method = GetInputMethod();
-    if (input_method)
+    if (input_method) {
       input_method->SetFocusedTextInputClient(this);
+      if (!weak_this) {
+        return;
+      }
+    }
   }
 
 #if BUILDFLAG(IS_WIN)

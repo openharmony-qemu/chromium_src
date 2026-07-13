@@ -2802,3 +2802,7 @@ void DidStartNavigating(FrameTreeNode& ftn,
 }  // namespace devtools_instrumentation
 
 }  // namespace content
+
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+#include "arkweb/chromium_ext/content/browser/devtools/devtools_instrumentation_for_include.cc"
+#endif // ARKWEB_MEDIA_HLS

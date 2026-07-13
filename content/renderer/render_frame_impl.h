@@ -433,9 +433,18 @@ class CONTENT_EXPORT RenderFrameImpl
   int32_t ExecuteInputCommand(const std::string& xpath,
                               const std::string& value,
                               const std::string& event_type) override;
+  int32_t ExecuteAIPageInputCommandByXPath(const std::string& xpath,
+                              const std::string& value,
+                              const std::string& input_type) override;
+  int32_t ExecuteAIPageInputCommandById(const std::string& id,
+                                  const std::string& value,
+                                  const std::string& input_type) override;
   int32_t ExecuteSelectCommand(const std::string& xpath,
                                const std::vector<int32_t>& indexes,
                                const std::vector<std::string>& values) override;
+  int32_t ExecuteSelectCommandById(const std::string& id,
+                                   const std::vector<int32_t>& indexes,
+                                   const std::vector<std::string>& values) override;
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   gfx::Vector2dF GetOverScrollOffset() override;
 #endif

@@ -3160,7 +3160,7 @@ Servernachricht: <ph name="SERVER_MSG" /></translation>
 <translation id="3132277757485842847">Die Verbindung zu deinem Smartphone konnte nicht aufrechterhalten werden. Dein Smartphone muss sich in der Nähe befinden, entsperrt sein und Bluetooth und WLAN müssen aktiviert sein.</translation>
 <translation id="3132896062549112541">Regel</translation>
 <translation id="3132996321662585180">Täglich aktualisieren</translation>
-<translation id="3134312457920437826">Die Erweiterung kann nicht installiert werden, da sie eine nicht unterstützte Manifestversion verwendet.</translation>
+<translation id="3134312457920437826">Die Erweiterung kann nicht installiert werden, da sie eine nicht unterstützte Manifestversion nutzt.</translation>
 <translation id="3134393957315651797">Wähle den Teststatus für den Test „<ph name="EXPERIMENT_NAME" />“ aus. Testbeschreibung: <ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">Gelber Standardavatar</translation>
 <translation id="3141093262818886744">Trotzdem öffnen</translation>

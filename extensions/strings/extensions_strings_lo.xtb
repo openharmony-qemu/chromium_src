@@ -55,6 +55,7 @@
 <translation id="8047248493720652249">ສ່ວນຂະຫຍາຍນີ້ໃສ່ຊື່ດາວໂຫຼດ "<ph name="ATTEMPTED_FILENAME" />" ບໍ່ໄດ້ ເພາະວ່າສ່ວນຂະຫຍາຍອື່ນ (<ph name="EXTENSION_NAME" />) ໄດ້ກໍານົດຊື່ໄຟລ໌ອື່ນ "<ph name="ACTUAL_FILENAME" />" ແລ້ວ.</translation>
 <translation id="8284835137979141223"><ph name="PRODUCT_NAME" /> ຈາກ <ph name="VENDOR_NAME" /></translation>
 <translation id="8517576857589387417">ໄຟລ໌ Manifest ຫາຍໄປ ຫຼື ບໍ່ສາມາດອ່ານໄດ້</translation>
+<translation id="8602184400052594090">ໄຟລ໌ Manifest ຫາຍໄປ ຫຼື ບໍ່ສາມາດອ່ານໄດ້.</translation>
 <translation id="8621383749470166852">ບໍ່ສາມາດໂຫຼດໄຟລ໌ '<ph name="RELATIVE_PATH" />' ສຳລັບສະຄຣິບເນື້ອຫາໄດ້, ສະຄຣິບເນື້ອຫາສາມາດໂຫຼດໄດ້ສະເພາະຈາກໄຟລ໌ JavaScript ທີ່ຮອງຮັບເທົ່ານັ້ນ ເຊັ່ນ: ໄຟລ໌ .js.</translation>
 <translation id="8636666366616799973">ແພັກເກດໃຊ້ບໍ່ໄດ້. ລາຍລະອຽດ: '<ph name="ERROR_MESSAGE" />'.</translation>
 <translation id="8761756413268424715">"<ph name="APP_NAME" />" ກຳລັງຮ້ອງຂໍການເຂົ້າເຖິງອຸປະກອນຂອງທ່ານໜຶ່ງເຄື່ອງ:</translation>

@@ -3168,7 +3168,7 @@
 <translation id="3132277757485842847">無法與你的手機維持連線狀態。請確認你的手機在附近，且已解鎖及開啟藍牙和 Wi-Fi。</translation>
 <translation id="3132896062549112541">規則</translation>
 <translation id="3132996321662585180">每天更新</translation>
-<translation id="3134312457920437826">擴充功能使用不支援的資訊清單版本，因此無法安裝。</translation>
+<translation id="3134312457920437826">無法安裝擴充程式，因其使用不受支援的清單版本。</translation>
 <translation id="3134393957315651797">選取「<ph name="EXPERIMENT_NAME" />」的實驗狀態。實驗說明：<ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">預設的黃色顯示圖片</translation>
 <translation id="3141093262818886744">仍要開啟</translation>

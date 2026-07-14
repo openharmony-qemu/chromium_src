@@ -1574,6 +1574,7 @@ You can manage this account’s settings by installing the Family Link app on yo
 <translation id="2040822390690632244">Updates, help, developer options</translation>
 <translation id="2040894699575719559">Location blocked</translation>
 <translation id="2041246176170574368">Security updates end soon. Save $50 or more on a new Chromebook.</translation>
+<translation id="2041681409552851212">The extension will be able to run code which has not been reviewed by Browser. It may be unsafe and you should only enable this if you know what you are doing.</translation>
 <translation id="2042279886444479655">Active profiles</translation>
 <translation id="2044014337866019681">Please make sure that you are verifying <ph name="ACCOUNT" /> to unlock the session.</translation>
 <translation id="2044750031738659219">{0,plural, =1{Close Guest}other{Close Guest (# windows)}}</translation>
@@ -11507,6 +11508,7 @@ This can include information about installed software, files, your browser, the 
 <translation id="8849262417389398097"><ph name="CHECKED" /> of <ph name="CHECKING" /></translation>
 <translation id="8850251000316748990">See more...</translation>
 <translation id="8890944795668818744">System print</translation>
+<translation id="889095128849097287">Allow user scripts</translation>
 <translation id="885246833287407341">API function arguments</translation>
 <translation id="8853586775156634952">This card will be saved to this device only</translation>
 <translation id="8855242995793521265">Doesn't noticeably slow down your browser or device.</translation>

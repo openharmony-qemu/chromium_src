@@ -22,8 +22,6 @@ const char kPasteEventType[] = "TextPasted";
 const char kKeyPressedEventType[] = "KeyPressed";
 }  // namespace
 
-constexpr base::TimeDelta kPasteRateLimit = base::Milliseconds(200);
-
 PasswordProtectionJavaScriptFeature::PasswordProtectionJavaScriptFeature()
     : JavaScriptFeature(web::ContentWorld::kIsolatedWorld,
                         {FeatureScript::CreateWithFilename(
@@ -82,18 +80,6 @@ void PasswordProtectionJavaScriptFeature::ScriptMessageReceived(
     }
     observer->OnKeyPressed(*text);
   } else if (*event_type == kPasteEventType) {
-    // Rate limit paste events to prevent flooding from a compromised
-    // WebProcess.
-    base::TimeTicks now = base::TimeTicks::Now();
-    auto it = last_paste_timestamps_.find(web_state);
-    if (it != last_paste_timestamps_.end()) {
-      base::TimeDelta elapsed = now - it->second;
-      if (elapsed < kPasteRateLimit) {
-        return;
-      }
-    }
-    last_paste_timestamps_[web_state] = now;
-
     observer->OnPaste(*text);
   }
 }
@@ -118,5 +104,4 @@ void PasswordProtectionJavaScriptFeature::RemoveObserver(
   DCHECK_EQ(observer, lookup_by_web_state_[web_state]);
   lookup_by_web_state_.erase(web_state);
   lookup_by_observer_.erase(observer);
-  last_paste_timestamps_.erase(web_state);
 }

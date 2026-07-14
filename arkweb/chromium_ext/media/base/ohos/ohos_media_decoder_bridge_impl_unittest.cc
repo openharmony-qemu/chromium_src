@@ -135,6 +135,7 @@ class MockSystemPropertiesAdapter : public OHOS::NWeb::SystemPropertiesAdapter {
               GetLTPOIntConfig,
               (const std::string& configName, int32_t defaultValue),
               (override));
+  MOCK_METHOD(int32_t, GetRenderProcessMode, (), (override));
 };
 
 class MockWindowAdapter : public WindowAdapter {

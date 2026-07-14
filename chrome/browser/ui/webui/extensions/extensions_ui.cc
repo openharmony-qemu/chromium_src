@@ -184,7 +184,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
 #else
       {"incognitoInfoWarning", IDS_EXTENSIONS_INCOGNITO_WARNING},
 #endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"userScriptInfoWarning", IDS_EXTENSIONS_ALLOW_USER_SCRIPTS_WARNING_V2},
+#else
       {"userScriptInfoWarning", IDS_EXTENSIONS_ALLOW_USER_SCRIPTS_WARNING},
+#endif
       {"hostPermissionsDescription",
        IDS_EXTENSIONS_HOST_PERMISSIONS_DESCRIPTION},
       {"permissionsLearnMoreLabel",
@@ -223,7 +227,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
 #else
       {"itemAllowIncognito", IDS_EXTENSIONS_ITEM_ALLOW_INCOGNITO},
 #endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"itemAllowUserScripts", IDS_EXTENSIONS_ITEM_ALLOW_USER_SCRIPTS_V2},
+#else
       {"itemAllowUserScripts", IDS_EXTENSIONS_ITEM_ALLOW_USER_SCRIPTS},
+#endif
       {"itemDescriptionLabel", IDS_EXTENSIONS_ITEM_DESCRIPTION},
       {"itemDependencies", IDS_EXTENSIONS_ITEM_DEPENDENCIES},
       {"itemDependentEntry", IDS_EXTENSIONS_DEPENDENT_ENTRY},

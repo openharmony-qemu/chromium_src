@@ -1561,6 +1561,7 @@ Puedes gestionar la configuración de esta cuenta instalando la aplicación Fami
 <translation id="2040822390690632244">Actualizaciones, ayuda y opciones para desarrolladores</translation>
 <translation id="2040894699575719559">Ubicación bloqueada</translation>
 <translation id="2041246176170574368">Este dispositivo pronto dejará de recibir actualizaciones de seguridad. Ahorra 50 $ o más al adquirir un Chromebook nuevo.</translation>
+<translation id="2041681409552851212">La extensión podrá ejecutar un código que el Navegador no haya revisado. Puede ser inseguro, por lo que solo debes habilitar esta opción si sabes lo que estás haciendo.</translation>
 <translation id="2042279886444479655">Perfiles activos</translation>
 <translation id="2044014337866019681">Asegúrate de que estás verificando <ph name="ACCOUNT" /> para desbloquear la sesión.</translation>
 <translation id="2044750031738659219">{0,plural, =1{Cerrar ventana de invitado}other{Cerrar ventanas de invitado (# ventanas)}}</translation>
@@ -11541,6 +11542,7 @@ Puede tratarse de información sobre el software instalado, los archivos, el nav
 <translation id="8890170499370378450">Es posible que se apliquen cargos por el uso de datos móviles</translation>
 <translation id="8890516388109605451">Fuentes</translation>
 <translation id="8890529496706615641">No se ha podido cambiar el nombre del perfil. Inténtalo de nuevo o ponte en contacto con tu operador para obtener asistencia técnica.</translation>
+<translation id="889095128849097287">Permitir secuencia de comandos de usuario</translation>
 <translation id="8892168913673237979">¡Todo listo!</translation>
 <translation id="8892246501904593980">Ver todos tus marcadores en Marcadores y listas</translation>
 <translation id="8893779047492837414">Actualmente tienes <ph name="NUMBERED_ITEM_1" />, <ph name="NUMBERED_ITEM_2" /> y más. Tu organización, <ph name="ACCOUNT_MANAGER" />, podrá ver y gestionar estos datos.</translation>

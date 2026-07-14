@@ -1561,6 +1561,7 @@ Puoi gestire le impostazioni dell'account installando l'app Family Link su quest
 <translation id="2040822390690632244">Aggiornamenti, guida, opzioni sviluppatore</translation>
 <translation id="2040894699575719559">Posizione bloccata</translation>
 <translation id="2041246176170574368">Gli aggiornamenti della sicurezza stanno per terminare. Risparmia 50 $ o più su un nuovo Chromebook.</translation>
+<translation id="2041681409552851212">L'estensione sarà in grado di eseguire codice che non è stato rivisto dal Browser. Potrebbe non essere sicura e dovresti abilitare questa opzione solo se sai cosa stai facendo.</translation>
 <translation id="2042279886444479655">Profili attivi</translation>
 <translation id="2044014337866019681">Per sbloccare la sessione devi assicurarti di verificare l'account <ph name="ACCOUNT" />.</translation>
 <translation id="2044750031738659219">{0,plural, =1{Chiudi Ospite}other{Chiudi Ospite (# finestre)}}</translation>
@@ -11539,6 +11540,7 @@ Potrebbero essere incluse informazioni su software installati, file, browser, si
 <translation id="8890170499370378450">Potrebbero esserti addebitati costi per l'utilizzo dei dati mobili</translation>
 <translation id="8890516388109605451">Origini</translation>
 <translation id="8890529496706615641">Impossibile rinominare il profilo. Riprova oppure contatta il tuo operatore per ricevere assistenza tecnica.</translation>
+<translation id="889095128849097287">Consenti script utente</translation>
 <translation id="8892168913673237979">Finito.</translation>
 <translation id="8892246501904593980">Visualizza tutti i tuoi preferiti in Preferiti ed elenchi</translation>
 <translation id="8893779047492837414">Attualmente hai <ph name="NUMBERED_ITEM_1" />, <ph name="NUMBERED_ITEM_2" /> e altro. La tua organizzazione, <ph name="ACCOUNT_MANAGER" />, potrà visualizzare e gestire questi dati.</translation>

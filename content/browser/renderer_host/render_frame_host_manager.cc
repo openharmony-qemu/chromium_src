@@ -4602,7 +4602,7 @@ void RenderFrameHostManager::CreateRenderFrameProxy(
       SCOPED_CRASH_KEY_STRING64("Bug1400009", "parent_lifecycle",
                                 RenderFrameHostImpl::LifecycleStateImplToString(
                                     parent_rfh->lifecycle_state()));
-      DCHECK(render_view_host);
+      CHECK(render_view_host);
     }
     if (!render_view_host) {
 #if BUILDFLAG(IS_ARKWEB)

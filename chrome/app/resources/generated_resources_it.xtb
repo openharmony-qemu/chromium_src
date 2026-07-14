@@ -2314,6 +2314,7 @@ Puoi gestire le impostazioni dell'account installando l'app Family Link su quest
 <translation id="2541400104619216245">Suggerisce dettagli di confronto da esaminare quando si sceglie tra prodotti</translation>
 <translation id="2541706104884128042">Nuova ora di dormire impostata</translation>
 <translation id="2542050502251273923">Consente di impostare il livello di debug del gestore della connessione di rete e di altri servizi usando ff_debug.</translation>
+<translation id="25436473744628215">Aggiornamento…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{Le autorizzazioni consentite per "<ph name="APP_NAME" />" saranno consentite anche per questa app. <ph name="MANAGE_LINK" />}other{Le autorizzazioni consentite per "<ph name="APP_NAME" />" saranno consentite anche per queste app. <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">Questa scheda</translation>
 <translation id="2545743249923338554">Nuove schede</translation>

@@ -465,7 +465,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       {"toolbarUpdateNow", IDS_EXTENSIONS_TOOLBAR_UPDATE_NOW},
       {"toolbarUpdateNowTooltip", IDS_EXTENSIONS_TOOLBAR_UPDATE_NOW_TOOLTIP},
       {"toolbarUpdateDone", IDS_EXTENSIONS_TOOLBAR_UPDATE_DONE},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"toolbarUpdatingToast", IDS_EXTENSIONS_TOOLBAR_UPDATING_TOAST_V2},
+#else
       {"toolbarUpdatingToast", IDS_EXTENSIONS_TOOLBAR_UPDATING_TOAST},
+#endif
       {"updateRequiredByPolicy",
        IDS_EXTENSIONS_DISABLED_UPDATE_REQUIRED_BY_POLICY},
       {"viewActivityLog", IDS_EXTENSIONS_VIEW_ACTIVITY_LOG},

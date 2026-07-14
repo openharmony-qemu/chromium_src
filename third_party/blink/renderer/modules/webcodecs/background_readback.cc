@@ -160,7 +160,8 @@ void BackgroundReadback::ReadbackRGBTextureBackedFrameToMemory(
     ReadbackToFrameDoneCallback result_cb) {
   DCHECK(CanUseRgbReadback(*txt_frame));
 
-  SkImageInfo info = GetImageInfoForFrame(*txt_frame, txt_frame->coded_size());
+  SkImageInfo info =
+      GetImageInfoForFrame(*txt_frame, txt_frame->visible_rect().size());
   const auto format = media::VideoPixelFormatFromSkColorType(
       info.colorType(), media::IsOpaque(txt_frame->format()));
 

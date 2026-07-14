@@ -124,6 +124,7 @@ OhosAudioOutputStream::OhosAudioOutputStream(OHOSAudioManager* manager,
   time_per_buffer_ = AudioTimestampHelper::FramesToTime(
       parameters_.frames_per_buffer(), parameters_.sample_rate());
   main_task_runner_ = content::GetUIThreadTaskRunner({});
+  audio_task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
 }
 
 OhosAudioOutputStream::~OhosAudioOutputStream() {
@@ -230,12 +231,8 @@ void OhosAudioOutputStream::Start(AudioSourceCallback* callback) {
   {
     base::AutoLock al(lock_);
     callback_ = callback;
-  }
-
-  if (!StartRender()) {
-    LOG(ERROR) << "OhosAudioOutputStream::StartRender failed";
-    {
-      base::AutoLock al(lock_);
+    if (!StartRender()) {
+      LOG(ERROR) << "OhosAudioOutputStream::StartRender failed";
       callback_ = nullptr;
     }
   }
@@ -257,7 +254,7 @@ void OhosAudioOutputStream::Stop() {
   {
     base::AutoLock al(lock_);
     if (ret != AUDIOSTREAM_SUCCESS) {
-      ReportError();
+      ReportErrorInternal();
     }
     callback_ = nullptr;
   }
@@ -449,7 +446,7 @@ bool OhosAudioOutputStream::StartRender() {
   OH_AudioStream_Result ret = OH_AudioRenderer_Start(audio_renderer_);
   if (ret != AUDIOSTREAM_SUCCESS) {
     LOG(ERROR) << "AudioRenderer Start failed, result:" << ret;
-    ReportError();
+    ReportErrorInternal();
     return false;
   }
   return true;
@@ -465,14 +462,16 @@ void OhosAudioOutputStream::ReleaseRender() {
 }
 
 void OhosAudioOutputStream::ReportError() {
+  base::AutoLock al(lock_);
+  ReportErrorInternal();
+}
+
+void OhosAudioOutputStream::ReportErrorInternal() {
   LOG(ERROR) << "ohos audio render error happened";
   reference_time_ = base::TimeTicks();
   timer_.Stop();
-  {
-    base::AutoLock al(lock_);
-    if (callback_) {
-      callback_->OnError(AudioSourceCallback::ErrorType::kUnknown);
-    }
+  if (callback_) {
+    callback_->OnError(AudioSourceCallback::ErrorType::kUnknown);
   }
 }
 
@@ -530,8 +529,7 @@ void OhosAudioOutputStream::PumpSamples(void* buffer, int32_t length) {
   base::TimeTicks now = base::TimeTicks::Now();
   base::TimeDelta delay = GetDelayImprove(now);
   if (!callback_) {
-    LOG(INFO) << "PumpSamples failed, callback_ is nullptr";
-    ReportError();
+    LOG(WARNING) << "PumpSamples failed, callback_ is nullptr";
     return;
   }
   // Request more samples from |callback_|.
@@ -555,7 +553,7 @@ void OhosAudioOutputStream::IdlePumpSamples() {
   }
 
   if (!callback_) {
-    ReportError();
+    LOG(WARNING) << "PumpSamples failed, callback_ is nullptr";
     return;
   }
 
@@ -597,9 +595,11 @@ void OhosAudioOutputStream::OnSuspend() {
   is_suspended_ = true;
   // After stopping playback, it is necessary to continue obtaining audio data,
   // which will trigger the pause action of the render process.
-  main_task_runner_->PostTask(
-      FROM_HERE, base::BindOnce(&OhosAudioOutputStream::IdlePumpSamples,
-                                weak_factory_.GetWeakPtr()));
+  if (audio_task_runner_) {
+    audio_task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(&OhosAudioOutputStream::IdlePumpSamples,
+                                  weak_factory_.GetWeakPtr()));
+  }
 }
 
 void OhosAudioOutputStream::SuspendPlayer() {

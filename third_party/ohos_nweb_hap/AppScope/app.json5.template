@@ -2,8 +2,8 @@
   "app": {
     "bundleName": "{{ ohos_package_name }}",
     "vendor": "ohos",
-    "versionCode": 700009900,
-    "versionName": "7.0.0.99",
+    "versionCode": 700003400,
+    "versionName": "7.0.0.34",
     "icon": "$media:app_icon",
     "label": "$string:app_name",
     "distributedNotificationEnabled": true

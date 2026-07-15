@@ -478,6 +478,9 @@ void OhosToplevelWindow::OnWindowStatusChangeEvent(
     std::shared_ptr<XCEvent> event) {
   auto window_event = static_pointer_cast<WindowStatusChangeEvent>(event);
   is_split_screen_ = window_event->status == WindowStatusType::SPLIT_SCREEN;
+  if (window_event->status == WindowStatusType::FULL_SCREEN) {
+    delegate()->OnFullscreenSwitched(true);
+  }
 }
 
 void OhosToplevelWindow::OnWindowCaptionButtonRectChangeEvent(
@@ -518,13 +521,6 @@ void OhosToplevelWindow::OnWindowRectChangeEvent(std::shared_ptr<XCEvent> event)
         restored_bounds_in_pixels_ = previous_bounds_in_pixels_;
       }
       break;
-    case PlatformWindowState::kFullScreen: {
-      if (reason == RectChangeReason::RECOVER) {
-        delegate()->OnFullscreenSwitched(false);
-      }
-      delegate()->OnFullscreenStateChanged();
-      break;
-    }
     default:
       break;
   }

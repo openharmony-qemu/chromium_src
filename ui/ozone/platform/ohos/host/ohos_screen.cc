@@ -43,7 +43,8 @@ bool ParseScreenSize(const std::string& screen_size, int* width, int* height) {
       !base::StringToInt(width_and_height[1], height)) {
     return false;
   }
-
+  LOG(INFO) << "OhosScreen::" << __func__
+            << ", display info: " << dst_display.ToString();
   return true;
 }
 
@@ -406,6 +407,8 @@ void OhosScreen::OnDisplayEvent(
   } else if (event == "remove") {
     auto it = display_list_.FindDisplayById(display_id);
     if (it != display_list_.displays().end()) {
+      LOG(INFO) << "OhosScreen::" << __func__
+                << ", remove display: " << display_id;
       display_list_.RemoveDisplay(display_id);
     }
   }

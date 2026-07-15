@@ -110,18 +110,15 @@ export class WebAbility extends WebBaseAbility {
       }
 
       try {
-        data.on('windowStatusChange', (status) => {
-          this.nativeContext.OnWindowStatusChange(this.xcomponentId, status);
-
-          if (status === window.WindowStatusType.MINIMIZE || this.deviceModeChangeEvent === undefined) {
-            return;
-          }
-          LogUtil.info(TAG, 'Send device mode change event, xcomponentId: ' +
-                            this.xcomponentId + ', deviceModeChangeEvent: ' +
-                            this.deviceModeChangeEvent + ', status: ' + status);
-          this.nativeContext.OnDeviceModeChange(this.xcomponentId, this.deviceModeChangeEvent, status);
-          this.setDeviceModeChangeEvent(undefined);
-        })
+        if (deviceInfo.sdkApiVersion >= 20) {
+          data.on('windowStatusDidChange', (status) => {
+            this.notifyWindowStatusChange(status)
+          })
+        } else {
+          data.on('windowStatusChange', (status) => {
+            this.notifyWindowStatusChange(status)
+          })
+        }
       } catch (exception) {
         LogUtil.error(TAG,'Failed to listener for window status changes: ' + JSON.stringify(exception));
       }
@@ -511,5 +508,18 @@ export class WebAbility extends WebBaseAbility {
     } catch (exception) {
       LogUtil.error(TAG, 'Failed to set the style of button: ' + JSON.stringify(exception));
     }
+  }
+
+  private notifyWindowStatusChange(status: window.WindowStatusType) {
+    this.nativeContext.OnWindowStatusChange(this.xcomponentId, status);
+ 
+    if (status === window.WindowStatusType.MINIMIZE || this.deviceModeChangeEvent === undefined) {
+      return;
+    }
+    LogUtil.info(TAG, 'Send device mode change event, xcomponentId: ' +
+      this.xcomponentId + ', deviceModeChangeEvent: ' +
+      this.deviceModeChangeEvent + ', status: ' + status);
+    this.nativeContext.OnDeviceModeChange(this.xcomponentId, this.deviceModeChangeEvent, status);
+    this.setDeviceModeChangeEvent(undefined);
   }
 };

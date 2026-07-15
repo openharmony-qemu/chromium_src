@@ -500,12 +500,43 @@ Response EmulationHandler::SetPressureSourceOverrideEnabled(
 // `SetPressureStateOverride` will be replaced by SetPressureDataOverride.
 // The method UpdateVirtualPressureSourceState called previously
 // was removed in //content.
+// Bug:513009005, `SetPressureDataOverride` has been reverted in the new version,
+// so DevTools continues to use `SetPressureStateOverride`.
 void EmulationHandler::SetPressureStateOverride(
     const Emulation::PressureSource& source,
     const Emulation::PressureState& state,
     std::unique_ptr<SetPressureStateOverrideCallback> callback) {
+  if (!host_) {
+    callback->sendFailure(Response::InternalError());
+    return;
+  }
+
+#if BUILDFLAG(ENABLE_COMPUTE_PRESSURE)
+  device::mojom::PressureSource mojo_source;
+  if (auto response = ConvertPressureSource(source, &mojo_source);
+      !response.IsSuccess()) {
+    callback->sendFailure(response);
+    return;
+  }
+  device::mojom::PressureState mojo_state;
+  if (auto response = ConvertPressureState(state, &mojo_state);
+      !response.IsSuccess()) {
+    callback->sendFailure(response);
+    return;
+  }
+  auto it = pressure_overrides_.find(mojo_source);
+  if (it == pressure_overrides_.end()) {
+    callback->sendFailure(
+        Response::InvalidParams(kPressureSourceIsNotOverridden));
+    return;
+  }
+  it->second->UpdateVirtualPressureSourceData(
+      mojo_state, /*own_contribution_estimate=*/0.0,
+      base::BindOnce(&SetPressureStateOverrideCallback::sendSuccess,
+                     std::move(callback)));
+#else
   callback->sendFailure(Response::InternalError());
-  return;
+#endif  // BUILDFLAG(ENABLE_COMPUTE_PRESSURE)
 }
 
 void EmulationHandler::SetPressureDataOverride(

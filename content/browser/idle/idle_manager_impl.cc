@@ -14,6 +14,10 @@
 #include "content/public/browser/render_frame_host.h"
 #include "third_party/blink/public/common/permissions/permission_utils.h"
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+#include "arkweb/build/features/features.h"
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
+
 namespace content {
 
 namespace {
@@ -94,6 +98,13 @@ void IdleManagerImpl::AddMonitor(
 }
 
 bool IdleManagerImpl::HasPermission() {
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  // When DevTools has set an idle override, bypass the permission check
+  // so that the override can take effect without requiring user grant.
+  if (state_override_) {
+    return true;
+  }
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
   PermissionController* permission_controller =
       render_frame_host_->GetBrowserContext()->GetPermissionController();
   DCHECK(permission_controller);

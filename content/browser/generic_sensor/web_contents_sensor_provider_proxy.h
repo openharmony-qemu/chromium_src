@@ -10,6 +10,8 @@
 #include "base/containers/flat_set.h"
 #include "base/memory/raw_ptr.h"
 #include "base/observer_list.h"
+#include "arkweb/build/features/features.h"
+#include "build/buildflag.h"
 #include "content/common/content_export.h"
 #include "content/public/browser/web_contents_user_data.h"
 #include "mojo/public/cpp/bindings/remote.h"
@@ -64,6 +66,12 @@ class CONTENT_EXPORT WebContentsSensorProviderProxy final
 
   void AddObserver(Observer*);
   void RemoveObserver(Observer*);
+
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  // Returns true if a virtual sensor override of |type| has been created
+  // for DevTools for this WebContents.
+  bool HasVirtualSensorOverrideForDevTools(device::mojom::SensorType type) const;
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
 
  private:
   friend class ScopedVirtualSensorForDevTools;

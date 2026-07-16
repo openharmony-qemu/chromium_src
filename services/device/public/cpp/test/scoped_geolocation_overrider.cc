@@ -47,7 +47,7 @@ class ScopedGeolocationOverrider::FakeGeolocationContext
   // The `has_precise_permission` parameter is ignored as approximate │
   // geolocation is not yet supported by this fake test class.
   void BindGeolocation(mojo::PendingReceiver<mojom::Geolocation> receiver,
-                       const GURL& requesting_url,
+                       const url::Origin& requesting_origin,
                        mojom::GeolocationClientId client_id,
                        bool has_precise_permission) override;
   void OnPermissionUpdated(
@@ -75,7 +75,7 @@ class ScopedGeolocationOverrider::FakeGeolocationContext
 class ScopedGeolocationOverrider::FakeGeolocation : public mojom::Geolocation {
  public:
   FakeGeolocation(mojo::PendingReceiver<mojom::Geolocation> receiver,
-                  const GURL& requesting_url,
+                  const url::Origin& requesting_origin,
                   FakeGeolocationContext* context);
   ~FakeGeolocation() override;
 
@@ -88,12 +88,12 @@ class ScopedGeolocationOverrider::FakeGeolocation : public mojom::Geolocation {
   // mojom::Geolocation implementation:
   void QueryNextPosition(QueryNextPositionCallback callback) override;
   void SetHighAccuracyHint(bool high_accuracy) override;
-  const GURL& url() { return url_; }
+  const url::Origin& origin() const { return origin_; }
 
  private:
   void RunPositionCallbackIfNeeded();
 
-  const GURL url_;
+  const url::Origin origin_;
   raw_ptr<FakeGeolocationContext> context_;
   bool needs_update_ = true;
   QueryNextPositionCallback position_callback_;
@@ -210,13 +210,13 @@ void ScopedGeolocationOverrider::FakeGeolocationContext::BindForOverrideService(
 
 void ScopedGeolocationOverrider::FakeGeolocationContext::BindGeolocation(
     mojo::PendingReceiver<mojom::Geolocation> receiver,
-    const GURL& requesting_url,
+    const url::Origin& requesting_origin,
     mojom::GeolocationClientId client_id,
     bool has_precise_permission) {
   // The `has_precise_permission` parameter is ignored as approximate
   // geolocation is not yet supported by this fake test class.
   impls_.insert(std::make_unique<FakeGeolocation>(std::move(receiver),
-                                                  requesting_url, this));
+                                                  requesting_origin, this));
 }
 
 void ScopedGeolocationOverrider::FakeGeolocationContext::OnPermissionUpdated(
@@ -226,7 +226,7 @@ void ScopedGeolocationOverrider::FakeGeolocationContext::OnPermissionUpdated(
   // should be updated to handle other permission levels if the fake needs to
   // support them.
   std::erase_if(impls_, [&origin, &permission_level](const auto& impl) {
-    if (!origin.IsSameOriginWith(impl->url())) {
+    if (origin != impl->origin()) {
       return false;
     }
     if (permission_level == mojom::GeolocationPermissionLevel::kDenied) {
@@ -272,9 +272,9 @@ size_t ScopedGeolocationOverrider::FakeGeolocationContext::
 
 ScopedGeolocationOverrider::FakeGeolocation::FakeGeolocation(
     mojo::PendingReceiver<mojom::Geolocation> receiver,
-    const GURL& requesting_url,
+    const url::Origin& requesting_origin,
     FakeGeolocationContext* context)
-    : url_(requesting_url), context_(context) {
+    : origin_(requesting_origin), context_(context) {
   receiver_.Bind(std::move(receiver));
   receiver_.set_disconnect_handler(
       base::BindOnce(&ScopedGeolocationOverrider::FakeGeolocation::OnDisconnect,

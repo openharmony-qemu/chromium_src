@@ -2300,6 +2300,7 @@ Możesz zarządzać ustawieniami konta, korzystając z aplikacji Family Link na
 <translation id="2541400104619216245">Sugeruje szczegóły porównania, które warto wziąć pod uwagę przy wyborze produktów</translation>
 <translation id="2541706104884128042">Ustawiono nową porę snu</translation>
 <translation id="2542050502251273923">Korzysta z ff_debug do ustawiania poziomu debugowania menedżera połączenia sieciowego i innych usług.</translation>
+<translation id="25436473744628215">Aktualizowanie…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{Uprawnienia przyznane aplikacji „<ph name="APP_NAME" />” będą też obowiązywać w tej aplikacji. <ph name="MANAGE_LINK" />}few{Uprawnienia przyznane aplikacji „<ph name="APP_NAME" />” będą też obowiązywać w tych aplikacjach. <ph name="MANAGE_LINK" />}many{Uprawnienia przyznane aplikacji „<ph name="APP_NAME" />” będą też obowiązywać w tych aplikacjach. <ph name="MANAGE_LINK" />}other{Uprawnienia przyznane aplikacji „<ph name="APP_NAME" />” będą też obowiązywać w tych aplikacjach. <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">Ta karta</translation>
 <translation id="2545743249923338554">Nowe karty</translation>

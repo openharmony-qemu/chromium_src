@@ -2314,6 +2314,7 @@
 <translation id="2541400104619216245">แนะนํารายละเอียดการเปรียบเทียบเพื่อดูเมื่อเลือกระหว่างผลิตภัณฑ์ต่างๆ</translation>
 <translation id="2541706104884128042">ตั้งเวลาเข้านอนใหม่แล้ว</translation>
 <translation id="2542050502251273923">ตั้งค่าระดับการแก้ไขข้อบกพร่องของโปรแกรมจัดการการเชื่อมต่อเครือข่ายและบริการอื่นๆ ที่ใช้ ff_debug</translation>
+<translation id="25436473744628215">กำลังอัปเดต…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{สิทธิ์ที่คุณให้กับ "<ph name="APP_NAME" />" จะอนุญาตสำหรับแอปนี้ด้วย <ph name="MANAGE_LINK" />}other{สิทธิ์ที่คุณให้กับ "<ph name="APP_NAME" />" จะอนุญาตสำหรับแอปเหล่านี้ด้วย <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">แท็บนี้</translation>
 <translation id="2545743249923338554">แท็บใหม่</translation>

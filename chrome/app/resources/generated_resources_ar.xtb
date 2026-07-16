@@ -2319,6 +2319,7 @@
 <translation id="2541400104619216245">تعرض الميزة تفاصيل المقارنة بين المنتجات للاطّلاع عليها عند الاختيار من بينها</translation>
 <translation id="2541706104884128042">ضبط وقت جديد للنوم</translation>
 <translation id="2542050502251273923">‏يضبط هذا الإعداد مستوى تصحيح الأخطاء لمدير الاتصال بالشبكة وغيرها من الخدمات باستخدام ff_debug.</translation>
+<translation id="25436473744628215">جارٍ التحديث…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{ستسري الأذونات التي تمنحها لـ "<ph name="APP_NAME" />" على هذا التطبيق أيضًا. <ph name="MANAGE_LINK" />}zero{ستسري الأذونات التي تمنحها لـ "<ph name="APP_NAME" />" على هذه التطبيقات أيضًا. <ph name="MANAGE_LINK" />}two{ستسري الأذونات التي تمنحها لـ "<ph name="APP_NAME" />" على هذين التطبيقَين أيضًا. <ph name="MANAGE_LINK" />}few{ستسري الأذونات التي تمنحها لـ "<ph name="APP_NAME" />" على هذه التطبيقات أيضًا. <ph name="MANAGE_LINK" />}many{ستسري الأذونات التي تمنحها لـ "<ph name="APP_NAME" />" على هذه التطبيقات أيضًا. <ph name="MANAGE_LINK" />}other{ستسري الأذونات التي تمنحها لـ "<ph name="APP_NAME" />" على هذه التطبيقات أيضًا. <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">علامة التبويب الحالية</translation>
 <translation id="2545743249923338554">علامات التبويب الجديدة</translation>

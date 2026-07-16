@@ -2315,6 +2315,7 @@ Puedes gestionar la configuración de esta cuenta instalando la aplicación Fami
 <translation id="2541400104619216245">Sugiere detalles de comparación para tener en cuenta al elegir un producto</translation>
 <translation id="2541706104884128042">Se ha definido una nueva hora de dormir</translation>
 <translation id="2542050502251273923">Establece el nivel de depuración del administrador de conexión de red y de otros servicios con ff_debug.</translation>
+<translation id="25436473744628215">Actualizando…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{Los permisos que concedas a <ph name="APP_NAME" /> también se concederán a esta aplicación. <ph name="MANAGE_LINK" />}other{Los permisos que concedas a <ph name="APP_NAME" /> también se concederán a estas aplicaciones. <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">Esta pestaña</translation>
 <translation id="2545743249923338554">Nuevas pestañas</translation>

@@ -2314,6 +2314,7 @@ Pode gerir as definições desta conta ao instalar a aplicação Family Link no 
 <translation id="2541400104619216245">Sugere detalhes de comparação a considerar aquando da escolha entre produtos</translation>
 <translation id="2541706104884128042">Nova hora de dormir definida.</translation>
 <translation id="2542050502251273923">Define o nível de depuração do gestor da ligação de rede e outros serviços através de ff_debug.</translation>
+<translation id="25436473744628215">A atualizar</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{As autorizações que concede à app "<ph name="APP_NAME" />" também são concedidas a esta app. <ph name="MANAGE_LINK" />}other{As autorizações que concede à app "<ph name="APP_NAME" />" também são concedidas a estas apps. <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">Este separador</translation>
 <translation id="2545743249923338554">Novos separadores</translation>

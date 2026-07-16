@@ -2331,6 +2331,7 @@ You can manage this account’s settings by installing the Family Link app on yo
 <translation id="2541400104619216245">Suggests comparison details to look at when choosing between products</translation>
 <translation id="2541706104884128042">New bedtime set</translation>
 <translation id="2542050502251273923">Sets the debugging level of the network connection manager and other services using ff_debug.</translation>
+<translation id="25436473744628215">Updating…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{Permissions that you allow for "<ph name="APP_NAME" />' will also be allowed for this app. <ph name="MANAGE_LINK" />}other{Permissions that you allow for ‘<ph name="APP_NAME" />' will also be allowed for these apps. <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">This tab</translation>
 <translation id="2545743249923338554">New tabs</translation>

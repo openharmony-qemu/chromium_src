@@ -2329,6 +2329,7 @@
 <translation id="2541400104619216245">제품을 선택할 때 참고할 비교 세부정보를 제안합니다.</translation>
 <translation id="2541706104884128042">새 취침 시간이 설정됨</translation>
 <translation id="2542050502251273923">ff_debug를 사용해 네트워크 연결 관리자와 다른 서비스의 디버깅 수준을 설정합니다.</translation>
+<translation id="25436473744628215">업데이트 중…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{"<ph name="APP_NAME" />"에 허용하는 권한은 이 앱에서도 허용됩니다. <ph name="MANAGE_LINK" />}other{"<ph name="APP_NAME" />"에 허용하는 권한은 이 앱에서도 허용됩니다. <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">현재 탭</translation>
 <translation id="2545743249923338554">새 탭</translation>

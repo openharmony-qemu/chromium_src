@@ -3163,7 +3163,7 @@
 <translation id="3132277757485842847">เราคงการเชื่อมต่อกับโทรศัพท์ไว้ไม่ได้ ตรวจสอบว่าโทรศัพท์อยู่ใกล้ๆ ปลดล็อกอยู่ และเปิดบลูทูธกับ Wi-Fi ไว้</translation>
 <translation id="3132896062549112541">กฎ</translation>
 <translation id="3132996321662585180">รีเฟรชทุกวัน</translation>
-<translation id="3134312457920437826">ติดตั้งส่วนขยายไม่ได้เนื่องจากใช้ไฟล์ Manifest เวอร์ชันที่ระบบไม่รองรับ</translation>
+<translation id="3134312457920437826">ไม่สามารถติดตั้งส่วนขยายได้เนื่องจากใช้เวอร์ชันของไฟล์ manifest ที่ไม่รองรับ</translation>
 <translation id="3134393957315651797">เลือกสถานะการทดสอบสำหรับการทดสอบ <ph name="EXPERIMENT_NAME" /> คำอธิบายการทดสอบ: <ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">รูปโปรไฟล์เริ่มต้นสีเหลือง</translation>
 <translation id="3141093262818886744">เปิดต่อไป</translation>

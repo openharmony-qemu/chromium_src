@@ -3164,7 +3164,7 @@ Puedes gestionar la configuración de esta cuenta instalando la aplicación Fami
 <translation id="3132277757485842847">No se ha podido mantener la conexión con tu teléfono. Asegúrate de que tengas el teléfono cerca, de que esté desbloqueado y de que el Bluetooth y el Wi‑Fi estén activados.</translation>
 <translation id="3132896062549112541">Regla</translation>
 <translation id="3132996321662585180">Actualizar todos los días</translation>
-<translation id="3134312457920437826">No se puede instalar la extensión porque usa una versión del archivo de manifiesto no compatible.</translation>
+<translation id="3134312457920437826">No se puede instalar la extensión porque utiliza una versión de manifiesto no compatible.</translation>
 <translation id="3134393957315651797">Selecciona el estado del experimento <ph name="EXPERIMENT_NAME" />. Descripción del experimento: <ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">Avatar amarillo predeterminado</translation>
 <translation id="3141093262818886744">Abrir de todos modos</translation>

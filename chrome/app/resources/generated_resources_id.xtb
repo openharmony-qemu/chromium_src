@@ -3176,7 +3176,7 @@ Anda dapat mengelola setelan akun ini dengan menginstal aplikasi Family Link di 
 <translation id="3132277757485842847">Kami tidak dapat mempertahankan koneksi dengan ponsel Anda. Pastikan ponsel berada di dekat Anda, tidak terkunci, serta Bluetooth dan Wi-Fi aktif.</translation>
 <translation id="3132896062549112541">Aturan</translation>
 <translation id="3132996321662585180">Perbarui tiap hari</translation>
-<translation id="3134312457920437826">Tidak dapat menginstal ekstensi karena ekstensi menggunakan versi manifes yang tidak didukung.</translation>
+<translation id="3134312457920437826">Tidak dapat memasang ekstensi karena menggunakan versi manifes yang tidak didukung.</translation>
 <translation id="3134393957315651797">Pilih status eksperimen untuk eksperimen <ph name="EXPERIMENT_NAME" />. Deskripsi eksperimen: <ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">Avatar kuning default</translation>
 <translation id="3141093262818886744">Tetap buka</translation>

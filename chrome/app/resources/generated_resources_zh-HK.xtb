@@ -3180,7 +3180,7 @@
 <translation id="3132277757485842847">我們無法與您的手機維持連線狀態。請確認您的手機在附近並已解鎖，且已開啟藍牙和 Wi-Fi。</translation>
 <translation id="3132896062549112541">規則</translation>
 <translation id="3132996321662585180">每日重新整理</translation>
-<translation id="3134312457920437826">擴充程式使用的資訊清單版本不受支援，因此無法安裝擴充程式。</translation>
+<translation id="3134312457920437826">無法安裝擴展程式，因為它使用了不受支援的清單版本。</translation>
 <translation id="3134393957315651797">揀「<ph name="EXPERIMENT_NAME" />」嘅實驗狀態。實驗描述：<ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">預設黃色圖片</translation>
 <translation id="3141093262818886744">仍要開啟</translation>

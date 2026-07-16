@@ -3164,7 +3164,7 @@ Vous pouvez gérer les paramètres de ce compte en installant l'application Fami
 <translation id="3132277757485842847">Nous n'avons pas pu maintenir la connexion avec votre téléphone. Vérifiez qu'il est déverrouillé et à proximité, et que le Bluetooth et le Wi-Fi sont activés.</translation>
 <translation id="3132896062549112541">Règle</translation>
 <translation id="3132996321662585180">Actualiser quotidiennement</translation>
-<translation id="3134312457920437826">Impossible d'installer l'extension, car elle utilise une version de fichier manifeste non compatible.</translation>
+<translation id="3134312457920437826">L'installation de l'extension a échoué car elle utilise une version de manifeste non prise en charge.</translation>
 <translation id="3134393957315651797">Sélectionnez l'état du test pour <ph name="EXPERIMENT_NAME" />. Description du test : <ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">Avatar jaune par défaut</translation>
 <translation id="3141093262818886744">Ouvrir quand même</translation>

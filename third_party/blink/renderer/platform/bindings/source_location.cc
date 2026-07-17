@@ -4,6 +4,9 @@
 
 #include "third_party/blink/renderer/platform/bindings/source_location.h"
 
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+#include "base/logging.h"
+#endif
 #include "base/tracing/protos/chrome_track_event.pbzero.h"
 #include "third_party/blink/renderer/platform/bindings/script_forbidden_scope.h"
 #include "third_party/blink/renderer/platform/bindings/thread_debugger.h"
@@ -234,6 +237,13 @@ SourceLocation* CaptureSourceLocation() {
 SourceLocation* CaptureSourceLocation(v8::Isolate* isolate,
                                       v8::Local<v8::Function> function) {
   if (!function.IsEmpty()) {
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+    if (!isolate || isolate->IsDead() || !isolate->InContext()) [[unlikely]] {
+        LOG(ERROR) << "[V8_UAF_HUNT] isolate:" << (!isolate) << ",IsDead:" << isolate->IsDead()
+                   << ",InContext:" << isolate->InContext();
+        return MakeGarbageCollected<SourceLocation>(String(), String(), 0, 0, nullptr, 0);
+    }
+#endif
     v8::Location location = function->GetScriptLocation();
     return MakeGarbageCollected<SourceLocation>(
         ToCoreStringWithUndefinedOrNullCheck(

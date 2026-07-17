@@ -55,4 +55,12 @@ void PrintAdapter::ShowPrintTipsDialog() {
  
 void PrintAdapter::AddPrinters(PrinterInfo &printInfo,
                                std::shared_ptr<PrintCallback> printCallback) {}
+
+void PrintAdapter::StartPrint(PrintJobData& print_job_data, std::vector<char>& data) {
+  aki::ArrayBuffer array_buffer((uint8_t*)data.data(), data.size());
+  print_job_data.binaryData = std::move(array_buffer);
+  if (auto func = ohos::adapter::GetJSFunction("PrintAdapter.startPrint")) {
+    func->Invoke<void>(print_job_data);
+  }
+}
 }  // namespace ohos::adapter::print

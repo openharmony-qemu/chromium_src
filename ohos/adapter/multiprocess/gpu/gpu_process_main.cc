@@ -48,7 +48,7 @@ OHIPCRemoteStub* ADAPTER_EXPORT_API NativeChildProcess_OnConnect() {
 // Main function when start gpu process by calling
 // OH_Ability_CreateNativeChildProcess()
 // 1. waiting for OHNativeWindow sent by parent process,
-// 2. call RunOtherProcessType()
+// 2. call RunChildProcess()
 void ADAPTER_EXPORT_API NativeChildProcess_MainProc() {
   GpuNativeProcess& process = GpuNativeProcess::GetInstance();
 
@@ -61,7 +61,7 @@ void ADAPTER_EXPORT_API NativeChildProcess_MainProc() {
     return;
   }
 
-  ohos::adapter::web_entry::RunOtherProcessType(ProcessType::kGpuProcess);
+  ohos::adapter::web_entry::RunChildProcess();
 }
 
 #ifdef __cplusplus

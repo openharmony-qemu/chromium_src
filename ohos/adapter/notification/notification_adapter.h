@@ -75,6 +75,7 @@ class ADAPTER_EXPORT_API NotificationAdapter {
   void SendNotification(NotificationRequest& request);
   void CloseNotification(int notificationId);
   std::vector<int> getAllDisplayedNotification();
+  void SetBadgeNumber(int badgeNumber);
   OnClickCallback GetOnClickCallback() { return onClickCallback_; }
   void RegisterOnClickCallback(OnClickCallback callback);
   OnCloseCallback GetOnCloseCallback() { return onCloseCallback_; }

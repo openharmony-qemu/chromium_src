@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -49,6 +49,14 @@ class NativeChildProcessArgsWrapper {
       const std::vector<std::string>& command,
       const std::vector<std::pair<int, int>>& fds_to_remap);
   ~NativeChildProcessArgsWrapper() = default;
+
+  NativeChildProcessArgsWrapper(NativeChildProcessArgsWrapper&& other) noexcept;
+  NativeChildProcessArgsWrapper& operator=(
+      NativeChildProcessArgsWrapper&& other) noexcept;
+
+  NativeChildProcessArgsWrapper(const NativeChildProcessArgsWrapper&) = delete;
+  NativeChildProcessArgsWrapper& operator=(
+      const NativeChildProcessArgsWrapper&) = delete;
 
   NativeChildProcess_Args Get();
 

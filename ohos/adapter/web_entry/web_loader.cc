@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ohos/adapter/web_entry/web_loader.h"
 #include "ohos/adapter/common/logging.h"
+#include "ohos/adapter/multiprocess/command_line/command_line.h"
+#include "ohos/adapter/web_entry/web_loader.h"
 
 namespace ohos::adapter::web_entry {
 
@@ -19,18 +20,15 @@ int BasicLoader::StartMainProcess(const std::vector<std::string>& args) {
     return -1;
   }
 
-  auto entry = GetEntryPoint(ProcessType::kMainProcess);
+  auto entry = GetEntryPoint(ProcessType::kChromeMain);
   if (entry.empty()) {
     LOGE("Get Entry Point failed.");
     return -1;
   }
   auto fn = shared_library_.GetFunction<int(int, const char**)>(entry.c_str());
   if (fn != nullptr) {
-    std::vector<const char*> argv_cstr;
-    for (const auto& arg : args) {
-      argv_cstr.push_back(const_cast<char*>(arg.c_str()));
-    }
-    return fn(argv_cstr.size(), argv_cstr.data());
+    auto argc_argv = multiprocess::CommandLine::BuildArgcArgv(args);
+    return fn(argc_argv.argc, argc_argv.argv.data());
   }
   LOGE("Start Main Process failed.");
   return -1;

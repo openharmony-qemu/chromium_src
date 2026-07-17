@@ -8,7 +8,11 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+
+#include <BasicServicesKit/ohprint.h>
+
 #include "ohos/adapter/export.h"
+#include "ohos_print_common.h"
 
 namespace ohos::adapter::print {
 struct PrinterRange {
@@ -65,6 +69,7 @@ class ADAPTER_EXPORT_API PrintAdapter {
   void ShowPrintTipsDialog();
   void AddPrinters(PrinterInfo& printInfo,
                    std::shared_ptr<PrintCallback> printCallback);
+  void StartPrint(PrintJobData& print_job_data, std::vector<char>& data);
 
  private:
   std::shared_ptr<char[]> pdf_buffer;

@@ -208,7 +208,7 @@
 #endif
 
 #if BUILDFLAG(IS_OHOS)
-#include "ohos/adapter/multiprocess/app_spawn_communication.h"
+#include "ohos/adapter/multiprocess/global_file_descriptor_mappings.h"
 #endif
 
 namespace content {
@@ -863,8 +863,9 @@ int ContentMainRunnerImpl::Initialize(ContentMainParams params) {
 
 // On OHOS, the ipc_fd is passed through the AppSpawn.
 #if BUILDFLAG(IS_OHOS)
-  auto ids_fds_map = ohos::adapter::multiprocess::AppSpawnCommunication::GetFdIdsRemap();
-  for (auto & [id, fd] : ids_fds_map) {
+  auto fd_mappings = ohos::adapter::multiprocess::GlobalFileDescriptorMappings::
+      GetFdIdsRemap();
+  for (const auto& [fd, id] : fd_mappings) {
     g_fds->Set(id, fd);
   }
 #endif

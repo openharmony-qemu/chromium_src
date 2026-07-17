@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -39,7 +39,17 @@ class NativeChildProcessConfigsWrapper {
   explicit NativeChildProcessConfigsWrapper(NativeChildProcessLibrary& helper);
   ~NativeChildProcessConfigsWrapper();
 
+  NativeChildProcessConfigsWrapper(NativeChildProcessConfigsWrapper&& other) noexcept;
+  NativeChildProcessConfigsWrapper& operator=(
+      NativeChildProcessConfigsWrapper&& other) noexcept;
+
+  NativeChildProcessConfigsWrapper(const NativeChildProcessConfigsWrapper&) = delete;
+  NativeChildProcessConfigsWrapper& operator=(
+      const NativeChildProcessConfigsWrapper&) = delete;
+
   Ability_ChildProcessConfigs* Get();
+
+  Ability_ChildProcessConfigs* Release();
 
  private:
   NativeChildProcessLibrary& native_api_;

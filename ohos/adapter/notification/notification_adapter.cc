@@ -34,6 +34,13 @@ void NotificationAdapter::CloseNotification(int notificationId) {
   }
 }
 
+void NotificationAdapter::SetBadgeNumber(int badgeNumber) {
+  if (auto func =
+          ohos::adapter::GetJSFunction("NotificationAdapter.SetBadgeNumber")) {
+    func->Invoke<void>(badgeNumber);
+  }
+}
+
 std::vector<int> NotificationAdapter::getAllDisplayedNotification() {
   if (auto func = ohos::adapter::GetJSFunction("NotificationAdapter.GetAllNotification")) {
     std::promise<std::vector<int>> insert_promise;

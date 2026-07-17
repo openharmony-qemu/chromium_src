@@ -10,6 +10,11 @@
 namespace ohos::adapter::multiprocess {
 namespace switches {
 ADAPTER_EXPORT_API extern const char kInProcessGpu[];
+ADAPTER_EXPORT_API extern const char kInitialClientFd[];
+ADAPTER_EXPORT_API extern const char kType[];
+ADAPTER_EXPORT_API extern const char kUtilitySubType[];
+ADAPTER_EXPORT_API extern const char kOhosArgsBegin[];
+ADAPTER_EXPORT_API extern const char kFdRemapSwitch[];
 }  // namespace switches
 }  // namespace ohos::adapter::multiprocess
 

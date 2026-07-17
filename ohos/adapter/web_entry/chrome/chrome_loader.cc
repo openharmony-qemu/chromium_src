@@ -50,12 +50,10 @@ bool ShouldDisableJit() {
 std::string ChromeMainLoader::GetEntryPoint(int process_type) {
   std::string entry_point;
   switch (process_type) {
-    case ProcessType::kMainProcess:
-    case ProcessType::kRenderProcess:
-    case ProcessType::kGpuProcess:
+    case ProcessType::kChromeMain:
       entry_point = "ChromeMain";
       break;
-    case ProcessType::kCrashpadHandler:
+    case ProcessType::kCrashPadHandler:
       entry_point = "CrashpadHandlerMain";
       break;
     default:

@@ -11,9 +11,7 @@ namespace ohos::adapter::web_entry {
 std::string ContentShellLoader::GetEntryPoint(int process_type) {
   std::string entry_point;
   switch (process_type) {
-    case ProcessType::kMainProcess:
-    case ProcessType::kRenderProcess:
-    case ProcessType::kGpuProcess:
+    case ProcessType::kChromeMain:
       entry_point = "ContentMain";
       break;
     default:

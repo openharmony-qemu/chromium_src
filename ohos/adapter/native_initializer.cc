@@ -22,7 +22,7 @@ static napi_value GetNativeContextByType(napi_env env,
                                          int32_t process_type) {
   TRACE_EVENT_0("GetNativeContextByType");
   switch (process_type) {
-    case ProcessType::kMainProcess: {
+    case ProcessType::kChromeMain: {
       ohos::adapter::web_entry::Register(env, exports);
       ohos::adapter::life_cycle::Register(env, exports);
       ohos::adapter::media::Register(env, exports);
@@ -33,8 +33,7 @@ static napi_value GetNativeContextByType(napi_env env,
       break;
     }
 
-    case ProcessType::kRenderProcess:
-    case ProcessType::kCrashpadHandler:
+    case ProcessType::kCrashPadHandler:
       ohos::adapter::web_entry::Register(env, exports);
       break;
     default:

@@ -7,5 +7,10 @@
 namespace ohos::adapter::multiprocess {
 namespace switches {
 ADAPTER_EXPORT_API const char kInProcessGpu[] = "in-process-gpu";
+ADAPTER_EXPORT_API const char kInitialClientFd[] = "initial-client-fd";
+ADAPTER_EXPORT_API const char kType[] = "type";
+ADAPTER_EXPORT_API const char kUtilitySubType[] = "utility-sub-type";
+ADAPTER_EXPORT_API const char kOhosArgsBegin[] = "ohos-args-begin";
+ADAPTER_EXPORT_API const char kFdRemapSwitch[] = "fds_to_remap=";
 }  // namespace switches
 }  // namespace ohos::adapter::multiprocess

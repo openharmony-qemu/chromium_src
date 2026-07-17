@@ -431,6 +431,12 @@ void Display::SetLocalSurfaceId(const LocalSurfaceId& id,
     return;
   }
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  if (renderer_) {
+    renderer_->ResetPartialDrawState();
+  }
+#endif
+
   TRACE_EVENT0("viz", "Display::SetSurfaceId");
   current_surface_id_ = SurfaceId(frame_sink_id_, id);
   device_scale_factor_ = device_scale_factor;
@@ -478,6 +484,12 @@ void Display::Resize(const gfx::Size& size) {
   // early out before the DCHECK fails.
   DCHECK(!size.IsEmpty());
   TRACE_EVENT0("viz", "Display::Resize");
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  if (renderer_) {
+    renderer_->ResetPartialDrawState();
+  }
+#endif
 
   swapped_since_resize_ = false;
 

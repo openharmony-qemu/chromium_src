@@ -372,6 +372,14 @@ void TextControlElement::SetFocused(bool flag,
 }
 
 void TextControlElement::DispatchFormControlChangeEvent() {
+  // Suppress change events during DOM moves (e.g. moveBefore) to prevent
+  // reentrancy. Disabled state changes triggered by the move can cause
+  // focus loss and change event dispatch, which may run script and cause
+  // UAF or tree corruption.
+  if (GetDocument().StatePreservingAtomicMoveInProgress()) {
+    ClearValueBeforeFirstUserEdit();
+    return;
+  }
   if (!value_before_first_user_edit_.IsNull() &&
       !EqualIgnoringNullity(value_before_first_user_edit_, Value())) {
     ClearValueBeforeFirstUserEdit();

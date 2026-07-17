@@ -40,12 +40,41 @@ bool ClientCertStoreOHOS::is_huks_ = false;
 
 namespace {
 
+struct OhosClientCertEntry {
+  OhosClientCertEntry(bssl::UniquePtr<X509> cert,
+                      OhosClientCertBackend backend,
+                      bool selected_by_system = false)
+      : cert(std::move(cert)),
+        backend(backend),
+        selected_by_system(selected_by_system) {}
+
+  OhosClientCertEntry(OhosClientCertEntry&&) = default;
+  OhosClientCertEntry& operator=(OhosClientCertEntry&&) = default;
+
+  bssl::UniquePtr<X509> cert;
+  OhosClientCertBackend backend;
+  bool selected_by_system;
+};
+
 class ClientCertIdentityOHOS : public ClientCertIdentity {
  public:
   ClientCertIdentityOHOS(scoped_refptr<net::X509Certificate> cert,
-                         bssl::UniquePtr<X509> bssl_cert)
-      : ClientCertIdentity(std::move(cert)), bssl_cert_(std::move(bssl_cert)) {}
+                         bssl::UniquePtr<X509> bssl_cert,
+						 OhosClientCertBackend backend,
+                         bool selected_by_system)
+      : ClientCertIdentity(std::move(cert)),
+	    bssl_cert_(std::move(bssl_cert)),
+        backend_(backend),
+        selected_by_system_(selected_by_system) {}
   ~ClientCertIdentityOHOS() override = default;
+
+  OhosClientCertBackend GetOhosClientCertBackend() const override {
+    return backend_;
+  }
+
+  bool IsOhosClientCertSelectedBySystem() const override {
+    return selected_by_system_;
+  }
 
   void AcquirePrivateKey(base::OnceCallback<void(scoped_refptr<SSLPrivateKey>)>
                              private_key_callback) override {
@@ -55,12 +84,14 @@ class ClientCertIdentityOHOS : public ClientCertIdentity {
         FROM_HERE,
         {base::MayBlock(), base::TaskShutdownBehavior::CONTINUE_ON_SHUTDOWN},
         base::BindOnce(&FetchClientCertPrivateKey,
-                       base::Unretained(certificate()), bssl_cert_.get()),
+                       base::Unretained(certificate()), bssl_cert_.get(), backend_),
         std::move(private_key_callback));
   }
 
  private:
   bssl::UniquePtr<X509> bssl_cert_;
+  OhosClientCertBackend backend_;
+  bool selected_by_system_;
 };
 
 }  // namespace
@@ -174,14 +205,13 @@ std::vector<bssl::UniquePtr<X509>> FindSSLCertsOHOS(bool only_client) {
   return certs;
 }
 
-std::vector<bssl::UniquePtr<X509>> GetSSLCertsOHOS(bool only_client) {
-  std::vector<bssl::UniquePtr<X509>> certs;
+std::vector<OhosClientCertEntry> GetSSLClientCertEntriesOHOS(bool only_client) {
+  std::vector<OhosClientCertEntry> certs;
 
   CertManagerAdapter::CertInfoList ohos_cert_info_list =
       CertManagerAdapter::GetInstance().EnumClientCerts();
   for (auto& ohos_cert : ohos_cert_info_list) {
     std::string pem_cert = ohos_cert.cert;
-    // pem cert file
     bssl::UniquePtr<BIO> cert_bio(
         BIO_new_mem_buf(pem_cert.c_str(), pem_cert.size()));
     if (!cert_bio) {
@@ -200,14 +230,15 @@ std::vector<bssl::UniquePtr<X509>> GetSSLCertsOHOS(bool only_client) {
 
       X509_set_ex_data(bssl_cert.get(), 0, uri_cert);
 
+      OhosClientCertBackend backend = OhosClientCertBackend::kOhosUri;
       if (ohos_cert.type == ohos::adapter::CertType::USB_CERT) {
-        X509_set_ex_data(bssl_cert.get(), 1, uri_cert);
+        backend = OhosClientCertBackend::kHuks;
       }
       if (!only_client) {
-        certs.push_back(std::move(bssl_cert));
+        certs.emplace_back(std::move(bssl_cert), backend, true);
       } else if (X509_check_ca(cert) == 0 &&
                  X509_check_purpose(cert, X509_PURPOSE_SSL_CLIENT, 0) == 1) {
-        certs.push_back(std::move(bssl_cert));
+        certs.emplace_back(std::move(bssl_cert), backend, true);
       }
     }
   }
@@ -282,7 +313,7 @@ void ClientCertStoreOHOS::GetSoftClientCerts(
       cert->SetCertUri(cert_uri);
     }
     identities.push_back(std::make_unique<ClientCertIdentityOHOS>(
-        cert, std::move(*itr)));
+        cert, std::move(*itr), OhosClientCertBackend::kOhosUri, false));
   }
   std::move(callback).Run(std::move(identities));
 }
@@ -369,17 +400,22 @@ void ClientCertStoreOHOS::GetPlatformCertsOnWorkerThread(
     LOG(ERROR) << "identities is nullptr.";
     return;
   }
-  auto found_certs = FindSSLCertsOHOS(true);
-  if (is_huks_)
-    found_certs = GetSSLCertsOHOS(false);
-  if (found_certs.empty()) {
-    LOG(ERROR) << "No client certs found.";
-    return;
+  std::vector<OhosClientCertEntry> found_cert_entries;
+  if (is_huks_) {
+    found_cert_entries = GetSSLClientCertEntriesOHOS(false);
+  }
+  if (!is_huks_) {
+    auto found_certs = FindSSLCertsOHOS(true);
+    for (auto& found_cert : found_certs) {
+      found_cert_entries.emplace_back(std::move(found_cert),
+                                      OhosClientCertBackend::kOhosUri);
+    }
   }
 
-  for (auto itr = found_certs.begin(); itr != found_certs.end(); ++itr) {
+  for (auto itr = found_cert_entries.begin(); itr != found_cert_entries.end();
+       ++itr) {
     uint8_t* der_buf = nullptr;
-    int size = i2d_X509(itr->get(), &der_buf);
+    int size = i2d_X509(itr->cert.get(), &der_buf);
     if (!der_buf || size <= 0) {
       LOG(ERROR) << "call i2d_X509 failed.";
       continue;
@@ -398,13 +434,12 @@ void ClientCertStoreOHOS::GetPlatformCertsOnWorkerThread(
           << "x509_util::CreateX509CertificateFromCERTCertificate failed";
       continue;
     }
-    char* cert_uri = (char*)X509_get_ex_data(itr->get(), 0);
-    char* is_ukey = (char*)X509_get_ex_data(itr->get(), 1);
-    if (cert_uri && !is_ukey) {
+    char* cert_uri = (char*)X509_get_ex_data(itr->cert.get(), 0);
+    if (cert_uri && itr->backend == OhosClientCertBackend::kOhosUri) {
       cert->SetCertUri(cert_uri);
     }
     identities->push_back(std::make_unique<ClientCertIdentityOHOS>(
-        cert, std::move(*itr)));
+        cert, std::move(itr->cert), itr->backend, itr->selected_by_system));
   }
 }
 

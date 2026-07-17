@@ -7,8 +7,12 @@
 
 #include "base/functional/callback.h"
 #include "base/time/time.h"
+#include "build/build_config.h"
 #include "net/base/net_export.h"
 #include "net/cert/x509_certificate.h"
+#if BUILDFLAG(IS_OHOS)
+#include "net/ssl/ohos_client_cert_backend.h"
+#endif
 
 namespace base {
 class Time;
@@ -27,6 +31,11 @@ class NET_EXPORT ClientCertIdentity {
 
   // Returns the certificate.
   X509Certificate* certificate() const { return cert_.get(); }
+
+#if BUILDFLAG(IS_OHOS)
+  virtual OhosClientCertBackend GetOhosClientCertBackend() const;
+  virtual bool IsOhosClientCertSelectedBySystem() const;
+#endif
 
   // Passes the private key to |private_key_callback| on the same sequence
   // AcquirePrivateKey is called on, or nullptr on error. The callback may be

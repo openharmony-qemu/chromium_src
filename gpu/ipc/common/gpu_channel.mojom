@@ -184,6 +184,7 @@ interface GpuChannel {
   [Sync, EnableIf=is_arkweb] CreateNativeTexture(
       int32 native_id,
       int32 texture_owner_mode,
+      bool is_custom_media_player,
       pending_associated_receiver<StreamTexture> receiver) => (int32 native_embed_id);
 
   // This interface is used by MediaFoundationRendererClient to subscribe

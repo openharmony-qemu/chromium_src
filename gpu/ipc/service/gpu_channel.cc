@@ -197,6 +197,7 @@ class GPU_IPC_SERVICE_EXPORT GpuChannelMessageFilter
   void CreateNativeTexture(
       int32_t native_id,
       int32_t texture_owner_mode,
+      bool is_custom_media_player,
       mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver,
       CreateNativeTextureCallback callback) override;
 #endif

@@ -27,6 +27,8 @@ enum SdkVersion {
   SDK_VERSION_20 = 20,
   SDK_VERSION_21 = 21,
   SDK_VERSION_22 = 22,
+  SDK_VERSION_23 = 23,
+  SDK_VERSION_24 = 24,
 };
 
 enum class DeviceType {

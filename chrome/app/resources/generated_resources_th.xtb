@@ -2314,6 +2314,7 @@
 <translation id="2541400104619216245">แนะนํารายละเอียดการเปรียบเทียบเพื่อดูเมื่อเลือกระหว่างผลิตภัณฑ์ต่างๆ</translation>
 <translation id="2541706104884128042">ตั้งเวลาเข้านอนใหม่แล้ว</translation>
 <translation id="2542050502251273923">ตั้งค่าระดับการแก้ไขข้อบกพร่องของโปรแกรมจัดการการเชื่อมต่อเครือข่ายและบริการอื่นๆ ที่ใช้ ff_debug</translation>
+<translation id="25436473744628215">กำลังอัปเดต…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{สิทธิ์ที่คุณให้กับ "<ph name="APP_NAME" />" จะอนุญาตสำหรับแอปนี้ด้วย <ph name="MANAGE_LINK" />}other{สิทธิ์ที่คุณให้กับ "<ph name="APP_NAME" />" จะอนุญาตสำหรับแอปเหล่านี้ด้วย <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">แท็บนี้</translation>
 <translation id="2545743249923338554">แท็บใหม่</translation>
@@ -3162,7 +3163,7 @@
 <translation id="3132277757485842847">เราคงการเชื่อมต่อกับโทรศัพท์ไว้ไม่ได้ ตรวจสอบว่าโทรศัพท์อยู่ใกล้ๆ ปลดล็อกอยู่ และเปิดบลูทูธกับ Wi-Fi ไว้</translation>
 <translation id="3132896062549112541">กฎ</translation>
 <translation id="3132996321662585180">รีเฟรชทุกวัน</translation>
-<translation id="3134312457920437826">ติดตั้งส่วนขยายไม่ได้เนื่องจากใช้ไฟล์ Manifest เวอร์ชันที่ระบบไม่รองรับ</translation>
+<translation id="3134312457920437826">ไม่สามารถติดตั้งส่วนขยายได้เนื่องจากใช้เวอร์ชันของไฟล์ manifest ที่ไม่รองรับ</translation>
 <translation id="3134393957315651797">เลือกสถานะการทดสอบสำหรับการทดสอบ <ph name="EXPERIMENT_NAME" /> คำอธิบายการทดสอบ: <ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">รูปโปรไฟล์เริ่มต้นสีเหลือง</translation>
 <translation id="3141093262818886744">เปิดต่อไป</translation>

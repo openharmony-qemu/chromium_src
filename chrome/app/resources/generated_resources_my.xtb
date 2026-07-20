@@ -1461,7 +1461,7 @@
 <translation id="1969654639948595766">WebRTC စာသားမှတ်တမ်းများ (<ph name="WEBRTC_TEXT_LOG_COUNT" />)</translation>
 <translation id="1972313920920745320">သင်ထည့်သည့် ဝဘ်ဆိုက်များသည် အမြဲပွင့်နေမည်ဖြစ်ပြီး ၎င်းတို့၏ မှတ်ဉာဏ်ကို ရှင်းမည်မဟုတ်ပါ။ <ph name="BEGIN_LINK" />သတ်မှတ်ထားသောဝဘ်ဆိုင်များ ဆက်ဖွင့်ထားခြင်းနှင့် ပတ်သက်ပြီး ပိုမိုလေ့လာရန်<ph name="END_LINK" /></translation>
 <translation id="1972325230031091483">လက်ရှိဝဘ်စာမျက်နှာ ဝင်ကြည့်ခြင်းအပေါ် အခြေခံပြီး အကြောင်းအရာကို ကြိုတင်ဖန်တီးထားသောကြောင့် ကြည့်ရှုရာတွင် ပိုမြန်ပါမည်</translation>
-<translation id="197288927597451399">သိမ်းမည်</translation>
+<translation id="197288927597451399">ဆက်ထားရန်</translation>
 <translation id="1973886230221301399">ChromeVox</translation>
 <translation id="1974043046396539880">CRL ဖြန့်ချိရေး အမှတ်များ</translation>
 <translation id="1974060860693918893">အဆင့်မြင့်</translation>
@@ -2325,6 +2325,7 @@
 <translation id="2541400104619216245">ထုတ်ကုန်များအကြား ရွေးချယ်သောအခါ အသေးစိတ်ကို နှိုင်းယှဉ်ကြည့်ရန် အကြံပြုသည်</translation>
 <translation id="2541706104884128042">အိပ်ချိန်သစ် သတ်မှတ်ရန်</translation>
 <translation id="2542050502251273923">ff_debug အသုံးပြုပြီး ကွန်ရက်ချိတ်ဆက်မှုမန်နေဂျာနှင့် အခြားဝန်ဆောင်မှုများ၏ အမှားရှာပြင်သည့် အဆင့်ကို သတ်မှတ်ပေးသည်။</translation>
+<translation id="25436473744628215">အပ်ဒိတ်လုပ်နေဆဲ…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{“<ph name="APP_NAME" />” အတွက် သင်၏ခွင့်ပြုချက်များကို ဤအက်ပ်အတွက်လည်း ခွင့်ပြုပါမည်။ <ph name="MANAGE_LINK" />}other{“<ph name="APP_NAME" />” အတွက် သင်၏ခွင့်ပြုချက်များကို ဤအက်ပ်များအတွက်လည်း ခွင့်ပြုပါမည်။ <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">ဤတဘ်</translation>
 <translation id="2545743249923338554">တဘ်အသစ်</translation>
@@ -3174,7 +3175,7 @@
 <translation id="3132277757485842847">သင့်ဖုန်းနှင့် ချိတ်ဆက်ထား၍မရပါ။ သင့်ဖုန်းသည် အနီးတွင်ရှိပြီး လော့ခ်ဖွင့်ထားကာ ဘလူးတုသ်နှင့် Wi-Fi ဖွင့်ထားကြောင်း သေချာပါစေ။</translation>
 <translation id="3132896062549112541">စည်းမျဉ်း</translation>
 <translation id="3132996321662585180">နေ့စဉ် ပြန်လည် စတင်ရန်</translation>
-<translation id="3134312457920437826">မပံ့ပိုးသော မန်နီးဖက်စ်ဗားရှင်းကို သုံးသောကြောင့် နောက်ဆက်တွဲကို ထည့်သွင်း၍မရပါ။</translation>
+<translation id="3134312457920437826">မပံ့ပိုးမထားသော Manifest ဗားရှင်းကို အသုံးပြုထားသောကြောင့် Extension ကို ထည့်သွင်း၍မရပါ။</translation>
 <translation id="3134393957315651797"><ph name="EXPERIMENT_NAME" /> စမ်းသပ်မှုအတွက် စမ်းသပ်မှုအခြေအနေကို ရွေးပါ။ စမ်းသပ်မှု ဖော်ပြချက်- <ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">မူရင်းအဝါရောင်ချန်နယ်ပုံ</translation>
 <translation id="3141093262818886744">မည်သို့ပင်ဖြစ်စေ ဖွင့်ရန်</translation>

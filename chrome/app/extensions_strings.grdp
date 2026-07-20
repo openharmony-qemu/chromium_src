@@ -625,6 +625,9 @@
   <message name="IDS_EXTENSIONS_TOOLBAR_UPDATING_TOAST" desc="Text displayed in a toast popup message while extensions are updating.">
     Updating...
   </message>
+  <message name="IDS_EXTENSIONS_TOOLBAR_UPDATING_TOAST_V2" desc="Text displayed in a toast popup message while extensions are updating.">
+    Updating…
+  </message>
   <message name="IDS_EXTENSIONS_SUBPAGE_BUTTON" is_accessibility_with_no_ui="true" desc="Accessibility description for a button navigating the user from an extension's settings page to its settings subpage.">
     Subpage button
   </message>

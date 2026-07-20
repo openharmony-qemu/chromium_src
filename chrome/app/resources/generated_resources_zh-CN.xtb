@@ -2310,6 +2310,7 @@
 <translation id="2541400104619216245">提供详细的产品比较数据，作为选择产品时的比较建议</translation>
 <translation id="2541706104884128042">已设定新的就寝时间</translation>
 <translation id="2542050502251273923">使用 ff_debug 设定网络连接管理器和其他服务的调试级别。</translation>
+<translation id="25436473744628215">正在更新…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{您授予“<ph name="APP_NAME" />”的权限也会授予此应用。<ph name="MANAGE_LINK" />}other{您授予“<ph name="APP_NAME" />”的权限也会授予这些应用。<ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">此标签页</translation>
 <translation id="2545743249923338554">新标签页</translation>

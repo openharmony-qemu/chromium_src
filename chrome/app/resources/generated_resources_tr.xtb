@@ -1453,7 +1453,7 @@ Uygulamalara vermiş olduğunuz izinler bu hesap için geçerli olabilir. Androi
 <translation id="1969654639948595766">WebRTC metin günlükleri (<ph name="WEBRTC_TEXT_LOG_COUNT" />)</translation>
 <translation id="1972313920920745320">Eklediğiniz siteler her zaman etkin kalır ve bu sitelerin kullandığı bellekte yer açılmaz. <ph name="BEGIN_LINK" />Belirli siteleri etkin tutma hakkında daha fazla bilgi<ph name="END_LINK" /></translation>
 <translation id="1972325230031091483">İçerik, mevcut web sayfası ziyaretinize göre proaktif olarak yüklendiğinden internette daha hızlı gezinebilirsiniz</translation>
-<translation id="197288927597451399">Sakla</translation>
+<translation id="197288927597451399">Tut</translation>
 <translation id="1973886230221301399">ChromeVox</translation>
 <translation id="1974043046396539880">CRL Dağıtım Noktaları</translation>
 <translation id="1974060860693918893">Gelişmiş</translation>
@@ -2312,6 +2312,7 @@ Cihazınızda Family Link uygulamasını yükleyerek bu hesabın ayarlarını y�
 <translation id="2541400104619216245">Ürünler arasında seçim yaparken dikkate almanız gereken karşılaştırma ayrıntıları önerir</translation>
 <translation id="2541706104884128042">Yeni uyku vakti ayarlandı</translation>
 <translation id="2542050502251273923">Ağ bağlantı yöneticisi ve diğer hizmetlerin hata ayıklama seviyesini ff_debug kullanarak ayarlar.</translation>
+<translation id="25436473744628215">Güncelleniyor…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{"<ph name="APP_NAME" />" uygulamasına verdiğiniz izinler aynı zamanda bu uygulama için de geçerli olur. <ph name="MANAGE_LINK" />}other{"<ph name="APP_NAME" />" uygulamasına verdiğiniz izinler aynı zamanda bu uygulamalar için de geçerli olur. <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">Bu Sekme</translation>
 <translation id="2545743249923338554">Yeni Sekmeler</translation>
@@ -3160,7 +3161,7 @@ Sunucunun mesajı: <ph name="SERVER_MSG" /></translation>
 <translation id="3132277757485842847">Telefonunuzla bağlantıyı sürdüremedik. Telefonunuzun yakında bulunduğundan, kilidinin ve Bluetooth ile Kablosuz bağlantının da açık olduğundan emin olun.</translation>
 <translation id="3132896062549112541">Kural</translation>
 <translation id="3132996321662585180">Günlük olarak yenile</translation>
-<translation id="3134312457920437826">Uzantı desteklenmeyen bir manifest sürümü kullandığından yüklenemiyor.</translation>
+<translation id="3134312457920437826">Desteklenmeyen bir manifest sürümü kullandığından uzantı yüklenemiyor.</translation>
 <translation id="3134393957315651797"><ph name="EXPERIMENT_NAME" /> denemesi için deneme durumu seçin. Deneme açıklaması: <ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">Varsayılan sarı avatar</translation>
 <translation id="3141093262818886744">Yine de aç</translation>

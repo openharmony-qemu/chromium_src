@@ -2311,6 +2311,7 @@ Wenn du die Family Link App auf deinem Gerät installierst, kannst du die Einste
 <translation id="2541400104619216245">Es werden Details zum Vergleichen vorgeschlagen, die bei der Auswahl zwischen Produkten hilfreich sind</translation>
 <translation id="2541706104884128042">Neue Schlafenszeit festgelegt</translation>
 <translation id="2542050502251273923">Hiermit wird das Fehlerbehebungslevel des Netzwerkverbindungsmanagers und anderer Services mithilfe von ff_debug festgelegt.</translation>
+<translation id="25436473744628215">Aktualisieren …</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{Für die App „<ph name="APP_NAME" />“ erteilte Berechtigungen werden auch auf diese App angewendet. <ph name="MANAGE_LINK" />}other{Für die App „<ph name="APP_NAME" />“ erteilte Berechtigungen werden auch auf diese Apps angewendet. <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">Dieser Tab</translation>
 <translation id="2545743249923338554">Neue Tabs</translation>
@@ -3159,7 +3160,7 @@ Servernachricht: <ph name="SERVER_MSG" /></translation>
 <translation id="3132277757485842847">Die Verbindung zu deinem Smartphone konnte nicht aufrechterhalten werden. Dein Smartphone muss sich in der Nähe befinden, entsperrt sein und Bluetooth und WLAN müssen aktiviert sein.</translation>
 <translation id="3132896062549112541">Regel</translation>
 <translation id="3132996321662585180">Täglich aktualisieren</translation>
-<translation id="3134312457920437826">Die Erweiterung kann nicht installiert werden, da sie eine nicht unterstützte Manifestversion verwendet.</translation>
+<translation id="3134312457920437826">Die Erweiterung kann nicht installiert werden, da sie eine nicht unterstützte Manifestversion nutzt.</translation>
 <translation id="3134393957315651797">Wähle den Teststatus für den Test „<ph name="EXPERIMENT_NAME" />“ aus. Testbeschreibung: <ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">Gelber Standardavatar</translation>
 <translation id="3141093262818886744">Trotzdem öffnen</translation>

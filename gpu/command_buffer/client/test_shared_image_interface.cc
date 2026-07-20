@@ -16,6 +16,8 @@
 
 #include "base/check.h"
 #include "base/notreached.h"
+#include "base/numerics/checked_math.h"
+#include "base/numerics/safe_conversions.h"
 #include "build/build_config.h"
 #include "components/viz/common/resources/shared_image_format_utils.h"
 #include "gpu/command_buffer/client/client_shared_image.h"

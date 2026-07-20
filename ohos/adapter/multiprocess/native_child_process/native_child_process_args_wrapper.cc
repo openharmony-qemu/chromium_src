@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -26,12 +26,13 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+ 
 #include "native_child_process_args_wrapper.h"
 
 #include <cstdio>
 
 #include "ohos/adapter/common/logging.h"
-#include "ohos/adapter/multiprocess/command_line/command_line_helper.h"
+#include "ohos/adapter/multiprocess/command_line/command_line.h"
 
 namespace ohos::adapter::multiprocess {
 
@@ -53,8 +54,14 @@ void NodeDeleter::operator()(NativeChildProcess_Fd* node) const noexcept {
 NativeChildProcessArgsWrapper::NativeChildProcessArgsWrapper(
     const std::vector<std::string>& commands,
     const std::vector<std::pair<int32_t, int32_t>>& fds_to_remap) {
-  auto shared_fd_command = CommandLineHelper::BuildSharedFDCommand(fds_to_remap);
-  params_ = CommandLineHelper::BuildCommands(commands, {shared_fd_command});
+  auto shared_fd_command = CommandLine::BuildFdRemapCommand(fds_to_remap);
+  std::vector<std::string> extra_commands;
+  if (!shared_fd_command.empty()) {
+    extra_commands.push_back(shared_fd_command);
+  }
+  params_ = CommandLine::Join(commands);
+  params_ += CommandLine::kArgSeparator;
+  params_ += CommandLine::Join(extra_commands);
   native_args_.entryParams = params_.data();
 
   UniqueNode head(nullptr);
@@ -79,6 +86,34 @@ NativeChildProcessArgsWrapper::NativeChildProcessArgsWrapper(
   fd_list_ = std::move(head);
 }
 
+NativeChildProcessArgsWrapper::NativeChildProcessArgsWrapper(
+    NativeChildProcessArgsWrapper&& other) noexcept
+    : params_(std::move(other.params_)),
+      fd_list_(std::move(other.fd_list_)),
+      native_args_(other.native_args_) {
+  native_args_.entryParams = params_.data();
+  native_args_.fdList.head = fd_list_.get();
+
+  other.native_args_.entryParams = nullptr;
+  other.native_args_.fdList.head = nullptr;
+}
+
+NativeChildProcessArgsWrapper& NativeChildProcessArgsWrapper::operator=(
+    NativeChildProcessArgsWrapper&& other) noexcept {
+  if (this != &other) {
+    params_ = std::move(other.params_);
+    fd_list_ = std::move(other.fd_list_);
+    native_args_ = other.native_args_;
+
+    native_args_.entryParams = params_.data();
+    native_args_.fdList.head = fd_list_.get();
+
+    other.native_args_.entryParams = nullptr;
+    other.native_args_.fdList.head = nullptr;
+  }
+  return *this;
+}
+
 NativeChildProcess_Args NativeChildProcessArgsWrapper::Get() {
   return native_args_;
 }
@@ -94,13 +129,12 @@ void NativeChildProcessArgsWrapper::Parse(
   }
 
   std::vector<std::string> commandline =
-      CommandLineHelper::Split(args.entryParams);
+      CommandLine::Split(args.entryParams, CommandLine::kArgSeparator);
 
   auto current = args.fdList.head;
   while (current != nullptr) {
     int fd = current->fd;
-    LOGD("Parse %{public}d => %{public}s", fd, current->fdName);
-    fds_to_remap.push_back({std::stoi(current->fdName), fd});
+    fds_to_remap.push_back({fd, std::stoi(current->fdName)});
     current = current->next;
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -46,7 +46,31 @@ NativeChildProcessConfigsWrapper::~NativeChildProcessConfigsWrapper() {
   }
 }
 
+NativeChildProcessConfigsWrapper::NativeChildProcessConfigsWrapper(
+    NativeChildProcessConfigsWrapper&& other) noexcept
+    : native_api_(other.native_api_), native_configs_(other.native_configs_) {
+  other.native_configs_ = nullptr;
+}
+
+NativeChildProcessConfigsWrapper& NativeChildProcessConfigsWrapper::operator=(
+    NativeChildProcessConfigsWrapper&& other) noexcept {
+  if (this != &other) {
+    if (native_configs_) {
+      native_api_.DestroyChildProcessConfigs(native_configs_);
+    }
+    native_configs_ = other.native_configs_;
+    other.native_configs_ = nullptr;
+  }
+  return *this;
+}
+
 Ability_ChildProcessConfigs* NativeChildProcessConfigsWrapper::Get() {
   return native_configs_;
+}
+
+Ability_ChildProcessConfigs* NativeChildProcessConfigsWrapper::Release() {
+  Ability_ChildProcessConfigs* configs = native_configs_;
+  native_configs_ = nullptr;
+  return configs;
 }
 }  // namespace ohos::adapter::multiprocess

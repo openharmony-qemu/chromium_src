@@ -43,8 +43,7 @@ bool ParseScreenSize(const std::string& screen_size, int* width, int* height) {
       !base::StringToInt(width_and_height[1], height)) {
     return false;
   }
-  LOG(INFO) << "OhosScreen::" << __func__
-            << ", display info: " << dst_display.ToString();
+
   return true;
 }
 

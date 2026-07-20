@@ -204,52 +204,20 @@ void ResetChildSignalHandlersToDefaults() {
         // (!defined(__i386__) && !defined(__x86_64__) && !defined(__arm__))
 
 #if BUILDFLAG(IS_OHOS)
-Process LaunchProcessWithNativeSpawn(const CommandLine& cmdline,
-                                     const LaunchOptions& options) {
+Process LaunchProcessOhos(const CommandLine& cmdline,
+                          const LaunchOptions& options) {
   ohos::adapter::multiprocess::ChildProcessManager& manager =
       ohos::adapter::multiprocess::ChildProcessManager::GetInstance();
 
-  std::vector<std::string> argv = cmdline.argv();
-  std::vector<std::pair<int, int>> fd_id_remap;
-  size_t file_count = options.fds_to_remap.size();
-  for (size_t i = 0; i < file_count; ++i) {
-    const FileHandleMappingVector::value_type& value =
-        options.fds_to_remap[i];
-    int fd = value.first;
-    PCHECK(0 <= fd);
-    int id = value.second;
-    fd_id_remap.push_back(std::make_pair(fd, id));
-  }
-
-  int pid = -1;
-  if (options.is_gpu_process) {
-    pid = manager.StartGpuProcess(argv, fd_id_remap);
-  } else {
-    pid = manager.StartChildProcess(argv,
-                                    fd_id_remap,
-                                    options.process_entry_point,
-                                    options.is_isolated_process);
-  }
-  
+  OhosProcessSpawnType spawn_type = options.spawn_type.value_or(
+      manager.GetSpawnType(cmdline.GetSwitchValueASCII("type")));
+  int pid = manager.StartChildProcess(cmdline.argv(), options.fds_to_remap,
+                                      options.process_entry_point, spawn_type);
   if (pid < 0) {
     RAW_LOG(ERROR, "start child process failed");
     return Process();
   }
 
-  return Process(pid);
-}
-
-Process LaunchProcessWithNativeMessage(const std::vector<std::string>& argv,
-                                       const LaunchOptions& options) {
-  ohos::adapter::nativemessaging::NativeMessagingAdapter& native_messaging_adapter =
-      ohos::adapter::nativemessaging::NativeMessagingAdapter::GetInstance();
- 
-  int pid = native_messaging_adapter.ConnectNative(argv, options.fds_to_remap);
-  if (pid < 0) {
-    RAW_LOG(ERROR, "connect NativeMessageHost process failed");
-    return Process();
-  }
- 
   return Process(pid);
 }
 #endif  // BUILDFLAG(IS_OHOS)
@@ -353,16 +321,10 @@ void CloseSuperfluousFds(const base::InjectiveMultimap& saved_mapping) {
 Process LaunchProcess(const CommandLine& cmdline,
                       const LaunchOptions& options) {
 #if BUILDFLAG(IS_OHOS)
-  if (options.enable_native_spawn) {
-    // Creating a process with native spawn and specified the process startup entry point
-    return LaunchProcessWithNativeSpawn(cmdline, options);
-  }
-  if (options.is_native_message) {
-    // Connect NativeMessagingHost
-    return LaunchProcessWithNativeMessage(cmdline.argv(), options);
-  }
-#endif
+  return LaunchProcessOhos(cmdline, options);
+#else
   return LaunchProcess(cmdline.argv(), options);
+#endif
 }
 
 Process LaunchProcess(const std::vector<std::string>& argv,

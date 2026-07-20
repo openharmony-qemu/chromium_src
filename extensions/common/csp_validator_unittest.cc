@@ -491,6 +491,12 @@ TEST(ExtensionCSPValidator, IsSandboxed) {
 
   EXPECT_FALSE(ContentSecurityPolicyIsSandboxed("sandbox allow-same-origin",
                                                 Manifest::Type::kExtension));
+  EXPECT_FALSE(ContentSecurityPolicyIsSandboxed("sandbox \fallow-same-origin",
+                                                Manifest::Type::kExtension));
+  EXPECT_FALSE(ContentSecurityPolicyIsSandboxed("sandbox allow-same-origin\f",
+                                                Manifest::Type::kExtension));
+  EXPECT_FALSE(ContentSecurityPolicyIsSandboxed("sandbox \fallow-same-origin\f",
+                                                Manifest::Type::kExtension));
 
   // Additional directives are OK.
   EXPECT_TRUE(ContentSecurityPolicyIsSandboxed(

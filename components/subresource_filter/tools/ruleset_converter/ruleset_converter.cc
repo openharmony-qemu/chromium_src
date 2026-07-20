@@ -11,6 +11,7 @@
 
 #include "base/check.h"
 #include "base/files/file_util.h"
+#include "base/logging.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_split.h"
 #include "base/strings/utf_string_conversions.h"
@@ -74,10 +75,24 @@ bool RulesetConverter::Convert() {
   }
 
   if (primary_output) {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    if (!primary_output->Finish()) {
+        LOG(ERROR) << "[AdBLock] Failed to finish primary output";
+        return false;
+    }
+#else
     CHECK(primary_output->Finish());
+#endif
   }
   if (secondary_output) {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    if (!secondary_output->Finish()) {
+        LOG(ERROR) << "[AdBLock] Failed to finish secondary output";
+        return false;
+    }
+#else
     CHECK(secondary_output->Finish());
+#endif
   }
   return true;
 }

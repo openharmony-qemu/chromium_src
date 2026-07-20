@@ -114,6 +114,13 @@ void SetMouseEventAttributes(MouseEventInit* initializer,
 const int kDragThresholdX = 3;
 const int kDragThresholdY = 3;
 constexpr base::TimeDelta kTextDragDelay = base::Seconds(0.15);
+#elif BUILDFLAG(ARKWEB_DRAG_DROP)
+// The mouse coordinates are converted during the delivery from the system.
+// The coordinates may be offset by a maximum of 2 pixels (see DTS2026061121359),
+// the drag threshold is adjusted.
+const int kDragThresholdX = 6;
+const int kDragThresholdY = 6;
+constexpr base::TimeDelta kTextDragDelay = base::Seconds(0.0);
 #else
 const int kDragThresholdX = 4;
 const int kDragThresholdY = 4;

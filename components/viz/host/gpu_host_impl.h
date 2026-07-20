@@ -251,6 +251,7 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost,
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
   void StartMonitor(int32_t nweb_id);
   void StopMonitor();
+  void ReportDynamicFrameLoss(mojom::DynamicFrameDropDataPtr data) override;
 #endif
 
 #if BUILDFLAG(IS_ARKWEB)

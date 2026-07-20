@@ -53,6 +53,14 @@ struct SbBitmapMetadata {
   uint64 size;
 };
 
+[EnableIf=arkweb_report_loss_frame]
+struct DynamicFrameDropData {
+  int64 start_time;
+  int32 duration;
+  int32 max_app_frame_time;
+  int32 web_id;
+};
+
 // Communication channel from the gpu process to the gpu host. This interface
 // should never have any sync function calls.
 interface GpuHost {
@@ -130,4 +138,8 @@ interface GpuHost {
   [EnableIf=is_win]
   EnsureWebNNExecutionProvidersReady()
       => (map<string, webnn.mojom.EpPackageInfo> ep_package_info);
+
+  // report dynamic frame loss data from gpu process to browser process
+  [EnableIf=arkweb_report_loss_frame]
+  ReportDynamicFrameLoss(DynamicFrameDropData data);
 };

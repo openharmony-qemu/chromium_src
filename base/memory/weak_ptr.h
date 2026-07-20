@@ -163,6 +163,7 @@ class BASE_EXPORT WeakReferenceOwner {
   bool HasRefs() const { return !flag_->HasOneRef(); }
 
   void Invalidate();
+  void InvalidateAndDoom();
   void BindToCurrentSequence();
 
  private:
@@ -406,6 +407,15 @@ class WeakPtrFactory : public internal::WeakPtrFactoryBase {
   void InvalidateWeakPtrs() {
     DCHECK(ptr_);
     weak_reference_owner_.Invalidate();
+  }
+
+  // Invalidates all existing weak pointers, and makes the factory unusable
+  // (cannot call GetWeakPtr after this). This is more efficient than
+  // InvalidateWeakPtrs().
+  void InvalidateWeakPtrsAndDoom() {
+    DCHECK(ptr_);
+    weak_reference_owner_.InvalidateAndDoom();
+    ptr_ = 0;
   }
 
   // Call this method to determine if any weak pointers exist.

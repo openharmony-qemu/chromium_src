@@ -265,7 +265,8 @@ bool OhosScreen::ConvertDisplay(
     }
     dst_display.SetColorSpaces(display_color_spaces);
   }
-
+  LOG(INFO) << "OhosScreen::" << __func__
+            << ", display info: " << dst_display.ToString();
   return true;
 }
 
@@ -407,6 +408,8 @@ void OhosScreen::OnDisplayEvent(
   } else if (event == "remove") {
     auto it = display_list_.FindDisplayById(display_id);
     if (it != display_list_.displays().end()) {
+      LOG(INFO) << "OhosScreen::" << __func__
+                << ", remove display: " << display_id;
       LOG(INFO) << "OhosScreen::" << __func__
                 << ", remove display: " << display_id;
       display_list_.RemoveDisplay(display_id);

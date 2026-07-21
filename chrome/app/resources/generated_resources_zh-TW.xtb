@@ -1564,6 +1564,7 @@
 <translation id="2040822390690632244">更新、說明、開發人員選項</translation>
 <translation id="2040894699575719559">禁止取得位置資訊</translation>
 <translation id="2041246176170574368">安全性更新即將終止，購買新款 Chromebook 可省下 $50 美元以上</translation>
+<translation id="2041681409552851212">此擴充程式將能夠執行未經瀏覽器審核的代碼。這可能不安全，僅在您清楚瞭解相關風險並確認操作安全的情況下，才應啟用此功能。</translation>
 <translation id="2042279886444479655">使用中的設定檔</translation>
 <translation id="2044014337866019681">請確認你驗證的是 <ph name="ACCOUNT" />，才能解鎖工作階段。</translation>
 <translation id="2044750031738659219">{0,plural, =1{關閉訪客視窗}other{關閉訪客視窗 (# 個視窗)}}</translation>
@@ -11543,6 +11544,7 @@
 <translation id="8890170499370378450">可能需要支付行動數據傳輸費用</translation>
 <translation id="8890516388109605451">來源</translation>
 <translation id="8890529496706615641">無法重新命名設定檔。請再試一次，或是向電信業者尋求技術支援。</translation>
+<translation id="889095128849097287">允許執行使用者指令碼</translation>
 <translation id="8892168913673237979">設定完成！</translation>
 <translation id="8892246501904593980">前往「書籤」和「清單」查看所有書籤</translation>
 <translation id="8893779047492837414">你目前有 <ph name="NUMBERED_ITEM_1" />、<ph name="NUMBERED_ITEM_2" />及其他資料。貴機構 (<ph name="ACCOUNT_MANAGER" />) 將可查看及管理這些資料</translation>

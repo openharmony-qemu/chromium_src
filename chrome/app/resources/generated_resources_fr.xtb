@@ -1562,6 +1562,7 @@ Vous pouvez gérer les paramètres de ce compte en installant l'application Fami
 <translation id="2040822390690632244">Mises à jour, aide, options pour les développeurs</translation>
 <translation id="2040894699575719559">Position bloquée</translation>
 <translation id="2041246176170574368">Vous ne recevrez bientôt plus de mises à jour de sécurité. Économisez 50 $ ou plus sur un nouveau Chromebook.</translation>
+<translation id="2041681409552851212">L'extension pourra exécuter du code qui n'a pas été examiné par Navigateur. Cela peut être dangereux et vous ne devriez l'activer que si vous savez ce que vous faites.</translation>
 <translation id="2042279886444479655">Profils actifs</translation>
 <translation id="2044014337866019681">Pour déverrouiller la session, vérifiez que vous êtes bien en train de valider <ph name="ACCOUNT" />.</translation>
 <translation id="2044750031738659219">{0,plural, =1{Fermer la fenêtre ouverte en tant qu'invité}one{Fermer la fenêtre ouverte en tant qu'invité (# fenêtre)}other{Fermer les fenêtres ouvertes en tant qu'invité (# fenêtres)}}</translation>
@@ -11544,6 +11545,7 @@ Cela peut inclure des informations sur les logiciels installés, les fichiers, v
 <translation id="8890170499370378450">Des frais liés à la consommation de données mobiles peuvent s'appliquer</translation>
 <translation id="8890516388109605451">Sources</translation>
 <translation id="8890529496706615641">Impossible de renommer le profil. Veuillez réessayer ou contacter votre opérateur pour obtenir une assistance technique.</translation>
+<translation id="889095128849097287">Autoriser les scripts utilisateur</translation>
 <translation id="8892168913673237979">Vous êtes prêt</translation>
 <translation id="8892246501904593980">Retrouvez tous vos favoris dans "Favoris et listes"</translation>
 <translation id="8893779047492837414">Vous avez actuellement <ph name="NUMBERED_ITEM_1" />, <ph name="NUMBERED_ITEM_2" /> et plus. Votre organisation (<ph name="ACCOUNT_MANAGER" />) pourra voir et gérer ces données.</translation>

@@ -303,6 +303,9 @@ class ActionGetUserSettingsFunction : public ExtensionFunction {
 //   * browserAction.openPopup() returns a handle to the HTMLWindow of the
 //     popup; action.openPopup() returns nothing.
 // Due to these differences, the implementations are distinct classes.
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/extension_action/extension_action_api_for_include_file.cc"
+#else
 class ActionOpenPopupFunction : public ExtensionFunction {
  public:
   DECLARE_EXTENSION_FUNCTION("action.openPopup", ACTION_OPENPOPUP)
@@ -318,6 +321,7 @@ class ActionOpenPopupFunction : public ExtensionFunction {
 
   void OnShowPopupComplete(ExtensionHost* popup_host);
 };
+#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
 //
 // browserAction.* aliases for supported browserAction APIs.

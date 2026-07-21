@@ -2410,7 +2410,15 @@ HRESULT CGaiaCredentialBase::OnUserAuthenticated(BSTR authentication_info,
     }
 
     const std::wstring email = GetDictString(*properties, kKeyEmail);
-    const std::wstring email_domain = email.substr(email.find(L"@") + 1);
+    size_t at_pos = email.find(L"@");
+    if (at_pos == std::wstring::npos) {
+      LOGFN(ERROR) << "Email " << email << " is invalid (missing '@').";
+      *status_text =
+          CGaiaCredentialBase::AllocErrorString(IDS_INVALID_EMAIL_DOMAIN_BASE);
+      SecurelyClearDictionaryValue(properties);
+      return E_FAIL;
+    }
+    const std::wstring email_domain = email.substr(at_pos + 1);
     const std::vector<std::wstring> allowed_domains = GetEmailDomainsList();
 
     if (!base::Contains(allowed_domains, email_domain)) {

@@ -3290,6 +3290,17 @@ target(_test_target_type, "net_unittests") {
     "//url:buildflags",
   ]
 
+  if (is_arkweb) {
+    deps += [
+      "//arkweb/ohos_adapter_ndk:adapter_ndk",
+    ]
+    include_dirs = [
+      "//arkweb/glue",
+      "//arkweb/ohos_adapter_ndk/interfaces",
+      "//third_party/ohos_ndk/includes/ohos_adapter",
+    ]
+  }
+
   if (defined(arkweb_ext_http_dns_fallback) && arkweb_ext_http_dns_fallback) {
     deps += [ "//services/network/public/cpp:cpp", ]
   }

@@ -71,6 +71,8 @@ mojom::ActionResultCode LoginResultToActorResult(
       return mojom::ActionResultCode::kLoginDeviceReauthRequired;
     case actor_login::LoginStatusResult::kErrorDeviceReauthFailed:
       return mojom::ActionResultCode::kLoginDeviceReauthFailed;
+    case actor_login::LoginStatusResult::kErrorPageChangedDuringFilling:
+      return mojom::ActionResultCode::kLoginPasswordFillingPageChanged;
   }
 }
 

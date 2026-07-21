@@ -52,6 +52,10 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) URLLoaderCompletionStatus {
   explicit URLLoaderCompletionStatus(
       const mojom::BlockedByResponseReason& reason);
 
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
+  explicit URLLoaderCompletionStatus(int error_code, int custom_error_code);
+#endif
+
   ~URLLoaderCompletionStatus();
 
   bool operator==(const URLLoaderCompletionStatus& rhs) const;
@@ -118,6 +122,10 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) URLLoaderCompletionStatus {
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   bool used_fallback_proxy = false;
   bool needs_reload_with_fallback_proxy = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
+  int custom_error_code = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)

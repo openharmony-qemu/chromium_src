@@ -36,6 +36,7 @@
 #include "base/functional/callback.h"
 #include "base/memory/scoped_refptr.h"
 #include "net/base/net_export.h"
+#include "net/ssl/ohos_client_cert_backend.h"
  
 typedef struct x509_st X509;
 typedef struct evp_pkey_st EVP_PKEY;
@@ -57,7 +58,8 @@ NET_EXPORT std::vector<uint16_t> GetAlgorithmPreferences(int type,
 // signing operations.
 NET_EXPORT scoped_refptr<SSLPrivateKey> FetchClientCertPrivateKey(
     const X509Certificate* certificate,
-    X509* bssl_cert);
+    X509* bssl_cert,
+    OhosClientCertBackend backend);
  
 }  // namespace net
  

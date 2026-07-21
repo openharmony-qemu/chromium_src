@@ -27,6 +27,16 @@ ClientCertIdentity::ClientCertIdentity(scoped_refptr<net::X509Certificate> cert)
     : cert_(std::move(cert)) {}
 ClientCertIdentity::~ClientCertIdentity() = default;
 
+#if BUILDFLAG(IS_OHOS)
+OhosClientCertBackend ClientCertIdentity::GetOhosClientCertBackend() const {
+  return OhosClientCertBackend::kOhosUri;
+}
+
+bool ClientCertIdentity::IsOhosClientCertSelectedBySystem() const {
+  return false;
+}
+#endif
+
 // static
 void ClientCertIdentity::SelfOwningAcquirePrivateKey(
     std::unique_ptr<ClientCertIdentity> self,

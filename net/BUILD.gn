@@ -3657,8 +3657,8 @@ target(_test_target_type, "net_unittests") {
 
   if (arkweb_test) {
     sources += [
-      "//arkweb/chromium_ext/net/http/http_cache_transaction_utils_unittest.cc",
       "//arkweb/chromium_ext/net/dns/arkweb_host_resolver_manager_job_ext_unittest.cc",
+      "//arkweb/chromium_ext/net/http/http_cache_transaction_utils_unittest.cc",
     ]
   }
 

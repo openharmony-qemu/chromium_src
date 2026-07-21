@@ -752,9 +752,18 @@ StyleRuleBase* StyleRuleBase::Clone(
           To<StyleRuleFontFeature>(*this));
     case kImport:
       return MakeGarbageCollected<StyleRuleImport>(To<StyleRuleImport>(*this));
-    case kKeyframes:
+    case kKeyframes: {
+      StyleRuleKeyframes* keyframes_rule = To<StyleRuleKeyframes>(this);
+      HeapVector<Member<StyleRuleKeyframe>> new_keyframes;
+      for (const Member<StyleRuleKeyframe>& keyframe :
+           keyframes_rule->Keyframes()) {
+        new_keyframes.push_back(To<StyleRuleKeyframe>(
+            keyframe->Clone(new_parent, mixin_parameter_bindings)));
+      }
       return MakeGarbageCollected<StyleRuleKeyframes>(
-          To<StyleRuleKeyframes>(*this));
+          std::move(new_keyframes), keyframes_rule->GetName(),
+          keyframes_rule->Version(), keyframes_rule->IsVendorPrefixed());
+    }
     case kLayerStatement:
       return MakeGarbageCollected<StyleRuleLayerStatement>(
           To<StyleRuleLayerStatement>(*this));

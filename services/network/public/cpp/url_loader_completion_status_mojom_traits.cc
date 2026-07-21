@@ -57,6 +57,9 @@ bool StructTraits<network::mojom::URLLoaderCompletionStatusDataView,
   out->needs_reload_with_fallback_proxy =
       data.needs_reload_with_fallback_proxy();
 #endif
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
+  out->custom_error_code = data.custom_error_code();
+#endif
   return true;
 }
 

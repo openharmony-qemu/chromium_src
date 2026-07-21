@@ -137,6 +137,13 @@ class COMPONENT_EXPORT(NETWORK_CPP_BASE)
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
+  static int32_t custom_error_code(
+      const network::URLLoaderCompletionStatus& status) {
+    return status.custom_error_code;
+  }
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   static const std::optional<net::NavigationInfo>& navigation_info(
       const network::URLLoaderCompletionStatus& status) {

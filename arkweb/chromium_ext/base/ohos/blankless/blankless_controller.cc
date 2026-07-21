@@ -76,11 +76,15 @@ void BlanklessController::BlankOptWhiteList::LoadSysWhiteList()
   }
   base::Value::List& exactMatchList = exactMatch->GetList();
   for (const auto& item : exactMatchList) {
-    m_exact_match_set_.insert(item.GetString());
+    if (item.is_string()) {
+      m_exact_match_set_.insert(item.GetString());
+    }
   }
   base::Value::List& fuzzyMatchList = fuzzyMatch->GetList();
   for (const auto& item : fuzzyMatchList) {
-    m_fuzzy_match_set_.insert(item.GetString());
+    if (item.is_string()) {
+      m_fuzzy_match_set_.insert(item.GetString());
+    }
   }
   LOG(DEBUG) << "blankless BlankOptWhiteList read sys white list success.";
 }

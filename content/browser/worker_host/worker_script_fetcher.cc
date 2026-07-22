@@ -192,8 +192,12 @@ bool ShouldCreateWebUILoader(RenderFrameHostImpl* creator_render_frame_host) {
     return true;
   if (requesting_scheme == kChromeUIUntrustedScheme)
     return true;
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  // DevTools in CEF has it's own ProxyURLLoader.
+#else
   if (requesting_scheme == kChromeDevToolsScheme)
     return true;
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
   return false;
 }
 

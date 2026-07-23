@@ -1841,7 +1841,14 @@ def _make_empty_callback_def(cg_context, function_name):
         body.add_template_var(arg_name, arg_name)
 
     bind_callback_local_vars(body, cg_context)
+
     if cg_context.attribute or cg_context.function_like:
+        body.register_code_symbol(
+            SymbolNode(
+                "kPerformDetachCheckFlag",
+                "constexpr auto kPerformDetachCheckFlag = PassAsSpanMarkerBase::Flags::kPerformDetachCheck;"
+            ))
+
         bind_blink_api_arguments(body, cg_context)
         bind_return_value(body, cg_context)
 

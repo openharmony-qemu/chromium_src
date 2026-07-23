@@ -21,12 +21,20 @@ namespace {
 // Sufficiently complete profiles are added to the `form_data_importer`s
 // multi-step import candidates. This enables complementing them in later steps
 // with additional optional information.
-// This function adds the imported profile as a candidate. This is only done
-// after the user decision to incorporate manual edits.
-void AddMultiStepComplementCandidate(FormDataImporter* form_data_importer,
-                                     const AutofillProfile& profile,
-                                     const url::Origin& origin) {
+// This function maybe adds the imported profile as a candidate. This is only
+// done after the user decision to incorporate manual edits.
+void MaybeAddMultiStepComplementCandidate(FormDataImporter* form_data_importer,
+                                          const AutofillProfile& profile,
+                                          const url::Origin& origin) {
   if (!form_data_importer) {
+    return;
+  }
+  // Avoid adding profiles that don't match the currently tracked origin. It is
+  // possible that the user has navigated away since the import prompt was shown
+  // and submitted an (incomplete) address on the new origin in the meantime.
+  const std::optional<url::Origin>& tracked_origin =
+      form_data_importer->multi_step_import_merger_origin();
+  if (tracked_origin.has_value() && tracked_origin != origin) {
     return;
   }
   // Metrics depending on `import_process.import_metadata()` are collected
@@ -145,9 +153,9 @@ void AddressProfileSaveManager::FinalizeProfileImport(
     const std::optional<AutofillProfile>& confirmed_import_candidate =
         import_process->confirmed_import_candidate();
     DCHECK(confirmed_import_candidate);
-    AddMultiStepComplementCandidate(client_->GetFormDataImporter(),
-                                    *confirmed_import_candidate,
-                                    import_process->import_metadata().origin);
+    MaybeAddMultiStepComplementCandidate(client_->GetFormDataImporter(),
+                                         *confirmed_import_candidate,
+                                         import_process->import_metadata().origin);
   }
 
   ClearPendingImport(std::move(import_process));

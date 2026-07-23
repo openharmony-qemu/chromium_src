@@ -72,6 +72,8 @@ const char* const kHashSourcePrefixes[] = {
   "'sha512-"
 };
 
+// https://infra.spec.whatwg.org/#ascii-whitespace.
+const char kWhitespaceDelimiters[] = " \t\r\n\f";
 
 constexpr char kChromeResourcesUrl[] = "chrome://resources";
 

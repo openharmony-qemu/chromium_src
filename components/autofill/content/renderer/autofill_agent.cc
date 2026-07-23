@@ -502,6 +502,9 @@ void AutofillAgent::Reset() {
   // Navigation to a new page or a page refresh.
   last_queried_element_ = {};
   form_cache_.Reset();
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+  AsAutofillAgentExt()->ClearAutofillPositionRequestContext();
+#endif
   is_dom_content_loaded_ = false;
   select_option_change_batch_timer_.clear();
   datalist_option_change_batch_timer_.Stop();
@@ -550,6 +553,13 @@ void AutofillAgent::DidChangeScrollOffset() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+void AutofillAgent::OnMainFrameViewportRectangleChanged(const gfx::Rect& main_frame_viewport_rect) {
+  AsAutofillAgentExt()->OnAutofillMainFrameViewportRectangleChanged(
+      main_frame_viewport_rect);
+}
+#endif
+
 void AutofillAgent::DidChangeScrollOffsetImpl(FieldRendererId element_id) {
   WebFormControlElement element =
       form_util::GetFormControlByRendererId(element_id);
@@ -591,9 +601,11 @@ void AutofillAgent::FocusedElementChanged(
     const WebElement& new_focused_element) {
   ObserveCaret(new_focused_element);
 
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+  AsAutofillAgentExt()->OnAutofillFocusedElementChanged(new_focused_element);
+#endif
   HidePopup();
 #if BUILDFLAG(ARKWEB_AUTOFILL)
-  AsAutofillAgentExt()->SetIsPopupCreatedByFocusChange(false);
   AsAutofillAgentExt()->SetIsNeedToCreatedPopup(false);
 #endif
 
@@ -615,6 +627,13 @@ void AutofillAgent::FocusedElementChanged(
           !base::FeatureList::IsEnabled(
               features::kAutofillAndroidDisableSuggestionsOnJSFocus) ||
           !config_.focus_requires_scroll;
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+      if (AsAutofillAgentExt()->MaybeStartAutofillPositionRequestContext(
+              focused_node_was_last_clicked,
+              /*restart_if_sent=*/false)) {
+        return;
+      }
+#endif
       HandleFocusChangeComplete(
           /*focused_node_was_last_clicked=*/focused_node_was_last_clicked,
           extracted_form && GetDocument() &&
@@ -630,7 +649,6 @@ void AutofillAgent::FocusedElementChanged(
               : SynchronousFormCache());
 #if BUILDFLAG(ARKWEB_AUTOFILL)
       if (focused_node_was_last_clicked) {
-        AsAutofillAgentExt()->SetIsPopupCreatedByFocusChange(true);
         AsAutofillAgentExt()->SetIsNeedToCreatedPopup(true);
         AsAutofillAgentExt()->SetCreatedPopupTime(base::TimeTicks::Now());
       }
@@ -1856,6 +1874,14 @@ void AutofillAgent::DidCompleteFocusChangeInFrame() {
        base::FeatureList::IsEnabled(
            features::kAutofillAndroidKeyboardAccessoryDynamicPositioning)) &&
       config_.focus_requires_scroll) {
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+    if (AsAutofillAgentExt()->MaybeStartAutofillPositionRequestContext(
+            last_left_mouse_down_or_gesture_tap_in_node_caused_focus_,
+            /*restart_if_sent=*/false)) {
+      last_left_mouse_down_or_gesture_tap_in_node_caused_focus_ = false;
+      return;
+    }
+#endif
     HandleFocusChangeComplete(
         /*focused_node_was_last_clicked=*/
         last_left_mouse_down_or_gesture_tap_in_node_caused_focus_,

@@ -7874,6 +7874,15 @@ void Element::SetFocused(bool now_focused, mojom::blink::FocusType focus_type) {
   PseudoStateChanged(CSSSelector::kPseudoFocusWithin);
 }
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+bool Element::SetInputElementFocusedByPenTouch() {
+  if (GetDocument().GetPage()) {
+    return GetDocument().GetPage()->GetFocusController().SetFocusedElement(this, GetDocument().GetFrame(), FocusParams());
+  }
+  return false;
+}
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
 void Element::SetDragged(bool new_value) {
   if (new_value == IsDragged()) {
     return;

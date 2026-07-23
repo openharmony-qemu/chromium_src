@@ -509,18 +509,21 @@ void PassthroughResources::SharedImageData::EnsureClear(
     else
       api->glColorMaskFn(true, true, true, true);
     api->glDisableFn(GL_SCISSOR_TEST);
-    api->glClearFn(GL_COLOR_BUFFER_BIT);
     if (has_rasterizer_discard) {
       api->glDisableFn(GL_RASTERIZER_DISCARD);
+    }
+    api->glClearFn(GL_COLOR_BUFFER_BIT);
+
+    if (api->glCheckFramebufferStatusEXTFn(GL_FRAMEBUFFER) ==
+        GL_FRAMEBUFFER_COMPLETE) {
+      // Mark the shared image as cleared.
+      representation_->SetCleared();
     }
 
     // Delete the generated framebuffer.
     api->glFramebufferTexture2DEXTFn(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                      texture->target(), 0, 0);
     api->glDeleteFramebuffersEXTFn(1, &fbo);
-
-    // Mark the shared image as cleared.
-    representation_->SetCleared();
   }
 }
 

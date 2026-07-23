@@ -211,6 +211,10 @@ class VIZ_SERVICE_EXPORT OutputSurface {
   virtual void CleanBufferAfterSwapBuffer(bool delay_clean) {}
 #endif
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  virtual void DiscardCompositingResources() {}
+#endif
+
   // Reshape the output surface.
   struct ReshapeParams {
     gfx::Size size;

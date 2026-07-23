@@ -29,6 +29,10 @@
 #include "ui/gfx/overlay_transform_utils.h"
 #include "ui/gfx/video_types.h"
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 namespace viz {
 
 namespace {
@@ -132,7 +136,6 @@ bool RequiresBlendingForReasonOtherThanRoundedCorners(const DrawQuad* quad) {
   return quad->ShouldDrawWithBlendingForReasonOtherThanMaskFilter() ||
          quad->shared_quad_state->mask_filter_info.HasGradientMask();
 }
-
 }  // namespace
 
 OverlayCandidateFactory::OverlayContext::OverlayContext() = default;
@@ -180,6 +183,11 @@ OverlayCandidate::CandidateStatus OverlayCandidateFactory::FromDrawQuad(
       status = FromTextureQuad(TextureDrawQuad::MaterialCast(quad), candidate);
       break;
     case DrawQuad::Material::kVideoHole:
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+      if (base::ohos::IsDelegatedCompositingEnabledOhos()) {
+        break;
+      }
+#endif
       status =
           FromVideoHoleQuad(VideoHoleDrawQuad::MaterialCast(quad), candidate);
       break;
@@ -627,6 +635,13 @@ OverlayCandidate::CandidateStatus OverlayCandidateFactory::FromTileQuad(
 OverlayCandidate::CandidateStatus OverlayCandidateFactory::FromTextureQuad(
     const TextureDrawQuad* quad,
     OverlayCandidate& candidate) const {
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  if (base::ohos::IsDelegatedCompositingEnabledOhos() && !quad->is_video_frame ) {
+    LOG(DEBUG) << "OverlayCandidateFactory::FromTextureQuad is not video frame";
+    return CandidateStatus::kFailNotOverlay;
+  }
+#endif
+
   if (!context_.is_delegated_context &&
       quad->overlay_priority_hint == OverlayPriority::kLow) {
     // For current implementation low priority means this does not promote to

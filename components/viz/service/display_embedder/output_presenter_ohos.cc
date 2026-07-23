@@ -1,0 +1,833 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <algorithm>
+#include <bitset>
+#include <native_buffer/native_buffer.h>
+#include <sstream>
+#include <utility>
+#include <vector>
+
+#include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
+#include "base/logging.h"
+#include "base/native_library.h"
+#include "base/task/bind_post_task.h"
+#include "base/task/sequenced_task_runner.h"
+#include "base/task/single_thread_task_runner.h"
+#include "base/timer/elapsed_timer.h"
+#include "components/viz/common/gpu/vulkan_context_provider.h"
+#include "components/viz/service/display_embedder/output_presenter_ohos.h"
+#include "components/viz/service/display_embedder/skia_output_surface_dependency.h"
+#include "gpu/command_buffer/service/external_semaphore.h"
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "ui/gfx/geometry/rect_conversions.h"
+#include "ui/gfx/gpu_fence_handle.h"
+#include "ui/gfx/overlay_plane_data.h"
+
+namespace viz {
+namespace {
+constexpr int kVec3Size = 3;
+constexpr int kPoint2Size = 2;
+constexpr int kNumberOfBuffers = 4;
+constexpr int kColorChannelSize = 4;
+OHOS::NWeb::OhosAdapterHelper& GetAdapterHelper() {
+  return OHOS::NWeb::OhosAdapterHelper::GetInstance();
+}
+
+gfx::Size GetRotatedSize(const gfx::Size size,
+                         gfx::OverlayTransform transform) {
+  const bool needs_swapped_dims =
+      transform == gfx::OVERLAY_TRANSFORM_ROTATE_CLOCKWISE_90 ||
+      transform == gfx::OVERLAY_TRANSFORM_ROTATE_CLOCKWISE_270 ||
+      transform == gfx::OVERLAY_TRANSFORM_FLIP_VERTICAL_CLOCKWISE_90 ||
+      transform == gfx::OVERLAY_TRANSFORM_FLIP_VERTICAL_CLOCKWISE_270;
+  return needs_swapped_dims ? gfx::Size(size.height(), size.width()) : size;
+}
+
+int32_t FromGfxOverlayTransform(gfx::OverlayTransform transform) {
+  switch (transform) {
+    case gfx::OVERLAY_TRANSFORM_NONE:
+      return OH_TRANSFORM_ROTATE_NONE;
+    case gfx::OVERLAY_TRANSFORM_ROTATE_CLOCKWISE_90:
+      return OH_TRANSFORM_ROTATE_90;
+    case gfx::OVERLAY_TRANSFORM_ROTATE_CLOCKWISE_180:
+      return OH_TRANSFORM_ROTATE_180;
+    case gfx::OVERLAY_TRANSFORM_ROTATE_CLOCKWISE_270:
+      return OH_TRANSFORM_ROTATE_270;
+    default:
+      NOTREACHED();
+  }
+}
+} // namespace
+
+class OutputPresenterOHOS::SurfaceControl {
+ public:
+  using ReleaseCallback =
+      base::OnceCallback<void(base::ScopedFD release_fence_fd)>;
+  using SurfaceControlAdapter = OHOS::NWeb::SurfaceControlAdapter;
+  using TransactionAdapter = OHOS::NWeb::SurfaceTransactionAdapter;
+
+  explicit SurfaceControl(SurfaceControl* parent,
+                          std::string name,
+                          SurfaceControlAdapter& surface_adapter,
+                          TransactionAdapter& transaction_adapter)
+      : parent_(parent ? parent->surface_ : nullptr),
+        name_(std::move(name)),
+        surface_control_adapter_(surface_adapter),
+        transaction_adapter_(transaction_adapter) {
+    TRACE_EVENT1("viz", "Create SurfaceControl", "name", name_.c_str());
+    if (!parent || !parent->surface_) {
+      LOG(ERROR) << "[Delegate] Creating SurfaceControl, parent is null";
+    }
+  }
+
+  explicit SurfaceControl(OHNativeWindow* window,
+                          SurfaceControlAdapter& surface_adapter,
+                          TransactionAdapter& transaction_adapter)
+      : name_("delegate_container"),
+        surface_control_adapter_(surface_adapter),
+        transaction_adapter_(transaction_adapter) {
+    if (!window) {
+      LOG(ERROR) << "Creating SurfaceControl, window is null";
+    }
+    surface_ = reinterpret_cast<OH_SurfaceControl*>(surface_control_adapter_
+        .CreateSurfaceControlFromNativeWindow(window, name_.c_str()));
+    if (!surface_) {
+      LOG(ERROR) << "[Delegate] Creating failed, surface_ is null";
+    }
+  }
+
+  ~SurfaceControl() {
+    DCHECK(destroyed_);
+    TRACE_EVENT1("viz", "~SurfaceControl", "name", name_.c_str());
+    if (surface_) {
+      surface_control_adapter_.Release(surface_);
+    }
+  }
+
+  void ClearBufferQueueCache(OH_SurfaceTransaction* transaction, bool is_clean_all) {
+    if (surface_ == nullptr) {
+      LOG(ERROR) << "[Delegate] ClearBufferQueueCache, surface_ is nullptr";
+      return;
+    }
+
+    transaction_adapter_.ClearBufferQueueCache(transaction, surface_, is_clean_all);
+  }
+
+  void Destroy(OH_SurfaceTransaction* transaction) {
+    DCHECK(!destroyed_);
+    destroyed_ = true;
+    transaction_adapter_.Reparent(transaction, surface_, nullptr);
+    transaction_adapter_.SetVisibility(transaction, surface_,
+        OH_SURFACE_TRANSACTION_VISIBILITY_HIDE);
+  }
+
+  OH_SurfaceControl* ReleaseSurface() {
+    DCHECK(parent_);
+    OH_SurfaceControl* surface = surface_;
+    surface_ = nullptr;
+    return surface;
+  }
+
+  void SetSurface(SurfaceControl* surface) {
+    DCHECK(!surface_);
+    if (!surface) {
+      LOG(ERROR) << "Set surface failed, surface_ is null";
+      return;
+    }
+    surface_ = surface->ReleaseSurface();
+    DCHECK(surface->dirty_bits_.none());
+
+    if (name_ != surface->name_) dirty_bits_.set(kName);
+    if (z_order_ != surface->z_order_) dirty_bits_.set(kZOrder);
+    if (bounds_ != surface->bounds_) dirty_bits_.set(kBounds);
+    if (frame_gravity_ != surface->frame_gravity_)
+      dirty_bits_.set(kFrameGravity);
+    if (translate_ != surface->translate_) dirty_bits_.set(kTranslate);
+    if (pivot_ != surface->pivot_) dirty_bits_.set(kPivot);
+    if (border_color_ != surface->border_color_) dirty_bits_.set(kBorderColor);
+    if (border_width_ != surface->border_width_) dirty_bits_.set(kBorderWidth);
+    if (border_style_ != surface->border_style_) dirty_bits_.set(kBorderStyle);
+    if (background_color_ != surface->background_color_)
+      dirty_bits_.set(kBackgroundColor);
+    if (foreground_color_ != surface->foreground_color_)
+      dirty_bits_.set(kForegroundColor);
+    if (alpha_ != surface->alpha_) dirty_bits_.set(kAlpha);
+    if (buffer_transform_ != surface->buffer_transform_)
+      dirty_bits_.set(kBufferTransform);
+    if (src_rect_ != surface->src_rect_) dirty_bits_.set(kSrcRect);
+    if (display_rect_ != surface->display_rect_) dirty_bits_.set(kDisplayRect);
+  }
+
+  void SetZOrder(int32_t z_order) {
+    UpdateProperty(z_order_, z_order, kZOrder);
+  }
+
+  void SetName(std::string name) { UpdateProperty(name_, name, kName); }
+
+  void SetVisible(bool visible) { UpdateProperty(visible_, visible, kVisible); }
+
+  void SetGeometry(const gfx::RectF& src_rect,
+                   const gfx::RectF& display_rect,
+                   int32_t transform) {
+    UpdateProperty(src_rect_, src_rect, kSrcRect);
+    UpdateProperty(display_rect_, display_rect, kDisplayRect);
+    UpdateProperty(buffer_transform_, transform, kBufferTransform);
+  }
+
+  void SetBounds(const gfx::RectF& bounds) {
+    UpdateProperty(bounds_, bounds, kBounds);
+  }
+
+  void SetFrameGravity(int32_t gravity) {
+    UpdateProperty(frame_gravity_, gravity, kFrameGravity);
+  }
+
+  void SetTranslate(float x, float y, float z) {
+    if (translate_[0] != x || translate_[1] != y || translate_[2] != z) {
+      translate_ = {x, y, z};
+      dirty_bits_.set(kTranslate);
+    }
+  }
+
+  void SetPivot(float x, float y) {
+    if (pivot_[0] != x || pivot_[1] != y) {
+      pivot_ = {x, y};
+      dirty_bits_.set(kPivot);
+    }
+  }
+
+  void SetBorderWidth(int32_t width) {
+    UpdateProperty(border_width_, width, kBorderWidth);
+  }
+
+  void SetBorderColor(const std::array<float, kColorChannelSize>& color) {
+    UpdateProperty(border_color_, color, kBorderColor);
+  }
+
+  void SetBorderStyle(int32_t style) {
+    UpdateProperty(border_style_, style, kBorderStyle);
+  }
+
+  void SetForegroundColor(const std::array<float, kColorChannelSize>& color) {
+    UpdateProperty(foreground_color_, color, kForegroundColor);
+  }
+
+  void SetBackgroundColor(const std::array<float, kColorChannelSize>& color) {
+    UpdateProperty(background_color_, color, kBackgroundColor);
+  }
+
+  void SetAlpha(float alpha) { UpdateProperty(alpha_, alpha, kAlpha); }
+
+  void SetBufferTransform(int32_t transform) {
+    UpdateProperty(buffer_transform_, transform, kBufferTransform);
+  }
+
+  void SetBuffer(OH_NativeBuffer* buffer,
+                 base::ScopedFD fence_fd,
+                 const gfx::Rect& damage_rect,
+                 ReleaseCallback release_callback) {
+    DCHECK(buffer);
+    DCHECK(release_callback);
+    DCHECK(!release_callback_);
+    DCHECK_NE(buffer_, buffer);
+    buffer_ = buffer;
+    fence_fd_ = std::move(fence_fd);
+    damage_rect_ = damage_rect;
+    release_callback_ = std::move(release_callback);
+    dirty_bits_.set(kBuffer);
+  }
+
+  void SetMailbox(const gpu::Mailbox& mailbox) { mailbox_ = mailbox; }
+
+  void Sync(OH_SurfaceTransaction* transaction) {
+    DCHECK(!destroyed_);
+    if (!surface_) {
+      surface_ = reinterpret_cast<OH_SurfaceControl*>(
+          surface_control_adapter_.Create(name_.c_str()));
+      transaction_adapter_.SetHardwareEnableHint(transaction, surface_, true);
+      transaction_adapter_.Reparent(transaction, surface_, parent_);
+      transaction_adapter_.SetVisibility(
+          transaction, surface_, OH_SURFACE_TRANSACTION_VISIBILITY_SHOW);
+      transaction_adapter_.SetZOrder(transaction, surface_, z_order_);
+      dirty_bits_.reset(kName);
+      dirty_bits_.reset(kZOrder);
+    }
+    if (dirty_bits_.test(kName)) {
+      transaction_adapter_.SetName(transaction, surface_, name_.c_str());
+    }
+    if (dirty_bits_.test(kVisible)) {
+      transaction_adapter_.SetVisibility(
+          transaction, surface_,
+          visible_ ? OH_SURFACE_TRANSACTION_VISIBILITY_SHOW
+                   : OH_SURFACE_TRANSACTION_VISIBILITY_HIDE);
+    }
+    if (dirty_bits_.test(kZOrder)) {
+      transaction_adapter_.SetZOrder(transaction, surface_, z_order_);
+    }
+    if (dirty_bits_.test(kBounds)) {
+      transaction_adapter_.SetBounds(transaction, surface_,bounds_.x(),
+          bounds_.y(), bounds_.width(), bounds_.height());
+    }
+    if (dirty_bits_.test(kFrameGravity)) {
+      transaction_adapter_.SetFrameGravity(
+          transaction, surface_, frame_gravity_);
+    }
+    if (dirty_bits_.test(kTranslate)) {
+      transaction_adapter_.SetTranslate(
+          transaction, surface_, translate_[0], translate_[1], translate_[2]);
+    }
+    if (dirty_bits_.test(kPivot)) {
+      transaction_adapter_.SetPivot(
+          transaction, surface_, pivot_[0], pivot_[1]);
+    }
+    if (dirty_bits_.test(kBorderWidth)) {
+      transaction_adapter_.SetBorderWidth(
+          transaction, surface_,
+          border_width_, border_width_, border_width_, border_width_);
+    }
+    if (dirty_bits_.test(kBorderColor)) {
+      transaction_adapter_.SetBorderColor(
+          transaction, surface_,
+          border_color_[0], border_color_[1],
+          border_color_[2], border_color_[3]);
+    }
+    if (dirty_bits_.test(kBorderStyle)) {
+      transaction_adapter_.SetBorderStyle(
+          transaction, surface_,
+          border_style_, border_style_, border_style_, border_style_);
+    }
+    if (dirty_bits_.test(kForegroundColor)) {
+      transaction_adapter_.SetForegroundColor(
+          transaction, surface_,
+          foreground_color_[0], foreground_color_[1],
+          foreground_color_[2], foreground_color_[3]);
+    }
+    if (dirty_bits_.test(kBackgroundColor)) {
+      transaction_adapter_.SetBackgroundColor(
+          transaction, surface_,
+          background_color_[0], background_color_[1],
+          background_color_[2], background_color_[3]);
+    }
+    if (dirty_bits_.test(kAlpha)) {
+      transaction_adapter_.SetBufferAlpha(transaction, surface_, alpha_);
+    }
+    if (dirty_bits_.test(kBufferTransform)) {
+      transaction_adapter_.SetBufferTransform(
+          transaction, surface_, buffer_transform_);
+    }
+    if (dirty_bits_.test(kSrcRect)) {
+      transaction_adapter_.SetSrcRect(
+          transaction, surface_,
+          src_rect_.x(), src_rect_.y(),
+          src_rect_.width(), src_rect_.height());
+    }
+    if (dirty_bits_.test(kDisplayRect)) {
+      transaction_adapter_.SetDisplayRect(
+          transaction, surface_,
+          display_rect_.x(), display_rect_.y(),
+          display_rect_.width(), display_rect_.height());
+    }
+    if (dirty_bits_.test(kBuffer)) {
+      DCHECK(buffer_);
+      auto context = release_callback_ ?
+          std::make_unique<ReleaseCallback>(std::move(release_callback_)) :
+          std::unique_ptr<ReleaseCallback>();
+      transaction_adapter_.SetBuffer(
+          transaction,
+          surface_,
+          buffer_,
+          fence_fd_.release(),
+          context.release(),
+          [](void* context, int32_t release_fence_fd) {
+            std::unique_ptr<ReleaseCallback> callback(
+                reinterpret_cast<ReleaseCallback*>(context));
+            if (callback) {
+              std::move(*callback).Run(base::ScopedFD(release_fence_fd));
+            }
+          });
+      OH_Rect rect = {damage_rect_.x(), damage_rect_.y(), damage_rect_.width(),
+                      damage_rect_.height()};
+      transaction_adapter_.SetDamageRegion(transaction, surface_, &rect, 1);
+    }
+    dirty_bits_.reset();
+  }
+
+  const gfx::RectF bounds() const { return bounds_; }
+  OH_NativeBuffer* buffer() const { return buffer_; }
+  bool has_surface() const { return surface_ != nullptr; }
+  OH_SurfaceControl* surface() const { return surface_; }
+  const gpu::Mailbox& mailbox() const { return mailbox_; }
+  std::string name() const { return name_; }
+  int32_t z_order() const { return z_order_; }
+
+ private:
+  template <typename T, typename U>
+  void UpdateProperty(T& field, U&& new_value, DirtyBits bit) {
+    if (field != new_value) {
+      field = std::forward<U>(new_value);
+      dirty_bits_.set(bit);
+    }
+  }
+
+  std::bitset<kCount> dirty_bits_;
+  OH_SurfaceControl* parent_ = nullptr;
+  OH_SurfaceControl* surface_ = nullptr;
+  bool destroyed_ = false;
+  std::string name_;
+  int32_t z_order_ = -1;
+  bool visible_ = true;
+  gfx::RectF bounds_;
+  gfx::RectF src_rect_;
+  gfx::RectF display_rect_;
+  int32_t frame_gravity_ = 9;
+  std::array<float, kVec3Size> translate_ = {0.0, 0.0, 0.0};
+  std::array<float, kPoint2Size> pivot_ = {0.5, 0.5};
+  std::array<float, kColorChannelSize> border_color_ = {0.0f, 0.0f, 0.0f, 0.0f};
+  int32_t border_width_ = 0;
+  int32_t border_style_ = 0;
+  std::array<float, kColorChannelSize> foreground_color_ = {0.0f, 0.0f, 0.0f, 0.0f};
+  std::array<float, kColorChannelSize> background_color_ = {0.0f, 0.0f, 0.0f, 0.0f};
+  float alpha_ = 1.0f;
+  int32_t buffer_transform_ = OH_TRANSFORM_ROTATE_NONE;
+
+  OH_NativeBuffer* buffer_ = nullptr;
+  base::ScopedFD fence_fd_;
+  gfx::Rect damage_rect_;
+  ReleaseCallback release_callback_;
+  gpu::Mailbox mailbox_;
+  SurfaceControlAdapter& surface_control_adapter_;
+  TransactionAdapter& transaction_adapter_;
+};
+
+// static
+std::unique_ptr<OutputPresenterOHOS> OutputPresenterOHOS::Create(
+    SkiaOutputSurfaceDependency* deps) {
+  TRACE_EVENT0("viz", "OutputPresenterOHOS::Create");
+  if (!deps) {
+    LOG(ERROR) << "deps is null";
+    return nullptr;
+  }
+
+  return std::make_unique<OutputPresenterOHOS>(deps);
+}
+
+OutputPresenterOHOS::OutputPresenterOHOS(SkiaOutputSurfaceDependency* deps)
+    : dependency_(deps),
+      task_runner_(base::SequencedTaskRunner::GetCurrentDefault()),
+      surface_control_adapter_(GetAdapterHelper().GetSurfaceControlAdapter()),
+      transaction_adapter_(GetAdapterHelper().GetSurfaceTransactionAdapter()) {
+  TRACE_EVENT0("viz", "OutputPresenterOHOS::OutputPresenterOHOS");
+  auto* tracker = NWebNativeWindowTracker::GetInstance();
+  void* window = tracker->GetNativeWindow(dependency_->GetSurfaceHandle());
+  transaction_ = reinterpret_cast<OH_SurfaceTransaction*>(transaction_adapter_.
+      CreateSurfaceTransaction(reinterpret_cast<OHNativeWindow*>(window)));
+  root_surface_ = std::make_unique<SurfaceControl>(
+      reinterpret_cast<OHNativeWindow*>(window),
+      surface_control_adapter_, transaction_adapter_);
+
+  auto callback = base::BindRepeating(&OutputPresenterOHOS::OnComplete,
+                                      weak_factory_.GetWeakPtr());
+
+  // Make sure OnComplete is called on the correct thread.
+  callback = base::BindPostTask(task_runner_, std::move(callback));
+  on_complete_callback_ = std::make_unique<OnCompleteCallback>(callback);
+  OHOS::NWeb::SurfaceControlOnCompleteCallback func =
+      [](void* context, uint64_t timestamp) {
+        auto* callback = reinterpret_cast<OnCompleteCallback*>(context);
+        if (callback) {
+          callback->Run(timestamp);
+        }
+      };
+  transaction_adapter_.SetOnComplete(
+      transaction_, on_complete_callback_.get(), func);
+}
+
+OutputPresenterOHOS::~OutputPresenterOHOS() {
+  transaction_adapter_.SetOnComplete(transaction_, nullptr, nullptr);
+  transaction_adapter_.DeleteTransaction(transaction_);
+}
+
+void OutputPresenterOHOS::DiscardCompositingResources(bool is_clean_all) {
+  for (const auto& surface : previous_frame_) {
+    if (surface) {
+      TRACE_EVENT2("viz", "OutputPresenterOHOS::DiscardCompositingResources",
+          "name", surface->name().c_str(), "is_clean_all", is_clean_all);
+      surface->ClearBufferQueueCache(transaction_, is_clean_all);
+    }
+  }
+}
+
+void OutputPresenterOHOS::InitializeCapabilities(
+    OutputSurface::Capabilities* capabilities) {
+  capabilities->number_of_buffers = kNumberOfBuffers;
+  capabilities->pending_swap_params.max_pending_swaps = kNumberOfBuffers - 1;
+  // We expect origin of buffers is at top left.
+  capabilities->output_surface_origin = gfx::SurfaceOrigin::kTopLeft;
+  capabilities->supports_post_sub_buffer = true;
+  capabilities->supports_surfaceless = true;
+  capabilities->needs_background_image = false;
+  capabilities->supports_non_backed_solid_color_overlays = true;
+  capabilities->orientation_mode = OutputSurface::OrientationMode::kHardware;
+
+  capabilities->sk_color_type_map[SinglePlaneFormat::kRGBA_8888] =
+      kRGBA_8888_SkColorType;
+  capabilities->sk_color_type_map[SinglePlaneFormat::kBGRA_8888] =
+      kRGBA_8888_SkColorType;
+}
+
+bool OutputPresenterOHOS::Reshape(const ReshapeParams& params) {
+  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+  TRACE_EVENT0("viz", "OutputPresenterOHOS::Reshape");
+  size_ = params.GfxSize();
+  transform_ = params.transform;
+  if (root_surface_) {
+    auto rect = gfx::RectF(GetRotatedSize(size_, transform_));
+    root_surface_->SetBounds(rect);
+  }
+  DiscardCompositingResources(false);
+  return true;
+}
+
+void OutputPresenterOHOS::Present(SwapCompletionCallback completion_callback,
+                                  BufferPresentedCallback presentation_callback,
+                                  gfx::FrameData data) {
+  TRACE_EVENT0("viz", "OutputPresenterOHOS::Present");
+  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+
+  root_surface_->Sync(transaction_);
+
+  // Sort pending frame by z order
+  std::sort(pending_frame_.begin(), pending_frame_.end(),
+            [](const std::unique_ptr<SurfaceControl>& a,
+               const std::unique_ptr<SurfaceControl>& b) {
+              return a->z_order() < b->z_order();
+            });
+
+  int32_t first_surface_z =
+      pending_frame_.size() > 0 ? pending_frame_[0]->z_order() : 0;
+
+  // Remove reused item.
+  std::erase(previous_frame_, nullptr);
+
+  for (auto& surface : pending_frame_) {
+    // Try reuse OH_SurfaceControl from previous frame.
+    if (!previous_frame_.empty() && !surface->has_surface() &&
+        surface->buffer()) {
+      auto it = std::find_if(previous_frame_.begin(), previous_frame_.end(),
+          [&](const auto& frame) {
+            return frame && frame->name() == surface->name();
+          });
+      if (it != previous_frame_.end()) {
+        surface->SetSurface(it->get());
+        previous_frame_.erase(it);
+      }
+    }
+    // negative z order doesn't work, offset to support underlay
+    if (first_surface_z < 0) {
+      int32_t z_order = surface->z_order() - first_surface_z;
+      surface->SetZOrder(z_order);
+    }
+    surface->Sync(transaction_);
+  }
+
+  // Clear all unused surface from previous frame.
+  for (auto& surface : previous_frame_) {
+    surface->Destroy(transaction_);
+    surface.reset();
+  }
+  previous_frame_.clear();
+
+  CompletionData* previous_completion_data =
+      completion_datas_.empty() ? nullptr : &completion_datas_.back();
+
+  completion_datas_.emplace_back(std::move(completion_callback),
+                                 root_overlay_access_);
+  if (previous_completion_data &&
+      previous_completion_data->access == root_overlay_access_) {
+    // If root plane buffer is not changed, reset previous frame access to
+    // nullptr, so TriggerOnCompleteCallbacks() can trigger the previouse
+    // completion callback without waiting for OnOverlayReleased() being called.
+    previous_completion_data->access = nullptr;
+  }
+
+  root_overlay_access_ = nullptr;
+  presentation_callbacks_.emplace_back(std::move(presentation_callback));
+
+  transaction_adapter_.Commit(transaction_);
+  std::swap(previous_frame_, pending_frame_);
+}
+
+void OutputPresenterOHOS::ScheduleOverlayPlane(
+    const OutputPresenter::OverlayPlaneCandidate& overlay_plane,
+    ScopedOverlayAccess* access) {
+  TRACE_EVENT0("viz", "OutputPresenterOHOS::ScheduleOverlayPlane");
+  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+
+  DCHECK_EQ(overlay_plane.is_solid_color, access == nullptr)
+      << "access and is_solid_color don't match";
+
+  const bool is_root = overlay_plane.is_root_render_pass;
+  const gfx::RectF& display_rect = overlay_plane.display_rect;
+  gfx::RectF bounds = display_rect;
+  gfx::RectF src_rect = display_rect;
+  std::string surface_name = "delegate_child";
+
+  if (is_root) {
+    DCHECK(!root_overlay_access_);
+    root_overlay_access_ = access;
+  } else if (!overlay_plane.is_solid_color) {
+    const gfx::SizeF buffer_size(overlay_plane.resource_size_in_pixels);
+    src_rect = gfx::ScaleRect(overlay_plane.uv_rect, buffer_size);
+    if (src_rect.width() == 0) {
+      src_rect.set_width(1);
+      if (src_rect.right() > buffer_size.width()) {
+        src_rect.set_x(buffer_size.width() - 1);
+      }
+    }
+    if (src_rect.height() == 0) {
+      src_rect.set_height(1);
+      if (src_rect.bottom() > buffer_size.height()) {
+        src_rect.set_y(buffer_size.height() - 1);
+      }
+    }
+    src_rect.Intersect(gfx::RectF(buffer_size));
+    bounds = gfx::RectF(display_rect.origin(), src_rect.size());
+  }
+
+  if (!is_root &&
+      overlay_plane.priority_hint == gfx::OverlayPriorityHint::kVideo) {
+    surface_name = "delegate_child_video";
+  }
+
+  TRACE_EVENT1("viz", "OutputPresenterOHOS::ScheduleOverlayPlane",
+      "name", surface_name.c_str());
+  OH_NativeBuffer* const buffer =
+      access ? access->GetOHNativeBuffer() : nullptr;
+  SurfaceControl* surface = nullptr;
+
+  if (buffer) {
+    DCHECK(!overlay_plane.is_solid_color);
+
+    // Find surface with same buffer in previous frame first.
+    auto it = std::find_if(previous_frame_.begin(), previous_frame_.end(),
+        [surface_name, buffer](const auto& surface) {
+          return surface && surface->name() == surface_name &&
+              surface->buffer() == buffer;
+        });
+    if (it == previous_frame_.end()) {
+      // Find surface with same display rect in previous frame.
+      it = std::find_if(previous_frame_.begin(), previous_frame_.end(),
+          [surface_name, bounds](const auto& surface) {
+            return surface && surface->name() == surface_name &&
+                surface->bounds() == bounds;
+          });
+    }
+
+    if (it != previous_frame_.end()) {
+      pending_frame_.push_back(std::move(*it));
+    } else {
+      DCHECK(root_surface_);
+      // Cannot find a surface with same buffer or bounds, so create a new one.
+      pending_frame_.emplace_back(std::make_unique<SurfaceControl>(
+          root_surface_.get(), surface_name,
+          surface_control_adapter_, transaction_adapter_));
+    }
+
+    const auto& mailbox = access->representation()->mailbox();
+    surface = pending_frame_.back().get();
+    if (surface && surface->buffer() != buffer) {
+      base::ScopedFD fence_fd = access->TakeAcquireFence().Release();
+      auto callback = base::BindOnce(&OutputPresenterOHOS::OnOverlayReleased,
+                                     weak_factory_.GetWeakPtr(), buffer);
+
+      // Make sure OnOverlayReleased() is called on GPU main thread.
+      callback = base::BindPostTask(task_runner_, std::move(callback));
+
+      // We need track buffer which are being used by RS. For root surface,
+      // the buffer is considered being released when OnComplete is called.
+      access->InUseByWindowServerInc();
+
+      auto damage_rect = overlay_plane.damage_rect.IsEmpty()
+          ? gfx::Rect(overlay_plane.resource_size_in_pixels)
+          : ToEnclosingRect(overlay_plane.damage_rect);
+      surface->SetBuffer(buffer, std::move(fence_fd), damage_rect,
+                         std::move(callback));
+      surface->SetMailbox(mailbox);
+      DCHECK(in_used_buffers_.find(buffer) == in_used_buffers_.end());
+      in_used_buffers_[buffer] = std::make_pair(access, is_root);
+
+      switch (access->representation()->surface_origin()) {
+        case kTopLeft_GrSurfaceOrigin:
+          surface->SetBufferTransform(OH_TRANSFORM_ROTATE_NONE);
+          break;
+        case kBottomLeft_GrSurfaceOrigin:
+          surface->SetBufferTransform(OH_TRANSFORM_FLIP_V);
+          break;
+      }
+    } else {
+      // For some video buffers, the buffers could be same, but shared image
+      // backings are different. In that case, we need to update the access and
+      // mailbox.
+      if (surface && surface->mailbox() != mailbox) {
+        auto& item = in_used_buffers_[buffer];
+        item.first->InUseByWindowServerDec();
+        item.first = access;
+        access->InUseByWindowServerInc();
+        surface->SetMailbox(mailbox);
+      }
+    }
+  } else {
+    DCHECK(overlay_plane.is_solid_color);
+    // Find a surface with the same bounds.
+    auto it = std::find_if(previous_frame_.begin(), previous_frame_.end(),
+        [surface_name, bounds](const auto& surface) {
+          return surface && !surface->buffer() &&
+              surface->name() == surface_name && surface->bounds() == bounds;
+        });
+
+    // If cannot find a surface with the same bounds, try to find a surface for
+    // any solid color plane.
+    if (it == previous_frame_.end()) {
+      it = std::find_if(previous_frame_.begin(), previous_frame_.end(),
+          [surface_name](const auto& surface) {
+            return surface && surface->name() == surface_name &&
+                surface->buffer() == nullptr;
+          });
+    }
+
+    if (it != previous_frame_.end()) {
+      pending_frame_.push_back(std::move(*it));
+    } else {
+      DCHECK(root_surface_);
+      pending_frame_.emplace_back(std::make_unique<SurfaceControl>(
+          root_surface_.get(), surface_name,
+          surface_control_adapter_, transaction_adapter_));
+    }
+
+    surface = pending_frame_.back().get();
+  }
+
+  if (surface == nullptr) {
+    LOG(ERROR) << "surface is nullptr, set info failed";
+    return;
+  }
+
+  // Make sure surface is visible.
+  surface->SetVisible(true);
+  surface->SetBounds(bounds);
+  surface->SetZOrder(overlay_plane.plane_z_order);
+  surface->SetAlpha(overlay_plane.opacity);
+  surface->SetPivot(0, 0);
+
+  // Only root buffer is always in hardware physical direction(portrait), so it
+  // need to be rotated to the current screen logic rotation direction.
+  auto transform =
+      is_root ? FromGfxOverlayTransform(transform_) : OH_TRANSFORM_ROTATE_NONE;
+
+  surface->SetBufferTransform(transform);
+  surface->SetGeometry(src_rect, display_rect, transform);
+
+  // Set surface's background color.
+  if (overlay_plane.color.has_value()) {
+    surface->SetBackgroundColor(
+        {overlay_plane.color->fR, overlay_plane.color->fG,
+         overlay_plane.color->fB, overlay_plane.color->fA});
+  }
+}
+
+void OutputPresenterOHOS::OnComplete(uint64_t timestamp) {
+  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+  DCHECK(!completion_datas_.empty());
+  DCHECK(!presentation_callbacks_.empty());
+
+  for (auto& data : completion_datas_) {
+    if (!data.completed) {
+      data.completed = true;
+      TriggerOnCompleteCallbacks();
+      break;
+    }
+  }
+}
+
+void OutputPresenterOHOS::TriggerOnCompleteCallbacks() {
+  gfx::SwapCompletionResult swap_result(gfx::SwapResult::SWAP_ACK);
+  gfx::PresentationFeedback feedback(base::TimeTicks::Now(), base::TimeDelta(),
+                                     /*flags=*/0);
+  // Trigger completed callbacks.
+  for (auto& data : completion_datas_) {
+    // Delay trigger complete callbacks, until data.access is set to nullptr.
+    // TODO(penghuang): remove the logic when RS supports transaction complete
+    // callback natively.
+    if (data.access || !data.completed) {
+      break;
+    }
+    auto completion_callback = std::move(data.callback);
+    completion_datas_.pop_front();
+    task_runner_->PostTask(
+        FROM_HERE,
+        base::BindOnce(std::move(completion_callback), std::move(swap_result)));
+
+    auto presentation_callback = std::move(presentation_callbacks_.front());
+    presentation_callbacks_.pop_front();
+
+    task_runner_->PostTask(
+        FROM_HERE,
+        base::BindOnce(std::move(presentation_callback), std::move(feedback)));
+  }
+}
+
+void OutputPresenterOHOS::OnOverlayReleased(OH_NativeBuffer* buffer,
+                                            base::ScopedFD release_fence_fd) {
+  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+  auto it = in_used_buffers_.find(buffer);
+  if (it == in_used_buffers_.end()) {
+    LOG(ERROR) << "Cannot find in used buffer";
+    return;
+  }
+  auto [access, is_root] = it->second;
+  in_used_buffers_.erase(it);
+  // Below code will crash for root overlay.
+  // TODO(penghuang): figure out how to handle it properly
+  // Probably it causes the artifacts on screen.
+  if (release_fence_fd.is_valid()) {
+    gfx::GpuFenceHandle fence_handle;
+    fence_handle.Adopt(std::move(release_fence_fd));
+    if (access) {
+      access->SetReleaseFence(std::move(fence_handle));
+    } else {
+      LOG(ERROR) << "access is nullptr";
+    }
+  }
+
+  // Decrease in use count, when count is 0, viz will return the buffer to
+  // render, so the buffer can be reused or released.
+  if (access) {
+    access->InUseByWindowServerDec();
+  }
+
+  if (is_root) {
+    for (auto& data : completion_datas_) {
+      if (data.access == access) {
+        data.access = nullptr;
+        TriggerOnCompleteCallbacks();
+        break;
+      }
+    }
+  }
+}
+
+}  // namespace viz

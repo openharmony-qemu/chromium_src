@@ -39,6 +39,10 @@ mojom("mojom") {
   if (arkweb_clean_buffers_when_invisible) {
     enabled_features += [ "arkweb_clean_buffers_when_invisible" ]
   }
+
+  if (arkweb_delegate_compositing) {
+    enabled_features += [ "arkweb_delegate_compositing"]
+  }
 }
 
 source_set("unit_tests") {

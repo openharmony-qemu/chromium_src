@@ -172,6 +172,10 @@ class VIZ_SERVICE_EXPORT SkiaOutputDevice {
   virtual void CleanBufferAfterSwapBuffer(bool delay_clean) {}
 #endif
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  virtual void DiscardCompositingResources(bool is_clean_all) {}
+#endif
+
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   virtual void SetNativeInnerWeb(bool isInnerWeb) {}
 #endif

@@ -174,6 +174,10 @@ class VIZ_SERVICE_EXPORT OverlayProcessorInterface {
   // Notifies the OverlayProcessor about the status of the last swap.
   virtual void OnSwapBuffersComplete(gfx::SwapResult swap_result) {}
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  virtual void UpdateFocusAndScreenStatus(bool is_focused,
+                                          bool is_single_screen) {}
+#endif
  protected:
   OverlayProcessorInterface() = default;
 };

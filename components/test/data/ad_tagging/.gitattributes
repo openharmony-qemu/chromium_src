@@ -1,0 +1,2 @@
+allow.zip filter=lfs diff=lfs merge=lfs -text
+disallow.zip filter=lfs diff=lfs merge=lfs -text

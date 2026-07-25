@@ -45,6 +45,12 @@ namespace net {
 
 namespace {
 
+#if BUILDFLAG(ARKWEB_NETWORK_PROXY_AUTH_RETRY)
+BASE_FEATURE(kEnableNetworkProxyAuthRetryFeature,
+             "EnableNetworkProxyAuthRetryFeature",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
+
 // Callback for TYPE_URL_REQUEST_FILTERS_SET net-internals event.
 base::Value::Dict SourceStreamSetParams(SourceStream* source_stream) {
   base::Value::Dict event_params;
@@ -435,6 +441,16 @@ bool URLRequestJob::CanSetCookie(
                                 inclusion_status);
 }
 
+#if BUILDFLAG(ARKWEB_NETWORK_PROXY_AUTH_RETRY)
+void URLRequestJob::NotifyNetworkServiceAuthRequired(std::unique_ptr<AuthChallengeInfo> auth_info) {
+  NotifyAuthRequiredForRequest(std::move(auth_info));
+}
+
+void URLRequestJob::NotifyAuthRequiredForRequest(std::unique_ptr<AuthChallengeInfo> auth_info) {
+  request_->NotifyAuthRequired(std::move(auth_info));
+}
+#endif
+
 void URLRequestJob::NotifyHeadersComplete() {
   if (has_handled_response_)
     return;
@@ -459,7 +475,19 @@ void URLRequestJob::NotifyHeadersComplete() {
     // Need to check for a NULL auth_info because the server may have failed
     // to send a challenge with the 401 response.
     if (auth_info) {
+#if BUILDFLAG(ARKWEB_NETWORK_PROXY_AUTH_RETRY)
+      if (auth_info->is_proxy &&
+          !is_network_proxy_auth_retried_ &&
+          base::FeatureList::IsEnabled(kEnableNetworkProxyAuthRetryFeature)) {
+        // The server returns a 407 response to notify the network management system to perform authentication.
+        NotifyNetworkServiceAuthRequired(std::move(auth_info));
+        is_network_proxy_auth_retried_ = true;
+      } else {
+        request_->NotifyAuthRequired(std::move(auth_info));
+      }
+#else
       request_->NotifyAuthRequired(std::move(auth_info));
+#endif
       // Wait for SetAuth or CancelAuth to be called.
       return;
     }

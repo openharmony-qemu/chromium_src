@@ -232,7 +232,11 @@ bool IsErrorPageAutoReloadEnabled() {
   if (command_line.HasSwitch(switches::kDisableAutoReload)) {
     return false;
   }
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  return false;
+#else
   return true;
+#endif
 }
 
 // NOTE: MaybeCreateVisitedLinkNavigationThrottleFor is defined here due to

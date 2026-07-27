@@ -708,6 +708,10 @@ class NavigationController {
   virtual void LoadOriginalRequestURL(bool ignore_cache) = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  virtual NavigationEntry* GetPostCommitErrorReplacedEntry() = 0;
+#endif
+
  private:
   // This interface should only be implemented inside content.
   friend class NavigationControllerImpl;

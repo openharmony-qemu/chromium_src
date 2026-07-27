@@ -263,6 +263,10 @@ class NavigationEntry : public base::SupportsUserData {
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   virtual int GetErrorCode() const = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  virtual int GetExtendedErrorCode() const = 0;
+#endif
 };
 
 }  // namespace content

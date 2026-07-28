@@ -503,7 +503,7 @@ void AutofillAgent::Reset() {
   last_queried_element_ = {};
   form_cache_.Reset();
 #if BUILDFLAG(ARKWEB_AUTOFILL)
-  AsAutofillAgentExt()->ClearAutofillPositionRequestContext();
+  AsAutofillAgentExt()->ResetPositionRequestState();
 #endif
   is_dom_content_loaded_ = false;
   select_option_change_batch_timer_.clear();
@@ -554,7 +554,8 @@ void AutofillAgent::DidChangeScrollOffset() {
 }
 
 #if BUILDFLAG(ARKWEB_AUTOFILL)
-void AutofillAgent::OnMainFrameViewportRectangleChanged(const gfx::Rect& main_frame_viewport_rect) {
+void AutofillAgent::OnMainFrameViewportRectangleChanged(
+    const gfx::Rect& main_frame_viewport_rect) {
   AsAutofillAgentExt()->OnAutofillMainFrameViewportRectangleChanged(
       main_frame_viewport_rect);
 }
@@ -628,7 +629,7 @@ void AutofillAgent::FocusedElementChanged(
               features::kAutofillAndroidDisableSuggestionsOnJSFocus) ||
           !config_.focus_requires_scroll;
 #if BUILDFLAG(ARKWEB_AUTOFILL)
-      if (AsAutofillAgentExt()->MaybeStartAutofillPositionRequestContext(
+      if (AsAutofillAgentExt()->MaybeDeferFocusedElementRequest(
               focused_node_was_last_clicked,
               /*restart_if_sent=*/false)) {
         return;
@@ -1875,7 +1876,7 @@ void AutofillAgent::DidCompleteFocusChangeInFrame() {
            features::kAutofillAndroidKeyboardAccessoryDynamicPositioning)) &&
       config_.focus_requires_scroll) {
 #if BUILDFLAG(ARKWEB_AUTOFILL)
-    if (AsAutofillAgentExt()->MaybeStartAutofillPositionRequestContext(
+    if (AsAutofillAgentExt()->MaybeDeferFocusedElementRequest(
             last_left_mouse_down_or_gesture_tap_in_node_caused_focus_,
             /*restart_if_sent=*/false)) {
       last_left_mouse_down_or_gesture_tap_in_node_caused_focus_ = false;
@@ -1903,7 +1904,7 @@ void AutofillAgent::DidReceiveLeftMouseDownOrGestureTapInNode(
 #endif
 
 #if BUILDFLAG(ARKWEB_AUTOFILL)
-  AsAutofillAgentExt()->OhAutoFillFormControlElementClicked(node);
+  AsAutofillAgentExt()->OhAutoFillEditableElementClicked(node);
 #endif
 
 #if defined(ANDROID)
@@ -2028,6 +2029,12 @@ void AutofillAgent::HandleFocusChangeComplete(
 
   if (auto focused_control = focused_element.DynamicTo<WebFormControlElement>();
       form_util::IsTextAreaElementOrTextInput(focused_control)) {
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+    if (AsAutofillAgentExt()->MaybeDeferPositionRequest(
+            focused_control, focused_node_was_last_clicked)) {
+      return;
+    }
+#endif
     std::optional<PasswordSuggestionRequest> password_request;
     if (auto input_element = focused_control.DynamicTo<WebInputElement>()) {
       password_request = password_autofill_agent_->CreateRequestForDomain(
@@ -2060,6 +2067,13 @@ void AutofillAgent::HandleFocusChangeComplete(
   // TODO(crbug.com/40284726): This seems to be redundant. Remove call to
   // ShowSuggestionsForContentEditable.
   if (focused_node_was_last_clicked) {
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+    if (focused_element.IsContentEditable() &&
+        AsAutofillAgentExt()->MaybeDeferPositionRequest(
+            focused_element, focused_node_was_last_clicked)) {
+      return;
+    }
+#endif
     ShowSuggestionsForContentEditable(
         focused_element,
         AutofillSuggestionTriggerSource::kContentEditableClicked);

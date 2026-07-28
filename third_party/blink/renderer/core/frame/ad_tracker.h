@@ -10,6 +10,7 @@
 #include <optional>
 #include <variant>
 
+#include "base/gtest_prod_util.h"
 #include "components/subresource_filter/core/common/scoped_rule.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/frame/ad_script_identifier.h"
@@ -160,6 +161,8 @@ class CORE_EXPORT AdTracker : public GarbageCollected<AdTracker> {
   friend class FrameFetchContextSubresourceFilterTest;
   friend class AdTrackerSimTest;
   friend class AdTrackerTest;
+  FRIEND_TEST_ALL_PREFIXES(AdTrackerTest,
+                           AdScriptAncestry_ScriptIdFromDifferentTracker);
 
   struct AdScriptData {
     AdScriptIdentifier id;

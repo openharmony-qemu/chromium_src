@@ -273,6 +273,10 @@ class AutofillAgent : public content::RenderFrameObserver,
   void DidCreateDocumentElement() override;
   void DidDispatchDOMContentLoadedEvent() override;
   void DidChangeScrollOffset() override;
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+  void OnMainFrameViewportRectangleChanged(
+      const gfx::Rect& main_frame_viewport_rect) override;
+#endif
   void AccessibilityModeChanged(const ui::AXMode& mode) override;
   void OnDestruct() override;
 

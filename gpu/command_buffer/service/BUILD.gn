@@ -731,6 +731,25 @@ if (is_android) {
   }
 }
 
+if (is_arkweb) {
+  static_library("ohos_texture_owner_test_support") {
+    testonly = true
+    sources = [
+      "../../../arkweb/chromium_ext/gpu/command_buffer/service/ohos/mock_native_image_texture_owner.cc",
+      "../../../arkweb/chromium_ext/gpu/command_buffer/service/ohos/mock_native_image_texture_owner.h",
+      "ref_counted_lock_for_test.cc",
+      "ref_counted_lock_for_test.h",
+    ]
+    deps = [
+      ":gles2",
+      "//base/test:test_support",
+      "//gpu:test_support",
+      "//testing/gmock",
+      "//testing/gtest",
+    ]
+  }
+}
+
 if (is_android) {
   source_set("android_texture_owner_unittests") {
     testonly = true

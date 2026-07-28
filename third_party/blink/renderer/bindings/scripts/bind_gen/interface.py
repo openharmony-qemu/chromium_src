@@ -2477,6 +2477,16 @@ def make_no_alloc_direct_call_callback_def(cg_context, function_name,
                           "${v8_arg0_receiver};")),
         S("handle_scope", "v8::HandleScope handle_scope(${isolate});")
     ])
+    # NADC stubs won't have any JS re-entry during argument conversion, so
+    # skip detach check for PassAsSpan arguments.
+    body.register_code_symbol(
+        S(
+            "kPerformDetachCheckFlag",
+            # TODO(caseq): figure out if it makes sense to skip it when we can.
+            # See https://crbug.com/499365904 for details.
+            "constexpr auto kPerformDetachCheckFlag = PassAsSpanMarkerBase::Flags::kPerformDetachCheck;"
+        ))
+
     bind_callback_local_vars(body, cg_context)
 
     if cg_context.may_throw_exception:

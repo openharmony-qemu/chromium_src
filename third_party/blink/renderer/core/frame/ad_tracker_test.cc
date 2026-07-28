@@ -5,6 +5,7 @@
 #include "third_party/blink/renderer/core/frame/ad_tracker.h"
 
 #include <memory>
+#include <optional>
 
 #include "base/containers/contains.h"
 #include "base/run_loop.h"
@@ -902,6 +903,66 @@ TEST_P(AdTrackerVanillaOrAdSimTest, AdExternalStylesheetLoadsResources) {
   EXPECT_TRUE(ad_tracker_->RequestWithUrlTaggedAsAd(ad_stylesheet_url));
   EXPECT_TRUE(ad_tracker_->RequestWithUrlTaggedAsAd(font_url));
   EXPECT_TRUE(ad_tracker_->RequestWithUrlTaggedAsAd(image_url));
+}
+
+// Test that when a script ID from one AdTracker is used in
+// another AdTracker (e.g. if a node is moved between frames), the tracker
+// correctly handles the case where it doesn't recognize the script ID.
+TEST(AdTrackerTest, AdScriptAncestry_ScriptIdFromDifferentTracker) {
+  test::TaskEnvironment task_environment;
+  auto page_holder_a = std::make_unique<DummyPageHolder>();
+  auto page_holder_b = std::make_unique<DummyPageHolder>();
+
+  AdTracker* ad_tracker_a = MakeGarbageCollected<AdTracker>(
+      &page_holder_a->GetFrame().LocalFrameRoot());
+  AdTracker* ad_tracker_b = MakeGarbageCollected<AdTracker>(
+      &page_holder_b->GetFrame().LocalFrameRoot());
+
+  const int script_id_a = 1001;
+  const int script_id_b = 2001;
+  const int script_id_c = 3001;
+  v8_inspector::V8DebuggerId debugger_id;
+
+  // Registers a script by populating the tracker's private `ad_script_data_`
+  // map directly. The parent (if any) is recorded as the parent script's id,
+  // which is how `GetAncestry` walks the ancestry chain.
+  auto register_ad_script = [&](AdTracker* tracker, int script_id,
+                                const String& name,
+                                std::optional<int> parent_id) {
+    AdTracker::AdProvenance provenance;
+    if (parent_id) {
+      provenance = *parent_id;
+    }
+    tracker->ad_script_data_.insert(
+        script_id,
+        AdTracker::AdScriptData(
+            AdScriptIdentifier(debugger_id, script_id, name), provenance));
+  };
+
+  // Register `script_id_a` in `ad_tracker_a`, which is the only tracker to
+  // learn about this script id.
+  register_ad_script(ad_tracker_a, script_id_a, "script_a", std::nullopt);
+
+  // In `ad_tracker_b`, register `script_id_b` with `script_id_a` as parent.
+  // `ad_tracker_b` doesn't actually know about `script_id_a` though, since it
+  // was registered only in `ad_tracker_a`.
+  register_ad_script(ad_tracker_b, script_id_b, "script_b", script_id_a);
+
+  // Register `script_id_c` with `script_id_b` as parent in `ad_tracker_b`.
+  register_ad_script(ad_tracker_b, script_id_c, "script_c", script_id_b);
+
+  // `ad_tracker_b` knows `script_id_c` and `script_id_b`, but not
+  // `script_id_a`. `GetAncestry(script_id_c)` should return a chain of length 2
+  // (c and b), stopping gracefully when it reaches the unknown parent
+  // `script_id_a`.
+  AdTracker::AdScriptAncestry ancestry = ad_tracker_b->GetAncestry(
+      AdScriptIdentifier(debugger_id, script_id_c, "script_c"));
+  EXPECT_EQ(ancestry.ancestry_chain.size(), 2u);
+  EXPECT_EQ(ancestry.ancestry_chain[0].id, script_id_c);
+  EXPECT_EQ(ancestry.ancestry_chain[1].id, script_id_b);
+
+  ad_tracker_a->Shutdown();
+  ad_tracker_b->Shutdown();
 }
 
 TEST_P(AdTrackerVanillaOrAdSimTest, LinkRelStylesheetAddedByScript) {

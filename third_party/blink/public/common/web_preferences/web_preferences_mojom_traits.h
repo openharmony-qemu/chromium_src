@@ -1170,6 +1170,9 @@ struct BLINK_COMMON_EXPORT StructTraits<blink::mojom::WebPreferencesDataView,
   static bool error_page_enabled(const blink::web_pref::WebPreferences& r) {
     return r.error_page_enabled;
   }
+  static bool subframe_error_page_enabled(const blink::web_pref::WebPreferences& r) {
+    return r.subframe_error_page_enabled;
+  }
 #endif
 
 #if BUILDFLAG(ARKWEB_BFCACHE)

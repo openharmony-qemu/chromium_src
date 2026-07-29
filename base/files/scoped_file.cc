@@ -9,6 +9,9 @@
 #include "build/build_config.h"
 #if BUILDFLAG(ARKWEB_DFX_LOGGING)
 #include "base/logging.h"
+#include <stdlib.h>
+#include "info/fatal_message.h"
+#include  "securec.h"
 #endif
 
 #if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
@@ -48,6 +51,13 @@ void ScopedFDCloseTraits::Free(int fd) {
 #if BUILDFLAG(ARKWEB_DFX_LOGGING)
   if (ret != 0) {
     LOG(ERROR) << "bad fd found!!! fd:" << fd;
+    char msg[128];
+    int result = sprintf_s(msg, sizeof(msg), "bad fd!! fd num: %d,close fd error, refer to the fdsan report.", fd);
+    if (result == -1) {
+      msg[0] = '\0';
+    }
+    set_fatal_message(msg);
+    abort();
   }
 #endif
 

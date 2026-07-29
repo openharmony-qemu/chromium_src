@@ -884,12 +884,13 @@ v8::MaybeLocal<v8::Value> V8ScriptRunner::CallFunction(
   v8::MicrotasksScope microtasks_scope(isolate, microtask_queue,
                                        v8::MicrotasksScope::kRunMicrotasks);
   if (!depth) {
+#if !BUILDFLAG(ARKWEB_ENABLE_COMPILE_TRACE)
     TRACE_EVENT_BEGIN1("devtools.timeline", "FunctionCall", "data",
                        [&](perfetto::TracedValue trace_context) {
                          inspector_function_call_event::Data(
                              std::move(trace_context), context, function);
                        });
-#if BUILDFLAG(ARKWEB_ENABLE_COMPILE_TRACE)
+#else
     v8::Local<v8::Function> original_function = GetBoundFunction(function);
     v8::Local<v8::Value> function_name = original_function->GetDebugName();
     if (!function_name.IsEmpty() && function_name->IsString()) {

@@ -104,6 +104,17 @@ void FullscreenElementChanged(Document& document,
 
   if (old_element) {
     DCHECK_NE(old_element, Fullscreen::FullscreenElementFrom(document));
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    // A custom-media-player video is leaving the fullscreen slot (exit, or
+    // swap to a container). Reset render_video_view so the inline view
+    // presents again. This chokepoint is hit per-document for every teardown
+    // (Unfullscreen in all exit paths), so it covers iframe / OOPIF /
+    // container-swap / direct-exit uniformly — old_element is exactly the
+    // element leaving, no per-doc iteration and no stored state needed.
+    auto* old_video = DynamicTo<HTMLVideoElement>(old_element);
+    if (old_video && old_video->IsCustomMediaPlayerEnabled())
+      old_video->SetRenderVideoView(false);
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
     old_element->PseudoStateChanged(CSSSelector::kPseudoFullScreen);
     old_element->PseudoStateChanged(CSSSelector::kPseudoFullscreen);

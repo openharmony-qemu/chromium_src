@@ -47,6 +47,10 @@
 #include "url/gurl.h"
 #include "v8/include/v8-version-string.h"
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+#include "arkweb/build/features/features.h"
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
+
 using blink::PermissionType;
 
 namespace content {
@@ -573,10 +577,21 @@ Response BrowserHandler::DoSetDownloadBehavior(
     std::optional<std::string> download_path) {
   if (!allow_set_download_behavior_)
     return Response::ServerError("Not allowed");
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  // ArkWeb: Extend downloadPath validation to AllowAndName.
+  // Upstream only checks Allow, causing SIGABRT when allowAndName is used
+  // without downloadPath (optional::value() on nullopt).
+  if ((behavior == Browser::SetDownloadBehavior::BehaviorEnum::Allow ||
+       behavior == Browser::SetDownloadBehavior::BehaviorEnum::AllowAndName) &&
+      !download_path.has_value()) {
+    return Response::InvalidParams("downloadPath not provided");
+  }
+#else
   if (behavior == Browser::SetDownloadBehavior::BehaviorEnum::Allow &&
       !download_path.has_value()) {
     return Response::InvalidParams("downloadPath not provided");
   }
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
   DevToolsManagerDelegate* manager_delegate =
       DevToolsManager::GetInstance()->delegate();
   if (!manager_delegate) {

@@ -2668,7 +2668,12 @@ void RenderWidgetHostImpl::SetPopupBounds(const gfx::Rect& bounds,
 
 input::RenderWidgetHostInputEventRouter*
 RenderWidgetHostImpl::GetInputEventRouter() {
-  return delegate()->GetInputEventRouter();
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (!delegate_) {
+    return nullptr;
+  }
+#endif
+  return delegate_->GetInputEventRouter();
 }
 
 input::RenderWidgetHostViewInput* RenderWidgetHostImpl::GetPointerLockView() {

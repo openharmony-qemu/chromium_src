@@ -94,15 +94,18 @@ void TouchSelectionController::OnSelectionBoundsChanged(
 
   if (!start.HasHandle() || !end.HasHandle() || !show_touch_handles_) {
 #if BUILDFLAG(ARKWEB_MENU)
-    if (AsTouchSelectionControllerExt()->SelectOverImg())
-      return;
+    if (auto* ext = AsTouchSelectionControllerExt()) {
+      if (ext->SelectOverImg())
+        return;
+    }
 #endif
     HideHandles();
 #if BUILDFLAG(ARKWEB_MENU)
     LOG(INFO) << "OnSelectionBoundsChanged show_touch_handles_: " << show_touch_handles_
               << " start.visible: " << start.visible();
     if (show_touch_handles_ && start.visible()) {
-      AsTouchSelectionControllerExt()->OnInsertionChangedExt(start, end);
+      if (auto* ext = AsTouchSelectionControllerExt())
+        ext->OnInsertionChangedExt(start, end);
     }
 #endif
     return;
@@ -137,7 +140,8 @@ void TouchSelectionController::OnSelectionBoundsChanged(
                  (end_selection_handle_->IsActive() &&
                   end.edge_end() == start_.edge_start());
 #if BUILDFLAG(ARKWEB_MENU)
-    need_swap = AsTouchSelectionControllerExt()->OnHandleSwap(need_swap, start, end);
+    if (auto* ext = AsTouchSelectionControllerExt())
+      need_swap = ext->OnHandleSwap(need_swap, start, end);
 #endif
     if (need_swap)
       start_selection_handle_.swap(end_selection_handle_);
@@ -241,7 +245,8 @@ void TouchSelectionController::HandleLongPressEvent(
     base::TimeTicks event_time,
     const gfx::PointF& location) {
 #if BUILDFLAG(ARKWEB_VIBRATE)
-  AsTouchSelectionControllerExt()->SetLongPressEvent(true);
+  if (auto* ext = AsTouchSelectionControllerExt())
+    ext->SetLongPressEvent(true);
 #endif  // BUILDFLAG(ARKWEB_VIBRATE)
   longpress_drag_selector_.OnLongPressEvent(event_time, location);
   response_pending_input_event_ = LONG_PRESS;
@@ -421,7 +426,8 @@ bool TouchSelectionController::WillHandleTouchEventImpl(
     return true;
   }
 #if BUILDFLAG(ARKWEB_AI)
-  AsTouchSelectionControllerExt()->SetTouchNumsForHandle(event);
+  if (auto* ext = AsTouchSelectionControllerExt())
+    ext->SetTouchNumsForHandle(event);
 #endif
   if (active_status_ == INSERTION_ACTIVE) {
     DCHECK(insertion_handle_);
@@ -443,7 +449,8 @@ bool TouchSelectionController::WillHandleTouchEventImpl(
       return start_selection_handle_->WillHandleTouchEvent(event);
     }
 #if BUILDFLAG(ARKWEB_MENU)
-    if (AsTouchSelectionControllerExt()->IsEndHandleNotVisible(event)) {
+    if (AsTouchSelectionControllerExt() &&
+        AsTouchSelectionControllerExt()->IsEndHandleNotVisible(event)) {
       return start_selection_handle_->WillHandleTouchEvent(event);
     }
 #endif
@@ -522,7 +529,10 @@ void TouchSelectionController::OnDragBegin(
   // When moving the handle we want to move only the extent point. Before doing
   // so we must make sure that the base point is set correctly.
 #if BUILDFLAG(ARKWEB_MENU)
-  AsTouchSelectionControllerExt()->ArkSelectBetweenCoordinates(base, extent);
+  if (auto* ext = AsTouchSelectionControllerExt())
+    ext->ArkSelectBetweenCoordinates(base, extent);
+  else
+    client_->SelectBetweenCoordinates(base, extent);
 #else
   client_->SelectBetweenCoordinates(base, extent);
 #endif
@@ -585,7 +595,8 @@ void TouchSelectionController::OnDragEnd(
     client_->OnSelectionEvent(INSERTION_HANDLE_DRAG_STOPPED);
   } else {
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
-    AsTouchSelectionControllerExt()->ResetPositionAfterDragEnd(draggable);
+    if (auto* ext = AsTouchSelectionControllerExt())
+      ext->ResetPositionAfterDragEnd(draggable);
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
     client_->OnSelectionEvent(SELECTION_HANDLE_DRAG_STOPPED);
   }

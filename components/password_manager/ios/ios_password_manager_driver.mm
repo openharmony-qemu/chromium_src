@@ -198,7 +198,7 @@ const GURL& IOSPasswordManagerDriver::GetLastCommittedURL() const {
 }
 
 const url::Origin& IOSPasswordManagerDriver::GetLastCommittedOrigin() const {
-  NOTREACHED();
+  return security_origin_;
 }
 
 gfx::RectF IOSPasswordManagerDriver::TransformToRootCoordinates(

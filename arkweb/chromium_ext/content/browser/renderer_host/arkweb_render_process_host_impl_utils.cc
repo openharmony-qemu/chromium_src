@@ -302,6 +302,12 @@ void RenderProcessHost::SetRenderProcessMode(RenderProcessMode mode) {
 // static
 RenderProcessMode RenderProcessHost::render_process_mode() {
   if (g_render_process_mode == RenderProcessMode::DEFAULT_MODE) {
+    auto renderProcess = static_cast<RenderProcessMode>(
+ 	      OHOS::NWeb::OhosAdapterHelper::GetInstance().
+ 	      GetSystemPropertiesInstance().GetRenderProcessMode());
+ 	    if (renderProcess != RenderProcessMode::DEFAULT_MODE) {
+ 	      return renderProcess;
+ 	    }    
     return (base::ohos::IsPcDevice() || base::ohos::IsTabletDevice())
                ? RenderProcessMode::MULTIPLE_MODE
                : RenderProcessMode::SINGLE_MODE;

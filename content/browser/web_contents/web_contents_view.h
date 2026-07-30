@@ -137,7 +137,6 @@ class CONTENT_EXPORT WebContentsView {
 
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
   virtual void UpdateBrowserControlsHeight(int, bool) {}
-  virtual void SetBrowserControlsParams(float, float, float, float) {}
 #endif
 
   // Reset the above animation manager.

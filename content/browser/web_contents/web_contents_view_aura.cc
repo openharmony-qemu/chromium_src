@@ -1873,7 +1873,7 @@ void WebContentsViewAura::OnGotVirtualFilesAsTempFiles(
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-float WebContentsViewAura::GetTopControlsHeight() {
+int WebContentsViewAura::GetTopControlsHeight() {
 #else
 int WebContentsViewAura::GetTopControlsHeight() const {
 #endif
@@ -1883,11 +1883,7 @@ int WebContentsViewAura::GetTopControlsHeight() const {
   return delegate->GetTopControlsHeight();
 }
 
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-float WebContentsViewAura::GetBottomControlsHeight() const {
-#else
 int WebContentsViewAura::GetBottomControlsHeight() const {
-#endif
   WebContentsDelegate* delegate = web_contents_->GetDelegate();
   if (!delegate)
     return 0;

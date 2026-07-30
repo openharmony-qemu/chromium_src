@@ -133,16 +133,6 @@ class CC_EXPORT RenderFrameMetadata {
   gfx::SizeF scrollable_viewport_size;
   gfx::SizeF root_layer_size;
   bool root_overflow_y_hidden = false;
-
-  // Used to position Android bottom bar, whose position is computed by the
-  // renderer compositor.
-  float bottom_controls_height = 0.f;
-  float bottom_controls_shown_ratio = 0.f;
-
-  // Used to offset views that need to be positioned according to the current
-  // min-height. These offsets follow the min-height change animations.
-  float top_controls_min_height_offset = 0.f;
-  float bottom_controls_min_height_offset = 0.f;
 #endif
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)

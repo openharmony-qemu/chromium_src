@@ -253,12 +253,11 @@ class CONTENT_EXPORT WebContentsViewAura
   void LostFocus(RenderWidgetHostImpl* render_widget_host) override;
   void TakeFocus(bool reverse) override;
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-  float GetTopControlsHeight() override;
-  float GetBottomControlsHeight() const override;
+  int GetTopControlsHeight() override;
 #else
   int GetTopControlsHeight() const override;
-  int GetBottomControlsHeight() const override;
 #endif
+  int GetBottomControlsHeight() const override;
   bool DoBrowserControlsShrinkRendererSize() const override;
 #if BUILDFLAG(USE_EXTERNAL_POPUP_MENU)
   void ShowPopupMenu(

@@ -142,23 +142,12 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   // retrieved by doing a Shift-Tab.
   virtual void TakeFocus(bool reverse) {}
 
+  // Returns the height of the top controls in physical pixels (not DIPs).
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-  // Returns the height of the top controls in physical pixels (not DIPs).
-  virtual float GetTopControlsHeight();
-
-  // Returns the minimum visible height the top controls can have in physical
-  // pixels (not DIPs).
-  virtual float GetTopControlsMinHeight() const;
-
-  // Returns the height of the bottom controls in physical pixels (not DIPs).
-  virtual float GetBottomControlsHeight() const;
-
-  // Returns the minimum visible height the bottom controls can have in physical
-  // pixels (not DIPs).
-  virtual float GetBottomControlsMinHeight() const;
+  virtual int GetTopControlsHeight();
 #else
-  // Returns the height of the top controls in physical pixels (not DIPs).
   virtual int GetTopControlsHeight() const;
+#endif
 
   // Returns the minimum visible height the top controls can have in physical
   // pixels (not DIPs).
@@ -170,7 +159,6 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   // Returns the minimum visible height the bottom controls can have in physical
   // pixels (not DIPs).
   virtual int GetBottomControlsMinHeight() const;
-#endif
 
   // Returns true if the changes in browser controls height (including min
   // height) should be animated.

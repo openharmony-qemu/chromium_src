@@ -195,12 +195,6 @@ bool RenderFrameMetadataObserverImpl::ShouldSendRenderFrameMetadata(
 #if BUILDFLAG(IS_ARKWEB)
       rfm1.root_layer_size != rfm2.root_layer_size ||
       rfm1.root_scroll_offset != rfm2.root_scroll_offset ||
-      rfm1.bottom_controls_height != rfm2.bottom_controls_height ||
-      rfm1.bottom_controls_shown_ratio != rfm2.bottom_controls_shown_ratio ||
-      rfm1.top_controls_min_height_offset !=
-          rfm2.top_controls_min_height_offset ||
-      rfm1.bottom_controls_min_height_offset !=
-          rfm2.bottom_controls_min_height_offset ||
 #endif
 #if BUILDFLAG(ARKWEB_MENU)
       rfm1.clipped_selection_bounds != rfm2.clipped_selection_bounds ||

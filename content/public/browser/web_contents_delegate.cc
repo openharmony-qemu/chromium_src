@@ -372,23 +372,6 @@ bool WebContentsDelegate::ShouldAllowRunningInsecureContent(
   return allowed_per_prefs;
 }
 
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-float WebContentsDelegate::GetTopControlsHeight() {
-  return 0;
-}
-
-float WebContentsDelegate::GetTopControlsMinHeight() {
-  return 0;
-}
-
-float WebContentsDelegate::GetBottomControlsHeight() {
-  return 0;
-}
-
-float WebContentsDelegate::GetBottomControlsMinHeight() {
-  return 0;
-}
-#else
 int WebContentsDelegate::GetTopControlsHeight() {
   return 0;
 }
@@ -404,7 +387,6 @@ int WebContentsDelegate::GetBottomControlsHeight() {
 int WebContentsDelegate::GetBottomControlsMinHeight() {
   return 0;
 }
-#endif
 
 bool WebContentsDelegate::ShouldAnimateBrowserControlsHeightChanges() {
   return false;

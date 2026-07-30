@@ -617,7 +617,7 @@ class COMPOSITOR_EXPORT Layer : public LayerAnimationDelegate,
   void SetSurfaceSize(gfx::Size surface_size_in_dip);
 
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-  void SetTopControlsHeight(float height) { top_controls_height_ = height; }
+  void SetTopControlsHeight(int height) { top_controls_height_ = height; }
 #endif
 
   base::WeakPtr<Layer> AsWeakPtr();
@@ -901,7 +901,7 @@ class COMPOSITOR_EXPORT Layer : public LayerAnimationDelegate,
   bool no_mutation_ = false;  // CHECK on Add/SetMakeLayer if true.
 
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-  float top_controls_height_ = 0;
+  int top_controls_height_ = 0;
 #endif
 
   base::WeakPtrFactory<Layer> weak_ptr_factory_{this};

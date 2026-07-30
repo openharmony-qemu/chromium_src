@@ -726,11 +726,7 @@ class Browser : public TabStripModelObserver,
   bool IsContentsActive(content::WebContents* contents) override;
   void SetTopControlsShownRatio(content::WebContents* web_contents,
                                 float ratio) override;
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-  float GetTopControlsHeight() override;
-#else
   int GetTopControlsHeight() override;
-#endif
   bool DoBrowserControlsShrinkRendererSize(
       content::WebContents* contents) override;
   int GetVirtualKeyboardHeight(content::WebContents* contents) override;

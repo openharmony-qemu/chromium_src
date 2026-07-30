@@ -514,17 +514,6 @@ gfx::Vector2dF BrowserControlsOffsetManager::ScrollBy(
   // with the web contents.
   bool base_on_top_controls = TopControlsHeight();
 
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-  // When top controls are fixed (min_ratio == 1.0) but bottom controls can
-  // scroll, we must base calculations on bottom controls. Otherwise the
-  // normalized_shown_ratio will always be 1.0, preventing bottom controls
-  // from hiding.
-  if (base_on_top_controls && TopControlsMinShownRatio() == 1.f &&
-      BottomControlsHeight() && BottomControlsMinShownRatio() < 1.f) {
-    base_on_top_controls = false;
-  }
-#endif
-
   float old_top_offset = ContentTopOffset();
   float baseline_content_offset = base_on_top_controls
                                       ? baseline_top_content_offset_
@@ -549,24 +538,12 @@ gfx::Vector2dF BrowserControlsOffsetManager::ScrollBy(
         (std::clamp(shown_ratio, min_ratio, 1.f) - min_ratio) /
         (1.f - min_ratio);
   }
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-  // When top controls are fixed (min_ratio == 1.0), keep them at shown ratio
-  // 1.0 regardless of the normalized ratio computed for bottom controls.
-  float top_shown_ratio =
-      TopControlsMinShownRatio() == 1.f
-          ? 1.f
-          : TopControlsMinShownRatio() +
-                normalized_shown_ratio * (1.f - TopControlsMinShownRatio());
-#else
-  float top_shown_ratio =
-      TopControlsMinShownRatio() +
-      normalized_shown_ratio * (1.f - TopControlsMinShownRatio());
-#endif
   // Even though the real shown ratios (shown height / total height) of the top
   // and bottom controls can be different, they share the same
   // relative/normalized ratio to keep them in sync.
   client_->SetCurrentBrowserControlsShownRatio(
-      top_shown_ratio,
+      TopControlsMinShownRatio() +
+          normalized_shown_ratio * (1.f - TopControlsMinShownRatio()),
       BottomControlsMinShownRatio() +
           normalized_shown_ratio * (1.f - BottomControlsMinShownRatio()));
 
@@ -597,16 +574,7 @@ void BrowserControlsOffsetManager::ScrollEnd() {
   // See if we should animate the top bar in, in case there was a race between
   // chrome showing the controls and the user performing a scroll. We only need
   // to animate the top control if it's not fully shown.
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-  // When top controls are fixed (min_ratio == 1.0) but bottom controls can
-  // scroll, also check if bottom controls need a show animation.
-  if (show_controls_when_scroll_completes_ &&
-      (TopControlsShownRatio() != 1.f ||
-       (BottomControlsHeight() && BottomControlsShownRatio() != 1.f &&
-        BottomControlsMinShownRatio() < 1.f))) {
-#else
   if (show_controls_when_scroll_completes_ && TopControlsShownRatio() != 1.f) {
-#endif
     SetupAnimation(AnimationDirection::kShowingControls);
     return;
   }
@@ -770,28 +738,6 @@ void BrowserControlsOffsetManager::StartAnimationIfNecessary() {
       (BottomControlsShownRatio() == BottomControlsMinShownRatio() ||
        BottomControlsShownRatio() == 1.f))
     return;
-
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-  // When top controls are fixed (min_ratio == 1.0), use bottom controls
-  // ratio to decide animation direction, since top ratio cannot change.
-  // This also avoids division by zero in normalized_top_ratio calculation.
-  if (TopControlsMinShownRatio() == 1.f && BottomControlsHeight() &&
-      BottomControlsMinShownRatio() < 1.f) {
-    float normalized_bottom_ratio =
-        (BottomControlsShownRatio() - BottomControlsMinShownRatio()) /
-        (1.f - BottomControlsMinShownRatio());
-    if (normalized_bottom_ratio >= 1.f - controls_hide_threshold_) {
-      SetupAnimation(AnimationDirection::kShowingControls);
-    } else if (normalized_bottom_ratio <= controls_show_threshold_) {
-      SetupAnimation(AnimationDirection::kHidingControls);
-    } else {
-      SetupAnimation(accumulated_scroll_delta_ <= 0.f
-                         ? AnimationDirection::kShowingControls
-                         : AnimationDirection::kHidingControls);
-    }
-    return;
-  }
-#endif
 
   float normalized_top_ratio =
       (TopControlsShownRatio() - TopControlsMinShownRatio()) /

@@ -997,15 +997,7 @@ void RenderWidgetHostViewBase::SetViewTransitionResources(
 }
 
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS) || BUILDFLAG(ARKWEB_EX_TOPCONTROLS)
-float RenderWidgetHostViewBase::GetTopControlsOffset() const {
-  return 0;
-}
-
-float RenderWidgetHostViewBase::GetTopContentOffset() const {
-  return 0;
-}
-
-float RenderWidgetHostViewBase::GetBottomContentOffset() const {
+int RenderWidgetHostViewBase::GetTopControlsOffset() const {
   return 0;
 }
 #endif

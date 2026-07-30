@@ -247,9 +247,7 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
   bool IsHTMLFormPopup() const override;
 
 #if BUILDFLAG(ARKWEB_EX_TOPCONTROLS)
-  float GetTopControlsOffset() const override;
-  float GetTopContentOffset() const override;
-  float GetBottomContentOffset() const override;
+  int GetTopControlsOffset() const override;
 #endif
 
   // This only needs to be overridden by RenderWidgetHostViewBase subclasses

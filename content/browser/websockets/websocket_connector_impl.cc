@@ -13,8 +13,10 @@
 #include "content/public/browser/storage_partition.h"
 #include "content/public/common/content_client.h"
 #include "content/public/common/content_switches.h"
+#include "mojo/public/cpp/bindings/message.h"
 #include "net/storage_access_api/status.h"
 #include "services/network/public/cpp/features.h"
+#include "services/network/public/cpp/websocket_utils.h"
 #include "url/gurl.h"
 
 namespace content {
@@ -83,6 +85,13 @@ void WebSocketConnectorImpl::Connect(
         handshake_client,
     const std::optional<base::UnguessableToken>& throttling_profile_id) {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
+
+  if (auto error = network::VerifyWebSocketConnectParameters(
+          url, requested_protocols, isolation_info_)) {
+    mojo::ReportBadMessage(*error);
+    return;
+  }
+
   RenderProcessHost* process = RenderProcessHost::FromID(process_id_);
   if (!process) {
     return;

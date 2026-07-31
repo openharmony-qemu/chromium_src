@@ -88,6 +88,7 @@ source_set("unit_tests") {
     "multipart_drive_uploader_unittest.cc",
     "resumable_drive_uploader_unittest.cc",
     "save_to_drive_recorder_unittest.cc",
+    "save_to_drive_utils_unittest.cc",
     "time_remaining_calculator_unittest.cc",
   ]
   deps = [

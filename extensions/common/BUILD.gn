@@ -722,6 +722,11 @@ source_set("unit_tests") {
     "utils/extension_types_utils_unittest.cc",
     "value_counter_unittest.cc",
   ]
+  if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
+    sources += [
+      "//arkweb/chromium_ext/extensions/common/extension_urls_ext_unittest.cc",
+    ]
+  }
 
   deps = [
     ":common",

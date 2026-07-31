@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 #include <optional>
-#include <string>
 #include <ranges>
+#include <string>
 
 #include "base/functional/callback_helpers.h"
 #include "base/memory/raw_ptr.h"
@@ -522,7 +522,4 @@ TEST_F(NetworkServiceProxyDelegateTest, OnTunnelHeadersReceivedObserved) {
       headers->raw_headers());
 }
 
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-#include "arkweb/chromium_ext/services/network/network_service_proxy_delegate_for_include_unittest.cc"
-#endif  // ARKWEB_UNITTESTS
 }  // namespace network

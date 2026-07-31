@@ -244,16 +244,17 @@ bool ModelContext::RegisterTool(ScriptState* script_state,
 
 void ModelContext::OnToolExecuted(uint32_t execution_id,
                                   std::optional<String> result) {
-  auto it = pending_executions_.find(execution_id);
-  CHECK(it != pending_executions_.end());
+  auto callback = pending_executions_.Take(execution_id);
+  if(callback.is_null()) {
+    return;
+  }
 
   if (result) {
-    std::move(it->value).Run(*result);
+    std::move(callback).Run(*result);
   } else {
-    std::move(it->value).Run(
+    std::move(callback).Run(
         base::unexpected(WebDocument::ScriptToolError::kToolInvocationFailed));
   }
-  pending_executions_.erase(it);
 }
 
 void ModelContext::OnToolsChanged() {

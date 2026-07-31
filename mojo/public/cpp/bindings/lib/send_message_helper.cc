@@ -16,8 +16,10 @@ void SendMojoMessage(MessageReceiver& receiver, Message& message) {
   uint64_t flow_id = message.GetTraceId();
   bool is_sync_non_response = message.has_flag(Message::kFlagIsSync) &&
                               !message.has_flag(Message::kFlagIsResponse);
+#if !BUILDFLAG(ARKWEB_DFX_TRACING)
   TRACE_EVENT_INSTANT("toplevel.flow,mojom.flow", "Send mojo message",
                       perfetto::Flow::Global(flow_id));
+#endif
 
   std::ignore = receiver.Accept(&message);
 
@@ -35,9 +37,10 @@ void SendMojoMessage(MessageReceiverWithResponder& receiver,
   uint64_t flow_id = message.GetTraceId();
   bool is_sync_non_response = message.has_flag(Message::kFlagIsSync) &&
                               !message.has_flag(Message::kFlagIsResponse);
+#if !BUILDFLAG(ARKWEB_DFX_TRACING)
   TRACE_EVENT_INSTANT("toplevel.flow,mojom.flow", "Send mojo message",
                       perfetto::Flow::Global(flow_id));
-
+#endif
   std::ignore = receiver.AcceptWithResponder(&message, std::move(responder));
 
   // If this is a sync message which has received just received a reply, connect

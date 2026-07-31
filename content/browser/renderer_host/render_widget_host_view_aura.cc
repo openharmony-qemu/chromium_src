@@ -104,6 +104,9 @@
 #include "ui/gfx/geometry/size_conversions.h"
 #include "ui/gfx/geometry/skia_conversions.h"
 #include "ui/touch_selection/touch_selection_controller.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/ui/touch_selection/touch_selection_controller_ext.h"
+#endif
 #include "ui/wm/core/coordinate_conversion.h"
 #include "ui/wm/public/activation_client.h"
 #include "ui/wm/public/scoped_tooltip_disabler.h"
@@ -3223,8 +3226,13 @@ void RenderWidgetHostViewAura::CreateSelectionController() {
                             ->max_touch_move_in_pixels_for_click();
   tsc_config.enable_longpress_drag_selection =
       features::IsTouchTextEditingRedesignEnabled();
+#if BUILDFLAG(IS_ARKWEB)
+  selection_controller_ = std::make_unique<ui::TouchSelectionControllerExt>(
+      selection_controller_client_.get(), tsc_config);
+#else
   selection_controller_ = std::make_unique<ui::TouchSelectionController>(
       selection_controller_client_.get(), tsc_config);
+#endif
 }
 
 void RenderWidgetHostViewAura::OnOldViewDidNavigatePreCommit() {

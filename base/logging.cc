@@ -504,6 +504,7 @@ std::string BuildCrashString(const char* file,
 
 // Invokes macro to record trace event when a log message is emitted.
 void TraceLogMessage(const char* file, int line, const std::string& message) {
+#if !BUILDFLAG(ARKWEB_DFX_TRACING)
   TRACE_EVENT_INSTANT("log", "LogMessage", [&](perfetto::EventContext ctx) {
     perfetto::protos::pbzero::LogMessage* log = ctx.event()->set_log_message();
     log->set_source_location_iid(base::trace_event::InternedSourceLocation::Get(
@@ -512,6 +513,7 @@ void TraceLogMessage(const char* file, int line, const std::string& message) {
     log->set_body_iid(
         base::trace_event::InternedLogMessage::Get(&ctx, message));
   });
+#endif
 }
 
 }  // namespace

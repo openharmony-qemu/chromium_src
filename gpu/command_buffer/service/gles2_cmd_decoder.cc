@@ -613,6 +613,13 @@ class GLES2DecoderImpl : public GLES2Decoder,
   void RestoreVertexAttribArray(unsigned index) override {
     RestoreStateForAttrib(index, true);
   }
+  void PauseTransformFeedback() override {
+    if (state_.bound_transform_feedback.get() &&
+        state_.bound_transform_feedback->active() &&
+        !state_.bound_transform_feedback->paused()) {
+      state_.api()->glPauseTransformFeedbackFn();
+    }
+  }
   void RestoreBufferBinding(unsigned int target) override;
   void RestoreFramebufferBindings() const override;
   void RestoreRenderbufferBindings() override;
@@ -5575,6 +5582,8 @@ void GLES2DecoderImpl::DoBeginTransformFeedback(GLenum primitive_mode) {
   }
   transform_feedback->DoBeginTransformFeedback(primitive_mode);
   DCHECK(transform_feedback->active());
+
+  transform_feedback->SetActiveProgram(program);
 }
 
 void GLES2DecoderImpl::DoEndTransformFeedback() {
@@ -5587,6 +5596,11 @@ void GLES2DecoderImpl::DoEndTransformFeedback() {
   }
   // TODO(zmo): Validate binding points.
   state_.bound_transform_feedback->DoEndTransformFeedback();
+
+  Program* program = state_.bound_transform_feedback->active_program();
+  if (program) {
+    state_.bound_transform_feedback->ClearActiveProgram();
+  }
 }
 
 void GLES2DecoderImpl::DoPauseTransformFeedback() {
@@ -5608,6 +5622,15 @@ void GLES2DecoderImpl::DoResumeTransformFeedback() {
                        "transform feedback is not active or not paused");
     return;
   }
+
+  if (state_.current_program.get() !=
+      state_.bound_transform_feedback->active_program()) {
+    LOCAL_SET_GL_ERROR(GL_INVALID_OPERATION, "glResumeTransformFeedback",
+                       "current program does not match the program active when "
+                       "transform feedback began");
+    return;
+  }
+
   state_.bound_transform_feedback->DoResumeTransformFeedback();
 }
 
@@ -7127,6 +7150,11 @@ void GLES2DecoderImpl::DoSampleCoverage(GLclampf value, GLboolean invert) {
 // Assumes framebuffer is complete.
 void GLES2DecoderImpl::ClearUnclearedAttachments(
     GLenum target, Framebuffer* framebuffer) {
+  bool rasterizer_discard_enabled = state_.enable_flags.rasterizer_discard;
+  if (rasterizer_discard_enabled) {
+    state_.SetDeviceCapabilityState(GL_RASTERIZER_DISCARD, false);
+  }
+
   // Clear textures that we can't use glClear first. These textures will be
   // marked as cleared after the call and no longer be part of the following
   // code.
@@ -7212,6 +7240,10 @@ void GLES2DecoderImpl::ClearUnclearedAttachments(
 
   framebuffer_manager()->MarkAttachmentsAsCleared(
       framebuffer, renderbuffer_manager(), texture_manager());
+
+  if (rasterizer_discard_enabled) {
+    state_.SetDeviceCapabilityState(GL_RASTERIZER_DISCARD, true);
+  }
 }
 
 void GLES2DecoderImpl::RestoreClearState() {
@@ -8311,6 +8343,12 @@ void GLES2DecoderImpl::DoLinkProgram(GLuint program_id) {
     return;
   }
 
+  if (program->IsActiveForTransformFeedback()) {
+    LOCAL_SET_GL_ERROR(GL_INVALID_OPERATION, "glLinkProgram",
+                       "program is active for transform feedback");
+    return;
+  }
+
   LogClientServiceForInfo(program, program_id, "glLinkProgram");
   if (program->Link(shader_manager(),
                     client())) {
@@ -8644,14 +8682,11 @@ void GLES2DecoderImpl::DoUniform1iv(GLint fake_location,
   auto values_copy = std::make_unique<GLint[]>(count);
   GLint* safe_values = values_copy.get();
   std::copy(values, values + count, safe_values);
-  if (type == GL_SAMPLER_2D || type == GL_SAMPLER_2D_RECT_ANGLE ||
-      type == GL_SAMPLER_CUBE || type == GL_SAMPLER_EXTERNAL_OES) {
-    if (!state_.current_program->SetSamplers(
-            state_.texture_units.size(), fake_location, count, safe_values)) {
-      LOCAL_SET_GL_ERROR(
-          GL_INVALID_VALUE, "glUniform1iv", "texture unit out of range");
-      return;
-    }
+  if (!state_.current_program->SetSamplers(state_.texture_units.size(),
+                                           fake_location, count, safe_values)) {
+    LOCAL_SET_GL_ERROR(GL_INVALID_VALUE, "glUniform1iv",
+                       "texture unit out of range");
+    return;
   }
   api()->glUniform1ivFn(real_location, count, safe_values);
 }
@@ -13749,6 +13784,9 @@ void GLES2DecoderImpl::DoCopyTexSubImage2D(
   GLint dy = src.y() - y;
   GLint destX = xoffset + dx;
   GLint destY = yoffset + dy;
+
+  LOCAL_COPY_REAL_GL_ERRORS_TO_WRAPPER(func_name);
+
   // It's only legal to skip clearing the level of the target texture
   // if the entire level is being redefined.
   GLsizei level_width = 0;
@@ -13758,10 +13796,15 @@ void GLES2DecoderImpl::DoCopyTexSubImage2D(
       target, level, &level_width, &level_height, &level_depth);
   // Validated above.
   DCHECK(have_level);
+
+  bool set_cleared = false;
+  gfx::Rect cleared_rect_to_set;
+  bool set_cleared_rect = false;
+
   if (destX == 0 && destY == 0 &&
       src.width() == level_width && src.height() == level_height) {
     // Write all pixels in below.
-    texture_manager()->SetLevelCleared(texture_ref, target, level, true);
+    set_cleared = true;
   } else {
     gfx::Rect cleared_rect;
     if (TextureManager::CombineAdjacentRects(
@@ -13770,8 +13813,8 @@ void GLES2DecoderImpl::DoCopyTexSubImage2D(
             &cleared_rect)) {
       DCHECK_GE(cleared_rect.size().GetArea(),
                 texture->GetLevelClearedRect(target, level).size().GetArea());
-      texture_manager()->SetLevelClearedRect(texture_ref, target, level,
-                                             cleared_rect);
+      cleared_rect_to_set = cleared_rect;
+      set_cleared_rect = true;
     } else {
       // Otherwise clear part of texture level that is not already cleared.
       if (!texture_manager()->ClearTextureLevel(this, texture_ref, target,
@@ -13796,6 +13839,15 @@ void GLES2DecoderImpl::DoCopyTexSubImage2D(
   } else {
     api()->glCopyTexSubImage2DFn(target, level, destX, destY, src.x(), src.y(),
                                  src.width(), src.height());
+  }
+
+  if (LOCAL_PEEK_GL_ERROR(func_name) == GL_NO_ERROR) {
+    if (set_cleared) {
+      texture_manager()->SetLevelCleared(texture_ref, target, level, true);
+    } else if (set_cleared_rect) {
+      texture_manager()->SetLevelClearedRect(texture_ref, target, level,
+                                             cleared_rect_to_set);
+    }
   }
 
   // This may be a slow command.  Exit command processing to allow for

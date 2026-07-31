@@ -455,6 +455,10 @@ TEST_P(GLES2DecoderTest, CopyTexSubImage2DValidArgs) {
               CopyTexSubImage2D(GL_TEXTURE_2D, 1, 0, 0, 0, 0, kWidth, kHeight))
       .Times(1)
       .RetiresOnSaturation();
+  EXPECT_CALL(*gl_, GetError())
+      .WillOnce(Return(GL_NO_ERROR))
+      .WillOnce(Return(GL_NO_ERROR))
+      .RetiresOnSaturation();
   cmds::CopyTexSubImage2D cmd;
   cmd.Init(GL_TEXTURE_2D, 1, 0, 0, 0, 0, kWidth, kHeight);
   EXPECT_EQ(error::kNoError, ExecuteCmd(cmd));
@@ -2793,6 +2797,10 @@ TEST_P(GLES2DecoderTest, CopyTexSubImage2DTwiceMarksTextureAsCleared) {
     EXPECT_CALL(*gl_, CopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, 2, 1))
         .Times(1)
         .RetiresOnSaturation();
+    EXPECT_CALL(*gl_, GetError())
+        .WillOnce(Return(GL_NO_ERROR))
+        .WillOnce(Return(GL_NO_ERROR))
+        .RetiresOnSaturation();
     cmds::CopyTexSubImage2D cmd;
     cmd.Init(GL_TEXTURE_2D, 0, 0, 0, 0, 0, 2, 1);
     EXPECT_EQ(error::kNoError, ExecuteCmd(cmd));
@@ -2802,6 +2810,10 @@ TEST_P(GLES2DecoderTest, CopyTexSubImage2DTwiceMarksTextureAsCleared) {
   {
     EXPECT_CALL(*gl_, CopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 1, 0, 0, 2, 1))
         .Times(1)
+        .RetiresOnSaturation();
+    EXPECT_CALL(*gl_, GetError())
+        .WillOnce(Return(GL_NO_ERROR))
+        .WillOnce(Return(GL_NO_ERROR))
         .RetiresOnSaturation();
     cmds::CopyTexSubImage2D cmd;
     cmd.Init(GL_TEXTURE_2D, 0, 0, 1, 0, 0, 2, 1);
@@ -2825,6 +2837,10 @@ TEST_P(GLES2DecoderTest, CopyTexSubImage2DTwiceClearsUnclearedTexture) {
     EXPECT_CALL(*gl_, CopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, 2, 1))
         .Times(1)
         .RetiresOnSaturation();
+    EXPECT_CALL(*gl_, GetError())
+        .WillOnce(Return(GL_NO_ERROR))
+        .WillOnce(Return(GL_NO_ERROR))
+        .RetiresOnSaturation();
     cmds::CopyTexSubImage2D cmd;
     cmd.Init(GL_TEXTURE_2D, 0, 0, 0, 0, 0, 2, 1);
     EXPECT_EQ(error::kNoError, ExecuteCmd(cmd));
@@ -2839,6 +2855,10 @@ TEST_P(GLES2DecoderTest, CopyTexSubImage2DTwiceClearsUnclearedTexture) {
   {
     EXPECT_CALL(*gl_, CopyTexSubImage2D(GL_TEXTURE_2D, 0, 1, 1, 0, 0, 1, 1))
         .Times(1)
+        .RetiresOnSaturation();
+    EXPECT_CALL(*gl_, GetError())
+        .WillOnce(Return(GL_NO_ERROR))
+        .WillOnce(Return(GL_NO_ERROR))
         .RetiresOnSaturation();
     cmds::CopyTexSubImage2D cmd;
     cmd.Init(GL_TEXTURE_2D, 0, 1, 1, 0, 0, 1, 1);
@@ -2860,6 +2880,10 @@ TEST_P(GLES2DecoderTest, CopyTexSubImage2DClearsUnclearedBackBufferSizedTexture)
   EXPECT_CALL(*gl_, CopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0,
                                       kBackBufferWidth, kBackBufferHeight))
       .Times(1)
+      .RetiresOnSaturation();
+  EXPECT_CALL(*gl_, GetError())
+      .WillOnce(Return(GL_NO_ERROR))
+      .WillOnce(Return(GL_NO_ERROR))
       .RetiresOnSaturation();
   cmds::CopyTexSubImage2D cmd;
   cmd.Init(GL_TEXTURE_2D, 0, 0, 0, 0, 0, kBackBufferWidth, kBackBufferHeight);

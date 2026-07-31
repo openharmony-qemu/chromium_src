@@ -805,6 +805,78 @@ TEST_P(RestrictedCookieManagerTest, GetAllForUrlFromOpaqueOrigin) {
   EXPECT_TRUE(received_bad_message());
 }
 
+TEST_P(RestrictedCookieManagerTest, GetAllForUrlSpoofedSiteForCookies) {
+  std::unique_ptr<net::CanonicalCookie> cookie =
+      net::CanonicalCookie::CreateUnsafeCookieForTesting(
+          "strict-cookie", "value", "example.com", "/", base::Time(),
+          base::Time(), base::Time(), base::Time(),
+          /*secure=*/true,
+          /*httponly=*/false, net::CookieSameSite::STRICT_MODE,
+          net::COOKIE_PRIORITY_DEFAULT, net::CookieSourceType::kOther);
+  ASSERT_TRUE(SetCanonicalCookie(*cookie, "https", /*can_modify_httponly=*/true,
+                                 net::CookieOptions::SameSiteCookieContext::
+                                     ContextType::SAME_SITE_STRICT));
+
+  service_->OverrideIsolationInfoForTesting(kOtherIsolationInfo);
+
+  auto options = mojom::CookieManagerGetOptions::New();
+  options->name = "strict-cookie";
+  options->match_type = mojom::CookieMatchType::EQUALS;
+
+  std::vector<net::CanonicalCookie> cookies = sync_service_->GetAllForUrl(
+      kDefaultUrlWithPath, net::SiteForCookies::FromUrl(kDefaultUrl),
+      kDefaultOrigin, net::StorageAccessApiStatus::kNone, std::move(options));
+
+  EXPECT_THAT(cookies, IsEmpty());
+}
+
+TEST_P(RestrictedCookieManagerTest, SetCanonicalCookieSpoofedSiteForCookies) {
+  service_->OverrideIsolationInfoForTesting(kOtherIsolationInfo);
+
+  bool result = sync_service_->SetCanonicalCookie(
+      mojom::RestrictedCanonicalCookieParams::New(
+          "strict-cookie", "value", "example.com", "/", base::Time(),
+          base::Time(), base::Time(), /*secure=*/true,
+          /*httponly=*/false, net::CookieSameSite::STRICT_MODE,
+          net::COOKIE_PRIORITY_DEFAULT,
+          mojom::RestrictedCookiePartition::UNPARTITIONED),
+      kDefaultUrlWithPath, net::SiteForCookies::FromUrl(kDefaultUrl),
+      kDefaultOrigin, net::StorageAccessApiStatus::kNone);
+
+  EXPECT_FALSE(result);
+
+  auto options = mojom::CookieManagerGetOptions::New();
+  options->name = "strict-cookie";
+  options->match_type = mojom::CookieMatchType::EQUALS;
+
+  std::vector<net::CanonicalCookie> cookies = sync_service_->GetAllForUrl(
+      kDefaultUrlWithPath, net::SiteForCookies(), kDefaultOrigin,
+      net::StorageAccessApiStatus::kNone, std::move(options));
+
+  EXPECT_THAT(cookies, IsEmpty());
+}
+
+TEST_P(RestrictedCookieManagerTest, SetCookieFromStringSpoofedSiteForCookies) {
+  service_->OverrideIsolationInfoForTesting(kOtherIsolationInfo);
+
+  sync_service_->SetCookieFromString(
+      kDefaultUrlWithPath, net::SiteForCookies::FromUrl(kDefaultUrl),
+      kDefaultOrigin, net::StorageAccessApiStatus::kNone,
+      /*get_version_shared_memory=*/false,
+      /*is_ad_tagged=*/false, /*apply_devtools_overrides=*/false,
+      "strict-cookie=value;SameSite=Strict;Secure;path=/");
+
+  auto options = mojom::CookieManagerGetOptions::New();
+  options->name = "strict-cookie";
+  options->match_type = mojom::CookieMatchType::EQUALS;
+
+  std::vector<net::CanonicalCookie> cookies = sync_service_->GetAllForUrl(
+      kDefaultUrlWithPath, net::SiteForCookies(), kDefaultOrigin,
+      net::StorageAccessApiStatus::kNone, std::move(options));
+
+  EXPECT_THAT(cookies, IsEmpty());
+}
+
 TEST_P(RestrictedCookieManagerTest, GetAllForUrlSkipAccessNotification) {
   SetSessionCookie("cookie1", "value1", "example.com", "/");
   SetSessionCookie("cookie2", "value2", "example.com", "/");

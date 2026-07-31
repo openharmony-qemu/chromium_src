@@ -1012,8 +1012,7 @@ media::GpuVideoAcceleratorFactories* RenderThreadImpl::GetGpuFactories() {
   auto media_context_provider = viz::ContextProviderCommandBuffer::CreateForGL(
       gpu_channel_host, kGpuStreamIdMedia, kGpuStreamPriorityMedia,
       GURL("chrome://gpu/RenderThreadImpl::CreateOffscreenContext/Media"),
-      viz::command_buffer_metrics::ContextType::MEDIA,
-      /*lose_context_when_out_of_memory=*/true);
+      viz::command_buffer_metrics::ContextType::MEDIA);
 
   const bool enable_video_decode_accelerator =
 #if BUILDFLAG(IS_LINUX)
@@ -1098,8 +1097,7 @@ RenderThreadImpl::GetVideoFrameCompositorContextProvider(
                "RenderCompositor"),
           /*automatic_flushes=*/false, /*support_locking=*/false, limits,
           viz::command_buffer_metrics::ContextType::RENDERER_COMPOSITOR,
-          /*enable_gpu_rasterization=*/false,
-          /*lose_context_when_out_of_memory=*/true);
+          /*enable_gpu_rasterization=*/false);
 
   return video_frame_compositor_context_provider_;
 }
@@ -1157,8 +1155,7 @@ RenderThreadImpl::SharedMainThreadContextProvider() {
           /*automatic_flushes=*/true, /*support_locking=*/false,
           gpu::SharedMemoryLimits(),
           viz::command_buffer_metrics::ContextType::RENDERER_MAIN_THREAD,
-          /*enable_gpu_rasterization=*/true,
-          /*lose_context_when_out_of_memory=*/true);
+          /*enable_gpu_rasterization=*/true);
 
   auto result = shared_main_thread_contexts_->BindToCurrentSequence();
   if (result != gpu::ContextResult::kSuccess) {
@@ -1656,8 +1653,7 @@ RenderThreadImpl::SharedCompositorWorkerContextProvider(
           /*automatic_flushes=*/false, /*support_locking=*/true,
           shared_memory_limits,
           viz::command_buffer_metrics::ContextType::RENDERER_RASTER_WORKER,
-          /*enable_gpu_rasterization=*/support_gpu_rasterization,
-          /*lose_context_when_out_of_memory=*/true);
+          /*enable_gpu_rasterization=*/support_gpu_rasterization);
 
   auto result = shared_worker_context_provider_->BindToCurrentSequence();
   if (result != gpu::ContextResult::kSuccess) {

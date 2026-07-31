@@ -519,13 +519,34 @@ void XRInputSource::ProcessOverlayHitTest(
   // the common base class to cover both. (There's no intention to actively
   // support framesets for DOM Overlay, but this helps prevent them from
   // being used as a mechanism for information leaks.)
-  HTMLFrameElementBase* frame = DynamicTo<HTMLFrameElementBase>(hit_element);
-  if (frame) {
-    Document* hit_document = frame->contentDocument();
-    if (hit_document) {
-      Frame* hit_frame = hit_document->GetFrame();
-      DCHECK(hit_frame);
-      if (hit_frame->IsCrossOriginToOutermostMainFrame()) {
+  HTMLFrameElementBase* frame_element =
+      DynamicTo<HTMLFrameElementBase>(hit_element);
+  if (frame_element) {
+    Frame* hit_frame = frame_element->ContentFrame();
+    if (hit_frame) {
+      bool is_cross_origin = false;
+      const SecurityOrigin* session_origin =
+          session_->GetExecutionContext()->GetSecurityOrigin();
+
+      // Ensure that same-origin wrapper iframes cannot be used to bypass input
+      // suppression for nested cross-origin iframes. Walk the entire frame
+      // subtree to check if any descendant frame is cross-origin or remote.
+      for (Frame* node = hit_frame; node != nullptr;
+           node = node->Tree().TraverseNext(hit_frame)) {
+        if (node->IsRemoteFrame()) {
+          is_cross_origin = true;
+          break;
+        } else {
+          const SecurityOrigin* hit_origin =
+              node->GetSecurityContext()->GetSecurityOrigin();
+          if (!hit_origin->IsSameOriginWith(session_origin)) {
+            is_cross_origin = true;
+            break;
+          }
+        }
+      }
+
+      if (is_cross_origin) {
         // Mark the input source as invisible until the primary button is
         // released.
         state_.is_visible = false;

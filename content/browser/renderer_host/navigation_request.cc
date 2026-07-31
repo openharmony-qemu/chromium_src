@@ -3818,6 +3818,12 @@ void NavigationRequest::OnRequestRedirected(
 
   did_encounter_cross_origin_redirect_ |= !is_same_origin_redirect;
 
+  // Reset the LCPP hint as the hint is for the original page and not for the
+  // redirected one. Only for cross-origin redirects.
+  if (!is_same_origin_redirect) {
+    commit_params_->lcpp_hint = nullptr;
+  }
+
   // Only same-origin navigations without cross-origin redirects can
   // expose response details (status-code / mime-type).
   // https://github.com/whatwg/fetch/issues/1602

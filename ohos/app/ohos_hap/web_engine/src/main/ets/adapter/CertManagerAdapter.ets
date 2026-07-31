@@ -30,7 +30,9 @@ const TAG: string = 'CertManagerAdapter';
 
 @injectable()
 export class CertManagerAdapter extends BaseAdapter {
+  private static INVALID_OS_LOCAL_USER_ID: number = 0;
   private ctxAdapter: ContextAdapter;
+  private localUserId: number | undefined = undefined;
 
   constructor(@inject(ContextAdapter) ctxAdapter: ContextAdapter) {
     super();
@@ -61,13 +63,18 @@ export class CertManagerAdapter extends BaseAdapter {
     callback: (ready: number) => void) {
     const keystore: Uint8Array =  new Uint8Array(certData);
     const keystorePwd: string = certPass;
-    certManager.installPrivateCertificate(keystore, keystorePwd, alias)
-      .then((cmResult) => {
-        callback(0);
-      }).catch((err: BusinessError) => {
-      LogUtil.error(TAG, `installPrivateCertificate failed, code: ${err.code}`);
-      callback(err.code);
-    });
+    try {
+      certManager.installPrivateCertificate(keystore, keystorePwd, alias)
+        .then((cmResult) => {
+          callback(0);
+        }).catch((err: BusinessError) => {
+        LogUtil.error(TAG, `installPrivateCertificate failed, code: ${err.code}`);
+        callback(err.code);
+      });
+    } catch (error) {
+      LogUtil.error(TAG, `installPersonalCert failed: ${JSON.stringify(error)}`);
+      callback(error.code);
+    }
   }
 
   private uint8ArrayToString(data: Uint8Array) {
@@ -117,12 +124,17 @@ export class CertManagerAdapter extends BaseAdapter {
 
   @LogMethod
   removeCertByUri(uriparam: string, callback: Function) {
-    certManager.uninstallPrivateCertificate(uriparam).then(() => {
-      callback(0);
-    }).catch((err: BusinessError) => {
-      LogUtil.error(TAG, `uninstallPrivateCertificate failed, code: ${err.code}`);
-      callback(err.code);
-    });
+    try {
+      certManager.uninstallPrivateCertificate(uriparam).then(() => {
+        callback(0);
+      }).catch((err: BusinessError) => {
+        LogUtil.error(TAG, `uninstallPrivateCertificate failed, code: ${err.code}`);
+        callback(err.code);
+      });
+    } catch (error) {
+      LogUtil.error(TAG, `signByCertUri failed: ${JSON.stringify(error)}`);
+      callback(error.code);
+    }
   }
 
   @LogMethod
@@ -134,65 +146,82 @@ export class CertManagerAdapter extends BaseAdapter {
       padding: certManager.CmKeyPadding.CM_PADDING_PKCS1_V1_5,
       digest: certManager.CmKeyDigest.CM_DIGEST_SHA256
     }
-    certManager.init(uri, SignReq, (err: BusinessError, SignHandle: certManager.CMHandle) => {
-      if (err) {
-        LogUtil.error(TAG, `init sign failed, code: ${err.code}`);
-        callback(buffer_return);
-        return;
-      }
-      const SignHandle_const = SignHandle.handle;
-      certManager.update(SignHandle_const, input, (err: BusinessError) => {
+    try {
+      certManager.init(uri, SignReq, (err: BusinessError, SignHandle: certManager.CMHandle) => {
         if (err) {
-          LogUtil.error(TAG, `update sign failed, code: ${err.code}`);
+          LogUtil.error(TAG, `init sign failed, code: ${err.code}`);
           callback(buffer_return);
           return;
         }
-        certManager.finish(SignHandle_const).then((cmResult) => {
-          callback(cmResult.outData || buffer_return);
-        }).catch((err: BusinessError) => {
-          LogUtil.error(TAG, `finish sign failed, code: ${err.code}`);
-          callback(buffer_return);
+        const SignHandle_const = SignHandle.handle;
+        certManager.update(SignHandle_const, input, (err: BusinessError) => {
+          if (err) {
+            LogUtil.error(TAG, `update sign failed, code: ${err.code}`);
+            callback(buffer_return);
+            return;
+          }
+          certManager.finish(SignHandle_const).then((cmResult) => {
+            callback(cmResult.outData || buffer_return);
+          }).catch((err: BusinessError) => {
+            LogUtil.error(TAG, `finish sign failed, code: ${err.code}`);
+            callback(buffer_return);
+          });
         });
-      });
-    })
+      })
+    } catch (error) {
+      LogUtil.error(TAG, `signByCertUri failed: ${JSON.stringify(error)}`);
+      callback(buffer_return);
+    }
   }
 
   async getUserId(): Promise<number> {
-    let accountManager = account_osAccount.getAccountManager();
-    let localId: number = await accountManager.getOsAccountLocalId();
-    return await Promise.resolve(localId);
+    if (this.localUserId === undefined || this.localUserId === CertManagerAdapter.INVALID_OS_LOCAL_USER_ID) {
+      let accountManager = account_osAccount.getAccountManager();
+      this.localUserId = await accountManager.getOsAccountLocalId();
+      LogUtil.info(TAG, "Current OS local user id from AccountManager: " + this.localUserId);
+    }
+    return this.localUserId;
   }
 
   @LogMethod
   async returnUserId(callback: Function) {
-    let userid: number = await this.getUserId();
-    callback(userid);
+    let userid: number = CertManagerAdapter.INVALID_OS_LOCAL_USER_ID;
+    try {
+      userid = await this.getUserId();
+    } catch (error) {
+      LogUtil.error(TAG, `returnUserId error: ${JSON.stringify(error)}`);
+    } finally {
+      callback(userid);
+    }
   }
 
   @LogMethod
   async getCertCrl(pathDirPrefix:string, getUserIdFlag: boolean, callback: Function) {
-    let option = new ListFileOption();
-    let pathDir: string;
-    if (getUserIdFlag) {
-      let userid: number = await this.getUserId();
-      pathDir = pathDirPrefix + userid;
-    } else {
-      pathDir = pathDirPrefix;
-    }
-
     let cert_crl = new Array<string>();
-    let res = fs.accessSync(pathDir);
-    if (!res) {
-      callback(cert_crl, 0);
-      return;
+    try {
+      let option = new ListFileOption();
+      let pathDir: string;
+      if (getUserIdFlag) {
+        let userid: number = await this.getUserId();
+        pathDir = pathDirPrefix + userid;
+      } else {
+        pathDir = pathDirPrefix;
+      }
+
+      let res = fs.accessSync(pathDir);
+      if (res) {
+        let filenames = fs.listFileSync(pathDir, option);
+        for (let i = 0; i < filenames.length; i++) {
+          let filePath: string = pathDir + '/' + filenames[i];
+          let buf: string = this.readFile(filePath);
+          cert_crl.push(buf);
+        }
+      }
+    } catch (error) {
+      LogUtil.error(TAG, `getCertCrl error: ${JSON.stringify(error)}`);
+    } finally {
+      callback(cert_crl, cert_crl.length);
     }
-    let filenames = fs.listFileSync(pathDir, option);
-    for (let i = 0; i < filenames.length; i++) {
-      let filePath: string = pathDir + '/' + filenames[i];
-      let buf: string = this.readFile(filePath);
-      cert_crl.push(buf);
-    }
-    callback(cert_crl, cert_crl.length);
   }
 
   @LogMethod

@@ -7081,6 +7081,7 @@ bool GLES2DecoderImpl::ClearUnclearedAttachments(GLenum target,
 
   GLbitfield clear_bits = 0;
   bool reset_draw_buffers = false;
+  bool rebound_draw_for_clear = cleared_int_renderbuffers;
   if (framebuffer->HasUnclearedColorAttachments()) {
     // We should always use alpha == 0 here, because 1) some draw buffers may
     // have alpha and some may not; 2) we won't have the same situation as the
@@ -7090,6 +7091,14 @@ bool GLES2DecoderImpl::ClearUnclearedAttachments(GLenum target,
     clear_bits |= GL_COLOR_BUFFER_BIT;
 
     if (SupportsDrawBuffers()) {
+      // Ensure |framebuffer| is bound as DRAW before preparing draw buffers.
+      // Otherwise glDrawBuffersARB mutates the wrong FBO's state, causing
+      // the glClear to skip clearing uncleared attachments.
+      if (!rebound_draw_for_clear && target == GL_READ_FRAMEBUFFER &&
+          draw_framebuffer != framebuffer) {
+        BindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer->service_id());
+        rebound_draw_for_clear = true;
+      }
       reset_draw_buffers =
           framebuffer->PrepareDrawBuffersForClearingUninitializedAttachments();
     }
@@ -7109,8 +7118,8 @@ bool GLES2DecoderImpl::ClearUnclearedAttachments(GLenum target,
   }
 
   if (clear_bits) {
-    if (!cleared_int_renderbuffers &&
-        target == GL_READ_FRAMEBUFFER && draw_framebuffer != framebuffer) {
+    if (!rebound_draw_for_clear && target == GL_READ_FRAMEBUFFER &&
+        draw_framebuffer != framebuffer) {
       // TODO(zmo): There is no guarantee that an FBO that is complete on the
       // READ attachment will be complete as a DRAW attachment.
       BindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer->service_id());

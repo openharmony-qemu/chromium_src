@@ -150,6 +150,9 @@ PA_ALWAYS_INLINE void ShimCppDeleteWithSize(void* address, size_t size) {
 #if PA_BUILDFLAG(IS_APPLE) && !PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
   context = malloc_default_zone();
 #endif
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosRestrace(RES_VMA_ARKWEB, address, size, TAG_RES_VMA_ARKWEB, false);
+#endif
   return chain_head->free_with_size_function(address, size, context);
 }
 
@@ -160,6 +163,9 @@ PA_ALWAYS_INLINE void ShimCppDeleteWithAlignment(void* address,
   void* context = nullptr;
 #if PA_BUILDFLAG(IS_APPLE) && !PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
   context = malloc_default_zone();
+#endif
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosRestrace(RES_VMA_ARKWEB, address, 0, TAG_RES_VMA_ARKWEB, false);
 #endif
   return chain_head->free_with_alignment_function(address, alignment, context);
 }
@@ -172,6 +178,9 @@ PA_ALWAYS_INLINE void ShimCppDeleteWithSizeAndAlignment(void* address,
   void* context = nullptr;
 #if PA_BUILDFLAG(IS_APPLE) && !PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
   context = malloc_default_zone();
+#endif
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosRestrace(RES_VMA_ARKWEB, address, size, TAG_RES_VMA_ARKWEB, false);
 #endif
   return chain_head->free_with_size_and_alignment_function(address, size,
                                                            alignment, context);
@@ -223,9 +232,11 @@ PA_ALWAYS_INLINE void* ShimRealloc(void* address, size_t size, void* context) {
     ptr = chain_head->realloc_function(address, size, context);
   }
 #if PA_BUILDFLAG(IS_OHOS)
-  if (address != ptr) {
+  if (ptr != nullptr) {
     OhosRestrace(RES_VMA_ARKWEB, address, 0, TAG_RES_VMA_ARKWEB, false);
     OhosRestrace(RES_VMA_ARKWEB, ptr, size, TAG_RES_VMA_ARKWEB, true);
+  } else if (address != nullptr && size == 0) {
+    OhosRestrace(RES_VMA_ARKWEB, address, 0, TAG_RES_VMA_ARKWEB, false);
   }
 #endif
   return ptr;
@@ -296,6 +307,9 @@ PA_ALWAYS_INLINE void ShimFree(void* address, void* context) {
 PA_ALWAYS_INLINE void ShimFreeWithSize(void* ptr, size_t size, void* context) {
   const allocator_shim::AllocatorDispatch* const chain_head =
       allocator_shim::internal::GetChainHead();
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosRestrace(RES_VMA_ARKWEB, ptr, size, TAG_RES_VMA_ARKWEB, false);
+#endif
   return chain_head->free_with_size_function(ptr, size, context);
 }
 
@@ -396,9 +410,11 @@ PA_ALWAYS_INLINE void* ShimAlignedRealloc(void* address,
         chain_head->aligned_realloc_function(address, size, alignment, context);
   }
 #if PA_BUILDFLAG(IS_OHOS)
-  if (address != ptr) {
+  if (ptr != nullptr) {
     OhosRestrace(RES_VMA_ARKWEB, address, 0, TAG_RES_VMA_ARKWEB, false);
     OhosRestrace(RES_VMA_ARKWEB, ptr, size, TAG_RES_VMA_ARKWEB, true);
+  } else if (address != nullptr && size == 0) {
+    OhosRestrace(RES_VMA_ARKWEB, address, 0, TAG_RES_VMA_ARKWEB, false);
   }
 #endif
   return ptr;

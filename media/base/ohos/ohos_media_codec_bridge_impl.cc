@@ -185,8 +185,12 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::Configure(
   codec_task_runner_ = codec_task_runner;
   cb_->codec_callback_task_runner_ = codec_task_runner;
   OH_AVErrCode ret = OH_VideoEncoder_Configure(video_encoder_, &config_format);
-  return ret == AV_ERR_OK ? CodecCodeAdapter::ENCODER_OK
-                          : CodecCodeAdapter::ENCODER_ERROR;
+  if (ret != AV_ERR_OK) {
+    LOG(ERROR) << "[VideoEncode] " << __func__
+               << ": call OH_VideoEncoder_Configure failed, error=" << static_cast<int>(ret);
+    return CodecCodeAdapter::ENCODER_ERROR;
+  }
+  return CodecCodeAdapter::ENCODER_OK;
 }
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::Prepare() {
@@ -196,8 +200,12 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::Prepare() {
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   OH_AVErrCode ret = OH_VideoEncoder_Prepare(video_encoder_);
-  return ret == AV_ERR_OK ? CodecCodeAdapter::ENCODER_OK
-                          : CodecCodeAdapter::ENCODER_ERROR;
+  if (ret != AV_ERR_OK) {
+    LOG(ERROR) << "[VideoEncode] " << __func__
+               << ": call OH_VideoEncoder_Prepare failed, error=" << static_cast<int>(ret);
+    return CodecCodeAdapter::ENCODER_ERROR;
+  }
+  return CodecCodeAdapter::ENCODER_OK;
 }
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::Start() {
@@ -210,7 +218,8 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::Start() {
 
   OH_AVErrCode ret = OH_VideoEncoder_Start(video_encoder_);
   if (ret != AV_ERR_OK) {
-    LOG(ERROR) << __func__ << " [VideoEncoder] OH_VideoEncoder_Start error.";
+    LOG(ERROR) << "[VideoEncode] " << __func__
+               << ": call OH_VideoEncoder_Start failed, error=" << static_cast<int>(ret);
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   return CodecCodeAdapter::ENCODER_OK;
@@ -225,12 +234,17 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::Stop() {
   }
   OH_AVErrCode ret = OH_VideoEncoder_NotifyEndOfStream(video_encoder_);
   if (ret != AV_ERR_OK) {
-    LOG(ERROR) << __func__ << " [VideoEncoder] OH_VideoEncoder_NotifyEndOfStream error.";
+    LOG(ERROR) << "[VideoEncode] " << __func__
+               << ": call OH_VideoEncoder_NotifyEndOfStream failed, error=" << static_cast<int>(ret);
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   ret = OH_VideoEncoder_Stop(video_encoder_);
-  return ret == AV_ERR_OK ? CodecCodeAdapter::ENCODER_OK
-                          : CodecCodeAdapter::ENCODER_ERROR;
+  if (ret != AV_ERR_OK) {
+    LOG(ERROR) << "[VideoEncode] " << __func__
+               << ": call OH_VideoEncoder_Stop failed, error=" << static_cast<int>(ret);
+    return CodecCodeAdapter::ENCODER_ERROR;
+  }
+  return CodecCodeAdapter::ENCODER_OK;
 }
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::Reset() {
@@ -241,8 +255,12 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::Reset() {
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   OH_AVErrCode ret = OH_VideoEncoder_Reset(video_encoder_);
-  return ret == AV_ERR_OK ? CodecCodeAdapter::ENCODER_OK
-                          : CodecCodeAdapter::ENCODER_ERROR;
+  if (ret != AV_ERR_OK) {
+    LOG(ERROR) << "[VideoEncode] " << __func__
+               << ": call OH_VideoEncoder_Reset failed, error=" << static_cast<int>(ret);
+    return CodecCodeAdapter::ENCODER_ERROR;
+  }
+  return CodecCodeAdapter::ENCODER_OK;
 }
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::Release() {
@@ -254,12 +272,12 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::Release() {
   }
   OH_AVErrCode ret = OH_VideoEncoder_Destroy(video_encoder_);
   if (ret != AV_ERR_OK) {
-    LOG(ERROR) << __func__ << " [VideoEncoder] OH_VideoEncoder_Destroy error.";
+    LOG(ERROR) << "[VideoEncode] " << __func__
+               << ": call OH_VideoEncoder_Destroy failed, error=" << static_cast<int>(ret);
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   video_encoder_ = nullptr;
-  return ret == AV_ERR_OK ? CodecCodeAdapter::ENCODER_OK
-                          : CodecCodeAdapter::ENCODER_ERROR;
+  return CodecCodeAdapter::ENCODER_OK;
 }
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::CreateInputSurface() {
@@ -274,7 +292,8 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::CreateInputSurface() {
     ret = OH_VideoEncoder_GetSurface(video_encoder_, &native_window_);
   }
   if (ret != AV_ERR_OK) {
-    LOG(ERROR) << __func__ << " [VideoEncoder] OH_VideoEncoder_GetSurface failed." << ret;
+    LOG(ERROR) << "[VideoEncode] " << __func__
+               << ": call OH_VideoEncoder_GetSurface failed, error=" << static_cast<int>(ret);
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   return CodecCodeAdapter::ENCODER_OK;

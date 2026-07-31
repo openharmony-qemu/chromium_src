@@ -169,9 +169,11 @@ void BluetoothClassicDeviceOhos::Connect(PairingDelegate* pairing_delegate,
 }
 
 void BluetoothClassicDeviceOhos::SetPinCode(const std::string& pincode) {
-  BluetoothOhos::SetDevicePinCode(device_id_, pincode, [](bool is_succeed) {
+  std::string device_id = device_id_;
+  BluetoothOhos::SetDevicePinCode(device_id, pincode, [device_id](bool is_succeed) {
     if (!is_succeed) {
-      LOG(ERROR) << "set device pin code failed.";
+      LOG(ERROR) << "[BluetoothClassicDeviceOhos] " << __func__
+                 << ": call BluetoothOhos::SetDevicePinCode failed, device_id=" << device_id;
     }
   });
 }
@@ -201,7 +203,8 @@ void BluetoothClassicDeviceOhos::Pair(
           FROM_HERE,
           base::BindOnce(std::move(callback), std::nullopt));
     } else {
-      LOG(WARNING) << this->device_id_ << ": Paired Failed.";
+      LOG(WARNING) << "[BluetoothClassicDeviceOhos] " << __func__
+                   << ": call BluetoothOhos::PairDevice failed, device_id=" << device_id_;
       base::TaskRunnerOHOS::GetUIThreadTaskRunner()->PostTask(
           FROM_HERE,
           base::BindOnce(std::move(callback), BluetoothDevice::ERROR_FAILED));

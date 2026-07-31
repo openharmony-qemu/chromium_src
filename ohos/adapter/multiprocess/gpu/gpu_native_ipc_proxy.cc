@@ -14,6 +14,7 @@ namespace ohos::adapter::multiprocess {
 
 OH_IPC_ErrorCode GpuNativeIpcProxy::GetPid(int32_t* child_pid) {
   if (child_pid == nullptr) {
+    LOGE("[GpuNativeIpcProxy] %{public}s: child_pid parameter is null", __func__);
     return OH_IPC_CHECK_PARAM_ERROR;
   }
   return PerformRequest(std::make_unique<RequestGetPid>(child_pid));
@@ -28,6 +29,8 @@ OH_IPC_ErrorCode GpuNativeIpcProxy::InitializeWindowAdapter(
 OH_IPC_ErrorCode GpuNativeIpcProxy::AddWindow(const std::string& window_id,
                                               void* window) {
   if (window == nullptr) {
+    LOGE("[GpuNativeIpcProxy] %{public}s: window parameter is null, window_id=%{public}s",
+         __func__, window_id.c_str());
     return OH_IPC_CHECK_PARAM_ERROR;
   }
   return PerformRequest(std::make_unique<RequestAddWindow>(window_id, window));
@@ -48,6 +51,8 @@ OH_IPC_ErrorCode GpuNativeIpcProxy::NotifyWindowChange(
     const std::string& window_id,
     void* window) {
   if (window == nullptr) {
+    LOGE("[GpuNativeIpcProxy] %{public}s: window parameter is null, window_id=%{public}s",
+         __func__, window_id.c_str());
     return OH_IPC_CHECK_PARAM_ERROR;
   }
   return PerformRequest(
@@ -59,14 +64,16 @@ OH_IPC_ErrorCode RequestGetPid::Run(const OHIPCRemoteProxy* remote_proxy) {
       remote_proxy, static_cast<uint32_t>(GpuNativeIpcOpCode::GET_PID),
       data_parcel_, reply_parcel_, nullptr);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Request native IPC request error: %{public}d", ret);
+    LOGE("[GpuNativeIpcProxy] %{public}s: call OH_IPCRemoteProxy_SendRequest GET_PID failed, error=%{public}d",
+         __func__, ret);
     return static_cast<OH_IPC_ErrorCode>(ret);
   }
 
   int32_t child_pid;
   ret = OH_IPCParcel_ReadInt32(reply_parcel_, &child_pid);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Read GPU process pid from reply parcel error: %{public}d", ret);
+    LOGE("[GpuNativeIpcProxy] %{public}s: call OH_IPCParcel_ReadInt32 for child_pid failed, error=%{public}d",
+         __func__, ret);
     return static_cast<OH_IPC_ErrorCode>(ret);
   }
 
@@ -78,20 +85,23 @@ OH_IPC_ErrorCode RequestInitializeWindowAdapter::Run(
     const OHIPCRemoteProxy* remote_proxy) {
   int ret = OH_IPCParcel_WriteInt32(data_parcel_, windows_.size());
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Write # of elements into data parcel error: %{public}d", ret);
+    LOGE("[GpuNativeIpcProxy] %{public}s: call OH_IPCParcel_WriteInt32 for window count failed, error=%{public}d",
+         __func__, ret);
     return static_cast<OH_IPC_ErrorCode>(ret);
   }
 
   for (auto& [window_id, window] : windows_) {
     ret = OH_IPCParcel_WriteString(data_parcel_, window_id.c_str());
     if (ret != OH_IPC_SUCCESS) {
-      LOGE("Write window id into data parcel error: %{public}d", ret);
+      LOGE("[GpuNativeIpcProxy] %{public}s: call OH_IPCParcel_WriteString for window_id failed, error=%{public}d",
+           __func__, ret);
       return static_cast<OH_IPC_ErrorCode>(ret);
     }
 
     ret = NativeWindowWriteToParcel(window, data_parcel_);
     if (ret != 0) {
-      LOGE("Write native window and attr into parcel failed.");
+      LOGE("[GpuNativeIpcProxy] %{public}s: NativeWindowWriteToParcel failed for window_id=%{public}s",
+           __func__, window_id.c_str());
       return OH_IPC_PARCEL_WRITE_ERROR;
     }
   }
@@ -101,7 +111,9 @@ OH_IPC_ErrorCode RequestInitializeWindowAdapter::Run(
       static_cast<uint32_t>(GpuNativeIpcOpCode::INITIALIZE_WINDOW_ADAPTER),
       data_parcel_, reply_parcel_, nullptr);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Request native IPC request error: %{public}d", ret);
+    LOGE("[GpuNativeIpcProxy] %{public}s:"
+         "call OH_IPCRemoteProxy_SendRequest INITIALIZE_WINDOW_ADAPTER failed, error=%{public}d",
+         __func__, ret);
     return static_cast<OH_IPC_ErrorCode>(ret);
   }
 
@@ -111,12 +123,14 @@ OH_IPC_ErrorCode RequestInitializeWindowAdapter::Run(
 OH_IPC_ErrorCode RequestAddWindow::Run(const OHIPCRemoteProxy* remote_proxy) {
   int ret = OH_IPCParcel_WriteString(data_parcel_, window_id_.c_str());
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Write window id into data parcel error: %{public}d", ret);
+    LOGE("[GpuNativeIpcProxy] %{public}s: call OH_IPCParcel_WriteString for window_id failed, error=%{public}d",
+         __func__, ret);
     return static_cast<OH_IPC_ErrorCode>(ret);
   }
   ret = NativeWindowWriteToParcel(window_, data_parcel_);
   if (ret != 0) {
-    LOGE("Write native window into data parcel error: %{public}d", ret);
+    LOGE("[GpuNativeIpcProxy] %{public}s: NativeWindowWriteToParcel failed, window_id=%{public}s, error=%{public}d",
+         __func__, window_id_.c_str(), ret);
     return OH_IPC_PARCEL_WRITE_ERROR;
   }
 
@@ -124,7 +138,8 @@ OH_IPC_ErrorCode RequestAddWindow::Run(const OHIPCRemoteProxy* remote_proxy) {
       remote_proxy, static_cast<uint32_t>(GpuNativeIpcOpCode::ADD_WINDOW),
       data_parcel_, reply_parcel_, nullptr);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Request native IPC request error: %{public}d", ret);
+    LOGE("[GpuNativeIpcProxy] %{public}s: call OH_IPCRemoteProxy_SendRequest ADD_WINDOW failed, error=%{public}d",
+         __func__, ret);
     return static_cast<OH_IPC_ErrorCode>(ret);
   }
 
@@ -135,7 +150,8 @@ OH_IPC_ErrorCode RequestRemoveWindow::Run(
     const OHIPCRemoteProxy* remote_proxy) {
   int ret = OH_IPCParcel_WriteString(data_parcel_, window_id_.c_str());
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Write window id into data parcel error: %{public}d", ret);
+    LOGE("[GpuNativeIpcProxy] %{public}s: call OH_IPCParcel_WriteString for window_id failed, error=%{public}d",
+         __func__, ret);
     return static_cast<OH_IPC_ErrorCode>(ret);
   }
 
@@ -143,7 +159,8 @@ OH_IPC_ErrorCode RequestRemoveWindow::Run(
       remote_proxy, static_cast<uint32_t>(GpuNativeIpcOpCode::REMOVE_WINDOW),
       data_parcel_, reply_parcel_, nullptr);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Request native IPC request error: %{public}d", ret);
+    LOGE("[GpuNativeIpcProxy] %{public}s: call OH_IPCRemoteProxy_SendRequest REMOVE_WINDOW failed, error=%{public}d",
+         __func__, ret);
     return static_cast<OH_IPC_ErrorCode>(ret);
   }
 
@@ -154,12 +171,14 @@ OH_IPC_ErrorCode RequestSetWindowWidget::Run(
     const OHIPCRemoteProxy* remote_proxy) {
   int ret = OH_IPCParcel_WriteString(data_parcel_, window_id_.c_str());
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Write window id into data parcel error: %{public}d", ret);
+    LOGE("[GpuNativeIpcProxy] %{public}s: call OH_IPCParcel_WriteString for window_id failed, error=%{public}d",
+         __func__, ret);
     return static_cast<OH_IPC_ErrorCode>(ret);
   }
   ret = OH_IPCParcel_WriteInt32(data_parcel_, widget_id_);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Write widget id into data parcel error: %{public}d", ret);
+    LOGE("[GpuNativeIpcProxy] %{public}s: call OH_IPCParcel_WriteInt32 for widget_id failed, error=%{public}d",
+         __func__, ret);
     return static_cast<OH_IPC_ErrorCode>(ret);
   }
 
@@ -168,7 +187,9 @@ OH_IPC_ErrorCode RequestSetWindowWidget::Run(
       static_cast<uint32_t>(GpuNativeIpcOpCode::SET_WINDOW_WIDGET),
       data_parcel_, reply_parcel_, nullptr);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Request native IPC request error: %{public}d", ret);
+    LOGE("[GpuNativeIpcProxy] %{public}s:"
+         "call OH_IPCRemoteProxy_SendRequest SET_WINDOW_WIDGET failed, error=%{public}d",
+         __func__, ret);
     return static_cast<OH_IPC_ErrorCode>(ret);
   }
 
@@ -179,12 +200,16 @@ OH_IPC_ErrorCode RequestNotifyWindowChange::Run(
     const OHIPCRemoteProxy* remote_proxy) {
   int ret = OH_IPCParcel_WriteString(data_parcel_, window_id_.c_str());
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Write window id into data parcel error: %{public}d", ret);
+    LOGE("[GpuNativeIpcProxy] %{public}s:"
+         "call OH_IPCParcel_WriteString for window_id failed, error=%{public}d",
+         __func__, ret);
     return static_cast<OH_IPC_ErrorCode>(ret);
   }
   ret = NativeWindowAttrToParcel(window_, data_parcel_);
   if (ret != 0) {
-    LOGE("Write native window into data parcel error: %{public}d", ret);
+    LOGE("[GpuNativeIpcProxy] %{public}s:"
+         "NativeWindowAttrToParcel failed, window_id=%{public}s, error=%{public}d",
+         __func__, window_id_.c_str(), ret);
     return OH_IPC_PARCEL_WRITE_ERROR;
   }
 
@@ -193,7 +218,9 @@ OH_IPC_ErrorCode RequestNotifyWindowChange::Run(
       static_cast<uint32_t>(GpuNativeIpcOpCode::NOTIFY_WINDOW_CHANGE),
       data_parcel_, reply_parcel_, nullptr);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Request native IPC request error: %{public}d", ret);
+    LOGE("[GpuNativeIpcProxy] %{public}s:"
+         "call OH_IPCRemoteProxy_SendRequest NOTIFY_WINDOW_CHANGE failed, error=%{public}d",
+         __func__, ret);
     return static_cast<OH_IPC_ErrorCode>(ret);
   }
 

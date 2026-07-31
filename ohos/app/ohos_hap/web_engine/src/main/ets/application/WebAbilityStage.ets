@@ -123,7 +123,7 @@ export class WebAbilityStage extends AbilityStage {
         this.nativeThemeAdapter = Inject.get(NativeThemeAdapter);
         JsBindingUtils.SetContextPaths();
       }).catch(()=>{
-        console.log('import failed');
+        LogUtil.error(TAG, 'runTaskAsync: import JsBindingMethod failed');
       });
     }, DELAYED_TIME)
   }

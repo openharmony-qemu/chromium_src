@@ -271,9 +271,9 @@ void OhosPipWindow::CreateAndRegisterNativeWindow(uint64_t surface_id) {
   int32_t result = OH_NativeWindow_CreateNativeWindowFromSurfaceId(
       surface_id, &native_window);
   if (result != 0) {
-    LOG(ERROR)
-        << "OH_NativeWindow_CreateNativeWindowFromSurfaceId failed, result: "
-        << result;
+    LOG(ERROR) << "[OhosPipWindow] " << __func__
+               << ": call OH_NativeWindow_CreateNativeWindowFromSurfaceId failed, error=" << result
+               << ", surface_id=" << surface_id;
     return;
   }
 

@@ -85,7 +85,9 @@ int32_t OhosWindowManager::AddWindow(gfx::AcceleratedWidget widget,
   if (native_window) {
     auto ret = OH_NativeWindow_GetSurfaceId(reinterpret_cast<OHNativeWindow*>(native_window), &surface_id);
     if (ret != 0) {
-      LOG(ERROR) << "get xcomponent surface id error";
+      LOG(ERROR) << "[OhosWindowManager] " << __func__
+                 << ": call OH_NativeWindow_GetSurfaceId failed, error=" << ret
+                 << ", widget=" << widget;
       return widget;
     }
 

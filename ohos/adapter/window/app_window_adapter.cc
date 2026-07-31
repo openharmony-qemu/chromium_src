@@ -184,14 +184,14 @@ bool AppWindowAdapter::ShiftWindowMouseEvent(const int32_t source_id,
     jsFunc->Invoke<void>(source_id, target_id, callback);
     auto status = future.wait_for(std::chrono::seconds(3));
     if (status == std::future_status::timeout) {
-      LOGE("[OhosTabDrag] %{public}s Wait timeout", __FUNCTION__);
+      LOGE("[OhosTabDrag] %{public}s Wait timeout", __func__);
       return false;
     }
     bool result = future.get();
     LOGI(
         "[OhosTabDrag] %{public}s future "
         "result:%{public}d",
-        __FUNCTION__, result);
+        __func__, result);
     return result;
   }
   return false;
@@ -210,14 +210,14 @@ bool AppWindowAdapter::ShiftWindowTouchEvent(const int32_t source_id,
     jsFunc->Invoke<void>(source_id, target_id, finger_id, callback);
     auto status = future.wait_for(std::chrono::seconds(3));
     if (status == std::future_status::timeout) {
-      LOGE("[OhosTabDrag] %{public}s Wait timeout", __FUNCTION__);
+      LOGE("[OhosTabDrag] %{public}s Wait timeout", __func__);
       return false;
     }
     bool result = future.get();
     LOGI(
         "[OhosTabDrag] %{public}s future "
         "result:%{public}d",
-        __FUNCTION__, result);
+        __func__, result);
     return result;
   }
   return false;
@@ -232,10 +232,9 @@ bool AppWindowAdapter::Bind(const std::string& id) {
                                          node_content.GetHandle(),
                                          &node_content_handle);
     if (node_content_handle == nullptr) {
-      LOGE(
-          "AppWindowAdapter::Bind Get content node handle failed, "
-          "id:%{public}s",
-          id.c_str());
+      LOGE("[AppWindowAdapter] %{public}s: "
+            "call OH_ArkUI_GetNodeContentFromNapiValue failed, returned nullptr, id=%{public}s",
+           __func__, id.c_str());
       promise->set_value(false);
       return;
     }
@@ -251,10 +250,10 @@ bool AppWindowAdapter::Bind(const std::string& id) {
     auto future = promise->get_future();
     auto status = future.wait_for(std::chrono::seconds(3));
     if (status == std::future_status::timeout) {
-      LOGE("AppWindowAdapter::Bind timeout for %{public}s", id.c_str());
+      LOGE("[AppWindowAdapter] %{public}s: Bind timeout for %{public}s", __func__, id.c_str());
       return false;
     }
- 
+
     return future.get();
   }
   return false;
@@ -269,26 +268,28 @@ bool AppWindowAdapter::UnBind(const std::string& id) {
                                          node_content.GetHandle(),
                                          &node_content_handle);
     if (node_content_handle == nullptr) {
-      LOGE("AppWindowAdapter::UnBind Get content node handle failed");
+      LOGE("[AppWindowAdapter] %{public}s: "
+           "call OH_ArkUI_GetNodeContentFromNapiValue failed, returned nullptr, id=%{public}s",
+           __func__, id.c_str());
       promise->set_value(false);
       return;
     }
- 
+
     promise->set_value(
         xcomponent::XComponentManager::GetInstance()
             ->UnBindNativeXComponentNode(id, node_content_handle));
   };
- 
+
   auto js_func = ohos::adapter::GetJSFunction("AppWindow.UnBind");
   if (js_func) {
     js_func->Invoke<void>(id, callback);
     auto future = promise->get_future();
     auto status = future.wait_for(std::chrono::seconds(3));
     if (status == std::future_status::timeout) {
-      LOGE("AppWindowAdapter::UnBind timeout for %{public}s", id.c_str());
+      LOGE("[AppWindowAdapter] %{public}s: UnBind timeout for %{public}s", __func__, id.c_str());
       return false;
     }
- 
+
     return future.get();
   }
   return false;

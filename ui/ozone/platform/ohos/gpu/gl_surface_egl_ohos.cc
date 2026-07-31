@@ -43,7 +43,9 @@ bool NativeViewGLSurfaceEGLOhos::Resize(const gfx::Size& size,
                                                       size_.width(),
                                                       size_.height());
   if (ret != 0) {
-    LOG(ERROR) << "NativeViewGLSurfaceEGLOhos::Resize error: " << ret;
+    LOG(ERROR) << "[NativeViewGLSurfaceEGLOhos] " << __func__
+               << ": call OH_NativeWindow_NativeWindowHandleOpt(SET_BUFFER_GEOMETRY) failed, error=" << ret
+               << ", width=" << size_.width() << ", height=" << size_.height();
     return false;
   }
   return true;

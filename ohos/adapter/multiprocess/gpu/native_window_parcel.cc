@@ -43,13 +43,16 @@ static int WriteInt32AttrToParcel(NativeWindowOperation op,
   int ret =
       OH_NativeWindow_NativeWindowHandleOpt((OHNativeWindow*)window, op, &val);
   if (ret != 0) {
-    LOGE("Native window %{public}d error: %{public}d", op, ret);
+    LOGE("[NativeWindowParcel] %{public}s:"
+         "call OH_NativeWindow_NativeWindowHandleOpt failed, operation=%{public}d, error=%{public}d",
+         __func__, op, ret);
     return OH_IPC_PARCEL_WRITE_ERROR;
   }
   ret = OH_IPCParcel_WriteInt32(data_parcel, val);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Native window write %{public}d into parcel error: %{public}d", op,
-         ret);
+    LOGE("[NativeWindowParcel] %{public}s:"
+         "call OH_IPCParcel_WriteInt32 failed, operation=%{public}d, error=%{public}d",
+         __func__, op, ret);
     return ret;
   }
 
@@ -62,14 +65,17 @@ static int ReadInt32AttrFromParcel(NativeWindowOperation op,
   int32_t val;
   int ret = OH_IPCParcel_ReadInt32(data_parcel, &val);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Native window read %{public}d from parcel error: %{public}d", op,
-         ret);
+    LOGE("[NativeWindowParcel] %{public}s:"
+         "call OH_IPCParcel_ReadInt32 failed, operation=%{public}d, error=%{public}d",
+         __func__, op, ret);
     return OH_IPC_PARCEL_READ_ERROR;
   }
 
   ret = OH_NativeWindow_NativeWindowHandleOpt((OHNativeWindow*)window, op, val);
   if (ret != 0) {
-    LOGE("Native window %{public}d error: %{public}d", op, ret);
+    LOGE("[NativeWindowParcel] %{public}s:"
+         "call OH_NativeWindow_NativeWindowHandleOpt failed, operation=%{public}d, error=%{public}d",
+         __func__, op, ret);
     return ret;
   }
 
@@ -83,13 +89,16 @@ static int WriteInt64AttrToParcel(NativeWindowOperation op,
   int ret =
       OH_NativeWindow_NativeWindowHandleOpt((OHNativeWindow*)window, op, &val);
   if (ret != 0) {
-    LOGE("Native window %{public}d error: %{public}d", op, ret);
+    LOGE("[NativeWindowParcel] %{public}s:"
+         "call OH_NativeWindow_NativeWindowHandleOpt failed, operation=%{public}d, error=%{public}d",
+         __func__, op, ret);
     return OH_IPC_PARCEL_WRITE_ERROR;
   }
   ret = OH_IPCParcel_WriteInt64(data_parcel, val);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Native window write %{public}d into parcel error: %{public}d", op,
-         ret);
+    LOGE("[NativeWindowParcel] %{public}s:"
+         "call OH_IPCParcel_WriteInt64 failed, operation=%{public}d, error=%{public}d",
+         __func__, op, ret);
     return ret;
   }
 
@@ -102,14 +111,17 @@ static int ReadInt64AttrFromParcel(NativeWindowOperation op,
   int64_t val;
   int ret = OH_IPCParcel_ReadInt64(data_parcel, &val);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Native window read %{public}d from parcel error: %{public}d", op,
-         ret);
+    LOGE("[NativeWindowParcel] %{public}s:"
+         "call OH_IPCParcel_ReadInt64 failed, operation=%{public}d, error=%{public}d",
+         __func__, op, ret);
     return OH_IPC_PARCEL_READ_ERROR;
   }
 
   ret = OH_NativeWindow_NativeWindowHandleOpt((OHNativeWindow*)window, op, val);
   if (ret != 0) {
-    LOGE("Native window %{public}d error: %{public}d", op, ret);
+    LOGE("[NativeWindowParcel] %{public}s:"
+         "call OH_NativeWindow_NativeWindowHandleOpt failed, operation=%{public}d, error=%{public}d",
+         __func__, op, ret);
     return ret;
   }
 
@@ -122,18 +134,22 @@ int NativeWindowAttrToParcel(void* window, OHIPCParcel* data_parcel) {
   int ret = OH_NativeWindow_NativeWindowHandleOpt(
       (OHNativeWindow*)window, GET_BUFFER_GEOMETRY, &height, &width);
   if (ret != 0) {
-    LOGE("Native window GET_BUFFER_GEOMETRY error: %{public}d", ret);
+    LOGE("[NativeWindowParcel] %{public}s:"
+         "call OH_NativeWindow_NativeWindowHandleOpt GET_BUFFER_GEOMETRY failed, error=%{public}d",
+         __func__, ret);
     return OH_IPC_PARCEL_WRITE_ERROR;
   }
 
   ret = OH_IPCParcel_WriteInt32(data_parcel, height);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Native window write height into parcel error: %{public}d", ret);
+    LOGE("[NativeWindowParcel] %{public}s: call OH_IPCParcel_WriteInt32 for height failed, error=%{public}d",
+         __func__, ret);
     return ret;
   }
   ret = OH_IPCParcel_WriteInt32(data_parcel, width);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Native window write width into parcel error: %{public}d", ret);
+    LOGE("[NativeWindowParcel] %{public}s: call OH_IPCParcel_WriteInt32 for width failed, error=%{public}d",
+         __func__, ret);
     return ret;
   }
 
@@ -152,14 +168,16 @@ int NativeWindowAttrToParcel(void* window, OHIPCParcel* data_parcel) {
   ret = OH_NativeWindow_NativeWindowHandleOpt(
       (OHNativeWindow*)window, GET_APP_FRAMEWORK_TYPE, app_framework_type);
   if (ret != 0) {
-    LOGE("Native window %{public}d error: %{public}d", GET_APP_FRAMEWORK_TYPE,
-         ret);
+    LOGE("[NativeWindowParcel] %{public}s:"
+         "call OH_NativeWindow_NativeWindowHandleOpt GET_APP_FRAMEWORK_TYPE failed, error=%{public}d",
+         __func__, ret);
     return OH_IPC_PARCEL_WRITE_ERROR;
   }
   ret = OH_IPCParcel_WriteString(data_parcel, app_framework_type);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Native window write %{public}d into parcel error: %{public}d",
-         GET_APP_FRAMEWORK_TYPE, ret);
+    LOGE("[NativeWindowParcel] %{public}s:"
+         "call OH_IPCParcel_WriteString for app_framework_type failed, error=%{public}d",
+         __func__, ret);
     return ret;
   }
 
@@ -171,20 +189,24 @@ int NativeWindowAttrFromParcel(const OHIPCParcel* data_parcel, void* window) {
   int32_t width;
   int ret = OH_IPCParcel_ReadInt32(data_parcel, &height);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Native window read height from parcel error: %{public}d", ret);
+    LOGE("[NativeWindowParcel] %{public}s: call OH_IPCParcel_ReadInt32 for height failed, error=%{public}d",
+         __func__, ret);
     return static_cast<OH_IPC_ErrorCode>(ret);
   }
 
   ret = OH_IPCParcel_ReadInt32(data_parcel, &width);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Native window read width from parcel error: %{public}d", ret);
+    LOGE("[NativeWindowParcel] %{public}s: call OH_IPCParcel_ReadInt32 for width failed, error=%{public}d",
+         __func__, ret);
     return static_cast<OH_IPC_ErrorCode>(ret);
   }
 
   ret = OH_NativeWindow_NativeWindowHandleOpt(
       (OHNativeWindow*)window, SET_BUFFER_GEOMETRY, width, height);
   if (ret != 0) {
-    LOGE("Native window set window size error: %{public}d", ret);
+    LOGE("[NativeWindowParcel] %{public}s:"
+         "call OH_NativeWindow_NativeWindowHandleOpt SET_BUFFER_GEOMETRY failed, error=%{public}d",
+         __func__, ret);
     return OH_IPC_PARCEL_READ_ERROR;
   }
 
@@ -201,14 +223,17 @@ int NativeWindowAttrFromParcel(const OHIPCParcel* data_parcel, void* window) {
 
   const char* app_framework_type = OH_IPCParcel_ReadString(data_parcel);
   if (app_framework_type == nullptr) {
-    LOGE("Native window read appFrameworkType from parcel failed.");
+    LOGE("[NativeWindowParcel] %{public}s:"
+         "call OH_IPCParcel_ReadString for app_framework_type failed, returned nullptr",
+         __func__);
     return OH_IPC_PARCEL_READ_ERROR;
   }
   ret = OH_NativeWindow_NativeWindowHandleOpt(
       (OHNativeWindow*)window, SET_APP_FRAMEWORK_TYPE, app_framework_type);
   if (ret != 0) {
-    LOGE("Native window %{public}d error: %{public}d", SET_APP_FRAMEWORK_TYPE,
-         ret);
+    LOGE("[NativeWindowParcel] %{public}s:"
+         "call OH_NativeWindow_NativeWindowHandleOpt SET_APP_FRAMEWORK_TYPE failed, error=%{public}d",
+         __func__, ret);
     return OH_IPC_PARCEL_READ_ERROR;
   }
 
@@ -218,12 +243,13 @@ int NativeWindowAttrFromParcel(const OHIPCParcel* data_parcel, void* window) {
 int NativeWindowWriteToParcel(void* window, OHIPCParcel* data_parcel) {
   int ret = OH_NativeWindow_WriteToParcel((OHNativeWindow*)window, data_parcel);
   if (ret != 0) {
-    LOGE("Write native window into data parcel error: %{public}d", ret);
+    LOGE("[NativeWindowParcel] %{public}s: call OH_NativeWindow_WriteToParcel failed, error=%{public}d",
+         __func__, ret);
     return OH_IPC_PARCEL_WRITE_ERROR;
   }
 
   if (NativeWindowAttrToParcel(window, data_parcel) != OH_IPC_SUCCESS) {
-    LOGE("Native window write attr to parcel error.");
+    LOGE("[NativeWindowParcel] %{public}s: NativeWindowAttrToParcel failed", __func__);
     return OH_IPC_PARCEL_WRITE_ERROR;
   }
 
@@ -235,15 +261,14 @@ int NativeWindowReadFromParcel(const OHIPCParcel* data_parcel, void** window) {
   int32_t ret = OH_NativeWindow_ReadFromParcel(
       const_cast<OHIPCParcel*>(data_parcel), &window_tmp);
   if (ret != 0 || window_tmp == nullptr) {
-    LOGE(
-        "Native window read from parcel error: %{public}d, "
-        "pointer is null? %{public}d",
-        ret, window_tmp == nullptr);
+    LOGE("[NativeWindowParcel] %{public}s: "
+         "call OH_NativeWindow_ReadFromParcel failed, error=%{public}d, window_is_null=%{public}d",
+         __func__, ret, window_tmp == nullptr);
     return OH_IPC_PARCEL_READ_ERROR;
   }
 
   if (NativeWindowAttrFromParcel(data_parcel, window_tmp) != OH_IPC_SUCCESS) {
-    LOGE("Native window setup attr from parcel error.");
+    LOGE("[NativeWindowParcel] %{public}s: NativeWindowAttrFromParcel failed", __func__);
     return OH_IPC_PARCEL_READ_ERROR;
   }
 

@@ -22,22 +22,22 @@ void AppLifeCycle::RegisterAppLifecycle(napi_env env, napi_value exports) {
 }
 
 napi_value AppLifeCycle::OnCreate(napi_env env, napi_callback_info info) {
-  LOGE("AppLifeCycle::OnCreate");
+  LOGI("[AppLifeCycle] %{public}s", __func__);
   return nullptr;
 }
 
 napi_value AppLifeCycle::OnShow(napi_env env, napi_callback_info info) {
-  LOGE("AppLifeCycle::OnShow");
+  LOGI("[AppLifeCycle] %{public}s", __func__);
   return nullptr;
 }
 
 napi_value AppLifeCycle::OnHide(napi_env env, napi_callback_info info) {
-  LOGE("AppLifeCycle::OnHide");
+  LOGI("[AppLifeCycle] %{public}s", __func__);
   return nullptr;
 }
 
 napi_value AppLifeCycle::OnDestroy(napi_env env, napi_callback_info info) {
-  LOGE("AppLifeCycle::OnDestroy");
+  LOGI("[AppLifeCycle] %{public}s", __func__);
   return nullptr;
 }
 

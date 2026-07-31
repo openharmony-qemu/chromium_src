@@ -51,6 +51,8 @@ SkCanvas* OhosCanvasSurface::GetCanvas() {
 
 void OhosCanvasSurface::PresentCanvas(const gfx::Rect& damage) {
   if ((width_ == 1 && height_ == 1) || width_ <= 0 || height_ <= 0) {
+    LOG(ERROR) << "[OhosCanvasSurface] " << __func__
+               << ": Invalid canvas size, width=" << width_ << ", height=" << height_;
     return;
   }
 
@@ -80,11 +82,12 @@ void OhosCanvasSurface::PresentCanvas(const gfx::Rect& damage) {
   ret = OH_NativeWindow_NativeWindowRequestBuffer(
       (OHNativeWindow*)window_, &nativeWindowBuffer, &fenceFd);
   if (ret != 0) {
-    LOG(ERROR) << "OH_NativeWindow_NativeWindowRequestBuffer fail ret=" << ret;
+    LOG(ERROR) << "[OhosCanvasSurface] " << __func__
+               << ": call OH_NativeWindow_NativeWindowRequestBuffer failed, error=" << ret;
     return;
   }
   if (!nativeWindowBuffer) {
-    LOG(ERROR) << "OhosCanvasSurface::PresentCanvas nativeWindowBuffer is null";
+    LOG(ERROR) << "[OhosCanvasSurface] " << __func__ << ": nativeWindowBuffer is null";
     return;
   }
   OH_NativeWindow_NativeObjectReference(nativeWindowBuffer);
@@ -96,17 +99,19 @@ void OhosCanvasSurface::PresentCanvas(const gfx::Rect& damage) {
                                               &height,
                                               &width);
   if (ret != 0) {
-    LOG(ERROR) << "OH_NativeWindow_NativeWindowHandleOpt fail ret=" << ret;
+    LOG(ERROR) << "[OhosCanvasSurface] " << __func__
+               << ": call OH_NativeWindow_NativeWindowHandleOpt(GET_BUFFER_GEOMETRY) failed, error=" << ret;
     OH_NativeWindow_NativeObjectUnreference(nativeWindowBuffer);
     return;
   }
   width = std::min(width, width_);
   height = std::min(height, height_);
- 
+
   BufferHandle* bufferHandle =
       OH_NativeWindow_GetBufferHandleFromNative(nativeWindowBuffer);
   if (!bufferHandle) {
-    LOG(ERROR) << "OhosCanvasSurface::PresentCanvas bufferHandle is null";
+    LOG(ERROR) << "[OhosCanvasSurface] " << __func__
+               << ": call OH_NativeWindow_GetBufferHandleFromNative returned nullptr";
     OH_NativeWindow_NativeObjectUnreference(nativeWindowBuffer);
     return;
   }
@@ -114,7 +119,7 @@ void OhosCanvasSurface::PresentCanvas(const gfx::Rect& damage) {
       mmap(bufferHandle->virAddr, bufferHandle->size, PROT_READ | PROT_WRITE,
            MAP_SHARED, bufferHandle->fd, 0);
   if (mappedAddr == MAP_FAILED) {
-    LOG(ERROR) << "mmap failed";
+    LOG(ERROR) << "[OhosCanvasSurface] " << __func__ << ": mmap failed, errno=" << errno;
     OH_NativeWindow_NativeObjectUnreference(nativeWindowBuffer);
     return;
   }
@@ -129,10 +134,14 @@ void OhosCanvasSurface::PresentCanvas(const gfx::Rect& damage) {
   }
  
   Region region{nullptr, 0};
-  OH_NativeWindow_NativeWindowFlushBuffer((OHNativeWindow*)window_,
-                                          nativeWindowBuffer, fenceFd, region);
+  int32_t flush_result = OH_NativeWindow_NativeWindowFlushBuffer((OHNativeWindow*)window_,
+                                                                 nativeWindowBuffer, fenceFd, region);
+  if (flush_result != 0) {
+    LOG(ERROR) << "[OhosCanvasSurface] " << __func__
+               << ": call OH_NativeWindow_NativeWindowFlushBuffer failed, error=" << flush_result;
+  }
   if (munmap(mappedAddr, bufferHandle->size) < 0) {
-    LOG(ERROR) << ("munmap failed");
+    LOG(ERROR) << "[OhosCanvasSurface] " << __func__ << ": munmap failed, errno=" << errno;
   }
   OH_NativeWindow_NativeObjectUnreference(nativeWindowBuffer);
 }

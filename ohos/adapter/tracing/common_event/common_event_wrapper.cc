@@ -107,6 +107,7 @@ std::string EventData::ToString() const {
 
 void Subscriber::OnCommonEvent(const CommonEvent_RcvData* data) {
   if (data == nullptr) {
+    LOGE("[Subscriber] %{public}s: data is null", __func__);
     return;
   }
 

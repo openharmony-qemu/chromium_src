@@ -46,6 +46,7 @@ using namespace ohos::adapter::multiprocess;
 
 void ChildMain(NativeChildProcess_Args args) {
   if (args.entryParams == nullptr) {
+    LOGE("[NativeChildProcess] %{public}s: args.entryParams is null", __func__);
     return;
   }
   {
@@ -55,6 +56,8 @@ void ChildMain(NativeChildProcess_Args args) {
   std::vector<std::string> commandlines =
       CommandLine::Split(args.entryParams, CommandLine::kArgSeparator);
   if (commandlines.size() == 0) {
+    LOGE("[NativeChildProcess] %{public}s: commandlines is empty after split, entryParams=%{public}s",
+         __func__, args.entryParams);
     return;
   }
   for (const auto& commandline : commandlines) {

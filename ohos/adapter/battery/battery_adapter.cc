@@ -49,7 +49,7 @@ bool BatteryAdapter::GetBatteryInfo(BatteryInfo& battery_info_ohos) {
   if (func) {
     result = func->Invoke<bool>(callback);
   } else {
-    LOGE("Failed to get BatteryAdapter.GetBatteryInfo.");
+    LOGE("[BatteryAdapter] %{public}s: Failed to get BatteryAdapter.GetBatteryInfo function", __func__);
   }
   return result;
 }

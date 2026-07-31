@@ -261,7 +261,6 @@ bool WindowAdapter::WindowHasInit(WindowWidgetType widget_id) {
 }
 
 void WindowAdapter::SetWindowPrivacyMode(WindowWidgetType widget_id, bool is_privacy_mode) {
-  // get ohos window id form widget_id
   std::vector<int32_t> ids = AppWindowAdapter::GetInstance().GetOriginWindowIds({widget_id});
   if (!ids.empty()) {
     LOGI(
@@ -270,10 +269,9 @@ void WindowAdapter::SetWindowPrivacyMode(WindowWidgetType widget_id, bool is_pri
         widget_id, is_privacy_mode);
     int32_t result = OH_WindowManager_SetWindowPrivacyMode(ids[0], is_privacy_mode);
     if (result != 0) {
-      LOGE(
-          "OH_WindowManager_SetWindowPrivacyMode result: %{public}d, "
-          "widget_id:%{public}d ",
-          result, widget_id);
+      LOGE("[WindowAdapter] %{public}s:"
+           "call OH_WindowManager_SetWindowPrivacyMode failed, error=%{public}d, widget_id=%{public}d",
+           __func__, result, widget_id);
     }
   }
 }

@@ -7,6 +7,7 @@ import Inject from '../common/InjectModule';
 import { ContextPathAdapter } from '../adapter/ContextPathAdapter';
 import { ContextType } from '../common/Constants';
 import { NativeContext } from '../interface/CommonInterface';
+import LogUtil from './LogUtil';
 
 export default class JsBindingUtils {
   private static currentContext: NativeContext;
@@ -38,7 +39,7 @@ export default class JsBindingUtils {
   static SetContextPaths() {
     const contextPathAdapter = Inject.get(ContextPathAdapter);
     if (!contextPathAdapter) {
-      console.error('ContextPathAdapter not available');
+      LogUtil.error('JsBindingUtils', 'SetContextPaths: ContextPathAdapter not available');
       return;
     }
     const safeGet = (fn: () => string, defaultValue: string = ''): string => {
@@ -55,7 +56,7 @@ export default class JsBindingUtils {
     if (adapter.SetContextPaths) {
       adapter.SetContextPaths(paths);
     } else {
-      console.error('SetContextPaths not found in C++ module');
+      LogUtil.error('JsBindingUtils', 'SetContextPaths: adapter.SetContextPaths not found in C++ module');
     }
   }
 }

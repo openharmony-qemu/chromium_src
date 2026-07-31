@@ -200,6 +200,7 @@ int32_t ChildProcessManager::WaitChildPid(const int32_t pid,
                                           int* status,
                                           const bool can_block) {
   if (!monitor_) {
+    LOGE("[ChildProcessManager] %{public}s: monitor is null, pid=%{public}d", __func__, pid);
     return -1;
   }
 

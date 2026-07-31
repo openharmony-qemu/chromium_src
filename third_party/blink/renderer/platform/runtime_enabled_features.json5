@@ -656,7 +656,6 @@
     {
       name: "AutoDarkMode",
       base_feature: "none",
-      origin_trial_feature_name: "AutoDarkMode",
     },
     {
       name: "Autofill",

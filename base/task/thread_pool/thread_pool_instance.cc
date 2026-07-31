@@ -8,12 +8,16 @@
 #include <string_view>
 
 #include "base/check.h"
+#include "base/memory/low_memory_mode_ohos.h"
 #include "base/memory/ptr_util.h"
 #include "base/system/sys_info.h"
 #include "base/task/thread_pool/thread_pool_impl.h"
 #include "base/threading/platform_thread.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
+#include "base/command_line.h"
+#include "base/base_switches.h"
+#include "base/strings/string_number_conversions.h"
 
 namespace base {
 
@@ -22,13 +26,38 @@ namespace {
 // |g_thread_pool| is intentionally leaked on shutdown.
 ThreadPoolInstance* g_thread_pool = nullptr;
 
+#if BUILDFLAG(IS_OHOS)
+int GetThreadNumFromCommandline() {
+  bool low_memory_mode = base::GetLowMemoryMode();
+  int num_raster_threads = SysInfo::NumberOfEfficientProcessors();
+  if (low_memory_mode) {
+    num_raster_threads = 4;
+  }
+  const base::CommandLine& command_line =
+      *base::CommandLine::ForCurrentProcess();
+  if (command_line.HasSwitch(switches::kNumForegroundThreads)) {
+    std::string string_value =
+        command_line.GetSwitchValueASCII(switches::kNumForegroundThreads);
+    base::StringToInt(string_value, &num_raster_threads);
+  }
+  return num_raster_threads;
+}
+#endif
+
 size_t GetDefaultMaxNumUtilityThreads(size_t max_num_foreground_threads_in) {
   int num_of_efficient_processors = SysInfo::NumberOfEfficientProcessors();
   if (num_of_efficient_processors != 0) {
     DCHECK_GT(num_of_efficient_processors, 0);
+#if BUILDFLAG(IS_OHOS)
+    int thread_num = GetThreadNumFromCommandline();
+    return std::max<size_t>(
+        2, std::min(max_num_foreground_threads_in,
+                    static_cast<size_t>(thread_num)));
+#else
     return std::max<size_t>(
         2, std::min(max_num_foreground_threads_in,
                     static_cast<size_t>(num_of_efficient_processors)));
+#endif
   }
   return std::max<size_t>(2, max_num_foreground_threads_in / 2);
 }
@@ -110,8 +139,14 @@ void ThreadPoolInstance::StartWithDefaultParams() {
   // * The system is utilized maximally by foreground threads.
   // * The main thread is assumed to be busy, cap foreground workers at
   //   |num_cores - 1|.
+#if BUILDFLAG(IS_OHOS)
+  int thread_num = GetThreadNumFromCommandline();
+  const size_t max_num_foreground_threads =
+      static_cast<size_t>(std::max(3, thread_num));
+#else
   const size_t max_num_foreground_threads =
       static_cast<size_t>(std::max(3, SysInfo::NumberOfProcessors() - 1));
+#endif
   Start({max_num_foreground_threads});
 }
 #endif  // !BUILDFLAG(IS_NACL)

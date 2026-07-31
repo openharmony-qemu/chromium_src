@@ -5,6 +5,7 @@
 #include "components/payments/content/payment_request.h"
 
 #include <algorithm>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -45,6 +46,7 @@
 #include "content/public/common/content_features.h"
 #include "services/metrics/public/cpp/ukm_source_id.h"
 #include "services/network/public/cpp/is_potentially_trustworthy.h"
+#include "url/origin.h"
 
 namespace payments {
 namespace {
@@ -978,6 +980,9 @@ void PaymentRequest::Pay() {
 
   // Log the correct "selected method".
   journey_logger_.SetSelectedMethod(GetSelectedMethodCategory());
+
+  display_handle_->SetPaymentHandlerOrigin(
+      state_->selected_app()->GetPaymentHandlerOrigin());
 
   state_->selected_app()->SetPaymentHandlerHost(
       payment_handler_host_->AsWeakPtr());

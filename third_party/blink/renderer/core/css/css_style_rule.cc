@@ -112,9 +112,12 @@ void CSSStyleRule::setSelectorText(const ExecutionContext* execution_context,
           new_style_rule, /*mixin_parameter_bindings=*/nullptr));
     }
   }
+  position_hint_ = ReplaceChildRuleInParentIfExists(
+      /*old_rule=*/style_rule_, new_style_rule, position_hint_);
+
   if (parent_contents) {
-    position_hint_ = parent_contents->ReplaceRuleIfExists(
-        style_rule_, new_style_rule, position_hint_);
+    parent_contents->NotifyRuleChanged(style_rule_);
+    parent_contents->NotifyRuleChanged(new_style_rule);
   }
 
   // Updates style_rule_, as well as any inner CSSOM wrappers.

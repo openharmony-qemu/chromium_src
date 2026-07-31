@@ -21,6 +21,8 @@
 
 #include "third_party/blink/renderer/core/css/style_rule.h"
 
+#include <limits>
+
 #include "base/compiler_specific.h"
 #include "third_party/blink/renderer/core/css/css_apply_mixin_rule.h"
 #include "third_party/blink/renderer/core/css/css_container_rule.h"
@@ -80,6 +82,7 @@
 #include "third_party/blink/renderer/platform/heap/visitor.h"
 #include "third_party/blink/renderer/platform/instrumentation/use_counter.h"
 #include "third_party/blink/renderer/platform/wtf/size_assertions.h"
+#include "third_party/blink/renderer/platform/wtf/wtf_size_t.h"
 
 namespace blink {
 
@@ -528,6 +531,16 @@ bool StyleRule::PropertiesHaveFailedOrCanceledSubresources() const {
   return properties_ && properties_->HasFailedOrCanceledSubresources();
 }
 
+wtf_size_t StyleRule::ReplaceChildRuleIfExists(StyleRuleBase* old_rule,
+                                               StyleRuleBase* new_rule,
+                                               wtf_size_t position_hint) {
+  if (child_rules_) {
+    return ReplaceStyleRuleInVector(old_rule, new_rule, position_hint,
+                                    *child_rules_);
+  }
+  return std::numeric_limits<wtf_size_t>::max();  // Not found.
+}
+
 bool StyleRule::HasParsedProperties() const {
   // StyleRule should only have one of {lazy_property_parser_, properties_} set.
   DCHECK(lazy_property_parser_ || properties_);
@@ -869,6 +882,13 @@ void StyleRuleScope::TraceAfterDispatch(blink::Visitor* visitor) const {
 StyleRuleGroup::StyleRuleGroup(RuleType type,
                                HeapVector<Member<StyleRuleBase>> rules)
     : StyleRuleBase(type), child_rules_(std::move(rules)) {}
+
+wtf_size_t StyleRuleGroup::ReplaceChildRuleIfExists(StyleRuleBase* old_rule,
+                                                    StyleRuleBase* new_rule,
+                                                    wtf_size_t position_hint) {
+  return ReplaceStyleRuleInVector(old_rule, new_rule, position_hint,
+                                  child_rules_);
+}
 
 void StyleRuleGroup::WrapperInsertRule(CSSStyleSheet* parent_sheet,
                                        unsigned index,

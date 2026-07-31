@@ -360,6 +360,11 @@ void View::RemoveAllChildViews() {
   while (!children_.empty()) {
     DoRemoveChildView(children_.front(), false, true, nullptr);
   }
+#if BUILDFLAG(IS_ARKWEB)
+  if (!GetWidget() || GetWidget()->is_destroying()) {
+    return;
+  }
+#endif
   UpdateTooltip();
 }
 

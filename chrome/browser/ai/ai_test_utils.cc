@@ -9,6 +9,8 @@
 
 #include "chrome/browser/ai/ai_manager.h"
 #include "chrome/browser/optimization_guide/optimization_guide_keyed_service_factory.h"
+#include "content/public/test/navigation_simulator.h"
+#include "services/network/public/mojom/permissions_policy/permissions_policy_feature.mojom.h"
 #include "third_party/blink/public/mojom/ai/model_download_progress_observer.mojom.h"
 
 AITestUtils::TestStreamingResponder::TestStreamingResponder() = default;
@@ -237,6 +239,21 @@ size_t AITestUtils::AITestBase::GetAIManagerDownloadProgressObserversSize() {
 
 size_t AITestUtils::AITestBase::GetAIManagerContextBoundObjectSetSize() {
   return ai_manager_->GetContextBoundObjectSetSizeForTesting();
+}
+
+void AITestUtils::AITestBase::DisablePolicy(
+    network::mojom::PermissionsPolicyFeature feature) {
+  auto navigation = content::NavigationSimulator::CreateRendererInitiated(
+      GURL("https://example.com"), main_rfh());
+  navigation->SetPermissionsPolicyHeader(
+      {{feature, /*allowed_origins=*/{}, /*self_if_matches=*/std::nullopt,
+        /*matches_all_origins=*/false, /*matches_opaque_src=*/false}});
+  navigation->Commit();
+
+  // Re-create AIManager as it's bound to the RFH.
+  ai_manager_ = std::make_unique<AIManager>(
+      navigation->GetFinalRenderFrameHost()->GetBrowserContext(),
+      &component_update_service_, navigation->GetFinalRenderFrameHost());
 }
 
 // static

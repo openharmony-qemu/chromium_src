@@ -134,9 +134,11 @@ class GL_EXPORT NativeViewGLSurfaceEGL : public GLSurfaceEGL,
     return presentation_helper_.get();
   }
 #if BUILDFLAG(IS_OHOS)
+  bool SetBackbufferAllocation(bool allocated);
   gfx::SwapResult SwapBuffersWithDamage(const std::vector<int>& rects,
                                         PresentationCallback callback,
                                         gfx::FrameData data) override;
+  void UpdateHdrConfig();
 #else
   gfx::SwapResult SwapBuffersWithDamage(const std::vector<int>& rects,
                                         PresentationCallback callback,

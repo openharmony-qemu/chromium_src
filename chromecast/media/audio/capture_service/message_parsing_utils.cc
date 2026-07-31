@@ -83,7 +83,17 @@ bool ConvertInterleavedData(int channels,
     return false;
   }
 
-  DCHECK_EQ(frames, audio->frames());
+  if (frames != audio->frames()) {
+    LOG(ERROR) << "Audio frames (" << frames
+               << ") don't match audio bus frames (" << audio->frames() << ")";
+    return false;
+  }
+  if (channels > audio->channels()) {
+    LOG(ERROR) << "Audio channels (" << channels
+               << ") don't match audio bus channels (" << audio->channels()
+               << ")";
+    return false;
+  }
   audio->FromInterleaved<Traits>(
       reinterpret_cast<const typename Traits::ValueType*>(data), frames);
   return true;
@@ -100,7 +110,17 @@ bool ConvertPlanarData(int channels,
     return false;
   }
 
-  DCHECK_EQ(frames, audio->frames());
+  if (frames != audio->frames()) {
+    LOG(ERROR) << "Audio frames (" << frames
+               << ") don't match audio bus frames (" << audio->frames() << ")";
+    return false;
+  }
+  if (channels > audio->channels()) {
+    LOG(ERROR) << "Audio channels (" << channels
+               << ") don't match audio bus channels (" << audio->channels()
+               << ")";
+    return false;
+  }
   const typename Traits::ValueType* base_data =
       reinterpret_cast<const typename Traits::ValueType*>(data);
   for (int c = 0; c < channels; ++c) {
@@ -122,7 +142,17 @@ bool ConvertPlanarFloat(int channels,
     return false;
   }
 
-  DCHECK_EQ(frames, audio->frames());
+  if (frames != audio->frames()) {
+    LOG(ERROR) << "Audio frames (" << frames
+               << ") don't match audio bus frames (" << audio->frames() << ")";
+    return false;
+  }
+  if (channels > audio->channels()) {
+    LOG(ERROR) << "Audio channels (" << channels
+               << ") don't match audio bus channels (" << audio->channels()
+               << ")";
+    return false;
+  }
   const float* base_data = reinterpret_cast<const float*>(data);
   for (int c = 0; c < channels; ++c) {
     const float* source = base_data + c * frames;
@@ -290,7 +320,12 @@ bool ReadDataToAudioBus(const StreamInfo& stream_info,
                         size_t size,
                         ::media::AudioBus* audio_bus) {
   DCHECK(audio_bus);
-  DCHECK_EQ(stream_info.num_channels, audio_bus->channels());
+  if (stream_info.num_channels > audio_bus->channels()) {
+    LOG(ERROR) << "Stream channels (" << stream_info.num_channels
+               << ") exceed audio bus channels (" << audio_bus->channels()
+               << ")";
+    return false;
+  }
   return ConvertData(stream_info.num_channels, stream_info.sample_format,
                      data + kPcmAudioHeaderBytes, size - kPcmAudioHeaderBytes,
                      audio_bus);

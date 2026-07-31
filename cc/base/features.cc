@@ -69,7 +69,7 @@ BASE_FEATURE(kDetectHiDpiForMsaa,
 
 BASE_FEATURE(kReclaimPrepaintTilesWhenIdle,
              "ReclaimPrepaintTilesWhenIdle",
-             base::FEATURE_DISABLED_BY_DEFAULT);
+             base::FEATURE_ENABLED_BY_DEFAULT);
 
 // This saves memory on all platforms, but while on Android savings are
 // significant (~10MiB or more of foreground memory), on desktop they were
@@ -79,7 +79,7 @@ BASE_FEATURE(kReclaimPrepaintTilesWhenIdle,
 // to find a better balance between checkerboarding and memory.
 BASE_FEATURE(kSmallerInterestArea,
              "SmallerInterestArea",
-             base::FEATURE_DISABLED_BY_DEFAULT
+             base::FEATURE_ENABLED_BY_DEFAULT
 );
 
 const base::FeatureParam<int> kInterestAreaSizeInPixels{
@@ -87,7 +87,7 @@ const base::FeatureParam<int> kInterestAreaSizeInPixels{
 
 BASE_FEATURE(kReclaimOldPrepaintTiles,
              "ReclaimOldPrepaintTiles",
-             base::FEATURE_DISABLED_BY_DEFAULT);
+             base::FEATURE_ENABLED_BY_DEFAULT);
 
 const base::FeatureParam<int> kReclaimDelayInSeconds{&kSmallerInterestArea,
                                                      "reclaim_delay_s", 30};
@@ -104,7 +104,7 @@ BASE_FEATURE(kEvictionThrottlesDraw,
 
 BASE_FEATURE(kClearCanvasResourcesInBackground,
              "ClearCanvasResourcesInBackground",
-             base::FEATURE_DISABLED_BY_DEFAULT);
+             base::FEATURE_ENABLED_BY_DEFAULT);
 
 BASE_FEATURE(kMetricsTracingCalculationReduction,
              "MetricsTracingCalculationReduction",

@@ -12,6 +12,7 @@
 #include "media/base/audio_buffer.h"
 #include "media/base/video_frame.h"
 #include "third_party/blink/renderer/core/streams/underlying_source_base.h"
+#include "third_party/blink/renderer/core/timing/time_clamper.h"
 #include "third_party/blink/renderer/modules/breakout_box/frame_queue.h"
 #include "third_party/blink/renderer/modules/modules_export.h"
 #include "third_party/blink/renderer/platform/heap/cross_thread_persistent.h"
@@ -153,6 +154,7 @@ class FrameQueueUnderlyingSource : public UnderlyingSourceBase {
   const wtf_size_t frame_pool_size_ = 0;
 
   std::optional<base::TimeTicks> first_frame_ticks_;
+  TimeClamper time_clamper_;
 };
 
 template <>

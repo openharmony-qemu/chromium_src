@@ -1165,7 +1165,11 @@ TEST_F(PasswordSuggestionGeneratorTest,
       suggestions[0].children,
       ElementsAre(
           EqualsSuggestion(SuggestionType::kPasswordFieldByFieldFilling,
-                           u"username@example.com"),
+                           u"username@example.com", Suggestion::Icon::kNoIcon,
+                           Suggestion::PasswordSuggestionDetails(
+                               u"username@example.com", u"password",
+                               "https://google.com/", u"google.com",
+                               /*is_cross_domain=*/false)),
           EqualsSuggestion(
               SuggestionType::kFillPassword,
               l10n_util::GetStringUTF16(
@@ -1194,7 +1198,11 @@ TEST_F(PasswordSuggestionGeneratorTest,
       suggestions[0].children,
       ElementsAre(
           EqualsSuggestion(SuggestionType::kPasswordFieldByFieldFilling,
-                           u"username@example.com"),
+                           u"username@example.com", Suggestion::Icon::kNoIcon,
+                           Suggestion::PasswordSuggestionDetails(
+                               u"username@example.com", u"password",
+                               "https://google.com/", u"google.com",
+                               /*is_cross_domain=*/true)),
           EqualsSuggestion(
               SuggestionType::kFillPassword,
               l10n_util::GetStringUTF16(

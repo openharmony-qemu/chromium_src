@@ -106,6 +106,10 @@ BASE_DECLARE_FEATURE(kDisableFillingOnPageLoadForLeakedCredentials);
 BASE_DECLARE_FEATURE(kEnablePasswordManagerMojoApi);
 #endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
 
+// Cross domain credential data is not previewed by the manual fallback
+// suggestion popup.
+BASE_DECLARE_FEATURE(kFallbackNoPreviewForCrossDomainCredentials);
+
 // Fetches change password url if the credential has been identified as leaked.
 // Later change password url is used during password change.
 BASE_DECLARE_FEATURE(kFetchChangePasswordUrlForPasswordChange);

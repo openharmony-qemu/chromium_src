@@ -13,6 +13,7 @@
 #include "base/base64.h"
 #include "base/check_is_test.h"
 #include "base/command_line.h"
+#include "base/feature_list.h"
 #include "base/functional/callback_helpers.h"
 #include "base/location.h"
 #include "base/logging.h"
@@ -22,6 +23,7 @@
 #include "build/build_config.h"
 #include "cloud_policy_validator.h"
 #include "components/policy/core/common/cloud/cloud_policy_constants.h"
+#include "components/policy/core/common/features.h"
 #include "components/policy/core/common/policy_logger.h"
 #include "components/policy/core/common/policy_switches.h"
 #include "components/policy/proto/device_management_backend.pb.h"
@@ -449,8 +451,9 @@ bool CloudPolicyValidatorBase::CheckNewPublicKeyVerificationSignature() {
                       verification_key_.value(),
                       policy_->new_public_key_verification_data_signature(),
                       em::PolicyFetchRequest::SHA256_RSA) &&
-      CheckDomainInPublicKeyVerificationData(
-          policy_->new_public_key_verification_data())) {
+      CheckPublicKeyVerificationData(
+          policy_->new_public_key_verification_data(),
+          policy_->new_public_key())) {
     UMA_HISTOGRAM_ENUMERATION(kMetricKeySignatureVerification,
                               MetricKeySignatureVerification::kSuccess);
     // Signature verification succeeded - return success to the caller.
@@ -527,12 +530,19 @@ std::string CloudPolicyValidatorBase::ExtractDomainFromPolicy() {
   return domain;
 }
 
-bool CloudPolicyValidatorBase::CheckDomainInPublicKeyVerificationData(
-    const std::string& new_public_key_verification_data) {
+bool CloudPolicyValidatorBase::CheckPublicKeyVerificationData(
+    const std::string& new_public_key_verification_data,
+    const std::string& expected_public_key) {
   em::PublicKeyVerificationData public_key_data;
   if (!public_key_data.ParseFromString(new_public_key_verification_data)) {
     LOG_POLICY(ERROR, POLICY_FETCHING)
         << "Failed to deserialize new public key.";
+    return false;
+  }
+  if (base::FeatureList::IsEnabled(features::kVerifyVerificationDataKey) &&
+      public_key_data.new_public_key() != expected_public_key) {
+    LOG_POLICY(ERROR, POLICY_FETCHING)
+        << "Key mismatch in new public key verification data.";
     return false;
   }
   if (public_key_data.domain() != ExtractDomainFromPolicy()) {
@@ -607,7 +617,7 @@ CloudPolicyValidatorBase::Status CloudPolicyValidatorBase::CheckCachedKey() {
   if (VerifySignature(new_cached_key_, verification_key_.value(),
                       new_cached_key_signature_,
                       em::PolicyFetchRequest::SHA256_RSA) &&
-      CheckDomainInPublicKeyVerificationData(new_cached_key_)) {
+      CheckPublicKeyVerificationData(new_cached_key_, cached_key_)) {
     UMA_HISTOGRAM_ENUMERATION(kMetricKeySignatureVerification,
                               MetricKeySignatureVerification::kSuccess);
     // Signature verification succeeded - return success to the caller.

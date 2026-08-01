@@ -906,7 +906,7 @@ class CONTENT_EXPORT RenderProcessHostImpl
       mojo::PendingReceiver<network::mojom::P2PSocketManager> receiver,
       GlobalRenderFrameHostId render_frame_host_id);
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // Notifies the renderer process of memory pressure level.
   void NotifyMemoryPressureToRenderer(base::MemoryPressureLevel level);
 #endif

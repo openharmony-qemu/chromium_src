@@ -133,7 +133,7 @@ interface ChildProcess {
   // This method is only for an experimental feature, and may be removed
   // shortly. Other code should not use this method.
   // See https://crbug.com/1393283 for details.
-  [EnableIf=is_android]
+  [EnableIf=is_android_or_arkweb_memory_pressure_to_child]
   OnMemoryPressure(mojo_base.mojom.MemoryPressureLevel memory_pressure_level);
 
   // Asks the child process to modify its internal settings to bias towards

@@ -228,8 +228,8 @@ class PLATFORM_EXPORT WidgetInputHandlerManager final
   void SetInputHandlerProxyForTesting(
       std::unique_ptr<InputHandlerProxy> input_handler_proxy);
 
-  base::WeakPtr<WidgetInputHandlerManager> AsWeakPtr() {
-    return weak_ptr_factory_.GetWeakPtr();
+  void set_destruction_callback_for_testing(base::OnceClosure callback) {
+    destruction_callback_for_testing_ = std::move(callback);
   }
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   void DidNativeEmbedEvent(blink::WebInputEvent::Type type,
@@ -262,6 +262,7 @@ class PLATFORM_EXPORT WidgetInputHandlerManager final
   ~WidgetInputHandlerManager() override;
 
   void InitInputHandler();
+
   void InitOnInputHandlingThread(
       const base::WeakPtr<cc::CompositorDelegateForInput>& compositor_delegate,
       bool sync_compositing);
@@ -495,7 +496,7 @@ class PLATFORM_EXPORT WidgetInputHandlerManager final
   // hidden state.
   base::TimeTicks hidden_received_;
 
-  base::WeakPtrFactory<WidgetInputHandlerManager> weak_ptr_factory_{this};
+  base::OnceClosure destruction_callback_for_testing_;
 };
 
 }  // namespace blink

@@ -1093,7 +1093,10 @@ source_set("unit_tests") {
   #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
     sources += [
+      "//arkweb/chromium_ext/extensions/browser/extension_icon_aggregator_unittest.cc",
+      "//arkweb/chromium_ext/extensions/browser/extension_prefs_for_include_unittest.cc",
       "//arkweb/chromium_ext/extensions/browser/extension_registry_info_manager_unittest.cc",
+      "//arkweb/chromium_ext/extensions/browser/ui_util_ext_unittest.cc",
     ]
   }
   #endif

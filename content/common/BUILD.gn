@@ -488,6 +488,10 @@ mojom("mojo_bindings") {
   if (use_clang_profiling_inside_sandbox) {
     enabled_features += [ "clang_profiling_inside_sandbox" ]
   }
+  if (is_android || is_ohos) {
+    enabled_features += [ "is_android_or_arkweb_memory_pressure_to_child" ]
+  }
+
   if (is_posix && !is_android) {
     enabled_features += [ "is_non_android_posix" ]
   }

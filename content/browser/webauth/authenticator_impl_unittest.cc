@@ -10347,4 +10347,26 @@ TEST_F(AuthenticatorImplWithRequestProxyTest,
   EXPECT_EQ(request_proxy().observations().num_isuvpaa, 0u);
 }
 
+TEST_F(AuthenticatorImplTest, InactiveRenderFrameHost) {
+  NavigateAndCommit(GURL(kTestOrigin1));
+
+  // Set the lifecycle state to `kInBackForwardCache` so the RenderFrameHost is
+  // inactive.
+  static_cast<RenderFrameHostImpl*>(main_rfh())
+      ->SetLifecycleState(
+          RenderFrameHostImpl::LifecycleStateImpl::kInBackForwardCache);
+  ASSERT_FALSE(main_rfh()->IsActive());
+
+  // Try to connect to the authenticator service.
+  mojo::Remote<blink::mojom::Authenticator> authenticator =
+      ConnectToAuthenticator();
+
+  // The receiver should be dropped immediately, causing the remote to be
+  // disconnected.
+  base::RunLoop run_loop;
+  authenticator.set_disconnect_handler(run_loop.QuitClosure());
+  run_loop.Run();
+  EXPECT_FALSE(authenticator.is_connected());
+}
+
 }  // namespace content

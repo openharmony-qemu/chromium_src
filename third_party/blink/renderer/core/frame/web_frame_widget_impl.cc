@@ -3970,7 +3970,20 @@ bool WebFrameWidgetImpl::SetComposition(
   WebInputMethodController* controller = GetActiveWebInputMethodController();
   if (!controller)
     return false;
-  LOG(INFO) << "ime_text_spans.size:" << ime_text_spans.size();
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (!replacement_range.IsValid() || replacement_range.start() > static_cast<size_t>(INT_MAX) ||
+      replacement_range.length() > static_cast<size_t>(INT_MAX)) {
+    if (replacement_range.IsValid()) {
+      LOG(ERROR) << "SetComposition ime_text_spans.size:" << ime_text_spans.size()
+              << " replacement_range:(" << replacement_range.start() << "," << replacement_range.end()
+              << ") IsValid:" << replacement_range.IsValid()
+              << " selection_start:" << selection_start << " selection_end:" << selection_end;
+    }  
+    return controller->SetComposition(
+        text, base::ToVector(ime_text_spans), WebRange(),
+        selection_start, selection_end);
+  }
+#endif
   return controller->SetComposition(
       text, base::ToVector(ime_text_spans),
       replacement_range.IsValid()

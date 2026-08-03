@@ -2241,6 +2241,8 @@ class PwnMessageHelper {
   // Calls OpenURL method in FrameHost Mojo interface.
   static void OpenURL(RenderFrameHost* render_frame_host, const GURL& url);
 
+  static bool OpenPopup(RenderFrameHost* render_frame_host, const GURL& url);
+
  private:
   PwnMessageHelper();  // Not instantiable.
 };

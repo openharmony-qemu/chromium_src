@@ -92,6 +92,7 @@ std::vector<SurfaceId> FrameEvictor::CollectSurfaceIdsForEviction() const {
 #if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
 void FrameEvictor::EvictCurrentFrame(bool isProcessMemoryPressure) {
   client_->EvictDelegatedFrame(CollectSurfaceIdsForEviction(isProcessMemoryPressure));
+  client_->SetUseSpecifiedDeadlinePolicy(true);
 }
 #else
 void FrameEvictor::EvictCurrentFrame() {

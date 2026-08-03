@@ -7,6 +7,7 @@
 #include <string>
 
 #include "net/base/network_anonymization_key.h"
+#include "net/base/network_handle.h"
 #include "net/base/privacy_mode.h"
 #include "net/base/proxy_chain.h"
 #include "net/base/session_usage.h"
@@ -51,6 +52,25 @@ bool QuicChromiumClientSessionPeer::GetSessionGoingAway(
 MigrationCause QuicChromiumClientSessionPeer::GetCurrentMigrationCause(
     QuicChromiumClientSession* session) {
   return session->current_migration_cause_;
+}
+
+// static
+void QuicChromiumClientSessionPeer::SetDefaultNetwork(
+    QuicChromiumClientSession* session,
+    handles::NetworkHandle network) {
+  session->default_network_ = network;
+}
+
+// static
+bool QuicChromiumClientSessionPeer::IsMigrateBackToDefaultNetworkTimerRunning(
+    QuicChromiumClientSession* session) {
+  return session->migrate_back_to_default_timer_.IsRunning();
+}
+
+// static
+void QuicChromiumClientSessionPeer::OnCryptoHandshakeComplete(
+    QuicChromiumClientSession* session) {
+  session->OnCryptoHandshakeComplete();
 }
 
 }  // namespace net::test

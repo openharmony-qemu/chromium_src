@@ -38,7 +38,6 @@ namespace autofill {
 class AddressDataManager;
 class AutofillDriver;
 class BrowserAutofillManager;
-class CreditCard;
 
 // Retrieves a copy of the profile that the `payload` refers to.
 std::optional<AutofillProfile> GetProfileFromPayload(
@@ -180,9 +179,6 @@ class AutofillExternalDelegate : public AutofillSuggestionDelegate {
   // Private handler for DidAcceptSuggestions for payments related suggestions.
   void DidAcceptPaymentsSuggestion(const Suggestion& suggestion,
                                    const SuggestionMetadata& metadata);
-
-  // Called when a credit card is scanned using device camera.
-  void OnCreditCardScanned(const CreditCard& card);
 
   // Returns the last Autofill triggering field. Derived from the `form` and
   // `field` parameters of `OnQuery(). Returns nullptr if called before

@@ -802,6 +802,11 @@ base::WeakPtr<AutofillManager> BrowserAutofillManager::GetWeakPtr() {
   return weak_ptr_factory_.GetWeakPtr();
 }
 
+base::WeakPtr<BrowserAutofillManager>
+BrowserAutofillManager::GetBrowserAutofillManagerWeakPtr() {
+  return weak_ptr_factory_.GetWeakPtr();
+}
+
 CreditCardAccessManager* BrowserAutofillManager::GetCreditCardAccessManager() {
   if (!credit_card_access_manager_) {
     credit_card_access_manager_ =

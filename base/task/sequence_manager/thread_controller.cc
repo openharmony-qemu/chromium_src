@@ -269,8 +269,10 @@ void ThreadController::RunLevelTracker::RecordScheduleWork() {
   if (outer_->associated_thread_->IsBoundToCurrentThread()) {
     TRACE_EVENT_INSTANT("wakeup.flow", "ScheduleWorkToSelf");
   } else {
+#if !BUILDFLAG(ARKWEB_DFX_TRACING)
     TRACE_EVENT_INSTANT("wakeup.flow", "ScheduleWork",
                         perfetto::Flow::FromPointer(this));
+#endif
   }
 }
 

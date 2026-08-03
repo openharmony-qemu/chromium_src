@@ -8,7 +8,6 @@
 
 #include "base/check_op.h"
 #include "base/functional/bind.h"
-#include "base/numerics/checked_math.h"
 #include "net/base/io_buffer.h"
 #include "net/base/net_errors.h"
 #include "net/base/upload_bytes_element_reader.h"
@@ -77,16 +76,11 @@ int ElementsUploadDataStream::InitElements(size_t start_index) {
       return result;
   }
 
-  base::CheckedNumeric<uint64_t> total_size = 0;
+  uint64_t total_size = 0;
   for (const std::unique_ptr<UploadElementReader>& it : element_readers_) {
     total_size += it->GetContentLength();
   }
-
-  if (!total_size.IsValid()) {
-    return ERR_FILE_TOO_BIG;
-  }
-
-  SetSize(total_size.ValueOrDie());
+  SetSize(total_size);
   return OK;
 }
 

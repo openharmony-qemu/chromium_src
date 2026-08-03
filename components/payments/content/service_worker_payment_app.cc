@@ -5,6 +5,7 @@
 #include "components/payments/content/service_worker_payment_app.h"
 
 #include <limits>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -27,6 +28,7 @@
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/content_features.h"
 #include "ui/gfx/image/image_skia.h"
+#include "url/gurl.h"
 #include "url/origin.h"
 
 namespace payments {
@@ -426,6 +428,11 @@ bool ServiceWorkerPaymentApp::NeedsInstallation() const {
 std::string ServiceWorkerPaymentApp::GetId() const {
   return needs_installation_ ? installable_web_app_info_->sw_scope
                              : stored_payment_app_info_->scope.spec();
+}
+
+std::optional<url::Origin> ServiceWorkerPaymentApp::GetPaymentHandlerOrigin()
+    const {
+  return url::Origin::Create(GURL(GetId()));
 }
 
 std::u16string ServiceWorkerPaymentApp::GetLabel() const {

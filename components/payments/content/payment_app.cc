@@ -5,9 +5,11 @@
 #include "components/payments/content/payment_app.h"
 
 #include <algorithm>
+#include <optional>
 
 #include "base/containers/contains.h"
 #include "base/functional/callback.h"
+#include "url/origin.h"
 
 namespace payments {
 namespace {
@@ -157,6 +159,10 @@ bool PaymentApp::operator<(const PaymentApp& other) const {
   if (CanPreselect() != other.CanPreselect())
     return CanPreselect();
   return false;
+}
+
+std::optional<url::Origin> PaymentApp::GetPaymentHandlerOrigin() const {
+  return std::nullopt;
 }
 
 }  // namespace payments

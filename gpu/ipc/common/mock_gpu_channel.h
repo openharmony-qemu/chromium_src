@@ -64,6 +64,7 @@ class MockGpuChannel : public mojom::GpuChannel {
   bool CreateNativeTexture(
       int32_t a,
       int32_t b,
+      bool /*is_custom_media_player*/,
       mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver,
       int32_t* out_value) override {
     return CreateNativeTextureReturnBool(a, b, std::move(receiver), out_value);
@@ -72,6 +73,7 @@ class MockGpuChannel : public mojom::GpuChannel {
   void CreateNativeTexture(
       int32_t a,
       int32_t b,
+      bool /*is_custom_media_player*/,
       mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver,
       CreateNativeTextureCallback callback) override {
     CreateNativeTextureReturnVoid(a, b, std::move(receiver), std::move(callback));

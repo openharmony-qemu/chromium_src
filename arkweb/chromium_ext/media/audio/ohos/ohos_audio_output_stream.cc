@@ -663,6 +663,17 @@ void OHOSAudioOutputStream::SetUpAudioSilentState() {
                   "parameters or audioRender failed!";
     return;
   }
+  if (parameters_.latency_tag() == AudioLatency::Type::kInteractive) {
+    if (OHOSAudioFocusController::IsWebContentCurrentlyAudible(parameters_)) {
+      OH_AudioRenderer_SetSilentModeAndMixWithOthers(audio_renderer_, false);
+      LOG(INFO) << "OHOSAudioOutputStream AudioContext SetAudioSilentMode false!";
+      isSilentMode_ = false;
+    } else {
+      LOG(DEBUG) << "OHOSAudioOutputStream IsWebContentCurrentlyAudible is false";
+    }
+    return;
+  }
+
   bool is_playing = OHOSAudioFocusController::IsActive(parameters_) ||
                     OHOSAudioFocusController::GetPlayingState(parameters_) ||
                     write_data_counts_ >= 1;
@@ -687,6 +698,16 @@ bool OHOSAudioOutputStream::IsPreloadOrMutedMediaMode() {
   if (!parameters_.IsValid()) {
     LOG(ERROR) << "OHOSAudioOutputStream::IsPreloadOrMutedMediaMode,"
                   "parameters_ is not valid";
+    return false;
+  }
+
+  if (parameters_.latency_tag() == AudioLatency::Type::kInteractive) {
+    LOG(INFO) << "OHOSAudioOutputStream::IsPreloadOrMutedMediaMode AudioContext";
+    if (audio_renderer_) {
+      LOG(INFO) << "OHOSAudioOutputStream AudioContext SetAudioSilentMode true";
+      OH_AudioRenderer_SetSilentModeAndMixWithOthers(audio_renderer_, true);
+      isSilentMode_ = true;
+    }
     return false;
   }
 

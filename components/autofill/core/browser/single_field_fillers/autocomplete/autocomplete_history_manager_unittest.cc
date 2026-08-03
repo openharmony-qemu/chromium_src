@@ -21,6 +21,7 @@
 #include "base/time/time.h"
 #include "base/version_info/version_info.h"
 #include "build/build_config.h"
+#include "components/autofill/core/browser/form_structure_test_api.h"
 #include "components/autofill/core/browser/foundations/test_autofill_client.h"
 #include "components/autofill/core/browser/test_utils/autofill_test_utils.h"
 #include "components/autofill/core/browser/webdata/autocomplete/autocomplete_entry.h"
@@ -159,7 +160,7 @@ TEST_F(AutocompleteHistoryManagerTest, CreditCardNumberValue) {
 
   EXPECT_CALL(*(web_data_service_.get()), AddFormFields(_)).Times(0);
   autocomplete_manager_->OnWillSubmitFormWithFields(
-      form.fields(),
+      form.fields(), /*form=*/nullptr,
       /*is_autocomplete_enabled=*/true);
 }
 
@@ -183,7 +184,7 @@ TEST_F(AutocompleteHistoryManagerTest, NonCreditCardNumberValue) {
 
   EXPECT_CALL(*(web_data_service_.get()), AddFormFields(_));
   autocomplete_manager_->OnWillSubmitFormWithFields(
-      form.fields(),
+      form.fields(), /*form=*/nullptr,
       /*is_autocomplete_enabled=*/true);
 }
 
@@ -204,7 +205,7 @@ TEST_F(AutocompleteHistoryManagerTest, SSNValue) {
 
   EXPECT_CALL(*web_data_service_, AddFormFields(_)).Times(0);
   autocomplete_manager_->OnWillSubmitFormWithFields(
-      form.fields(),
+      form.fields(), /*form=*/nullptr,
       /*is_autocomplete_enabled=*/true);
 }
 
@@ -226,7 +227,7 @@ TEST_F(AutocompleteHistoryManagerTest, SearchField) {
 
   EXPECT_CALL(*(web_data_service_.get()), AddFormFields(_));
   autocomplete_manager_->OnWillSubmitFormWithFields(
-      form.fields(),
+      form.fields(), /*form=*/nullptr,
       /*is_autocomplete_enabled=*/true);
 }
 
@@ -247,7 +248,7 @@ TEST_F(AutocompleteHistoryManagerTest, AutocompleteFeatureOff) {
 
   EXPECT_CALL(*(web_data_service_.get()), AddFormFields(_)).Times(0);
   autocomplete_manager_->OnWillSubmitFormWithFields(
-      form.fields(),
+      form.fields(), /*form=*/nullptr,
       /*is_autocomplete_enabled=*/false);
 }
 
@@ -275,7 +276,7 @@ TEST_F(AutocompleteHistoryManagerTest, InvalidValues) {
 
   EXPECT_CALL(*(web_data_service_.get()), AddFormFields(_)).Times(0);
   autocomplete_manager_->OnWillSubmitFormWithFields(
-      form.fields(),
+      form.fields(), /*form=*/nullptr,
       /*is_autocomplete_enabled=*/true);
 }
 
@@ -301,7 +302,7 @@ TEST_F(AutocompleteHistoryManagerTest, FieldWithAutocompleteOff) {
 
   EXPECT_CALL(*web_data_service_, AddFormFields(_)).Times(0);
   autocomplete_manager_->OnWillSubmitFormWithFields(
-      form.fields(),
+      form.fields(), /*form=*/nullptr,
       /*is_autocomplete_enabled=*/true);
 }
 
@@ -325,7 +326,7 @@ TEST_F(AutocompleteHistoryManagerTest, Incognito) {
 
   EXPECT_CALL(*web_data_service_, AddFormFields(_)).Times(0);
   autocomplete_manager_->OnWillSubmitFormWithFields(
-      form.fields(),
+      form.fields(), /*form=*/nullptr,
       /*is_autocomplete_enabled=*/true);
 }
 
@@ -351,7 +352,7 @@ TEST_F(AutocompleteHistoryManagerTest, UserInputNotFocusable) {
 
   EXPECT_CALL(*(web_data_service_.get()), AddFormFields(_));
   autocomplete_manager_->OnWillSubmitFormWithFields(
-      form.fields(),
+      form.fields(), /*form=*/nullptr,
       /*is_autocomplete_enabled=*/true);
 }
 #endif
@@ -376,7 +377,7 @@ TEST_F(AutocompleteHistoryManagerTest, PresentationField) {
 
   EXPECT_CALL(*web_data_service_, AddFormFields(_)).Times(0);
   autocomplete_manager_->OnWillSubmitFormWithFields(
-      form.fields(),
+      form.fields(), /*form=*/nullptr,
       /*is_autocomplete_enabled=*/true);
 }
 
@@ -908,6 +909,122 @@ TEST_F(AutocompleteHistoryManagerTest, EntriesCleanup_Success) {
 
   EXPECT_EQ(version_info::GetMajorVersionNumberAsInt(),
             prefs_->GetInteger(prefs::kAutocompleteLastVersionRetentionPolicy));
+}
+
+// Tests that fields with ineligible autocomplete types (e.g., credit card
+// numbers, CVCs, standalone CVCs, promo codes, IBANs, and autofilled loyalty
+// cards) are filtered out by their field type and not saved.
+TEST_F(AutocompleteHistoryManagerTest, ClassificationBasedFiltering) {
+  FormData form;
+  form.set_name(u"MyForm");
+  form.set_url(GURL("http://myform.com/form.html"));
+  form.set_action(GURL("http://myform.com/submit.html"));
+
+  auto make_field = [](std::u16string name, std::u16string value) {
+    FormFieldData field;
+    field.set_name(name);
+    field.set_value(value);
+    field.set_properties_mask(kUserTyped);
+    field.set_form_control_type(FormControlType::kInputText);
+    return field;
+  };
+  form.set_fields({
+      make_field(u"cc_number", u"1234567890123456"),
+      make_field(u"cvc", u"123"),
+      make_field(u"standalone_cvc", u"456"),
+      make_field(u"loyalty", u"999"),
+      make_field(u"promo", u"PROMO123"),
+      make_field(u"iban", u"DE75512108001245126199"),
+      make_field(u"firstname", u"John"),
+  });
+
+  FormStructure form_structure{form};
+  ASSERT_EQ(7u, form_structure.field_count());
+  test_api(form_structure)
+      .SetFieldTypes({CREDIT_CARD_NUMBER, CREDIT_CARD_VERIFICATION_CODE,
+                      CREDIT_CARD_STANDALONE_VERIFICATION_CODE,
+                      LOYALTY_MEMBERSHIP_ID, MERCHANT_PROMO_CODE, IBAN_VALUE,
+                      NAME_FIRST});
+
+  // Mark the loyalty card field as autofilled.
+  form_structure.field(3)->set_is_autofilled(true);
+
+  // Only the last field (NAME_FIRST) is saveable in Autocomplete. Credit card
+  // numbers, CVC, standalone CVC, Loyalty card (autofilled), Merchant Promo,
+  // and IBAN fields are skipped.
+  EXPECT_CALL(*(web_data_service_.get()),
+              AddFormFields(testing::ElementsAre(
+                  testing::Property(&FormFieldData::value, u"John"))));
+
+  autocomplete_manager_->OnWillSubmitFormWithFields(
+      form.fields(), &form_structure,
+      /*is_autocomplete_enabled=*/true);
+}
+
+// Tests that loyalty card fields are saved in autocomplete history if they
+// were entered manually (i.e., not autofilled).
+TEST_F(AutocompleteHistoryManagerTest, LoyaltyCardManualEntryIsSaved) {
+  FormData form;
+  form.set_name(u"MyForm");
+  form.set_url(GURL("http://myform.com/form.html"));
+  form.set_action(GURL("http://myform.com/submit.html"));
+
+  FormFieldData loyalty_field;
+  loyalty_field.set_name(u"loyalty");
+  loyalty_field.set_value(u"999");
+  loyalty_field.set_properties_mask(kUserTyped);
+  loyalty_field.set_form_control_type(FormControlType::kInputText);
+  form.set_fields({loyalty_field});
+
+  FormStructure form_structure{form};
+  ASSERT_EQ(1u, form_structure.field_count());
+  test_api(form_structure).SetFieldTypes({LOYALTY_MEMBERSHIP_ID});
+
+  // Since the field is NOT autofilled, it should be saved.
+  EXPECT_CALL(*(web_data_service_.get()),
+              AddFormFields(testing::ElementsAre(
+                  testing::Property(&FormFieldData::value, u"999"))));
+
+  autocomplete_manager_->OnWillSubmitFormWithFields(
+      form.fields(), &form_structure,
+      /*is_autocomplete_enabled=*/true);
+}
+
+// Tests that field names associated with CVCs (including flight verification
+// fields that travel parsers may misclassify) are considered not meaningful
+// for autocomplete and thus not saved.
+TEST_F(AutocompleteHistoryManagerTest, FieldNameMeaningfulForAutocomplete) {
+  auto IsMeaningful = [](const std::u16string& name) {
+    return AutocompleteHistoryManager::IsFieldNameMeaningfulForAutocomplete(
+        name);
+  };
+
+  // Names that are meaningful.
+  EXPECT_TRUE(IsMeaningful(u"city"));
+  EXPECT_TRUE(IsMeaningful(u"search"));
+  EXPECT_TRUE(IsMeaningful(u"email_verification"));
+  EXPECT_TRUE(IsMeaningful(u"verification"));
+  EXPECT_TRUE(IsMeaningful(u"verify"));
+  EXPECT_TRUE(IsMeaningful(u"security"));
+
+  // Names that are not meaningful.
+  EXPECT_FALSE(IsMeaningful(u"cvc"));
+  EXPECT_FALSE(IsMeaningful(u"cvv"));
+  EXPECT_FALSE(IsMeaningful(u"csc"));
+  EXPECT_FALSE(IsMeaningful(u"cvd"));
+  EXPECT_FALSE(IsMeaningful(u"ccv"));
+  EXPECT_FALSE(IsMeaningful(u"flight_verification"));
+  EXPECT_FALSE(IsMeaningful(u"card_verification"));
+  EXPECT_FALSE(IsMeaningful(u"verification_code"));
+  EXPECT_FALSE(IsMeaningful(u"verify_card"));
+  EXPECT_FALSE(IsMeaningful(u"verify_code"));
+  EXPECT_FALSE(IsMeaningful(u"security_code"));
+  EXPECT_FALSE(IsMeaningful(u"card_security_code"));
+  EXPECT_FALSE(IsMeaningful(u"verifycard"));
+  EXPECT_FALSE(IsMeaningful(u"verify-card"));
+  EXPECT_FALSE(IsMeaningful(u"securitycode"));
+  EXPECT_FALSE(IsMeaningful(u"security_value"));
+  EXPECT_FALSE(IsMeaningful(u"security_number"));
 }
 
 }  // namespace autofill

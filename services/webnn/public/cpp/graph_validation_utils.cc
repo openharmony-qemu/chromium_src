@@ -58,6 +58,9 @@ static constexpr char kVarianceParam[] = "variance";
 static constexpr char kWeightParam[] = "weight";
 static constexpr char kZeroPointParam[] = "zeroPoint";
 
+// Used by concat/split to validate operand count limit.
+constexpr uint32_t kMaxValidTensorCount = 8192;
+
 // Validate and calculate the output spatial dimensions of conv2d given
 // input sizes, filter sizes, padding, strides and dilations.
 // Return the calculated output sizes in double precision floating point number
@@ -581,6 +584,13 @@ base::expected<OperandDescriptor, std::string> ValidateConcatAndInferOutput(
   if (inputs.empty()) {
     return base::unexpected(
         ErrorWithLabel(label, "The inputs should not be empty."));
+  }
+
+  if (inputs.size() > kMaxValidTensorCount) {
+    return base::unexpected(ErrorWithLabel(
+        label, base::StringPrintf(
+                   "The number of inputs must be less than or equal to %u.",
+                   kMaxValidTensorCount)));
   }
 
   for (const auto& input : inputs) {
@@ -2792,6 +2802,13 @@ ValidateSplitAndInferOutput(const ContextProperties& context_properties,
           ErrorWithLabel(label, "The splits must be greater than zero."));
     }
 
+    if (splits > kMaxValidTensorCount) {
+      return base::unexpected(ErrorWithLabel(
+          label,
+          base::StringPrintf("The splits must be less than or equal to %u.",
+                             kMaxValidTensorCount)));
+    }
+
     if (input.shape()[attributes.axis] % splits != 0) {
       return base::unexpected(
           ErrorWithLabel(label,
@@ -2816,6 +2833,18 @@ ValidateSplitAndInferOutput(const ContextProperties& context_properties,
                  attributes.splits)) {
     const auto& splits =
         std::get<base::span<const uint32_t>>(attributes.splits);
+    if (splits.empty()) {
+      return base::unexpected(
+          ErrorWithLabel(label, "The splits should not be empty."));
+    }
+
+    if (splits.size() > kMaxValidTensorCount) {
+      return base::unexpected(ErrorWithLabel(
+          label, base::StringPrintf(
+                     "The number of splits must be less than or equal to %u.",
+                     kMaxValidTensorCount)));
+    }
+
     if (std::ranges::any_of(splits,
                             [](uint32_t split) { return split == 0; })) {
       return base::unexpected(

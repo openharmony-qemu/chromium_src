@@ -9206,7 +9206,11 @@ url::Origin NavigationRequest::GetOriginForURLLoaderFactoryBeforeResponse(
     }
   }
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (use_opaque_origin && !origin.opaque()) {
+#else
   if (use_opaque_origin) {
+#endif
     origin = origin.DeriveNewOpaqueOrigin();
   }
 

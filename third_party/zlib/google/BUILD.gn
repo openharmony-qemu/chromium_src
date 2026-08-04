@@ -37,6 +37,9 @@ if (build_with_chromium) {
       "..",
       "//base",
     ]
+    if (is_ohos) {
+      deps += [ "//third_party:huawei_securec" ]
+    }
     public_deps = [ ":compression_utils_portable" ]
   }
 

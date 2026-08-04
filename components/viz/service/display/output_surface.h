@@ -244,6 +244,10 @@ class VIZ_SERVICE_EXPORT OutputSurface {
   virtual void SetBypassVsyncCondition(int32_t condition) {}
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  virtual void SetAsyncStackId(uint64_t stackId) {}
+#endif
+
   // Swaps the current backbuffer to the screen. For successful swaps, the
   // implementation must call OutputSurfaceClient::DidReceiveSwapBuffersAck()
   // after returning from this method in order to unblock the next frame.

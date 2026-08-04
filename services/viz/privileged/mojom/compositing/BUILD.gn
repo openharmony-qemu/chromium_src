@@ -156,4 +156,7 @@ mojom("compositing") {
   }
   enabled_features += ["arkweb_same_layer"]
   enabled_features += ["arkweb_vsync_schedule"]
+  if (arkweb_dfx_dump) {
+    enabled_features += [ "arkweb_dfx_dump" ]
+  }
 }

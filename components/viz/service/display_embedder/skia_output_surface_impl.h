@@ -242,6 +242,10 @@ class VIZ_SERVICE_EXPORT SkiaOutputSurfaceImpl : public SkiaOutputSurface {
   void SetBypassVsyncCondition(int32_t condition) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  void SetAsyncStackId(uint64_t stackId) override;
+#endif
+
  private:
   friend class SkiaOutputSurfaceSharedImageInterface;
 

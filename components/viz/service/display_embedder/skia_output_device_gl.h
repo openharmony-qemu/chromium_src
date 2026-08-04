@@ -69,6 +69,11 @@ class SkiaOutputDeviceGL final : public SkiaOutputDevice {
   void SetBypassVsyncCondition(int32_t condition) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  void SetAsyncStackId(uint64_t stackId) override;
+  uint64_t GetAsyncStackId() override;
+#endif
+
 #if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
   gfx::Rect GetLastBufferDamageRect() override;
   int GetLastBufferAge() override;
@@ -99,6 +104,10 @@ class SkiaOutputDeviceGL final : public SkiaOutputDevice {
   uint64_t backbuffer_estimated_size_ = 0;
 
   sk_sp<SkSurface> sk_surface_;
+
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  uint64_t stackId_ = 0;
+#endif
 
   std::unique_ptr<MultiSurfaceSwapBuffersTracker>
       multisurface_swapbuffers_tracker_;

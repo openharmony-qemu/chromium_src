@@ -190,8 +190,18 @@ void URLLoaderThrottle::WillStartRequest(network::ResourceRequest* request,
     return;
   }
 
-  for (const auto& rule : rules_->data->rules)
+  GURL current_url = request->url;
+  for (const auto& rule : rules_->data->rules) {
     ApplyRule(request, rule);
+    if (request->url != current_url) {
+      if (!IsRequestAllowed(request, rules_->data)) {
+        delegate_->CancelWithError(net::ERR_ABORTED,
+                                   "Resource load blocked by embedder policy.");
+        return;
+      }
+      current_url = request->url;
+    }
+  }
   *defer = false;
 }
 

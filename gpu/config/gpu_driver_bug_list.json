@@ -3841,6 +3841,15 @@
       "features": [
         "dont_change_base_level_for_npot_immutable_textures"
       ]
+    },
+    {
+      "id": 484,
+      "cr_bugs": [529867799],
+      "description": "Pack large row length separately when packing into a pixel pack buffer to work around Mali driver bug.",
+      "gl_vendor": "ARM.*",
+      "features": [
+        "pack_large_row_length_separately_pack_buffer"
+      ]
     }
   ]
 }

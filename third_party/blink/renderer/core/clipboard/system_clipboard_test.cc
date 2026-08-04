@@ -8,13 +8,17 @@
 
 #include "base/test/bind.h"
 #include "base/test/scoped_feature_list.h"
+#include "build/build_config.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/blink/renderer/core/clipboard/data_object_item.h"
+#include "third_party/blink/renderer/core/frame/local_dom_window.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/frame/platform_event_controller.h"
+#include "third_party/blink/renderer/core/frame/settings.h"
 #include "third_party/blink/renderer/core/testing/dummy_page_holder.h"
 #include "third_party/blink/renderer/core/testing/page_test_base.h"
+#include "third_party/blink/renderer/platform/testing/runtime_enabled_features_test_helpers.h"
 #include "third_party/blink/renderer/platform/testing/task_environment.h"
 #include "third_party/blink/renderer/platform/testing/unit_test_helpers.h"
 #include "third_party/skia/include/core/SkBitmap.h"
@@ -733,6 +737,36 @@ TEST_F(SystemClipboardTest, DataObjectItemGetAsStringSequenceNumberValidation) {
   String data = item->GetAsString();
   EXPECT_TRUE(data.empty());
 }
+
+#if BUILDFLAG(IS_OZONE)
+TEST_F(SystemClipboardTest, DataObjectItemGetAsFileRespectsSelectionMode) {
+  ScopedClipboardPasteImageRespectBufferForTest scoped_feature(true);
+  dom_window()->GetFrame()->GetSettings()->SetSelectionClipboardBufferAvailable(
+      true);
+
+  SkBitmap bitmap;
+  ASSERT_TRUE(bitmap.tryAllocPixelsFlags(
+      SkImageInfo::Make(4, 3, kN32_SkColorType, kOpaque_SkAlphaType), 0));
+  clipboard_host()->WriteImage(bitmap);
+  clipboard_host()->CommitWrite();
+
+  auto sequence_number = system_clipboard().SequenceNumber();
+  DataObjectItem* item = DataObjectItem::CreateFromClipboard(
+      &system_clipboard(), ui::kMimeTypePng, sequence_number);
+
+  system_clipboard().SetSelectionMode(true);
+  File* file = item->GetAsFile();
+  EXPECT_NE(file, nullptr);
+  EXPECT_EQ(mock_clipboard_host()->LastReadPngBuffer(),
+            mojom::blink::ClipboardBuffer::kSelection);
+
+  system_clipboard().SetSelectionMode(false);
+  file = item->GetAsFile();
+  EXPECT_NE(file, nullptr);
+  EXPECT_EQ(mock_clipboard_host()->LastReadPngBuffer(),
+            mojom::blink::ClipboardBuffer::kStandard);
+}
+#endif  // BUILDFLAG(IS_OZONE)
 
 }  // namespace blink
 

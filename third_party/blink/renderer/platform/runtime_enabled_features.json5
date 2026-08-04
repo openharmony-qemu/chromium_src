@@ -1045,6 +1045,12 @@
       status: "stable",
     },
     {
+      // Make selection-buffer image paste respect the active clipboard buffer.
+      // crbug.com/524931675
+      name: "ClipboardPasteImageRespectBuffer",
+      status: "stable",
+    },
+    {
       // TODO(crbug.com/440374239): Disabled due to https://crbug.com/440374239.
       name: "ClipElementVisibleBoundsInLocalRoot",
     },

@@ -22,6 +22,10 @@ class MockClipboardHost : public mojom::blink::ClipboardHost {
   MockClipboardHost& operator=(const MockClipboardHost&) = delete;
   ~MockClipboardHost() override;
 
+  mojom::ClipboardBuffer LastReadPngBuffer() const {
+    return last_read_png_buffer_;
+  }
+
   void Bind(mojo::PendingReceiver<mojom::blink::ClipboardHost> receiver);
   // Clears all clipboard data.
   void Reset();
@@ -110,6 +114,8 @@ class MockClipboardHost : public mojom::blink::ClipboardHost {
   mojom::blink::ClipboardFilesPtr files_ = mojom::blink::ClipboardFiles::New();
   KURL url_;
   Vector<uint8_t> png_;
+  mojom::ClipboardBuffer last_read_png_buffer_ =
+      mojom::ClipboardBuffer::kStandard;
   // TODO(asully): Remove `image_` once ReadImage() path is removed.
   SkBitmap image_;
   HashMap<String, String> custom_data_;

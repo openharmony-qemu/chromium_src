@@ -71,6 +71,8 @@ class NWebCreateInfoFuzzer : public NWebCreateInfo {
   void* GetEnhanceSurfaceInfo() override { return nullptr; }
 
   bool GetIsIncognitoMode() override { return false; }
+
+  uint64_t GetAsyncStackId() override { return 0; }
 };
 
 void FuzzTest(const uint8_t* data, size_t size) {

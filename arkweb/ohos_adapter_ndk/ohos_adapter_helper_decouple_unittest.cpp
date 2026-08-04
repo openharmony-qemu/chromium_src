@@ -168,6 +168,7 @@ public:
     virtual ArkWebRefPtr<ArkBackgroundTaskAdapter> CreateBackgroundTaskAdapter() {return nullptr;}
     virtual ArkWebRefPtr<ArkSurfaceControlAdapter> GetSurfaceControlAdapter() {return nullptr;}
     virtual ArkWebRefPtr<ArkSurfaceTransactionAdapter> GetSurfaceTransactionAdapter() {return nullptr;}
+    virtual ArkWebRefPtr<ArkHiViewDfxAdapter> GetHiViewDfxAdapterInstance() {return nullptr;}
 };
 
 class ArkOhosAdapterHelperWrapperTest : public testing::Test {

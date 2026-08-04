@@ -118,7 +118,7 @@ class CC_EXPORT SurfaceLayerImpl : public LayerImpl {
   gfx::Rect visible_quad_rect_;
 #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-  raw_ptr<SurfaceLayerImplUtils> surfaceLayerImplUtils_;
+  std::unique_ptr<SurfaceLayerImplUtils> surfaceLayerImplUtils_;
 #endif
   bool override_child_paint_flags_ = false;
 };

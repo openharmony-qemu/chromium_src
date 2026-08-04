@@ -549,6 +549,11 @@ class CONTENT_EXPORT NavigationEntryImpl : public NavigationEntry {
   void set_error_code(int error_code) { error_code_ = error_code; }
 #endif
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  int GetExtendedErrorCode() const override { return extended_error_code_; }
+  void set_extended_error_code(int extended_error_code) { extended_error_code_ = extended_error_code; }
+#endif
+
  private:
   std::unique_ptr<NavigationEntryImpl> CloneAndReplaceInternal(
       scoped_refptr<FrameNavigationEntry> frame_entry,
@@ -697,6 +702,10 @@ class CONTENT_EXPORT NavigationEntryImpl : public NavigationEntry {
 
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   int error_code_;
+#endif
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  int extended_error_code_ = 0;
 #endif
 };
 

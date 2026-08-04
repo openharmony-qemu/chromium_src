@@ -12,6 +12,10 @@
 #include "arkweb/chromium_ext/content/public/browser/ohos_navigation_type.h"
 #endif // BUILDFLAG(ARKWEB_NAVIGATION)
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+#include <vector>
+#endif
+
 namespace content {
 
 class NavigationEntry;
@@ -81,6 +85,10 @@ struct CONTENT_EXPORT LoadCommittedDetails {
   content::OhosNavigationType type;
   GURL current_commit_entry_url;
   #endif // BUILDFLAG(ARKWEB_NAVIGATION)
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  std::vector<GURL> redirect_chain;
+#endif
 };
 
 // Provides the details for a NOTIFICATION_NAV_ENTRY_CHANGED notification.

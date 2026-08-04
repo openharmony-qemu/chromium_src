@@ -22,6 +22,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/base/l10n/l10n_util.h"
 #include "ui/gfx/image/image_unittest_util.h"
+#include "url/gurl.h"
 
 namespace autofill {
 namespace {
@@ -61,7 +62,7 @@ class IbanSuggestionGeneratorTest : public testing::Test,
 #endif
   }
 
-  AutofillClient& client() { return autofill_client_; }
+  TestAutofillClient& client() { return autofill_client_; }
   FormStructure& form() { return *form_structure_; }
   AutofillField& field() { return *form_structure_->fields().front(); }
   PersonalDataManager& personal_data_manager() {
@@ -199,6 +200,87 @@ TEST_P(IbanSuggestionGeneratorTest, GeneratesIbanSuggestions) {
                       MatchesTextAndSuggestionType(server_iban_suggestion_1),
                       MatchesTextAndSuggestionType(separator_suggestion),
                       MatchesTextAndSuggestionType(footer_suggestion)))));
+  generator.GenerateSuggestions(form().ToFormData(), field(), &form(), &field(),
+                                client(), {savedCallbackArgument},
+                                suggestions_generated_callback.Get());
+  task_environment().RunUntilIdle();
+}
+
+// Verify that for a non-secure context, IBAN suggestions are replaced with a
+// warning message.
+TEST_P(IbanSuggestionGeneratorTest, ShowsWarningForNonSecureContext) {
+  SetUpLocalIban("DE91 1000 0000 0123 4567 89", kNickname_0);
+  client().set_last_committed_primary_main_frame_url(
+      GURL("http://example.test"));
+
+  base::MockCallback<base::OnceCallback<void(
+      std::pair<SuggestionGenerator::SuggestionDataSource,
+                std::vector<SuggestionGenerator::SuggestionData>>)>>
+      suggestion_data_callback;
+  base::MockCallback<
+      base::OnceCallback<void(SuggestionGenerator::ReturnedSuggestions)>>
+      suggestions_generated_callback;
+
+  IbanSuggestionGenerator generator;
+  std::pair<SuggestionGenerator::SuggestionDataSource,
+            std::vector<SuggestionGenerator::SuggestionData>>
+      savedCallbackArgument;
+
+  EXPECT_CALL(
+      suggestion_data_callback,
+      Run(testing::Pair(SuggestionGenerator::SuggestionDataSource::kIban,
+                        testing::SizeIs(1))))
+      .WillOnce(testing::SaveArg<0>(&savedCallbackArgument));
+  generator.FetchSuggestionData(form().ToFormData(), field(), &form(), &field(),
+                                client(), suggestion_data_callback.Get());
+
+  EXPECT_CALL(suggestions_generated_callback,
+              Run(testing::Pair(
+                  FillingProduct::kIban,
+                  testing::ElementsAre(AllOf(
+                      testing::Field(
+                          &Suggestion::type,
+                          SuggestionType::kInsecureContextPaymentDisabledMessage),
+                      testing::Field(
+                          &Suggestion::main_text,
+                          Suggestion::Text(l10n_util::GetStringUTF16(
+                                               IDS_AUTOFILL_WARNING_INSECURE_CONNECTION),
+                                           Suggestion::Text::IsPrimary(true))))))));
+  generator.GenerateSuggestions(form().ToFormData(), field(), &form(), &field(),
+                                client(), {savedCallbackArgument},
+                                suggestions_generated_callback.Get());
+  task_environment().RunUntilIdle();
+}
+
+// Verify that no warning is shown for a non-secure context when there are no
+// IBANs to suggest.
+TEST_P(IbanSuggestionGeneratorTest, NoWarningForNonSecureContextWithoutIbans) {
+  client().set_last_committed_primary_main_frame_url(
+      GURL("http://example.test"));
+
+  base::MockCallback<base::OnceCallback<void(
+      std::pair<SuggestionGenerator::SuggestionDataSource,
+                std::vector<SuggestionGenerator::SuggestionData>>)>>
+      suggestion_data_callback;
+  base::MockCallback<
+      base::OnceCallback<void(SuggestionGenerator::ReturnedSuggestions)>>
+      suggestions_generated_callback;
+
+  IbanSuggestionGenerator generator;
+  std::pair<SuggestionGenerator::SuggestionDataSource,
+            std::vector<SuggestionGenerator::SuggestionData>>
+      savedCallbackArgument;
+
+  EXPECT_CALL(
+      suggestion_data_callback,
+      Run(testing::Pair(SuggestionGenerator::SuggestionDataSource::kIban,
+                        testing::IsEmpty())))
+      .WillOnce(testing::SaveArg<0>(&savedCallbackArgument));
+  generator.FetchSuggestionData(form().ToFormData(), field(), &form(), &field(),
+                                client(), suggestion_data_callback.Get());
+
+  EXPECT_CALL(suggestions_generated_callback,
+              Run(testing::Pair(FillingProduct::kIban, testing::IsEmpty())));
   generator.GenerateSuggestions(form().ToFormData(), field(), &form(), &field(),
                                 client(), {savedCallbackArgument},
                                 suggestions_generated_callback.Get());

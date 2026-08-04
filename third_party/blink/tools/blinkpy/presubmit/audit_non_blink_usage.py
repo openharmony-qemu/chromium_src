@@ -1212,6 +1212,14 @@ _CONFIG = [
         ]
     },
     {
+        'paths': [
+            'third_party/blink/renderer/core/html/anchor_element_utils.cc',
+        ],
+        'allowed': [
+            'base::CommandLine',
+        ]
+    },
+    {
         'paths': ['third_party/blink/renderer/core/frame/dom_window.cc'],
         'allowed': [
             'base::MakeFixedFlatMap',

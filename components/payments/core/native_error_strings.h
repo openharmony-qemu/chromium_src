@@ -314,6 +314,10 @@ extern const char kValidLogoUrlSchemeRequired[];
 // the "secure-payment-confirmation" method.
 extern const char kLogoLabelRequired[];
 
+// Used when a SecurePaymentConfirmationRequest includes one or more disallowed
+// WebAuthn extensions.
+extern const char kWebAuthnExtensionsNotSupported[];
+
 }  // namespace errors
 }  // namespace payments
 

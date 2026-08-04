@@ -275,5 +275,9 @@ extern const char kLogoLabelRequired[] =
     "The \"secure-payment-confirmation\" method requires that each entry in "
     "\"paymentEntitiesLogos\" has a non-empty \"label\" field.";
 
+extern const char kWebAuthnExtensionsNotSupported[] =
+    "The \"secure-payment-confirmation\" method does not support the "
+    "provided WebAuthn extension(s).";
+
 }  // namespace errors
 }  // namespace payments

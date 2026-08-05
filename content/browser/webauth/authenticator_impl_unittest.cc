@@ -74,6 +74,7 @@
 #include "content/public/common/content_client.h"
 #include "content/public/common/content_switches.h"
 #include "content/public/test/browser_test_utils.h"
+#include "content/public/test/mock_render_process_host.h"
 #include "content/public/test/navigation_simulator.h"
 #include "content/public/test/test_renderer_host.h"
 #include "crypto/evp.h"
@@ -997,6 +998,16 @@ TEST_F(AuthenticatorImplTest, ReportOriginAndRpIds) {
     EXPECT_EQ(AuthenticatorReport(std::move(options)),
               test_case.expected_status);
   }
+}
+
+TEST_F(AuthenticatorImplTest, PdfProcessBlocked) {
+  process()->SetIsPdf(true);
+
+  mojo::Remote<blink::mojom::Authenticator> authenticator;
+  static_cast<RenderFrameHostImpl*>(main_rfh())
+      ->GetWebAuthenticationService(authenticator.BindNewPipeAndPassReceiver());
+
+  EXPECT_EQ(1, process()->bad_msg_count());
 }
 
 constexpr auto kValidAppIdCases = std::to_array<OriginClaimedAuthorityPair>({

@@ -2267,6 +2267,24 @@ TEST_F(ContextMenuControllerTest, FileInputSelectAllShowsContextMenuNoCrash) {
   EXPECT_TRUE(ShowContextMenuForElement(element, kMenuSourceMouse));
 }
 
+TEST_F(ContextMenuControllerTest, RevealedPasswordField) {
+  Document* document = GetDocument();
+  document->documentElement()->SetInnerHTMLWithoutTrustedTypes(
+      "<input type=text id=test>");
+  document->UpdateStyleAndLayout(DocumentUpdateReason::kTest);
+  document->GetFrame()->Selection().SelectAll();
+
+  Element* element = document->getElementById(AtomicString("test"));
+  HTMLInputElement* input_element = To<HTMLInputElement>(element);
+  ASSERT_TRUE(input_element);
+  input_element->MaybeSetHasBeenPasswordField();
+
+  ASSERT_TRUE(ShowContextMenuForElement(element, kMenuSourceMouse));
+  ContextMenuData context_menu_data = GetWebFrameClient().GetContextMenuData();
+  EXPECT_EQ(context_menu_data.form_control_type,
+            mojom::blink::FormControlType::kInputPassword);
+}
+
 class ContextMenuControllerRemoteParentFrameTest : public testing::Test {
  public:
   ContextMenuControllerRemoteParentFrameTest() = default;

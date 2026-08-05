@@ -103,6 +103,9 @@ bool StructTraits<media::mojom::VideoFrameMetadataDataView,
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   output->render_video_view = input.render_video_view();
 #endif
+#if BUILDFLAG(ARKWEB_AI_HDR)
+  output->is_ai_hdr_active = input.is_ai_hdr_active();
+#endif
   output->wants_promotion_hint = input.wants_promotion_hint();
   output->protected_video = input.protected_video();
   output->hw_protected = input.hw_protected();

@@ -122,6 +122,16 @@ bool DisplayResourceProvider::IsBackedBySurfaceView(ResourceId id) const {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_AI_HDR)
+bool DisplayResourceProvider::IsAiHdrActive(ResourceId id) const {
+  const ChildResource* resource = GetResource(id);
+  if (!resource) {
+    return false;
+  }
+  return resource->transferable.is_ai_hdr_active;
+}
+#endif
+
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)
 bool DisplayResourceProvider::DoesResourceWantPromotionHint(
     ResourceId id) const {
@@ -246,6 +256,15 @@ void DisplayResourceProvider::ReceiveFromChild(
         child_info.child_to_parent_map.find(transferable_resource.id);
     if (resource_in_map_it != child_info.child_to_parent_map.end()) {
       ChildResource* resource = GetResource(resource_in_map_it->second);
+#if BUILDFLAG(ARKWEB_AI_HDR)
+      // VPE resolution change: resource_id reused with different size.
+      if (resource && resource->transferable.GetSize() != transferable_resource.GetSize()) {
+        TRACE_EVENT2("viz",
+            "DisplayResourceProvider::ReceiveFromChild SIZE_MISMATCH",
+            "old_size", resource->transferable.GetSize().ToString(),
+            "new_size", transferable_resource.GetSize().ToString());
+      }
+#endif
       resource->marked_for_deletion = false;
       resource->imported_count++;
       continue;

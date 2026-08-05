@@ -79,6 +79,12 @@ class VIZ_SERVICE_EXPORT DisplayResourceProvider
   bool IsBackedBySurfaceView(ResourceId id) const;
 #endif
 
+#if BUILDFLAG(ARKWEB_AI_HDR)
+  // ArkWeb OHOS: Indicates if this resource has been processed by VPE
+  // (Video Processing Engine) for AI HDR enhancement.
+  bool IsAiHdrActive(ResourceId id) const;
+#endif
+
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)
   // Indicates if this resource wants to receive promotion hints.
   bool DoesResourceWantPromotionHint(ResourceId id) const;

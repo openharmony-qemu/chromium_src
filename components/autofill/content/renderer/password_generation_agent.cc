@@ -328,7 +328,8 @@ bool PasswordGenerationAgent::ShouldIgnoreBlur() {
 }
 
 bool PasswordGenerationAgent::IsPrerendering() const {
-  return render_frame()->GetWebFrame()->GetDocument().IsPrerendering();
+  return render_frame() &&
+         render_frame()->GetWebFrame()->GetDocument().IsPrerendering();
 }
 
 void PasswordGenerationAgent::PreviewGenerationSuggestion(

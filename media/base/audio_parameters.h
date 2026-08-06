@@ -361,7 +361,6 @@ class MEDIA_EXPORT AudioParameters {
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   int render_process_id_;
   int render_frame_id_;
-  int nweb_id_ = -1;
 #endif // defined(OHOS_MEDIA_POLICY)
   // Microphone positions using Cartesian coordinates:
   // x: the horizontal dimension, with positive to the right from the camera's

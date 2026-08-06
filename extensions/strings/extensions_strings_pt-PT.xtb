@@ -55,6 +55,7 @@
 <translation id="8047248493720652249">Esta extensão não conseguiu atribuir o nome "<ph name="ATTEMPTED_FILENAME" />" à transferência, porque outra extensão (<ph name="EXTENSION_NAME" />) determinou um nome de ficheiro diferente: "<ph name="ACTUAL_FILENAME" />".</translation>
 <translation id="8284835137979141223"><ph name="PRODUCT_NAME" /> de <ph name="VENDOR_NAME" /></translation>
 <translation id="8517576857589387417">O ficheiro de manifesto está em falta ou é ilegível.</translation>
+<translation id="8602184400052594090">O ficheiro de manifesto está em falta ou é ilegível.</translation>
 <translation id="8621383749470166852">Não foi possível carregar o ficheiro "<ph name="RELATIVE_PATH" />" para o script de conteúdo. Os scripts de conteúdo só podem ser carregados a partir de ficheiros JavaScript compatíveis, como os ficheiros .js.</translation>
 <translation id="8636666366616799973">O pacote é inválido. Detalhes: "<ph name="ERROR_MESSAGE" />".</translation>
 <translation id="8761756413268424715">"<ph name="APP_NAME" />" está a solicitar acesso a um dos seus dispositivos:</translation>

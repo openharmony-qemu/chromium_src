@@ -1875,6 +1875,26 @@ TEST_F(SyntheticResponseContentSecurityPolicyTest,
             2);
 }
 
+TEST_F(ContentSecurityPolicyTest, StaticAllowBaseURI) {
+  KURL allowed_base("https://example.test/");
+  KURL blocked_base("https://not-example.test/");
+
+  // Empty policies should allow everything.
+  Vector<network::mojom::blink::ContentSecurityPolicyPtr> empty_policies;
+  EXPECT_TRUE(
+      ContentSecurityPolicy::AllowBaseURI(allowed_base, empty_policies));
+  EXPECT_TRUE(
+      ContentSecurityPolicy::AllowBaseURI(blocked_base, empty_policies));
+
+  // Policy with base-uri 'self'.
+  Vector<network::mojom::blink::ContentSecurityPolicyPtr> policies =
+      ParseContentSecurityPolicies(
+          "base-uri 'self'", ContentSecurityPolicyType::kEnforce,
+          ContentSecurityPolicySource::kHTTP, *secure_origin);
+  EXPECT_TRUE(ContentSecurityPolicy::AllowBaseURI(allowed_base, policies));
+  EXPECT_FALSE(ContentSecurityPolicy::AllowBaseURI(blocked_base, policies));
+}
+
 // Regression test for crbug.com/513824957.
 TEST_F(ContentSecurityPolicyTest, AddHashReportSanitization) {
   auto dummy = std::make_unique<DummyPageHolder>();
@@ -1920,5 +1940,4 @@ TEST_F(ContentSecurityPolicyTest, AddHashReportSanitization) {
   // remain).
   EXPECT_EQ("https://example.test/script.js", body->subresourceURL());
 }
-
 }  // namespace blink

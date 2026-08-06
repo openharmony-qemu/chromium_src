@@ -124,8 +124,11 @@ void CursorManager::UpdateCursor() {
   last_set_cursor_type_for_testing_ = cursor.type();
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  CHECK(!root_view_->GetViewType().empty());
   LOG(INFO) << "root_view_ type is " << root_view_->GetViewType();
+  if (root_view_->GetViewType().empty()) {
+    LOG(ERROR) << "Skip cursor update: root_view type is empty";
+    return;
+  }
   root_view_->UpdateCursor(cursor);
 #else
   root_view_->DisplayCursor(cursor);

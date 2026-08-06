@@ -1169,6 +1169,7 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
       media::RendererType::kRendererImpl;
   std::string poster_url_;
   int native_texture_id_ = 0;
+  bool has_video_natural_size_ = false;
   uint32_t initial_preload_ =
       static_cast<uint32_t>(media::DataSource::METADATA);
   media::Renderer::OnGetRectCallback on_get_rect_cb_;

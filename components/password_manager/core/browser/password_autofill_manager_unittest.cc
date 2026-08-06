@@ -495,6 +495,18 @@ TEST_F(PasswordAutofillManagerTest, PreviewSuggestion) {
       password_autofill_manager_->PreviewSuggestionForTest(test_username_));
 }
 
+TEST_F(PasswordAutofillManagerTest, PreviewGroupedSuggestion) {
+  fill_data().preferred_login.is_grouped_affiliation = true;
+  TestPasswordManagerClient client;
+  InitializePasswordAutofillManager(&client, nullptr);
+
+  // Grouped suggestions should be masked using an 8-character long mask.
+  EXPECT_CALL(*client.mock_driver(),
+              PreviewSuggestion(test_username_, std::u16string(8, '*')));
+  EXPECT_TRUE(
+      password_autofill_manager_->PreviewSuggestionForTest(test_username_));
+}
+
 // Test that the popup is marked as visible after receiving password
 // suggestions.
 TEST_F(PasswordAutofillManagerTest, ExternalDelegatePasswordSuggestions) {

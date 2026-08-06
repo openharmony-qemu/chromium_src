@@ -113,6 +113,17 @@ class CONTENT_EXPORT DevToolsManagerDelegate {
   virtual scoped_refptr<DevToolsAgentHost>
   CreateNewTarget(const GURL& url, TargetType target_type, bool new_window);
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  // Async version of CreateNewTarget. Calls |callback| with (success, target_id).
+  // Note: This is only meaningful for ARKWEB builds.
+  using CreateNewTargetCallback =
+      base::OnceCallback<void(bool success, const std::string& target_id)>;
+  virtual void CreateNewTargetAsync(const GURL& url,
+                                    TargetType target_type,
+                                    bool new_window,
+                                    CreateNewTargetCallback callback) {}
+#endif
+
   // Get all live browser contexts created by CreateBrowserContext() method.
   virtual std::vector<BrowserContext*> GetBrowserContexts();
 

@@ -125,13 +125,6 @@ void MojoDecryptorService::InitializeVideoDecoder(
     const VideoDecoderConfig& config,
     InitializeVideoDecoderCallback callback) {
   DVLOG(2) << __func__;
-
-  if (!config.IsValidConfig()) {
-    std::move(callback).Run(false);
-    mojo::ReportBadMessage("Invalid VideoDecoderConfig");
-    return;
-  }
-
   decryptor_->InitializeVideoDecoder(
       config, base::BindOnce(&MojoDecryptorService::OnVideoDecoderInitialized,
                              weak_this_, std::move(callback)));

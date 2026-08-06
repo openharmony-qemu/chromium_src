@@ -22,8 +22,7 @@ InterleavedChannelMixer::InterleavedChannelMixer(
       output_layout_(output_layout),
       output_channel_count_(output_channel_count),
       max_frames_(max_frames) {
-  if (input_layout_ == output_layout_ &&
-      input_channel_count_ == output_channel_count_) {
+  if (input_layout_ == output_layout_) {
     return;
   }
 
@@ -45,8 +44,7 @@ InterleavedChannelMixer::InterleavedChannelMixer(
 InterleavedChannelMixer::~InterleavedChannelMixer() = default;
 
 float* InterleavedChannelMixer::Transform(const float* input, int num_frames) {
-  if (input_layout_ == output_layout_ &&
-      input_channel_count_ == output_channel_count_) {
+  if (input_layout_ == output_layout_) {
     return const_cast<float*>(input);
   }
 

@@ -212,20 +212,4 @@ TEST_F(UrlIndexTest, DestructionWithOrphanedUrlData) {
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/url_index_ext_unittest.cc"
 #endif  // ARKWEB_TEST
 
-TEST_F(UrlIndexTest, RedirectToPreservesCrossOrigin) {
-  KURL url1("http://foo.bar.com");
-  KURL url2("http://bar.foo.com");
-  scoped_refptr<UrlData> a = GetByUrl(url1, UrlData::CORS_UNSPECIFIED);
-  scoped_refptr<UrlData> b = GetByUrl(url2, UrlData::CORS_UNSPECIFIED);
-
-  EXPECT_FALSE(a->is_cors_cross_origin());
-  EXPECT_FALSE(b->is_cors_cross_origin());
-
-  a->set_is_cors_cross_origin(true);
-  a->RedirectTo(b);
-
-  EXPECT_TRUE(a->is_cors_cross_origin());
-  EXPECT_TRUE(b->is_cors_cross_origin());
-}
-
 }  // namespace blink

@@ -6,19 +6,14 @@
 #define MEDIA_AUDIO_WIN_AUDIO_SESSION_CREATION_OBSERVER_WIN_H_
 
 #include <audiopolicy.h>
-#include <wrl/implements.h>
 
 #include "base/functional/callback.h"
-#include "media/base/media_export.h"
 
 namespace media {
 
 // Calls the given callback when notified by the IAudioSessionManager2 that an
 // audio session was created.
-class MEDIA_EXPORT AudioSessionCreationObserverWin
-    : public Microsoft::WRL::RuntimeClass<
-          Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom>,
-          IAudioSessionNotification> {
+class AudioSessionCreationObserverWin : public IAudioSessionNotification {
  public:
   // `session_created_callback` is called when the system notifies us of a new
   // audio session via `OnSessionCreated()`.
@@ -28,9 +23,12 @@ class MEDIA_EXPORT AudioSessionCreationObserverWin
       delete;
   AudioSessionCreationObserverWin& operator=(
       const AudioSessionCreationObserverWin&) = delete;
-  ~AudioSessionCreationObserverWin() override;
+  virtual ~AudioSessionCreationObserverWin();
 
   // IAudioSessionNotification:
+  IFACEMETHODIMP_(ULONG) AddRef() override;
+  IFACEMETHODIMP_(ULONG) Release() override;
+  IFACEMETHODIMP QueryInterface(REFIID iid, void** object) override;
   IFACEMETHODIMP OnSessionCreated(IAudioSessionControl* session) override;
 
  private:

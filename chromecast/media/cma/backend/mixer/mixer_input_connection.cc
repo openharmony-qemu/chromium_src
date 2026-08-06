@@ -17,7 +17,6 @@
 #include "base/functional/bind.h"
 #include "base/location.h"
 #include "base/logging.h"
-#include "base/numerics/checked_math.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/time.h"
@@ -422,18 +421,6 @@ MixerInputConnection::MixerInputConnection(
   DCHECK(socket_);
   CHECK_GT(num_channels_, 0);
   CHECK_GT(input_samples_per_second_, 0);
-  if (channel_layout_ != ::media::CHANNEL_LAYOUT_DISCRETE &&
-      ::media::ChannelLayoutToChannelCount(channel_layout_) != num_channels_) {
-    LOG(ERROR) << "Invalid channel layout/count: " << channel_layout_ << " / "
-               << num_channels_;
-    // Setting state_ to kRemoved or setting a flag might be needed.
-    // Instead we can just CHECK, but it might be untrusted renderer input.
-    // However, since it's a constructor, we can just let it fail gracefully
-    // later or here we just set a flag. Or we can just CHECK to fail safe if
-    // the renderer is compromised anyway.
-    CHECK_EQ(::media::ChannelLayoutToChannelCount(channel_layout_),
-             num_channels_);
-  }
   DCHECK_LE(start_threshold_frames_, max_queued_frames_);
 
   socket_->SetDelegate(this);
@@ -462,17 +449,8 @@ void MixerInputConnection::CreateBufferPool(int frame_count) {
   DCHECK_GT(frame_count, 0);
   buffer_pool_frames_ = frame_count;
 
-  base::CheckedNumeric<int> size(frame_count);
-  size *= sizeof(float);
-  size *= num_channels_;
-  size += kAudioMessageHeaderSize;
-
-  if (!size.IsValid()) {
-    LOG(ERROR) << "Buffer size is invalid.";
-    OnConnectionError();
-    return;
-  }
-  int converted_buffer_size = size.ValueOrDie();
+  int converted_buffer_size =
+      kAudioMessageHeaderSize + num_channels_ * sizeof(float) * frame_count;
   buffer_pool_ = base::MakeRefCounted<IOBufferPool>(
       converted_buffer_size, std::numeric_limits<size_t>::max(),
       true /* threadsafe */);
@@ -660,12 +638,7 @@ void MixerInputConnection::RestartPlaybackAt(int64_t timestamp, int64_t pts) {
 void MixerInputConnection::SetMediaPlaybackRate(double rate) {
   DCHECK(io_task_runner_->RunsTasksInCurrentSequence());
   LOG(INFO) << this << " SetMediaPlaybackRate rate=" << rate;
-  // Non-positive playback rates are invalid and can lead to out-of-bounds
-  // memory access (crbug.com/501659253).
-  if (rate <= 0) {
-    LOG(ERROR) << "Invalid playback rate: " << rate;
-    return;
-  }
+  DCHECK_GT(rate, 0);
 
   base::AutoLock lock(lock_);
   if (state_ == State::kGotEos || state_ == State::kRemoved) {

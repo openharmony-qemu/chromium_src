@@ -105,6 +105,8 @@ class ChromeSpeechRecognitionClient
 
   ChromeSpeechRecognitionClient::InitializeCallback initialize_callback_;
 
+  media::SpeechRecognitionClient::OnReadyCallback on_ready_callback_;
+
   base::RepeatingClosure reset_callback_;
 
   // Sends audio to the speech recognition thread on the renderer thread.
@@ -133,9 +135,6 @@ class ChromeSpeechRecognitionClient
   // Protects `is_recognizer_bound_` when it's accessed from the main and
   // rendering threads concurrently.
   mutable base::Lock is_recognizer_bound_lock_;
-
-  media::SpeechRecognitionClient::OnReadyCallback on_ready_callback_
-      GUARDED_BY(is_recognizer_bound_lock_);
 
   // A flag indicating whether the speech recognition service supports
   // multichannel audio.

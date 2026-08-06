@@ -8,7 +8,11 @@ namespace features {
 
 // Please keep features in alphabetical order.
 BASE_FEATURE(kBlockCrossPartitionBlobUrlFetching,
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#else
              base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
 
 // Please keep features in alphabetical order.
 

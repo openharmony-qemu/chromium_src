@@ -356,10 +356,12 @@ int MockNetworkTransaction::RestartIgnoringLastError(
   return ERR_FAILED;
 }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 int MockNetworkTransaction::RestartWithSecureDnsOnly(
     CompletionOnceCallback callback) {
   return ERR_FAILED;
 }
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
 int MockNetworkTransaction::RestartWithCertificate(
     scoped_refptr<X509Certificate> client_cert,

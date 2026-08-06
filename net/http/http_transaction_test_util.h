@@ -196,7 +196,9 @@ class MockNetworkTransaction final : public HttpTransaction {
 
   int RestartIgnoringLastError(CompletionOnceCallback callback) override;
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   int RestartWithSecureDnsOnly(CompletionOnceCallback callback) override;
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   int RestartWithFallbackProxy(CompletionOnceCallback callback) override;

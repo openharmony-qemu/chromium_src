@@ -121,7 +121,7 @@ class CONTENT_EXPORT DelegatedFrameHost
 
 #if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
   static cc::DeadlinePolicy FirstFrameDeadlinePolicy();
-  void SetUseSpecifiedDeadlinePolicy(bool shouldUse);
+  void SetUseSpecifiedDeadlinePolicy(bool shouldUse) override;
   static bool evictUnlockFrameEnabled_;
 #endif
 

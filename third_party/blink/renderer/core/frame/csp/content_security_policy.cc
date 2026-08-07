@@ -221,6 +221,21 @@ String ContentSecurityPolicy::StripURLForUseInReport(
   return CSPStripURL(url).GetString();
 }
 
+// static
+bool ContentSecurityPolicy::ContainsDanglingMarkupSignal(
+    const String& attribute_name,
+    const String& attribute_value) {
+  static const char kScriptString[] = "<SCRIPT";
+  static const char kStyleString[] = "<STYLE";
+  static const char kLinkString[] = "<LINK";
+  return attribute_name.FindIgnoringASCIICase(kScriptString) != kNotFound ||
+         attribute_name.FindIgnoringASCIICase(kStyleString) != kNotFound ||
+         attribute_name.FindIgnoringASCIICase(kLinkString) != kNotFound ||
+         attribute_value.FindIgnoringASCIICase(kScriptString) != kNotFound ||
+         attribute_value.FindIgnoringASCIICase(kStyleString) != kNotFound ||
+         attribute_value.FindIgnoringASCIICase(kLinkString) != kNotFound;
+}
+
 bool ContentSecurityPolicy::IsNonceableElement(const Element* element) {
   if (element->nonce().IsNull())
     return false;
@@ -239,18 +254,8 @@ bool ContentSecurityPolicy::IsNonceableElement(const Element* element) {
     nonceable = false;
 
   if (nonceable) {
-    static const char kScriptString[] = "<SCRIPT";
-    static const char kStyleString[] = "<STYLE";
-    static const char kLinkString[] = "<LINK";
     for (const Attribute& attr : element->Attributes()) {
-      const AtomicString& name = attr.LocalName();
-      const AtomicString& value = attr.Value();
-      if (name.FindIgnoringASCIICase(kScriptString) != kNotFound ||
-          name.FindIgnoringASCIICase(kStyleString) != kNotFound ||
-          name.FindIgnoringASCIICase(kLinkString) != kNotFound ||
-          value.FindIgnoringASCIICase(kScriptString) != kNotFound ||
-          value.FindIgnoringASCIICase(kStyleString) != kNotFound ||
-          value.FindIgnoringASCIICase(kLinkString) != kNotFound) {
+      if (ContainsDanglingMarkupSignal(attr.LocalName(), attr.Value())) {
         nonceable = false;
         break;
       }

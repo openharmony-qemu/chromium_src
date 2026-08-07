@@ -316,20 +316,24 @@ TEST_F(UndoPasswordChangeControllerTest, OnLoginPotentiallyFailedFlagOn) {
 }
 
 TEST_F(UndoPasswordChangeControllerTest,
-       OnLoginPotentiallyFailed_GroupedAffiliation_Ignored) {
+       OnLoginPotentiallyFailed_GroupedAffiliation_RecoveryTriggered) {
   base::test::ScopedFeatureList feature_list(features::kShowRecoveryPassword);
   best_match_form_.SetPasswordBackupNote(kBackupPassword);
   best_match_form_.match_type =
       password_manager::PasswordForm::MatchType::kGrouped;
   auto form_manager = CreateFormManager(best_match_form_);
+  base::RunLoop run_loop;
 
   controller_.OnLoginPotentiallyFailed(&driver_, failed_login_form_);
-  EXPECT_CALL(driver_, TriggerPasswordRecoverySuggestions).Times(0);
+  EXPECT_CALL(driver_, TriggerPasswordRecoverySuggestions(
+                           failed_login_form_.password_element_renderer_id))
+      .WillOnce(RunOnceClosure(run_loop.QuitClosure()));
   static_cast<PasswordFormManagerObserver*>(&controller_)
       ->OnPasswordFormParsed(form_manager.get());
+  run_loop.Run();
 
   EXPECT_EQ(controller_.GetState(kUsername),
-            PasswordRecoveryState::kRegularFlow);
+            PasswordRecoveryState::kShowProactiveRecovery);
 }
 
 TEST_F(UndoPasswordChangeControllerTest, OnLoginPotentiallyFailedFlagOff) {

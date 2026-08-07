@@ -652,4 +652,7 @@ BASE_FEATURE(kEnableNwebExHttpDnsFallback,
              base::FEATURE_DISABLED_BY_DEFAULT);
 #endif
 
+BASE_FEATURE(kBrowserInitiatedFileUploadValidation,
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
 }  // namespace network::features

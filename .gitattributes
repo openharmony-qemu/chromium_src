@@ -356,8 +356,8 @@ android_webview/tools/cts_archive/cipd/x86/V/android-cts-x86-15_r2.zip filter=lf
 android_webview/tools/cts_archive/cipd/x86/U/android-cts-x86-14_r6.zip filter=lfs diff=lfs merge=lfs -text
 android_webview/tools/cts_archive/cipd/x86/O/android-cts-x86-8.0_r26.zip filter=lfs diff=lfs merge=lfs -text
 android_webview/tools/cts_archive/cipd/x86/R/android-cts-x86-11_r16.zip filter=lfs diff=lfs merge=lfs -text
-ohos_sdk/ohos-sdk-linux-6.0.2.130.tar.gz.00 filter=lfs diff=lfs merge=lfs -text
-ohos_sdk/ohos-sdk-linux-6.0.2.130.tar.gz.01 filter=lfs diff=lfs merge=lfs -text
+ohos_sdk/ohos-sdk-linux-6.1.1.125.tar.gz.00 filter=lfs diff=lfs merge=lfs -text
+ohos_sdk/ohos-sdk-linux-6.1.1.125.tar.gz.01 filter=lfs diff=lfs merge=lfs -text
 /ohos_ndk/toolchains/llvm/bin/clang-12 filter=lfs diff=lfs merge=lfs -text
 /ohos_ndk/toolchains/llvm/lib/liblldb.so.12.0.1 filter=lfs diff=lfs merge=lfs -text
 /third_party/llvm-build/Release+Asserts/bin/clang filter=lfs diff=lfs merge=lfs -text

@@ -6650,8 +6650,8 @@ void NavigationRequest::CommitErrorPage(
     net_error = original_error_code_;
     if (net_error == net::OK) {
       LOG(ERROR) << "CommitErrorPage with fallback proxy, url "
-                 << url::LogUtils::ConvertUrl(
-                        common_params_->url.possibly_invalid_spec(), true)
+                 << url::LogUtils::ConvertUrlWithMask(
+                        common_params_->url.possibly_invalid_spec())
                  << ", net_error " << net_error_;
       SCOPED_CRASH_KEY_STRING256("ErrorPageProxy", "url",
                                  common_params_->url.possibly_invalid_spec());

@@ -716,8 +716,9 @@ void InputController::DoCreate(
   is_muted_ = stream_->IsMuted();
 #if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
   LOG(DEBUG) << "InputController::DoCreate, SetPauseStateChangedCallback";
-  stream_->SetPauseStateChangedCallback(base::BindRepeating(
-      &InputController::OnStreamPaused, base::Unretained(this)));
+  stream_->SetPauseStateChangedCallback(base::BindPostTask(
+      task_runner_,
+      base::BindRepeating(&InputController::OnStreamPaused, weak_this_)));
 #endif // ARKWEB_MEDIA_CAPTURE
   event_handler_->OnCreated(is_muted_);
   check_muted_state_timer_.Start(FROM_HERE, kCheckMutedStateInterval, this,

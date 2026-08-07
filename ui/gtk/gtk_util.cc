@@ -19,6 +19,7 @@
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "ui/aura/window_tree_host.h"
 #include "ui/base/accelerators/accelerator.h"
+#include "ui/base/cursor/cursor_factory.h"
 #include "ui/gfx/color_palette.h"
 #include "ui/gfx/color_utils.h"
 #include "ui/gfx/geometry/size.h"
@@ -32,6 +33,15 @@
 #include "ui/views/widget/desktop_aura/desktop_window_tree_host_linux.h"
 
 namespace gtk {
+
+std::string SanitizeCursorThemeName(std::string_view theme_name) {
+  return ui::IsValidCursorThemeName(theme_name) ? std::string(theme_name)
+                                                 : "Adwaita";
+}
+
+int SanitizeCursorThemeSize(int theme_size) {
+  return ui::IsValidCursorThemeSize(theme_size) ? theme_size : 24;
+}
 
 namespace {
 

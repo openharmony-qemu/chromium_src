@@ -14637,6 +14637,10 @@ void RenderFrameHostImpl::BindMediaRemoterFactoryReceiver(
 
 void RenderFrameHostImpl::CreateWebSocketConnector(
     mojo::PendingReceiver<blink::mojom::WebSocketConnector> receiver) {
+  if (is_mhtml_document()) {
+    mojo::ReportBadMessage("WebSockets are not allowed in MHTML documents.");
+    return;
+  }
   mojo::MakeSelfOwnedReceiver(
       std::make_unique<WebSocketConnectorImpl>(
           GetProcess()->GetDeprecatedID(), routing_id_, last_committed_origin_,
@@ -14646,6 +14650,10 @@ void RenderFrameHostImpl::CreateWebSocketConnector(
 
 void RenderFrameHostImpl::CreateWebTransportConnector(
     mojo::PendingReceiver<blink::mojom::WebTransportConnector> receiver) {
+  if (is_mhtml_document()) {
+    mojo::ReportBadMessage("WebTransport is not allowed in MHTML documents.");
+    return;
+  }
   mojo::MakeSelfOwnedReceiver(
       std::make_unique<WebTransportConnectorImpl>(
           GetProcess()->GetDeprecatedID(), weak_ptr_factory_.GetWeakPtr(),

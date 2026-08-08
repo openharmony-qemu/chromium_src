@@ -92,7 +92,8 @@ Suggestion::PasswordSuggestionDetails GetSuggestionDetailsForRecoveryFlow(
 
   return Suggestion::PasswordSuggestionDetails(
       credential.username_value, credential.password_value,
-      credential.backup_password_value.value());
+      credential.backup_password_value.value(), credential.realm,
+      credential.is_grouped_affiliation);
 }
 
 void MaybeAppendManagePasswordsEntry(std::vector<Suggestion>* suggestions) {

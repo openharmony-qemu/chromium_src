@@ -140,6 +140,7 @@ export class PrintAdapter extends BaseAdapter {
       LogUtil.error(TAG, 'list file error: ' + JSON.stringify(error));
     }
     ;
+  }
 
   @LogMethod
   startPrint(printData: PrintJobData) {
@@ -162,6 +163,5 @@ export class PrintAdapter extends BaseAdapter {
     }).catch((error: BusinessError) => {
       LogUtil.error(TAG, 'Failed to print the file. Error message: ' + JSON.stringify(error));
     })
-  }
   }
 }

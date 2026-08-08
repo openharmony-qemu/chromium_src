@@ -642,7 +642,11 @@ BASE_FEATURE_ENUM_PARAM(
 // Prevents an opener from being returned when a BlobURL is cross-site to the
 // window's top-level site.
 BASE_FEATURE(kEnforceNoopenerOnBlobURLNavigation,
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#else
              base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
 
 BASE_FEATURE(kEventTimingIgnorePresentationTimeFromUnexpectedFrameSource,
              base::FEATURE_DISABLED_BY_DEFAULT);

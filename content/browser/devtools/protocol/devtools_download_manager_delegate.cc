@@ -25,6 +25,15 @@ namespace protocol {
 const char kDevToolsDownloadManagerDelegateName[] =
     "devtools_download_manager_delegate";
 
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+const char kArkWebAllowAndNameKey[] = "arkweb_allow_and_name";
+
+class ArkWebAllowAndNameData : public base::SupportsUserData::Data {
+ public:
+  ~ArkWebAllowAndNameData() override = default;
+};
+#endif
+
 DevToolsDownloadManagerDelegate::DevToolsDownloadManagerDelegate(
     content::BrowserContext* browser_context) {
   download_manager_ = browser_context->GetDownloadManager();
@@ -67,8 +76,20 @@ bool DevToolsDownloadManagerDelegate::DetermineDownloadTarget(
   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
 
   // Check if we should failback to delegate.
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  if (original_download_delegate_ &&
+      download_behavior_ != DownloadBehavior::DENY) {
+    // When behavior is ALLOW_AND_NAME, mark the download item so that
+    // the ArkWeb NWebDownloadHandlerDelegate can use guid as the suggested
+    // file name instead of generating one from URL/content-disposition.
+    if (download_behavior_ == DownloadBehavior::ALLOW_AND_NAME) {
+      item->SetUserData(kArkWebAllowAndNameKey,
+                        std::make_unique<ArkWebAllowAndNameData>());
+    }
+#else
   if (original_download_delegate_ &&
       download_behavior_ == DownloadBehavior::DEFAULT) {
+#endif
     return original_download_delegate_->DetermineDownloadTarget(item, callback);
   }
 

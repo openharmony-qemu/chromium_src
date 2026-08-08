@@ -67,8 +67,13 @@ bool DevToolsDownloadManagerDelegate::DetermineDownloadTarget(
   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
 
   // Check if we should failback to delegate.
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  if (original_download_delegate_ &&
+      download_behavior_ != DownloadBehavior::DENY) {
+#else
   if (original_download_delegate_ &&
       download_behavior_ == DownloadBehavior::DEFAULT) {
+#endif
     return original_download_delegate_->DetermineDownloadTarget(item, callback);
   }
 

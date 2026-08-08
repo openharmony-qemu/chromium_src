@@ -86,11 +86,9 @@ typedef HANDLE FileHandle;
 #endif  // BUILDFLAG(IS_APPLE)
 
 #if BUILDFLAG(ARKWEB_DFX_LOGGING)
-#include "third_party/ohos_ndk/includes/ohos_adapter/hilog_adapter.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_DFX_LOGGING)
+#include "info/fatal_message.h"
 #include "ohos_sdk/openharmony/native/sysroot/usr/include/hilog/log.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/hilog_adapter.h"
 #endif
 
 #if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
@@ -702,7 +700,7 @@ LogMessageHandlerFunction GetLogMessageHandler() {
   return g_log_message_handler;
 }
 
-#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT) || BUILDFLAG(ARKWEB_DFX_LOGGING)
 #include "arkweb/chromium_ext/base/logging_for_include.cc"
 #endif
 

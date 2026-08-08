@@ -305,7 +305,7 @@ typedef bool (*LogMessageHandlerFunction)(int severity,
 BASE_EXPORT void SetLogMessageHandler(LogMessageHandlerFunction handler);
 BASE_EXPORT LogMessageHandlerFunction GetLogMessageHandler();
 
-#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT) || BUILDFLAG(ARKWEB_DFX_LOGGING)
 #include "arkweb/chromium_ext/base/logging_for_include.h"
 #endif
 

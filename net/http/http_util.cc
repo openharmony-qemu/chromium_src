@@ -29,6 +29,10 @@
 #include "net/http/http_response_headers.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_DFX_LOGGING)
+#include "arkweb/chromium_ext/net/http/http_util_for_include.cc"
+#endif
+
 namespace net {
 
 namespace {

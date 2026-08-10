@@ -429,9 +429,20 @@ void PermissionControllerImpl::SetPermissionOverride(
   permission_overrides_.Set(requesting_origin, embedding_origin, permission,
                             status);
   NotifyChangedSubscriptions(old_statuses);
+#if BUILDFLAG(ARKWEB_PERMISSION)
+  if (status == PermissionStatus::GRANTED) {
+    GrantPermissionOverridesToDelegate(requesting_origin, {permission},
+                                       std::move(callback));
+  } else {
+    UpdateCookieManagerContentSettings(
+        permission,
+        base::BindOnce(std::move(callback), OverrideStatus::kOverrideSet));
+  }
+#else
   UpdateCookieManagerContentSettings(
       permission,
       base::BindOnce(std::move(callback), OverrideStatus::kOverrideSet));
+#endif
 }
 
 void PermissionControllerImpl::GrantPermissionOverrides(
@@ -471,9 +482,14 @@ void PermissionControllerImpl::GrantPermissionOverrides(
   // notified manually.
   NotifyChangedSubscriptions(old_statuses);
 
+#if BUILDFLAG(ARKWEB_PERMISSION)
+  GrantPermissionOverridesToDelegate(requesting_origin, permissions,
+                                     std::move(callback));
+#else
   UpdateCookieManagerContentSettings(
       /*permission=*/std::nullopt,
       base::BindOnce(std::move(callback), OverrideStatus::kOverrideSet));
+#endif
 }
 
 void PermissionControllerImpl::ResetPermissionOverrides(

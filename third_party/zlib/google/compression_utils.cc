@@ -73,6 +73,7 @@ bool GzipCompress(base::span<const uint8_t> input, std::string* output) {
   if (!base::UncheckedMalloc(compressed_data_size,
                              reinterpret_cast<void**>(&resized_data))) {
     LOG(ERROR) << "GzipCompress: UncheckedMalloc failed for resized_data";
+    base::UncheckedFree(compressed_data);
     return false;
   }
   memcpy_s(resized_data, compressed_data_size, compressed_data, compressed_data_size);

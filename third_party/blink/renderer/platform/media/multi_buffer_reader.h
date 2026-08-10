@@ -12,7 +12,6 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
-#include "base/numerics/safe_conversions.h"
 #include "third_party/blink/renderer/platform/media/multi_buffer.h"
 #include "third_party/blink/renderer/platform/platform_export.h"
 
@@ -127,8 +126,8 @@ class PLATFORM_EXPORT MultiBufferReader : public MultiBuffer::Reader {
 
   // Returns the block for a particular byte position.
   MultiBufferBlockId block(int64_t byte_pos) const {
-    return base::checked_cast<MultiBufferBlockId>(
-        byte_pos >> multibuffer_->block_size_shift());
+    return static_cast<MultiBufferBlockId>(byte_pos >>
+                                           multibuffer_->block_size_shift());
   }
 
   // Returns the block for a particular byte position, rounding up.

@@ -12,6 +12,7 @@
 #include "components/autofill/core/browser/payments/payments_autofill_client.h"
 #include "components/autofill/core/browser/payments/payments_requests/payments_request.h"
 #include "components/autofill/core/browser/payments/payments_service_url.h"
+#include "components/autofill/core/common/autofill_payments_features.h"
 #include "components/signin/public/identity_manager/access_token_fetcher.h"
 #include "components/signin/public/identity_manager/access_token_info.h"
 #include "components/signin/public/identity_manager/identity_manager.h"
@@ -237,6 +238,17 @@ void PaymentsNetworkInterfaceBase::OnSimpleLoaderCompleteInternal(
             << " with data: " << data;
   }
 
+  if (base::FeatureList::IsEnabled(
+          features::kAllowReentryFromRespondToDelegate)) {
+    // Move the request to a local variable before invoking RespondToDelegate.
+    // If RespondToDelegate triggers a new request (reentry) via IssueRequest,
+    // `request_` will be reset, which would destroy the request during the call
+    // to its RespondToDelegate().
+    std::unique_ptr<PaymentsRequest> local_request = std::move(request_);
+    local_request->RespondToDelegate(result);
+    return;
+  }
+
   request_->RespondToDelegate(result);
 }
 
@@ -264,6 +276,17 @@ void PaymentsNetworkInterfaceBase::AccessTokenError(
     simple_url_loader_.reset();
   }
   if (request_) {
+    if (base::FeatureList::IsEnabled(
+            features::kAllowReentryFromRespondToDelegate)) {
+      // Move the request to a local variable before invoking RespondToDelegate.
+      // If RespondToDelegate triggers a new request (reentry) via IssueRequest,
+      // `request_` will be reset, which would destroy the request during the
+      // call to its RespondToDelegate().
+      std::unique_ptr<PaymentsRequest> local_request = std::move(request_);
+      local_request->RespondToDelegate(PaymentsRpcResult::kPermanentFailure);
+      return;
+    }
+
     request_->RespondToDelegate(PaymentsRpcResult::kPermanentFailure);
   }
 }

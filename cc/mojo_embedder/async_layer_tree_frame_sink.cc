@@ -186,6 +186,14 @@ bool AsyncLayerTreeFrameSink::BindToClient(LayerTreeFrameSinkClient* client) {
 void AsyncLayerTreeFrameSink::DetachFromClient() {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   client_->SetBeginFrameSource(nullptr);
+
+#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
+  // Teardown the software compositor before releasing begin_frame_source_ so that
+  // CompositorFrameSinkSupport destructs while the BeginFrameSource is still
+  // alive, preventing use-after-free in UpdateNeedsBeginFramesInternal().
+  async_layer_tree_frame_sink_utils_->DetachFromClientArkWebSoftCom();
+#endif
+
   begin_frame_source_.reset();
   synthetic_begin_frame_source_.reset();
   internal_begin_frame_source_.reset();
@@ -196,10 +204,6 @@ void AsyncLayerTreeFrameSink::DetachFromClient() {
   compositor_frame_sink_ptr_ = nullptr;
   compositor_frame_sink_.reset();
   compositor_frame_sink_associated_.reset();
-
-#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
-  async_layer_tree_frame_sink_utils_->DetachFromClientArkWebSoftCom();
-#endif
 
   LayerTreeFrameSink::DetachFromClient();
   weak_factory_.InvalidateWeakPtrs();

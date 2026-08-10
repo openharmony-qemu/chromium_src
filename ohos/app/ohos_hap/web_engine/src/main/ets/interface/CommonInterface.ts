@@ -8,6 +8,7 @@ import type GestureEvent from '@ohos.multimodalInput.gestureEvent';
 import type ConfigurationConstant from '@ohos.app.ability.ConfigurationConstant';
 import type common from '@ohos.app.ability.common';
 import type window from '@ohos.window';
+import print from '@ohos.print';
 
 export class PowerMonitor {
   OnSuspend: () => void;
@@ -56,7 +57,7 @@ export interface WinLimits {
 export interface NativeContext {
   runBrowser: (vec_args: string[]) => void;
   BrowserDestroyed: () => boolean;
-  runOtherProcessType: (processType: number) => void;
+  runArkProcess: (entryParams: string, fdsFrom: number[], fdsTo: number[]) => void;
   registerLifecycle: () => void;
   readImageFromReceiver: (receiver: image.ImageReceiver) => image.Image;
   JSBind: JSBind;
@@ -348,6 +349,33 @@ export interface PointCoordinate {
   x: number
   y: number,
   displayId: number,
+}
+
+export interface PrintJobData {
+  printerId: string,
+  jobName: string,
+  copyNumber: number,
+  isLandscape: boolean,
+  colorMode: print.PrintColorMode,
+  duplexMode: print.PrintDuplexMode,
+  pageSize: PrintPageSize
+  jobId: string,
+  binaryData: ArrayBuffer,
+  printQuality: print.PrintQuality,
+  mediaType: string,
+  isBorderless: boolean,
+  isAutoRotate: boolean,
+  isReverse: boolean,
+  isCollate: boolean,
+  isSequential: boolean,
+  options: string
+}
+
+export interface PrintPageSize {
+  id: string,
+  name: string,
+  width: number,
+  height: number
 }
 
 export enum BrowserCloseResponse {

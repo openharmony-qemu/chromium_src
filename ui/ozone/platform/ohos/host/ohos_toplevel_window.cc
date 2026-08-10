@@ -507,7 +507,21 @@ void OhosToplevelWindow::OnWindowStatusChangeEvent(
   is_split_screen_ = window_event->status == WindowStatusType::SPLIT_SCREEN;
   if (!ohos::adapter::ContextAdapter::GetInstance().IsNormalWindowMode() &&
       window_event->status == WindowStatusType::FULL_SCREEN) {
-    delegate()->OnFullscreenSwitched(true);
+    // Only forward the async ArkUI FULL_SCREEN callback when the local
+    // synchronous state machine agrees we are actually full-screen.
+    //
+    // ArkUI window-status callbacks are asynchronous and lag behind the
+    // Chromium local state machine (SetWindowState updates state_
+    // synchronously). When the user toggles F/F11/Esc quickly, the
+    // forward path may already have left full-screen (state_ becomes
+    // kMaximized etc.) by the time a stale ArkUI FULL_SCREEN callback
+    // arrives. Forwarding it unconditionally would call
+    // OnFullscreenSwitched(true) -> ExecuteCommand(IDC_FULLSCREEN) and
+    // unexpectedly re-enter browser full-screen. state_ is the trusted
+    // local snapshot, so drop the callback when it disagrees.
+    if (state_ == PlatformWindowState::kFullScreen) {
+      delegate()->OnFullscreenSwitched(true);
+    }
   }
 }
 

@@ -5,6 +5,9 @@
 #include "headless/lib/browser/protocol/target_handler.h"
 
 #include "build/build_config.h"
+#include "content/public/browser/render_frame_host.h"
+#include "content/public/browser/render_process_host.h"
+#include "content/public/browser/web_contents.h"
 #include "headless/lib/browser/headless_browser_context_impl.h"
 #include "headless/lib/browser/headless_browser_impl.h"
 #include "headless/lib/browser/headless_web_contents_impl.h"
@@ -71,6 +74,15 @@ Response TargetHandler::CreateTarget(const std::string& url,
           .SetEnableBeginFrameControl(
               enable_begin_frame_control.value_or(false))
           .Build());
+
+    // Mark the process used so IsSuitableHost() rejects it for sites that
+    // require a dedicated process. (Mirrors content::HiddenTargetManager, which
+    // the headless embedder layer bypasses by handling Target.createTarget
+    // itself.)
+    web_contents_impl->web_contents()
+        ->GetPrimaryMainFrame()
+        ->GetProcess()
+        ->SetIsUsed();
 
   content::WebContents* wc = web_contents_impl->web_contents();
   auto devtools_agent_host =

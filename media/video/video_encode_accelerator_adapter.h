@@ -15,6 +15,7 @@
 #include "base/memory/read_only_shared_memory_region.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/unsafe_shared_memory_pool.h"
+#include "base/memory/weak_ptr.h"
 #include "base/synchronization/lock.h"
 #include "base/time/time.h"
 #include "media/base/media_export.h"
@@ -199,6 +200,8 @@ class MEDIA_EXPORT VideoEncodeAcceleratorAdapter
   VideoEncodeAccelerator::Config::EncoderType required_encoder_type_ =
       VideoEncodeAccelerator::Config::EncoderType::kHardware;
   bool supports_frame_size_change_ = false;
+
+  base::WeakPtrFactory<VideoEncodeAcceleratorAdapter> weak_factory_{this};
 };
 
 }  // namespace media

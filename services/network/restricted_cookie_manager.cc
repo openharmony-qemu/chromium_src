@@ -481,7 +481,7 @@ void RestrictedCookieManager::GetAllForUrl(
   // TODO(morlovich): Try to validate site_for_cookies as well.
 
   net::CookieOptions net_options =
-      MakeOptionsForGet(role_, url, site_for_cookies, cookie_settings());
+      MakeOptionsForGet(role_, url, BoundSiteForCookies(), cookie_settings());
   // TODO(crbug.com/40632967): remove set_return_excluded_cookies() once
   // removing deprecation warnings.
   net_options.set_return_excluded_cookies();
@@ -490,7 +490,7 @@ void RestrictedCookieManager::GetAllForUrl(
       url, net_options, cookie_partition_key_collection_,
       base::BindOnce(
           &RestrictedCookieManager::CookieListToGetAllForUrlCallback,
-          weak_ptr_factory_.GetWeakPtr(), url, site_for_cookies,
+          weak_ptr_factory_.GetWeakPtr(), url, BoundSiteForCookies(),
           top_frame_origin,
           isolation_info_.top_frame_origin().value_or(url::Origin()),
           is_ad_tagged,
@@ -869,7 +869,7 @@ void RestrictedCookieManager::SetCookieFromString(
       OnCookiesAccessed(mojom::CookieAccessDetails::New(
           mojom::CookieAccessDetails::Type::kChange, url,
           isolation_info_.top_frame_origin().value_or(url::Origin()),
-          site_for_cookies, std::move(result_with_access_result), std::nullopt,
+          BoundSiteForCookies(), std::move(result_with_access_result), std::nullopt,
           /*is_ad_tagged=*/false,
           GetCookieSettingOverrides(
               storage_access_api_status,
@@ -882,7 +882,7 @@ void RestrictedCookieManager::SetCookieFromString(
 
   // Further checks (origin_, settings), as well as logging done by
   // SetCanonicalCookie()
-  SetCanonicalCookie(*parsed_cookie, url, site_for_cookies, top_frame_origin,
+  SetCanonicalCookie(*parsed_cookie, url, BoundSiteForCookies(), top_frame_origin,
                      storage_access_api_status, status, base::DoNothing());
 }
 

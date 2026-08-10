@@ -914,6 +914,9 @@ void WebMediaPlayerImpl::DoLoad(LoadType load_type,
 
   is_cache_disabled_ = is_cache_disabled;
   cors_mode_ = cors_mode;
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
+  has_video_natural_size_ = false;
+#endif
 
   // Note: `url` may be very large, take care when making copies.
   demuxer_manager_->SetLoadedUrl(GURL(url));
@@ -2499,6 +2502,16 @@ void WebMediaPlayerImpl::OnVideoNaturalSizeChange(const gfx::Size& size) {
   RecordVideoNaturalSize(rotated_size);
 
   gfx::Size old_size = pipeline_metadata_.natural_size;
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
+  if (media_player_url_params_.GetMediaPlayerUrlType() != media::MediaPlayerUrlType::kNoMediaPlayer
+      && !has_video_natural_size_) {
+    has_video_natural_size_ = true;
+    if (webMediaPlayerImplUtils_) {
+      webMediaPlayerImplUtils_->OnVideoNaturalSizeChangeExt();
+    }
+  }
+#endif
+
   if (rotated_size == old_size)
     return;
 
@@ -3891,6 +3904,14 @@ bool WebMediaPlayerImpl::ShouldPausePlaybackWhenHidden() const {
   // Audio only stream is allowed to play when in background.
   if (!HasVideo() && preserve_audio)
     return false;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
+  if (media_player_url_params_.GetMediaPlayerUrlType() != media::MediaPlayerUrlType::kNoMediaPlayer &&
+      !has_video_natural_size_ && preserve_audio) {
+    LOG(INFO) << "OhMedia: using media player renderer and no video natural size";
+    return false;
+  }
+#endif
 
   // Video PiP is the only exception when background video playback is disabled.
   if (HasVideo() && IsInVideoPictureInPicture()) {

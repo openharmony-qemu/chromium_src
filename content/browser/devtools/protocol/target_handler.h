@@ -116,6 +116,21 @@ class TargetHandler : public DevToolsDomainHandler,
       std::unique_ptr<DisposeBrowserContextCallback> callback) override;
   Response GetBrowserContexts(
       std::unique_ptr<protocol::Array<String>>* browser_context_ids) override;
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  void CreateTarget(const std::string& url,
+                    std::optional<int> left,
+                    std::optional<int> top,
+                    std::optional<int> width,
+                    std::optional<int> height,
+                    std::optional<std::string> window_state,
+                    std::optional<std::string> browser_context_id,
+                    std::optional<bool> enable_begin_frame_control,
+                    std::optional<bool> new_window,
+                    std::optional<bool> background,
+                    std::optional<bool> for_tab,
+                    std::optional<bool> hidden,
+                    std::unique_ptr<CreateTargetCallback> callback) override;
+#else
   Response CreateTarget(const std::string& url,
                         std::optional<int> left,
                         std::optional<int> top,
@@ -129,6 +144,7 @@ class TargetHandler : public DevToolsDomainHandler,
                         std::optional<bool> for_tab,
                         std::optional<bool> hidden,
                         std::string* out_target_id) override;
+#endif
   Response GetTargets(
       std::unique_ptr<protocol::Array<protocol::Target::FilterEntry>> filter,
       std::unique_ptr<protocol::Array<Target::TargetInfo>>* target_infos)

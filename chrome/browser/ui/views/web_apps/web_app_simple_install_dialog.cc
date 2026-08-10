@@ -153,8 +153,8 @@ void ShowSimpleInstallDialogForWebApps(
   views::Widget* simple_dialog_widget =
       constrained_window::ShowWebModalDialogViews(dialog.release(),
                                                   web_contents);
-  if (IsWidgetCurrentSizeSmallerThanPreferredSize(
-          simple_dialog_widget, kMinSimpleInstallDialogHeight)) {
+  if (IsWidgetCurrentSizeSmallerThanPreferredSize(simple_dialog_widget,
+                                                  kSimpleMaxShrinkage)) {
     delegate_weak_ptr->CloseDialogAsIgnored();
     return;
   }

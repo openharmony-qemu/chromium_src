@@ -43,10 +43,21 @@ namespace web_app {
 enum InstallDialogType { kSimple, kDetailed, kDiy, kMaxValue = kDiy };
 
 inline constexpr int kIconSize = 32;
-inline constexpr int kMinInstallDialogBoundsDiffFromPreferred = 50;
-inline constexpr int kMinSimpleFlowInstallDialogHeight = 320;
-inline constexpr int kMinSimpleInstallDialogHeight = 220;
-inline constexpr int kMinDetailedInstallDialogHeight = 220;
+
+// Defines the maximum allowed width and height shrinkage (in pixels) from the
+// preferred size of a dialog before it is considered too small/occluded and
+// automatically closed to prevent UI spoofing.
+struct MaxAllowedShrinkage {
+  int max_width_shrinkage;
+  int max_height_shrinkage;
+};
+
+inline constexpr MaxAllowedShrinkage kSimpleMaxShrinkage = {40, 20};
+inline constexpr MaxAllowedShrinkage kDetailedMaxShrinkage = {100, 150};
+inline constexpr MaxAllowedShrinkage kDiyMaxShrinkage = {50, 50};
+inline constexpr MaxAllowedShrinkage kLaunchMaxShrinkage = {50, 50};
+
+MaxAllowedShrinkage GetMaxAllowedShrinkage(InstallDialogType type);
 
 // When pre-populating the name field (using the web app title) we
 // should try to make some effort to not suggest things we know work extra
@@ -68,13 +79,11 @@ std::u16string NormalizeSuggestedAppTitle(const std::u16string& title);
 // current size is smaller than the preferred size, leading to important
 // security information being occluded. This function performs the comparison
 // between the sizes and prevents that from happening.
-// `min_height_limit` is the absolute minimum height required for this dialog
-// type to be considered safe to display.
 // This serves as a stop-gap fix for crbug.com/384962294.
 // TODO(crbug.com/346974105): Remove once tab modal dialogs can be sized
 // irrespective of the size of the browser window triggering it.
 bool IsWidgetCurrentSizeSmallerThanPreferredSize(views::Widget* widget,
-                                                 int min_height_limit);
+                                                 MaxAllowedShrinkage shrinkage);
 
 class WebAppInstallDialogDelegate : public WebAppModalDialogDelegate {
  public:

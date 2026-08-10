@@ -285,8 +285,7 @@ void Dav1dVideoDecoder::Initialize(const VideoDecoderConfig& config,
   }
 
   if (!frame_pool_) {
-    frame_pool_ =
-        base::MakeRefCounted<FrameBufferPool>(/*zero_initialize_memory=*/true);
+    frame_pool_ = base::MakeRefCounted<FrameBufferPool>();
   }
 
   // Clear any previously initialized decoder.

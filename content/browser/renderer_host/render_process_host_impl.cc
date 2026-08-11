@@ -3115,6 +3115,22 @@ bool RenderProcessHostImpl::MayReuseHost() {
     LOG(ERROR) << "RenderProcessHostImpl is dead";
     return false;
   }
+  // Reject RPHs that have no process launcher at all (Init() never completed
+  // successfully, or launcher was reset after process death). Also reject RPHs
+  // where the launcher exists but the launch has completed without producing a
+  // valid handle - this indicates an abnormal state (e.g. process launch
+  // failed silently). Do NOT reject RPHs where the launcher is still starting
+  // (IsStarting()=true), as that is a normal transient state.
+  if (child_process_launcher_.get() && !child_process_launcher_->IsStarting() && !GetProcess().Handle()) {
+    LOG(ERROR) << "RenderProcessHostImpl has no valid process (launcher="
+               << !!child_process_launcher_.get()
+               << ", starting="
+               << (child_process_launcher_.get()
+                       ? child_process_launcher_->IsStarting()
+                       : false)
+               << ", handle=" << GetProcess().Handle() << ")";
+    return false;
+  }
 #endif
   return GetContentClient()->browser()->MayReuseHost(this);
 }

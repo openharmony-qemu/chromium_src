@@ -90,6 +90,8 @@ body {
 
 .hw-block-img img {
   display: block;
+  width: 72px;
+  height: 72px;
 }
 
 .hw-block-img img {
@@ -123,6 +125,16 @@ body {
   line-height: 1.6;
   word-wrap: break-word;
   max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.hw-title-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .hw-block-info__title,
@@ -391,6 +403,10 @@ button:active {
     opacity: 0.86;
   }
 
+  .hw-title-icon {
+    content: url(ic_safe_browsing_title_warning_dark.svg);
+  }
+
   .hw-istablet .hw-block-info__title {
     color: #ffffff;
     opacity: 0.86;
@@ -609,8 +625,8 @@ button:active {
   .hw-block-img img {
     content: url(ic_safe_browsing_error_big.svg);
     display: block;
-    width: 100%;
-    height: 100%;
+    width: 96px;
+    height: 96px;
   }
 
   .hw-block-img.threat-non-high-risk img {
@@ -653,8 +669,8 @@ button:active {
   .hw-block-img img {
     content: url(ic_safe_browsing_error_big.svg);
     display: block;
-    width: 100%;
-    height: 100%;
+    width: 96px;
+    height: 96px;
   }
 
   .hw-block-img.threat-non-high-risk img {
@@ -672,8 +688,8 @@ button:active {
 
   .hw-block-img img {
     content: url(ic_safe_browsing_error_big.svg);
-    height: 240px;
-    width: 240px;
+    height: 144px;
+    width: 144px;
   }
 
   .hw-block-img.threat-non-high-risk img {

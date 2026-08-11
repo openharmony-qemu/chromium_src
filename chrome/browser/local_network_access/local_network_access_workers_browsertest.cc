@@ -234,12 +234,12 @@ IN_PROC_BROWSER_TEST_F(LocalNetworkAccessWorkersBrowserTest,
   bubble_factory()->set_response_type(
       permissions::PermissionRequestManager::AutoResponseType::DENY_ALL);
 
-  GURL initial_url = https_public_server().GetURL(
+  GURL initial_url = https_server().GetURL(
       "a.com", "/local_network_access/no-favicon-treat-as-public-address.html");
   ASSERT_TRUE(content::NavigateToURL(web_contents(), initial_url));
 
   GURL nav_url = https_server().GetURL("c.com", kLnaPath);
-  GURL iframe_url = https_public_server().GetURL(
+  GURL iframe_url = https_server().GetURL(
       "b.com", std::string(kServiceWorkerHtmlPath) + "?url=" + nav_url.spec() +
                    "&method=navigate");
 
@@ -274,12 +274,12 @@ IN_PROC_BROWSER_TEST_F(LocalNetworkAccessWorkersBrowserTest,
   bubble_factory()->set_response_type(
       permissions::PermissionRequestManager::AutoResponseType::ACCEPT_ALL);
 
-  GURL initial_url = https_public_server().GetURL(
+  GURL initial_url = https_server().GetURL(
       "a.com", "/local_network_access/no-favicon-treat-as-public-address.html");
   ASSERT_TRUE(content::NavigateToURL(web_contents(), initial_url));
 
   GURL nav_url = https_server().GetURL("c.com", kLnaPath);
-  GURL iframe_url = https_public_server().GetURL(
+  GURL iframe_url = https_server().GetURL(
       "b.com", std::string(kServiceWorkerHtmlPath) + "?url=" + nav_url.spec() +
                    "&method=navigate");
 
@@ -315,7 +315,7 @@ IN_PROC_BROWSER_TEST_F(LocalNetworkAccessWorkersBrowserTest,
       permissions::PermissionRequestManager::AutoResponseType::DENY_ALL);
 
   GURL nav_url = https_server().GetURL("c.com", kLnaPath);
-  GURL initial_url = https_public_server().GetURL(
+  GURL initial_url = https_server().GetURL(
       "b.com", std::string(kServiceWorkerHtmlPath) + "?url=" + nav_url.spec() +
                    "&method=navigate");
   content::TestNavigationManager nav_url_nav_manager(web_contents(), nav_url);

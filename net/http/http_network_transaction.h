@@ -16,6 +16,7 @@
 #include "base/gtest_prod_util.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
+#include "base/memory/weak_ptr.h"
 #include "base/time/time.h"
 #include "base/trace_event/trace_event.h"
 #include "build/buildflag.h"
@@ -573,6 +574,13 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
   // of times we can retry a request on reused sockets is limited.
   size_t retry_attempts_ = 0;
 
+  // Number of retries made for connection errors on reused sockets like
+  // ERR_CONNECTION_RESET, ERR_CONNECTION_CLOSED, ERR_CONNECTION_ABORTED,
+  // ERR_SOCKET_NOT_CONNECTED and ERR_EMPTY_RESPONSE.
+  // If this count reaches kMaxRetryAttemptsOnConnectionErrors, we return
+  // ERR_TOO_MANY_RETRIES to prevent an infinite retry loop.
+  size_t retry_attempts_on_connection_errors_ = 0;
+
   // Number of times the transaction was restarted via a RestartWith* call.
   size_t num_restarts_ = 0;
 
@@ -604,6 +612,8 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
 
   // The number of bytes of the body received from network.
   int64_t received_body_bytes_ = 0;
+
+  base::WeakPtrFactory<HttpNetworkTransaction> weak_ptr_factory_{this};
 };
 
 }  // namespace net

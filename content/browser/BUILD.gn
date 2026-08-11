@@ -2952,6 +2952,9 @@ source_set("browser") {
   }
 
   #endif ARKWEB_VIDEO_ASSISTANT
+  if (defined(arkweb_fullscreen_video_overlay) && arkweb_fullscreen_video_overlay) {
+    sources += arkweb_content_browser_media_fullscreen_overlay_sources
+  }
 
   if (is_ios && target_platform == "iphoneos") {
     sources += [

@@ -19,6 +19,10 @@
 #include "third_party/blink/public/common/features.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "services/network/public/cpp/features.h"
+#endif
+
 namespace history {
 namespace {
 
@@ -277,6 +281,13 @@ std::optional<uint64_t> ContentVisitDelegate::GetOrAddOriginSalt(
 void ContentVisitDelegate::RebuildTable(
     const scoped_refptr<URLEnumerator>& enumerator) {
   DCHECK(history_service_);
+#if BUILDFLAG(IS_ARKWEB)
+  if (base::FeatureList::IsEnabled(network::features::kDeleteHistoryServiceDB)) {
+    // DB is not available, complete the build with empty data immediately.
+    enumerator->OnComplete(false);
+    return;
+  }
+#endif
   std::unique_ptr<HistoryDBTask> task(new IterateUrlsDBTask(enumerator));
   history_service_->ScheduleDBTask(FROM_HERE, std::move(task), &task_tracker_);
 }
@@ -284,6 +295,13 @@ void ContentVisitDelegate::RebuildTable(
 void ContentVisitDelegate::BuildVisitedLinkTable(
     const scoped_refptr<VisitedLinkEnumerator>& enumerator) {
   DCHECK(history_service_);
+#if BUILDFLAG(IS_ARKWEB)
+  if (base::FeatureList::IsEnabled(network::features::kDeleteHistoryServiceDB)) {
+    // DB is not available, complete the build with empty data immediately.
+    enumerator->OnVisitedLinkComplete(false);
+    return;
+  }
+#endif
   std::unique_ptr<HistoryDBTask> task(new IterateVisitedLinkDBTask(enumerator));
   history_service_->ScheduleDBTask(FROM_HERE, std::move(task), &task_tracker_);
 }

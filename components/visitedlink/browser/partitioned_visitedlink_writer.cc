@@ -26,6 +26,10 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "services/network/public/cpp/features.h"
+#endif
+
 namespace {
 
 // These values are persisted to logs. Entries should not be renumbered and
@@ -518,6 +522,29 @@ void PartitionedVisitedLinkWriter::OnTableBuildComplete(
       // invalidate their links again.
       listener_->Reset(false);
     }
+  } else {
+#if BUILDFLAG(IS_ARKWEB)
+  if (base::FeatureList::IsEnabled(network::features::kDeleteHistoryServiceDB)) {
+    // DB build failed (e.g. no DB available). Still process links that were
+    // added during the build phase, so they work for the current session.
+    bool has_new_links = false;
+    for (const auto& link : added_during_build_) {
+      const std::optional<uint64_t> salt = GetOrAddOriginSalt(link.frame_origin);
+      if (salt.has_value() &&
+          AddFingerprint(ComputePartitionedFingerprint(link, salt.value()),
+                         false)) {
+        has_new_links = true;
+      }
+    }
+    added_during_build_.clear();
+    deleted_during_build_.clear();
+
+    if (has_new_links) {
+      listener_->NewTable(&mapped_table_memory_.region);
+      listener_->Reset(false);
+    }
+  }
+#endif
   }
 
   // Now that we have completed our build on the DB thread, we can recover the

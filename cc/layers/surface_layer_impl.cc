@@ -53,7 +53,7 @@ SurfaceLayerImpl::SurfaceLayerImpl(
     : LayerImpl(tree_impl, id),
       update_submission_state_callback_(
           std::move(update_submission_state_callback)) {
-  surfaceLayerImplUtils_ = new SurfaceLayerImplUtils(this);
+  surfaceLayerImplUtils_ = std::make_unique<SurfaceLayerImplUtils>(this);
 }
 
 SurfaceLayerImpl::~SurfaceLayerImpl() {

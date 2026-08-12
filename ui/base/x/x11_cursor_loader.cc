@@ -9,6 +9,7 @@
 #include <limits>
 #include <string>
 #include <string_view>
+#include <string_view>
 #include <utility>
 
 #include "base/compiler_specific.h"
@@ -32,6 +33,7 @@
 #include "base/task/task_traits.h"
 #include "base/task/thread_pool.h"
 #include "base/time/time.h"
+#include "ui/base/cursor/cursor_factory.h"
 #include "ui/base/x/x11_util.h"
 #include "ui/gfx/x/atom_cache.h"
 #include "ui/gfx/x/connection.h"
@@ -149,6 +151,10 @@ base::FilePath CanonicalizePath(base::FilePath path) {
     path = base::MakeAbsoluteFilePath(path);
   }
   return path;
+}
+
+bool IsValidCursorThemeName(const std::string& theme) {
+  return ui::IsValidCursorThemeName(theme);
 }
 
 scoped_refptr<base::RefCountedMemory> ReadCursorFromThemeImpl(

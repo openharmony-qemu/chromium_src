@@ -116,6 +116,10 @@ class GtkUi : public ui::LinuxUiAndTheme {
  private:
   using TintMap = std::map<int, color_utils::HSL>;
 
+  // Sanitizes the GTK cursor settings and reports whether they were changed.
+  bool SanitizeCursorThemeName();
+  bool SanitizeCursorThemeSize();
+
   void OnThemeChanged(GtkSettings* settings, GtkParamSpec* param);
 
   void OnCursorThemeNameChanged(GtkSettings* settings, GtkParamSpec* param);

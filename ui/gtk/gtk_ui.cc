@@ -365,6 +365,8 @@ bool GtkUi::Initialize() {
   };
 
   GtkSettings* settings = gtk_settings_get_default();
+  SanitizeCursorThemeName();
+  SanitizeCursorThemeSize();
   // Disable GTK theme change notifications because they are extremely slow.
   // Light/dark theme changes will still be detected via DarkModeManagerLinux.
   // See https://issues.chromium.org/issues/40280130#comment7
@@ -846,8 +848,36 @@ void GtkUi::OnThemeChanged(GtkSettings* settings, GtkParamSpec* param) {
   native_theme_->NotifyOnNativeThemeUpdated();
 }
 
+bool GtkUi::SanitizeCursorThemeName() {
+  GtkSettings* settings = gtk_settings_get_default();
+  std::string theme_name =
+      GetGtkSettingsStringProperty(settings, "gtk-cursor-theme-name");
+  std::string sanitized_name = gtk::SanitizeCursorThemeName(theme_name);
+  if (sanitized_name == theme_name) {
+    return false;
+  }
+  g_object_set(settings, "gtk-cursor-theme-name", sanitized_name.c_str(),
+               nullptr);
+  return true;
+}
+
+bool GtkUi::SanitizeCursorThemeSize() {
+  GtkSettings* settings = gtk_settings_get_default();
+  gint theme_size = 0;
+  g_object_get(settings, "gtk-cursor-theme-size", &theme_size, nullptr);
+  int sanitized_size = gtk::SanitizeCursorThemeSize(theme_size);
+  if (sanitized_size == theme_size) {
+    return false;
+  }
+  g_object_set(settings, "gtk-cursor-theme-size", sanitized_size, nullptr);
+  return true;
+}
+
 void GtkUi::OnCursorThemeNameChanged(GtkSettings* settings,
                                      GtkParamSpec* param) {
+  if (SanitizeCursorThemeName()) {
+    return;
+  }
   std::string cursor_theme_name = GetCursorThemeName();
   if (cursor_theme_name.empty()) {
     return;
@@ -859,6 +889,9 @@ void GtkUi::OnCursorThemeNameChanged(GtkSettings* settings,
 
 void GtkUi::OnCursorThemeSizeChanged(GtkSettings* settings,
                                      GtkParamSpec* param) {
+  if (SanitizeCursorThemeSize()) {
+    return;
+  }
   int cursor_theme_size = GetCursorThemeSize();
   if (!cursor_theme_size) {
     return;

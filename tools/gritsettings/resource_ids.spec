@@ -1674,6 +1674,9 @@
   "ohos_resources/image_change_detection/image_change_detection_resources.grd": {
     "includes": [10540],
   },
+  "ohos_resources/page_scene_query/page_scene_query_resources.grd": {
+    "includes": [10550],
+  },
 
   "cef/libcef/resources/cef_resources.grd": {
     "includes": [12500],

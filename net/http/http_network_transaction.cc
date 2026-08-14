@@ -24,6 +24,7 @@
 #include "base/notreached.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
+#include "base/task/single_thread_task_runner.h"
 #include "base/time/time.h"
 #if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
 #include "base/trace_event/trace_event.h"
@@ -113,6 +114,10 @@ namespace {
 // Max number of |retry_attempts| (excluding the initial request) after which
 // we give up and show an error page.
 const size_t kMaxRetryAttempts = 2;
+
+// Max number of `retry_attempts_on_connection_errors_` for connection errors,
+// after which we give up and crash early.
+const size_t kMaxRetryAttemptsOnConnectionErrors = 50;
 
 // Max number of calls to RestartWith* allowed for a single connection. A single
 // HttpNetworkTransaction should not signal very many restartable errors, but it
@@ -2260,9 +2265,41 @@ int HttpNetworkTransaction::HandleIOError(int error) {
     // preconnected but failed to be used before the server timed it out.
     case RetryReason::kEmptyResponse:
       if (ShouldResendRequest()) {
+        if (retry_attempts_on_connection_errors_ >=
+            kMaxRetryAttemptsOnConnectionErrors) {
+          return ERR_TOO_MANY_RETRIES;
+        }
+        retry_attempts_on_connection_errors_++;
         net_log_.AddEventWithNetErrorCode(
             NetLogEventType::HTTP_TRANSACTION_RESTART_AFTER_ERROR, error);
         ResetConnectionAndRequestForResend(*retry_reason);
+        // Workaround for priority starvation: If the Network Service Task
+        // Scheduler is enabled, high-priority retries can repeatedly bypass the
+        // DEFAULT-priority tasks that detect connection closure and clean the
+        // session pool. This creates a cycle where we keep picking the same
+        // stale session. See crbug.com/482074640 for details.
+        //
+        // By yielding (PostTask) at DEFAULT priority after several attempts, we
+        // restore FIFO ordering relative to the cleanup tasks, allowing the
+        // pool to be scrubbed before the next retry.
+        //
+        // TODO(crbug.com/482074640): Write unit tests to reproduce this issue.
+        if (base::FeatureList::IsEnabled(
+                features::kAsyncRetryOnTooManyConnectionErrors) &&
+            // For performance reasons, we initially retry synchronously.
+            // However, after a threshold of attempts
+            // (= kMaxRetryAttemptsOnConnectionErrors / 2), we switch to
+            // asynchronous retry to break potential priority starvation loops
+            // as described above.
+            retry_attempts_on_connection_errors_ >=
+                kMaxRetryAttemptsOnConnectionErrors / 2) {
+          // Use WeakPtr to prevent a potential dangling pointer crash. See
+          // http://crbug.com/506964502 for more details.
+          base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
+              FROM_HERE, base::BindOnce(&HttpNetworkTransaction::OnIOComplete,
+                                        weak_ptr_factory_.GetWeakPtr(), OK));
+          return ERR_IO_PENDING;
+        }
         error = OK;
       }
       break;

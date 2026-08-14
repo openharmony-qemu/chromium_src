@@ -475,6 +475,12 @@ BASE_FEATURE(kEnableNetworkPreload,
              base::FEATURE_ENABLED_BY_DEFAULT);
 #endif  // BUILDFLAG(ARKWEB_PRP_PRELOAD)
 
+#if BUILDFLAG(ARKWEB_NETWORK_IPV6_SLAAC_FILTER)
+BASE_FEATURE(kArkWebIPv6SlaacFilter,
+             "ArkWebIPv6SlaacFilter",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
+
 // Enables binding of cookies to the port that originally set them by default.
 BASE_FEATURE(kEnablePortBoundCookies, base::FEATURE_DISABLED_BY_DEFAULT);
 

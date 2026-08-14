@@ -5629,8 +5629,14 @@ void RenderFrameHostImpl::DidCommitPageActivation(
   });
 #endif
 
+  base::WeakPtr<RenderFrameHostImpl> weak_ptr = GetWeakPtr();
   DidCommitNavigationInternal(std::move(owned_request), std::move(params),
                               /*same_document_params=*/nullptr);
+  if (!weak_ptr) {
+    // This RFH may be deleted after DidCommitNavigationInternal due to a nested
+    // message loop. All callers should handle this.
+    return;
+  }
 
   // If any load events occurred pre-activation and were deferred until
   // activation, dispatch them now. This must happen before DidStopLoading() is
@@ -10848,6 +10854,15 @@ CanCommitStatus RenderFrameHostImpl::CanCommitOriginAndUrl(
   // (e.g. "http://localhost"). In such cases, don't verify the URL, but require
   // the URL to commit in the process of the main frame.
   if (IsMhtmlSubframe()) {
+    // Documents derived from an MHTML archive are behind sandbox flags, so
+    // their origin is opaque. The early-return below validates neither URL
+    // nor origin, so a compromised renderer could otherwise launder an
+    // arbitrary non-opaque origin past this point via
+    // DidCommitSameDocumentNavigation.
+    if (!origin.opaque()) {
+      LogCanCommitOriginAndUrlFailureReason("mhtml_subframe_non_opaque_origin");
+      return CanCommitStatus::CANNOT_COMMIT_ORIGIN;
+    }
     RenderFrameHostImpl* main_frame = GetMainFrame();
     if (IsSameSiteInstance(main_frame)) {
       return CanCommitStatus::CAN_COMMIT_ORIGIN_AND_URL;
@@ -14854,10 +14869,17 @@ bool RenderFrameHostImpl::DidCommitNavigationInternal(
   }
 
   // TODO(crbug.com/40150370): Do not pass |params| to DidNavigate().
-  NavigationRequest* raw_navigation_request = navigation_request.get();
-  raw_navigation_request->frame_tree_node()->navigator().DidNavigate(
+  FrameTreeNode* frame_tree_node = navigation_request->frame_tree_node();
+  base::WeakPtr<RenderFrameHostImpl> weak_ptr = GetWeakPtr();
+  frame_tree_node->navigator().DidNavigate(
       this, *params, std::move(navigation_request),
       is_same_document_navigation);
+  if (!weak_ptr) {
+    // This RFH may be deleted after DidNavigate due to a nested message loop.
+    // That occurs before the navigation has actually committed, so return false
+    // to indicate that the commit did not succeed.
+    return false;
+  }
 
   // Run any deferred shared storage operations from response headers now that
   // commit has occurred.

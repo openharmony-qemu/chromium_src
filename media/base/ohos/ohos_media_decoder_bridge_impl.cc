@@ -382,7 +382,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::ResetBridgeDecoder() {
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::ReleaseBridgeDecoder() {
   LOG(INFO) << __func__ << "[VideoDecoder]  release decoder.";
   if (video_decoder_ == nullptr) {
-    LOG(ERROR) << __func__ << "[VideoDecoder]  decoder is NULL.";
+    LOG(WARNING) << __func__ << "[VideoDecoder] video_decoder_ is already released.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
   is_running_.store(false);

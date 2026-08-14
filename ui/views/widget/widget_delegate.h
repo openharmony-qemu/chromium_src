@@ -21,6 +21,8 @@
 #include "ui/views/view.h"
 #include "ui/views/widget/widget.h"
 
+class ViewTracker;
+
 namespace gfx {
 class Rect;
 }  // namespace gfx
@@ -85,7 +87,7 @@ class VIEWS_EXPORT WidgetDelegate {
 
     // The widget's initially focused view, if any. This can only be set before
     // this WidgetDelegate is used to initialize a Widget.
-    std::optional<View*> initially_focused_view;
+    std::unique_ptr<ViewTracker> initially_focused_view;
 
     // This is used by modal dialogs to override and constrain desired bounds
     // calculations.

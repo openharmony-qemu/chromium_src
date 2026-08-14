@@ -8,6 +8,12 @@
 
 namespace autofill::features {
 
+// Enables the fix to allow reentry in PaymentsNetworkInterface::IssueRequest()
+// from PaymentsRequest::RespondToDelegate().
+BASE_FEATURE(kAllowReentryFromRespondToDelegate,
+             "AllowReentryFromRespondToDelegate",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
 // When enabled, local credit card migration flows will not be offered.
 BASE_FEATURE(kAutofillDisableLocalCardMigration,
              "AutofillDisableLocalCardMigration",

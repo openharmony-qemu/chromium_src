@@ -495,7 +495,7 @@ class CONTENT_EXPORT NavigationRequest
 
   NavigationState state() const { return state_; }
 
-  FrameTreeNode* frame_tree_node() const { return frame_tree_node_; }
+  FrameTreeNode* frame_tree_node() const { return frame_tree_node_.get(); }
 
   bool is_synchronous_renderer_commit() const {
     return is_synchronous_renderer_commit_;
@@ -2097,10 +2097,10 @@ class CONTENT_EXPORT NavigationRequest
   // contexts or if DocumentIsolationPolicy is not supported.
   void SanitizeDocumentIsolationPolicyHeader();
 
-  // Never null. The pointee node owns this navigation request instance.
-  // This field is not a raw_ptr because of incompatibilities with tracing
-  // (TRACE_EVENT*), perfetto::TracedDictionary::Add and gmock/EXPECT_THAT.
-  RAW_PTR_EXCLUSION FrameTreeNode* const frame_tree_node_;
+  // Never null, and intended to outlive this NavigationRequest. Initially, this
+  // NavigationRequest instance is owned by this FrameTreeNode, until ownership
+  // is transferred to the committing RenderFrameHost.
+  raw_ptr<FrameTreeNode> const frame_tree_node_;
 
   // Used for short-lived NavigationRequest created at DidCommit time for the
   // purpose of committing navigation that were not driven by the browser

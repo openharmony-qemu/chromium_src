@@ -758,6 +758,10 @@ source_set("browser_sources") {
     sources += arkweb_content_public_browser_sources
   }
 
+  if (defined(arkweb_fullscreen_video_overlay) && arkweb_fullscreen_video_overlay) {
+    sources += arkweb_content_public_browser_fullscreen_overlay_sources
+  }
+
   if (defined(arkweb_network_base) && arkweb_network_base) {
     sources += [
       "//cef/ohos_cef_ext/libcef/browser/ark_web_javascript_dialog_manager.cc",

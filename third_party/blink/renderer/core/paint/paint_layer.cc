@@ -1659,7 +1659,9 @@ bool PaintLayer::HitTestFragmentsWithPhase(
         bounds.HasRadius() &&
         HitTestClippedOutByBorderRadius(transform_container, container_fragment,
                                         hit_test_location, bounds)) {
-      continue;
+      if (!result.GetHitTestRequest().IsHitTestVisualOverflow()) {
+        continue;
+      }
     }
 
     inside_clip_rect = true;
@@ -1718,7 +1720,9 @@ PaintLayer* PaintLayer::HitTestTransformedLayerInFragments(
         HitTestClippedOutByBorderRadius(transform_container, container_fragment,
                                         recursion_data.location,
                                         fragment.background_rect)) {
-      continue;
+      if (!result.GetHitTestRequest().IsHitTestVisualOverflow()) {
+        continue;
+      }
     }
 
     PaintLayer* hit_layer = HitTestLayerByApplyingTransform(

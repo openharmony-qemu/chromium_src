@@ -575,6 +575,10 @@ NET_EXPORT BASE_DECLARE_FEATURE(kAddressTrackerLinuxIsProxied);
 NET_EXPORT BASE_DECLARE_FEATURE(kEnableNetworkPreload);
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_IPV6_SLAAC_FILTER)
+NET_EXPORT BASE_DECLARE_FEATURE(kArkWebIPv6SlaacFilter);
+#endif
+
 // Enables binding of cookies to the port that originally set them by default.
 NET_EXPORT BASE_DECLARE_FEATURE(kEnablePortBoundCookies);
 

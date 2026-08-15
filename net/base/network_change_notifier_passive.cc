@@ -21,6 +21,9 @@
 
 #include "base/logging.h"
 #include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_NETWORK_IPV6_SLAAC_FILTER)
+#include "net/base/features.h"
+#endif
 
 #if BUILDFLAG(IS_LINUX)
 #include <linux/rtnetlink.h>

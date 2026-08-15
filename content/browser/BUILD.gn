@@ -2755,7 +2755,10 @@ source_set("browser") {
       "//arkweb/chromium_ext/content/browser/permissions/permission_controller_impl_grant_delegate.cc",
     ]
     configs += [ "//cef/libcef/features:config" ]
-    deps += [ "//cef/libcef/features:deps" ]
+    deps += [
+      "//cef/libcef/features:deps",
+      "//cef/libcef/common/mojom:mojom",
+    ]
   }
 
   if (is_linux || is_chromeos) {

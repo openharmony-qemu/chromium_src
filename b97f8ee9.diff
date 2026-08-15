@@ -1,0 +1,57 @@
+From b97f8ee94229b0e1e436be35edece6a6f2bc52d2 Mon Sep 17 00:00:00 2001
+From: q60126774 <q60126774@notesmail.huawei.com/>
+Date: Mon, 20 Jul 2026 09:20:20 +0800
+Subject: [PATCH] =?UTF-8?q?TicketNo:DTS2026071311479=20Description:?=
+ =?UTF-8?q?=E5=90=8C=E6=AD=A5=E6=BC=8F=E6=B4=9E500055357=20Team:ArkWeb=20F?=
+ =?UTF-8?q?eature=20or=20Bugfix:Bugfix=20Binary=20Source:No=20PrivateCode(?=
+ =?UTF-8?q?Yes/No):No=20cherry=20picked=20from=20commit=20c706c5595cfb6de3?=
+ =?UTF-8?q?77aab791ce7f515a35f2476f=20cherry=20picked=20from=20commit=202c?=
+ =?UTF-8?q?658bf79e0f70fb3b7bec945ea862e0cf93ff05?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Change-Id: I9900acd563403dccdf9f18eff647b157adc25501
+Reviewed-by: l30054594
+Approved-by: g00512219
+Merged-on: https://open.codehub.huawei.com/OpenSourceCenter_CR/openharmony-tpc/oh-chromium/-/change_requests/16592
+Merged-by: public pjenkins
+---
+ chromecast/media/cma/backend/audio_decoder_for_mixer.cc | 5 +++++
+ chromecast/public/media/decoder_config.h                | 3 ++-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/chromecast/media/cma/backend/audio_decoder_for_mixer.cc b/chromecast/media/cma/backend/audio_decoder_for_mixer.cc
+index 00ff7285a4e..3ed205a64f6 100644
+--- a/chromecast/media/cma/backend/audio_decoder_for_mixer.cc
++++ b/chromecast/media/cma/backend/audio_decoder_for_mixer.cc
+@@ -490,6 +490,11 @@ void AudioDecoderForMixer::OnBufferDecoded(
+   UpdateStatistics(delta);
+ 
+   if (has_config) {
++    if (!IsValidConfig(config)) {
++      LOG(ERROR) << "Invalid audio config from decoder";
++      delegate_->OnPushBufferComplete(MediaPipelineBackend::kBufferFailed);
++      return;
++    }
+     bool changed_config = false;
+     if (config.samples_per_second != decoded_config_.samples_per_second) {
+       LOG(INFO) << "Input sample rate changed from "
+diff --git a/chromecast/public/media/decoder_config.h b/chromecast/public/media/decoder_config.h
+index e56f5f82efb..79aadf85f20 100644
+--- a/chromecast/public/media/decoder_config.h
++++ b/chromecast/public/media/decoder_config.h
+@@ -393,8 +393,9 @@ inline bool IsValidConfig(const AudioConfig& config) {
+          config.channel_layout != ChannelLayout::UNSUPPORTED &&
+          config.sample_format >= kSampleFormatMin &&
+          config.sample_format <= kSampleFormatMax &&
++         config.channel_number > 0 && config.channel_number <= 32 &&
+          ((config.sample_format != kUnknownSampleFormat &&
+-           config.channel_number > 0 && config.bytes_per_channel > 0 &&
++           config.bytes_per_channel > 0 &&
+            config.bytes_per_channel <= kMaxBytesPerSample) ||
+           config.channel_layout == ChannelLayout::BITSTREAM) &&
+          config.samples_per_second > 0 &&
+-- 
+2.51.2.huawei.11
+

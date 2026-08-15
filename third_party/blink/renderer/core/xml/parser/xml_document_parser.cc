@@ -740,7 +740,8 @@ static void ErrorFunc(void*, const char*, ...) {
   // FIXME: It would be nice to display error messages somewhere.
 }
 
-static void InitializeLibXMLIfNecessary() {
+// static
+void XMLDocumentParser::EnsureLibXMLInitialized() {
   static bool did_init = false;
   if (did_init)
     return;
@@ -754,7 +755,7 @@ static void InitializeLibXMLIfNecessary() {
 scoped_refptr<XMLParserContext> XMLParserContext::CreateStringParser(
     xmlSAXHandlerPtr handlers,
     void* user_data) {
-  InitializeLibXMLIfNecessary();
+  XMLDocumentParser::EnsureLibXMLInitialized();
   xmlParserCtxtPtr parser =
       xmlCreatePushParserCtxt(handlers, nullptr, nullptr, 0, nullptr);
 
@@ -778,7 +779,7 @@ scoped_refptr<XMLParserContext> XMLParserContext::CreateMemoryParser(
     xmlSAXHandlerPtr handlers,
     void* user_data,
     const std::string& chunk) {
-  InitializeLibXMLIfNecessary();
+  XMLDocumentParser::EnsureLibXMLInitialized();
 
   // appendFragmentSource() checks that the length doesn't overflow an int.
   xmlParserCtxtPtr parser = xmlCreateMemoryParserCtxt(

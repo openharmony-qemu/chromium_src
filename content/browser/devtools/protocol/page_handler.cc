@@ -1357,6 +1357,16 @@ void PageHandler::CaptureScreenshot(
           Response::ServerError("Only screenshots from surface are allowed."));
       return;
     }
+#if BUILDFLAG(IS_OHOS)
+    // OSR mode does not have a native window,
+    // GrabViewSnapshot will crash. Return error instead.
+    if (!widget_host->GetView()->GetNativeView()) {
+      pending_request->callback->sendFailure(
+          Response::ServerError(
+              "Screenshot from window is not supported, use fromSurface=true."));
+      return;
+    }
+#endif
     widget_host->GetSnapshotFromBrowser(
         base::BindOnce(&PageHandler::ScreenshotCaptured,
                        weak_factory_.GetWeakPtr(), std::move(pending_request)),

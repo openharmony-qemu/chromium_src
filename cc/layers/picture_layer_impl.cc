@@ -1403,14 +1403,9 @@ void PictureLayerImpl::UpdateTilingsForRasterScaleAndTranslation(
   }
   high_res->set_resolution(HIGH_RESOLUTION);
 
-#if BUILDFLAG(IS_ARKWEB)
-  if (layer_tree_impl()->settings().commit_to_active_tree &&
-      IsDirectlyCompositedImage()) {
-#else
   if (layer_tree_impl()->IsPendingTree() ||
       (layer_tree_impl()->settings().commit_to_active_tree &&
        IsDirectlyCompositedImage())) {
-#endif
     // On the pending tree, drop any tilings that are non-ideal since we don't
     // need them to activate anyway.
 

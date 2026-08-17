@@ -212,6 +212,14 @@ void DirectRenderer::SetBypassVsyncCondition(int32_t condition) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+void DirectRenderer::SetAsyncStackId(uint64_t stackId) {
+  if (output_surface_) {
+    output_surface_->SetAsyncStackId(stackId);
+  }
+}
+#endif
+
 void DirectRenderer::DecideRenderPassAllocationsForFrame(
     const AggregatedRenderPassList& render_passes_in_draw_order,
     bool skip_root_render_pass_allocation) {

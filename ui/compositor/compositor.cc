@@ -367,6 +367,9 @@ void Compositor::SetLayerTreeFrameSink(
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
   compositor_utils_->SetBypassVsyncCondition(compositor_utils_->condition_);
 #endif
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  compositor_utils_->SetAsyncStackId(compositor_utils_->stackId_);
+#endif
   host_->SetLayerTreeFrameSink(std::move(layer_tree_frame_sink));
   // Display properties are reset when the output surface is lost, so update it
   // to match the Compositor's.

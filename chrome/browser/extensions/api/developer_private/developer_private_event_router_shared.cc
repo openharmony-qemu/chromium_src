@@ -338,6 +338,26 @@ void DeveloperPrivateEventRouterShared::BroadcastItemStateChangedHelper(
     ExtensionInfoGenerator::ExtensionInfoList infos) {
   DCHECK_LE(infos.size(), 1u);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  // During extension uninstallation, multiple async events (kUnloaded,
+  // kViewUnregistered, kServiceWorkerStopped, kPrefsChanged, etc.) may be
+  // in-flight concurrently. Their async callbacks (after icon loading) can
+  // arrive after the kUninstalled callback has already removed the extension
+  // from the UI, causing the extension to re-appear in a disabled state.
+  // To prevent this, skip broadcasting stale events for extensions that are
+  // no longer in the registry. The kUninstalled event itself must still be
+  // broadcast so the UI can remove the extension.
+  if (event_type != developer::EventType::kUninstalled) {
+    ExtensionRegistry* registry = ExtensionRegistry::Get(profile_);
+    if (!registry->GetExtensionById(extension_id,
+                                    ExtensionRegistry::EVERYTHING)) {
+      LOG(INFO) << "failed to get extensions,event type is "
+                << static_cast<int>(event_type);
+      return;
+    }
+  }
+#endif
+
   developer::EventData event_data;
   event_data.event_type = event_type;
   event_data.item_id = extension_id;

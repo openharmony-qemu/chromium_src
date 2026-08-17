@@ -189,7 +189,8 @@ void CacheCreator::Run() {
 #else
 #if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_CACHE)
   if (kSimpleBackendIsDefault) {
-    return net::ERR_FAILED;
+    FailAttempt();
+    return;
   }
 #endif  // BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_CACHE)
   auto cache = std::make_unique<disk_cache::BackendImpl>(

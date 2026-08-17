@@ -7,6 +7,7 @@ import("//arkweb/chromium_ext/chromium_ext.gni")
 import("//arkweb/ohos_nweb/src/nweb_sysevent.gni")
 if (is_arkweb_ext) {
   import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+  import("//cef/libcef/features/features.gni")
 }
 import("//base/allocator/partition_allocator/partition_alloc.gni")
 import("//build/buildflag_header.gni")
@@ -2746,6 +2747,17 @@ source_set("browser") {
       "//arkweb/chromium_ext/content/browser/gpu/ark_web_compositor_util.h",
       "//arkweb/chromium_ext/content/browser/renderer_host/ark_web_render_frame_host_manager.cc",
       "//arkweb/chromium_ext/content/browser/renderer_host/ark_web_render_frame_host_manager.h",
+    ]
+  }
+
+  if (is_arkweb && arkweb_permission) {
+    sources += [
+      "//arkweb/chromium_ext/content/browser/permissions/permission_controller_impl_grant_delegate.cc",
+    ]
+    configs += [ "//cef/libcef/features:config" ]
+    deps += [
+      "//cef/libcef/features:deps",
+      "//cef/libcef/common/mojom:mojom",
     ]
   }
 

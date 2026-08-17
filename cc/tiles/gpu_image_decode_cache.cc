@@ -11,6 +11,10 @@
 #include <string>
 
 #include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_CLIPPED_IMAGE_SCALING)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
 #include "base/auto_reset.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
@@ -61,7 +65,6 @@
 #include "ui/gfx/geometry/skia_conversions.h"
 #include "ui/gfx/skia_span_util.h"
 #include "ui/gl/trace_util.h"
-
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 static const int kMaxRenderTargetSize = 8192;
 #endif
@@ -957,6 +960,23 @@ size_t GpuImageDecodeCache::ImageData::GetTotalSize() const {
 ////////////////////////////////////////////////////////////////////////////////
 // GpuImageDecodeCache
 
+#if BUILDFLAG(ARKWEB_CLIPPED_IMAGE_SCALING)
+namespace {
+bool ShouldEnableClippedImageScaling() {
+  static bool enabled = [] {
+    int memtest = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                      .GetSystemPropertiesInstance()
+                      .GetIntParameter("web.debug.memtest", 0);
+    bool result = base::ohos::IsOhosLowEndDevice() && (memtest == 0 || memtest == 3);
+    LOG(DEBUG) << "ArkWebClipImgCache ShouldEnableClippedImageScaling memtest="
+               << memtest << " result=" << result;
+    return result;
+  }();
+  return enabled;
+}
+}  // namespace
+#endif
+
 GpuImageDecodeCache::GpuImageDecodeCache(
     viz::RasterContextProvider* context,
     SkColorType color_type,
@@ -968,8 +988,12 @@ GpuImageDecodeCache::GpuImageDecodeCache(
       max_texture_size_(max_texture_size),
       generator_client_id_(PaintImage::GetNextGeneratorClientId()),
       enable_clipped_image_scaling_(
-          base::CommandLine::ForCurrentProcess()->HasSwitch(
-              switches::kEnableClippedImageScaling)),
+#if BUILDFLAG(ARKWEB_CLIPPED_IMAGE_SCALING)
+        ShouldEnableClippedImageScaling()),
+#else
+        base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kEnableClippedImageScaling)),
+#endif
       persistent_cache_(PersistentCache::NO_AUTO_EVICT),
       max_working_set_bytes_(max_working_set_bytes),
       max_working_set_items_(kMaxItemsInWorkingSet),
@@ -1359,6 +1383,20 @@ void GpuImageDecodeCache::AddToPersistentCache(const DrawImage& draw_image,
     DCHECK(persistent_cache_.empty() || has_pending_purge_task());
     PostPurgeOldCacheEntriesTask();
   }
+#if BUILDFLAG(ARKWEB_CLIPPED_IMAGE_SCALING)
+  if (ShouldEnableClippedImageScaling()) {
+    int cid = draw_image.frame_key().content_id();
+    int mip = data->upload_scale_mip_level;
+    gfx::Size base_size = draw_image.paint_image().GetSize(AuxImage::kDefault);
+    bool is_clipped = draw_image.src_rect() !=
+      SkIRect::MakeSize(draw_image.paint_image().GetSkISize(AuxImage::kDefault));
+    if (is_clipped && mip > 0) {
+      LOG(DEBUG) << "ArkWebClipImgCache CACHE cid=" << cid
+          << " base=" << base_size.width() << "x" << base_size.height()
+          << " mipLevel=" << mip;
+    }
+  }
+#endif
 
   WillAddCacheEntry(draw_image);
   persistent_cache_memory_size_ += data->GetTotalSize();

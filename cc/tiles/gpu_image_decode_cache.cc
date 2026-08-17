@@ -11,7 +11,7 @@
 #include <string>
 
 #include "arkweb/build/features/features.h"
-#if BUILDFLAG(ARKWEB_CLIPPED_IMAGE_SCALING)
+#if BUILDFLAG(ARKWEB_CLIPPED_IMAGE_SCALING) || BUILDFLAG(ARKWEB_GPU_IMAGE_PERSISTENT_CACHE_LIMIT)
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
@@ -77,6 +77,10 @@ namespace {
 // be deleted.
 static const int kNormalMaxItemsInCacheForGpu = 2000;
 static const int kSuspendedMaxItemsInCacheForGpu = 0;
+
+#if BUILDFLAG(ARKWEB_GPU_IMAGE_PERSISTENT_CACHE_LIMIT)
+  constexpr size_t kArkWebMaxPersistentCacheMemoryBytes = 32 * 1024 * 1024;
+#endif
 
 // The maximum number of images that we can lock simultaneously in our working
 // set. This is separate from the memory limit, as keeping very large numbers
@@ -1978,6 +1982,17 @@ bool GpuImageDecodeCache::ExceedsCacheLimits() const {
   } else {
     items_limit = kNormalMaxItemsInCacheForGpu;
   }
+
+#if BUILDFLAG(ARKWEB_GPU_IMAGE_PERSISTENT_CACHE_LIMIT)
+  static int persistent_cache_memory_limit = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                 .GetSystemPropertiesInstance()
+                                 .GetIntParameter("web.debug.memtest", 0);
+  if (base::ohos::IsOhosLowEndDevice() && 
+      (persistent_cache_memory_limit == 0 || persistent_cache_memory_limit == 4) && 
+      persistent_cache_memory_size_ > kArkWebMaxPersistentCacheMemoryBytes) {
+    return true;
+  }
+#endif
 
   return persistent_cache_.size() > items_limit;
 }

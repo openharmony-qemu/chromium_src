@@ -80,6 +80,10 @@
 #include "chrome/browser/safe_browsing/safe_browsing_service.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 using safe_browsing::SafeBrowsingNavigationObserverManager;
@@ -215,6 +219,8 @@ const char kParentBlockedExtensionInstallError[] =
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 const char kWebstoreInvalidTypeError[] = "Invalid type";
+const char kWebstoreDeviceTypeError[] =
+    "Feature not supported on the current device type";
 #endif
 
 #if BUILDFLAG(SAFE_BROWSING_AVAILABLE)
@@ -427,6 +433,14 @@ std::u16string WebstorePrivateBeginInstallWithManifest3Function::
 
 ExtensionFunction::ResponseAction
 WebstorePrivateBeginInstallWithManifest3Function::Run() {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!base::ohos::IsPcDevice()) {
+    LOG(INFO) << "Install aborted: device type not supported";
+    return RespondNow(
+        BuildResponse(api::webstore_private::Result::kFeatureDisabled,
+                      kWebstoreDeviceTypeError));
+  }
+#endif
   params_ = Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params_);
 

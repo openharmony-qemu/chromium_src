@@ -1990,6 +1990,8 @@ bool GpuImageDecodeCache::ExceedsCacheLimits() const {
   if (base::ohos::IsOhosLowEndDevice() && 
       (persistent_cache_memory_limit == 0 || persistent_cache_memory_limit == 4) && 
       persistent_cache_memory_size_ > kArkWebMaxPersistentCacheMemoryBytes) {
+     LOG(DEBUG) << "Persistent Cache limits exceeded," <<                                                        
+                   " cache_memory_size=" << persistent_cache_memory_size_;                                             
     return true;
   }
 #endif

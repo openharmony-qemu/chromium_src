@@ -48,6 +48,9 @@
         }
         for (let r = 0; r < attrRules.length; r++) {
             const rule = attrRules[r];
+            if (!rule || !rule.value) {
+                continue;
+            }
             let attrVal = el.getAttribute(rule.attr);
             if (rule.attr === 'type' && nodeType === 'input' && !attrVal) {
                 attrVal = 'text';
@@ -113,6 +116,11 @@
         return control;
     }
 
+    // Safe getter: returns [] if config.typeAttrRules or a nodeType key is missing
+    function getAttrRules(config, nodeType) {
+        return (config && config.typeAttrRules && config.typeAttrRules[nodeType]) || [];
+    }
+
     // ========== Core query function ==========
 
     function queryControls(selectorConfigStr) {
@@ -127,7 +135,7 @@
         config.nodeTypes.forEach(function (nodeType) {
             const elements = document.querySelectorAll(nodeType);
             elements.forEach(function (el) {
-                if (!matchAttrRules(el, nodeType, config.typeAttrRules[nodeType])) {
+                if (!matchAttrRules(el, nodeType, getAttrRules(config, nodeType))) {
                     return;
                 }
                 if (config.onlyVisible && !isVisible(el)) {
@@ -150,10 +158,10 @@
     }
 
     // Scroll detection state
-    let __isScrolling = false;
-    let __scrollEndTimer = null;
-    const __scrollEndDelay = 200;
-    const __mutationDebounceMs = 200;
+    let isScrolling = false;
+    let scrollEndTimer = null;
+    const scrollEndDelay = 200;
+    const mutationDebounceMs = 200;
 
     function stopObserver(ruleId) {
         const entry = window.__pageSceneObservers[ruleId];
@@ -207,55 +215,55 @@
         return false;
     }
 
-    // Scroll event handlers — only manage __isScrolling state
-    // touchstart/mousedown do NOT set __isScrolling: a tap without scroll is not scrolling.
-    // Only actual scroll/touchmove sets __isScrolling = true.
-    function __handleScrollStart() {
+    // Scroll event handlers — only manage isScrolling state
+    // touchstart/mousedown do NOT set isScrolling: a tap without scroll is not scrolling.
+    // Only actual scroll/touchmove sets isScrolling = true.
+    function onScrollStart() {
         // no-op: tap is not scroll
     }
 
-    let __lastScrollReset = 0;
+    let lastScrollReset = 0;
 
-    function __handleScroll() {
-        if (!__isScrolling) {
-            __isScrolling = true;
+    function onScroll() {
+        if (!isScrolling) {
+            isScrolling = true;
         }
         const now = Date.now();
-        if (__lastScrollReset && now - __lastScrollReset < 50) {
+        if (lastScrollReset && now - lastScrollReset < 50) {
             return;
         }
-        __lastScrollReset = now;
-        if (__scrollEndTimer) {
-            clearTimeout(__scrollEndTimer);
-            __scrollEndTimer = null;
+        lastScrollReset = now;
+        if (scrollEndTimer) {
+            clearTimeout(scrollEndTimer);
+            scrollEndTimer = null;
         }
-        __scrollEndTimer = setTimeout(function () {
-            __isScrolling = false;
-        }, __scrollEndDelay);
+        scrollEndTimer = setTimeout(function () {
+            isScrolling = false;
+        }, scrollEndDelay);
     }
 
-    function __handleScrollEnd() {
-        if (__scrollEndTimer) {
-            clearTimeout(__scrollEndTimer);
-            __scrollEndTimer = null;
+    function onScrollEnd() {
+        if (scrollEndTimer) {
+            clearTimeout(scrollEndTimer);
+            scrollEndTimer = null;
         }
-        __scrollEndTimer = setTimeout(function () {
-            __isScrolling = false;
-        }, __scrollEndDelay);
+        scrollEndTimer = setTimeout(function () {
+            isScrolling = false;
+        }, scrollEndDelay);
     }
 
-    function __setupScrollListener() {
-        window.addEventListener('touchstart', __handleScrollStart, { passive: true });
-        window.addEventListener('mousedown', __handleScrollStart);
-        window.addEventListener('scroll', __handleScroll, { passive: true });
-        window.addEventListener('touchmove', __handleScroll, { passive: true });
-        window.addEventListener('touchend', __handleScrollEnd, { passive: true });
-        window.addEventListener('touchcancel', __handleScrollEnd, { passive: true });
-        window.addEventListener('mouseup', __handleScrollEnd);
+    function setupScrollListener() {
+        window.addEventListener('touchstart', onScrollStart, { passive: true });
+        window.addEventListener('mousedown', onScrollStart);
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('touchmove', onScroll, { passive: true });
+        window.addEventListener('touchend', onScrollEnd, { passive: true });
+        window.addEventListener('touchcancel', onScrollEnd, { passive: true });
+        window.addEventListener('mouseup', onScrollEnd);
     }
 
-    const __scrollCheckMaxRetries = 15;
-    const __observerTimeoutMs = 2000;
+    const scrollCheckMaxRetries = 15;
+    const observerTimeoutMs = 2000;
 
     function setupObserver(selectorConfigStr, selectorJsonStr, ruleId, nodeTypes) {
         if (!nodeTypes || nodeTypes.length === 0) {
@@ -275,9 +283,9 @@
             }
             let scrollRetries = 0;
             function check() {
-                if (__isScrolling && scrollRetries < __scrollCheckMaxRetries) {
+                if (isScrolling && scrollRetries < scrollCheckMaxRetries) {
                     scrollRetries++;
-                    entry.debounceTimer = setTimeout(check, __scrollEndDelay);
+                    entry.debounceTimer = setTimeout(check, scrollEndDelay);
                     return;
                 }
                 entry.debounceTimer = null;
@@ -286,10 +294,10 @@
                 const controlCount = JSON.parse(result).controls.length;
                 console.log('[PageScene] MutationObserver: ruleId=' + ruleId +
                     ' controls=' + controlCount +
-                    (__isScrolling ? ' (force after max retries)' : ''));
+                    (isScrolling ? ' (force after max retries)' : ''));
                 reportResult(result, selectorJsonStr);
             }
-            entry.debounceTimer = setTimeout(check, __mutationDebounceMs);
+            entry.debounceTimer = setTimeout(check, mutationDebounceMs);
         });
 
         observer.observe(document.documentElement, { childList: true, subtree: true });
@@ -302,7 +310,7 @@
             if (controlCount > 0) {
                 reportResult(result, selectorJsonStr);
             }
-        }, __observerTimeoutMs);
+        }, observerTimeoutMs);
 
         const entry = {
             observer: observer,
@@ -313,26 +321,28 @@
         window.__pageSceneObservers[ruleId] = entry;
     }
 
+    function onDomReadyForObserver(selectorConfigStr, selectorJsonStr, ruleId, nodeTypes) {
+        const result = queryControls(selectorConfigStr);
+        const parsed = JSON.parse(result);
+        if (parsed.controls.length > 0) {
+            console.log('[PageScene] DOMContentLoaded: ruleId=' + ruleId +
+                ' controls=' + parsed.controls.length);
+            reportResult(result, selectorJsonStr);
+        } else {
+            setupObserver(selectorConfigStr, selectorJsonStr, ruleId, nodeTypes);
+        }
+    }
+
     function startObserver(selectorConfigStr, selectorJsonStr, ruleId, nodeTypes) {
         stopObserver(ruleId);
-
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', function () {
                 setTimeout(function () {
-                    const result = queryControls(selectorConfigStr);
-                    const parsed = JSON.parse(result);
-                    if (parsed.controls.length > 0) {
-                        console.log('[PageScene] DOMContentLoaded: ruleId=' + ruleId +
-                            ' controls=' + parsed.controls.length);
-                        reportResult(result, selectorJsonStr);
-                    } else {
-                        setupObserver(selectorConfigStr, selectorJsonStr, ruleId, nodeTypes);
-                    }
+                    onDomReadyForObserver(selectorConfigStr, selectorJsonStr, ruleId, nodeTypes);
                 }, 100);
             });
             return;
         }
-
         setupObserver(selectorConfigStr, selectorJsonStr, ruleId, nodeTypes);
     }
 
@@ -352,5 +362,5 @@
     };
 
     // Initialize scroll listener once
-    __setupScrollListener();
+    setupScrollListener();
 })();

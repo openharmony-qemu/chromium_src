@@ -960,8 +960,15 @@ void HistoryBackend::AddPage(const HistoryAddPageArgs& request) {
     CHECK(request.hidden);
   }
 
-  if (!db_)
+  if (!db_) {
+#if BUILDFLAG(IS_ARKWEB)
+    if (base::FeatureList::IsEnabled(network::features::kDeleteHistoryServiceDB)) {
+      // Even without DB, notify visited link system so links get marked as visited.
+      delegate_->NotifyVisitedLinksAdded(request);
+    }
+#endif
     return;
+  }
 
   // Will be filled with the visit ID of the last addition.
   VisitID last_visit_id = tracker_.GetLastVisit(

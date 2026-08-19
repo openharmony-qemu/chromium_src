@@ -267,6 +267,21 @@ struct QosCtrlData {
 };
 constexpr unsigned int QOS_CTRL_IPC_MAGIC = 0xCC;
 #define QOS_CTRL_BASIC_OPERATION _IOWR(QOS_CTRL_IPC_MAGIC, 1, struct QosCtrlData)
+// FFTS ioctl commands
+constexpr unsigned int FFTS_SCHED_MAGIC = 0xBF;
+#define FFTS_SCHED_IOCTL_1 _IO(FFTS_SCHED_MAGIC, 1)
+#define FFTS_SCHED_IOCTL_2 _IO(FFTS_SCHED_MAGIC, 2)
+#define FFTS_SCHED_IOCTL_3 _IO(FFTS_SCHED_MAGIC, 3)
+#define FFTS_SCHED_IOCTL_4 _IO(FFTS_SCHED_MAGIC, 4)
+
+// SHMM ioctl commands
+constexpr unsigned int SHMM_MAGIC = 0x46;
+#define SHMM_IOCTL_1 _IO(SHMM_MAGIC, 1)
+#define SHMM_IOCTL_2 _IO(SHMM_MAGIC, 2)
+#define SHMM_IOCTL_3 _IO(SHMM_MAGIC, 3)
+#define SHMM_IOCTL_4 _IO(SHMM_MAGIC, 4)
+#define SHMM_IOCTL_5 _IO(SHMM_MAGIC, 5)
+#define SHMM_IOCTL_8 _IO(SHMM_MAGIC, 8)
 
         const Arg<unsigned int> request(1);
         #ifdef BINDER_IPC_32BIT
@@ -285,7 +300,11 @@ constexpr unsigned int QOS_CTRL_IPC_MAGIC = 0xCC;
             .Cases({ASHMEM_SET_NAME, ASHMEM_GET_NAME, ASHMEM_SET_SIZE,
                     ASHMEM_GET_SIZE, ASHMEM_SET_PROT_MASK, ASHMEM_GET_PROT_MASK,
                     ASHMEM_PIN, ASHMEM_UNPIN, ASHMEM_GET_PIN_STATUS, QOS_CTRL_BASIC_OPERATION,
-                    kBinderWriteRead64},
+                    kBinderWriteRead64,
+                    FFTS_SCHED_IOCTL_1, FFTS_SCHED_IOCTL_2,
+                    FFTS_SCHED_IOCTL_3, FFTS_SCHED_IOCTL_4,
+                    SHMM_IOCTL_1, SHMM_IOCTL_2, SHMM_IOCTL_3,
+                    SHMM_IOCTL_4, SHMM_IOCTL_5, SHMM_IOCTL_8},
                     Allow())
             .Cases({kBinderWriteRead32, BINDER_SET_MAX_THREADS,
                     BINDER_THREAD_EXIT, BINDER_VERSION, BINDER_ENABLE_ONEWAY_SPAM_DETECTION,

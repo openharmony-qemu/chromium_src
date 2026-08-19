@@ -1561,6 +1561,7 @@ Cihazınızda Family Link uygulamasını yükleyerek bu hesabın ayarlarını y�
 <translation id="2040822390690632244">Güncellemeler, yardım, geliştirici seçenekleri</translation>
 <translation id="2040894699575719559">Konum engellendi</translation>
 <translation id="2041246176170574368">Kısa süre sonra artık güvenlik güncellemeleri almayacaksınız. Yeni bir Chromebook satın alırken en az 50 ABD doları tasarruf edin.</translation>
+<translation id="2041681409552851212">Uzantı, Tarayıcı tarafından incelenmemiş kodları çalıştırabilecektir. Bu güvenli olmayabilir ve bunu yalnızca ne yaptığınızı biliyorsanız etkinleştirmelisiniz.</translation>
 <translation id="2042279886444479655">Etkin profiller</translation>
 <translation id="2044014337866019681">Oturumun kilidini açmak için lütfen <ph name="ACCOUNT" /> hesabını doğruladığınızdan emin olun.</translation>
 <translation id="2044750031738659219">{0,plural, =1{Misafir penceresini kapat}other{Misafir pencerelerini kapat (# pencere)}}</translation>
@@ -11538,6 +11539,7 @@ Yüklü yazılımlar, dosyalar, tarayıcınız, cihazın işletim sistemi ve IP 
 <translation id="8890170499370378450">Mobil veri ücretleri alınabilir</translation>
 <translation id="8890516388109605451">Kaynaklar</translation>
 <translation id="8890529496706615641">Profil yeniden adlandırılamadı. Lütfen tekrar deneyin veya teknik destek için operatörünüzle iletişime geçin.</translation>
+<translation id="889095128849097287">Kullanıcı komut dosyalarına izin ver</translation>
 <translation id="8892168913673237979">Her şey hazır!</translation>
 <translation id="8892246501904593980">Tüm yer işaretlerinizi Yer İşaretleri ve Listeler'de bulabilirsiniz</translation>
 <translation id="8893779047492837414">Şu anda <ph name="NUMBERED_ITEM_1" />, <ph name="NUMBERED_ITEM_2" /> ve daha fazla içeriğiniz var. <ph name="ACCOUNT_MANAGER" /> kuruluşunuz bu verileri görebilecek ve yönetebilecek.</translation>

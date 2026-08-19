@@ -1558,6 +1558,7 @@ Wenn du die Family Link App auf deinem Gerät installierst, kannst du die Einste
 <translation id="2040822390690632244">Updates, Hilfe, Entwickleroptionen</translation>
 <translation id="2040894699575719559">Standort blockiert</translation>
 <translation id="2041246176170574368">Dieses Chromebook erhält bald keine Sicherheitsupdates mehr. Sichere dir einen Rabatt von 50 $ oder mehr beim Kauf eines neuen Chromebook.</translation>
+<translation id="2041681409552851212">Die Erweiterung wird Code ausführen können, der nicht vom Browser überprüft wurde. Dies kann unsicher sein und Sie sollten dies nur aktivieren, wenn Sie wissen, was Sie tun.</translation>
 <translation id="2042279886444479655">Aktive Profile</translation>
 <translation id="2044014337866019681">Bitte bestätige <ph name="ACCOUNT" />, um die Sitzung zu entsperren.</translation>
 <translation id="2044750031738659219">{0,plural, =1{Gastfenster schließen}other{Gastfenster schließen (# Fenster)}}</translation>
@@ -11533,6 +11534,7 @@ Dazu gehören beispielsweise installierte Software, Dateien, dein Browser, das B
 <translation id="8890170499370378450">Es können Gebühren für mobile Daten anfallen</translation>
 <translation id="8890516388109605451">Quellen</translation>
 <translation id="8890529496706615641">Das Profil konnte nicht umbenannt werden. Bitte versuche es noch einmal oder wende dich an den technischen Support.</translation>
+<translation id="889095128849097287">Nutzerskripte zulassen</translation>
 <translation id="8892168913673237979">Fertig!</translation>
 <translation id="8892246501904593980">Alle deine Lesezeichen in „Lesezeichen und Listen“ ansehen</translation>
 <translation id="8893779047492837414">Du hast derzeit u. a. <ph name="NUMBERED_ITEM_1" /> und <ph name="NUMBERED_ITEM_2" />. Deine Organisation (<ph name="ACCOUNT_MANAGER" />) kann diese Daten einsehen und verwalten.</translation>

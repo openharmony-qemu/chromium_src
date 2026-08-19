@@ -1557,6 +1557,7 @@
 <translation id="2040822390690632244">更新、帮助、开发者选项</translation>
 <translation id="2040894699575719559">已阻止获取位置信息</translation>
 <translation id="2041246176170574368">安全更新即将终止。升级为新款 Chromebook 至少可节省 50 美元。</translation>
+<translation id="2041681409552851212">此扩展程序将能够运行未经浏览器审核的代码。这可能不安全，仅在您清楚了解相关风险并确认操作安全的情况下，才应启用此功能。</translation>
 <translation id="2042279886444479655">使用中的配置文件</translation>
 <translation id="2044014337866019681">请确保您验证的账号是 <ph name="ACCOUNT" /> 以解锁会话。</translation>
 <translation id="2044750031738659219">{0,plural, =1{关闭访客模式}other{关闭访客模式（# 个窗口）}}</translation>
@@ -11478,6 +11479,7 @@
 <translation id="8849262417389398097"><ph name="CHECKED" /> 个（共 <ph name="CHECKING" /> 个）</translation>
 <translation id="8850251000316748990">查看更多…</translation>
 <translation id="8890944795668818744">系统打印</translation>
+<translation id="889095128849097287">允许运行用户脚本</translation>
 <translation id="885246833287407341">API 函数参数</translation>
 <translation id="8853586775156634952">此卡的信息将仅保存到此设备上</translation>
 <translation id="8855242995793521265">不会显著减慢浏览器或设备的运行速度。</translation>

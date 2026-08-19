@@ -1571,6 +1571,7 @@ Bạn có thể quản lý các tùy chọn cài đặt của tài khoản này 
 <translation id="2040822390690632244">Nội dung cập nhật, trợ giúp, tuỳ chọn cho nhà phát triển</translation>
 <translation id="2040894699575719559">Đã chặn quyền truy cập vị trí</translation>
 <translation id="2041246176170574368">Sắp tới, bạn sẽ không nhận được các bản cập nhật bảo mật nữa. Bạn sẽ tiết kiệm được 50 USD trở lên khi mua Chromebook mới.</translation>
+<translation id="2041681409552851212">Tiện ích mở rộng này sẽ có thể chạy mã chưa được Trình duyệt kiểm duyệt. Việc này có thể không an toàn và bạn chỉ nên bật nếu hiểu rõ mình đang làm gì.</translation>
 <translation id="2042279886444479655">Các hồ sơ đang hoạt động</translation>
 <translation id="2044014337866019681">Để mở khóa phiên này, hãy đảm bảo rằng bạn đang xác minh <ph name="ACCOUNT" />.</translation>
 <translation id="2044750031738659219">{0,plural, =1{Đóng cửa sổ khách}other{Đóng cửa sổ khách (# cửa sổ)}}</translation>
@@ -11558,6 +11559,7 @@ Thông tin này có thể bao gồm thông tin về phần mềm đã cài đặ
 <translation id="8890170499370378450">Nhà mạng có thể tính phí dữ liệu di động</translation>
 <translation id="8890516388109605451">Nguồn</translation>
 <translation id="8890529496706615641">Không thể đổi tên hồ sơ. Vui lòng thử lại hoặc liên hệ với nhà mạng của bạn để được hỗ trợ kỹ thuật.</translation>
+<translation id="889095128849097287">Cho phép tập lệnh của người dùng</translation>
 <translation id="8892168913673237979">Đã hoàn tất!</translation>
 <translation id="8892246501904593980">Xem tất cả dấu trang của bạn trong phần Dấu trang và danh sách</translation>
 <translation id="8893779047492837414">Bạn hiện có <ph name="NUMBERED_ITEM_1" />, <ph name="NUMBERED_ITEM_2" /> và nhiều dữ liệu khác Tổ chức của bạn, <ph name="ACCOUNT_MANAGER" />, sẽ có thể xem và quản lý dữ liệu này.</translation>

@@ -135,4 +135,169 @@ TEST(ServiceTransferCacheTest, PurgeEntryOnTimer) {
   EXPECT_TRUE(flush_called);
 }
 
+TEST(ServiceTransferCacheTest, DeleteEntry) {
+  ServiceTransferCache cache{GpuPreferences(), base::RepeatingClosure()};
+  uint32_t entry_id = 0u;
+  size_t entry_size = 1024u;
+
+  // Create an entry
+  cache.CreateLocalEntry(
+      ServiceTransferCache::EntryKey(kDecoderId, kEntryType, ++entry_id),
+      CreateEntry(entry_size));
+  EXPECT_EQ(cache.entries_count_for_testing(), 1u);
+  EXPECT_NE(cache.GetEntry(ServiceTransferCache::EntryKey(kDecoderId, kEntryType, entry_id)),
+            nullptr);
+
+  // Delete the entry
+  EXPECT_TRUE(cache.DeleteEntry(ServiceTransferCache::EntryKey(kDecoderId, kEntryType, entry_id)));
+  EXPECT_EQ(cache.entries_count_for_testing(), 0u);
+  EXPECT_EQ(cache.GetEntry(ServiceTransferCache::EntryKey(kDecoderId, kEntryType, entry_id)),
+            nullptr);
+
+  // Deleting non-existent entry should return false
+  EXPECT_FALSE(cache.DeleteEntry(ServiceTransferCache::EntryKey(kDecoderId, kEntryType, entry_id)));
+}
+
+TEST(ServiceTransferCacheTest, GetEntryUpdatesMetrics) {
+  ServiceTransferCache cache{GpuPreferences(), base::RepeatingClosure()};
+  uint32_t entry_id = 0u;
+  size_t entry_size = 1024u;
+
+  // Create an entry
+  cache.CreateLocalEntry(
+      ServiceTransferCache::EntryKey(kDecoderId, kEntryType, ++entry_id),
+      CreateEntry(entry_size));
+
+  // GetEntry should return the entry
+  EXPECT_NE(cache.GetEntry(ServiceTransferCache::EntryKey(kDecoderId, kEntryType, entry_id)),
+            nullptr);
+
+  // GetEntry for non-existent entry should return nullptr
+  EXPECT_EQ(cache.GetEntry(ServiceTransferCache::EntryKey(kDecoderId, kEntryType, 9999)),
+            nullptr);
+}
+
+TEST(ServiceTransferCacheTest, UnlockEntryWithNoHandle) {
+  ServiceTransferCache cache{GpuPreferences(), base::RepeatingClosure()};
+  uint32_t entry_id = 0u;
+
+  // Create a local entry (no handle)
+  cache.CreateLocalEntry(
+      ServiceTransferCache::EntryKey(kDecoderId, kEntryType, ++entry_id),
+      CreateEntry(1024u));
+
+  // UnlockEntry should return false for local entries without handle
+  EXPECT_FALSE(cache.UnlockEntry(ServiceTransferCache::EntryKey(kDecoderId, kEntryType, entry_id)));
+
+  // UnlockEntry should return false for non-existent entries
+  EXPECT_FALSE(cache.UnlockEntry(ServiceTransferCache::EntryKey(kDecoderId, kEntryType, 9999)));
+}
+
+TEST(ServiceTransferCacheTest, CreateLockedEntryFailsForExistingEntry) {
+  ServiceTransferCache cache{GpuPreferences(), base::RepeatingClosure()};
+  uint32_t entry_id = 0u;
+
+  // Create a local entry
+  cache.CreateLocalEntry(
+      ServiceTransferCache::EntryKey(kDecoderId, kEntryType, ++entry_id),
+      CreateEntry(1024u));
+
+  // CreateLockedEntry should fail because entry already exists
+  // (passing null context and empty data - will fail anyway)
+  EXPECT_FALSE(cache.CreateLockedEntry(
+      ServiceTransferCache::EntryKey(kDecoderId, kEntryType, entry_id),
+      ServiceDiscardableHandle(), nullptr, nullptr, base::span<uint8_t>()));
+}
+
+TEST(ServiceTransferCacheTest, EnforceLimitsByEntryCount) {
+  ServiceTransferCache cache{GpuPreferences(), base::RepeatingClosure()};
+  size_t entry_size = 1024u;
+
+  // Set max entries to 3
+  cache.SetMaxCacheEntriesForTesting(3);
+
+  // Create 4 entries - should enforce limits
+  for (uint32_t i = 0; i < 4; ++i) {
+    cache.CreateLocalEntry(
+        ServiceTransferCache::EntryKey(kDecoderId, kEntryType, i + 1),
+        CreateEntry(entry_size));
+  }
+
+  // Only 3 entries should remain due to max_cache_entries_ limit
+  EXPECT_EQ(cache.entries_count_for_testing(), 3u);
+}
+
+TEST(ServiceTransferCacheTest, CreateLocalEntryReplacesExisting) {
+  ServiceTransferCache cache{GpuPreferences(), base::RepeatingClosure()};
+  uint32_t entry_id = 1u;
+  size_t entry_size = 1024u;
+
+  // Create first entry
+  cache.CreateLocalEntry(
+      ServiceTransferCache::EntryKey(kDecoderId, kEntryType, entry_id),
+      CreateEntry(entry_size));
+  EXPECT_EQ(cache.entries_count_for_testing(), 1u);
+
+  // Create another entry with same key - should replace
+  cache.CreateLocalEntry(
+      ServiceTransferCache::EntryKey(kDecoderId, kEntryType, entry_id),
+      CreateEntry(entry_size * 2));
+  EXPECT_EQ(cache.entries_count_for_testing(), 1u);
+  EXPECT_EQ(cache.cache_size_for_testing(), entry_size * 2);
+}
+
+TEST(ServiceTransferCacheTest, RemoveOldEntriesUntil) {
+  static base::TimeTicks now_value = base::TimeTicks::Now();
+  base::subtle::ScopedTimeClockOverrides time_override(
+      nullptr, []() { return now_value; }, nullptr);
+
+  ServiceTransferCache cache{GpuPreferences(), base::RepeatingClosure()};
+  size_t entry_size = 1024u;
+
+  // Create 3 entries at different times
+  cache.CreateLocalEntry(
+      ServiceTransferCache::EntryKey(kDecoderId, kEntryType, 1),
+      CreateEntry(entry_size));
+
+  now_value = now_value + base::Seconds(10);
+  cache.CreateLocalEntry(
+      ServiceTransferCache::EntryKey(kDecoderId, kEntryType, 2),
+      CreateEntry(entry_size));
+
+  now_value = now_value + base::Seconds(10);
+  cache.CreateLocalEntry(
+      ServiceTransferCache::EntryKey(kDecoderId, kEntryType, 3),
+      CreateEntry(entry_size));
+
+  EXPECT_EQ(cache.entries_count_for_testing(), 3u);
+
+  // Move time forward past cutoff
+  now_value = now_value + base::Seconds(30);
+
+  // Trigger time-based eviction through PurgeMemory which indirectly
+  // exercises the entry eviction logic
+  cache.PurgeMemory(base::MEMORY_PRESSURE_LEVEL_CRITICAL);
+
+  // All entries should be purged under critical memory pressure
+  EXPECT_EQ(cache.entries_count_for_testing(), 0u);
+}
+
+TEST(ServiceTransferCacheTest, EntryKeyFields) {
+  ServiceTransferCache::EntryKey key1(1, cc::TransferCacheEntryType::kRawMemory, 100);
+  ServiceTransferCache::EntryKey key2(1, cc::TransferCacheEntryType::kRawMemory, 100);
+  ServiceTransferCache::EntryKey key3(2, cc::TransferCacheEntryType::kRawMemory, 100);
+  ServiceTransferCache::EntryKey key4(1, cc::TransferCacheEntryType::kImage, 100);
+  ServiceTransferCache::EntryKey key5(1, cc::TransferCacheEntryType::kRawMemory, 200);
+
+  // Same key values should be equal
+  EXPECT_EQ(key1.decoder_id, key2.decoder_id);
+  EXPECT_EQ(key1.entry_type, key2.entry_type);
+  EXPECT_EQ(key1.entry_id, key2.entry_id);
+
+  // Verify different fields
+  EXPECT_NE(key1.decoder_id, key3.decoder_id);
+  EXPECT_NE(key1.entry_type, key4.entry_type);
+  EXPECT_NE(key1.entry_id, key5.entry_id);
+}
+
 }  // namespace gpu

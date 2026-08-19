@@ -1359,13 +1359,24 @@ void TargetHandler::CreateTarget(
     callback->sendFailure(Response::ServerError("Not supported"));
     return;
   }
+
+  BrowserContext* browser_context = nullptr;
+  if (browser_context_id.has_value()) {
+    Response response = BrowserHandler::FindBrowserContext(browser_context_id,
+                                                           &browser_context);
+    if (!response.IsSuccess()) {
+      callback->sendFailure(response);
+      return;
+    }
+  }
+
   DevToolsManagerDelegate::TargetType target_type =
       for_tab.value_or(session_mode_ ==
                        DevToolsSession::Mode::kSupportsTabTarget)
           ? DevToolsManagerDelegate::kTab
           : DevToolsManagerDelegate::kFrame;
   delegate->CreateNewTargetAsync(
-      gurl, target_type, new_window.value_or(false),
+      gurl, target_type, new_window.value_or(false), browser_context,
       base::BindOnce(
           [](std::unique_ptr<CreateTargetCallback> callback, bool success,
              const std::string& result) {

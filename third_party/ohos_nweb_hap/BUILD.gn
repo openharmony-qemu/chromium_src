@@ -63,7 +63,10 @@ action("add_kernel_permission_hap") {
 }
 
 ohos_hap("ohos_nweb_hap") {
-  output = "$root_out_dir/ohos_nweb.hap"
+  entry_output = "$root_out_dir/ohos_nweb.hap"
+  if (defined(ohos_nweb_ex) && ohos_nweb_ex) {
+    feature_output = "$root_out_dir/ohos_nweb_ex.hap"
+  }
 
   entry_libs = [
     "libadapter_ndk_stub.so",
@@ -75,6 +78,12 @@ ohos_hap("ohos_nweb_hap") {
 
   if (is_arkweb_ext && build_watch) {
     entry_libs += ["libohcamera.so"]
+  }
+
+  if (defined(ohos_nweb_ex) && ohos_nweb_ex) {
+    feature_libs = [
+      "libarkweb_ex.so",
+    ]
   }
 
   entry_raw_resources = [
@@ -178,6 +187,12 @@ ohos_hap("ohos_nweb_hap") {
     deps -= [
       "//components/crash/core/app:arkweb_crashpad_handler"
     ]
+  }
+
+  if (defined(ohos_nweb_ex) && ohos_nweb_ex) {
+    deps += [
+      "//ohos_nweb_ex:libarkweb_ex",
+    ]    
   }
 }
 

@@ -3775,4 +3775,27 @@ TEST_F(WebContentsImplTest, IsLoadingExcludingAdFrames) {
   EXPECT_FALSE(contents()->IsLoadingExcludingAdSubframes());
 }
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+// Test that DiscardCompositingResources can be called without crash.
+// The method delegates to implUtils_->DiscardCompositingResources() which
+// checks GetRenderWidgetHostView() internally. In the test environment,
+// IsDelegatedCompositingEnabledOhos() returns false, so the delegate
+// compositing path is not active, but the call should still complete safely.
+TEST_F(WebContentsImplTest, DiscardCompositingResources) {
+  ASSERT_NO_FATAL_FAILURE(contents()->DiscardCompositingResources());
+}
+
+// Test that NotifyWebContentsFocused/LostFocus call implUtils_ path without
+// crash. The implUtils_->NotifyFocusStatus() path is guarded by a null check
+// on implUtils_, which is always initialized in WebContentsImpl.
+TEST_F(WebContentsImplTest, NotifyFocusStatusOnFocusChange) {
+  ASSERT_NO_FATAL_FAILURE(
+      contents()->NotifyWebContentsFocused(
+          contents()->GetPrimaryMainFrame()->GetRenderWidgetHost()));
+  ASSERT_NO_FATAL_FAILURE(
+      contents()->NotifyWebContentsLostFocus(
+          contents()->GetPrimaryMainFrame()->GetRenderWidgetHost()));
+}
+#endif  // BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+
 }  // namespace content

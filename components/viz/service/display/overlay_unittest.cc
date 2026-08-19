@@ -61,6 +61,7 @@
 #include "components/viz/service/display/overlay_strategy_single_on_top.h"
 #include "components/viz/service/display/overlay_strategy_underlay.h"
 #include "components/viz/service/display/test_resource_factory.h"
+#include "components/viz/test/fake_output_surface.h"
 #include "components/viz/test/fake_skia_output_surface.h"
 #include "components/viz/test/overlay_candidate_matchers.h"
 #include "components/viz/test/test_context_provider.h"
@@ -6413,6 +6414,40 @@ TEST_P(MultiUnderlayPromotedTest, UnderlaysBlendPrimaryPlane) {
 INSTANTIATE_TEST_SUITE_P(PromotedTrueFalse,
                          MultiUnderlayPromotedTest,
                          testing::Bool());
+
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+// Test that UpdateFocusAndScreenStatus is available on OverlayProcessorInterface
+// when ARKWEB_DELEGATE_COMPOSITING is enabled.
+TEST_F(DelegatedTest, UpdateFocusAndScreenStatus) {
+  // Verify the method exists and can be called without crash.
+  ASSERT_NO_FATAL_FAILURE(
+      overlay_processor_->UpdateFocusAndScreenStatus(true, true));
+  ASSERT_NO_FATAL_FAILURE(
+      overlay_processor_->UpdateFocusAndScreenStatus(false, false));
+}
+
+// Test that DiscardCompositingResources is available on OutputSurface
+// when ARKWEB_DELEGATE_COMPOSITING is enabled.
+TEST_F(DelegatedTest, DiscardCompositingResourcesOnOutputSurface) {
+  // OutputSurface::DiscardCompositingResources() is a virtual no-op by default.
+  // Verify it can be called on a concrete subclass without crash.
+  auto output_surface = FakeSoftwareOutputSurface(
+      std::make_unique<SoftwareOutputDevice>());
+  ASSERT_NO_FATAL_FAILURE(output_surface.DiscardCompositingResources());
+}
+
+// When IsDelegatedCompositingEnabledOhos() returns false (test environment),
+// CreateOverlayProcessor should fall back to the non-OHOS path and create
+// an OverlayProcessorStub for kNullSurfaceHandle.
+TEST_F(DelegatedTest, CreateOverlayProcessor_DelegatedDisabled) {
+  auto processor = OverlayProcessorInterface::CreateOverlayProcessor(
+      nullptr, gpu::kNullSurfaceHandle,
+      OutputSurface::Capabilities(), nullptr, nullptr,
+      RendererSettings(), nullptr);
+  // With kNullSurfaceHandle, a stub processor is created regardless.
+  ASSERT_TRUE(processor != nullptr);
+}
+#endif  // BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
 
 }  // namespace
 }  // namespace viz

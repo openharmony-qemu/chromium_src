@@ -48,7 +48,14 @@
 #include "components/viz/service/display/aggregated_frame.h"
 #include "components/viz/service/display/delegated_ink_point_renderer_skia.h"
 #include "components/viz/service/display/delegated_ink_trail_data.h"
+// Allow access to DirectRenderer/SkiaRenderer private members for testing.
+#define private public
 #include "components/viz/service/display/direct_renderer.h"
+#include "components/viz/service/display/skia_renderer.h"
+#undef private
+
+#include "base/ohos/sys_info_utils_ext.h"
+
 #include "components/viz/service/display/display_client.h"
 #include "components/viz/service/display/display_scheduler.h"
 #include "components/viz/service/display/overlay_processor_stub.h"
@@ -214,7 +221,7 @@ class DisplayTest : public testing::Test {
                                       kArbitraryFrameSinkId);
   }
 
-  std::unique_ptr<Display> CreateDisplay(
+  virtual std::unique_ptr<Display> CreateDisplay(
       const RendererSettings& settings,
       const FrameSinkId& frame_sink_id,
       std::unique_ptr<DisplayScheduler> scheduler,
@@ -2341,5 +2348,135 @@ TEST_F(UnsupportedRendererDelegatedInkTest,
   display_->InitDelegatedInkPointRendererReceiver(
       ink_renderer_remote.BindNewPipeAndPassReceiver());
 }
+
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+
+// Mock OverlayProcessor that records UpdateFocusAndScreenStatus calls.
+class MockOverlayProcessorForDelegated
+    : public OverlayProcessorInterface {
+ public:
+  MockOverlayProcessorForDelegated() = default;
+
+  bool IsOverlaySupported() const override { return true; }
+  gfx::Rect GetAndResetOverlayDamage() override { return gfx::Rect(); }
+  bool NeedsSurfaceDamageRectList() const override { return false; }
+  void ProcessForOverlays(
+      DisplayResourceProvider* resource_provider,
+      AggregatedRenderPassList* render_passes,
+      const SkM44& output_color_matrix,
+      const FilterOperationsMap& render_pass_filters,
+      const FilterOperationsMap& render_pass_backdrop_filters,
+      SurfaceDamageRectList surface_damage_rect_list,
+      std::optional<OverlayCandidate>& primary_plane,
+      CandidateList* overlay_candidates,
+      gfx::Rect* damage_rect,
+      std::vector<gfx::Rect>* content_bounds) override {}
+
+  MOCK_METHOD(void, UpdateFocusAndScreenStatus, (bool is_focused, bool is_single_screen), (override));
+};
+
+// Fixture that injects a MockOverlayProcessorForDelegated into the Display.
+class DisplayTestWithDelegatedOverlay : public DisplayTest {
+ protected:
+  std::unique_ptr<Display> CreateDisplay(
+      const RendererSettings& settings,
+      const FrameSinkId& frame_sink_id,
+      std::unique_ptr<DisplayScheduler> scheduler,
+      std::unique_ptr<OutputSurface> output_surface) override {
+    auto overlay_processor =
+        std::make_unique<MockOverlayProcessorForDelegated>();
+    mock_overlay_processor_ = overlay_processor.get();
+    auto display = std::make_unique<Display>(
+        &shared_image_manager_, &gpu_scheduler_, settings, &debug_settings_,
+        frame_sink_id, nullptr /* DisplayCompositorMemoryAndTaskController */,
+        std::move(output_surface), std::move(overlay_processor),
+        std::move(scheduler), task_runner_);
+    display->SetVisible(true);
+    return display;
+  }
+
+  raw_ptr<MockOverlayProcessorForDelegated> mock_overlay_processor_ = nullptr;
+};
+
+// Test that DirectRenderer::UpdateFocusAndScreenStatus can be called and
+// updates internal state. This behavior is independent of
+// IsDelegatedCompositingEnabledOhos() since it is a simple setter.
+TEST_F(DisplayTest, UpdateFocusAndScreenStatus) {
+  SetUpGpuDisplay(RendererSettings());
+  display_->Initialize(client_.get(), manager_.surface_manager());
+
+  auto* renderer = display_->renderer_for_testing();
+  ASSERT_TRUE(renderer != nullptr);
+
+  // Initial state: is_focused_ and is_single_screen_ are false.
+  EXPECT_FALSE(renderer->is_focused_);
+  EXPECT_FALSE(renderer->is_single_screen_);
+
+  // Update to focused=true, is_single_screen=true.
+  renderer->UpdateFocusAndScreenStatus(true, true);
+  EXPECT_TRUE(renderer->is_focused_);
+  EXPECT_TRUE(renderer->is_single_screen_);
+
+  // Update to focused=false, is_single_screen=false.
+  renderer->UpdateFocusAndScreenStatus(false, false);
+  EXPECT_FALSE(renderer->is_focused_);
+  EXPECT_FALSE(renderer->is_single_screen_);
+}
+
+// Test that SkiaRenderer's is_delegated_enabled_ matches the runtime value of
+// IsDelegatedCompositingEnabledOhos(). When the flag is false, delegate
+// compositing code paths in SkiaRenderer are disabled; when true, they are
+// active.
+TEST_F(DisplayTest, SkiaRenderer_DelegatedEnabled) {
+  SetUpGpuDisplay(RendererSettings());
+  display_->Initialize(client_.get(), manager_.surface_manager());
+
+  auto* renderer = display_->renderer_for_testing();
+  ASSERT_TRUE(renderer != nullptr);
+  auto* skia_renderer = static_cast<SkiaRenderer*>(renderer);
+  ASSERT_TRUE(skia_renderer != nullptr);
+  EXPECT_EQ(skia_renderer->is_delegated_enabled_,
+            base::ohos::IsDelegatedCompositingEnabledOhos());
+}
+
+// Test that DirectRenderer::DrawFrame propagates is_focused_ and
+// is_single_screen_ to the OverlayProcessor via UpdateFocusAndScreenStatus.
+// Note: The call is guarded by BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING), not
+// by is_delegated_enabled_, so it occurs regardless of the runtime flag.
+TEST_F(DisplayTestWithDelegatedOverlay,
+       DrawFrame_PropagatesFocusAndScreenStatus) {
+  SetUpGpuDisplay(RendererSettings());
+  display_->Initialize(client_.get(), manager_.surface_manager());
+  ASSERT_TRUE(mock_overlay_processor_ != nullptr);
+
+  auto* renderer = display_->renderer_for_testing();
+  ASSERT_TRUE(renderer != nullptr);
+
+  // Set focus and screen status before drawing a frame.
+  renderer->UpdateFocusAndScreenStatus(true, true);
+
+  // Set up the expectation before triggering DrawAndSwap.
+  EXPECT_CALL(*mock_overlay_processor_,
+              UpdateFocusAndScreenStatus(true, true));
+
+  // Submit a frame and draw it to trigger the overlay processor call.
+  id_allocator_.GenerateId();
+  display_->SetLocalSurfaceId(id_allocator_.GetCurrentLocalSurfaceId(), 1.f);
+  display_->Resize(gfx::Size(100, 100));
+
+  CompositorRenderPassList pass_list;
+  auto pass = CompositorRenderPass::Create();
+  pass->output_rect = gfx::Rect(0, 0, 100, 100);
+  pass->damage_rect = gfx::Rect(10, 10, 1, 1);
+  pass->id = CompositorRenderPassId{1u};
+  pass_list.push_back(std::move(pass));
+
+  ResetDamageForTest();
+  SubmitCompositorFrame(&pass_list,
+                        id_allocator_.GetCurrentLocalSurfaceId());
+  display_->DrawAndSwap({base::TimeTicks::Now(), base::TimeTicks::Now()});
+}
+
+#endif  // BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
 
 }  // namespace viz

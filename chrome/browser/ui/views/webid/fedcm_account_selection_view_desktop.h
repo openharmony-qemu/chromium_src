@@ -9,6 +9,7 @@
 
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
+#include "base/scoped_observation.h"
 #include "chrome/browser/picture_in_picture/picture_in_picture_occlusion_observer.h"
 #include "chrome/browser/picture_in_picture/scoped_picture_in_picture_occlusion_observation.h"
 #include "chrome/browser/ui/tabs/public/tab_dialog_manager.h"
@@ -22,6 +23,7 @@
 #include "content/public/browser/web_contents_observer.h"
 #include "ui/views/input_event_activation_protector.h"
 #include "ui/views/widget/widget_delegate.h"
+#include "ui/views/widget/widget_observer.h"
 #include "ui/views/window/dialog_delegate.h"
 
 namespace tabs {
@@ -66,7 +68,8 @@ class AccountSelectionViewBase;
 class FedCmAccountSelectionView : public AccountSelectionView,
                                   public FedCmModalDialogView::Observer,
                                   public content::WebContentsObserver,
-                                  public PictureInPictureOcclusionObserver {
+                                  public PictureInPictureOcclusionObserver,
+                                  public views::WidgetObserver {
  public:
   enum class DialogType {
     // FedCM dialog inherits a bubble dialog, which is typically shown on the
@@ -143,6 +146,9 @@ class FedCmAccountSelectionView : public AccountSelectionView,
                                         blink::mojom::RpMode rp_mode) override;
   void CloseModalDialog() override;
   void PrimaryMainFrameWasResized(bool width_changed) override;
+
+  // views::WidgetObserver:
+  void OnWidgetVisibilityChanged(views::Widget* widget, bool visible) override;
 
   base::WeakPtr<FedCmAccountSelectionView> GetWeakPtr();
 
@@ -570,6 +576,9 @@ class FedCmAccountSelectionView : public AccountSelectionView,
 
   // Widget that owns the view.
   std::unique_ptr<views::Widget> dialog_widget_;
+
+  base::ScopedObservation<views::Widget, views::WidgetObserver>
+      dialog_widget_observation_{this};
 
   // This controls the contents of the dialog_widget_. Conceptually there
   // is a view if and only if there is a widget. The two are constructed

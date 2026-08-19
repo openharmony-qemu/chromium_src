@@ -776,18 +776,7 @@ void PrefetchContainer::AddRedirectHop(const net::RedirectInfo& redirect_info) {
       &resource_request_->headers, &should_clear_upload);
   CHECK(!should_clear_upload);
 
-  resource_request_->url = redirect_info.new_url;
-  resource_request_->method = redirect_info.new_method;
-  resource_request_->site_for_cookies = redirect_info.new_site_for_cookies;
-
-  resource_request_->trusted_params->isolation_info =
-      resource_request_->trusted_params->isolation_info.CreateForRedirect(
-          url::Origin::Create(resource_request_->url));
-
-  // TODO(jbroman): This somewhat duplicates |referrer_|. Revisit usage of that
-  // (and related data members) to see if they can/should use this data instead.
-  resource_request_->referrer = GURL(redirect_info.new_referrer);
-  resource_request_->referrer_policy = redirect_info.new_referrer_policy;
+  resource_request_->UpdateOnRedirect(redirect_info);
 
   AddXClientDataHeader(*resource_request_.get());
 

@@ -204,6 +204,7 @@ CONTENT_EXPORT BASE_DECLARE_FEATURE(
 CONTENT_EXPORT BASE_DECLARE_FEATURE(kSendBeaconThrowForBlobWithNonSimpleType);
 CONTENT_EXPORT BASE_DECLARE_FEATURE(
     kServiceWorkerAvoidMainThreadForInitialization);
+CONTENT_EXPORT BASE_DECLARE_FEATURE(kSanitizeFailedSubframeNavigationUrls);
 CONTENT_EXPORT BASE_DECLARE_FEATURE(
     kServiceWorkerBypassFetchHandlerHashStrings);
 CONTENT_EXPORT extern const base::FeatureParam<std::string>

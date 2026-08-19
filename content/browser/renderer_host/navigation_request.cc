@@ -6681,7 +6681,7 @@ void NavigationRequest::CommitErrorPage(
   // the redirect URLs to avoid leaking potentially sensitive data into
   // processes which are cross-site. There is no dependency on the
   // cross-site-ness, therefore just sanitize unilaterally.
-  SanitizeRedirectsForCommit(commit_params_);
+  SanitizeRedirectsForCommit(common_params_, commit_params_);
 
   GetRenderFrameHost()->FailedNavigation(
       this, *common_params_, *commit_params_, has_stale_copy_in_cache_,
@@ -6691,7 +6691,7 @@ void NavigationRequest::CommitErrorPage(
   // the redirect URLs to avoid leaking potentially sensitive data into
   // processes which are cross-site. There is no dependency on the
   // cross-site-ness, therefore just sanitize unilaterally.
-  SanitizeRedirectsForCommit(commit_params_);
+  SanitizeRedirectsForCommit(common_params_, commit_params_);
 
   GetRenderFrameHost()->FailedNavigation(
       this, *common_params_, *commit_params_, has_stale_copy_in_cache_,
@@ -7145,7 +7145,7 @@ void NavigationRequest::CommitNavigation() {
   // the redirect URLs to avoid leaking potentially sensitive data into
   // processes which are cross-site. There is no dependency on the
   // cross-site-ness, therefore just sanitize unilaterally.
-  SanitizeRedirectsForCommit(commit_params);
+  SanitizeRedirectsForCommit(common_params, commit_params);
 
   GetRenderFrameHost()->CommitNavigation(
       this, std::move(common_params), std::move(commit_params),
@@ -7967,10 +7967,26 @@ void NavigationRequest::UpdateHistoryParamsInCommitNavigationParams() {
 }
 
 void NavigationRequest::SanitizeRedirectsForCommit(
+    blink::mojom::CommonNavigationParamsPtr& common_params,
     blink::mojom::CommitNavigationParamsPtr& commit_params) {
   if (!base::FeatureList::IsEnabled(kSanitizeRedirectUrlsDuringNavigation)) {
     return;
   }
+
+  // TODO(crbug.com/40134629): Remove the sanitization once Subframe Error
+  // Pages are isolated.
+  const bool should_sanitize_final_url_for_error_page =
+      base::FeatureList::IsEnabled(
+          features::kSanitizeFailedSubframeNavigationUrls) &&
+      ComputeErrorPageProcess() == ErrorPageProcess::kCurrentProcess &&
+      !commit_params->redirect_infos.empty() &&
+      !url::Origin::Create(common_params->url)
+           .IsSameOriginWith(GetRenderFrameHost()->GetLastCommittedOrigin());
+
+  if (should_sanitize_final_url_for_error_page) {
+    common_params->url = common_params->url.DeprecatedGetOriginAsURL();
+  }
+
   // It is safe to convert GURL to an Origin and back in the code below because
   // we only want to discard the rest of the URL (e.g., path and params). The
   // actual underlying Origin is not needed, which could be inherited or opaque
@@ -7981,11 +7997,17 @@ void NavigationRequest::SanitizeRedirectsForCommit(
 
   // In the redirect_infos vector, the last entry is the URL we are going to
   // commit after following all redirects. We should not be sanitizing it, as
-  // we need to commit the real URL as part of the navigation.
+  // we need to commit the real URL as part of the navigation. Make an exception
+  // if the error page commits in the initiator's process and the navigation was
+  // redirected before failing, in which case that final URL may be cross-origin
+  // to the receiving process and must be reduced to origin as well.
   if (!commit_params->redirect_infos.empty()) {
     auto redirect_infos_span = base::span(commit_params->redirect_infos);
-    for (net::RedirectInfo& redirect :
-         redirect_infos_span.first(redirect_infos_span.size() - 1)) {
+    if (!should_sanitize_final_url_for_error_page) {
+      redirect_infos_span =
+          redirect_infos_span.first(redirect_infos_span.size() - 1);
+    }
+    for (net::RedirectInfo& redirect : redirect_infos_span) {
       redirect.new_url = redirect.new_url.DeprecatedGetOriginAsURL();
     }
   }

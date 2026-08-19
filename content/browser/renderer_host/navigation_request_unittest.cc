@@ -990,8 +990,9 @@ TEST_F(NavigationRequestTest, SanitizeRedirectsForCommit) {
 
   NavigationRequest* request =
       NavigationRequest::From(navigation->GetNavigationHandle());
+  auto common_params = request->common_params().Clone();
   auto commit_params = request->commit_params().Clone();
-  request->SanitizeRedirectsForCommit(commit_params);
+  request->SanitizeRedirectsForCommit(common_params, commit_params);
 
   // redirect_infos contains entries for B, C, and D, but not the starting URL.
   // Ensure that the full URL for D is preserved.

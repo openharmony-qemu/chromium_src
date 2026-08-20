@@ -797,12 +797,8 @@ bool PasswordAutofillManager::PreviewSuggestion(const std::u16string& username,
   }
   if (const autofill::PasswordAndMetadata* password_and_metadata =
           GetPasswordAndMetadataForUsername(username, type)) {
-    std::u16string password_to_preview =
-        password_and_metadata->is_grouped_affiliation
-            ? std::u16string(8, '*')
-            : password_and_metadata->password_value;
     password_manager_driver_->PreviewSuggestion(
-        username, password_to_preview);
+        username, password_and_metadata->password_value);
     return true;
   }
   return false;

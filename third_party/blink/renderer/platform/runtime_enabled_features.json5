@@ -4630,10 +4630,6 @@
       base_feature: "none",
     },
     {
-      name: "SecurePaymentConfirmationExtensionsDisallowForThirdParties",
-      status: "stable",
-    },
-    {
       // Implements new UX for SPC including new output states, payment
       // instrument details and payment entities logos.
       name: "SecurePaymentConfirmationUxRefresh",

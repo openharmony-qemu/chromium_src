@@ -1899,7 +1899,7 @@ class PrintRenderFrameHelperPreviewTest
             .Set(kSettingDeviceName, "dummy")
             .Set(kSettingDpiHorizontal, 72)
             .Set(kSettingDpiVertical, 72)
-            .Set(kPreviewUIID, base::UnguessableToken::Create().ToString()).Set(kPreviewUIID, 4)
+            .Set(kPreviewUIID, base::UnguessableToken::Create().ToString())
             .Set(kSettingRasterizePdf, false)
             .Set(kPreviewRequestID, 12345)
             .Set(kSettingScaleFactor, 100)

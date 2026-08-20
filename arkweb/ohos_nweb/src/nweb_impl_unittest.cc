@@ -168,7 +168,7 @@ public:
   MOCK_METHOD(void*, GetProducerSurface, (), (override));
   MOCK_METHOD(void*, GetEnhanceSurfaceInfo, (), (override));
   MOCK_METHOD(bool, GetIsIncognitoMode, (), (override));
-  MOCK_METHOD(bool, GetAsyncStackId, (), (override));
+  MOCK_METHOD(uint64_t, GetAsyncStackId, (), (override));
 };
 
 class MockNWebAccessRequest : public NWebAccessRequest {

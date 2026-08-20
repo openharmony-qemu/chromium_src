@@ -740,7 +740,9 @@ TEST_P(GcpGaiaCredentialBasePermittedAccountTest, PermittedAccounts) {
   ASSERT_EQ(S_OK, cred.As(&test));
 
   std::wstring email = L"user@test.com";
-  std::wstring email_domain = email.substr(email.find(L"@") + 1);
+  size_t at_pos = email.find(L"@");
+  std::wstring email_domain =
+      at_pos != std::wstring::npos ? email.substr(at_pos + 1) : L"";
 
   ASSERT_EQ(S_OK, test->SetGlsEmailAddress(base::WideToUTF8(email)));
 

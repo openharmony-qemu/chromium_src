@@ -660,8 +660,7 @@ bool PopupViewViews::AcceptSelectedContentOrCreditCardCell(
     return false;
   }
 
-  controller_->AcceptSuggestion(index->first, accept_method);
-  return true;
+  return GetPopupRowViewAt(index->first).Accept(accept_method);
 }
 
 bool PopupViewViews::RemoveSelectedCell() {

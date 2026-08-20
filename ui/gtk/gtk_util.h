@@ -6,7 +6,6 @@
 #define UI_GTK_GTK_UTIL_H_
 
 #include <string>
-#include <string_view>
 #include <vector>
 
 #include "base/component_export.h"
@@ -175,12 +174,6 @@ SkColor GetSeparatorColor(const std::string& css_selector);
 // Get a GtkSettings property as a C++ string.
 std::string GetGtkSettingsStringProperty(GtkSettings* settings,
                                          const gchar* prop_name);
-
-// Returns a safe cursor theme name. Invalid values fall back to "Adwaita".
-std::string SanitizeCursorThemeName(std::string_view theme_name);
-
-// Returns a safe cursor theme size. Invalid values fall back to 24.
-int SanitizeCursorThemeSize(int theme_size);
 
 GtkIconTheme* GetDefaultIconTheme();
 

@@ -129,8 +129,10 @@ int32_t PepperFileSystemHost::OnHostMsgOpen(
   if (file_system_manager == nullptr)
     return PP_ERROR_FAILED;
 
+  // 20260713 基线里 blink.mojom FileSystemManager::Open 已去掉 origin 参数
+  // (browser 端 FileSystemManagerImpl::Open 也是 2 参数), 此处 renderer 侧漏改。
   file_system_manager->Open(
-      url::Origin::Create(document_url), file_system_type.value(),
+      file_system_type.value(),
       base::BindOnce(&PepperFileSystemHost::DidOpenFileSystem,
                      weak_ptr_factory_.GetWeakPtr()));
   return PP_OK_COMPLETIONPENDING;

@@ -169,6 +169,7 @@ public:
     virtual ArkWebRefPtr<ArkSurfaceControlAdapter> GetSurfaceControlAdapter() {return nullptr;}
     virtual ArkWebRefPtr<ArkSurfaceTransactionAdapter> GetSurfaceTransactionAdapter() {return nullptr;}
     virtual ArkWebRefPtr<ArkHiViewDfxAdapter> GetHiViewDfxAdapterInstance() {return nullptr;}
+    virtual ArkWebRefPtr<ArkVpeVideoAdapter> CreateVpeVideoAdapter() {return nullptr;}
 };
 
 class ArkOhosAdapterHelperWrapperTest : public testing::Test {

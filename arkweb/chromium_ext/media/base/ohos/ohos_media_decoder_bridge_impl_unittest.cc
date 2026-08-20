@@ -37,6 +37,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/adapter_base.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/surface_control_adapter.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/hiviewdfx_adapter.h"
 
 using ::testing::_;
 using ::testing::AtLeast;
@@ -398,6 +399,9 @@ class MockOhosAdapterHelper : public OhosAdapterHelper {
               ());
    MOCK_METHOD(SurfaceTransactionAdapter&,
               GetSurfaceTransactionAdapter,
+              ());
+   MOCK_METHOD(HiViewDfxAdapter&,
+              GetHiViewDfxAdapterInstance,
               ());
   static MockOhosAdapterHelper& GetInstance() {
     static MockOhosAdapterHelper instance;

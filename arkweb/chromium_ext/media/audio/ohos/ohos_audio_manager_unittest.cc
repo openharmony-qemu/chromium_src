@@ -24,6 +24,7 @@
 #include "base/task/bind_post_task.h"
 #include "gtest/gtest.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/surface_control_adapter.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/hiviewdfx_adapter.h"
 #include "media/audio/audio_thread.h"
 #include "media/base/media_switches.h"
 #include "ohos_adapter_helper.h"
@@ -212,6 +213,9 @@ class MockOhosAdapterHelper : public OHOS::NWeb::OhosAdapterHelper {
               ());
    MOCK_METHOD(SurfaceTransactionAdapter&,
               GetSurfaceTransactionAdapter,
+              ());
+   MOCK_METHOD(HiViewDfxAdapter&,
+              GetHiViewDfxAdapterInstance,
               ());
   static MockOhosAdapterHelper& GetInstance() {
     static MockOhosAdapterHelper instance;

@@ -5126,7 +5126,7 @@ CSSMathExpressionNode* CSSMathExpressionNode::Create(
       CSSMathExpressionOperation::Operands operands;
       operands.push_back(Create(*children.front()));
       operands.push_back(Create(*children.back()));
-      return CSSMathExpressionOperation::CreateSignRelatedFunction(
+      return CSSMathExpressionOperation::CreateExponentialFunction(
           std::move(operands), CSSValueID::kPow);
     }
     case CalculationOperator::kSin:
@@ -5148,7 +5148,7 @@ CSSMathExpressionNode* CSSMathExpressionNode::Create(
       CSSMathExpressionOperation::Operands operands;
       operands.push_back(Create(*children.front()));
       operands.push_back(Create(*children.back()));
-      return CSSMathExpressionOperation::CreateSignRelatedFunction(
+      return CSSMathExpressionOperation::CreateTrigonometricFunction(
           std::move(operands), CSSValueID::kAtan2);
     }
     case CalculationOperator::kRandom: {

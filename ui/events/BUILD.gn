@@ -798,6 +798,10 @@ if (use_blink) {
     }
 
     if (arkweb_test) {
+      if (is_arkweb) {
+        import("//build/config/ohos/config.gni")
+        include_dirs = ohos_src_includes
+      }
       deps += [ "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_base_ohos" ]
       configs += [ "//content:content_implementation" ]
       import("//arkweb/chromium_ext/ui/events/build.gni")

@@ -1978,7 +1978,7 @@ void ChromePasswordManagerClient::PropagatePredictionsToPasswordManager(
     auto* driver =
         password_manager::ContentPasswordManagerDriver::GetForRenderFrameHost(
             rfh);
-    if (!driver) {
+    if (!driver || !driver->HasValidURL(/*may_kill_renderer=*/false)) {
       continue;
     }
 

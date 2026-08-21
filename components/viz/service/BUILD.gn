@@ -816,6 +816,13 @@ viz_source_set("unit_tests") {
     deps += [ "//ui/events:motionevent_jni_headers" ]
   }
 
+  if (enable_arkweb) {
+    sources += [
+      "display/overlay_processor_ohos_unittest.cc",
+      "display_embedder/output_presenter_ohos_unittest.cc",
+    ]
+  }
+
   if (enable_vulkan) {
     deps += [
       "//gpu/vulkan:test_support",

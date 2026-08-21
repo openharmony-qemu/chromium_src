@@ -4,12 +4,10 @@
 
 #include "base/auto_reset.h"
 #include "base/strings/utf_string_conversions.h"
-#include "base/task/sequenced_task_runner.h"
 #include "chrome/browser/apps/app_service/app_launch_params.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/ui/browser_finder.h"
 #include "chrome/browser/ui/views/frame/browser_view.h"
-#include "chrome/browser/ui/views/web_apps/web_app_install_dialog_delegate.h"
 #include "chrome/browser/ui/web_applications/web_app_dialogs.h"
 #include "chrome/browser/web_applications/commands/launch_web_app_command.h"
 #include "chrome/browser/web_applications/web_app_command_manager.h"
@@ -81,18 +79,6 @@ class WebAppLaunchDialogDelegate : public WebAppModalDialogDelegate {
   void OnDestroyed() {
     if (!callback_.is_null()) {
       std::move(callback_).Run(/*accepted=*/false);
-    }
-  }
-
-  // views::WidgetObserver:
-  void OnWidgetBoundsChanged(views::Widget* widget,
-                             const gfx::Rect& new_bounds) override {
-    if (IsWidgetCurrentSizeSmallerThanPreferredSize(widget,
-                                                    kLaunchMaxShrinkage)) {
-      base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
-          FROM_HERE,
-          base::BindOnce(&WebAppLaunchDialogDelegate::CloseDialogAsIgnored,
-                         weak_ptr_factory_.GetWeakPtr()));
     }
   }
 
@@ -172,11 +158,6 @@ void ShowWebInstallAppLaunchDialog(
   views::Widget* launch_dialog_widget =
       constrained_window::ShowWebModalDialogViews(dialog.release(),
                                                   web_contents);
-  if (IsWidgetCurrentSizeSmallerThanPreferredSize(launch_dialog_widget,
-                                                  kLaunchMaxShrinkage)) {
-    delegate_weak_ptr->CloseDialogAsIgnored();
-    return;
-  }
   delegate_weak_ptr->OnWidgetShownStartTracking(launch_dialog_widget);
 
   if (g_auto_accept_launch_for_testing) {

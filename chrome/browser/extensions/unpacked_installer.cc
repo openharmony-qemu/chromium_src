@@ -55,6 +55,10 @@
 #include "extensions/common/mojom/manifest.mojom-shared.h"
 #include "extensions/common/permissions/permissions_data.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/browser/extension_log_reporter.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 using content::BrowserThread;
@@ -382,6 +386,12 @@ void UnpackedInstaller::ReportExtensionLoadError(const std::string &error) {
   if (!callback_.is_null())
     std::move(callback_).Run(nullptr, extension_path_,
                              base::UTF8ToUTF16(error));
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  auto id = extension_ ? extension_->id() : "";
+  ExtensionLogReporter::ReportInstallationFailure(
+      InstallerType::INSTALLER_TYPE_DIR, id, extension_path_, error);
+#endif
 }
 
 void UnpackedInstaller::InstallExtension() {
@@ -418,6 +428,11 @@ void UnpackedInstaller::InstallExtension() {
 
   if (!callback_.is_null())
     std::move(callback_).Run(extension(), extension_path_, std::u16string());
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  ExtensionLogReporter::ReportInstallationSuccess(
+      InstallerType::INSTALLER_TYPE_DIR, extension_->id(), extension_path_);
+#endif
 }
 
 void UnpackedInstaller::RecordCommandLineMetrics() {

@@ -88,6 +88,7 @@
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "arkweb/chromium_ext/extensions/browser/custom_handler.h"
+#include "arkweb/chromium_ext/extensions/browser/extension_log_reporter.h"
 #include "base/task/thread_pool.h"
 #endif
 
@@ -1066,19 +1067,6 @@ void CrxInstaller::ReportFailureFromUIThread(const CrxInstallError& error) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   DCHECK_NE(CrxInstallErrorType::NONE, error.type());
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  if (error.type() == CrxInstallErrorType::SANDBOXED_UNPACKER_FAILURE) {
-    LOG_FEEDBACK(INFO) << "failed to install extension " << expected_id_
-                       << ",sandboxed unpacker error, detail is "
-                       << (int)error.sandbox_failure_detail() << ",message is "
-                       << base::UTF16ToUTF8(error.message());
-  } else {
-    LOG_FEEDBACK(INFO) << "failed to install extension " << expected_id_
-                       << ",detail is " << (int)error.detail() << ",message is "
-                       << base::UTF16ToUTF8(error.message());
-  }
-#endif
-
   if (!profile_ || browser_terminating_) {
     return;
   }
@@ -1120,10 +1108,6 @@ void CrxInstaller::ReportSuccessFromSharedFileThread() {
 
 void CrxInstaller::ReportSuccessFromUIThread() {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
-
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  LOG_FEEDBACK(INFO) << "succeed to install extension " << expected_id_;
-#endif
 
   if (!profile_ || browser_terminating_) {
     return;
@@ -1202,6 +1186,17 @@ void CrxInstaller::NotifyCrxInstallComplete(
   install_stage_tracker->ReportInstallationStage(
       extension_id, InstallStageTracker::Stage::COMPLETE);
   const bool success = !error.has_value();
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!error) {
+    ExtensionLogReporter::ReportInstallationSuccess(
+        InstallerType::INSTALLER_TYPE_CRX, extension_id, install_directory_);
+  } else {
+    ExtensionLogReporter::ReportInstallationFailure(
+        InstallerType::INSTALLER_TYPE_CRX, extension_id, install_directory_,
+        base::UTF16ToUTF8(error->message()));
+  }
+#endif
 
   if (extension()) {
     install_stage_tracker->ReportExtensionType(extension_id,

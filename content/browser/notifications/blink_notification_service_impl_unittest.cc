@@ -17,6 +17,11 @@
 #include "base/memory/scoped_refptr.h"
 #include "base/run_loop.h"
 #include "base/test/scoped_feature_list.h"
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+#include "arkweb/chromium_ext/content/browser/notifications/blink_notification_service_impl_ext.h"
+#include "base/test/scoped_command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
 #include "base/test/test_simple_task_runner.h"
 #include "base/time/time.h"
 #include "content/browser/notifications/platform_notification_context_impl.h"
@@ -132,7 +137,11 @@ class BlinkNotificationServiceImplTest : public ::testing::Test {
     storage_key_ = blink::StorageKey::CreateFirstParty(
         url::Origin::Create(GURL(kTestOrigin)));
 
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+    notification_service_ = std::make_unique<BlinkNotificationServiceImplExt>(
+#else
     notification_service_ = std::make_unique<BlinkNotificationServiceImpl>(
+#endif
         notification_context_.get(), &browser_context_,
         embedded_worker_helper_->context_wrapper(), &render_process_host_,
         storage_key_,
@@ -425,6 +434,23 @@ class BlinkNotificationServiceImplTest : public ::testing::Test {
 
  protected:
   void OnMojoError(const std::string& error) { bad_messages_.push_back(error); }
+
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+  void ResetDocumentForArkWebTest() { contents_.reset(); }
+
+  void RecreateArkWebServiceForServiceWorker(
+      RenderProcessHost* render_process_host) {
+    notification_service_remote_.reset();
+    notification_service_.reset();
+    notification_service_ = std::make_unique<BlinkNotificationServiceImplExt>(
+        notification_context_.get(), &browser_context_,
+        embedded_worker_helper_->context_wrapper(), render_process_host,
+        storage_key_, /*document_url=*/GURL(), /*weak_document_ptr=*/
+        WeakDocumentPtr(),
+        RenderProcessHost::NotificationServiceCreatorType::kServiceWorker,
+        notification_service_remote_.BindNewPipeAndPassReceiver());
+  }
+#endif
 
   BrowserTaskEnvironment task_environment_;  // Must be first member.
 
@@ -890,5 +916,9 @@ TEST_F(BlinkNotificationServiceImplTest, RejectsTriggerTimestampOverAYear) {
   EXPECT_EQ(1u, bad_messages_.size());
   EXPECT_EQ(kBadMessageInvalidNotificationTriggerTimestamp, bad_messages_[0]);
 }
+
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+#include "arkweb/chromium_ext/content/browser/notifications/blink_notification_service_impl_ext_unittest_for_include.cc"
+#endif
 
 }  // namespace content

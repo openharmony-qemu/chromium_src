@@ -800,16 +800,45 @@ TEST_F(FeatureListTest, StoreAndRetrieveAssociatedFeaturesFromSharedMemory) {
 
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
 TEST_F(FeatureListTest, ModifyFeaturesToAllocator) {
-  std::unique_ptr<base::FeatureList> feature_list =
-      std::make_unique<FeatureList>();
+  FeatureList* feature_list = FeatureList::GetInstance();
   ASSERT_NE(feature_list, nullptr);
-  // Create an allocator and store the overrides.
+  feature_list->GetUtils()->SetOverrideStateByFeatureName(
+      "OverlayScrollbar", FeatureList::OVERRIDE_ENABLE_FEATURE);
+  feature_list->GetUtils()->SetOverrideStateByFeatureName(
+      "ForceScrollbar", FeatureList::OVERRIDE_DISABLE_FEATURE);
+
+  auto source_feature_list = std::make_unique<FeatureList>();
+  source_feature_list->RegisterOverride(
+      "OverlayScrollbar", FeatureList::OVERRIDE_DISABLE_FEATURE, nullptr);
+  source_feature_list->RegisterOverride(
+      "ForceScrollbar", FeatureList::OVERRIDE_ENABLE_FEATURE, nullptr);
+  source_feature_list->RegisterOverride(
+      "UnrelatedFeature", FeatureList::OVERRIDE_ENABLE_FEATURE, nullptr);
+  source_feature_list->FinalizeInitialization();
+
   base::MappedReadOnlyRegion shm =
       base::ReadOnlySharedMemoryRegion::Create(4 << 10);
   WritableSharedPersistentMemoryAllocator allocator(std::move(shm.mapping), 1,
                                                     "");
-  feature_list->initialized_ = false;
+  source_feature_list->AddFeaturesToAllocator(&allocator);
+
   feature_list->GetUtils()->ModifyFeaturesToAllocator(&allocator);
+
+  std::map<std::string, FeatureList::OverrideState> entries;
+  PersistentMemoryAllocator::Iterator iter(&allocator);
+  const FeatureEntry* entry;
+  while ((entry = iter.GetNextOfObject<FeatureEntry>()) != nullptr) {
+    std::string_view feature_name;
+    std::string_view trial_name;
+    ASSERT_TRUE(entry->GetFeatureAndTrialName(&feature_name, &trial_name));
+    entries.emplace(
+        std::string(feature_name),
+        static_cast<FeatureList::OverrideState>(entry->override_state));
+  }
+  EXPECT_EQ(entries.size(), 3u);
+  EXPECT_EQ(entries["OverlayScrollbar"], FeatureList::OVERRIDE_ENABLE_FEATURE);
+  EXPECT_EQ(entries["ForceScrollbar"], FeatureList::OVERRIDE_DISABLE_FEATURE);
+  EXPECT_EQ(entries["UnrelatedFeature"], FeatureList::OVERRIDE_ENABLE_FEATURE);
 }
 
 TEST_F(FeatureListTest, AddFeaturesToAllocator) {
@@ -841,59 +870,86 @@ TEST_F(FeatureListTest, AddFeaturesToAllocator) {
 }
 
 TEST_F(FeatureListTest, SetScrollbarEnable1) {
-  std::unique_ptr<base::FeatureList> feature_list =
-      std::make_unique<FeatureList>();
+  FeatureList* feature_list = FeatureList::GetInstance();
+  ASSERT_NE(feature_list, nullptr);
 
-  feature_list->GetUtils()->SetScrollbarEnable(true);
-  EXPECT_FALSE(feature_list->IsFeatureOverridden(kFeatureOverlayScrollbarName));
+  FeatureListUtils::SetScrollbarEnable(true);
+
+  EXPECT_TRUE(feature_list->IsFeatureOverriddenFromCommandLine(
+      "OverlayScrollbar", FeatureList::OVERRIDE_DISABLE_FEATURE));
+  EXPECT_TRUE(feature_list->IsFeatureOverriddenFromCommandLine(
+      "ForceScrollbar", FeatureList::OVERRIDE_DISABLE_FEATURE));
 }
 
 TEST_F(FeatureListTest, SetScrollbarEnable2) {
-  std::unique_ptr<base::FeatureList> feature_list =
-      std::make_unique<FeatureList>();
+  FeatureList* feature_list = FeatureList::GetInstance();
+  ASSERT_NE(feature_list, nullptr);
 
   FeatureListUtils::SetScrollbarEnable(false);
-  EXPECT_FALSE(feature_list->IsFeatureOverridden(kFeatureOverlayScrollbarName));
+
+  EXPECT_TRUE(feature_list->IsFeatureOverriddenFromCommandLine(
+      "OverlayScrollbar", FeatureList::OVERRIDE_ENABLE_FEATURE));
+  EXPECT_TRUE(feature_list->IsFeatureOverriddenFromCommandLine(
+      "ForceScrollbar", FeatureList::OVERRIDE_ENABLE_FEATURE));
+}
+
+TEST_F(FeatureListTest, SetOverrideStateKeepsExistingEntry) {
+  FeatureList* feature_list = FeatureList::GetInstance();
+  ASSERT_NE(feature_list, nullptr);
+  feature_list->GetUtils()->SetOverrideStateByFeatureName(
+      "OverlayScrollbar", FeatureList::OVERRIDE_ENABLE_FEATURE);
+
+  feature_list->GetUtils()->SetOverrideStateByFeatureName(
+      "OverlayScrollbar", FeatureList::OVERRIDE_DISABLE_FEATURE);
+
+  EXPECT_TRUE(feature_list->IsFeatureOverriddenFromCommandLine(
+      "OverlayScrollbar", FeatureList::OVERRIDE_ENABLE_FEATURE));
+  EXPECT_FALSE(feature_list->IsFeatureOverriddenFromCommandLine(
+      "OverlayScrollbar", FeatureList::OVERRIDE_DISABLE_FEATURE));
 }
 
 TEST_F(FeatureListTest, AddFeatureToField) {
-  std::unique_ptr<base::FeatureList> feature_list =
-      std::make_unique<FeatureList>();
+  FeatureList* feature_list = FeatureList::GetInstance();
   ASSERT_NE(feature_list, nullptr);
+  FieldTrial* field_trial =
+      FieldTrialList::CreateFieldTrial("ScrollbarTrial", "Enabled");
+  feature_list->overrides_.clear();
+  feature_list->overrides_.emplace(
+      "OverlayScrollbar",
+      FeatureList::OverrideEntry(FeatureList::OVERRIDE_ENABLE_FEATURE,
+                                 field_trial));
+  feature_list->overrides_.emplace(
+      "ForceScrollbar", FeatureList::OverrideEntry(
+                            FeatureList::OVERRIDE_DISABLE_FEATURE, nullptr));
+  feature_list->overrides_.emplace(
+      "UnrelatedFeature", FeatureList::OverrideEntry(
+                              FeatureList::OVERRIDE_ENABLE_FEATURE, nullptr));
 
-  // Create some overrides.
-  feature_list->RegisterOverride(kFeatureOffByDefaultName,
-                                 FeatureList::OVERRIDE_ENABLE_FEATURE, nullptr);
-  feature_list->RegisterOverride(
-      kFeatureOnByDefaultName, FeatureList::OVERRIDE_DISABLE_FEATURE, nullptr);
-  feature_list->RegisterOverride(
-      kFeatureOnByDefaultName, FeatureList::OVERRIDE_DISABLE_FEATURE, nullptr);
-  feature_list->FinalizeInitialization();
-
-  // Create an allocator and store the overrides.
   base::MappedReadOnlyRegion shm =
       base::ReadOnlySharedMemoryRegion::Create(4 << 10);
   WritableSharedPersistentMemoryAllocator allocator(std::move(shm.mapping), 1,
                                                     "");
-  int cnt = 0;
-  size_t total_size;
-  for (auto& override : feature_list->overrides_) {
-    if (cnt == 0) {
-      override.first = "OverlayScrollbar";
-    }
-    if (cnt == 1) {
-      override.first = "ForceScrollbar";
-    }
-    if (cnt == 2) {
-      override.first = "NotOverlayScrollbar";
-      Pickle pickle;
-      pickle.WriteString(override.first);
-      total_size = sizeof(FeatureEntry) + pickle.size();
-    }
-    ++cnt;
+
+  feature_list->GetUtils()->AddFeatureToField(&allocator, "ignored");
+
+  std::map<std::string, FeatureList::OverrideState> entries;
+  std::map<std::string, std::string> trials;
+  PersistentMemoryAllocator::Iterator iter(&allocator);
+  const FeatureEntry* entry;
+  while ((entry = iter.GetNextOfObject<FeatureEntry>()) != nullptr) {
+    std::string_view feature_name;
+    std::string_view trial_name;
+    ASSERT_TRUE(entry->GetFeatureAndTrialName(&feature_name, &trial_name));
+    entries.emplace(
+        std::string(feature_name),
+        static_cast<FeatureList::OverrideState>(entry->override_state));
+    trials.emplace(std::string(feature_name), std::string(trial_name));
   }
-  feature_list->AddFeaturesToAllocator(&allocator);
-  ASSERT_NE(allocator.New<FeatureEntry>(total_size), nullptr);
+  EXPECT_EQ(entries.size(), 2u);
+  EXPECT_EQ(entries["OverlayScrollbar"], FeatureList::OVERRIDE_ENABLE_FEATURE);
+  EXPECT_EQ(entries["ForceScrollbar"], FeatureList::OVERRIDE_DISABLE_FEATURE);
+  EXPECT_EQ(trials["OverlayScrollbar"], "ScrollbarTrial");
+  EXPECT_TRUE(trials["ForceScrollbar"].empty());
 }
 
 #endif

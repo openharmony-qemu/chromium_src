@@ -4041,6 +4041,12 @@ test("base_unittests") {
   # "//base" is a dependency of WebRTC where `build_with_chromium` is false.
   # TODO(42223878): Remove standalone WebRTC dependency on //base.
   if (arkweb_unittests) {
+   if (is_arkweb_ext) {
+     import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+   }
+   if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
+     deps += [ "//ohos_nweb_ex/overrides/cef" ]
+   }
    deps += ["//storage/browser"]
    deps += ["//chrome/common"]
    deps += ["//components/web_cache/browser"]

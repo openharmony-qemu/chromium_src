@@ -169,6 +169,31 @@ void PartitionAddressSpace::Init() {
   const size_t core_pool_size = CorePoolSize();
 
   size_t glued_pool_sizes = core_pool_size * 2;
+
+#if PA_CONFIG(MOVE_METADATA_OUT_OF_GIGACAGE) && PA_BUILDFLAG(IS_OHOS)
+  // OHOS: Merge Glued Pools + Metadata Region into one contiguous allocation
+  // so that both reside in the same 64GiB-aligned virtual memory block.
+  // Without this, two independent mmap calls with ASLR-randomized hints tend
+  // to land in different 64GiB blocks, consuming 2 blocks (128GiB quota) and
+  // fragmenting the address space for other components (e.g., aha_runtime's
+  // 64GiB request).
+  //
+  // Layout: [Regular Pool | BRP Pool | Metadata Region]
+  //         base          base+core  base+glued
+  //
+  // Pre-compute metadata_region_size_ here because MetadataRegionSize()
+  // returns metadata_region_size_ which is still 0 at this point (it is only
+  // set inside InitMetadataRegionAndOffsets()).
+#if PA_CONFIG(DYNAMICALLY_SELECT_POOL_SIZE)
+  metadata_region_size_ = std::max(kConfigurablePoolMaxSize, core_pool_size);
+#endif
+  size_t combined_size = glued_pool_sizes + MetadataRegionSize();
+  setup_.regular_pool_base_address_ =
+      AllocPages(combined_size, glued_pool_sizes,
+                 PageAccessibilityConfiguration(
+                     PageAccessibilityConfiguration::kInaccessible),
+                 PageTag::kPartitionAlloc);
+#else
   // Note, BRP pool requires to be preceded by a "forbidden zone", which is
   // conveniently taken care of by the last guard page of the regular pool.
   setup_.regular_pool_base_address_ =
@@ -176,6 +201,7 @@ void PartitionAddressSpace::Init() {
                  PageAccessibilityConfiguration(
                      PageAccessibilityConfiguration::kInaccessible),
                  PageTag::kPartitionAlloc);
+#endif  // PA_CONFIG(MOVE_METADATA_OUT_OF_GIGACAGE) && PA_BUILDFLAG(IS_OHOS)
 #if PA_BUILDFLAG(IS_ANDROID)
   // On Android, Adreno-GSL library fails to mmap if we snatch address
   // 0x400000000. Find a different address instead.
@@ -343,7 +369,14 @@ void PartitionAddressSpace::UninitForTesting() {
 #endif
   // The core pools (regular & BRP) were allocated using a single allocation of
   // double size.
+#if PA_CONFIG(MOVE_METADATA_OUT_OF_GIGACAGE) && PA_BUILDFLAG(IS_OHOS)
+  // OHOS: Glued Pools + Metadata Region were allocated as one contiguous block
+  // in Init(). Free the combined allocation.
+  FreePages(setup_.regular_pool_base_address_,
+            2 * CorePoolSize() + MetadataRegionSize());
+#else
   FreePages(setup_.regular_pool_base_address_, 2 * CorePoolSize());
+#endif  // PA_CONFIG(MOVE_METADATA_OUT_OF_GIGACAGE) && PA_BUILDFLAG(IS_OHOS)
   // Do not free pages for the configurable pool, because its memory is owned
   // by someone else, but deinitialize it nonetheless.
   setup_.regular_pool_base_address_ = kUninitializedPoolBaseAddress;
@@ -356,7 +389,9 @@ void PartitionAddressSpace::UninitForTesting() {
 #endif  // PA_BUILDFLAG(ENABLE_POINTER_COMPRESSION)
 
 #if PA_CONFIG(MOVE_METADATA_OUT_OF_GIGACAGE)
+#if !PA_BUILDFLAG(IS_OHOS)
   FreePages(metadata_region_start_, MetadataRegionSize());
+#endif  // !PA_BUILDFLAG(IS_OHOS)
   metadata_region_start_ = kUninitializedPoolBaseAddress;
 #if PA_CONFIG(DYNAMICALLY_SELECT_POOL_SIZE)
   metadata_region_size_ = 0;
@@ -433,9 +468,20 @@ void PartitionAddressSpace::InitMetadataRegionAndOffsets() {
 #endif  // PA_BUILDFLAG(ENABLE_MOVE_METADATA_OUT_OF_GIGACAGE_TRIAL)
 
 #if PA_CONFIG(DYNAMICALLY_SELECT_POOL_SIZE)
+  // On OHOS, metadata_region_size_ was already set in Init() before the
+  // combined AllocPages call. Skip re-setting it here.
+#if !PA_BUILDFLAG(IS_OHOS)
   metadata_region_size_ = std::max(kConfigurablePoolMaxSize, CorePoolSize());
+#endif  // !PA_BUILDFLAG(IS_OHOS)
 #endif  // PA_CONFIG(DYNAMICALLY_SELECT_POOL_SIZE)
 
+#if PA_BUILDFLAG(IS_OHOS)
+  // OHOS: Metadata Region was already allocated contiguously with Glued Pools
+  // in Init(). Derive the start address from the existing allocation.
+  PA_DCHECK(RegularPoolBase() != kUninitializedPoolBaseAddress);
+  PA_DCHECK(BRPPoolBase() != kUninitializedPoolBaseAddress);
+  metadata_region_start_ = RegularPoolBase() + CorePoolSize() * 2;
+#else
   uintptr_t address =
       AllocPages(MetadataRegionSize(), PageAllocationGranularity(),
                  PageAccessibilityConfiguration(
@@ -449,12 +495,19 @@ void PartitionAddressSpace::InitMetadataRegionAndOffsets() {
 
   PA_DCHECK(RegularPoolBase() != kUninitializedPoolBaseAddress);
   PA_DCHECK(BRPPoolBase() != kUninitializedPoolBaseAddress);
+#endif  // PA_BUILDFLAG(IS_OHOS)
 
+#if PA_BUILDFLAG(IS_OHOS)
+  offsets_to_metadata_[kRegularPoolHandle] =
+      metadata_region_start_ - RegularPoolBase() + MetadataInnerOffset(kRegularPoolHandle);
+  offsets_to_metadata_[kBRPPoolHandle] =
+      metadata_region_start_ - BRPPoolBase() + MetadataInnerOffset(kBRPPoolHandle);
+#else
   offsets_to_metadata_[kRegularPoolHandle] =
       address - RegularPoolBase() + MetadataInnerOffset(kRegularPoolHandle);
   offsets_to_metadata_[kBRPPoolHandle] =
       address - BRPPoolBase() + MetadataInnerOffset(kBRPPoolHandle);
-
+#endif  // PA_BUILDFLAG(IS_OHOS)
   // ConfigurablePool has not been initialized yet at this time.
   offsets_to_metadata_[kConfigurablePoolHandle] = SystemPageSize();
 #if PA_BUILDFLAG(ENABLE_THREAD_ISOLATION)

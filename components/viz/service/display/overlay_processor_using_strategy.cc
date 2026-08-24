@@ -836,20 +836,19 @@ bool OverlayProcessorUsingStrategy::AttemptWithStrategies(
     }
 
 #if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
-  bool used_overlay = false;
-  if (!base::ohos::IsDelegatedCompositingEnabledOhos() || (num_proposed_pre_sort <= 1)) {
-    used_overlay = candidate.strategy->Attempt(
+    bool used_overlay = false;
+    if (!base::ohos::IsDelegatedCompositingEnabledOhos() || (num_proposed_pre_sort <= 1)) {
+      used_overlay = candidate.strategy->Attempt(
+          output_color_matrix, render_pass_filters, render_pass_backdrop_filters,
+          resource_provider, render_pass_list, surface_damage_rect_list,
+          primary_plane, candidates, content_bounds, candidate);
+    }
+#else
+    bool used_overlay = candidate.strategy->Attempt(
         output_color_matrix, render_pass_filters, render_pass_backdrop_filters,
         resource_provider, render_pass_list, surface_damage_rect_list,
         primary_plane, candidates, content_bounds, candidate);
-  }
-#else 
-  bool used_overlay = candidate.strategy->Attempt(
-      output_color_matrix, render_pass_filters, render_pass_backdrop_filters,
-      resource_provider, render_pass_list, surface_damage_rect_list,
-      primary_plane, candidates, content_bounds, candidate);
 #endif
-
     if (!used_overlay && candidate.candidate.requires_overlay) {
       // Check if we likely failed due to scaling capabilities, and if so, try
       // to adjust things to make it work. We do this by tracking what scale

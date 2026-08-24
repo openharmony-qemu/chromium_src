@@ -40,17 +40,9 @@ struct OH_Rect {
 typedef struct OH_Rect OH_Rect;
 
 enum DirtyBits {
-  kName,
-  kVisible,
   kBounds,
-  kFrameGravity,
-  kTranslate,
   kPivot,
   kBuffer,
-  kBorderWidth,
-  kBorderColor,
-  kBorderStyle,
-  kForegroundColor,
   kBackgroundColor,
   kAlpha,
   kZOrder,

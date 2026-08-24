@@ -21,6 +21,7 @@
 
 #include "base/logging.h"
 #include "arkweb/build/features/features.h"
+#include "net/base/features.h"
 
 #if BUILDFLAG(IS_LINUX)
 #include <linux/rtnetlink.h>

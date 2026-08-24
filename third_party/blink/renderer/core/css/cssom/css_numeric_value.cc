@@ -162,12 +162,26 @@ CSSNumericValue* CalcToNumericValue(const CSSMathExpressionNode& root) {
 
   CSSNumericValueVector values;
 
-  // When the node is a variadic operation, we return either a CSSMathMin or a
-  // CSSMathMax.
+  if (const auto& node = To<CSSMathExpressionOperation>(root);
+      node.IsInvert()) {
+    DCHECK_EQ(node.GetOperands().size(), 1u);
+    CSSNumericValue* value = CalcToNumericValue(*node.GetOperands()[0]);
+    if (!value) {
+      return nullptr;
+    }
+    return CSSMathInvert::Create(value);
+  }
+
+  // When the node is a math function, we return a CSSMathMin, a CSSMathMax, or
+  // a CSSMathClamp.
   if (const auto& node = To<CSSMathExpressionOperation>(root);
       node.IsMathFunction()) {
     for (const auto& operand : node.GetOperands()) {
-      values.push_back(CalcToNumericValue(*operand));
+      CSSNumericValue* value = CalcToNumericValue(*operand);
+      if (!value) {
+        return nullptr;
+      }
+      values.push_back(value);
     }
     if (node.OperatorType() == CSSMathOperator::kMin) {
       return CSSMathMin::Create(std::move(values));
@@ -230,7 +244,13 @@ CSSNumericValue* CalcToNumericValue(const CSSMathExpressionNode& root) {
   } while (CanCombineNodes(root, *cur_node));
 
   DCHECK(cur_node);
-  values.push_back(CalcToNumericValue(*cur_node));
+  {
+    CSSNumericValue* value = CalcToNumericValue(*cur_node);
+    if (!value) {
+      return nullptr;
+    }
+    values.push_back(value);
+  }
 
   // Our algorithm collects the children in reverse order, so we have to reverse
   // the values.

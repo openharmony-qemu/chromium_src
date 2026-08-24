@@ -29,6 +29,13 @@ URLLoaderCompletionStatus::URLLoaderCompletionStatus(
   blocked_by_response_reason = reason;
 }
 
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
+URLLoaderCompletionStatus::URLLoaderCompletionStatus(int error_code, int custom_error_code)
+    : error_code(error_code),
+      completion_time(base::TimeTicks::Now()),
+      custom_error_code(custom_error_code) {}
+#endif
+
 URLLoaderCompletionStatus::~URLLoaderCompletionStatus() = default;
 
 bool URLLoaderCompletionStatus::operator==(
@@ -46,6 +53,9 @@ bool URLLoaderCompletionStatus::operator==(
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
          abort_due_to_cef_browser_destroyed == rhs.abort_due_to_cef_browser_destroyed &&
 #endif  //  ARKWEB_EX_DOWNLOAD
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
+         custom_error_code == rhs.custom_error_code &&
+#endif
          should_collapse_initiator == rhs.should_collapse_initiator;
 }
 
@@ -57,6 +67,9 @@ void URLLoaderCompletionStatus::WriteIntoTrace(
   dict.Add("encoded_data_length", encoded_data_length);
   dict.Add("encoded_body_length", encoded_body_length);
   dict.Add("decoded_body_length", decoded_body_length);
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
+  dict.Add("custom_error_code", custom_error_code);
+#endif
 }
 
 }  // namespace network

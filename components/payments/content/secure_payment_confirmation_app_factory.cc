@@ -40,7 +40,6 @@
 #include "services/data_decoder/public/cpp/decode_image.h"
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/mojom/payments/payment_request.mojom.h"
-#include "third_party/blink/public/mojom/webauthn/authenticator.mojom.h"
 #include "url/gurl.h"
 #include "url/origin.h"
 
@@ -72,7 +71,6 @@ bool IsValidDomain(const std::string& rp_id) {
 }
 
 bool IsValid(const mojom::SecurePaymentConfirmationRequestPtr& request,
-             const url::Origin& initiator_origin,
              std::string* error_message) {
   // `request` can be null when the feature is disabled in Blink.
   if (!request)
@@ -174,28 +172,6 @@ bool IsValid(const mojom::SecurePaymentConfirmationRequestPtr& request,
       }
       if (logo->label.empty()) {
         *error_message = errors::kLogoLabelRequired;
-        return false;
-      }
-    }
-  }
-
-  // Disallow WebAuthn extensions for third-party SPC requests, i.e. when the
-  // caller is not the Relying Party. Comparing against the parsed mojo message
-  // (rather than individual fields) ensures that any future extensions added to
-  // the Mojo struct are automatically rejected by default. The browser-side
-  // check is authoritative; the renderer also performs a best-effort check.
-  if (request->extensions &&
-      base::FeatureList::IsEnabled(
-          blink::features::
-              kSecurePaymentConfirmationExtensionsDisallowForThirdParties)) {
-    bool is_third_party = !content::OriginIsAllowedToClaimRelyingPartyId(
-        request->rp_id, initiator_origin);
-
-    if (is_third_party) {
-      auto empty_extensions =
-          blink::mojom::AuthenticationExtensionsClientInputs::New();
-      if (!request->extensions.Equals(empty_extensions)) {
-        *error_message = errors::kWebAuthnExtensionsNotSupported;
         return false;
       }
     }
@@ -325,8 +301,7 @@ void SecurePaymentConfirmationAppFactory::Create(
   for (const mojom::PaymentMethodDataPtr& method_data : spec->method_data()) {
     if (method_data->supported_method == methods::kSecurePaymentConfirmation) {
       std::string error_message;
-      if (!IsValid(method_data->secure_payment_confirmation,
-                   delegate->GetFrameSecurityOrigin(), &error_message)) {
+      if (!IsValid(method_data->secure_payment_confirmation, &error_message)) {
         if (!error_message.empty())
           delegate->OnPaymentAppCreationError(error_message);
         delegate->OnDoneCreatingPaymentApps();

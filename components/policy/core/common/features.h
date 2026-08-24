@@ -48,6 +48,10 @@ POLICY_EXPORT BASE_DECLARE_FEATURE(kSafeSitesCaptivePortalCheck);
 // Used to enable extension install policy support.
 POLICY_EXPORT BASE_DECLARE_FEATURE(kEnableExtensionInstallPolicyFetching);
 
+// Controls checking if the public key in the policy verification data matches
+// the expected public key.
+POLICY_EXPORT BASE_DECLARE_FEATURE(kVerifyVerificationDataKey);
+
 }  // namespace policy::features
 
 #endif  // COMPONENTS_POLICY_CORE_COMMON_FEATURES_H_

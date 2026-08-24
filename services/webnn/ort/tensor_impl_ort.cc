@@ -27,7 +27,8 @@ TensorImplOrt::TensorImplOrt(
                       std::move(context),
                       std::move(tensor_info)),
       tensor_(std::move(tensor)),
-      size_(size) {
+      size_(size),
+      can_access_on_cpu_(can_access_on_cpu) {
   // Initialize the tensor with zeros, otherwise, reading uninitialized memory
   // will get random values.
   // TODO(crbug.com/461303833): check whether fast HW clears can be used
@@ -41,6 +42,10 @@ TensorImplOrt::~TensorImplOrt() = default;
 
 base::span<uint8_t> TensorImplOrt::AsSpan() const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(gpu_sequence_checker_);
+  // For non-CPU device tensors (e.g. WebGPU EP), `GetTensorMutableData()`
+  // returns an opaque device handle, not a CPU-dereferenceable address.
+  // Any read or write through it is undefined behavior.
+  CHECK(can_access_on_cpu_);
 
   void* ort_tensor_raw_data = nullptr;
   CHECK_STATUS(

@@ -13,7 +13,9 @@
 
 #include "base/containers/flat_map.h"
 #include "base/memory/raw_ref.h"
+#include "base/memory/weak_ptr.h"
 #include "build/build_config.h"
+#include "arkweb/build/features/features.h"
 #include "components/viz/common/frame_sinks/begin_frame_source.h"
 #include "components/viz/common/surfaces/frame_sink_bundle_id.h"
 #include "mojo/public/cpp/bindings/receiver.h"
@@ -119,6 +121,10 @@ class FrameSinkBundleImpl : public mojom::FrameSinkBundle {
   // Mapping from BeginFrameSource to the SinkGroup which manages batched
   // communication for all the sinks which share that source.
   base::flat_map<BeginFrameSource*, std::unique_ptr<SinkGroup>> sink_groups_;
+
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+  base::WeakPtrFactory<FrameSinkBundleImpl> weak_ptr_factory_{this};
+#endif
 };
 
 }  // namespace viz

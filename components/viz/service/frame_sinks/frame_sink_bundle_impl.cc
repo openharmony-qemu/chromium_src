@@ -14,6 +14,7 @@
 #include "base/memory/raw_ref.h"
 #include "base/memory/weak_ptr.h"
 #include "build/build_config.h"
+#include "arkweb/build/features/features.h"
 #include "components/viz/service/frame_sinks/compositor_frame_sink_impl.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
 #include "mojo/public/cpp/bindings/receiver.h"
@@ -286,6 +287,15 @@ void FrameSinkBundleImpl::SetNeedsBeginFrame(uint32_t sink_id,
 
 void FrameSinkBundleImpl::Submit(
     std::vector<mojom::BundledFrameSubmissionPtr> submissions) {
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+  // Capture a weak pointer to guard against this object being destroyed during
+  // the SubmitCompositorFrame call below. SubmitCompositorFrame may
+  // synchronously ack, which can trigger OnDisconnect -> DestroyFrameSinkBundle
+  // -> delete this. After such re-entrancy, the weak pointer becomes invalid
+  // and we must return immediately to avoid use-after-free.
+  base::WeakPtr<FrameSinkBundleImpl> guard = weak_ptr_factory_.GetWeakPtr();
+#endif
+
   std::map<raw_ptr<SinkGroup>, base::WeakPtr<SinkGroup>> groups;
   std::map<raw_ptr<SinkGroup>, base::WeakPtr<SinkGroup>> affected_groups;
 
@@ -325,6 +335,11 @@ void FrameSinkBundleImpl::Submit(
           break;
       }
     }
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+    if (!guard) {
+      return;
+    }
+#endif
   }
 
   for (const auto& [unsafe_group, weak_group] : groups) {

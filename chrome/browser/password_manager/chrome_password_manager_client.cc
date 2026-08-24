@@ -1978,20 +1978,7 @@ void ChromePasswordManagerClient::PropagatePredictionsToPasswordManager(
     auto* driver =
         password_manager::ContentPasswordManagerDriver::GetForRenderFrameHost(
             rfh);
-    if (!driver) {
-      continue;
-    }
-    // Do not propagate autofill predictions to the Password Manager for frames
-    // that do not have a valid URL (e.g., opaque-origin / data: / about:
-    // frames). Mirrors upstream HasValidURL(/*may_kill_renderer=*/false): skip
-    // the frame without killing the renderer. The lethal check remains at form
-    // submission (see ContentPasswordManagerDriver's HasValidURL).
-    const GURL rfh_url = password_manager::GetURLFromRenderFrameHost(rfh);
-    if (!rfh_url.is_valid() ||
-        !password_manager::bad_message::CheckChildProcessSecurityPolicyForURL(
-            rfh, rfh_url,
-            BadMessageReason::CPMD_BAD_ORIGIN_FORM_SUBMITTED,
-            /*may_kill_renderer=*/false)) {
+    if (!driver || !driver->HasValidURL(/*may_kill_renderer=*/false)) {
       continue;
     }
 

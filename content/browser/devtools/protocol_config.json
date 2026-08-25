@@ -192,7 +192,7 @@
             },
             {
                 "domain": "Target",
-                "async": ["createBrowserContext", "disposeBrowserContext", "setAutoAttach", "autoAttachRelated", "exposeDevToolsProtocol" ]
+                "async": ["createBrowserContext", "disposeBrowserContext", "setAutoAttach", "autoAttachRelated", "exposeDevToolsProtocol", "createTarget" ]
             },
             {
                 "domain": "Tethering",

@@ -14951,6 +14951,10 @@ void RenderFrameHostImpl::CreatePermissionService(
 
 void RenderFrameHostImpl::GetWebAuthenticationService(
     mojo::PendingReceiver<blink::mojom::Authenticator> receiver) {
+  if (!IsActive()) {
+    return;
+  }
+
 #if !BUILDFLAG(IS_ANDROID)
   AuthenticatorImpl::Create(this, std::move(receiver));
 #else

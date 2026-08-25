@@ -38,6 +38,8 @@
 #include "components/optimization_guide/public/mojom/model_broker.mojom-data-view.h"
 #include "components/update_client/update_client.h"
 #include "content/public/browser/render_widget_host_view.h"
+#include "mojo/public/cpp/test_support/test_utils.h"
+#include "services/network/public/mojom/permissions_policy/permissions_policy_feature.mojom.h"
 #include "services/on_device_model/public/cpp/capabilities.h"
 #include "services/on_device_model/public/mojom/on_device_model.mojom.h"
 #include "testing/gmock/include/gmock/gmock.h"
@@ -1399,6 +1401,24 @@ TEST_F(AILanguageModelTest, Priority) {
 
   main_rfh()->GetRenderWidgetHost()->GetView()->Show();
   EXPECT_THAT(Prompt(*session, MakeInput("baz")), ElementsAre("hi"));
+}
+
+TEST_F(AILanguageModelTest, CanCreatePermissionsPolicyDisabled) {
+  DisablePolicy(network::mojom::PermissionsPolicyFeature::kLanguageModel);
+  mojo::test::BadMessageObserver observer;
+  GetAIManagerRemote()->CanCreateLanguageModel(
+      blink::mojom::AILanguageModelCreateOptions::New(), base::DoNothing());
+  EXPECT_EQ(observer.WaitForBadMessage(), "Permissions policy disabled");
+}
+
+TEST_F(AILanguageModelTest, CreatePermissionsPolicyDisabled) {
+  DisablePolicy(network::mojom::PermissionsPolicyFeature::kLanguageModel);
+  mojo::test::BadMessageObserver observer;
+  AITestUtils::MockCreateLanguageModelClient language_model_client;
+  GetAIManagerRemote()->CreateLanguageModel(
+      language_model_client.BindNewPipeAndPassRemote(),
+      blink::mojom::AILanguageModelCreateOptions::New());
+  EXPECT_EQ(observer.WaitForBadMessage(), "Permissions policy disabled");
 }
 
 }  // namespace

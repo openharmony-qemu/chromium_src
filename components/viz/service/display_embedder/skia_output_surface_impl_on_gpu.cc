@@ -496,9 +496,15 @@ void SkiaOutputSurfaceImplOnGpu::FinishPaintCurrentFrame(
     base::OnceCallback<void(gfx::GpuFenceHandle)> return_release_fence_cb) {
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   uint64_t stackId = output_device_ ? output_device_->GetAsyncStackId() : 0;
+  std::optional<base::ScopedClosureRunner> dfx_pop_submitter_stack_id;
   if (stackId) {
     LOG(DEBUG) << "SkiaOutputSurfaceImplOnGpu::FinishPaintCurrentFrame::GetAsyncStackId: " << stackId;
     OHOS::NWeb::OhosAdapterHelper::GetInstance().GetHiViewDfxAdapterInstance().DfxSetSubmitterStackId(stackId);
+    dfx_pop_submitter_stack_id.emplace(base::BindOnce(
+        [](uint64_t id) {
+          OHOS::NWeb::OhosAdapterHelper::GetInstance().GetHiViewDfxAdapterInstance().DfxPopSubmitterStackId(id);
+        },
+        stackId));
   }
 #endif
   TRACE_EVENT0("viz", "SkiaOutputSurfaceImplOnGpu::FinishPaintCurrentFrame");
@@ -623,11 +629,6 @@ void SkiaOutputSurfaceImplOnGpu::FinishPaintCurrentFrame(
       return_release_fence_cb.Reset();
     }
   }
-#if BUILDFLAG(ARKWEB_DFX_DUMP)
-  if (stackId) {
-    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetHiViewDfxAdapterInstance().DfxPopSubmitterStackId(stackId);
-  }
-#endif
 }
 
 void SkiaOutputSurfaceImplOnGpu::SwapBuffers(OutputSurfaceFrame frame) {

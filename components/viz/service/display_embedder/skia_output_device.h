@@ -194,7 +194,7 @@ class VIZ_SERVICE_EXPORT SkiaOutputDevice {
 
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   virtual void SetAsyncStackId(uint64_t stackId) {}
-  virtual uint64_t GetAsyncStackId() {return 0;}
+  virtual uint64_t GetAsyncStackId() { return 0; }
 #endif
 
   // Acknowledges a SwapBuffers request without actually attempting to swap.

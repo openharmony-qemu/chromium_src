@@ -34,6 +34,9 @@
 #include "content/public/browser/site_instance.h"
 #include "content/public/browser/web_contents.h"
 #include "extensions/browser/api/extensions_api_client.h"
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/chromium_ext/extensions/browser/api/messaging/browser_message_port.h"
+#endif
 #include "extensions/browser/api/messaging/channel_endpoint.h"
 #include "extensions/browser/api/messaging/extension_message_port.h"
 #include "extensions/browser/api/messaging/message_port.h"
@@ -129,6 +132,13 @@ const Extension* GetExtensionForNativeAppChannel(
   return extension_web_contents_observer->GetExtensionFromFrame(
       source_render_frame_host, true);
 }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+const Extension* GetExtensionForBrowserMessageChannel(
+    const ChannelEndpoint& source) {
+  return GetExtensionForNativeAppChannel(source);
+}
+#endif
 
 // Disables the back forward for `host` if the current configuration does not
 // support extension messaging APIs.
@@ -363,6 +373,20 @@ class MessageServiceFactory
         GetEndpoint(context, source), source_port_id, native_app_name,
         std::move(port), std::move(port_host));
   }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+  void OpenChannelToBrowser(
+      content::BrowserContext* context,
+      Source source,
+      const PortId& source_port_id,
+      mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
+      mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
+          port_host) override {
+    MessageService::Get(context)->OpenChannelToBrowser(
+        GetEndpoint(context, source), source_port_id, std::move(port),
+        std::move(port_host));
+  }
+#endif
 
   void OpenChannelToTab(
       content::BrowserContext* context,
@@ -746,6 +770,60 @@ void MessageService::OpenChannelToNativeAppImpl(
 #endif  // !(BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) ||
         // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
 }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+void MessageService::OpenChannelToBrowserImpl(
+    const ChannelEndpoint& source,
+    const PortId& source_port_id,
+    mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
+    mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
+        port_host) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  DCHECK(source_port_id.is_opener);
+
+  if (!source.IsValid()) {
+    return;
+  }
+
+  const Extension* extension = GetExtensionForBrowserMessageChannel(source);
+  if (!extension) {
+    return;
+  }
+
+  std::unique_ptr<ExtensionMessagePort> opener_port =
+      ExtensionMessagePort::CreateForEndpoint(
+          weak_factory_.GetWeakPtr(), source_port_id, extension->id(), source,
+          std::move(port), std::move(port_host));
+  if (!opener_port->IsValidPort()) {
+    return;
+  }
+
+  std::unique_ptr<MessageChannel> channel = std::make_unique<MessageChannel>();
+  channel->opener = std::move(opener_port);
+  channel->opener->OpenPort(source.render_process_id(), source.port_context());
+
+  content::RenderFrameHost* source_render_frame_host =
+      source.is_for_render_frame() ? source.GetRenderFrameHost() : nullptr;
+  MaybeDisableBackForwardCacheForMessaging(source_render_frame_host);
+
+  const PortId receiver_port_id = source_port_id.GetOppositePortId();
+  BrowserContext* source_context = source.browser_context();
+  DCHECK(
+      ExtensionsBrowserClient::Get()->IsSameContext(source_context, context_));
+  channel->receiver = messaging_delegate_->CreateReceiverForBrowserMessage(
+      source_context, weak_factory_.GetWeakPtr(), source_render_frame_host,
+      extension->id(), receiver_port_id);
+  if (!channel->receiver) {
+    channel->opener->DispatchOnDisconnect(kReceivingEndDoesntExistError);
+    return;
+  }
+
+  channel->opener->set_should_have_strong_keepalive(true);
+  channel->opener->IncrementLazyKeepaliveCount(Activity::MESSAGE_PORT);
+
+  AddChannel(std::move(channel), receiver_port_id);
+}
+#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
 
 void MessageService::OpenChannelToTabImpl(
     const ChannelEndpoint& source,

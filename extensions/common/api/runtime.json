@@ -550,6 +550,36 @@
         }
       },
       {
+        "name": "sendBrowserMessage",
+        "type": "function",
+        "nocompile": true,
+        "description": "Send a single message to the host browser application.",
+        "parameters": [
+          {
+            "name": "message",
+            "description": "The message that will be passed to the host browser application.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any"
+            }
+          }
+        ],
+        "returns_async": {
+          "name": "callback",
+          "optional": true,
+          "parameters": [
+            {
+              "name": "response",
+              "type": "any",
+              "description": "The response message sent by the host browser application. If an error occurs while connecting to the host browser application, the callback will be called with no arguments and $(ref:runtime.lastError) will be set to the error message.",
+              "additionalProperties": {
+                "type": "any"
+              }
+            }
+          ]
+        }
+      },
+      {
         "name": "getPlatformInfo",
         "type": "function",
         "description": "Returns information about the current platform.",

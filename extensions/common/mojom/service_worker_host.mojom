@@ -96,6 +96,14 @@ interface ServiceWorkerHost {
     pending_associated_remote<extensions.mojom.MessagePort> port,
     pending_associated_receiver<extensions.mojom.MessagePortHost> port_host);
 
+  // Get a port handle to the host browser application.  The handle can be used
+  // for sending messages to the extension.
+  [EnableIf=arkweb_arkweb_extensions&is_arkweb_ext]
+  OpenChannelToBrowser(
+    extensions.mojom.PortId port_id,
+    pending_associated_remote<extensions.mojom.MessagePort> port,
+    pending_associated_receiver<extensions.mojom.MessagePortHost> port_host);
+
   // Get a port handle to the given tab.  The handle can be used for sending
   // messages to the extension.
   OpenChannelToTab(

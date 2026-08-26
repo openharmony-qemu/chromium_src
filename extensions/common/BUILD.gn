@@ -128,6 +128,9 @@ mojom("mojom") {
     public_deps += [ "//arkweb/chromium_ext/extensions/common/mojom" ]
     enabled_features += [ "arkweb_arkweb_extensions" ]
   }
+  if (is_arkweb_ext) {
+    enabled_features += [ "is_arkweb_ext" ]
+  }
 
   if (enable_guest_view) {
     sources += [ "mojom/guest_view.mojom" ]

@@ -7,6 +7,7 @@
 
 #include <variant>
 
+#include "arkweb/build/features/features.h"
 #include "extensions/browser/service_worker/worker_id.h"
 #include "extensions/common/api/messaging/port_id.h"
 #include "extensions/common/mojom/message_port.mojom-forward.h"
@@ -45,6 +46,15 @@ class MessageServiceApi {
       mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
       mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
           port_host) = 0;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+  virtual void OpenChannelToBrowser(
+      content::BrowserContext* context,
+      Source source,
+      const PortId& source_port_id,
+      mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
+      mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
+          port_host) = 0;
+#endif
   virtual void OpenChannelToTab(
       content::BrowserContext* context,
       Source source,

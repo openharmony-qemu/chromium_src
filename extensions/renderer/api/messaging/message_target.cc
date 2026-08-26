@@ -4,6 +4,8 @@
 
 #include "extensions/renderer/api/messaging/message_target.h"
 
+#include "arkweb/build/features/features.h"
+
 namespace extensions {
 
 MessageTarget MessageTarget::ForTab(int tab_id, int frame_id) {
@@ -35,6 +37,12 @@ MessageTarget MessageTarget::ForNativeApp(const std::string& native_app) {
   target.native_application_name = native_app;
   return target;
 }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+MessageTarget MessageTarget::ForBrowser() {
+  return MessageTarget(BROWSER);
+}
+#endif
 
 MessageTarget::MessageTarget(MessageTarget&& other) = default;
 MessageTarget::MessageTarget(const MessageTarget& other) = default;

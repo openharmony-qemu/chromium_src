@@ -721,6 +721,10 @@
     "dependencies": ["permission:nativeMessaging"],
     "contexts": ["privileged_extension"]
   },
+  "runtime.sendBrowserMessage": {
+    "contexts": ["privileged_extension"],
+    "platforms": ["ohos"]
+  },
   "serial": {
     "dependencies": ["permission:serial"],
     "contexts": ["privileged_extension"]

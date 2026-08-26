@@ -7,6 +7,7 @@
 #include <optional>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/metrics/histogram_macros.h"
@@ -239,6 +240,15 @@ class MainThreadIPCMessageSender : public IPCMessageSender {
             ->OpenChannelToNativeApp(*target.native_application_name, port_id,
                                      std::move(port), std::move(port_host));
         break;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+      case MessageTarget::BROWSER:
+        CHECK_EQ(mojom::ChannelType::kBrowser, channel_type);
+        ExtensionFrameHelper::Get(render_frame)
+            ->GetLocalFrameHost()
+            ->OpenChannelToBrowser(port_id, std::move(port),
+                                   std::move(port_host));
+        break;
+#endif
     }
   }
 
@@ -527,6 +537,15 @@ class WorkerThreadIPCMessageSender : public IPCMessageSender {
             ->OpenChannelToNativeApp(*target.native_application_name, port_id,
                                      std::move(port), std::move(port_host));
         break;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+      case MessageTarget::BROWSER:
+        CHECK_EQ(mojom::ChannelType::kBrowser, channel_type);
+        WorkerThreadDispatcher::GetServiceWorkerData()
+            ->GetServiceWorkerHost()
+            ->OpenChannelToBrowser(port_id, std::move(port),
+                                   std::move(port_host));
+        break;
+#endif
     }
   }
 

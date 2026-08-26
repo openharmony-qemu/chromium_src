@@ -9,6 +9,7 @@
 #include "base/check_op.h"
 #include "base/containers/contains.h"
 #include "base/functional/callback.h"
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "chrome/browser/extensions/api/messaging/incognito_connectability.h"
 #include "chrome/browser/extensions/extension_tab_util.h"
@@ -26,6 +27,12 @@
 #include "extensions/common/extension_id.h"
 #include "ui/gfx/native_ui_types.h"
 #include "url/gurl.h"
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+#include "base/task/bind_post_task.h"
+#include "arkweb/ohos_nweb/src/cef_delegate/nweb_extension_connect_native.h"
+#include "arkweb/chromium_ext/extensions/browser/api/messaging/browser_message_port.h"
+#endif
 
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
@@ -131,6 +138,27 @@ ChromeMessagingDelegate::CreateReceiverForNativeApp(
   return std::make_unique<NativeMessagePort>(channel_delegate, receiver_port_id,
                                              std::move(native_host));
 }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+std::unique_ptr<MessagePort>
+ChromeMessagingDelegate::CreateReceiverForBrowserMessage(
+    content::BrowserContext*,
+    base::WeakPtr<MessagePort::ChannelDelegate> channel_delegate,
+    content::RenderFrameHost*,
+    const ExtensionId& extension_id,
+    const PortId& receiver_port_id) {
+  return std::make_unique<BrowserMessagePort>(
+      std::move(channel_delegate), receiver_port_id, extension_id,
+      base::BindRepeating(
+          [](const ExtensionId& extension_id, const std::string& message_json,
+             BrowserMessagePort::BrowserMessageResponseCallback callback) {
+            OHOS::NWeb::NWebConnectNativeManager::GetInstance()
+                ->SendBrowserMessage(
+                    extension_id, message_json,
+                    base::BindPostTaskToCurrentDefault(std::move(callback)));
+          }));
+}
+#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
 
 void ChromeMessagingDelegate::QueryIncognitoConnectability(
     content::BrowserContext* context,

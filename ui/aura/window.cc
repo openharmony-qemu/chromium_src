@@ -200,6 +200,8 @@ Window::Window(WindowDelegate* delegate, client::WindowType type)
 }
 
 Window::~Window() {
+  CHECK_EQ(delete_block_count_, 0u);
+
   is_destroying_ = true;
   WindowOcclusionTracker::ScopedPause pause_occlusion_tracking;
 
@@ -1530,6 +1532,10 @@ void Window::SetOpaqueRegionsForOcclusion(
   opaque_regions_for_occlusion_ = opaque_regions_for_occlusion;
   for (auto& observer : observers_)
     observer.OnWindowOpaqueRegionsForOcclusionChanged(this);
+}
+
+base::WeakPtr<aura::Window> Window::GetWeakPtrAsWindow() {
+  return weak_factory_.GetWeakPtr();
 }
 
 void Window::NotifyResizeLoopStarted() {

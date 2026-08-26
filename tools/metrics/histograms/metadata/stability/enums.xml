@@ -132,6 +132,7 @@ Called by update_bad_message_reasons.py.-->
   <int value="12" label="PVM_PRINT_FENCED_FRAME"/>
 </enum>
 
+  <int value="13" label="SAGPC_INVALID_PERMISSION_REQUEST_CONTEXT"/>
 <enum name="BadMessageReasonContent">
 <!-- Generated from content/browser/bad_message.h.
 Called by update_bad_message_reasons.py.-->

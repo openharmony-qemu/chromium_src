@@ -149,7 +149,8 @@ void SaveToDriveFlow::OnOpenContent(AccountInfo account_info, bool success) {
     return;
   }
   auto* web_contents = WebContents::FromRenderFrameHost(&render_frame_host());
-  std::string title = base::UTF16ToUTF8(web_contents->GetTitle());
+  std::string title =
+      base::UTF16ToUTF8(EnsurePdfExtension(web_contents->GetTitle()));
 
   auto upload_progress_callback = base::BindRepeating(
       &SaveToDriveFlow::OnUploadProgress, weak_ptr_factory_.GetWeakPtr());

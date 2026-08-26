@@ -52,6 +52,9 @@ class MockFrameEvictorClient : public FrameEvictorClient {
   MOCK_METHOD(EvictIds, CollectSurfaceIdsForEviction, (), (const, override));
   MOCK_METHOD(SurfaceId, GetCurrentSurfaceId, (), (const, override));
   MOCK_METHOD(SurfaceId, GetPreNavigationSurfaceId, (), (const, override));
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  MOCK_METHOD(void, SetUseSpecifiedDeadlinePolicy, (bool), (override));
+#endif
 };
 
 }  // namespace

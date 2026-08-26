@@ -7,6 +7,7 @@
 
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "v8/include/v8-forward.h"
 
@@ -54,6 +55,13 @@ class SendMessageTester {
       const std::string& expected_message,
       const std::string& expected_application_name);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+  // Tests the sendBrowserMessage API with the specified expectations.
+  v8::Local<v8::Value> TestSendBrowserMessage(
+      const std::string& args,
+      const std::string& expected_message);
+#endif
+
   // Tests the connect API with the specified expectations.
   void TestConnect(const std::string& args,
                    const std::string& expected_channel,
@@ -64,6 +72,9 @@ class SendMessageTester {
     SEND_REQUEST,
     SEND_MESSAGE,
     SEND_NATIVE_MESSAGE,
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+    SEND_BROWSER_MESSAGE,
+#endif
   };
 
   // Common handler for testing sendMessage and sendRequest.

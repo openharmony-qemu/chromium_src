@@ -4,6 +4,7 @@
 
 #include "extensions/renderer/api/runtime_hooks_delegate.h"
 
+#include "arkweb/build/features/features.h"
 #include <memory>
 #include <string_view>
 
@@ -319,6 +320,17 @@ TEST_F(RuntimeHooksDelegateTest, SendMessageErrors) {
   send_message("'some id', 'some message', 'some other string'");
   send_message("'some id', 'some message', {}, {}");
 }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+TEST_F(RuntimeHooksDelegateTest, SendBrowserMessage) {
+  v8::HandleScope handle_scope(isolate());
+
+  SendMessageTester tester(ipc_message_sender(), script_context(), 0,
+                           "runtime");
+
+  tester.TestSendBrowserMessage("{hi:'bye'}, function() {}", R"({"hi":"bye"})");
+}
+#endif
 
 TEST_F(RuntimeHooksDelegateTest, ConnectWithTrickyOptions) {
   v8::HandleScope handle_scope(isolate());

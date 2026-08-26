@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "extensions/common/extension_id.h"
 
 namespace extensions {
@@ -24,11 +25,18 @@ namespace extensions {
 //    communicate with a third-party application. Any calls to
 //    chrome.runtime.connectNative() or chrome.runtime.sendNativeMessage()
 //    target native applications.
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+// 4. The host browser application. Any calls to
+//    chrome.runtime.sendBrowserMessage() target the embedding browser.
+#endif
 struct MessageTarget {
   enum Type {
     TAB,
     EXTENSION,
     NATIVE_APP,
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+    BROWSER,
+#endif
   };
 
   static MessageTarget ForTab(int tab_id, int frame_id);
@@ -37,6 +45,9 @@ struct MessageTarget {
                               const std::string& document_id);
   static MessageTarget ForExtension(const ExtensionId& extension_id);
   static MessageTarget ForNativeApp(const std::string& native_app_name);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+  static MessageTarget ForBrowser();
+#endif
 
   MessageTarget(MessageTarget&& other);
   MessageTarget(const MessageTarget& other);

@@ -9,6 +9,7 @@
 #include <optional>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback_forward.h"
 #include "base/memory/weak_ptr.h"
 #include "extensions/browser/api/messaging/message_port.h"
@@ -64,6 +65,17 @@ class MessagingDelegate {
       const std::string& native_app_name,
       bool allow_user_level,
       std::string* error_out);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+  // Creates a MessagePort for browser messages. Embedders may override this to
+  // forward messages to the host browser application.
+  virtual std::unique_ptr<MessagePort> CreateReceiverForBrowserMessage(
+      content::BrowserContext* browser_context,
+      base::WeakPtr<MessagePort::ChannelDelegate> channel_delegate,
+      content::RenderFrameHost* source,
+      const ExtensionId& extension_id,
+      const PortId& receiver_port_id);
+#endif
 
   // Runs `callback` with true if `url` is allowed to connect to `extension`
   // from incognito mode, false otherwise. If the URL's origin has not been

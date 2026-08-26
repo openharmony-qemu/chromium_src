@@ -678,6 +678,9 @@ BASE_FEATURE(kServiceWorkerStaticRouterStartServiceWorker,
 BASE_FEATURE(kServiceWorkerClientUrlIsCreationUrl,
              base::FEATURE_ENABLED_BY_DEFAULT);
 
+BASE_FEATURE(kServiceWorkerWindowClientInitiator,
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
 // Kill switch for crbug.com/499449324.
 BASE_FEATURE(kServiceWorkerOptionalTimeoutIterator,
              base::FEATURE_ENABLED_BY_DEFAULT);

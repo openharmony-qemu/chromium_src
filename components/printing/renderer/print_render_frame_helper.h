@@ -440,7 +440,12 @@ class PrintRenderFrameHelper
 #endif // BUILDFLAG(ARKWEB_PRINT)
 
   // `settings` must be valid.
-  void SetPrintPagesParams(const mojom::PrintPagesParams& settings);
+  void SetPrintPagesParamsForPrinting(const mojom::PrintPagesParams& settings);
+#if BUILDFLAG(ENABLE_PRINT_PREVIEW)
+  void SetPrintPagesParamsForPrintPreview(
+      const mojom::PrintPagesParams& settings,
+      const base::UnguessableToken& preview_ui_id);
+#endif  // BUILDFLAG(ENABLE_PRINT_PREVIEW)
 
   // Quits active runloop waiting for Mojo reply. It's called when
   // |print_manager_host_| is disconnected before the replies.
@@ -458,6 +463,10 @@ class PrintRenderFrameHelper
   bool reset_prep_frame_view_ = false;
 
   mojom::PrintPagesParamsPtr print_pages_params_;
+#if BUILDFLAG(ENABLE_PRINT_PREVIEW)
+  // The Print Preview UI ID associated with the current request.
+  base::UnguessableToken preview_ui_id_;
+#endif
   gfx::Rect printer_printable_area_;
   bool is_print_ready_metafile_sent_ = false;
   bool ignore_css_margins_ = false;

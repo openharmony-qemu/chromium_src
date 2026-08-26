@@ -152,8 +152,6 @@ std::pair<float, TextRunLayoutUnit> ShapeResultSpacing::ComputeExpansion(
     opportunity_before = pair.first;
     opportunity_after = pair.second;
   } else {
-    VLOG(0) << __func__ << " size=" << text_.Span16().size()
-            << " index=" << index;
     auto pair = CheckJustificationOpportunity16(
         justification_method_, CodePointAt(text_.Span16(), index),
         is_after_expansion_);

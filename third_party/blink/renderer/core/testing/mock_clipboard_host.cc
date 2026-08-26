@@ -35,6 +35,7 @@ void MockClipboardHost::Reset() {
   files_ = mojom::blink::ClipboardFiles::New();
   url_ = KURL();
   png_.clear();
+  last_read_png_buffer_ = mojom::ClipboardBuffer::kStandard;
   custom_data_.clear();
   write_smart_paste_ = false;
   needs_reset_ = false;
@@ -131,6 +132,7 @@ void MockClipboardHost::ReadRtf(mojom::ClipboardBuffer clipboard_buffer,
 
 void MockClipboardHost::ReadPng(mojom::ClipboardBuffer clipboard_buffer,
                                 ReadPngCallback callback) {
+  last_read_png_buffer_ = clipboard_buffer;
   std::move(callback).Run(mojo_base::BigBuffer(png_));
 }
 

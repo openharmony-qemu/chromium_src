@@ -40,6 +40,7 @@
 #include "google_apis/gaia/gaia_auth_util.h"
 #include "ui/base/l10n/l10n_util.h"
 #include "url/gurl.h"
+#include "url/url_constants.h"
 
 namespace password_manager {
 
@@ -339,7 +340,8 @@ void AppendManualFallbackSuggestions(
                                    ? Suggestion::Acceptability::kAcceptable
                                    : Suggestion::Acceptability::kUnacceptable;
     if (FacetURI::FromPotentiallyInvalidSpec(domain_info.signon_realm)
-            .IsValidWebFacetURI()) {
+            .IsValidWebFacetURI() &&
+        domain_info.url.SchemeIs(url::kHttpsScheme)) {
       suggestion.custom_icon = Suggestion::FaviconDetails(
           domain_info.url, favicon_can_be_requested_from_google);
     }

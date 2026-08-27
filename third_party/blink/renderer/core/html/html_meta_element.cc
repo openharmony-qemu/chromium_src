@@ -717,7 +717,7 @@ void HTMLMetaElement::ProcessContent() {
     ProcessViewportContentAttribute(content_value,
                                     ViewportDescription::kViewportMeta);
   } else if (EqualIgnoringASCIICase(name_value, "referrer") &&
-             GetExecutionContext()) {
+             GetExecutionContext() && GetDocument().IsActive()) {
     UseCounter::Count(&GetDocument(),
                       WebFeature::kHTMLMetaElementReferrerPolicy);
     if (!IsDescendantOf(GetDocument().head())) {

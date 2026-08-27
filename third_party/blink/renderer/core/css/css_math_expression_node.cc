@@ -39,6 +39,7 @@
 #include "base/memory/values_equivalent.h"
 #include "third_party/blink/renderer/core/css/css_color_channel_keywords.h"
 #include "third_party/blink/renderer/core/css/css_custom_ident_value.h"
+#include "third_party/blink/renderer/core/css/css_markup.h"
 #include "third_party/blink/renderer/core/css/css_math_function_value.h"
 #include "third_party/blink/renderer/core/css/css_math_operator.h"
 #include "third_party/blink/renderer/core/css/css_numeric_literal_value.h"
@@ -5336,7 +5337,7 @@ String RandomValueSharing::CssText() const {
     result.AppendNumber(GetFixed());
   }
   if (GetIdent()) {
-    result.Append(GetIdent());
+    SerializeIdentifier(GetIdent(), result);
   }
   if (IsElementShared()) {
     if (!result.empty()) {

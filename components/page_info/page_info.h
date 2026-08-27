@@ -273,8 +273,6 @@ class PageInfo : private content_settings::CookieControlsObserver,
     return site_connection_status_;
   }
 
-  const GURL& site_url() const { return site_url_; }
-
   const SiteIdentityStatus& site_identity_status() const {
     return site_identity_status_;
   }
@@ -284,6 +282,8 @@ class PageInfo : private content_settings::CookieControlsObserver,
   }
 
   content::WebContents* web_contents() const { return web_contents_.get(); }
+
+  const GURL& site_url() const { return site_url_; }
 
   // For most sites, this returns a human-friendly string based on site origin,
   // without scheme, the username and password, the path or trivial subdomains.

@@ -2330,7 +2330,7 @@ bool PrintRenderFrameHelper::PrintPagesNative(
 #if BUILDFLAG(ARKWEB_PRINT)
   if (CheckCancel()) {
     LOG(ERROR) << "OhosPrintManager stop print";
-    return;
+    return false;
   }
 #endif // BUILDFLAG(ARKWEB_PRINT)
   const mojom::PrintPagesParams& params = *print_pages_params_;

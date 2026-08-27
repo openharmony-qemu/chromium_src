@@ -445,6 +445,18 @@ class CONTENT_EXPORT RenderFrameImpl
   int32_t ExecuteSelectCommandById(const std::string& id,
                                    const std::vector<int32_t>& indexes,
                                    const std::vector<std::string>& values) override;
+  int32_t ExecuteFocusCommand(const std::string& xpath, bool suppress_keyboard) override;
+  int32_t ExecuteInputModifyCommand(const std::string& content) override;
+  int32_t ExecuteInputInsertCommand(const std::string& content, int32_t index) override;
+  int32_t ExecuteAutoFillCommand(const std::string& xpath,
+                                 const std::string& content,
+                                 int32_t index, int32_t mode) override;
+  int32_t ExecuteClickCommand(const std::string& xpath) override;
+  int32_t ExecuteScrollCommand(const std::string& xpath,
+                               const std::string& align,
+                               int32_t offset) override;
+  int32_t ExecuteInputSelectCommand(int32_t start_index, int32_t finish_index) override;
+  int32_t ExecuteInputSetCursorCommand(int32_t index) override;
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   gfx::Vector2dF GetOverScrollOffset() override;
 #endif

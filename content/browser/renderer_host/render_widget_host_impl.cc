@@ -92,6 +92,7 @@
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/device_service.h"
+#include "content/public/browser/disallow_activation_reason.h"
 #include "content/public/browser/keyboard_event_processing_result.h"
 #include "content/public/browser/peak_gpu_memory_tracker_factory.h"
 #include "content/public/browser/render_frame_metadata_provider.h"
@@ -2925,11 +2926,17 @@ void RenderWidgetHostImpl::UpdateBrowserControlsState(
 void RenderWidgetHostImpl::StartDragging(
     blink::mojom::DragDataPtr drag_data,
     const url::Origin& source_origin,
-    DragOperationsMask drag_operations_mask,
+    blink::DragOperationsMask drag_operations_mask,
     const SkBitmap& bitmap,
     const gfx::Vector2d& cursor_offset_in_dip,
     const gfx::Rect& drag_obj_rect_in_dip,
     blink::mojom::DragEventSourceInfoPtr event_info) {
+  if (frame_tree_ && frame_tree_->GetMainFrame() &&
+      frame_tree_->GetMainFrame()->IsInactiveAndDisallowActivation(
+          DisallowActivationReasonId::kStartDragging)) {
+    return;
+  }
+
   DropData drop_data = DragDataToDropData(*drag_data);
   DropData filtered_data(drop_data);
   RenderProcessHost* process = GetProcess();

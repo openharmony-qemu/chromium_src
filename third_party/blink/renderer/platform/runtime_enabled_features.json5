@@ -5044,6 +5044,10 @@
       status: "stable",
     },
     {
+      name: "SvgFeImageEXIFOrientation",
+      status: "stable",
+    },
+    {
       name: "SvgInlineRootPixelSnappingScaleAdjustment",
       status: "test",
     },

@@ -62,7 +62,9 @@ struct Suggestion {
     // Used to construct the payload of a backup password suggestion.
     PasswordSuggestionDetails(std::u16string_view username,
                               std::u16string_view password,
-                              std::u16string_view backup_password);
+                              std::u16string_view backup_password,
+                              std::string_view signon_realm,
+                              bool is_cross_domain);
     PasswordSuggestionDetails(const PasswordSuggestionDetails&);
     PasswordSuggestionDetails(PasswordSuggestionDetails&&);
     PasswordSuggestionDetails& operator=(const PasswordSuggestionDetails&);

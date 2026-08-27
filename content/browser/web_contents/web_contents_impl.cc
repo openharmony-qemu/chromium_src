@@ -296,6 +296,10 @@
 #include "content/public/common/content_switches.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+#include "cef/ohos_cef_ext/libcef/browser/useragent/arkweb_useragent_utils.h"
+#endif
+
 #if defined(USE_AURA)
 #include "ui/aura/window.h"
 #include "ui/wm/core/window_util.h"
@@ -7081,7 +7085,15 @@ void WebContentsImpl::SaveFrameWithHeaders(
     // Replay the original initiator, rather than using the current frame origin
     params->set_initiator(frame_navigation_entry->initiator_origin());
   }
-
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  const std::string ua_string =
+      arkweb_useragent_utils::GetUAStringForHost(
+          this, std::string(url.host()));
+  if (!ua_string.empty()) {
+    params->add_request_header(net::HttpRequestHeaders::kUserAgent,
+                               ua_string);
+  }
+#endif
   GetBrowserContext()->GetDownloadManager()->DownloadUrl(std::move(params));
 }
 

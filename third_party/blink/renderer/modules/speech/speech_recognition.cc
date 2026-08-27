@@ -503,6 +503,21 @@ void SpeechRecognition::CheckAvailabilityAndStart(
     return;
   }
 
+  bool can_use_on_device_recognition = DomWindow()->IsFeatureEnabled(
+      network::mojom::PermissionsPolicyFeature::kOnDeviceSpeechRecognition);
+
+  if (process_locally_ && !can_use_on_device_recognition) {
+    if (exception_state) {
+      exception_state->ThrowDOMException(DOMExceptionCode::kNotAllowedError,
+                                         kExceptionMessagePermissionPolicy);
+    } else {
+      ErrorOccurred(media::mojom::blink::SpeechRecognitionError::New(
+          media::mojom::blink::SpeechRecognitionErrorCode::kNotAllowed,
+          media::mojom::blink::SpeechAudioErrorDetails::kNone));
+    }
+    return;
+  }
+
   if (process_locally_ && lang_) {
     controller_->AvailableOnDevice(
         Vector<String>{lang_},

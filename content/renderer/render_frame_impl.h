@@ -1778,6 +1778,11 @@ class CONTENT_EXPORT RenderFrameImpl
 #endif
   raw_ptr<RenderFrameImplUtils> implUtils;
 
+  // Set to true while CommitSameDocumentNavigation is calling into Blink,
+  // so reentrant calls to DidFailAsyncSameDocumentCommit know not to consume
+  // the incoming NavigationState.
+  bool is_committing_same_document_navigation_ = false;
+
   base::WeakPtrFactory<RenderFrameImpl> weak_factory_{this};
 };
 

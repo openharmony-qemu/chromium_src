@@ -390,7 +390,6 @@ class TestBluetoothDelegate : public BluetoothDelegate {
   void RevokeDevicePermissionWebInitiated(
       RenderFrameHost* frame,
       const blink::WebBluetoothDeviceId& device_id) override {}
-  bool MayUseBluetooth(RenderFrameHost* rfh) override { return true; }
   bool IsAllowedToAccessService(RenderFrameHost* frame,
                                 const blink::WebBluetoothDeviceId& device_id,
                                 const device::BluetoothUUID& service) override {
@@ -412,6 +411,12 @@ class TestBluetoothDelegate : public BluetoothDelegate {
     return {};
   }
 
+  bool MayUseBluetooth(RenderFrameHost* frame) override {
+    return may_use_bluetooth_;
+  }
+
+  void set_may_use_bluetooth(bool value) { may_use_bluetooth_ = value; }
+
   void RunBluetoothScanningPromptEventCallback(
       BluetoothScanningPrompt::Event event) {
     if (!prompt_) {
@@ -426,6 +431,7 @@ class TestBluetoothDelegate : public BluetoothDelegate {
       FramePermissionObserver* observer) override {}
 
  private:
+  bool may_use_bluetooth_ = true;
   raw_ptr<FakeBluetoothScanningPrompt, AcrossTasksDanglingUntriaged> prompt_ =
       nullptr;
 };
@@ -734,6 +740,17 @@ class WebBluetoothServiceImplTest : public RenderViewHostImplTestHarness,
     // this test does.
     WebBluetoothServiceImpl::DeleteForCurrentDocument(
         &service_ptr_.ExtractAsDangling()->render_frame_host());
+  }
+
+  void ForgetDevice(
+      const blink::WebBluetoothDeviceId& device_id,
+      blink::mojom::WebBluetoothService::ForgetDeviceCallback callback) {
+    service_ptr_->ForgetDevice(device_id, std::move(callback));
+  }
+
+  std::string GetAllowedDeviceAddress(
+      const blink::WebBluetoothDeviceId& device_id) {
+    return service_ptr_->allowed_devices().GetDeviceAddress(device_id);
   }
 
   scoped_refptr<FakeBluetoothAdapter> adapter_;
@@ -1352,4 +1369,21 @@ TEST_F(WebBluetoothServiceImplTestWithBaseAdapter,
   EXPECT_EQ(BluetoothAdapterFactoryWrapper::Get().GetAdapter(service_ptr_),
             base_adapter_);
 }
+
+TEST_F(WebBluetoothServiceImplTest, ForgetDevice_NotAllowed) {
+  blink::WebBluetoothDeviceId device_id =
+      AddTestDevice(battery_device_bundle());
+  EXPECT_FALSE(GetAllowedDeviceAddress(device_id).empty());
+
+  browser_client_.bluetooth_delegate()->set_may_use_bluetooth(false);
+
+  base::test::TestFuture<void> future;
+  ForgetDevice(device_id, future.GetCallback());
+  EXPECT_TRUE(future.Wait());
+
+  // The device should STILL be in allowed devices because ForgetDevice should
+  // return early.
+  EXPECT_FALSE(GetAllowedDeviceAddress(device_id).empty());
+}
+
 }  // namespace content

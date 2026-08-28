@@ -18,6 +18,7 @@
 #include "components/autofill/core/common/unique_ids.h"
 #include "components/password_manager/content/browser/bad_message.h"
 #include "components/password_manager/content/browser/content_password_manager_driver_factory.h"
+#include "components/password_manager/content/browser/content_password_manager_util.h"
 #include "components/password_manager/content/browser/form_meta_data.h"
 #include "components/password_manager/core/browser/browser_save_password_progress_logger.h"
 #include "components/password_manager/core/browser/password_manager.h"
@@ -483,9 +484,9 @@ bool ContentPasswordManagerDriver::IsPasswordFieldForPasswordManager(
 
 void ContentPasswordManagerDriver::PasswordFormsParsed(
     const std::vector<autofill::FormData>& raw_forms) {
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(
-          render_frame_host_))
+  if (!CheckFrameActiveAndNotPrerendering(render_frame_host_)) {
     return;
+  }
 
   // In case we can't obtain a valid URL or a frame isn't allowed to perform an
   // operation with generated URL, don't forward anything to password manager.
@@ -512,9 +513,9 @@ void ContentPasswordManagerDriver::PasswordFormsParsed(
 
 void ContentPasswordManagerDriver::PasswordFormsRendered(
     const std::vector<autofill::FormData>& raw_forms) {
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(
-          render_frame_host_))
+  if (!CheckFrameActiveAndNotPrerendering(render_frame_host_)) {
     return;
+  }
 
   // In case we can't obtain a valid URL or a frame isn't allowed to perform an
   // operation with generated URL, don't forward anything to password manager.
@@ -531,6 +532,7 @@ void ContentPasswordManagerDriver::PasswordFormsRendered(
 
 void ContentPasswordManagerDriver::PasswordFormSubmitted(
     const autofill::FormData& raw_form) {
+  // Don't check IsActive(): the submitting frame may have entered BFCache.
   if (!password_manager::bad_message::CheckFrameNotPrerendering(
           render_frame_host_))
     return;
@@ -549,9 +551,9 @@ void ContentPasswordManagerDriver::PasswordFormSubmitted(
 
 void ContentPasswordManagerDriver::InformAboutUserInput(
     const autofill::FormData& raw_form) {
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(
-          render_frame_host_))
+  if (!CheckFrameActiveAndNotPrerendering(render_frame_host_)) {
     return;
+  }
 
   // In case we can't obtain a valid URL or a frame isn't allowed to perform an
   // operation with generated URL, don't forward anything to password manager.
@@ -582,6 +584,7 @@ void ContentPasswordManagerDriver::InformAboutUserInput(
 
 void ContentPasswordManagerDriver::DynamicFormSubmission(
     autofill::mojom::SubmissionIndicatorEvent submission_indication_event) {
+  // Don't check IsActive(): the submitting frame may have entered BFCache.
   if (!password_manager::bad_message::CheckFrameNotPrerendering(
           render_frame_host_))
     return;
@@ -592,9 +595,9 @@ void ContentPasswordManagerDriver::DynamicFormSubmission(
 
 void ContentPasswordManagerDriver::PasswordFormCleared(
     const autofill::FormData& raw_form) {
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(
-          render_frame_host_))
+  if (!CheckFrameActiveAndNotPrerendering(render_frame_host_)) {
     return;
+  }
 
   // In case we can't obtain a valid URL or a frame isn't allowed to perform an
   // operation with generated URL, don't forward anything to password manager.
@@ -608,9 +611,9 @@ void ContentPasswordManagerDriver::PasswordFormCleared(
 
 void ContentPasswordManagerDriver::RecordSavePasswordProgress(
     const std::string& log) {
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(
-          render_frame_host_))
+  if (!CheckFrameActiveAndNotPrerendering(render_frame_host_)) {
     return;
+  }
   // Skip messages from chrome:// URLs as they are just noise for
   // chrome://password-manager-internals based debugging.
   if (GetLastCommittedURL().SchemeIs(content::kChromeUIScheme))
@@ -622,9 +625,9 @@ void ContentPasswordManagerDriver::RecordSavePasswordProgress(
 }
 
 void ContentPasswordManagerDriver::UserModifiedPasswordField() {
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(
-          render_frame_host_))
+  if (!CheckFrameActiveAndNotPrerendering(render_frame_host_)) {
     return;
+  }
   if (client_->GetMetricsRecorder())
     client_->GetMetricsRecorder()->RecordUserModifiedPasswordField();
   // A user has modified an input field, it wouldn't be a submission "after
@@ -637,9 +640,9 @@ void ContentPasswordManagerDriver::UserModifiedNonPasswordField(
     const std::u16string& value,
     bool autocomplete_attribute_has_username,
     bool is_likely_otp) {
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(
-          render_frame_host_))
+  if (!CheckFrameActiveAndNotPrerendering(render_frame_host_)) {
     return;
+  }
   GetPasswordManager()->OnUserModifiedNonPasswordField(
       this, renderer_id, value, autocomplete_attribute_has_username,
       is_likely_otp);
@@ -650,9 +653,9 @@ void ContentPasswordManagerDriver::UserModifiedNonPasswordField(
 
 void ContentPasswordManagerDriver::ShowPasswordSuggestions(
     const autofill::PasswordSuggestionRequest& request) {
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(
-          render_frame_host_))
+  if (!CheckFrameActiveAndNotPrerendering(render_frame_host_)) {
     return;
+  }
 
   if ((request.username_field_index > request.form_data.fields().size()) ||
       (request.password_field_index > request.form_data.fields().size())) {
@@ -671,9 +674,9 @@ void ContentPasswordManagerDriver::ShowPasswordSuggestions(
 void ContentPasswordManagerDriver::CheckSafeBrowsingReputation(
     const GURL& form_action,
     const GURL& frame_url) {
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(
-          render_frame_host_))
+  if (!CheckFrameActiveAndNotPrerendering(render_frame_host_)) {
     return;
+  }
 #if defined(ON_FOCUS_PING_ENABLED) && BUILDFLAG(SAFE_BROWSING_AVAILABLE)
   client_->CheckSafeBrowsingReputation(form_action, frame_url);
 #endif
@@ -682,8 +685,7 @@ void ContentPasswordManagerDriver::CheckSafeBrowsingReputation(
 void ContentPasswordManagerDriver::FocusedInputChanged(
     autofill::FieldRendererId focused_field_id,
     FocusedFieldType focused_field_type) {
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(
-          render_frame_host_)) {
+  if (!CheckFrameActiveAndNotPrerendering(render_frame_host_)) {
     return;
   }
   GetPasswordAutofillManager()->FocusedInputChanged();
@@ -693,9 +695,9 @@ void ContentPasswordManagerDriver::FocusedInputChanged(
 void ContentPasswordManagerDriver::LogFirstFillingResult(
     autofill::FormRendererId form_renderer_id,
     int32_t result) {
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(
-          render_frame_host_))
+  if (!CheckFrameActiveAndNotPrerendering(render_frame_host_)) {
     return;
+  }
   GetPasswordManager()->LogFirstFillingResult(this, form_renderer_id, result);
 }
 
@@ -736,8 +738,7 @@ void ContentPasswordManagerDriver::OnChangePasswordFormFilled(
     base::OnceCallback<void(const std::optional<autofill::FormData>&)>
         form_data_callback,
     const std::optional<autofill::FormData>& raw_form) {
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(
-          render_frame_host_)) {
+  if (!CheckFrameActiveAndNotPrerendering(render_frame_host_)) {
     return;
   }
 

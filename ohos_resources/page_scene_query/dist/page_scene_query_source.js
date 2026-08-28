@@ -23,18 +23,31 @@
         if (!el || el.nodeType !== 1) {
             return '';
         }
+        if (el.id) {
+            return '//*[@id="' + el.id.replace(/"/g, '&quot;') + '"]';
+        }
         const parts = [];
         while (el && el.nodeType === 1) {
-            let idx = 0;
-            let sib = el.previousSibling;
+            let index = 1;
+            let sib = el.previousElementSibling;
             while (sib) {
-                if (sib.nodeType === 1 && sib.tagName === el.tagName) {
-                    idx++;
+                if (sib.tagName === el.tagName) {
+                    index++;
                 }
-                sib = sib.previousSibling;
+                sib = sib.previousElementSibling;
+            }
+            let hasSimilarSiblings = false;
+            let nextSib = el.nextElementSibling;
+            while (nextSib) {
+                if (nextSib.tagName === el.tagName) {
+                    hasSimilarSiblings = true;
+                    break;
+                }
+                nextSib = nextSib.nextElementSibling;
             }
             const tag = el.tagName.toLowerCase();
-            parts.unshift(tag + (idx > 0 ? '[' + (idx + 1) + ']' : ''));
+            const segment = (index > 1 || hasSimilarSiblings) ? (tag + '[' + index + ']') : tag;
+            parts.unshift(segment);
             el = el.parentNode;
         }
         return '/' + parts.join('/');
@@ -102,7 +115,11 @@
             width: rect.width * dpr,
             height: rect.height * dpr
         };
-        control.text = el.value || el.textContent || '';
+        if (nodeType === 'input' && el.type === 'password') {
+            control.text = '';
+        } else {
+            control.text = el.value || el.textContent || '';
+        }
 
         if (config.includeAutocomplete) {
             const isInputNoPassword = (nodeType === 'input' && el.type !== 'password') || nodeType === 'textarea';
@@ -138,10 +155,13 @@
                 if (!matchAttrRules(el, nodeType, getAttrRules(config, nodeType))) {
                     return;
                 }
-                if (config.onlyVisible && !isVisible(el)) {
+                if (!isFocusable(el, nodeType, config.includeUnfocusableTextInput)) {
                     return;
                 }
-                if (!isFocusable(el, nodeType, config.includeUnfocusableTextInput)) {
+                if (config.onlyVisible && !isVisible(el)) {
+                    if (queryControls._pendingVisible) {
+                        queryControls._pendingVisible.push({ el: el, nodeType: nodeType, config: config });
+                    }
                     return;
                 }
                 results.push(buildControl(el, nodeType, config));
@@ -264,6 +284,8 @@
 
     const scrollCheckMaxRetries = 15;
     const observerTimeoutMs = 2000;
+    const visibleRetryMs = 300;
+    const visibleRetryMax = 5;
 
     function setupObserver(selectorConfigStr, selectorJsonStr, ruleId, nodeTypes) {
         if (!nodeTypes || nodeTypes.length === 0) {
@@ -282,20 +304,51 @@
                 clearTimeout(entry.debounceTimer);
             }
             let scrollRetries = 0;
+            let visibleRetries = 0;
+            let pendingVisible = [];
             function check() {
                 if (isScrolling && scrollRetries < scrollCheckMaxRetries) {
                     scrollRetries++;
                     entry.debounceTimer = setTimeout(check, scrollEndDelay);
                     return;
                 }
-                entry.debounceTimer = null;
-                stopObserver(ruleId);
-                const result = queryControls(selectorConfigStr);
-                const controlCount = JSON.parse(result).controls.length;
-                console.log('[PageScene] MutationObserver: ruleId=' + ruleId +
-                    ' controls=' + controlCount +
-                    (isScrolling ? ' (force after max retries)' : ''));
-                reportResult(result, selectorJsonStr);
+                queryControls._pendingVisible = [];
+                const resultStr = queryControls(selectorConfigStr);
+                const parsed = JSON.parse(resultStr);
+                if (parsed.controls.length > 0) {
+                    entry.debounceTimer = null;
+                    stopObserver(ruleId);
+                    reportResult(resultStr, selectorJsonStr);
+                } else if (queryControls._pendingVisible.length > 0 && visibleRetries < visibleRetryMax) {
+                    pendingVisible = queryControls._pendingVisible;
+                    visibleRetries++;
+                    entry.debounceTimer = setTimeout(checkPending, visibleRetryMs);
+                } else {
+                    entry.debounceTimer = null;
+                    stopObserver(ruleId);
+                    reportResult(resultStr, selectorJsonStr);
+                }
+            }
+            function checkPending() {
+                const newlyVisible = [];
+                for (let i = 0; i < pendingVisible.length; i++) {
+                    const item = pendingVisible[i];
+                    if (isVisible(item.el)) {
+                        newlyVisible.push(buildControl(item.el, item.nodeType, item.config));
+                    }
+                }
+                if (newlyVisible.length > 0) {
+                    entry.debounceTimer = null;
+                    stopObserver(ruleId);
+                    reportResult(JSON.stringify({ errorCode: 0, controls: newlyVisible }), selectorJsonStr);
+                } else if (visibleRetries < visibleRetryMax) {
+                    visibleRetries++;
+                    entry.debounceTimer = setTimeout(checkPending, visibleRetryMs);
+                } else {
+                    entry.debounceTimer = null;
+                    stopObserver(ruleId);
+                    reportResult(JSON.stringify({ errorCode: 0, controls: [] }), selectorJsonStr);
+                }
             }
             entry.debounceTimer = setTimeout(check, mutationDebounceMs);
         });
@@ -303,12 +356,11 @@
         observer.observe(document.documentElement, { childList: true, subtree: true });
 
         const timeoutId = setTimeout(function () {
-            console.log('[PageScene] Observer timeout: ruleId=' + ruleId);
             stopObserver(ruleId);
-            const result = queryControls(selectorConfigStr);
-            const controlCount = JSON.parse(result).controls.length;
-            if (controlCount > 0) {
-                reportResult(result, selectorJsonStr);
+            const resultStr = queryControls(selectorConfigStr);
+            const parsed = JSON.parse(resultStr);
+            if (parsed.controls.length > 0) {
+                reportResult(resultStr, selectorJsonStr);
             }
         }, observerTimeoutMs);
 
@@ -322,12 +374,10 @@
     }
 
     function onDomReadyForObserver(selectorConfigStr, selectorJsonStr, ruleId, nodeTypes) {
-        const result = queryControls(selectorConfigStr);
-        const parsed = JSON.parse(result);
+        const resultStr = queryControls(selectorConfigStr);
+        const parsed = JSON.parse(resultStr);
         if (parsed.controls.length > 0) {
-            console.log('[PageScene] DOMContentLoaded: ruleId=' + ruleId +
-                ' controls=' + parsed.controls.length);
-            reportResult(result, selectorJsonStr);
+            reportResult(resultStr, selectorJsonStr);
         } else {
             setupObserver(selectorConfigStr, selectorJsonStr, ruleId, nodeTypes);
         }
@@ -350,14 +400,12 @@
     window.__pageSceneQuery = {
         request: function (ruleJsonStr, ruleId, nodeTypesStr) {
             const nodeTypes = JSON.parse(nodeTypesStr);
-            const result = queryControls(ruleJsonStr);
-            const parsed = JSON.parse(result);
-            console.log('[PageScene] request: ruleId=' + ruleId +
-                ' controls=' + parsed.controls.length);
+            const resultStr = queryControls(ruleJsonStr);
+            const parsed = JSON.parse(resultStr);
             if (parsed.controls.length === 0 && nodeTypes && nodeTypes.length > 0) {
                 startObserver(ruleJsonStr, ruleJsonStr, ruleId, nodeTypes);
             }
-            return result;
+            return resultStr;
         }
     };
 

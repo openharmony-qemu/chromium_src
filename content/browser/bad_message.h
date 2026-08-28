@@ -376,6 +376,7 @@ enum BadMessageReason {
   BIBI_BIND_GAMEPAD_MONITOR_BLOCKED_BY_PERMISSIONS_POLICY = 352,
   BIBI_BIND_GAMEPAD_HAPTICS_MANAGER_BLOCKED_BY_PERMISSIONS_POLICY = 353,
   RFH_DID_COMMIT_NAVIGATION_WHILE_BFCACHED = 354,
+  RFH_AUTHENTICATOR_PDF_PROCESS_BLOCKED = 355,
 
   // Please add new elements here. The naming convention is abbreviated class
   // name (e.g. RenderFrameHost becomes RFH) plus a unique description of the

@@ -4,11 +4,16 @@
 
 #include "third_party/blink/renderer/platform/widget/input/widget_input_handler_manager.h"
 
+#include <atomic>
 #include <string>
+#include <thread>
 
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
+#include "base/run_loop.h"
+#include "base/task/thread_pool.h"
+#include "base/test/bind.h"
 #include "base/test/scoped_feature_list.h"
 #include "base/test/task_environment.h"
 #include "cc/test/fake_impl_task_runner_provider.h"
@@ -55,11 +60,22 @@ class WidgetInputHandlerManagerTest : public testing::Test,
     return widget_input_handler_manager_;
   }
 
+  scoped_refptr<WidgetInputHandlerManager> CreateManagerForHostTest() {
+    return WidgetInputHandlerManager::Create(
+        widget_base_->GetWeakPtr(), frame_widget_input_handler_,
+        /*never_composited=*/false,
+        /*compositor_thread_scheduler=*/nullptr, widget_scheduler_,
+        /*needs_input_handler=*/false,
+        /*allow_scroll_resampling=*/false,
+        /*io_thread_id=*/base::kInvalidThreadId,
+        /*main_thread_id=*/base::PlatformThread::CurrentId());
+  }
+
   // testing::Test:
   void SetUp() override;
 
  private:
-  base::test::SingleThreadTaskEnvironment task_environment_;
+  base::test::TaskEnvironment task_environment_;
 
   scoped_refptr<WidgetInputHandlerManager> widget_input_handler_manager_;
   StubWidgetBaseClient client_;
@@ -216,6 +232,73 @@ TEST_P(WidgetInputHandlerManagerTest, DevToolsSessionOverridesSuppression) {
   manager->OnDevToolsSessionConnectionChanged(/*attached=*/false);
   if (GetParam()) {
     ExpectNotConsumedDispatchEvent();
+  }
+}
+
+TEST_P(WidgetInputHandlerManagerTest,
+       ClearClientBreaksCycleEvenIfCopiesExistForHost) {
+  scoped_refptr<WidgetInputHandlerManager> manager = CreateManagerForHostTest();
+
+  mojo::PendingRemote<mojom::blink::WidgetInputHandlerHost> host_remote;
+  auto receiver = host_remote.InitWithNewPipeAndPassReceiver();
+
+  manager->SetHost(std::move(host_remote));
+
+  // Get a copy of the SharedRemote and keep it alive in the test.
+  auto host_copy = manager->GetWidgetInputHandlerHost();
+
+  base::RunLoop run_loop;
+  manager->set_destruction_callback_for_testing(run_loop.QuitClosure());
+
+  // ClearClient() must disconnect host_ and break the cycle even while an
+  // external SharedRemote copy remains alive.
+  manager->ClearClient();
+  manager = nullptr;
+
+  run_loop.Run();
+}
+
+TEST_P(WidgetInputHandlerManagerTest, MultiThreadedHostAccess) {
+  std::atomic<bool> start_flag{false};
+  std::atomic<int> threads_ready{0};
+  std::atomic<int> threads_finished{0};
+  constexpr int kOpsPerThread = 1000;
+
+  scoped_refptr<WidgetInputHandlerManager> manager = CreateManagerForHostTest();
+
+  mojo::PendingRemote<mojom::blink::WidgetInputHandlerHost> host_remote;
+  auto receiver = host_remote.InitWithNewPipeAndPassReceiver();
+  manager->SetHost(std::move(host_remote));
+
+  auto reader_runner = base::ThreadPool::CreateSequencedTaskRunner({});
+  auto reader_worker = [&]() {
+    threads_ready++;
+    while (!start_flag.load(std::memory_order_acquire)) {
+      std::this_thread::yield();
+    }
+
+    for (int i = 0; i < kOpsPerThread; ++i) {
+      manager->GetWidgetInputHandlerHost();
+    }
+    threads_finished++;
+  };
+
+  reader_runner->PostTask(FROM_HERE, base::BindLambdaForTesting(reader_worker));
+
+  threads_ready++;
+  while (threads_ready.load(std::memory_order_relaxed) < 2) {
+    std::this_thread::yield();
+  }
+
+  start_flag.store(true, std::memory_order_release);
+
+  for (int i = 0; i < kOpsPerThread; ++i) {
+    manager->GetWidgetInputHandlerHost();
+  }
+  threads_finished++;
+
+  while (threads_finished.load(std::memory_order_relaxed) < 2) {
+    std::this_thread::yield();
   }
 }
 

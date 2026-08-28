@@ -58,7 +58,9 @@
 #include "components/autofill/core/common/unique_ids.h"
 #include "components/device_reauth/device_authenticator.h"
 #include "components/device_reauth/mock_device_authenticator.h"
+#include "components/password_manager/content/browser/bad_message.h"
 #include "components/password_manager/content/browser/content_password_manager_driver.h"
+#include "components/password_manager/content/browser/form_meta_data.h"
 #include "components/password_manager/content/browser/password_manager_log_router_factory.h"
 #include "components/password_manager/core/browser/credential_cache.h"
 #include "components/password_manager/core/browser/credentials_filter.h"
@@ -77,6 +79,7 @@
 #include "components/sync/test/test_sync_service.h"
 #include "components/sync_preferences/testing_pref_service_syncable.h"
 #include "content/public/browser/browser_context.h"
+#include "content/public/browser/child_process_security_policy.h"
 #include "content/public/browser/navigation_controller.h"
 #include "content/public/browser/navigation_entry.h"
 #include "content/public/browser/web_contents.h"
@@ -84,6 +87,7 @@
 #include "content/public/common/content_switches.h"
 #include "content/public/common/url_constants.h"
 #include "content/public/test/mock_navigation_handle.h"
+#include "content/public/test/mock_render_process_host.h"
 #include "content/public/test/navigation_simulator.h"
 #include "content/public/test/web_contents_tester.h"
 #include "mojo/public/cpp/bindings/associated_receiver.h"
@@ -92,6 +96,7 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/blink/public/common/associated_interfaces/associated_interface_provider.h"
+#include "url/origin.h"
 #include "url/url_constants.h"
 
 #if BUILDFLAG(ENABLE_EXTENSIONS)
@@ -899,6 +904,176 @@ TEST_F(ChromePasswordManagerClientTest,
           Key(testing::Pair(CalculateFormSignature(child_form),
                             child_driver_id))));
 }
+
+// Regression test for https://issues.chromium.org/issues/521491778: predictions
+// must not be propagated to the Password Manager for frames that do not have a
+// valid URL (here, a data: / opaque-origin child frame).
+TEST_F(ChromePasswordManagerClientTest,
+       PasswordManagerDoesNotReceiveAutofillPredictionsFromOpaqueOriginFrame) {
+  constexpr char kUrl1[] = "https://www.foo.com/login.html";
+  constexpr char kUrl2[] = "data:text/html,<html></html>";
+
+  NavigateAndCommit(GURL(kUrl1));
+  content::RenderFrameHost* child_rfh =
+      content::RenderFrameHostTester::For(main_rfh())
+          ->AppendChild(std::string("child"));
+  child_rfh = content::NavigationSimulator::NavigateAndCommitFromDocument(
+      GURL(kUrl2), child_rfh);
+  auto* child_process =
+      static_cast<content::MockRenderProcessHost*>(child_rfh->GetProcess());
+  const int bad_message_count = child_process->bad_msg_count();
+  ContentAutofillDriver* main_driver =
+      ContentAutofillDriver::GetForRenderFrameHost(main_rfh());
+  ContentAutofillDriver* child_driver =
+      ContentAutofillDriver::GetForRenderFrameHost(child_rfh);
+  ASSERT_TRUE(main_driver);
+  ASSERT_TRUE(child_driver);
+
+  FormData main_form = CreateFormDataForRenderFrameHost(
+      *main_rfh(), {CreateTestFormField("Username", "username", "",
+                                        FormControlType::kInputText),
+                    CreateTestFormField("Password", "password", "",
+                                        FormControlType::kInputPassword)});
+  FormData child_form = CreateFormDataForRenderFrameHost(
+      *child_rfh,
+      {CreateTestFormField("OTP", "OTP", "", FormControlType::kInputText)});
+
+  // Ensure that the child frame is picked up as a child frame of `main_form`.
+  {
+    autofill::FrameTokenWithPredecessor child_frame_information;
+    child_frame_information.token = child_form.host_frame();
+    main_form.set_child_frames({child_frame_information});
+  }
+
+  {
+    autofill::TestAutofillManagerWaiter waiter(
+        main_driver->GetAutofillManager(),
+        {autofill::AutofillManagerEvent::kFormsSeen});
+    main_driver->renderer_events().FormsSeen(/*updated_forms=*/{main_form},
+                                             /*removed_forms=*/{});
+    child_driver->renderer_events().FormsSeen(/*updated_forms=*/{child_form},
+                                              /*removed_forms=*/{});
+    ASSERT_TRUE(waiter.Wait(/*num_expected_relevant_events=*/2));
+  }
+
+  // Simulate that the field types have been determined, since server
+  // communication is turned off.
+  using Observer = autofill::AutofillManager::Observer;
+  main_driver->GetAutofillManager().NotifyObservers(
+      &Observer::OnFieldTypesDetermined, main_form.global_id(),
+      Observer::FieldTypeSource::kAutofillServer);
+
+  ContentPasswordManagerDriver* main_password_driver =
+      ContentPasswordManagerDriver::GetForRenderFrameHost(main_rfh());
+  int main_driver_id = main_password_driver->GetId();
+
+  // Since the child frame is a data URL (opaque origin), predictions should NOT
+  // be propagated for it. Thus, only the main form's predictions are received.
+  EXPECT_THAT(static_cast<const password_manager::PasswordManager*>(
+                  GetClient()->GetPasswordManager())
+                  ->GetServerPredictionsForTesting(),
+              UnorderedElementsAre(Key(testing::Pair(
+                  CalculateFormSignature(main_form), main_driver_id))));
+  EXPECT_EQ(bad_message_count, child_process->bad_msg_count());
+}
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+TEST_F(ChromePasswordManagerClientTest,
+       PasswordManagerDoesNotReceiveAutofillPredictionsFromNonHttpFrame) {
+  const GURL main_url("https://www.foo.com/login.html");
+  const GURL file_url("file:///tmp/login.html");
+  const url::Origin file_origin = url::Origin::Create(file_url);
+  ASSERT_TRUE(file_url.is_valid());
+  ASSERT_FALSE(file_url.SchemeIsHTTPOrHTTPS());
+  ASSERT_FALSE(file_origin.opaque());
+
+  NavigateAndCommit(main_url);
+  content::RenderFrameHost* child_rfh =
+      content::RenderFrameHostTester::For(main_rfh())
+          ->AppendChild(std::string("child"));
+  content::ChildProcessSecurityPolicy* policy =
+      content::ChildProcessSecurityPolicy::GetInstance();
+  int child_process_id = child_rfh->GetProcess()->GetDeprecatedID();
+  policy->GrantRequestOrigin(child_process_id, file_origin);
+  policy->GrantCommitOrigin(child_process_id, file_origin);
+  child_rfh = content::NavigationSimulator::NavigateAndCommitFromDocument(
+      file_url, child_rfh);
+  ASSERT_TRUE(child_rfh);
+
+  // Grant against the process that committed the navigation as well, since a
+  // cross-scheme navigation may swap RenderFrameHosts/processes.
+  child_process_id = child_rfh->GetProcess()->GetDeprecatedID();
+  policy->GrantRequestOrigin(child_process_id, file_origin);
+  policy->GrantCommitOrigin(child_process_id, file_origin);
+
+  const GURL child_url = password_manager::GetURLFromRenderFrameHost(child_rfh);
+  ASSERT_EQ(file_url, child_url);
+  ASSERT_EQ(file_origin, child_rfh->GetLastCommittedOrigin());
+  auto* child_process =
+      static_cast<content::MockRenderProcessHost*>(child_rfh->GetProcess());
+  const int bad_message_count = child_process->bad_msg_count();
+
+  // MR 10440's inline predicates both pass for this URL. HasValidURL() adds
+  // the ArkWeb HTTP(S)-only policy and rejects it without killing the renderer.
+  ASSERT_TRUE(
+      password_manager::bad_message::CheckChildProcessSecurityPolicyForURL(
+          child_rfh, child_url,
+          password_manager::BadMessageReason::CPMD_BAD_ORIGIN_FORM_SUBMITTED,
+          /*may_kill_renderer=*/false));
+  EXPECT_EQ(bad_message_count, child_process->bad_msg_count());
+  ContentPasswordManagerDriver* child_password_driver =
+      ContentPasswordManagerDriver::GetForRenderFrameHost(child_rfh);
+  ASSERT_TRUE(child_password_driver);
+  ASSERT_FALSE(child_password_driver->HasValidURL(/*may_kill_renderer=*/false));
+  EXPECT_EQ(bad_message_count, child_process->bad_msg_count());
+
+  ContentAutofillDriver* main_driver =
+      ContentAutofillDriver::GetForRenderFrameHost(main_rfh());
+  ContentAutofillDriver* child_driver =
+      ContentAutofillDriver::GetForRenderFrameHost(child_rfh);
+  ASSERT_TRUE(main_driver);
+  ASSERT_TRUE(child_driver);
+
+  FormData main_form = CreateFormDataForRenderFrameHost(
+      *main_rfh(), {CreateTestFormField("Username", "username", "",
+                                        FormControlType::kInputText),
+                    CreateTestFormField("Password", "password", "",
+                                        FormControlType::kInputPassword)});
+  FormData child_form = CreateFormDataForRenderFrameHost(
+      *child_rfh,
+      {CreateTestFormField("OTP", "OTP", "", FormControlType::kInputText)});
+  autofill::FrameTokenWithPredecessor child_frame_information;
+  child_frame_information.token = child_form.host_frame();
+  main_form.set_child_frames({child_frame_information});
+
+  {
+    autofill::TestAutofillManagerWaiter waiter(
+        main_driver->GetAutofillManager(),
+        {autofill::AutofillManagerEvent::kFormsSeen});
+    main_driver->renderer_events().FormsSeen(/*updated_forms=*/{main_form},
+                                             /*removed_forms=*/{});
+    child_driver->renderer_events().FormsSeen(/*updated_forms=*/{child_form},
+                                              /*removed_forms=*/{});
+    ASSERT_TRUE(waiter.Wait(/*num_expected_relevant_events=*/2));
+  }
+
+  using Observer = autofill::AutofillManager::Observer;
+  main_driver->GetAutofillManager().NotifyObservers(
+      &Observer::OnFieldTypesDetermined, main_form.global_id(),
+      Observer::FieldTypeSource::kAutofillServer);
+
+  ContentPasswordManagerDriver* main_password_driver =
+      ContentPasswordManagerDriver::GetForRenderFrameHost(main_rfh());
+  ASSERT_TRUE(main_password_driver);
+  EXPECT_THAT(
+      static_cast<const password_manager::PasswordManager*>(
+          GetClient()->GetPasswordManager())
+          ->GetServerPredictionsForTesting(),
+      UnorderedElementsAre(Key(testing::Pair(CalculateFormSignature(main_form),
+                                             main_password_driver->GetId()))));
+  EXPECT_EQ(bad_message_count, child_process->bad_msg_count());
+}
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 
 TEST_F(ChromePasswordManagerClientTest,
        GetPasswordManagerDelegateReturnsAutofillManagerForOnlyFrame) {

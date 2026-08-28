@@ -410,6 +410,10 @@ class CORE_EXPORT ContentSecurityPolicy final
   // main world CSP. See ExecutionContext::GetContentSecurityPolicyForWorld.
   static bool ShouldBypassMainWorldDeprecated(const DOMWrapperWorld* world);
 
+  static bool AllowBaseURI(
+      const KURL&,
+      const Vector<network::mojom::blink::ContentSecurityPolicyPtr>&);
+
   static bool IsNonceableElement(const Element*);
 
   // Returns true if the attribute name or value contains a dangling markup

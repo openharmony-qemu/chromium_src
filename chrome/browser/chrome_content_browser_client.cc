@@ -6093,12 +6093,13 @@ ChromeContentBrowserClient::CreateURLLoaderThrottles(
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   ChromeContentBrowserClientUtils::AddExtraHeadersThrottle(request, result);
-#endif
 
-#if BUILDFLAG(IS_ARKWEB)
-  ChromeContentBrowserClientUtils::AddExtraHeadersUrlThrottle(chrome_navigation_ui_data, 
-                                                              result);
-#endif // BUILDFLAG(IS_ARKWEB)
+  if (base::FeatureList::IsEnabled(features::kExtraHeaderOptEnable)) {
+    LOG(DEBUG) << "ExtraHeaderOptEnable is enabled, need to add extra headers url throttle.";
+    ChromeContentBrowserClientUtils::AddExtraHeadersUrlThrottle(chrome_navigation_ui_data, 
+                                                                result);
+  }
+#endif
 
   return result;
 }

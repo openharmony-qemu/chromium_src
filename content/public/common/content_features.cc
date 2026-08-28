@@ -1456,4 +1456,11 @@ bool IsPushSubscriptionChangeEventEnabled() {
              features::kPushSubscriptionChangeEventOnResubscribe);
 }
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+// Flag to control whether headers include extra header
+BASE_FEATURE(kExtraHeaderOptEnable,
+             "ExtraHeaderOptEnable",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
+
 }  // namespace features

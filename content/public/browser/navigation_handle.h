@@ -99,10 +99,12 @@ class CONTENT_EXPORT NavigationHandle : public base::SupportsUserData {
   // Get a unique ID for this navigation.
   virtual int64_t GetNavigationId() const = 0;
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   // Get extra headers for this navigation.
-  virtual const std::string& GetExtraHeaders() = 0;
-#endif // BUILDFLAG(IS_ARKWEB)
+  virtual const std::string& GetExtraHeaders() const = 0;
+  // Get complete request headers including extra_headers.
+  virtual std::string GetCompleteHeaders() const = 0;
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
 
   // Get the page UKM ID that will be in use once this navigation fully commits
   // (typically the eventual value of

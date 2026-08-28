@@ -2515,7 +2515,15 @@ void NetworkHandler::NavigationRequestWillBeSent(
   const blink::mojom::CommonNavigationParams& common_params =
       nav_request.common_params();
   net::HttpRequestHeaders headers;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::FeatureList::IsEnabled(features::kExtraHeaderOptEnable)) {
+    headers.AddHeadersFromString(nav_request.GetCompleteHeaders());
+  } else {
+    headers.AddHeadersFromString(nav_request.begin_params().headers);
+  }
+#else
   headers.AddHeadersFromString(nav_request.begin_params().headers);
+#endif
 
   std::unique_ptr<Network::Response> redirect_response;
   const blink::mojom::CommitNavigationParams& commit_params =

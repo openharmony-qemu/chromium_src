@@ -6425,7 +6425,7 @@ void RenderProcessHostImpl::ProvideSwapFileForRenderer() {
           std::move(allocator)));
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
 void RenderProcessHostImpl::NotifyMemoryPressureToRenderer(
     base::MemoryPressureLevel level) {

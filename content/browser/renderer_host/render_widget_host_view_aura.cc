@@ -2320,6 +2320,8 @@ void RenderWidgetHostViewAura::OnDeviceScaleFactorChanged(
 }
 
 void RenderWidgetHostViewAura::OnWindowDestroying(aura::Window* window) {
+  event_handler_->set_window(nullptr);
+
 #if BUILDFLAG(IS_WIN)
   // The LegacyRenderWidgetHostHWND instance is destroyed when its window is
   // destroyed. Normally we control when that happens via the Destroy call

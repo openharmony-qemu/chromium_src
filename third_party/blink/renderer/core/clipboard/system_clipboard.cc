@@ -299,6 +299,10 @@ mojo_base::BigBuffer SystemClipboard::ReadPng(
   return png;
 }
 
+String SystemClipboard::ReadImageAsImageMarkup() {
+  return ReadImageAsImageMarkup(buffer_);
+}
+
 String SystemClipboard::ReadImageAsImageMarkup(
     mojom::blink::ClipboardBuffer buffer) {
   mojo_base::BigBuffer png_data = ReadPng(buffer);

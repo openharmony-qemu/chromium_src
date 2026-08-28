@@ -325,6 +325,7 @@ class CORE_EXPORT HTMLSelectElement final
       HTMLSelectedContentElement* selectedcontent);
   void SelectedContentElementRemoved(
       HTMLSelectedContentElement* selectedcontent);
+  bool HasDescendantSelectedcontentElements() const;
 
   // This will only return an element if IsAppearanceBase(). The element
   // is a popover inside the UA shadowroot which is used to show the user a

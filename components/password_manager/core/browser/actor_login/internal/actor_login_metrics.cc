@@ -74,6 +74,10 @@ void RecordAttemptLoginResult(const LoginStatusResultOrError& result_or_error) {
       case LoginStatusResult::kErrorDeviceReauthFailed:
         RecordAttemptLoginResult(AttemptLoginResult::kErrorDeviceReauthFailed);
         break;
+      case LoginStatusResult::kErrorPageChangedDuringFilling:
+        RecordAttemptLoginResult(
+            AttemptLoginResult::kErrorPageChangedDuringFilling);
+        break;
     }
     return;
   }

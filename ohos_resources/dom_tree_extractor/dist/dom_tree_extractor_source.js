@@ -28,6 +28,65 @@
     // == 工具函数定义 ==
     // ========================
 
+    // v002: one extraction owns one coherent set of read caches. They are
+    // reset before every public full extraction, so nothing survives across
+    // DOM revisions or reports.
+    let extractionXPathCache = new WeakMap();
+    let extractionSiblingInfoCache = new WeakMap();
+    let extractionStyleCache = new WeakMap();
+    let extractionRectCache = new WeakMap();
+
+    function resetExtractionCaches() {
+        extractionXPathCache = new WeakMap();
+        extractionSiblingInfoCache = new WeakMap();
+        extractionStyleCache = new WeakMap();
+        extractionRectCache = new WeakMap();
+    }
+
+    function getCachedComputedStyle(element) {
+        let style = extractionStyleCache.get(element);
+        if (!style) {
+            style = window.getComputedStyle(element);
+            extractionStyleCache.set(element, style);
+        }
+        return style;
+    }
+
+    function getCachedBoundingRect(element) {
+        let rect = extractionRectCache.get(element);
+        if (!rect) {
+            rect = element.getBoundingClientRect();
+            extractionRectCache.set(element, rect);
+        }
+        return rect;
+    }
+
+    function getSiblingInfo(element) {
+        const parent = element.parentElement;
+        if (!parent) {
+            return { index: 1, hasSimilarNextSibling: false };
+        }
+
+        let siblingInfo = extractionSiblingInfoCache.get(parent);
+        if (!siblingInfo) {
+            siblingInfo = new WeakMap();
+            const tagCounts = new Map();
+            for (const child of parent.children) {
+                const count = (tagCounts.get(child.nodeName) || 0) + 1;
+                tagCounts.set(child.nodeName, count);
+                siblingInfo.set(child, {
+                    index: count,
+                    // Preserve v0's exact rule: only the immediate next
+                    // element sibling determines whether the first item gets
+                    // an explicit [1].
+                    hasSimilarNextSibling: child.nextElementSibling?.nodeName === child.nodeName
+                });
+            }
+            extractionSiblingInfoCache.set(parent, siblingInfo);
+        }
+        return siblingInfo.get(element) || { index: 1, hasSimilarNextSibling: false };
+    }
+
     /**
      * 获取元素的 xpath 路径
      * @param {Node} element 元素节点
@@ -43,30 +102,33 @@
             return `//*[@id="${node.id}"]`;
         }
 
-        const segments = [];
-        let current = node;
-
-        while (current && current.nodeType === Node.ELEMENT_NODE) {
-            // 计算节点在兄弟节点中的索引
-            let index = 1;
-            let sibling = current.previousElementSibling;
-            while (sibling) {
-                if (sibling.nodeName === current.nodeName) {
-                    index++;
-                }
-                sibling = sibling.previousElementSibling;
-            }
-
-            // 生成路径段
-            const tag = current.nodeName.toLowerCase();
-            const hasSimilarSiblings = current.nextElementSibling?.nodeName === current.nodeName;
-            const segment = index > 1 || hasSimilarSiblings ? `${tag}[${index}]` : tag;
-
-            segments.unshift(segment);
-            current = current.parentNode;
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+            return null;
         }
 
-        return segments.length ? `/${segments.join('/')}` : null;
+        const unresolved = [];
+        let current = node;
+        let prefix = null;
+        while (current && current.nodeType === Node.ELEMENT_NODE) {
+            const cached = extractionXPathCache.get(current);
+            if (cached) {
+                prefix = cached;
+                break;
+            }
+            unresolved.push(current);
+            current = current.parentElement;
+        }
+
+        while (unresolved.length) {
+            const element = unresolved.pop();
+            const { index, hasSimilarNextSibling } = getSiblingInfo(element);
+            const tag = element.nodeName.toLowerCase();
+            const segment = index > 1 || hasSimilarNextSibling ? `${tag}[${index}]` : tag;
+            prefix = prefix ? `${prefix}/${segment}` : `/${segment}`;
+            extractionXPathCache.set(element, prefix);
+        }
+
+        return prefix;
     }
 
     function isScrollable(element, direction = 'both') {
@@ -75,7 +137,7 @@
         }
 
         // 获取计算后的样式
-        const computedStyle = window.getComputedStyle(element);
+        const computedStyle = getCachedComputedStyle(element);
         const overflowX = computedStyle.overflowX;
         const overflowY = computedStyle.overflowY;
 
@@ -149,7 +211,7 @@
         const hasOpenShadow = !!element.shadowRoot;
         const hasClosedShadow = typeof element.hasArkWebShadowRoot === 'function' && element.hasArkWebShadowRoot();
         if (hasOpenShadow || hasClosedShadow) {
-            const rect = element.getBoundingClientRect();
+            const rect = getCachedBoundingRect(element);
             // 宽高都超过视口的 80%
             const isMassiveByDimension = (rect.width > window.innerWidth * 0.8) && (rect.height > window.innerHeight * 0.8);
             if (isMassiveByDimension) {
@@ -189,51 +251,6 @@
         'FORM': 'form'
     };
 
-    /**
-     * 剔除节点数组被包含的节点通过判断位置和宽高
-     * @param {nodes} rectA 目标矩形
-     * @returns {nodes}
-     */
-    function filterCovered(nodes) {
-        if (nodes.length <= 1) {
-            return nodes;
-        }
-
-        function getRect(node) {
-            const r = node.getBoundingClientRect();
-            return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
-        }
-
-        function contains(a, b) {
-            return (
-                a.left <= b.left &&
-                a.top <= b.top &&
-                a.right >= b.right &&
-                a.bottom >= b.bottom
-            );
-        }
-
-        function recurse(list, i = 0) {
-            if (i >= list.length) {
-                return list;
-            }
-            const rectA = getRect(list[i]);
-            for (let j = 0; j < list.length; j++) {
-                if (i === j) {
-                    continue;
-                }
-                const rectB = getRect(list[j]);
-                // 如果 A 被 B 包含，去掉 A
-                if (contains(rectB, rectA)) {
-                    list.splice(i, 1);
-                    return recurse(list, i);
-                }
-            }
-            return recurse(list, i + 1);
-        }
-
-        return recurse([...nodes]);
-    }
 
     /**
      * 获取元素的"自身文本内容"（不包括子元素内容）。
@@ -300,83 +317,13 @@
         return ratio >= 0.9;
     }
 
-    // 判断是否有 transform
-    function isTransformed(node) {
-        const transform = window.getComputedStyle(node).transform;
-        return transform && transform !== 'none';
-    }
-
-    function isClippingNode(node) {
-        if (node === document.body || node === document.documentElement) {
-            return false;
-        }
-
-        const style = window.getComputedStyle(node);
-
-        // 判断 overflow 类型
-        const hasOverflowClip =
-            style.overflow !== 'visible' ||
-            style.overflowX !== 'visible' ||
-            style.overflowY !== 'visible';
-
-        // 判断 transform
-        const hasTransform = style.transform !== 'none';
-
-        // 判断 filter
-        const hasFilter = style.filter !== 'none';
-
-        // 判断 clip-path
-        const hasClipPath = style.clipPath !== 'none' && style.clipPath !== '';
-
-        // contain: layout 或 strict
-        const hasContainLayout = /layout|strict/.test(style.contain);
-
-        // mask
-        const hasMask = style.mask !== 'none' || style.webkitMaskImage !== 'none';
-
-        return (
-            hasOverflowClip ||
-            hasTransform ||
-            hasFilter ||
-            hasClipPath ||
-            hasContainLayout ||
-            hasMask
-        );
-    }
-
-    function hasTableAncestorRecursive(node, filter) {
-        // 如果当前节点没有父节点，说明已经到达根节点，没有找到
-        if (!node.parentNode) {
-            return false;
-        }
-        // 检查当前父节点是否是 <table>
-        const parent = node.parentNode;
-        if (parent.tagName && parent.tagName.toLowerCase() === filter) {
-            return true;
-        }
-
-        // 递归检查父节点的父节点
-        return hasTableAncestorRecursive(parent, filter);
-    }
-
-    function hasClassInAncestors(node, className = 'harmony-author-intro') {
-        let current = node;
-        while (current) {
-            if (current.classList && current.classList.contains(className)) {
-                return true;
-            }
-            current = current.parentElement;
-        }
-        return false;
-    }
-
     /**
      * 判断节点是否在其祖先节点的可见区域内（未被裁剪）。
      * @param {Node} node 当前节点
-     * @param {WeakMap} semanticMap 语义区域映射表
+     * @param {string|null} semanticRole 当前节点的语义角色
      * @returns {boolean}
      */
-    function isVisibleByAncestorIntersections(node, semanticMap) {
+    function isVisibleByAncestorIntersections(node, semanticRole) {
         let element;
 
         if (node.nodeType === Node.TEXT_NODE) {
@@ -391,20 +338,47 @@
             return true;
         }
 
-        const targetRect = element.getBoundingClientRect();
-        const semantic = semanticMap.get(element);
+        const targetRect = getCachedBoundingRect(element);
+        // v004: hoisted once instead of re-evaluating per clipping ancestor.
+        const requiresFullIntersection = semanticRole === 'banner';
 
         let current = element.parentElement;
 
         while (current && current !== document.body && current !== document.documentElement) {
-            if (isTransformed(current)) {
+            const style = getCachedComputedStyle(current);
+            const transform = style.transform;
+
+            if (transform && transform !== 'none') {
                 current = current.parentElement;
                 continue;
             }
 
-            if (isClippingNode(current)) {
-                const ancestorRect = current.getBoundingClientRect();
-                const intersection = 'banner' === semantic ? hasIntersection(targetRect, ancestorRect) : hasIntersectionXOnly(targetRect, ancestorRect);
+            // 判断 overflow 类型
+            const hasOverflowClip =
+                style.overflow !== 'visible' ||
+                style.overflowX !== 'visible' ||
+                style.overflowY !== 'visible';
+
+            // 判断 transform（与跳过分支同一份样式值）
+            const hasTransform = transform !== 'none';
+
+            // 判断 filter
+            const hasFilter = style.filter !== 'none';
+
+            // 判断 clip-path
+            const hasClipPath = style.clipPath !== 'none' && style.clipPath !== '';
+
+            // contain: layout 或 strict
+            const hasContainLayout = /layout|strict/.test(style.contain);
+
+            // mask
+            const hasMask = style.mask !== 'none' || style.webkitMaskImage !== 'none';
+
+            if (hasOverflowClip || hasTransform || hasFilter || hasClipPath || hasContainLayout || hasMask) {
+                const ancestorRect = getCachedBoundingRect(current);
+                const intersection = requiresFullIntersection
+                    ? hasIntersection(targetRect, ancestorRect)
+                    : hasIntersectionXOnly(targetRect, ancestorRect);
 
                 if (!intersection) {
                     return false;
@@ -424,107 +398,18 @@
         return range.getBoundingClientRect();
     }
 
-    //CHANGE-FUNC
-    function getTextNodes(node, processedNodes) {
-        let tmpTextNodes = [];
-        const textWalker = document.createTreeWalker(
-            node,
-            NodeFilter.SHOW_TEXT,
-            {
-                acceptNode: (node) => {
-                    if (hasTableAncestorRecursive(node, 'table')) {
-                        return NodeFilter.FILTER_SKIP;
-                    }
-                    const cleanText = getOwnTextContent(node).trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
-                    const isMeaningTextValue = !isMeaninglessText(cleanText);
-                    return node.nodeType === Node.TEXT_NODE && isMeaningTextValue ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
-                }
-            }
-        );
-        while (textWalker.nextNode()) {
-            const textNode = textWalker.currentNode;
-            // v4改进：检查是否已经处理过这个文本节点
-            if (!processedNodes.has(textNode)) {
-                tmpTextNodes.push(textNode);
-                processedNodes.add(textNode);
-            }
-        }
-        return tmpTextNodes;
-    }
-
-    //CHANGE-FUNC
-    function getAllVisibleElements(node, processedNodes) {
-        let tmpElements = [];
-        const elementWalker = document.createTreeWalker(
-            node,
-            NodeFilter.SHOW_ELEMENT,
-            {
-                acceptNode: (node) => {
-                    return node.nodeType === Node.ELEMENT_NODE ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
-                }
-            }
-        );
-        while (elementWalker.nextNode()) {
-            const element = elementWalker.currentNode;
-            // v4改进：检查是否已经处理过这个元素节点
-            if (!processedNodes.has(element)) {
-                tmpElements.push(element);
-                processedNodes.add(element);
-            }
-        }
-        return tmpElements;
-    }
-
-    function buildSemanticMap() {
-        const semanticMap = new WeakMap();
-
-        const walker = document.createTreeWalker(
-            document.body,
-            NodeFilter.SHOW_ELEMENT,
-            {
-                acceptNode: (node) => {
-                    const role = node.getAttribute('role') || html5ToAriaRole[node.tagName];
-                    if (role && semanticRoles.has(role)) {
-                        return NodeFilter.FILTER_ACCEPT;
-                    }
-                    return NodeFilter.FILTER_SKIP;
-                }
-            }
-        );
-
-        while (walker.nextNode()) {
-            const element = walker.currentNode;
-            const role = element.getAttribute('role') || html5ToAriaRole[element.tagName];
-
-            const subWalker = document.createTreeWalker(
-                element,
-                NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
-                null
-            );
-
-            while (subWalker.nextNode()) {
-                const child = subWalker.currentNode;
-                if (!semanticMap.has(child)) {
-                    semanticMap.set(child, role);
-                }
-            }
-        }
-
-        return semanticMap;
-    }
-
     function isOccluded(element) {
         // 检查元素是否存在且可见
         if (!element || !element.getBoundingClientRect) {
             return false;
         }
-        const rect = element.getBoundingClientRect();
+        const rect = getCachedBoundingRect(element);
         // 如果元素尺寸为0，认为不可见
         if (rect.width === 0 || rect.height === 0) {
             return true;
         }
         // 检查元素的样式
-        const computedStyle = window.getComputedStyle(element);
+        const computedStyle = getCachedComputedStyle(element);
         if (computedStyle.display === 'none' ||
             computedStyle.visibility === 'hidden' ||
             computedStyle.opacity === '0') {
@@ -554,7 +439,7 @@
                 continue;
             }
             // 检查遮挡元素是否透明
-            const occludingStyle = window.getComputedStyle(topElement);
+            const occludingStyle = getCachedComputedStyle(topElement);
             const opacity = parseFloat(occludingStyle.opacity);
             if (opacity === 0) {
                 continue;
@@ -595,7 +480,7 @@
             return false;
         }
         // CSS 检查
-        const style = window.getComputedStyle(element);
+        const style = getCachedComputedStyle(element);
         if (style.display === 'none' || style.visibility === 'hidden') {
             return false;
         }
@@ -604,7 +489,7 @@
             return false;
         }
         // 尺寸检查
-        const rect = element.getBoundingClientRect();
+        const rect = getCachedBoundingRect(element);
         if (rect.width < 0.5 && rect.height < 0.5) {
             return false;
         }
@@ -613,97 +498,6 @@
             return false;
         }
         return true;
-    }
-
-    function buildFixedOrStickyMap() {
-        const map = new WeakMap();
-
-        const walker = document.createTreeWalker(
-            document.body,
-            NodeFilter.SHOW_ELEMENT,
-            {
-                acceptNode: (node) => {
-                    const style = window.getComputedStyle(node);
-                    if (['fixed', 'sticky'].includes(style.position)) {
-                        return NodeFilter.FILTER_ACCEPT;
-                    }
-                    if (['is-fixed', 'fixed', 'sticky', 'Sticky', 'AppHeader'].some(cls => node.classList.contains(cls))) {
-                        return NodeFilter.FILTER_ACCEPT;
-                    }
-                    return NodeFilter.FILTER_SKIP;
-                }
-            }
-        );
-
-        while (walker.nextNode()) {
-            const fixedOrStickyNode = walker.currentNode;
-
-            const subWalker = document.createTreeWalker(
-                fixedOrStickyNode,
-                NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
-                null
-            );
-
-            while (subWalker.nextNode()) {
-                const child = subWalker.currentNode;
-                if (!map.has(child)) {
-                    map.set(child, fixedOrStickyNode);
-                }
-            }
-        }
-
-        return map;
-    }
-
-    /**
-     * 构建 hiddenMap
-     */
-    function buildHiddenMap() {
-        const hiddenMap = new WeakMap();
-
-        const walker = document.createTreeWalker(
-            document.body,
-            NodeFilter.SHOW_ELEMENT,
-            {
-                acceptNode: (node) => {
-                    const style = window.getComputedStyle(node);
-                    const rect = node.getBoundingClientRect();
-
-                    const isHiddenByDisplay = style.display === 'none';
-                    const isHiddenByVisibility = style.visibility === 'hidden';
-                    const isHiddenByOpacity = parseFloat(style.opacity) === 0;
-
-                    if (isHiddenByDisplay || isHiddenByVisibility || isHiddenByOpacity) {
-                        return NodeFilter.FILTER_ACCEPT;
-                    }
-
-                    return NodeFilter.FILTER_SKIP;
-                }
-            }
-        );
-
-        while (walker.nextNode()) {
-            const hiddenNode = walker.currentNode;
-
-            const subWalker = document.createTreeWalker(
-                hiddenNode,
-                NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
-                null
-            );
-
-            while (subWalker.nextNode()) {
-                const child = subWalker.currentNode;
-                if (!hiddenMap.has(child)) {
-                    hiddenMap.set(child, hiddenNode);
-                }
-            }
-        }
-
-        return hiddenMap;
-    }
-
-    function isAncestorFixedOrSticky(node, map) {
-        return map.has(node);
     }
 
     function getNodeText(node) {
@@ -728,315 +522,17 @@
         return cleanText.length === 0;
     }
 
-    function isHiddenByClass(node) {
-        const hideClasses = ['popup-hide', 'popup-anime-hide'];
-        let current = node;
-        while (current && current !== document.body) {
-            if (current.classList) {
-                if ([...current.classList].some(cls => hideClasses.includes(cls))) {
-                    return true;
-                }
-            }
-            current = current.parentElement;
-        }
-        return false;
-    }
+    const hideClasses = new Set(['popup-hide', 'popup-anime-hide']);
 
     function isInputAndNotPassword(element) {
         return ((element.tagName === 'INPUT' && element.type !== 'password') || element.tagName === 'TEXTAREA');
-    }
-
-    function convertNode(nodeXPathMap, hiddenMap, nodes, node, element, cache) {
-        if (node.nodeType === Node.TEXT_NODE) {
-            const nodeData = {
-                text: node.textContent.trim(),
-                tagName: '$TEXT_NODE$',
-                element: element,
-                node: node,
-                domNodeId: typeof node.getArkWebDomNodeId === 'function' ? node.getArkWebDomNodeId(node) : null,
-            };
-            // TOOD: No xpath, should add node id map.
-            nodes.push(nodeData);
-        } else {
-            let text = getNodeText(node);
-            const computedStyle = window.getComputedStyle(element);
-
-            let rect;
-            if (node.nodeType === Node.TEXT_NODE) {
-                rect = getTextNodeRect(node);
-            } else if (!['TITLE', 'META'].includes(element.tagName)) {
-                rect = element.getBoundingClientRect();
-            } else {
-                rect = { left: 0, top: 0, width: 0, height: 0 };
-            }
-
-            const isVisible =
-                // rect.width > 0 &&
-                // rect.height > 0 &&
-                (node.nodeType === Node.TEXT_NODE || element.offsetParent !== null || computedStyle.position === 'fixed') &&
-                computedStyle.visibility === 'visible' &&
-                parseFloat(computedStyle.opacity) > 0;
-
-            // 判断是否被父节点隐藏
-            const isHiddenByParent = hiddenMap.has(element) || hiddenMap.has(node);
-
-            if (isHiddenByParent || isHiddenByClass(element) || !isVisible) {
-                return;
-            }
-
-            if (isSuspiciousShadowDOM(element)) {
-                return;
-            }
-
-            // v4改进：生成唯一标识符
-            const xpath = getXPath(element);
-            const uniqueId = `${element.tagName}_${xpath}_${element.textContent.substring(0, 20)}`;
-
-            // Export img src.
-            const src = (element.tagName === 'IMG') ? element.getAttribute('src') : undefined;
-
-            const autocomplete = isInputAndNotPassword(element) ? element.getAttribute('autocomplete') : undefined;
-            const placeholder = isInputAndNotPassword(element) ? element.getAttribute('placeholder') : undefined;
-            const contenttype = isInputAndNotPassword(element) ? element.getAttribute('type') : undefined;
-            const inputvalue = isInputAndNotPassword(element) ? element.value : undefined;
-            const optionvalue = (element.tagName === 'SELECT' && element.selectedIndex !== -1) ? element.options[element.selectedIndex].text : undefined;
-
-            const scrollable = isScrollable(element);
-
-            // v4改进：检查是否已经处理过相同xpath的元素
-            if (nodeXPathMap.has(xpath)) {
-                return;
-            }
-
-            nodeXPathMap.set(xpath, true);
-
-            const nodeData = {
-                text: text,
-                x: rect.left * window.devicePixelRatio,
-                y: rect.top * window.devicePixelRatio,
-                width: rect.width * window.devicePixelRatio,
-                height: rect.height * window.devicePixelRatio,
-                tagName: element.tagName,
-                fontSize: computedStyle.fontSize,
-                fontColor: computedStyle.color,
-                fontWeight: computedStyle.fontWeight,
-                fontFamily: computedStyle.fontFamily,
-                fixedOrSticky: isAncestorFixedOrSticky(element, cache.fixedOrStickyMap),
-                xpath: xpath,
-                occluded: isOccluded(element),
-                element: element,
-                node: node,
-                uniqueId: uniqueId,  // v4新增：唯一标识符
-                className: element.getAttribute('class') || undefined,
-                eventListenerTypes: typeof element.getArkWebEventListenerTypes === 'function' ? element.getArkWebEventListenerTypes() : null,
-                domNodeId: typeof element.getArkWebDomNodeId === 'function' ? element.getArkWebDomNodeId(element) : null,
-                src,
-                autocomplete,
-                placeholder,
-                webid: element.getAttribute('id') || undefined,
-                contenttype,
-                inputvalue,
-                optionvalue,
-                scrollTop: scrollable ? element.scrollTop * window.devicePixelRatio : undefined,
-                scrollLeft: scrollable ? element.scrollLeft * window.devicePixelRatio : undefined,
-                scrollHeight: scrollable ? element.scrollHeight * window.devicePixelRatio : undefined,
-                scrollWidth: scrollable ? element.scrollWidth * window.devicePixelRatio : undefined,
-                isScrollable: scrollable,
-            };
-
-            nodes.push(nodeData);
-        }
-    }
-
-    function createGlobalWalker(textNodes, allElements, semanticMap) {
-        const acceptedNodes = new Set([...textNodes, ...allElements]);
-        return document.createTreeWalker(
-            document.body,
-            NodeFilter.SHOW_ALL,
-            {
-                acceptNode: (node) => {
-                    // 减少过滤条件
-                    if (node.classList && (node.classList.contains('hwb-news-nested-list') ||
-                        node.classList.contains('hwb-horizons-more-exploration'))) {
-                        return NodeFilter.FILTER_REJECT;
-                    }
-                    return acceptedNodes.has(node) && isVisibleByAncestorIntersections(node, semanticMap)
-                        ? NodeFilter.FILTER_ACCEPT
-                        : NodeFilter.FILTER_SKIP;
-                },
-            }
-        );
-    }
-
-    function initNodesMap(nodes) {
-        // 初始化映射
-        const childrenMap = new Map(); // parentNode -> Set of children
-        const parentMap = new Map();   // childNode -> parentNode
-        const nodeDataMap = new Map(); // node -> nodeData
-
-        nodes.forEach(nodeData => {
-            const node = nodeData.node;
-            nodeDataMap.set(node, nodeData);
-
-            // 获取父节点
-            const parentNode = node.parentNode;
-            if (parentNode) {
-                parentMap.set(node, parentNode);
-
-                if (!childrenMap.has(parentNode)) {
-                    childrenMap.set(parentNode, new Set());
-                }
-                childrenMap.get(parentNode).add(node);
-            }
-        });
-        return [childrenMap, parentMap];
-    }
-
-    function findLeafNode(nodes, childrenMap) {
-        const leafNodes = [];
-        nodes.forEach(nodeData => {
-            const node = nodeData.node;
-            const children = childrenMap.get(node);
-
-            // 如果没有子节点或子节点集合为空，则为叶子节点
-            if (!children || children.size === 0) {
-                leafNodes.push(node);
-            }
-        });
-        return leafNodes;
-    }
-
-    function processLeafNodes(leafNodes, childrenMap, parentMap) {
-        const toRemove = new Set();
-        const queue = [...leafNodes];
-
-        while (queue.length > 0) {
-            const node = queue.shift();
-
-            // 检查是否可见
-            if (!isVisible(node)) {
-                toRemove.add(node);
-
-                // 从父节点的子节点集合中移除
-                const parentNode = parentMap.get(node);
-                if (parentNode) {
-                    const siblings = childrenMap.get(parentNode);
-                    if (siblings) {
-                        siblings.delete(node);
-
-                        // 如果父节点现在变成了叶子节点，加入队列
-                        if (siblings.size === 0 && !isVisible(parentNode)) {
-                            queue.push(parentNode);
-                        }
-                    }
-                }
-            }
-        }
-        return toRemove;
-    }
-
-    function extractAllUniqueNodes() {
-        const nodes = [];
-        const processedNodes = new Set(); // v4新增：记录已处理的节点，避免重复
-
-        // 第一步：提取所有文本节点
-        const textNodes = getTextNodes(document.body, processedNodes);
-
-        // 第二步：提取所有可见的元素节点
-        const allElements = getAllVisibleElements(document.body, processedNodes);
-
-        // 第三步：构建语义区域映射表
-        const semanticMap = buildSemanticMap();
-        const fixedOrStickyMap = buildFixedOrStickyMap();
-        const hiddenMap = buildHiddenMap();
-        const nodeXPathMap = new Map(); // v4新增：用于检测重复xpath
-
-        // 第四步：v4改进 - 唯一节点过滤和转换
-        const filteredGlobalWalker = createGlobalWalker(textNodes, allElements, semanticMap);
-
-        // 第五步：遍历并转换节点
-        while (filteredGlobalWalker.nextNode()) {
-            const node = filteredGlobalWalker.currentNode;
-            let element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
-            convertNode(nodeXPathMap, hiddenMap, nodes, node, element, {
-                fixedOrStickyMap,
-                semanticMap
-            });
-        }
-
-        // 第六步: Filter those invisible subtree.
-        // 步骤1: 建立父子关系映射 O(n)
-        const [childrenMap, parentMap] = initNodesMap(nodes);
-
-        // 步骤2: 找出所有叶子节点 O(n)
-        const leafNodes = findLeafNode(nodes, childrenMap);
-
-        // 步骤3: 使用队列处理叶子节点 O(n)
-        const toRemove = processLeafNodes(leafNodes, childrenMap, parentMap);
-
-        // 步骤4: 过滤数组 O(n)
-        return nodes.filter(nodeData => !toRemove.has(nodeData.node));
-    }
-
-    async function extractAllUniqueNodesAsync() {
-        const nodes = [];
-        const processedNodes = new Set(); // v4新增：记录已处理的节点，避免重复
-
-        // 第一步：提取所有文本节点
-        const textNodes = getTextNodes(document.body, processedNodes);
-        await checkInterrupt();
-
-        // 第二步：提取所有可见的元素节点
-        const allElements = getAllVisibleElements(document.body, processedNodes);
-        await checkInterrupt();
-
-        // 第三步：构建语义区域映射表
-        const semanticMap = buildSemanticMap();
-        const fixedOrStickyMap = buildFixedOrStickyMap();
-        const hiddenMap = buildHiddenMap();
-        const nodeXPathMap = new Map(); // v4新增：用于检测重复xpath
-
-        // 第四步：v4改进 - 唯一节点过滤和转换
-        const filteredGlobalWalker = createGlobalWalker(textNodes, allElements, semanticMap);
-        await checkInterrupt();
-
-        // 第五步：遍历并转换节点
-        let globalWalkerCount = 0;
-        while (filteredGlobalWalker.nextNode()) {
-            globalWalkerCount++;
-            // 3. 时间切片：每处理 200 个节点，强行交出一次控制权
-            if (globalWalkerCount % 30 === 0) {
-                await checkInterrupt();
-            }
-            const node = filteredGlobalWalker.currentNode;
-            let element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
-            convertNode(nodeXPathMap, hiddenMap, nodes, node, element, {
-                fixedOrStickyMap,
-                semanticMap
-            });
-        }
-        await checkInterrupt();
-
-        // 第六步: Filter those invisible subtree.
-        // 步骤1: 建立父子关系映射 O(n)
-        const [childrenMap, parentMap] = initNodesMap(nodes);
-
-        // 步骤2: 找出所有叶子节点 O(n)
-        const leafNodes = findLeafNode(nodes, childrenMap);
-        await checkInterrupt();
-
-        // 步骤3: 使用队列处理叶子节点 O(n)
-        const toRemove = processLeafNodes(leafNodes, childrenMap, parentMap);
-
-        // 步骤4: 过滤数组 O(n)
-        return nodes.filter(nodeData => !toRemove.has(nodeData.node));
     }
 
     // ========================
     // == v4改进：基于DOM结构的树状构建 ==
     // ========================
     function getRefinedElementData(element) {
-        const rect = element.getBoundingClientRect();
+        const rect = getCachedBoundingRect(element);
         let scrollable = isScrollable(element);
         let treeNode = {
             $type: element.tagName ? element.tagName.toLowerCase() : 'text',
@@ -1067,166 +563,393 @@
         return treeNode;
     }
 
-    //CHANGE-FUNC
-    // v4改进：递归构建树状结构，确保唯一性和完整性
-    function buildTreeNodeV4(nodeData, processedNodes, nodeIdMap) {
-        if (!nodeData.element || !processedNodes.has(nodeData.element)) {
-            return null;
+    // ========================
+    // == v5: Single-pass extraction with viewport culling ==
+    // ========================
+
+    const VIEWPORT_MARGIN = 200;
+
+    function isOutsideViewport(rect) {
+        return rect.bottom < -VIEWPORT_MARGIN
+            || rect.top > window.innerHeight + VIEWPORT_MARGIN
+            || rect.right < -VIEWPORT_MARGIN
+            || rect.left > window.innerWidth + VIEWPORT_MARGIN;
+    }
+
+    const rejectClasses = new Set([
+        'hwb-news-nested-list', 'hwb-horizons-more-exploration'
+    ]);
+
+    function performDeferredOcclusion(candidates) {
+        const interactiveTags = new Set(['A', 'BUTTON', 'INPUT', 'TEXTAREA', 'SELECT', 'LABEL']);
+        const toCheck = [];
+        for (const c of candidates) {
+            if (interactiveTags.has(c.element.tagName)
+                || (c.treeNode.$attrs.eventListenerTypes && c.treeNode.$attrs.eventListenerTypes.length > 0)) {
+                toCheck.push(c);
+            }
+        }
+        if (toCheck.length > 500) {
+            toCheck.sort((a, b) =>
+                (b.treeNode.width * b.treeNode.height) - (a.treeNode.width * a.treeNode.height));
+            toCheck.length = 500;
+        }
+        for (const { element, treeNode } of toCheck) {
+            treeNode.$attrs.occluded = isOccluded(element);
+        }
+    }
+
+    function countTreeNodes(children) {
+        let count = 0;
+        for (const child of children) {
+            count++;
+            if (child.$children) {
+                count += countTreeNodes(child.$children);
+            }
+        }
+        return count;
+    }
+
+    function singlePassExtract() {
+        const rootChildren = [];
+        const xpathSet = new Set();
+        const stack = [];
+        const occlusionCandidates = [];
+
+        const initialState = {
+            semanticRole: null,
+            isFixedOrSticky: false,
+            isInTable: false,
+            hasHideClass: false
+        };
+        const bodyChildren = document.body.childNodes;
+        for (let i = bodyChildren.length - 1; i >= 0; i--) {
+            stack.push({
+                node: bodyChildren[i],
+                parentChildren: rootChildren,
+                inherited: initialState
+            });
         }
 
-        const element = nodeData.element;
-        const node = nodeData.node;
-        const children = [];
+        while (stack.length > 0) {
+            const frame = stack.pop();
+            const node = frame.node;
 
-        // v4改进：查找所有直接子元素，确保唯一性
-        const childNodes = Array.from(node.childNodes).filter(childNode => {
-            return processedNodes.has(childNode);
-        });
+            if (node.nodeType === Node.TEXT_NODE) {
+                if (frame.inherited.isInTable) continue;
+                const text = node.textContent.trim();
+                if (!text || text.replace(/[​-‍﻿]/g, '').length === 0) continue;
 
-        childNodes.forEach(childNode => {
-            // 查找对应的节点数据
-            let childNodeData = null;
+                frame.parentChildren.push({
+                    $type: '$TEXT_NODE$',
+                    $ID: typeof node.getArkWebDomNodeId === 'function' ? node.getArkWebDomNodeId(node) : 0,
+                    type: 'web',
+                    $attrs: { text: text }
+                });
+                continue;
+            }
 
-            // First using domNodeId.
-            let childNodeId = typeof childNode.getArkWebDomNodeId === 'function' ? childNode.getArkWebDomNodeId() : -1;
-            childNodeData = nodeIdMap.get(childNodeId);
+            if (node.nodeType !== Node.ELEMENT_NODE) continue;
 
-            if (childNodeData) {
-                const childTreeNode = buildTreeNodeV4(childNodeData, processedNodes, nodeIdMap);
-                if (childTreeNode) {
-                    children.push(childTreeNode);
+            const element = node;
+
+            if (element.classList) {
+                let rejected = false;
+                for (const cls of element.classList) {
+                    if (rejectClasses.has(cls)) { rejected = true; break; }
                 }
+                if (rejected) continue;
+            }
+
+            const style = getCachedComputedStyle(element);
+
+            if (style.display === 'none'
+                || style.visibility === 'hidden'
+                || parseFloat(style.opacity) === 0) continue;
+
+            let hasHideClass = frame.inherited.hasHideClass;
+            if (!hasHideClass && element.classList) {
+                for (const cls of element.classList) {
+                    if (hideClasses.has(cls)) { hasHideClass = true; break; }
+                }
+            }
+            if (hasHideClass) continue;
+
+            const selfFixed = (style.position === 'fixed' || style.position === 'sticky')
+                || (element.classList && (
+                    element.classList.contains('is-fixed')
+                    || element.classList.contains('fixed')
+                    || element.classList.contains('sticky')
+                    || element.classList.contains('Sticky')
+                    || element.classList.contains('AppHeader')));
+            const isFixedOrSticky = frame.inherited.isFixedOrSticky || selfFixed;
+
+            let rect;
+            const isMetaTag = element.tagName === 'TITLE' || element.tagName === 'META';
+            if (!isMetaTag) {
+                rect = getCachedBoundingRect(element);
             } else {
-                // 如果没有找到对应的节点数据，记录警告但不创建回退节点
-                print({
-                    type: 'debugLog',
-                    data: { log: `child not find data, tag : ${childNode.tagName}` }
+                rect = { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+            }
+
+            if (isSuspiciousShadowDOM(element)) continue;
+
+            if (!isMetaTag) {
+                if (rect.width < 0.5 && rect.height < 0.5) continue;
+                if (rect.width === 0 || rect.height === 0) continue;
+            }
+
+            const role = element.getAttribute('role') || html5ToAriaRole[element.tagName];
+            const semanticRole = frame.inherited.semanticRole
+                || (role && semanticRoles.has(role) ? role : null);
+
+            if (!isMetaTag && element.tagName !== 'UL') {
+                if (!isVisibleByAncestorIntersections(element, semanticRole)) continue;
+            }
+
+            const isInTable = frame.inherited.isInTable || element.tagName === 'TABLE';
+
+            const xpath = getXPath(element);
+            if (xpath && xpathSet.has(xpath)) continue;
+            if (xpath) xpathSet.add(xpath);
+
+            const text = getNodeText(element);
+            const scrollable = isScrollable(element);
+            const src = element.tagName === 'IMG' ? element.getAttribute('src') : undefined;
+            const isInput = isInputAndNotPassword(element);
+
+            const treeNode = {
+                $type: element.tagName ? element.tagName.toLowerCase() : 'text',
+                $ID: typeof element.getArkWebDomNodeId === 'function' ? element.getArkWebDomNodeId(element) : 0,
+                type: 'web',
+                x: rect.left * window.devicePixelRatio || 0,
+                y: rect.top * window.devicePixelRatio || 0,
+                width: rect.width * window.devicePixelRatio || 0,
+                height: rect.height * window.devicePixelRatio || 0,
+                $attrs: {
+                    fixedOrSticky: isFixedOrSticky,
+                    fontColor: style.color || '',
+                    fontFamily: style.fontFamily || '',
+                    fontSize: style.fontSize || '',
+                    fontWeight: style.fontWeight || '',
+                    occluded: false,
+                    text: text || '',
+                    xpath: xpath || '',
+                    className: element.getAttribute('class') || undefined,
+                    eventListenerTypes: typeof element.getArkWebEventListenerTypes === 'function' ? element.getArkWebEventListenerTypes() : null,
+                    src,
+                    autocomplete: isInput ? element.getAttribute('autocomplete') : undefined,
+                    placeholder: isInput ? element.getAttribute('placeholder') : undefined,
+                    webid: element.getAttribute('id') || undefined,
+                    contenttype: isInput ? element.getAttribute('type') : undefined,
+                    value: isInput ? element.value : undefined,
+                    optionvalue: (element.tagName === 'SELECT' && element.selectedIndex !== -1) ? element.options[element.selectedIndex].text : undefined,
+                    scrollLeft: scrollable ? element.scrollLeft * window.devicePixelRatio : undefined,
+                    scrollTop: scrollable ? element.scrollTop * window.devicePixelRatio : undefined,
+                    scrollHeight: scrollable ? element.scrollHeight * window.devicePixelRatio : undefined,
+                    scrollWidth: scrollable ? element.scrollWidth * window.devicePixelRatio : undefined,
+                    isScrollable: scrollable,
+                },
+                $children: []
+            };
+
+            frame.parentChildren.push(treeNode);
+            occlusionCandidates.push({ element, treeNode });
+
+            const childState = {
+                semanticRole,
+                isFixedOrSticky,
+                isInTable,
+                hasHideClass: false
+            };
+            const children = element.childNodes;
+            for (let i = children.length - 1; i >= 0; i--) {
+                stack.push({
+                    node: children[i],
+                    parentChildren: treeNode.$children,
+                    inherited: childState
                 });
             }
-        });
-
-        // v4改进：构建树节点
-        let treeNode = null;
-        if (node.nodeType === Node.TEXT_NODE) {
-            treeNode = {
-                $type: nodeData.tagName,
-                $ID: nodeData.domNodeId || 0,
-                type: 'web',
-                $attrs: {
-                    text: nodeData.text || '',
-                }
-                // No children as expecting
-            }
-        } else {
-            treeNode = {
-                $type: element.tagName ? element.tagName.toLowerCase() : 'text',
-                $ID: nodeData.domNodeId || 0,
-                type: 'web',
-                x: nodeData.x || 0,
-                y: nodeData.y || 0,
-                width: nodeData.width || 0,
-                height: nodeData.height || 0,
-                $attrs: {
-                    fixedOrSticky: nodeData.fixedOrSticky || false,
-                    fontColor: nodeData.fontColor || '',
-                    fontFamily: nodeData.fontFamily || '',
-                    fontSize: nodeData.fontSize || '',
-                    fontWeight: nodeData.fontWeight || '',
-                    occluded: nodeData.occluded || false,
-                    text: nodeData.text || '',
-                    xpath: nodeData.xpath || '',
-                    className: nodeData.className,
-                    eventListenerTypes: nodeData.eventListenerTypes || null,
-                    src: nodeData.src,
-                    autocomplete: nodeData.autocomplete,
-                    placeholder: nodeData.placeholder,
-                    webid: nodeData.webid,
-                    contenttype: nodeData.contenttype,
-                    value: nodeData.inputvalue,
-                    optionvalue: nodeData.optionvalue,
-                    scrollLeft: nodeData.scrollLeft,
-                    scrollTop: nodeData.scrollTop,
-                    scrollHeight: nodeData.scrollHeight,
-                    scrollWidth: nodeData.scrollWidth,
-                    isScrollable: nodeData.isScrollable,
-                },
-                $children: children
-            };
         }
 
-        return treeNode;
+        performDeferredOcclusion(occlusionCandidates);
+        return rootChildren;
     }
 
-    // v4改进：验证树状结构的唯一性和完整性
-    function validateTreeStructureV4(node, depth = 0) {
-        let nodeCount = 1;
-        if (depth > 10) {
-            print({
-                type: 'debugLog',
-                data: { log: `tree is too deep may contain circular references` }
-            });
-            return nodeCount;
-        }
+    async function singlePassExtractAsync() {
+        const rootChildren = [];
+        const xpathSet = new Set();
+        const stack = [];
+        const occlusionCandidates = [];
 
-        if (node.$children) {
-            node.$children.forEach(child => {
-                nodeCount += validateTreeStructureV4(child, depth + 1);
+        const initialState = {
+            semanticRole: null,
+            isFixedOrSticky: false,
+            isInTable: false,
+            hasHideClass: false
+        };
+        const bodyChildren = document.body.childNodes;
+        for (let i = bodyChildren.length - 1; i >= 0; i--) {
+            stack.push({
+                node: bodyChildren[i],
+                parentChildren: rootChildren,
+                inherited: initialState
             });
         }
 
-        return nodeCount;
-    }
+        let processedCount = 0;
 
-    function buildDomTreeMap(flatNodes) {
-        const nodeElementMap = new Map();
-        const nodeIdMap = new Map();
-        const processedNodes = new Set(); // v4新增：记录已处理的元素
-        flatNodes.forEach(nodeData => {
-            // v4改进：检查元素是否已经被处理
-            if (!processedNodes.has(nodeData.node)) {
-                nodeElementMap.set(nodeData.xpath, nodeData);
-                nodeIdMap.set(nodeData.domNodeId, nodeData);
-                processedNodes.add(nodeData.node);
+        while (stack.length > 0) {
+            const frame = stack.pop();
+            const node = frame.node;
+
+            if (node.nodeType === Node.TEXT_NODE) {
+                if (frame.inherited.isInTable) continue;
+                const text = node.textContent.trim();
+                if (!text || text.replace(/[​-‍﻿]/g, '').length === 0) continue;
+
+                frame.parentChildren.push({
+                    $type: '$TEXT_NODE$',
+                    $ID: typeof node.getArkWebDomNodeId === 'function' ? node.getArkWebDomNodeId(node) : 0,
+                    type: 'web',
+                    $attrs: { text: text }
+                });
+                continue;
             }
-        });
-        return [nodeElementMap, nodeIdMap, processedNodes];
-    }
 
-    function buildRootNodes(nodeElementMap, nodeIdMap) {
-        let rootNodes = [];
-        document.body.childNodes.forEach((node) => {
-            if (typeof node.getArkWebDomNodeId === 'function') {
-                let nodeId = typeof node.getArkWebDomNodeId === 'function' ? node.getArkWebDomNodeId() : -1;
-                if (nodeIdMap.has(nodeId)) {
-                    rootNodes.push(nodeIdMap.get(nodeId));
+            if (node.nodeType !== Node.ELEMENT_NODE) continue;
+
+            processedCount++;
+            if (processedCount % 120 === 0) {
+                await checkInterrupt();
+            }
+
+            const element = node;
+
+            if (element.classList) {
+                let rejected = false;
+                for (const cls of element.classList) {
+                    if (rejectClasses.has(cls)) { rejected = true; break; }
                 }
+                if (rejected) continue;
+            }
+
+            const style = getCachedComputedStyle(element);
+
+            if (style.display === 'none'
+                || style.visibility === 'hidden'
+                || parseFloat(style.opacity) === 0) continue;
+
+            let hasHideClass = frame.inherited.hasHideClass;
+            if (!hasHideClass && element.classList) {
+                for (const cls of element.classList) {
+                    if (hideClasses.has(cls)) { hasHideClass = true; break; }
+                }
+            }
+            if (hasHideClass) continue;
+
+            const selfFixed = (style.position === 'fixed' || style.position === 'sticky')
+                || (element.classList && (
+                    element.classList.contains('is-fixed')
+                    || element.classList.contains('fixed')
+                    || element.classList.contains('sticky')
+                    || element.classList.contains('Sticky')
+                    || element.classList.contains('AppHeader')));
+            const isFixedOrSticky = frame.inherited.isFixedOrSticky || selfFixed;
+
+            let rect;
+            const isMetaTag = element.tagName === 'TITLE' || element.tagName === 'META';
+            if (!isMetaTag) {
+                rect = getCachedBoundingRect(element);
             } else {
-                let xpath = getXPath(node);
-                if (xpath && nodeElementMap.get(xpath)) {
-                    rootNodes.push(nodeElementMap.get(xpath));
-                }
+                rect = { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
             }
-        });
-        return rootNodes;
+
+            if (isSuspiciousShadowDOM(element)) continue;
+
+            if (!isMetaTag) {
+                if (rect.width < 0.5 && rect.height < 0.5) continue;
+                if (rect.width === 0 || rect.height === 0) continue;
+            }
+
+            const role = element.getAttribute('role') || html5ToAriaRole[element.tagName];
+            const semanticRole = frame.inherited.semanticRole
+                || (role && semanticRoles.has(role) ? role : null);
+
+            if (!isMetaTag && element.tagName !== 'UL') {
+                if (!isVisibleByAncestorIntersections(element, semanticRole)) continue;
+            }
+
+            const isInTable = frame.inherited.isInTable || element.tagName === 'TABLE';
+
+            const xpath = getXPath(element);
+            if (xpath && xpathSet.has(xpath)) continue;
+            if (xpath) xpathSet.add(xpath);
+
+            const text = getNodeText(element);
+            const scrollable = isScrollable(element);
+            const src = element.tagName === 'IMG' ? element.getAttribute('src') : undefined;
+            const isInput = isInputAndNotPassword(element);
+
+            const treeNode = {
+                $type: element.tagName ? element.tagName.toLowerCase() : 'text',
+                $ID: typeof element.getArkWebDomNodeId === 'function' ? element.getArkWebDomNodeId(element) : 0,
+                type: 'web',
+                x: rect.left * window.devicePixelRatio || 0,
+                y: rect.top * window.devicePixelRatio || 0,
+                width: rect.width * window.devicePixelRatio || 0,
+                height: rect.height * window.devicePixelRatio || 0,
+                $attrs: {
+                    fixedOrSticky: isFixedOrSticky,
+                    fontColor: style.color || '',
+                    fontFamily: style.fontFamily || '',
+                    fontSize: style.fontSize || '',
+                    fontWeight: style.fontWeight || '',
+                    occluded: false,
+                    text: text || '',
+                    xpath: xpath || '',
+                    className: element.getAttribute('class') || undefined,
+                    eventListenerTypes: typeof element.getArkWebEventListenerTypes === 'function' ? element.getArkWebEventListenerTypes() : null,
+                    src,
+                    autocomplete: isInput ? element.getAttribute('autocomplete') : undefined,
+                    placeholder: isInput ? element.getAttribute('placeholder') : undefined,
+                    webid: element.getAttribute('id') || undefined,
+                    contenttype: isInput ? element.getAttribute('type') : undefined,
+                    value: isInput ? element.value : undefined,
+                    optionvalue: (element.tagName === 'SELECT' && element.selectedIndex !== -1) ? element.options[element.selectedIndex].text : undefined,
+                    scrollLeft: scrollable ? element.scrollLeft * window.devicePixelRatio : undefined,
+                    scrollTop: scrollable ? element.scrollTop * window.devicePixelRatio : undefined,
+                    scrollHeight: scrollable ? element.scrollHeight * window.devicePixelRatio : undefined,
+                    scrollWidth: scrollable ? element.scrollWidth * window.devicePixelRatio : undefined,
+                    isScrollable: scrollable,
+                },
+                $children: []
+            };
+
+            frame.parentChildren.push(treeNode);
+            occlusionCandidates.push({ element, treeNode });
+
+            const childState = {
+                semanticRole,
+                isFixedOrSticky,
+                isInTable,
+                hasHideClass: false
+            };
+            const children = element.childNodes;
+            for (let i = children.length - 1; i >= 0; i--) {
+                stack.push({
+                    node: children[i],
+                    parentChildren: treeNode.$children,
+                    inherited: childState
+                });
+            }
+        }
+
+        performDeferredOcclusion(occlusionCandidates);
+        return rootChildren;
     }
 
-    function buildTreeChildren(rootNodes, processedNodes, nodeIdMap) {
-        const treeChildren = [];
-        const builtNodes = new Set(); // v4新增：记录已构建的节点
-        rootNodes.forEach(rootNode => {
-            // v4改进：确保根节点也是唯一的
-            if (!builtNodes.has(rootNode.uniqueId)) {
-                const treeNode = buildTreeNodeV4(rootNode, processedNodes, nodeIdMap);
-                if (treeNode) {
-                    treeChildren.push(treeNode);
-                    builtNodes.add(rootNode.uniqueId);
-                }
-            }
-        });
-        return treeChildren;
-    }
-
-    function buildTotalDomTree(treeChildren, flatNodes) {
+    function wrapDomTree(treeChildren) {
         let htmlElementData = getRefinedElementData(document.documentElement);
         let documentBodyElementData = getRefinedElementData(document.body);
         documentBodyElementData.$children = treeChildren;
@@ -1235,102 +958,35 @@
         htmlElementData.$attrs.url = window.location.href;
         htmlElementData.$attrs.title = document.title;
 
-        const domTree = {
+        const nodeCount = countTreeNodes(treeChildren);
+        print({
+            type: 'debugLog',
+            data: { log: `v5 tree nodes: ${nodeCount}` }
+        });
+
+        return {
             $attrs: {
                 url: window.location.href,
                 title: document.title,
-                // 【新增】将安全标志位暴露给 MSDP
                 isUnsafeContent: shouldAbortExtraction
             },
             $child: htmlElementData
         };
-
-        let totalTreeNodes = 0;
-        treeChildren.forEach(rootNode => {
-            totalTreeNodes += validateTreeStructureV4(rootNode);
-        });
-        print({
-            type: 'debugLog',
-            data: { log: `tree node : ${totalTreeNodes}，origin node: ${flatNodes.length}` }
-        });
-
-        const completeness = (totalTreeNodes / flatNodes.length * 100).toFixed(1);
-
-        return domTree;
     }
 
-    /**
-     * 基于实际DOM结构构建树状结构（v4改进版）
-     * @param {Array} flatNodes 扁平化的节点数组
-     * @returns {Object} DOM树状结构
-     */
-    function buildDOMTreeFromDOMV4(flatNodes) {
-        // v4改进：使用Map来确保唯一性，避免重复
-        const [nodeElementMap, nodeIdMap, processedNodes] = buildDomTreeMap(flatNodes);
-
-        // 收集所有有效的DOM元素
-        const allElements = Array.from(processedNodes);
-
-        // v4改进：更智能的根节点识别
-        let rootNodes = buildRootNodes(nodeElementMap, nodeIdMap);
-
-        // 构建最终的树状结构
-        const treeChildren = buildTreeChildren(rootNodes, processedNodes, nodeIdMap);
-
-        // Append htmlElement and bodyElement.
-        return buildTotalDomTree(treeChildren, flatNodes);
-    }
-
-    async function buildDOMTreeFromDOMV4Async(flatNodes) {
-        // v4改进：使用Map来确保唯一性，避免重复
-        const [nodeElementMap, nodeIdMap, processedNodes] = buildDomTreeMap(flatNodes);
-        await checkInterrupt();
-
-        // 收集所有有效的DOM元素
-        const allElements = Array.from(processedNodes);
-
-        // v4改进：更智能的根节点识别
-        let rootNodes = buildRootNodes(nodeElementMap, nodeIdMap);
-        await checkInterrupt();
-
-        // 构建最终的树状结构
-        const treeChildren = buildTreeChildren(rootNodes, processedNodes, nodeIdMap);
-        await checkInterrupt();
-
-        // Append htmlElement and bodyElement.
-        return buildTotalDomTree(treeChildren, flatNodes);
-    }
-
-    /**
-     * 提取DOM树状结构的主函数（v4版本）
-     * @returns {Object} DOM树状结构
-     */
-    function extractDOMTreeV4() {
-        // 【新增】每次提取前重置报警状态
+    function extractDOMTreeV5() {
         shouldAbortExtraction = false;
-
-        // 首先获取扁平化的节点信息
-        const flatNodes = extractAllUniqueNodes();
-
-        // 构建树状结构
-        const domTree = buildDOMTreeFromDOMV4(flatNodes);
-
-        return domTree;
+        resetExtractionCaches();
+        const treeChildren = singlePassExtract();
+        return wrapDomTree(treeChildren);
     }
 
-    async function extractDOMTreeV4Async() {
-        // 【新增】每次提取前重置报警状态
+    async function extractDOMTreeV5Async() {
         shouldAbortExtraction = false;
-
-        // 首先获取扁平化的节点信息
-        const flatNodes = await extractAllUniqueNodesAsync();
+        resetExtractionCaches();
+        const treeChildren = await singlePassExtractAsync();
         await checkInterrupt();
-
-        // 构建树状结构
-        const domTree = await buildDOMTreeFromDOMV4Async(flatNodes);
-        await checkInterrupt();
-
-        return domTree;
+        return wrapDomTree(treeChildren);
     }
 
     // ========================
@@ -1350,17 +1006,106 @@
         isAsync: true
     };
 
+    // v003: a single lifecycle/scheduler owns every listener, timer and
+    // extraction. Input handlers only update state; expensive extraction is
+    // never started from a touch/scroll callback.
+    const SchedulerState = {
+        active: false,
+        generation: 0,
+        taskRunning: false,
+        pendingInitial: false,
+        pendingIncremental: false,
+        startTimer: null,
+        domReadyHandler: null,
+        listeners: []
+    };
+    let activeTaskGeneration = null;
+
+    function addManagedListener(target, type, handler, options) {
+        target.addEventListener(type, handler, options);
+        SchedulerState.listeners.push({ target, type, handler, options });
+    }
+
+    function removeManagedListeners() {
+        for (let index = SchedulerState.listeners.length - 1; index >= 0; index--) {
+            const listener = SchedulerState.listeners[index];
+            listener.target.removeEventListener(listener.type, listener.handler, listener.options);
+        }
+        SchedulerState.listeners.length = 0;
+    }
+
+    function clearManagedTimer(name) {
+        if (SchedulerState[name] !== null) {
+            clearTimeout(SchedulerState[name]);
+            SchedulerState[name] = null;
+        }
+    }
+
+    function isCurrentGeneration(generation) {
+        return SchedulerState.active && SchedulerState.generation === generation;
+    }
+
+    function schedulePendingExtraction() {
+        if (!SchedulerState.active || SchedulerState.taskRunning) {
+            return;
+        }
+        if (SchedulerState.pendingInitial) {
+            SchedulerState.pendingInitial = false;
+            if (ExtractorStateV4.isAsync) {
+                void performInitialExtractionV4Async();
+            } else {
+                performInitialExtractionV4();
+            }
+            return;
+        }
+        if (SchedulerState.pendingIncremental) {
+            SchedulerState.pendingIncremental = false;
+            debounceIncrementalExtractionV4();
+        }
+    }
+
+    function beginExtractionTask(kind) {
+        if (!SchedulerState.active) {
+            return null;
+        }
+        if (SchedulerState.taskRunning) {
+            if (kind === 'initial') {
+                SchedulerState.pendingInitial = true;
+            } else {
+                SchedulerState.pendingIncremental = true;
+            }
+            return null;
+        }
+        SchedulerState.taskRunning = true;
+        activeTaskGeneration = SchedulerState.generation;
+        return SchedulerState.generation;
+    }
+
+    function finishExtractionTask() {
+        SchedulerState.taskRunning = false;
+        activeTaskGeneration = null;
+        setTimeout(schedulePendingExtraction, 0);
+    }
+
     /**
      * 执行首次完整提取（精简版本v4）
      */
     function performInitialExtractionV4() {
+        const generation = beginExtractionTask('initial');
+        if (generation === null) {
+            return null;
+        }
         try {
             const startTime = performance.now();
 
             // 提取DOM树状结构
-            const domTree = extractDOMTreeV4();
+            const domTree = extractDOMTreeV5();
 
             const result = domTree;
+
+            if (!isCurrentGeneration(generation)) {
+                return null;
+            }
 
             // 更新状态
             ExtractorStateV4.isFirstRun = false;
@@ -1396,22 +1141,27 @@
                 data: { log: `window._arkWebDomTree.init error` }
             });
             return null;
+        } finally {
+            finishExtractionTask();
         }
     }
 
-    let isInitialTaskRunning = false;
     async function performInitialExtractionV4Async() {
-        if (isInitialTaskRunning) {
+        const generation = beginExtractionTask('initial');
+        if (generation === null) {
             return;
         }
-        isInitialTaskRunning = true;
         try {
             const startTime = performance.now();
 
             // 提取DOM树状结构
-            const domTree = await extractDOMTreeV4Async();
+            const domTree = await extractDOMTreeV5Async();
 
             const result = domTree;
+
+            if (!isCurrentGeneration(generation)) {
+                return;
+            }
 
             // 更新状态
             ExtractorStateV4.isFirstRun = false;
@@ -1442,6 +1192,8 @@
         } catch (error) {
             if (typeof error === 'string' && error === USER_INTERRUPT) {
                 InterruptedState.needRequestDomTree = true;
+            } else if (typeof error === 'string' && error === TASK_CANCELLED) {
+                // remove/restart invalidated this generation; do not report.
             } else {
                 print({
                     type: 'debugLog',
@@ -1449,7 +1201,7 @@
                 });
             }
         } finally {
-            isInitialTaskRunning = false;
+            finishExtractionTask();
         }
     }
 
@@ -1457,12 +1209,20 @@
      * 执行增量提取（精简版本v4）
      */
     function performIncrementalExtractionV4() {
+        const generation = beginExtractionTask('incremental');
+        if (generation === null) {
+            return null;
+        }
         try {
             const startTime = performance.now();
 
             // 重新提取DOM树状结构
-            const currentDomTree = extractDOMTreeV4();
+            const currentDomTree = extractDOMTreeV5();
             const result = currentDomTree;
+
+            if (!isCurrentGeneration(generation)) {
+                return null;
+            }
 
             // 更新状态
             ExtractorStateV4.lastDomTree = result;
@@ -1492,22 +1252,27 @@
                 data: { log: `window._arkWebDomTree.incremental error` }
             });
             return null;
+        } finally {
+            finishExtractionTask();
         }
     }
 
-    let isIncrementalTaskRunning = false;
     async function performIncrementalExtractionV4Async() {
-        if (isIncrementalTaskRunning) {
-            return; // 直接返回，不执行任何逻辑
+        const generation = beginExtractionTask('incremental');
+        if (generation === null) {
+            return;
         }
-        isIncrementalTaskRunning = true;
 
         try {
             const startTime = performance.now();
 
             // 重新提取DOM树状结构
-            const currentDomTree = await extractDOMTreeV4Async();
+            const currentDomTree = await extractDOMTreeV5Async();
             const result = currentDomTree;
+
+            if (!isCurrentGeneration(generation)) {
+                return;
+            }
 
             // 更新状态
             ExtractorStateV4.lastDomTree = currentDomTree;
@@ -1532,6 +1297,8 @@
         } catch (error) {
             if (typeof error === 'string' && error === USER_INTERRUPT) {
                 InterruptedState.needRequestDomTree = true;
+            } else if (typeof error === 'string' && error === TASK_CANCELLED) {
+                // remove/restart invalidated this generation; do not report.
             } else {
                 print({
                     type: 'debugLog',
@@ -1539,7 +1306,7 @@
                 });
             }
         } finally {
-            isIncrementalTaskRunning = false; // 任务结束（无论成败）清空标记
+            finishExtractionTask();
         }
     }
 
@@ -1551,7 +1318,7 @@
             const startTime = performance.now();
 
             // 重新提取DOM树状结构
-            const currentDomTree = extractDOMTreeV4();
+            const currentDomTree = extractDOMTreeV5();
 
             const result = currentDomTree;
 
@@ -1656,9 +1423,28 @@
      * 重置提取器状态（v4版本）
      */
     function resetExtractorV4() {
+        SchedulerState.active = false;
+        SchedulerState.generation++;
+        SchedulerState.pendingInitial = false;
+        SchedulerState.pendingIncremental = false;
+        clearManagedTimer('startTimer');
+        if (debouncedTimer !== null) {
+            clearTimeout(debouncedTimer);
+            debouncedTimer = null;
+        }
+        if (interruptScrollEndTimer !== null) {
+            clearTimeout(interruptScrollEndTimer);
+            interruptScrollEndTimer = null;
+        }
+        removeManagedListeners();
+
         ExtractorStateV4.isFirstRun = true;
         ExtractorStateV4.lastDomTree = null;
         ExtractorStateV4.isAsync = true;
+        InterruptedState.isScrolling = false;
+        InterruptedState.isScrollingInterrupted = false;
+        InterruptedState.shouldInterrupted = false;
+        InterruptedState.needRequestDomTree = false;
         stopChangeObserverV4();
     }
 
@@ -1709,6 +1495,7 @@
 
     // 滚动过程中异步打断报错
     const USER_INTERRUPT = 'USER_INTERRUPT';
+    const TASK_CANCELLED = 'TASK_CANCELLED';
 
     // 滚动过程中中断相关状态
     const InterruptedState = {
@@ -1720,6 +1507,9 @@
 
     let lastInterruptedCheckTime = 0;
     async function checkInterrupt(threshold = 16) {
+        if (!SchedulerState.active || activeTaskGeneration !== SchedulerState.generation) {
+            throw TASK_CANCELLED;
+        }
         const now = performance.now();
 
         // 只有距离上次检查超过阈值时，才真正释放主线程
@@ -1737,7 +1527,7 @@
 
     const interruptTouchStart = () => {
         InterruptedState.shouldInterrupted = true;
-        if (InterruptedState.isScrolling) {
+        if (InterruptedState.isScrolling || SchedulerState.taskRunning) {
             InterruptedState.isScrollingInterrupted = true;
         }
     }
@@ -1757,14 +1547,20 @@
         interruptScrollEndTimer = setTimeout(interruptScrollEnd, 150);
     }
 
-    let interruptScrollEndTimer;
+    let interruptScrollEndTimer = null;
     const interruptScrollEnd = () => {
         InterruptedState.shouldInterrupted = false;
 
         clearTimeout(interruptScrollEndTimer);
-        if (InterruptedState.needRequestDomTree && !InterruptedState.isScrollingInterrupted) {
+        interruptScrollEndTimer = null;
+        if (InterruptedState.needRequestDomTree) {
             InterruptedState.needRequestDomTree = false;
-            triggerExtractionV4Async();
+            if (ExtractorStateV4.isFirstRun) {
+                SchedulerState.pendingInitial = true;
+                schedulePendingExtraction();
+            } else {
+                debounceIncrementalExtractionV4();
+            }
         }
 
         InterruptedState.isScrolling = false;
@@ -1773,87 +1569,85 @@
 
     let debouncedTimer = null;
     function debounceIncrementalExtractionV4() {
-        // 防抖处理，避免频繁触发
-        if (InterruptedState.shouldInterrupted) {
+        // True trailing-edge debounce. Every meaningful mutation/force call
+        // moves the deadline, and scrolling never starts extraction inline.
+        if (!SchedulerState.active) {
+            return;
+        }
+        if (InterruptedState.shouldInterrupted || InterruptedState.isScrolling) {
             InterruptedState.needRequestDomTree = true;
             return;
         }
-        if (!debouncedTimer) {
-            debouncedTimer = setTimeout(() => {
-                if (ExtractorStateV4.isAsync) {
-                    performIncrementalExtractionV4Async();
-                } else {
-                    performIncrementalExtractionV4();
-                }
-                debouncedTimer = null;
-            }, 500);
+        if (debouncedTimer !== null) {
+            clearTimeout(debouncedTimer);
         }
+        const generation = SchedulerState.generation;
+        debouncedTimer = setTimeout(() => {
+            debouncedTimer = null;
+            if (!isCurrentGeneration(generation)) {
+                return;
+            }
+            if (SchedulerState.taskRunning) {
+                SchedulerState.pendingIncremental = true;
+                return;
+            }
+            if (ExtractorStateV4.isAsync) {
+                void performIncrementalExtractionV4Async();
+            } else {
+                performIncrementalExtractionV4();
+            }
+        }, 500);
     }
 
     // ========================
     // == 自动执行v4 ==
     // ========================
+    function activateExtractor(isAsync) {
+        if (SchedulerState.active) {
+            resetExtractorV4();
+        }
+
+        SchedulerState.active = true;
+        SchedulerState.generation++;
+        ExtractorStateV4.isAsync = isAsync;
+        const generation = SchedulerState.generation;
+        const start = () => {
+            if (!isCurrentGeneration(generation)) {
+                return;
+            }
+            SchedulerState.startTimer = null;
+            if (isAsync) {
+                void triggerExtractionV4Async();
+            } else {
+                triggerExtractionV4();
+            }
+        };
+
+        if (document.readyState === 'loading') {
+            addManagedListener(document, 'DOMContentLoaded', start, { once: true });
+        } else {
+            SchedulerState.startTimer = setTimeout(start, 100);
+        }
+
+        addManagedListener(document, 'scrollend', scrollEndReport, true);
+        if (isAsync) {
+            addManagedListener(window, 'touchstart', interruptTouchStart, { passive: true });
+            addManagedListener(window, 'touchend', interruptTouchEnd, { passive: true });
+            addManagedListener(window, 'scroll', interruptScrolling, { passive: true });
+            addManagedListener(window, 'scrollend', interruptScrollEnd, false);
+        }
+        addManagedListener(window, 'beforeunload', resetExtractorV4, { once: true });
+    }
+
     window.__arkWebDomTree = {
         addDomTreeReported: function () {
-            // 确保DOM加载完成
-            ExtractorStateV4.isAsync = false;
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', function () {
-                    triggerExtractionV4();
-                });
-            } else {
-                // 页面已加载，延迟执行
-                setTimeout(() => {
-                    triggerExtractionV4();
-                }, 100);
-            }
-
-            document.addEventListener('scrollend', scrollEndReport, true);
-
-            window.addEventListener('beforeunload', function () {
-                stopChangeObserverV4();
-                document.removeEventListener('scrollend', scrollEndReport, true);
-            });
+            activateExtractor(false);
         },
         addDomTreeReportedAsync: function () {
-            // 确保DOM加载完成
-            ExtractorStateV4.isAsync = true;
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', function () {
-                    triggerExtractionV4Async();
-                });
-            } else {
-                // 页面已加载，延迟执行
-                setTimeout(() => {
-                    triggerExtractionV4Async();
-                }, 100);
-            }
-
-            document.addEventListener('scrollend', scrollEndReport, true);
-
-            window.addEventListener('touchstart', interruptTouchStart, { passive: true });
-            window.addEventListener('touchend', interruptTouchEnd, { passive: true });
-            window.addEventListener('scroll', interruptScrolling, { passive: true });
-            window.addEventListener('scrollend', interruptScrollEnd);
-
-            window.addEventListener('beforeunload', function () {
-                stopChangeObserverV4();
-                document.removeEventListener('scrollend', scrollEndReport, true);
-
-                document.removeEventListener('touchstart', interruptTouchStart, true);
-                document.removeEventListener('touchend', interruptTouchEnd, true);
-                document.removeEventListener('scroll', interruptScrolling, true);
-                document.removeEventListener('scrollend', interruptScrollEnd, true);
-            });
+            activateExtractor(true);
         },
         removeDomTreeReported: function () {
             resetExtractorV4();
-            document.removeEventListener('scrollend', scrollEndReport, true);
-
-            document.removeEventListener('touchstart', interruptTouchStart, true);
-            document.removeEventListener('touchend', interruptTouchEnd, true);
-            document.removeEventListener('scroll', interruptScrolling, true);
-            document.removeEventListener('scrollend', interruptScrollEnd, true);
         },
         getWebDom: performGetDomTree,
         forceReport: debounceIncrementalExtractionV4,

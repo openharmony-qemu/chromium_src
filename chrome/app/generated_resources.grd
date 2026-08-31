@@ -2291,6 +2291,10 @@ are declared in tools/grit/grit_args.gni.
         desc="Message shown in the download shelf when a download is insecure, and Chrome has blocked it.">
         <ph name="FILE_NAME">$1<ex>bla.exe</ex></ph> can't be downloaded securely
       </message>
+      <message name="IDS_MULTI_DOWNLOAD_PERMISSION_WARNING"
+        desc="Warning shown when a site attempts to download multiple files without user interaction, asking whether to allow or block automatic downloads from this site.">
+        <ph name="ORIGIN">$1<ex>https://example.com</ex></ph> wants to download multiple files
+      </message>
       <message name="IDS_PROMPT_APP_DEEP_SCANNING"
         desc="Message shown in the download shelf when Chrome recommends uploading the file for additional scanning">
         <ph name="FILE_NAME">$1<ex>bla.exe</ex></ph> may be dangerous. Send to Google Advanced Protection for scanning?

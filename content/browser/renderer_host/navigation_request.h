@@ -392,10 +392,11 @@ class CONTENT_EXPORT NavigationRequest
 
   // NavigationHandle implementation:
   int64_t GetNavigationId() const override;
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   // Get extra headers for this navigation.
-  const std::string& GetExtraHeaders() override;
-#endif // BUILDFLAG(IS_ARKWEB)
+  const std::string& GetExtraHeaders() const override;
+  std::string GetCompleteHeaders() const override;
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
   ukm::SourceId GetNextPageUkmSourceId() override;
   const GURL& GetURL() override;
   SiteInstanceImpl* GetStartingSiteInstance() override;
@@ -570,9 +571,9 @@ class CONTENT_EXPORT NavigationRequest
     return *commit_params_;
   }
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   const std::string& extra_headers() const { return extra_headers_; }
-#endif // BUILDFLAG(IS_ARKWEB)
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
 
   // This describes the cases where the navigation start time is adjusted to be
   // later in time, after BeforeUnloadCompleted. This enum is used in UMA
@@ -1790,9 +1791,9 @@ class CONTENT_EXPORT NavigationRequest
       int initiator_process_id,
       bool was_opener_suppressed,
       bool is_pdf,
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
       const std::string& extra_headers,
-#endif // BUILDFLAG(IS_ARKWEB)
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
       bool is_embedder_initiated_fenced_frame_navigation = false,
       mojo::PendingReceiver<mojom::NavigationRendererCancellationListener>
           renderer_cancellation_listener = mojo::NullReceiver(),
@@ -3140,9 +3141,9 @@ class CONTENT_EXPORT NavigationRequest
   // a main frame navigation.
   bool is_pdf_ = false;
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   std::string extra_headers_;
-#endif // BUILDFLAG(IS_ARKWEB)
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
 
   // Indicates that this navigation is an embedder-initiated navigation of a
   // fenced frame root. That is to say, the navigation is caused by a `src`

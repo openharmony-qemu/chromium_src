@@ -1305,9 +1305,19 @@ std::unique_ptr<NavigationRequest> NavigationRequest::Create(
   common_params->request_destination =
       GetDestinationFromFrameTreeNode(frame_tree_node);
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  bool extra_header_opt_enabled = base::FeatureList::IsEnabled(features::kExtraHeaderOptEnable);
+  LOG(DEBUG) << "ExtraHeaderOptEnable: " << (extra_header_opt_enabled ? "ENABLE" : "DISABLE");
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
+
   auto navigation_params = blink::mojom::BeginNavigationParams::New(
-      initiator_frame_token, extra_headers, net::LOAD_NORMAL,
-      false /* skip_service_worker */,
+      initiator_frame_token,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      extra_header_opt_enabled ? std::string() : extra_headers,
+#else
+      extra_headers,
+#endif
+      net::LOAD_NORMAL, false /* skip_service_worker */,
       blink::mojom::RequestContextType::LOCATION,
       blink::mojom::MixedContentContextType::kBlockable, is_form_submission,
       false /* was_initiated_by_link_click */,
@@ -1386,9 +1396,9 @@ std::unique_ptr<NavigationRequest> NavigationRequest::Create(
       nullptr /* prefetched_signed_exchange_cache */,
       GetRenderFrameHostForBackForwardCacheRestore(frame_tree_node, entry),
       initiator_process_id, was_opener_suppressed, is_pdf,
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
       extra_headers,
-#endif // BUILDFLAG(IS_ARKWEB)
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
       is_embedder_initiated_fenced_frame_navigation,
       mojo::NullReceiver() /* renderer_cancellation_listener */,
       embedder_shared_storage_context));
@@ -1527,9 +1537,9 @@ std::unique_ptr<NavigationRequest> NavigationRequest::CreateRendererInitiated(
       std::nullopt,  // rfh_restored_from_back_forward_cache
       initiator_process_id,
       /*was_opener_suppressed=*/false, /*is_pdf=*/false,
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
       /*extra_headers=*/std::string(),
-#endif // BUILDFLAG(IS_ARKWEB)
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
       /*is_embedder_initiated_fenced_frame_navigation=*/false,
       std::move(renderer_cancellation_listener)));
 
@@ -1686,10 +1696,10 @@ NavigationRequest::CreateForSynchronousRendererCommit(
       std::nullopt /* rfh_restored_from_back_forward_cache */,
       ChildProcessHost::kInvalidUniqueID /* initiator_process_id */,
       false /* was_opener_suppressed */, false /* is_pdf */
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
       ,
       std::string() /*extra_headers=*/
-#endif // BUILDFLAG(IS_ARKWEB)
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
       ));
 
   std::optional<base::UnguessableToken> nonce = render_frame_host->ComputeNonce(
@@ -1753,9 +1763,9 @@ NavigationRequest::NavigationRequest(
     int initiator_process_id,
     bool was_opener_suppressed,
     bool is_pdf,
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
     const std::string& extra_headers,
-#endif // BUILDFLAG(IS_ARKWEB)
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
     bool is_embedder_initiated_fenced_frame_navigation,
     mojo::PendingReceiver<mojom::NavigationRendererCancellationListener>
         renderer_cancellation_listener,
@@ -1806,9 +1816,9 @@ NavigationRequest::NavigationRequest(
           base::BindRepeating(&NavigationRequest::NotifyCookiesAccessed,
                               base::Unretained(this)))),
       is_pdf_(is_pdf),
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
       extra_headers_(extra_headers),
-#endif // BUILDFLAG(IS_ARKWEB)
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
       is_embedder_initiated_fenced_frame_navigation_(
           is_embedder_initiated_fenced_frame_navigation),
       fenced_frame_properties_(
@@ -5447,9 +5457,17 @@ void NavigationRequest::OnRequestFailedInternal(
 
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
   if (common_params_ && begin_params_) {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    if (base::FeatureList::IsEnabled(features::kExtraHeaderOptEnable)) {
+      common_params_->headers = GetCompleteHeaders();
+    } else {
+      common_params_->headers = begin_params_->headers;
+    }
+#else
     common_params_->headers = begin_params_->headers;
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
   }
-#endif
+#endif // BUILDFLAG(ARKWEB_NETWORK_BASE)
 
   // Ensure the pending entry also gets discarded if it has no other active
   // requests.
@@ -9776,11 +9794,24 @@ int64_t NavigationRequest::GetNavigationId() const {
   return navigation_id_;
 }
 
-#if BUILDFLAG(IS_ARKWEB)
-const std::string& NavigationRequest::GetExtraHeaders() {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+const std::string& NavigationRequest::GetExtraHeaders() const {
   return extra_headers();
 }
-#endif // BUILDFLAG(IS_ARKWEB)
+
+std::string NavigationRequest::GetCompleteHeaders() const {
+  if (!begin_params_) {
+    return std::string();
+  }
+  if (extra_headers_.empty()) {
+    return begin_params_->headers;
+  }
+  net::HttpRequestHeaders headers;
+  headers.AddHeadersFromString(begin_params_->headers);
+  headers.AddHeadersFromString(extra_headers_);
+  return headers.ToString();
+}
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
 
 ukm::SourceId NavigationRequest::GetNextPageUkmSourceId() {
   // If the navigation is restoring from back-forward cache, the UKM id
@@ -9942,6 +9973,12 @@ const net::HttpRequestHeaders& NavigationRequest::GetRequestHeaders() {
   if (!request_headers_) {
     request_headers_.emplace();
     request_headers_->AddHeadersFromString(begin_params_->headers);
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    if (base::FeatureList::IsEnabled(features::kExtraHeaderOptEnable) &&
+        !extra_headers_.empty()) {
+      request_headers_->AddHeadersFromString(extra_headers_);
+    }
+#endif
   }
   return *request_headers_;
 }

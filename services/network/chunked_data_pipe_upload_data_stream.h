@@ -13,6 +13,7 @@
 
 #include "base/component_export.h"
 #include "base/memory/scoped_refptr.h"
+#include "base/memory/weak_ptr.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "mojo/public/cpp/system/data_pipe.h"
@@ -128,6 +129,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ChunkedDataPipeUploadDataStream
   void ArkWebInitInternal();
   bool has_null_source_{false};
   bool get_size_when_initialize_{false};
+  base::WeakPtrFactory<ChunkedDataPipeUploadDataStream> weak_ptr_factory_{this};
 #endif
 };
 

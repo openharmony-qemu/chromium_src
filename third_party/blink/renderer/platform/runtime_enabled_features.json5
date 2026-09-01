@@ -992,6 +992,11 @@
       status: "stable",
     },
     {
+      // crbug.com/517761566
+      name: "SkipStaleUndoStepsInIdleSpellCheck",
+      status: "stable",
+    },
+    {
       name: "CheckVisibilityExtraProperties",
       status: "stable",
     },

@@ -41,7 +41,7 @@ namespace viz {
 namespace {
 constexpr int kVec3Size = 3;
 constexpr int kPoint2Size = 2;
-constexpr int kNumberOfBuffers = 4;
+constexpr int kNumberOfBuffers = 5;
 constexpr int kColorChannelSize = 4;
 constexpr int kColorRed = 0;
 constexpr int kColorGreen = 1;
@@ -494,17 +494,17 @@ void OutputPresenterOHOS::Present(SwapCompletionCallback completion_callback,
   }
   previous_frame_.clear();
 
-  CompletionData* previous_completion_data =
-      completion_datas_.empty() ? nullptr : &completion_datas_.back();
-
+  bool has_previous = !completion_datas_.empty();
   completion_datas_.emplace_back(std::move(completion_callback),
                                  root_overlay_access_);
-  if (previous_completion_data &&
-      previous_completion_data->access == root_overlay_access_) {
-    // If root plane buffer is not changed, reset previous frame access to
-    // nullptr, so TriggerOnCompleteCallbacks() can trigger the previous
-    // completion callback without waiting for OnOverlayReleased() being called.
-    previous_completion_data->access = nullptr;
+  if (has_previous) {
+    auto& prev_data = completion_datas_[completion_datas_.size() - 2];
+    if (prev_data.access == root_overlay_access_) {
+      // If root plane buffer is not changed, reset previous frame access to
+      // nullptr, so TriggerOnCompleteCallbacks() can trigger the previous
+      // completion callback without waiting for OnOverlayReleased() being called.
+      prev_data.access = nullptr;
+    }
   }
 
   root_overlay_access_ = nullptr;
@@ -563,7 +563,7 @@ void OutputPresenterOHOS::ScheduleOverlayPlane(
   if (is_root) {
     DCHECK(!root_overlay_access_);
     root_overlay_access_ = access;
-  } else if (!overlay_plane.is_solid_color) {
+  } else {
 #if BUILDFLAG(ARKWEB_AI_HDR)
     gfx::SizeF buffer_size =
         MaybeCorrectBufferSize(overlay_plane, access,
@@ -593,8 +593,6 @@ void OutputPresenterOHOS::ScheduleOverlayPlane(
   SurfaceControl* surface = nullptr;
 
   if (buffer) {
-    DCHECK(!overlay_plane.is_solid_color);
-
     // Find surface with same buffer in previous frame first.
     auto it = std::find_if(previous_frame_.begin(), previous_frame_.end(),
         [surface_name, buffer](const auto& surface) {
@@ -671,33 +669,7 @@ void OutputPresenterOHOS::ScheduleOverlayPlane(
       surface->SetMailbox(mailbox);
     }
   } else {
-    DCHECK(overlay_plane.is_solid_color);
-    // Find a surface with the same bounds.
-    auto it = std::find_if(previous_frame_.begin(), previous_frame_.end(),
-        [surface_name, bounds](const auto& surface) {
-          return surface && !surface->buffer() &&
-                 surface->name() == surface_name && surface->bounds() == bounds;
-        });
-    // If cannot find a surface with the same bounds, try to find a surface for
-    // any solid color plane.
-    if (it == previous_frame_.end()) {
-      it = std::find_if(previous_frame_.begin(), previous_frame_.end(),
-          [surface_name](const auto& surface) {
-            return surface && surface->name() == surface_name &&
-                   surface->buffer() == nullptr;
-          });
-    }
-
-    if (it != previous_frame_.end()) {
-      pending_frame_.push_back(std::move(*it));
-    } else {
-      DCHECK(root_surface_);
-      pending_frame_.emplace_back(std::make_unique<SurfaceControl>(
-          root_surface_.get(), surface_name,
-          surface_control_adapter_, transaction_adapter_));
-    }
-
-    surface = pending_frame_.back().get();
+    root_overlay_access_ = nullptr;
   }
 
   if (surface == nullptr) {
@@ -747,6 +719,8 @@ void OutputPresenterOHOS::TriggerOnCompleteCallbacks() {
     if (data.access || !data.completed) {
       break;
     }
+    TRACE_EVENT1("viz", "OutputPresenterOHOS::TriggerOnCompleteCallbacks",
+      "completion callback size", completion_datas_.size());
     auto completion_callback = std::move(data.callback);
     completion_datas_.pop_front();
 
@@ -804,11 +778,9 @@ void OutputPresenterOHOS::OnOverlayReleased(OH_NativeBuffer* buffer,
 }
 
 void OutputPresenterOHOS::DiscardCompositingResources(bool is_clean_all) {
-  LOG(INFO) << "DelegateDebug call ClearBufferQueueCache id: "<< dependency_->GetSurfaceHandle();
+  LOG(INFO) << "DelegateDebug call ClearBufferQueueCache id: " << dependency_->GetSurfaceHandle();
   for (const auto& surface : previous_frame_) {
     if (surface) {
-      TRACE_EVENT2("viz", "OutputPresenterOHOS::DiscardCompositingResources",
-          "name", surface->name().c_str(), "is_clean_all", is_clean_all);
       surface->ClearBufferQueueCache(transaction_, is_clean_all);
     }
   }

@@ -26,6 +26,7 @@
 #include "third_party/abseil-cpp/absl/container/flat_hash_set.h"
 #if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
 #include "third_party/abseil-cpp/absl/container/flat_hash_map.h"
+#include "base/synchronization/lock.h"
 #endif // ARKWEB_MEDIA_CAPTURE
 
 namespace media {
@@ -241,8 +242,10 @@ class MEDIA_EXPORT AudioManagerBase : public AudioManager {
   std::unique_ptr<AudioDebugRecordingManager> debug_recording_manager_;
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
-  absl::flat_hash_map<raw_ptr<AudioOutputStream, CtnExperimental>, AudioParameters> stream_parameters_map_;
+  absl::flat_hash_map<raw_ptr<AudioOutputStream, CtnExperimental>, AudioParameters>
+      stream_parameters_map_ GUARDED_BY(stream_parameters_map_lock_);
   std::map<int, std::set<raw_ptr<AudioInputStream, CtnExperimental>>> nweb_input_streams_map_;
+  base::Lock stream_parameters_map_lock_;
 #endif // ARKWEB_MEDIA_CAPTURE
 };
 

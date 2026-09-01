@@ -276,7 +276,10 @@ AudioOutputStream* AudioManagerBase::MakeAudioOutputStream(
   if (stream) {
     ++num_output_streams_;
 #if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
- 	  stream_parameters_map_[stream] = params;
+	  {
+	    base::AutoLock lock(stream_parameters_map_lock_);
+	    stream_parameters_map_[stream] = params;
+	  }
 #endif // ARKWEB_MEDIA_CAPTURE
     SendLogMessage(log_callback, "%s => (number of streams=%d)", __func__,
                    output_stream_count());
@@ -563,10 +566,13 @@ void AudioManagerBase::ReleaseOutputStream(AudioOutputStream* stream) {
   // For example, pass the ownership to AudioManager so it can delete the
   // streams.
 #if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
- 	auto it = stream_parameters_map_.find(stream);
- 	if (it != stream_parameters_map_.end()) {
- 	  stream_parameters_map_.erase(it);
- 	}
+	{
+	  base::AutoLock lock(stream_parameters_map_lock_);
+	  auto it = stream_parameters_map_.find(stream);
+	  if (it != stream_parameters_map_.end()) {
+	    stream_parameters_map_.erase(it);
+	  }
+	}
 #endif // ARKWEB_MEDIA_CAPTURE
   --num_output_streams_;
   delete stream;
@@ -738,7 +744,8 @@ void AudioManagerBase::SetAecDumpRecordingManager(
 #if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
 absl::flat_hash_map<raw_ptr<AudioOutputStream, CtnExperimental>, AudioParameters>
 AudioManagerBase::GetStreamParametersMap() {
- 	return stream_parameters_map_;
+	base::AutoLock lock(stream_parameters_map_lock_);
+	return stream_parameters_map_;
 }
 #endif // ARKWEB_MEDIA_CAPTURE
  	

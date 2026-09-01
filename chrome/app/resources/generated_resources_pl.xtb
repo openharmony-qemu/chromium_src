@@ -4848,6 +4848,7 @@ Domena <ph name="DOMAIN" /> wymaga, by karta inteligentna pozostała w gnieźdz
 <translation id="428715201724021596">Łączę z profilem. Może to potrwać kilka minut.</translation>
 <translation id="4287157641315808225">Tak, włącz ChromeVoksa</translation>
 <translation id="4287502603002637393">{MUTED_NOTIFICATIONS_COUNT,plural, =1{Pokaż}few{Pokaż wszystko}many{Pokaż wszystko}other{Pokaż wszystko}}</translation>
+<translation id="4289004521405268796">Włącz tryb programisty, aby korzystać z tego rozszerzenia. Pamiętaj, że nie można zweryfikować jego bezpieczeństwa.</translation>
 <translation id="4289540628985791613">Przegląd</translation>
 <translation id="428963538941819373">Te strony mogą używać zapisanych o Tobie informacji zebranych podczas przeglądania strony <ph name="HOST" /></translation>
 <translation id="4289732974614035569">Wybierz kod PIN</translation>

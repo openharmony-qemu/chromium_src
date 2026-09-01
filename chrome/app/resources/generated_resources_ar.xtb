@@ -4871,6 +4871,7 @@
 <translation id="428715201724021596">جارٍ الاتصال بالملف الشخصي. قد تستغرق هذه العملية بضع دقائق.</translation>
 <translation id="4287157641315808225">‏نعم، تفعيل ChromeVox</translation>
 <translation id="4287502603002637393">{MUTED_NOTIFICATIONS_COUNT,plural, =1{عرض}zero{عرض محتوى الإشعارات}two{عرض محتوى الإشعارَين}few{عرض محتوى الإشعارات}many{عرض محتوى الإشعارات}other{عرض محتوى الإشعارات}}</translation>
+<translation id="4289004521405268796">شغّل وضع المطور لاستخدام هذا الامتداد. ويُرجى ملاحظة أنه لا يمكن التحقق من أمانه.</translation>
 <translation id="4289540628985791613">نظرة عامة</translation>
 <translation id="428963538941819373">يمكن لهذه المواقع الإلكترونية استخدام المعلومات التي تم حفظها عنك أثناء تصفُّح <ph name="HOST" />.</translation>
 <translation id="4289732974614035569">اختيار رقم تعريف شخصي</translation>

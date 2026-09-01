@@ -747,6 +747,10 @@ mojom("mojo_bindings") {
     enabled_features += [ "enable_glic" ]
   }
 
+  if (is_arkweb && arkweb_composite_render) {
+    enabled_features += [ "arkweb_composite_render" ]
+  }
+
   public_deps = [
     "//components/content_settings/common:mojom",
     "//components/content_settings/core/common:mojo_bindings",

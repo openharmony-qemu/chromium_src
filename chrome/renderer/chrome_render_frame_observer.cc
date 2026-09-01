@@ -4,6 +4,8 @@
 
 #include "chrome/renderer/chrome_render_frame_observer.h"
 
+#include "arkweb/build/features/features.h"
+
 #include <stddef.h>
 #include <string.h>
 
@@ -856,3 +858,7 @@ bool ChromeRenderFrameObserver::IsAnimatedWebp(
       WebPGetFeatures(image_data.data(), image_data.size(), &features);
   return status == VP8_STATUS_OK && features.has_animation;
 }
+
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+#include "arkweb/chromium_ext/chrome/renderer/chrome_render_frame_observer_for_include.cc"
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)

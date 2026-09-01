@@ -20,6 +20,8 @@
 #include "services/service_manager/public/cpp/binder_registry.h"
 #include "third_party/blink/public/common/associated_interfaces/associated_interface_registry.h"
 
+#include "arkweb/build/features/features.h"
+
 #if !BUILDFLAG(IS_ANDROID)
 #include "chrome/common/actor.mojom.h"
 #include "chrome/common/actor/task_id.h"
@@ -127,6 +129,10 @@ class ChromeRenderFrameObserver : public content::RenderFrameObserver,
   void GetMediaFeedURL(GetMediaFeedURLCallback callback) override;
   void LoadBlockedPlugins(const std::string& identifier) override;
   void SetShouldDeferMediaLoad(bool should_defer) override;
+
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+#include "arkweb/chromium_ext/chrome/renderer/chrome_render_frame_observer_for_include_public.h"
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
 #if !BUILDFLAG(IS_ANDROID)
   void InvokeTool(actor::mojom::ToolInvocationPtr request,

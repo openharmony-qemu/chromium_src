@@ -59,6 +59,15 @@ TEST(PDFiumPageHelperTest, ScopedUnloadPreventer) {
   prevent_unload3 = prevent_unload4;
 }
 
+TEST(PDFiumPageHelperTest, ScopedUnloadPreventerBlocksUnload) {
+  PDFiumPage page(/*engine=*/nullptr, 1u);
+  {
+    PDFiumPage::ScopedUnloadPreventer prevent_unload(&page);
+    EXPECT_FALSE(page.Unload());
+  }
+  EXPECT_TRUE(page.Unload());
+}
+
 void CompareTextRuns(const AccessibilityTextRunInfo& expected_text_run,
                      const AccessibilityTextRunInfo& actual_text_run) {
   EXPECT_EQ(expected_text_run.start_index, actual_text_run.start_index);

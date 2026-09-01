@@ -1109,8 +1109,7 @@ class FileSystemAccessFileHandleImplMovePermissionsTest
     auto origin = test_src_storage_key_.origin();
     auto target_basename = target.BaseName();
 
-    EXPECT_CALL(permission_context_,
-                IsFileTypeDangerous_(target_basename, origin))
+    EXPECT_CALL(permission_context_, IsFileTypeDangerous_(target_basename))
         .WillOnce(testing::Return(false));
     EXPECT_CALL(permission_context_,
                 GetReadPermissionGrant(
@@ -1185,8 +1184,7 @@ class FileSystemAccessFileHandleImplMovePermissionsTest
     auto origin = test_src_storage_key_.origin();
     auto target_basename = target.BaseName();
 
-    EXPECT_CALL(permission_context_,
-                IsFileTypeDangerous_(target_basename, origin))
+    EXPECT_CALL(permission_context_, IsFileTypeDangerous_(target_basename))
         .WillRepeatedly(testing::Return(!expects_safe_name));
     if (expected_sensitive_entry_result.has_value()) {
       EXPECT_CALL(
@@ -1246,8 +1244,7 @@ class FileSystemAccessFileHandleImplMovePermissionsTest
     auto origin = test_src_storage_key_.origin();
     auto target_basename = target.BaseName();
 
-    EXPECT_CALL(permission_context_,
-                IsFileTypeDangerous_(target_basename, origin))
+    EXPECT_CALL(permission_context_, IsFileTypeDangerous_(target_basename))
         .WillRepeatedly(testing::Return(false));
     EXPECT_CALL(
         permission_context_,
@@ -1310,8 +1307,7 @@ class FileSystemAccessFileHandleImplMovePermissionsTest
     auto origin = test_src_storage_key_.origin();
     auto target_basename = target.BaseName();
 
-    EXPECT_CALL(permission_context_,
-                IsFileTypeDangerous_(target_basename, origin))
+    EXPECT_CALL(permission_context_, IsFileTypeDangerous_(target_basename))
         .WillRepeatedly(testing::Return(!expects_safe_name));
     if (expected_sensitive_entry_result.has_value()) {
       EXPECT_CALL(

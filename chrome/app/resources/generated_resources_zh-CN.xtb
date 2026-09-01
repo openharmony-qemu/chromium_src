@@ -4866,6 +4866,7 @@
 <translation id="428715201724021596">正在连接到配置文件。这可能需要几分钟的时间。</translation>
 <translation id="4287157641315808225">是，启用 ChromeVox</translation>
 <translation id="4287502603002637393">{MUTED_NOTIFICATIONS_COUNT,plural, =1{显示}other{全部显示}}</translation>
+<translation id="4289004521405268796">开启开发者模式即可使用此扩展程序，但请注意，此扩展程序无法被审核。</translation>
 <translation id="4289540628985791613">概述</translation>
 <translation id="428963538941819373">这些网站可以使用它们在您浏览 <ph name="HOST" /> 时保存的与您相关的信息</translation>
 <translation id="4289732974614035569">选择 PIN 码</translation>

@@ -4859,6 +4859,7 @@
 <translation id="428715201724021596">プロファイルに接続しています。この処理には数分かかることがあります。</translation>
 <translation id="4287157641315808225">はい（ChromeVox を有効にする）</translation>
 <translation id="4287502603002637393">{MUTED_NOTIFICATIONS_COUNT,plural, =1{表示}other{すべて表示}}</translation>
+<translation id="4289004521405268796">この拡張機能を使用するには、開発者モードを有効にしてください。なお、この拡張機能の安全性は確認できません。</translation>
 <translation id="4289540628985791613">概要</translation>
 <translation id="428963538941819373">これらのサイトは、<ph name="HOST" /> を閲覧する際に、保存したあなたに関する情報を使用できます</translation>
 <translation id="4289732974614035569">PIN の入力</translation>

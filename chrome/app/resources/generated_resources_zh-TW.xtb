@@ -4872,6 +4872,7 @@
 <translation id="428715201724021596">正在連線至設定檔。請稍候片刻。</translation>
 <translation id="4287157641315808225">是，啟動 ChromeVox</translation>
 <translation id="4287502603002637393">{MUTED_NOTIFICATIONS_COUNT,plural, =1{顯示}other{顯示全部}}</translation>
+<translation id="4289004521405268796">啟用開發人員模式即可使用此擴充程式，但請注意，此擴充程式無法審核。</translation>
 <translation id="4289540628985791613">總覽</translation>
 <translation id="428963538941819373">這些網站可在你瀏覽 <ph name="HOST" /> 時，使用與你相關的既有資訊</translation>
 <translation id="4289732974614035569">選擇 PIN 碼</translation>

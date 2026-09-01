@@ -329,8 +329,13 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       {"itemRepair", IDS_EXTENSIONS_REPAIR_CORRUPTED},
       {"itemReload", IDS_EXTENSIONS_RELOAD_TERMINATED},
       {"itemUpload", IDS_EXTENSIONS_MOVE_TO_ACCOUNT_ICON_TOOLTIP},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"itemUnsupportedDeveloperMode",
+       IDS_EXTENSIONS_DISABLED_UNSUPPORTED_DEVELOPER_MODE_V2},
+#else
       {"itemUnsupportedDeveloperMode",
        IDS_EXTENSIONS_DISABLED_UNSUPPORTED_DEVELOPER_MODE},
+#endif
       {"itemUnsupportedDeveloperModeDetails",
        IDS_EXTENSIONS_DISABLED_UNSUPPORTED_DEVELOPER_MODE_DETAILS},
       {"itemUnsupportedDeveloperModeToast",

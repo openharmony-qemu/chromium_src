@@ -106,6 +106,14 @@ protocol::Response TargetHandler::CreateTarget(
     // Rely on web contents implementation.
     return protocol::Response::FallThrough();
   }
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  // ArkWeb: delegate to the content layer which calls
+  // ohos::DevToolsManagerDelegate::CreateNewTarget to create an Alloy-style
+  // browser. The Chrome path below (Navigate + ChromeBrowserHostImpl) would
+  // crash because AlloyBrowserHostImpl::GetBrowserForHost() finds
+  // ChromeBrowserHostImpl and CHECK(IsAlloyStyle()) fails.
+  return protocol::Response::FallThrough();
+#endif
   Profile* profile = nullptr;
   if (browser_context_id.has_value()) {
     std::string profile_id = browser_context_id.value();
@@ -154,12 +162,17 @@ protocol::Response TargetHandler::CreateTarget(
     gurl = GURL(url::kAboutBlankURL);
   }
 
-  if (!is_trusted_ && gurl.SchemeIs(content::kChromeUIUntrustedScheme)) {
+  GURL inner_url = gurl;
+  if (gurl.SchemeIs(content::kViewSourceScheme)) {
+    inner_url = GURL(gurl.GetContent());
+  }
+
+  if (!is_trusted_ && inner_url.SchemeIs(content::kChromeUIUntrustedScheme)) {
     return protocol::Response::ServerError(
         "Refusing to create a target with the specified URL");
   }
 
-  if (!may_read_local_files_ && gurl.SchemeIsFile()) {
+  if (!may_read_local_files_ && inner_url.SchemeIsFile()) {
     return protocol::Response::ServerError(
         "Creating a target with a local URL is not allowed");
   }

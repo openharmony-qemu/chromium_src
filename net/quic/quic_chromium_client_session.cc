@@ -1687,7 +1687,6 @@ void QuicChromiumClientSession::OnCanCreateNewOutgoingStream(
       std::unique_ptr<WebSocketQuicStreamAdapter> adapter =
           CreateWebSocketQuicStreamAdapterImpl(
               request->websocket_adapter_delegate_);
-      request->websocket_adapter_delegate_ = nullptr;
       std::move(request->start_websocket_callback_).Run(std::move(adapter));
       continue;
     }
@@ -3875,6 +3874,7 @@ void QuicChromiumClientSession::OnCryptoHandshakeComplete() {
   // confirmed if the session is not created on the default network.
   if (migrate_session_on_network_change_v2_ &&
       default_network_ != handles::kInvalidNetworkHandle &&
+      session_key_.proxy_chain().is_direct() &&
       GetCurrentNetwork() != default_network_) {
     current_migration_cause_ = ON_MIGRATE_BACK_TO_DEFAULT_NETWORK;
     StartMigrateBackToDefaultNetworkTimer(

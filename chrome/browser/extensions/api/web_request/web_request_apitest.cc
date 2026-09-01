@@ -93,6 +93,7 @@
 #include "content/public/test/web_transport_simple_test_server.h"
 #include "extensions/browser/api/web_request/extension_web_request_event_router.h"
 #include "extensions/browser/api/web_request/web_request_api.h"
+#include "extensions/browser/api_test_utils.h"
 #include "extensions/browser/background_script_executor.h"
 #include "extensions/browser/blocked_action_type.h"
 #include "extensions/browser/extension_prefs.h"
@@ -2540,6 +2541,33 @@ IN_PROC_BROWSER_TEST_F(ExtensionWebRequestApiTest, MAYBE_WebSocketCleanClose) {
   ASSERT_TRUE(RunExtensionTest(
       "webrequest", {.extension_url = "test_websocket_clean_close.html"}))
       << message_;
+}
+
+// Regression test for https://crbug.com/496279876.
+IN_PROC_BROWSER_TEST_F(ExtensionWebRequestApiTest, InvalidWebViewInstanceId) {
+  scoped_refptr<const Extension> extension =
+      ExtensionBuilder("webview_extension")
+          .AddAPIPermissions({"webview", "webRequest"})
+          .AddHostPermission("<all_urls>")
+          .Build();
+  ASSERT_TRUE(extension);
+
+  auto function =
+      base::MakeRefCounted<WebRequestInternalAddEventListenerFunction>();
+  function->set_extension(extension.get());
+  function->set_has_callback(true);
+
+  std::string args = R"([
+    {},
+    {"urls": ["<all_urls>"]},
+    ["blocking"],
+    "webRequest.onBeforeRequest",
+    "webRequest.onBeforeRequest/s1",
+    1
+  ])";
+  std::string error = api_test_utils::RunFunctionAndReturnError(
+      function.get(), args, profile());
+  EXPECT_EQ("Invalid event name for webview.", error);
 }
 
 // Depends on declarativeWebRequest. crbug.com/332512510.

@@ -52,6 +52,12 @@ BASE_FEATURE_PARAM(int,
                    "ad-auction-signals-max-size-bytes",
                    10000);
 
+// Controls whether JavaScript execution inside AudioWorkletProcessor::Process()
+// runs under strict IEEE-754 floating-point semantics (disabling FTZ/DAZ).
+// Enabled by default as a remote kill-switch.
+BASE_FEATURE(kAudioWorkletJSDenormalEnabler,
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
 #if BUILDFLAG(IS_ANDROID)
 // If enabled, then use desktop page webprefs for Android devices that have
 // large displays, specifically tablets and desktops.
@@ -642,7 +648,11 @@ BASE_FEATURE_ENUM_PARAM(
 // Prevents an opener from being returned when a BlobURL is cross-site to the
 // window's top-level site.
 BASE_FEATURE(kEnforceNoopenerOnBlobURLNavigation,
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#else
              base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
 
 BASE_FEATURE(kEventTimingIgnorePresentationTimeFromUnexpectedFrameSource,
              base::FEATURE_DISABLED_BY_DEFAULT);

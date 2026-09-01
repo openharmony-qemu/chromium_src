@@ -2324,7 +2324,8 @@ TEST_F(PasswordAutofillManagerTest,
   NiceMock<MockAutofillClient> autofill_client;
   InitializePasswordAutofillManager(&client, &autofill_client);
   const Suggestion::Payload& payload = Suggestion::PasswordSuggestionDetails(
-      test_username_, test_password_, backup_password_);
+      test_username_, test_password_, backup_password_,
+      /*signon_realm=*/"", /*is_cross_domain=*/false);
 
   EXPECT_CALL(*client.mock_driver(),
               FillSuggestion(test_username_, backup_password_, _));
@@ -2347,7 +2348,8 @@ TEST_F(PasswordAutofillManagerTest,
   TestPasswordManagerClient client;
   InitializePasswordAutofillManager(&client, nullptr);
   const Suggestion::PasswordSuggestionDetails payload(
-      test_username_, test_password_, backup_password_);
+      test_username_, test_password_, backup_password_,
+      /*signon_realm=*/"", /*is_cross_domain=*/false);
   const Suggestion suggestion = autofill::test::CreateAutofillSuggestion(
       autofill::SuggestionType::kBackupPasswordEntry, test_username_, payload);
 
@@ -2370,7 +2372,8 @@ TEST_F(
 
   InitializePasswordAutofillManager(&client, nullptr);
   const Suggestion::PasswordSuggestionDetails payload(
-      test_username_, test_password_, backup_password_);
+      test_username_, test_password_, backup_password_,
+      /*signon_realm=*/"", /*is_cross_domain=*/false);
   const Suggestion suggestion = autofill::test::CreateAutofillSuggestion(
       autofill::SuggestionType::kBackupPasswordEntry, test_username_, payload);
 
@@ -2386,7 +2389,8 @@ TEST_F(PasswordAutofillManagerTest,
   NiceMock<MockAutofillClient> autofill_client;
   InitializePasswordAutofillManager(&client, &autofill_client);
   const Suggestion::Payload& payload = Suggestion::PasswordSuggestionDetails(
-      test_username_, test_password_, backup_password_);
+      test_username_, test_password_, backup_password_,
+      /*signon_realm=*/"", /*is_cross_domain=*/false);
 
   EXPECT_CALL(*client.mock_driver(),
               FillSuggestion(test_username_, backup_password_, _));

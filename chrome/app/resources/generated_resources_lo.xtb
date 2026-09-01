@@ -1460,7 +1460,7 @@
 <translation id="1969654639948595766">ບັນທຶກຂໍ້ຄວາມ WebRTC (<ph name="WEBRTC_TEXT_LOG_COUNT" />)</translation>
 <translation id="1972313920920745320">ເວັບໄຊທີ່ທ່ານເພີ່ມຈະນຳໃຊ້ຢູ່ຕະຫຼອດ ແລະ ຈະບໍ່ມີການຮຽກເກັບໜ່ວຍຄວາມຈຳຈາກພວກມັນ. <ph name="BEGIN_LINK" />ສຶກສາເພີ່ມເຕີມກ່ຽວກັບການຮັກສາໃຫ້ເວັບໄຊສະເພາະເຄື່ອນໄຫວ<ph name="END_LINK" /></translation>
 <translation id="1972325230031091483">ທ່ານຈະທ່ອງເວັບໄດ້ໄວຂຶ້ນເນື່ອງຈາກເນື້ອຫາມີການໂຫຼດໄວ້ກ່ອນໂດຍອ້າງອີງໃສ່ການເຂົ້າເບິ່ງໜ້າເວັບປັດຈຸບັນຂອງທ່ານ</translation>
-<translation id="197288927597451399">ຮັກສາໄວ້</translation>
+<translation id="197288927597451399">ເກັບໄວ້</translation>
 <translation id="1973886230221301399">ChromeVox</translation>
 <translation id="1974043046396539880">ຈຸດ​ກະ​ຈາຍ CRL</translation>
 <translation id="1974060860693918893">ຂັ້ນສູງ</translation>
@@ -1568,6 +1568,7 @@
 <translation id="2040822390690632244">ການອັບເດດ, ຄວາມຊ່ວຍເຫຼືອ, ຕົວເລືອກນັກພັດທະນາ</translation>
 <translation id="2040894699575719559">ບລັອກສະຖານທີ່ແລ້ວ</translation>
 <translation id="2041246176170574368">ການອັບເດດຄວາມປອດໄພຈະສິ້ນສຸດລົງໃນໄວໆນີ້. ປະຢັດຢ່າງໜ້ອຍ $50 ເມື່ອຊື້ Chromebook ເຄື່ອງໃໝ່.</translation>
+<translation id="2041681409552851212">ສ່ວນຂະຫຍາຍຈະສາມາດເປີດໃຊ້ລະຫັດທີ່ບໍ່ໄດ້ຖືກກວດເບິ່ງຄືນໂດຍບຣາວເຊີ. ມັນອາດຈະບໍ່ປອດໄພ ແລະ ທ່ານຄວນເປີດໃຊ້ງານສິ່ງນີ້ເທົ່ານັ້ນ ຖ້າທ່ານຮູ້ຈັກວ່າທ່ານກຳລັງເຮັດຫຍັງ.</translation>
 <translation id="2042279886444479655">ໂປຣໄຟລ໌ທີ່ໃຊ້ຢູ່</translation>
 <translation id="2044014337866019681">ກະລຸນາກວດສອບໃຫ້ແນ່ໃຈວ່າທ່ານກຳລັງຢັ້ງຢືນ <ph name="ACCOUNT" /> ເພື່ອປົດລັອກເຊດຊັນ.</translation>
 <translation id="2044750031738659219">{0,plural, =1{ປິດໜ້າຈໍຜູ້ຢ້ຽມຢາມ}other{ປິດໜ້າຈໍຜູ້ຢ້ຽມຢາມ (# ໜ້າຈໍ)}}</translation>
@@ -2326,6 +2327,7 @@
 <translation id="2541400104619216245">ແນະນໍາລາຍລະອຽດການປຽບທຽບເພື່ອເບິ່ງໃນເວລາທີ່ເລືອກລະຫວ່າງຜະລິດຕະພັນ</translation>
 <translation id="2541706104884128042">ຕັ້ງເວລານອນໃໝ່ແລ້ວ</translation>
 <translation id="2542050502251273923">ຕັ້ງຄ່າລະດັບການດີບັກຂອງຕົວຈັດການເຊື່ອມຕໍ່ເຄືອຂ່າຍ ແລະ ການບໍລິການອື່ນໂດຍໃຊ້ ff_debug.</translation>
+<translation id="25436473744628215">ກໍາລັງອັບເດດ…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{ການອະນຸຍາດທີ່ທ່ານມອບໃຫ້ກັບ "<ph name="APP_NAME" />" ຈະອະນຸຍາດແອັບນີ້ນຳ. <ph name="MANAGE_LINK" />}other{ການອະນຸຍາດທີ່ທ່ານມອບໃຫ້ກັບ "<ph name="APP_NAME" />" ຈະອະນຸຍາດແອັບເຫຼົ່ານີ້ນຳ. <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">ແຖບນີ້</translation>
 <translation id="2545743249923338554">ແຖບໃໝ່</translation>
@@ -3174,7 +3176,7 @@
 <translation id="3132277757485842847">ພວກເຮົາບໍ່ສາມາດຮັກສາການເຊື່ອມຕໍ່ກັບໂທລະສັບຂອງທ່ານໄດ້. ກວດໃຫ້ແນ່ໃຈວ່າໂທລະສັບຂອງທ່ານຢູ່ໃກ້, ປົດລັອກ ແລະ ເປີດ Bluetooth ແລະ Wi-Fi ແລ້ວ.</translation>
 <translation id="3132896062549112541">ກົດ​ລະ​ບຽບ</translation>
 <translation id="3132996321662585180">ໂຫຼດຂໍ້ມູນໃໝ່ທຸກມື້</translation>
-<translation id="3134312457920437826">ບໍ່ສາມາດຕິດຕັ້ງສ່ວນຂະຫຍາຍໄດ້ຍ້ອນວ່າມັນໃຊ້ເວີຊັນ manifest ທີ່ບໍ່ຖືກຮອງຮັບ.</translation>
+<translation id="3134312457920437826">ບໍ່ສາມາດຕິດຕັ້ງສ່ວນຂະຫຍາຍໄດ້ ເພາະວ່າມັນໃຊ້ເວີຊັນ manifest ທີ່ບໍ່ຖືກຮອງຮັບ.</translation>
 <translation id="3134393957315651797">ເລືອກສະຖານະການທົດລອງສຳລັບການທົດລອງ <ph name="EXPERIMENT_NAME" />. ຄຳອະທິບາຍການທົດລອງ: <ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">ຮູບແທນຕົວສີເຫຼືອງຕາມຄ່າເລີ່ມຕົ້ນ</translation>
 <translation id="3141093262818886744">ຢືນຢັນການເປີດ</translation>
@@ -11550,6 +11552,7 @@
 <translation id="8890170499370378450">ອາດມີການຮຽກເກັບຄ່າອິນເຕີເນັດມືຖື</translation>
 <translation id="8890516388109605451">ແຫລ່ງທີ່ມາ</translation>
 <translation id="8890529496706615641">ບໍ່ສາມາດປ່ຽນຊື່ໂປຣໄຟລ໌ໄດ້. ກະລຸນາລອງໃໝ່ ຫຼື ຕິດຕໍ່ຫາຜູ້ໃຫ້ບໍລິການຂອງທ່ານສຳລັບການຊ່ວຍເຫຼືອທາງເທັກນິກ.</translation>
+<translation id="889095128849097287">ອະນຸຍາດສະຄຣິບຂອງຜູ້ໃຊ້</translation>
 <translation id="8892168913673237979">ຮຽບຮ້ອຍໝົດແລ້ວ!</translation>
 <translation id="8892246501904593980">ເບິ່ງບຸກມາກທັງໝົດຂອງທ່ານໄດ້ໃນບຸກມາກ ແລະ ລາຍຊື່</translation>
 <translation id="8893779047492837414">ຕອນນີ້ທ່ານມີ <ph name="NUMBERED_ITEM_1" />, <ph name="NUMBERED_ITEM_2" /> ແລະ ອື່ນໆ. ອົງກອນຂອງທ່ານ (<ph name="ACCOUNT_MANAGER" />) ຈະສາມາດເບິ່ງ ແລະ ຈັດການຂໍ້ມູນນີ້ໄດ້.</translation>

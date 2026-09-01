@@ -72,6 +72,7 @@ public class ClientManagerTest {
     private final SessionHolder<?> mSession =
             new SessionHolder<>(CustomTabsSessionToken.createMockSessionTokenForTesting());
     private final int mUid = Process.myUid();
+    private final int mPid = Process.myPid();
 
     private EngagementSignalsHandler mEngagementSignalsHandler;
     private PostMessageServiceConnection mPostMessageServiceConnection;
@@ -183,6 +184,7 @@ public class ClientManagerTest {
         mClientManager.newSession(
                 mSession,
                 mUid,
+                mPid,
                 null,
                 mPostMessageHandler,
                 mPostMessageServiceConnection,
@@ -199,6 +201,7 @@ public class ClientManagerTest {
         mClientManager.newSession(
                 mSession,
                 mUid,
+                mPid,
                 null,
                 mPostMessageHandler,
                 mPostMessageServiceConnection,
@@ -215,6 +218,7 @@ public class ClientManagerTest {
         mClientManager.newSession(
                 mSession,
                 mUid,
+                mPid,
                 null,
                 mPostMessageHandler,
                 mPostMessageServiceConnection,
@@ -230,6 +234,7 @@ public class ClientManagerTest {
         mClientManager.newSession(
                 mSession,
                 mUid,
+                mPid,
                 null,
                 mPostMessageHandler,
                 mPostMessageServiceConnection,
@@ -242,6 +247,7 @@ public class ClientManagerTest {
         mClientManager.newSession(
                 sessionHolder,
                 mUid,
+                mPid,
                 null,
                 mPostMessageHandler,
                 mPostMessageServiceConnection,
@@ -258,6 +264,7 @@ public class ClientManagerTest {
                 mClientManager.newSession(
                         mSession,
                         mUid,
+                        mPid,
                         null,
                         mPostMessageHandler,
                         mPostMessageServiceConnection,
@@ -276,6 +283,7 @@ public class ClientManagerTest {
                 mClientManager.newSession(
                         mSession,
                         mUid,
+                        mPid,
                         null,
                         mPostMessageHandler,
                         mPostMessageServiceConnection,
@@ -293,6 +301,7 @@ public class ClientManagerTest {
                 mClientManager.newSession(
                         mSession,
                         mUid,
+                        mPid,
                         null,
                         mPostMessageHandler,
                         mPostMessageServiceConnection,
@@ -311,6 +320,7 @@ public class ClientManagerTest {
                 mClientManager.newSession(
                         mSession,
                         mUid,
+                        mPid,
                         null,
                         mPostMessageHandler,
                         mPostMessageServiceConnection,
@@ -336,6 +346,7 @@ public class ClientManagerTest {
                 cm.newSession(
                         mSession,
                         mUid,
+                        mPid,
                         null,
                         MockPostMessageHandler.create(),
                         serviceConnection,
@@ -377,6 +388,7 @@ public class ClientManagerTest {
                 cm.newSession(
                         mSession,
                         mUid,
+                        mPid,
                         null,
                         MockPostMessageHandler.create(),
                         serviceConnection,
@@ -419,6 +431,7 @@ public class ClientManagerTest {
                 mClientManager.newSession(
                         mSession,
                         mUid,
+                        mPid,
                         null,
                         mPostMessageHandler,
                         mPostMessageServiceConnection,
@@ -456,6 +469,7 @@ public class ClientManagerTest {
                 mClientManager.newSession(
                         mSession,
                         mUid,
+                        mPid,
                         null,
                         mPostMessageHandler,
                         mPostMessageServiceConnection,
@@ -523,6 +537,7 @@ public class ClientManagerTest {
                 cm.newSession(
                         mSession,
                         mUid,
+                        mPid,
                         null,
                         MockPostMessageHandler.create(),
                         serviceConnection,
@@ -561,6 +576,7 @@ public class ClientManagerTest {
                 mClientManager.newSession(
                         mSession,
                         mUid,
+                        mPid,
                         null,
                         mPostMessageHandler,
                         mPostMessageServiceConnection,
@@ -594,6 +610,7 @@ public class ClientManagerTest {
                 mClientManager.newSession(
                         mSession,
                         mUid,
+                        mPid,
                         null,
                         mPostMessageHandler,
                         mPostMessageServiceConnection,
@@ -622,6 +639,7 @@ public class ClientManagerTest {
                 mClientManager.newSession(
                         mSession,
                         mUid,
+                        mPid,
                         null,
                         mPostMessageHandler,
                         mPostMessageServiceConnection,
@@ -655,6 +673,7 @@ public class ClientManagerTest {
                 mClientManager.newSession(
                         mSession,
                         mUid,
+                        mPid,
                         null,
                         mPostMessageHandler,
                         mPostMessageServiceConnection,
@@ -683,6 +702,7 @@ public class ClientManagerTest {
                 mClientManager.newSession(
                         mSession,
                         mUid,
+                        mPid,
                         null,
                         mPostMessageHandler,
                         mPostMessageServiceConnection,
@@ -717,6 +737,7 @@ public class ClientManagerTest {
                 mClientManager.newSession(
                         mSession,
                         mUid,
+                        mPid,
                         null,
                         mPostMessageHandler,
                         mPostMessageServiceConnection,
@@ -745,6 +766,7 @@ public class ClientManagerTest {
                 mClientManager.newSession(
                         mSession,
                         mUid,
+                        mPid,
                         null,
                         mPostMessageHandler,
                         mPostMessageServiceConnection,
@@ -779,6 +801,7 @@ public class ClientManagerTest {
                 mClientManager.newSession(
                         mSession,
                         mUid,
+                        mPid,
                         null,
                         mPostMessageHandler,
                         mPostMessageServiceConnection,
@@ -807,6 +830,7 @@ public class ClientManagerTest {
                 mClientManager.newSession(
                         mSession,
                         mUid,
+                        mPid,
                         null,
                         mPostMessageHandler,
                         mPostMessageServiceConnection,

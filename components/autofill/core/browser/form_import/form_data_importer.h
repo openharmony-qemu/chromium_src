@@ -132,6 +132,14 @@ class FormDataImporter : public AddressDataManager::Observer,
                                                     is_imported);
   }
 
+  // Returns the origin of the currently tracked multi-step import candidates,
+  // or nullopt if the queue is empty. Used to guard against adding a complement
+  // candidate whose origin no longer matches the tracked origin (e.g. the user
+  // navigated away after the import prompt was shown).
+  const std::optional<url::Origin>& multi_step_import_merger_origin() const {
+    return multistep_importer_.origin();
+  }
+
   // AddressDataManager::Observer
   void OnAddressDataChanged() override;
 

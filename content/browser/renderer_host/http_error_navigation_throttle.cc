@@ -20,7 +20,7 @@ void HttpErrorNavigationThrottle::MaybeCreateAndAdd(
     WebContents* web_contents = registry.GetNavigationHandle().GetWebContents();
     if (web_contents) {
       const auto& prefs = web_contents->GetOrCreateWebPreferences();
-      if (prefs.subframe_error_page_enabled) {
+      if (prefs.error_page_enabled && prefs.subframe_error_page_enabled) {
         registry.AddThrottle(
             base::WrapUnique(new HttpErrorNavigationThrottle(registry)));
         return;

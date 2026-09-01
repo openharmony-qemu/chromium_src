@@ -41,6 +41,10 @@ class VIZ_CLIENT_EXPORT FrameEvictorClient {
   virtual EvictIds CollectSurfaceIdsForEviction() const = 0;
   virtual SurfaceId GetCurrentSurfaceId() const = 0;
   virtual SurfaceId GetPreNavigationSurfaceId() const = 0;
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  virtual void SetUseSpecifiedDeadlinePolicy(bool shouldUse) = 0;
+#endif
 };
 
 // Keeps track of the visibility state of a child and notifies when the parent

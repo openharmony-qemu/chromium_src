@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <set>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 #include <vector>
 
@@ -27,8 +28,20 @@ namespace network::orb {
 
 namespace {
 
+void AdvancePastUtf8Bom(std::string_view* data) {
+  // https://en.wikipedia.org/wiki/Byte_order_mark#UTF-8
+  const std::string_view kUtf8Bom("\xEF\xBB\xBF");
+
+  if (data->starts_with(kUtf8Bom)) {
+    data->remove_prefix(kUtf8Bom.size());
+  }
+}
+
+// Based on https://infra.spec.whatwg.org/#ascii-whitespace
+const std::string_view kWhitespaceChars = "\t\n\f\r ";
+
 void AdvancePastWhitespace(std::string_view* data) {
-  size_t offset = data->find_first_not_of(" \t\r\n");
+  size_t offset = data->find_first_not_of(kWhitespaceChars);
   if (offset == std::string_view::npos) {
     // |data| was entirely whitespace.
     *data = std::string_view();
@@ -171,6 +184,7 @@ SniffingResult SniffForHTML(std::string_view data) {
       std::string_view("<p")   // Mozilla
   };
 
+  AdvancePastUtf8Bom(&data);
   while (data.length() > 0) {
     AdvancePastWhitespace(&data);
 
@@ -194,6 +208,7 @@ SniffingResult SniffForXML(std::string_view data) {
   // TODO(dsjang): Once CrossOriginReadBlocking is moved into the browser
   // process, we should do single-thread checking here for the static
   // initializer.
+  AdvancePastUtf8Bom(&data);
   AdvancePastWhitespace(&data);
   static constexpr std::string_view kXmlSignatures[] = {
       std::string_view("<?xml")};
@@ -218,11 +233,12 @@ SniffingResult SniffForJSON(std::string_view data) {
     kRightQuoteState,
   } state = kStartState;
 
+  AdvancePastUtf8Bom(&data);
   for (size_t i = 0; i < data.length(); ++i) {
     const char c = data[i];
     if (state != kLeftQuoteState && state != kEscapeState) {
       // Whitespace is ignored (outside of string literals)
-      if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
+      if (kWhitespaceChars.find(c) != std::string_view::npos) {
         continue;
       }
     }
@@ -299,6 +315,7 @@ SniffingResult SniffForFetchOnlyResource(std::string_view data) {
       std::string_view("for (;;);"),
       std::string_view("while (1);"),
   };
+  AdvancePastUtf8Bom(&data);
   SniffingResult has_parser_breaker = MatchesSignature(
       &data, kScriptBreakingPrefixes, base::CompareCase::SENSITIVE);
   if (has_parser_breaker != kNo) {

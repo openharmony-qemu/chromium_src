@@ -74,6 +74,7 @@
 #include "content/public/common/content_client.h"
 #include "content/public/common/content_switches.h"
 #include "content/public/test/browser_test_utils.h"
+#include "content/public/test/mock_render_process_host.h"
 #include "content/public/test/navigation_simulator.h"
 #include "content/public/test/test_renderer_host.h"
 #include "crypto/evp.h"
@@ -997,6 +998,16 @@ TEST_F(AuthenticatorImplTest, ReportOriginAndRpIds) {
     EXPECT_EQ(AuthenticatorReport(std::move(options)),
               test_case.expected_status);
   }
+}
+
+TEST_F(AuthenticatorImplTest, PdfProcessBlocked) {
+  process()->SetIsPdf(true);
+
+  mojo::Remote<blink::mojom::Authenticator> authenticator;
+  static_cast<RenderFrameHostImpl*>(main_rfh())
+      ->GetWebAuthenticationService(authenticator.BindNewPipeAndPassReceiver());
+
+  EXPECT_EQ(1, process()->bad_msg_count());
 }
 
 constexpr auto kValidAppIdCases = std::to_array<OriginClaimedAuthorityPair>({
@@ -10345,6 +10356,28 @@ TEST_F(AuthenticatorImplWithRequestProxyTest,
   EXPECT_EQ(request_proxy().observations().num_isuvpaa, 0u);
   EXPECT_TRUE(AuthenticatorIsConditionalMediationAvailable());
   EXPECT_EQ(request_proxy().observations().num_isuvpaa, 0u);
+}
+
+TEST_F(AuthenticatorImplTest, InactiveRenderFrameHost) {
+  NavigateAndCommit(GURL(kTestOrigin1));
+
+  // Set the lifecycle state to `kInBackForwardCache` so the RenderFrameHost is
+  // inactive.
+  static_cast<RenderFrameHostImpl*>(main_rfh())
+      ->SetLifecycleState(
+          RenderFrameHostImpl::LifecycleStateImpl::kInBackForwardCache);
+  ASSERT_FALSE(main_rfh()->IsActive());
+
+  // Try to connect to the authenticator service.
+  mojo::Remote<blink::mojom::Authenticator> authenticator =
+      ConnectToAuthenticator();
+
+  // The receiver should be dropped immediately, causing the remote to be
+  // disconnected.
+  base::RunLoop run_loop;
+  authenticator.set_disconnect_handler(run_loop.QuitClosure());
+  run_loop.Run();
+  EXPECT_FALSE(authenticator.is_connected());
 }
 
 }  // namespace content

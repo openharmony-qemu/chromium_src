@@ -283,6 +283,7 @@ WebInputEventResult WidgetBaseInputHandler::HandleTouchEvent(
 
   const WebTouchEvent touch_event =
       static_cast<const WebTouchEvent&>(input_event);
+  auto weak_self = weak_ptr_factory_.GetWeakPtr();
   for (unsigned i = 0; i < touch_event.touches_length; ++i) {
     const WebTouchPoint& touch_point = touch_event.touches[i];
     if (touch_point.state != WebTouchPoint::State::kStateStationary) {
@@ -295,6 +296,9 @@ WebInputEventResult WidgetBaseInputHandler::HandleTouchEvent(
               coalesced_event.GetPredictedEventsPointers(),
               coalesced_event.latency_info());
       widget_->client()->HandleInputEvent(coalesced_pointer_event);
+      if (!weak_self) {
+        return WebInputEventResult::kNotHandled;
+      }
     }
   }
   return widget_->client()->DispatchBufferedTouchEvents();
@@ -368,6 +372,20 @@ void WidgetBaseInputHandler::HandleInputEvent(
           std::move(done_callback));
 
   bool prevent_default = false;
+  WebInputEventResult processed = WebInputEventResult::kNotHandled;
+
+  auto check_was_destroyed = [&]() {
+    if (!weak_self) {
+      if (callback) {
+        std::move(callback).Run(GetAckResult(processed), swap_latency_info,
+                                std::move(handling_state.event_overscroll()),
+                                std::move(handling_state.touch_action()));
+      }
+      return true;
+    }
+    return false;
+  };
+
   bool show_virtual_keyboard_for_mouse = false;
   if (WebInputEvent::IsMouseEventType(input_event.GetType())) {
     const WebMouseEvent& mouse_event =
@@ -377,6 +395,9 @@ void WidgetBaseInputHandler::HandleInputEvent(
                  mouse_event.PositionInWidget().y());
 
     widget_->client()->WillHandleMouseEvent(mouse_event);
+    if (check_was_destroyed()) {
+      return;
+    }
 
     // Reset the last known cursor if mouse has left this widget. So next
     // time that the mouse enters we always set the cursor accordingly.
@@ -443,12 +464,14 @@ void WidgetBaseInputHandler::HandleInputEvent(
         static_cast<const WebGestureEvent&>(input_event);
     bool suppress = false;
     widget_->client()->WillHandleGestureEvent(gesture_event, &suppress);
-    prevent_default = prevent_default || suppress;
+    if (suppress) {
+      prevent_default = true;
+      processed = WebInputEventResult::kHandledSuppressed;
+    }
+    if (check_was_destroyed()) {
+      return;
+    }
   }
-
-  WebInputEventResult processed = prevent_default
-                                      ? WebInputEventResult::kHandledSuppressed
-                                      : WebInputEventResult::kNotHandled;
   if (input_event.GetType() != WebInputEvent::Type::kChar ||
       !suppress_next_char_events_) {
     suppress_next_char_events_ = false;
@@ -501,6 +524,9 @@ void WidgetBaseInputHandler::HandleInputEvent(
     HandleInjectedScrollGestures(
         std::move(handling_state.injected_scroll_params()), input_event,
         coalesced_event.latency_info(), cloned_metrics.get());
+    if (check_was_destroyed()) {
+      return;
+    }
   }
 
   // Send gesture scroll events and their dispositions to the compositor thread,
@@ -534,6 +560,11 @@ void WidgetBaseInputHandler::HandleInputEvent(
     DCHECK(!handling_state.event_overscroll())
         << "Unexpected overscroll for un-acked event";
   }
+  // The callback above may have resulted in this WidgetBaseInputHandler being
+  // destroyed (e.g. via closing the page). Bail out if that happens.
+  if (check_was_destroyed()) {
+    return;
+  }
   // Show the virtual keyboard if enabled and a user gesture triggers a focus
   // change.
   if ((processed != WebInputEventResult::kNotHandled &&
@@ -543,6 +574,9 @@ void WidgetBaseInputHandler::HandleInputEvent(
     widget_->utils()->SetRequestKeyboardReason(static_cast<int32_t>(mojom::RequestKeyboardReason::MOUSE));
 #endif
     widget_->ShowVirtualKeyboard();
+    if (check_was_destroyed()) {
+      return;
+    }
   }
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   // mark event
@@ -552,8 +586,12 @@ void WidgetBaseInputHandler::HandleInputEvent(
 #endif
 
   if (!prevent_default &&
-      WebInputEvent::IsKeyboardEventType(input_event.GetType()))
+      WebInputEvent::IsKeyboardEventType(input_event.GetType())) {
     widget_->client()->DidHandleKeyEvent();
+    if (check_was_destroyed()) {
+      return;
+    }
+  }
 
 // TODO(rouslan): Fix ChromeOS and Windows 8 behavior of autofill popup with
 // virtual keyboard.
@@ -563,6 +601,9 @@ void WidgetBaseInputHandler::HandleInputEvent(
        input_event.GetType() == WebInputEvent::Type::kMouseDown) ||
       input_event.GetType() == WebInputEvent::Type::kGestureTap) {
     widget_->client()->FocusChangeComplete();
+    if (check_was_destroyed()) {
+      return;
+    }
   }
 #endif
 
@@ -637,6 +678,7 @@ void WidgetBaseInputHandler::HandleInjectedScrollGestures(
       ui::INPUT_EVENT_LATENCY_ORIGINAL_COMPONENT, &original_timestamp);
   DCHECK(found_original_component);
 
+  auto weak_self = weak_ptr_factory_.GetWeakPtr();
   gfx::PointF position = PositionInWidgetFromInputEvent(input_event);
   for (const InjectScrollGestureParams& params : injected_scroll_params) {
     // Set up a new `LatencyInfo` for the injected scroll - this is the original
@@ -729,6 +771,9 @@ void WidgetBaseInputHandler::HandleInjectedScrollGestures(
               std::move(done_callback));
       widget_->client()->HandleInputEvent(
           WebCoalescedInputEvent(*gesture_event, scrollbar_latency_info));
+      if (!weak_self) {
+        return;
+      }
     }
   }
 }

@@ -129,12 +129,8 @@ void DelegatedFrameHost::WasShown(
 
   // Use the default deadline to synchronize web content with browser UI.
   // TODO(fsamuel): Investigate if there is a better deadline to use here.
-#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
-  EmbedSurface(new_local_surface_id, new_dip_size, FirstFrameDeadlinePolicy());
-#else
   EmbedSurface(new_local_surface_id, new_dip_size,
                cc::DeadlinePolicy::UseDefaultDeadline());
-#endif
 
   // Remove stale content that might be displayed.
   if (stale_content_layer_->has_external_content()) {

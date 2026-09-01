@@ -410,7 +410,17 @@ class CORE_EXPORT ContentSecurityPolicy final
   // main world CSP. See ExecutionContext::GetContentSecurityPolicyForWorld.
   static bool ShouldBypassMainWorldDeprecated(const DOMWrapperWorld* world);
 
+  static bool AllowBaseURI(
+      const KURL&,
+      const Vector<network::mojom::blink::ContentSecurityPolicyPtr>&);
+
   static bool IsNonceableElement(const Element*);
+
+  // Returns true if the attribute name or value contains a dangling markup
+  // signal ("<SCRIPT", "<STYLE", or "<LINK"), indicating a potential nonce
+  // hijacking attempt.
+  static bool ContainsDanglingMarkupSignal(const String& attribute_name,
+                                           const String& attribute_value);
 
   static const char* GetDirectiveName(CSPDirectiveName type);
   static CSPDirectiveName GetDirectiveType(const String& name);

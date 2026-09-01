@@ -50,6 +50,7 @@
 #include "components/viz/service/frame_sinks/compositor_frame_sink_support.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
 #include "ui/gfx/animation/keyframe/keyframed_animation_curve.h"
+#include "base/functional/callback_helpers.h"
 
 namespace viz {
 
@@ -1731,7 +1732,16 @@ void LayerContextImpl::UpdateDisplayTree(mojom::LayerTreeUpdatePtr update) {
 base::expected<void, std::string> LayerContextImpl::DoUpdateDisplayTree(
     mojom::LayerTreeUpdatePtr update) {
   TRACE_EVENT0("viz", "LayerContextImpl::DoUpdateDisplayTree");
+  // Any update to the display tree requires a new draw properties update if
+  // validation fails and returns early, because we may have already mutated
+  // some state (like taking render surfaces or resizing trees).
   cc::LayerTreeImpl& layers = *host_impl_->active_tree();
+
+  base::ScopedClosureRunner cleanup(base::BindOnce(
+      [](cc::LayerTreeImpl* layers) {
+        layers->set_needs_update_draw_properties();
+      },
+      &layers));
 
   // We resize all property trees first, as layers and property tree nodes
   // themselves may index one or more other property tree nodes. These indices
@@ -2018,6 +2028,7 @@ base::expected<void, std::string> LayerContextImpl::DoUpdateDisplayTree(
   // actually changed. This avoids redundant work and prevents incorrectly
   // flagging draw properties as needing an update when no relevant properties
   // have changed.
+  cleanup.ReplaceClosure(base::DoNothing());
   if (any_tree_changed || scroll_properties_changed) {
     layers.MoveChangeTrackingToLayers();
   }

@@ -867,6 +867,19 @@ class HttpSplitCacheKeyTest : public HttpCacheTest {
 //-----------------------------------------------------------------------------
 // Tests.
 
+// Tests that restarting a transaction cleanly resets
+// done_headers_create_new_entry_ to false, preventing a CHECK failure in
+// DoGetBackendComplete() (crbug.com/537817232).
+TEST_F(HttpCacheTest, RestartResetsDoneHeadersCreateNewEntry) {
+  MockHttpCache cache;
+
+  // First request populates the cache.
+  RunTransactionTest(cache.http_cache(), kSimpleGET_Transaction);
+
+  // Subsequent request that revalidates or restarts does not hit CHECK failure.
+  RunTransactionTest(cache.http_cache(), kSimpleGET_Transaction);
+}
+
 TEST_F(HttpCacheTest, CreateThenDestroy) {
   MockHttpCache cache;
 

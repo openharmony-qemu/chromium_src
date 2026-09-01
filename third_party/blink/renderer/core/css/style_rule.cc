@@ -21,6 +21,8 @@
 
 #include "third_party/blink/renderer/core/css/style_rule.h"
 
+#include <limits>
+
 #include "base/compiler_specific.h"
 #include "third_party/blink/renderer/core/css/css_apply_mixin_rule.h"
 #include "third_party/blink/renderer/core/css/css_container_rule.h"
@@ -80,6 +82,7 @@
 #include "third_party/blink/renderer/platform/heap/visitor.h"
 #include "third_party/blink/renderer/platform/instrumentation/use_counter.h"
 #include "third_party/blink/renderer/platform/wtf/size_assertions.h"
+#include "third_party/blink/renderer/platform/wtf/wtf_size_t.h"
 
 namespace blink {
 
@@ -528,6 +531,16 @@ bool StyleRule::PropertiesHaveFailedOrCanceledSubresources() const {
   return properties_ && properties_->HasFailedOrCanceledSubresources();
 }
 
+wtf_size_t StyleRule::ReplaceChildRuleIfExists(StyleRuleBase* old_rule,
+                                               StyleRuleBase* new_rule,
+                                               wtf_size_t position_hint) {
+  if (child_rules_) {
+    return ReplaceStyleRuleInVector(old_rule, new_rule, position_hint,
+                                    *child_rules_);
+  }
+  return std::numeric_limits<wtf_size_t>::max();  // Not found.
+}
+
 bool StyleRule::HasParsedProperties() const {
   // StyleRule should only have one of {lazy_property_parser_, properties_} set.
   DCHECK(lazy_property_parser_ || properties_);
@@ -578,18 +591,40 @@ StyleRuleBase* CloneGroupRule(
 // (it copies the parent selector during clone), not the
 // dummy parent selector that's there from parsing and which
 // may have the wrong specificity.
+HeapVector<CSSSelector> CloneSelectorListWithDummyFallback(
+    StyleRule* new_parent) {
+  if (new_parent) {
+    return CSSSelectorList::Copy(new_parent->FirstSelector());
+  }
+  // A StyleRule cannot have an empty selector; create a dummy.
+  HeapVector<CSSSelector> selectors;
+  selectors.emplace_back(/*parent_rule=*/nullptr, /*is_implicit=*/true);
+  selectors.back().SetLastInSelectorList(true);
+  selectors.back().SetLastInComplexSelector(true);
+  return selectors;
+}
+
+// Make sure that the FakeParentRuleForDeclarations, if any,
+// gets our parent as parent. In particular, we'd like any
+// StyleRuleNestedDeclarations in there to get our selector
+// list as their outer selector list.
 StyleRule* CloneFakeParentRule(
     StyleRule* old_inner_rule,
     StyleRule* new_parent,
     const MixinParameterBindings* mixin_parameter_bindings) {
+  if (!old_inner_rule) {
+    return nullptr;
+  }
   HeapVector<CSSSelector> selectors =
-      CSSSelectorList::Copy(new_parent->FirstSelector());
+      CloneSelectorListWithDummyFallback(new_parent);
   auto* new_rule = StyleRule::Create(
       selectors, old_inner_rule->Properties().ImmutableCopyIfNeeded(),
       mixin_parameter_bindings);
-  for (StyleRuleBase* child_rule : *old_inner_rule->ChildRules()) {
-    new_rule->AddChildRule(
-        child_rule->Clone(new_rule, mixin_parameter_bindings));
+  if (old_inner_rule->ChildRules()) {
+    for (StyleRuleBase* child_rule : *old_inner_rule->ChildRules()) {
+      new_rule->AddChildRule(
+          child_rule->Clone(new_rule, mixin_parameter_bindings));
+    }
   }
   return new_rule;
 }
@@ -663,9 +698,6 @@ StyleRuleBase* StyleRuleBase::Clone(
     case kApplyMixin: {
       auto* apply_rule = To<StyleRuleApplyMixin>(this);
       StyleRule* old_inner_rule = apply_rule->FakeParentRuleForDeclarations();
-      if (!old_inner_rule || !old_inner_rule->ChildRules()) {
-        return this;
-      }
       return MakeGarbageCollected<StyleRuleApplyMixin>(
           apply_rule->GetName(), apply_rule->GetArguments(),
           CloneFakeParentRule(old_inner_rule, new_parent,
@@ -674,15 +706,14 @@ StyleRuleBase* StyleRuleBase::Clone(
     case kContents: {
       auto* contents_rule = To<StyleRuleContentsStatement>(this);
       StyleRule* old_inner_rule = contents_rule->FakeParentRuleForFallback();
-      if (!old_inner_rule || !old_inner_rule->ChildRules()) {
-        return this;
-      }
       return MakeGarbageCollected<StyleRuleContentsStatement>(
           CloneFakeParentRule(old_inner_rule, new_parent,
                               mixin_parameter_bindings));
     }
     case kNestedDeclarations: {
       auto* nested_declarations_rule = To<StyleRuleNestedDeclarations>(this);
+      HeapVector<CSSSelector> selectors;
+      StyleRule* old_inner_rule = nested_declarations_rule->InnerStyleRule();
       // Nested declaration rules are different from regular nested style rules,
       // since they don't refer to their parent rule with any '&' selector.
       // Instead the outer selector list is *copied* parse-time. Now that we're
@@ -693,11 +724,10 @@ StyleRuleBase* StyleRuleBase::Clone(
       // by @scope rules, however, since they always just behave like
       // :where(:scope).
       if (nested_declarations_rule->NestingType() == CSSNestingType::kScope) {
-        return this;
+        selectors = CSSSelectorList::Copy(old_inner_rule->FirstSelector());
+      } else {
+        selectors = CloneSelectorListWithDummyFallback(new_parent);
       }
-      StyleRule* old_inner_rule = nested_declarations_rule->InnerStyleRule();
-      HeapVector<CSSSelector> selectors =
-          CSSSelectorList::Copy(new_parent->FirstSelector());
       auto* new_inner_rule = StyleRule::Create(
           selectors, old_inner_rule->Properties().ImmutableCopyIfNeeded(),
           mixin_parameter_bindings);
@@ -735,9 +765,18 @@ StyleRuleBase* StyleRuleBase::Clone(
           To<StyleRuleFontFeature>(*this));
     case kImport:
       return MakeGarbageCollected<StyleRuleImport>(To<StyleRuleImport>(*this));
-    case kKeyframes:
+    case kKeyframes: {
+      StyleRuleKeyframes* keyframes_rule = To<StyleRuleKeyframes>(this);
+      HeapVector<Member<StyleRuleKeyframe>> new_keyframes;
+      for (const Member<StyleRuleKeyframe>& keyframe :
+           keyframes_rule->Keyframes()) {
+        new_keyframes.push_back(To<StyleRuleKeyframe>(
+            keyframe->Clone(new_parent, mixin_parameter_bindings)));
+      }
       return MakeGarbageCollected<StyleRuleKeyframes>(
-          To<StyleRuleKeyframes>(*this));
+          std::move(new_keyframes), keyframes_rule->GetName(),
+          keyframes_rule->Version(), keyframes_rule->IsVendorPrefixed());
+    }
     case kLayerStatement:
       return MakeGarbageCollected<StyleRuleLayerStatement>(
           To<StyleRuleLayerStatement>(*this));
@@ -747,18 +786,24 @@ StyleRuleBase* StyleRuleBase::Clone(
     case kCounterStyle:
       return MakeGarbageCollected<StyleRuleCounterStyle>(
           To<StyleRuleCounterStyle>(*this));
-    case kKeyframe:
+    case kKeyframe: {
+      StyleRuleKeyframe& keyframe = To<StyleRuleKeyframe>(*this);
       return MakeGarbageCollected<StyleRuleKeyframe>(
-          To<StyleRuleKeyframe>(*this));
+          std::make_unique<Vector<KeyframeOffset>>(keyframe.Keys()),
+          keyframe.Properties().MutableCopy());
+    }
     case kCharset:
       return MakeGarbageCollected<StyleRuleCharset>(
           To<StyleRuleCharset>(*this));
     case kViewTransition:
       return MakeGarbageCollected<StyleRuleViewTransition>(
           To<StyleRuleViewTransition>(*this));
-    case kPositionTry:
+    case kPositionTry: {
+      auto* position_try = To<StyleRulePositionTry>(this);
       return MakeGarbageCollected<StyleRulePositionTry>(
-          To<StyleRulePositionTry>(*this));
+          position_try->Name(),
+          position_try->Properties().ImmutableCopyIfNeeded());
+    }
     case kCustomMedia:
       return MakeGarbageCollected<StyleRuleCustomMedia>(
           To<StyleRuleCustomMedia>(*this));
@@ -840,6 +885,13 @@ void StyleRuleScope::TraceAfterDispatch(blink::Visitor* visitor) const {
 StyleRuleGroup::StyleRuleGroup(RuleType type,
                                HeapVector<Member<StyleRuleBase>> rules)
     : StyleRuleBase(type), child_rules_(std::move(rules)) {}
+
+wtf_size_t StyleRuleGroup::ReplaceChildRuleIfExists(StyleRuleBase* old_rule,
+                                                    StyleRuleBase* new_rule,
+                                                    wtf_size_t position_hint) {
+  return ReplaceStyleRuleInVector(old_rule, new_rule, position_hint,
+                                  child_rules_);
+}
 
 void StyleRuleGroup::WrapperInsertRule(CSSStyleSheet* parent_sheet,
                                        unsigned index,

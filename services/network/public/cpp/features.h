@@ -94,6 +94,12 @@ COMPONENT_EXPORT(NETWORK_CPP_FLAGS_AND_SWITCHES)
 BASE_DECLARE_FEATURE(kOmitCorsClientCert);
 
 COMPONENT_EXPORT(NETWORK_CPP_FLAGS_AND_SWITCHES)
+BASE_DECLARE_FEATURE(kIgnoreCorsPreflightPolicy);
+
+COMPONENT_EXPORT(NETWORK_CPP_FLAGS_AND_SWITCHES)
+BASE_DECLARE_FEATURE(kRestrictFrameDestinationsToNavigate);
+
+COMPONENT_EXPORT(NETWORK_CPP_FLAGS_AND_SWITCHES)
 BASE_DECLARE_FEATURE(kReduceAcceptLanguage);
 COMPONENT_EXPORT(NETWORK_CPP_FLAGS_AND_SWITCHES)
 BASE_DECLARE_FEATURE(kReduceAcceptLanguageHTTP);
@@ -402,6 +408,11 @@ BASE_DECLARE_FEATURE(kUseUnexportableKeyServiceInBrowserProcess);
 COMPONENT_EXPORT(NETWORK_CPP)
 BASE_DECLARE_FEATURE(kEnableNwebExHttpDnsFallback);
 #endif
+
+// Enables validating browser-initiated file upload requests from the network
+// service.
+COMPONENT_EXPORT(NETWORK_CPP_FLAGS_AND_SWITCHES)
+BASE_DECLARE_FEATURE(kBrowserInitiatedFileUploadValidation);
 
 }  // namespace network::features
 

@@ -4,6 +4,7 @@
 
 #include "gpu/command_buffer/service/shared_image/compound_image_backing.h"
 
+#include "base/check_is_test.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/logging.h"
@@ -607,6 +608,7 @@ CompoundImageBacking::CompoundImageBacking(
                                       std::move(buffer_usage)),
       shared_image_factory_(std::move(shared_image_factory)),
       copy_manager_(std::move(copy_manager)) {
+  CHECK(gpu_backing_factory);
   DCHECK(shm_backing);
   DCHECK_EQ(size, shm_backing->size());
 
@@ -632,10 +634,10 @@ CompoundImageBacking::CompoundImageBacking(
 
   // CreateBackingFromBackingFactory will be called on demand. Hence this is
   // lazy backing creation.
-  gpu_element.create_callback =
-      base::BindOnce(&CompoundImageBacking::CreateBackingFromBackingFactory,
-                     base::Unretained(this), std::move(gpu_backing_factory),
-                     std::move(debug_label));
+  SharedImageBackingType factory_type = gpu_backing_factory->GetBackingType();
+  gpu_element.create_callback = base::BindOnce(
+      &CompoundImageBacking::LazyCreateBacking, base::Unretained(this),
+      factory_type, std::move(gpu_backing_factory), std::move(debug_label));
   elements_.push_back(std::move(gpu_element));
 }
 
@@ -1015,19 +1017,22 @@ SharedImageBacking* CompoundImageBacking::GetOrAllocateBacking(
   if (base::FeatureList::IsEnabled(kUseDynamicBackingAllocations) &&
       shared_image_factory_) {
     SharedImageUsageSet usage = GetUsageFromAccessStream(stream);
+    std::unique_ptr<SharedImageBacking> new_backing;
     auto* gpu_backing_factory = shared_image_factory_->GetFactoryByUsage(
         usage, format(), size(),
         /*pixel_data=*/{}, gfx::EMPTY_BUFFER);
 
     if (gpu_backing_factory) {
+      CreateBackingFromBackingFactory(gpu_backing_factory, debug_label(),
+                                      new_backing);
+    }
+
+    if (new_backing) {
       ElementHolder element;
       element.access_streams.Put(stream);
-      CreateBackingFromBackingFactory(gpu_backing_factory->GetWeakPtr(),
-                                      debug_label(), element.backing);
-      if (element.backing) {
-        elements_.push_back(std::move(element));
-        return elements_.back().GetBacking();
-      }
+      element.backing = std::move(new_backing);
+      elements_.push_back(std::move(element));
+      return elements_.back().GetBacking();
     }
   }
 
@@ -1046,13 +1051,10 @@ SharedImageBacking* CompoundImageBacking::GetGpuBacking() {
 }
 
 void CompoundImageBacking::CreateBackingFromBackingFactory(
-    base::WeakPtr<SharedImageBackingFactory> factory,
+    SharedImageBackingFactory* factory,
     std::string debug_label,
     std::unique_ptr<SharedImageBacking>& backing) {
-  if (!factory) {
-    DLOG(ERROR) << "Can't allocate backing after image has been destroyed";
-    return;
-  }
+  CHECK(factory);
 
   backing = factory->CreateSharedImage(
       mailbox(), format(), kNullSurfaceHandle, size(), color_space(),
@@ -1090,6 +1092,22 @@ void CompoundImageBacking::CreateBackingFromBackingFactory(
 
   AutoLock auto_lock(this);
   UpdateEstimatedSize(estimated_size);
+}
+
+void CompoundImageBacking::LazyCreateBacking(
+    SharedImageBackingType factory_type,
+    base::WeakPtr<SharedImageBackingFactory> test_factory,
+    std::string debug_label,
+    std::unique_ptr<SharedImageBacking>& backing) {
+  if (shared_image_factory_) {
+    if (auto* factory = shared_image_factory_->GetFactoryByType(factory_type)) {
+      CreateBackingFromBackingFactory(factory, std::move(debug_label), backing);
+    }
+  } else if (test_factory) {
+    CHECK_IS_TEST();
+    CreateBackingFromBackingFactory(test_factory.get(), std::move(debug_label),
+                                    backing);
+  }
 }
 
 bool CompoundImageBacking::HasLatestContent(ElementHolder& element) {

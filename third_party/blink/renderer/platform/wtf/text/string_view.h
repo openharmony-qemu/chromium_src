@@ -188,8 +188,8 @@ class WTF_EXPORT StringView {
   void Clear();
 
   UChar operator[](unsigned i) const {
-    SECURITY_DCHECK(i < length());
-    // SAFETY: safe when i < length().
+    CHECK(i < length());
+    // SAFETY: checked that i < length() on previous line.
     UNSAFE_BUFFERS({
       if (Is8Bit()) {
         return static_cast<const LChar*>(bytes_)[i];
@@ -311,6 +311,8 @@ inline StringView::StringView(const StringView& view,
                               unsigned offset,
                               unsigned length)
     : impl_(view.impl_), length_(length) {
+  CHECK(offset <= view.length());
+  CHECK(length <= view.length() - offset);
   if (Is8Bit()) {
     bytes_ = view.Span8().subspan(offset, length).data();
   } else {
@@ -357,6 +359,8 @@ inline void StringView::Clear() {
 inline void StringView::Set(const StringImpl& impl,
                             unsigned offset,
                             unsigned length) {
+  CHECK(offset <= impl.length());
+  CHECK(length <= impl.length() - offset);
   length_ = length;
   impl_ = const_cast<StringImpl*>(&impl);
   if (impl.Is8Bit()) {

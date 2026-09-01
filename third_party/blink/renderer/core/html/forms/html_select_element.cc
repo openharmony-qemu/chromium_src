@@ -835,6 +835,7 @@ void HTMLSelectElement::SetSuggestedOption(HTMLOptionElement* option) {
 }
 
 void HTMLSelectElement::DidChangeIsCanvasOrInCanvasSubtree() {
+  HTMLFormControlElementWithState::DidChangeIsCanvasOrInCanvasSubtree();
   if (RuntimeEnabledFeatures::CanvasDrawElementEnabled() &&
       IsInCanvasSubtree()) {
     // Hide suggested values when under canvas, to prevent leaking this
@@ -1811,6 +1812,10 @@ void HTMLSelectElement::SelectedContentElementRemoved(
     (*descendant_selectedcontents_.begin())
         ->CloneContentsFromOptionElement(SelectedOption());
   }
+}
+
+bool HTMLSelectElement::HasDescendantSelectedcontentElements() const {
+  return !descendant_selectedcontents_.IsEmpty();
 }
 
 HTMLSelectElement::SelectAutofillPreviewElement*

@@ -159,8 +159,13 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       {"anonymousFunction", IDS_EXTENSIONS_ERROR_ANONYMOUS_FUNCTION},
       {"errorContext", IDS_EXTENSIONS_ERROR_CONTEXT},
       {"errorContextUnknown", IDS_EXTENSIONS_ERROR_CONTEXT_UNKNOWN},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"safetyCheckExtensionsDetailPagePrimaryLabel",
+       IDS_EXTENSIONS_SAFETY_CHECK_PRIMARY_LABEL_V2},
+#else
       {"safetyCheckExtensionsDetailPagePrimaryLabel",
        IDS_EXTENSIONS_SAFETY_CHECK_PRIMARY_LABEL},
+#endif
       {"safetyCheckExtensionsKeep", IDS_CONFIRM_DOWNLOAD},
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
       {"stackTrace", IDS_EXTENSIONS_ERROR_STACK_TRACE_V2},
@@ -179,7 +184,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
 #else
       {"incognitoInfoWarning", IDS_EXTENSIONS_INCOGNITO_WARNING},
 #endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"userScriptInfoWarning", IDS_EXTENSIONS_ALLOW_USER_SCRIPTS_WARNING_V2},
+#else
       {"userScriptInfoWarning", IDS_EXTENSIONS_ALLOW_USER_SCRIPTS_WARNING},
+#endif
       {"hostPermissionsDescription",
        IDS_EXTENSIONS_HOST_PERMISSIONS_DESCRIPTION},
       {"permissionsLearnMoreLabel",
@@ -218,7 +227,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
 #else
       {"itemAllowIncognito", IDS_EXTENSIONS_ITEM_ALLOW_INCOGNITO},
 #endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"itemAllowUserScripts", IDS_EXTENSIONS_ITEM_ALLOW_USER_SCRIPTS_V2},
+#else
       {"itemAllowUserScripts", IDS_EXTENSIONS_ITEM_ALLOW_USER_SCRIPTS},
+#endif
       {"itemDescriptionLabel", IDS_EXTENSIONS_ITEM_DESCRIPTION},
       {"itemDependencies", IDS_EXTENSIONS_ITEM_DEPENDENCIES},
       {"itemDependentEntry", IDS_EXTENSIONS_DEPENDENT_ENTRY},
@@ -460,7 +473,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       {"toolbarUpdateNow", IDS_EXTENSIONS_TOOLBAR_UPDATE_NOW},
       {"toolbarUpdateNowTooltip", IDS_EXTENSIONS_TOOLBAR_UPDATE_NOW_TOOLTIP},
       {"toolbarUpdateDone", IDS_EXTENSIONS_TOOLBAR_UPDATE_DONE},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"toolbarUpdatingToast", IDS_EXTENSIONS_TOOLBAR_UPDATING_TOAST_V2},
+#else
       {"toolbarUpdatingToast", IDS_EXTENSIONS_TOOLBAR_UPDATING_TOAST},
+#endif
       {"updateRequiredByPolicy",
        IDS_EXTENSIONS_DISABLED_UPDATE_REQUIRED_BY_POLICY},
       {"viewActivityLog", IDS_EXTENSIONS_VIEW_ACTIVITY_LOG},
@@ -504,7 +521,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       {"toolbarDevModeConfirm", IDS_EXTENSIONS_DEVELOPER_MODE_CONFIRM},
       {"toolbarDevModeCancel", IDS_EXTENSIONS_DEVELOPER_MODE_CANCEL},
 #endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"pendingChangeWarning", IDS_PENDING_CHANGE_WARNING_V2},
+#else
       {"pendingChangeWarning", IDS_PENDING_CHANGE_WARNING},
+#endif
   };
   source->AddLocalizedStrings(kLocalizedStrings);
 

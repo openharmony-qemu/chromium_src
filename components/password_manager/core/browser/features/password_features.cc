@@ -82,6 +82,9 @@ BASE_FEATURE(kDownloadModelForPasswordChange,
 BASE_FEATURE(kDisableFillingOnPageLoadForLeakedCredentials,
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+BASE_FEATURE(kFallbackNoPreviewForCrossDomainCredentials,
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
 BASE_FEATURE(kFetchChangePasswordUrlForPasswordChange,
 #if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
              // Desktop only since password change is not available on mobile.
@@ -90,6 +93,11 @@ BASE_FEATURE(kFetchChangePasswordUrlForPasswordChange,
              base::FEATURE_DISABLED_BY_DEFAULT
 #endif
 );
+
+// Shows a confirmation dialog before filling grouped credentials from the
+// manual fallback popup on Desktop.
+BASE_FEATURE(kShowConfirmationForGroupedCredentials,
+             base::FEATURE_ENABLED_BY_DEFAULT);
 
 BASE_FEATURE(kFillChangePasswordFormByTyping,
              base::FEATURE_DISABLED_BY_DEFAULT);
@@ -180,6 +188,9 @@ BASE_FEATURE(kMarkAllCredentialsAsLeaked, base::FEATURE_DISABLED_BY_DEFAULT);
 
 #if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)  // Desktop
 BASE_FEATURE(kEnablePasswordManagerMojoApi, base::FEATURE_ENABLED_BY_DEFAULT);
+
+BASE_FEATURE(kPasswordManualFallbackSecurityChecks,
+             base::FEATURE_DISABLED_BY_DEFAULT);
 #endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
 
 BASE_FEATURE(kImprovedPasswordChangeService, base::FEATURE_ENABLED_BY_DEFAULT);

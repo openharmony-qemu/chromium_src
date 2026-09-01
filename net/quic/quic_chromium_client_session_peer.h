@@ -9,6 +9,7 @@
 
 #include <string>
 
+#include "net/base/network_handle.h"
 #include "net/quic/quic_chromium_client_session.h"
 #include "net/third_party/quiche/src/quiche/quic/core/quic_packets.h"
 
@@ -34,6 +35,14 @@ class QuicChromiumClientSessionPeer {
 
   static MigrationCause GetCurrentMigrationCause(
       QuicChromiumClientSession* session);
+
+  static void SetDefaultNetwork(QuicChromiumClientSession* session,
+                                handles::NetworkHandle network);
+
+  static bool IsMigrateBackToDefaultNetworkTimerRunning(
+      QuicChromiumClientSession* session);
+
+  static void OnCryptoHandshakeComplete(QuicChromiumClientSession* session);
 };
 
 }  // namespace test

@@ -134,3 +134,13 @@ promise_test(async t => {
   assert_throws_js(
       TypeError, () => builder.concat(input1, input2, input3));
 }, '[concat] throw if the output tensor byte length exceeds limit');
+
+promise_test(async t => {
+  const builder = new MLGraphBuilder(context);
+  const operandDescriptor = {dataType: 'float32', shape: [1]};
+  const inputs = [];
+  for (let i = 0; i < 8193; ++i) {
+    inputs.push(builder.input(`input${i}`, operandDescriptor));
+  }
+  assert_throws_js(TypeError, () => builder.concat(inputs));
+}, '[concat] throw if the number of inputs exceeds limit');

@@ -1561,6 +1561,7 @@ Pode gerir as definições desta conta ao instalar a aplicação Family Link no 
 <translation id="2040822390690632244">Atualizações, ajuda, opções de programador</translation>
 <translation id="2040894699575719559">Localização bloqueada</translation>
 <translation id="2041246176170574368">As atualizações de segurança terminam em breve. Poupe 50 $ ou mais num novo Chromebook.</translation>
+<translation id="2041681409552851212">Permitir a execução de código que não tenha sido revisto pelo Navegador. Isto pode ser inseguro e só deve ativar isto se souber o que está a fazer.</translation>
 <translation id="2042279886444479655">Perfis ativos</translation>
 <translation id="2044014337866019681">Certifique-se de que está a validar a conta <ph name="ACCOUNT" /> para desbloquear a sessão.</translation>
 <translation id="2044750031738659219">{0,plural, =1{Fechar sessão de convidado}other{Fechar sessão de convidado (# janelas)}}</translation>
@@ -2314,6 +2315,7 @@ Pode gerir as definições desta conta ao instalar a aplicação Family Link no 
 <translation id="2541400104619216245">Sugere detalhes de comparação a considerar aquando da escolha entre produtos</translation>
 <translation id="2541706104884128042">Nova hora de dormir definida.</translation>
 <translation id="2542050502251273923">Define o nível de depuração do gestor da ligação de rede e outros serviços através de ff_debug.</translation>
+<translation id="25436473744628215">A atualizar</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{As autorizações que concede à app "<ph name="APP_NAME" />" também são concedidas a esta app. <ph name="MANAGE_LINK" />}other{As autorizações que concede à app "<ph name="APP_NAME" />" também são concedidas a estas apps. <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">Este separador</translation>
 <translation id="2545743249923338554">Novos separadores</translation>
@@ -3163,7 +3165,7 @@ Quer pará-lo?</translation>
 <translation id="3132277757485842847">Não foi possível manter uma ligação ao seu telemóvel. Certifique-se de que o telemóvel está próximo, desbloqueado e com o Bluetooth e o Wi-Fi ativados.</translation>
 <translation id="3132896062549112541">Regra</translation>
 <translation id="3132996321662585180">Atualizar diariamente</translation>
-<translation id="3134312457920437826">Não é possível instalar a extensão porque usa uma versão de manifesto incompatível.</translation>
+<translation id="3134312457920437826">Não é possível instalar a extensão porque esta utiliza uma versão de manifesto não suportada.</translation>
 <translation id="3134393957315651797">Selecione o estado da experiência <ph name="EXPERIMENT_NAME" />. Descrição da experiência: <ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">Avatar amarelo predefinido</translation>
 <translation id="3141093262818886744">Abrir mesmo assim</translation>
@@ -11544,6 +11546,7 @@ Pode incluir informações sobre o software instalado, os ficheiros, o navegador
 <translation id="8890170499370378450">Pode incorrer em custos de dados móveis</translation>
 <translation id="8890516388109605451">Fontes</translation>
 <translation id="8890529496706615641">Não foi possível mudar o nome do perfil. Tente novamente ou contacte o operador para obter apoio técnico.</translation>
+<translation id="889095128849097287">Permitir scripts do utilizador</translation>
 <translation id="8892168913673237979">Está tudo pronto!</translation>
 <translation id="8892246501904593980">Veja todos os seus marcadores em Marcadores e listas</translation>
 <translation id="8893779047492837414">Atualmente, tem <ph name="NUMBERED_ITEM_1" />, <ph name="NUMBERED_ITEM_2" /> e outros. A sua organização, <ph name="ACCOUNT_MANAGER" />, vai poder ver e gerir estes dados.</translation>

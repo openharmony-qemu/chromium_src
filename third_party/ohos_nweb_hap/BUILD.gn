@@ -71,7 +71,6 @@ ohos_hap("ohos_nweb_hap") {
     "libarkweb_engine.so",
     "libarkweb_crashpad_handler.so",
     "libffmpeg.so",
-    "libwebjs_dfx.so",
   ]
 
   if (is_arkweb_ext && build_watch) {
@@ -166,7 +165,6 @@ ohos_hap("ohos_nweb_hap") {
     "//cef:libarkweb_engine",
     "//components/crash/core/app:arkweb_crashpad_handler",
     "//ohos_nweb:libarkweb_render",
-    "//arkweb/chromium_ext/dfx:libwebjs_dfx",
   ]
 
   if (is_arkweb_ext) {

@@ -196,6 +196,7 @@
 #include "content/public/browser/content_browser_client.h"
 #include "content/public/browser/context_menu_params.h"
 #include "content/public/browser/cookie_access_details.h"
+#include "content/public/browser/devtools_agent_host.h"
 #include "content/public/browser/disallow_activation_reason.h"
 #include "content/public/browser/document_ref.h"
 #include "content/public/browser/document_service_internal.h"
@@ -4669,6 +4670,7 @@ void RenderFrameHostImpl::RenderFrameDeleted() {
   // the corruption will cause a crash but later, making the bug very
   // difficult to understand.
   CHECK_NE(render_frame_state_, RenderFrameState::kDeleting);
+  CHECK(children_.empty());
   bool was_created = is_render_frame_created();
   render_frame_state_ = RenderFrameState::kDeleting;
   render_frame_scoped_weak_ptr_factory_.InvalidateWeakPtrs();
@@ -4991,6 +4993,16 @@ void RenderFrameHostImpl::OnCreateChildFrame(
             DisallowActivationReasonId::kCreateChildFrame)) {
       return;
     }
+  }
+
+  // The placeholder frame for an inner frame tree (e.g., an attached
+  // GuestView, fenced frame) must never have its own local children, since
+  // the inner tree's main frame is treated as this frame's only child during
+  // FrameTree iteration. This message could only have been sent before the
+  // renderer processed the corresponding Unload IPC, so just drop it. See
+  // https://crbug.com/518078552.
+  if (inner_tree_main_frame_tree_node_id_) {
+    return;
   }
 
   // `new_routing_id`, `frame_token`, `devtools_frame_token` and
@@ -6681,6 +6693,12 @@ void RenderFrameHostImpl::MaybeDispatchDOMContentLoadedOnPrerenderActivation() {
 void RenderFrameHostImpl::SwapOuterDelegateFrame(
     RenderFrameProxyHost* proxy,
     const base::UnguessableToken& devtools_frame_token) {
+  // The placeholder frame for an inner frame tree must never have its own
+  // local children. Clear them here, before sending the Unload IPC, so that
+  // the cleanup does not depend on the renderer sending a DidUnloadRenderFrame
+  // ACK. See https://crbug.com/518078552.
+  ResetChildren();
+
   // Note: At this point the placeholder iframe for embedding the guest has
   // been initialized with a devtools_frame_token that is different from the
   // guest's main frame (that is about to be attached to it). When we swap
@@ -6949,8 +6967,13 @@ void RenderFrameHostImpl::OnUnloadACK() {
       IsPendingDeletion() ? GetFrameTreeNodeForUnload() : owner_;
   if (!is_main_frame() &&
       owner->GetRenderFrameHostManager().is_inner_delegate_attached()) {
-    // This RFH was unloaded while attaching an inner delegate. The RFH
-    // will stay around but it will no longer be associated with a RenderFrame.
+    // This RFH was unloaded while attaching an inner delegate. The RFH will
+    // stay around but it will no longer be associated with a RenderFrame.
+    // Ensure there are no lingering child frames before marking the frame
+    // deleted - this matters for compromised renderers (see
+    // https://crbug.com/517241992). This is a defense-in-depth call that
+    // mirrors a similar call in SwapOuterDelegateFrame().
+    ResetChildren();
     RenderFrameDeleted();
     return;
   }
@@ -7139,6 +7162,16 @@ void RenderFrameHostImpl::RunJavaScriptDialog(
     JavaScriptDialogType dialog_type,
     bool disable_third_party_subframe_suppresion,
     JavaScriptDialogCallback ipc_response_callback) {
+  // Sandboxed frames should only be allowed to show modal dialogs when they
+  // have the "allow-modals" attribute. This should have already been checked
+  // by the renderer process (see LocalDOMWindow::alert/confirm/prompt), and
+  // this browser-side check defends against compromised renderers.
+  if (IsSandboxed(network::mojom::WebSandboxFlags::kModals)) {
+    bad_message::ReceivedBadMessage(
+        GetProcess(), bad_message::RFH_MODAL_DIALOG_FROM_SANDBOXED_FRAME);
+    return;
+  }
+
   // Don't show the dialog if it's triggered on a non-active RenderFrameHost
   // or is contained in a Fenced Frame.
   if (!IsActive() || IsNestedWithinFencedFrame()) {
@@ -9116,7 +9149,13 @@ void RenderFrameHostImpl::EnterFullscreen(
   if (had_fullscreen_token && !GetView()->HasFocus()) {
     GetView()->Focus();
   }
+  // This may spin the message loop and destroy this object.
+  // See crbug.com/1506535, crbug.com/498752242.
+  base::WeakPtr<RenderFrameHostImpl> weak_ptr = GetWeakPtr();
   delegate_->EnterFullscreenMode(this, *options);
+  if (!weak_ptr) {
+    return;
+  }
   delegate_->FullscreenStateChanged(this, /*is_fullscreen=*/true,
                                     std::move(options));
 
@@ -9316,12 +9355,15 @@ void RenderFrameHostImpl::UpdateUserActivationState(
 }
 
 void RenderFrameHostImpl::DidConsumeHistoryUserActivation() {
-  // owner_ may be null for IsPendingDeletion() or IsInBackForwardCache(), in
-  // which case the history user activation is managed by a different active
-  // RenderFrameHost.
-  if (owner_) {
-    owner_->DidConsumeHistoryUserActivation();
+  // This IPC is only sent from an active document, but might be received after
+  // the transition to the backforward cache or after entering pending
+  // deletion. It must be ignored as it would affect the state of the primary
+  // page instead of the old one.
+  if (lifecycle_state() != LifecycleStateImpl::kActive) {
+    return;
   }
+  CHECK(owner_);  // See `owner_` invariants about `lifecycle_state_`.
+  owner_->DidConsumeHistoryUserActivation();
 }
 
 void RenderFrameHostImpl::HadStickyUserActivationBeforeNavigationChanged(
@@ -10024,9 +10066,22 @@ void RenderFrameHostImpl::CreateNewWindow(
   GetProcess()->FilterURL(false, &params->target_url);
 
   bool effective_transient_activation_state =
-      params->allow_popup || HasTransientUserActivation() ||
+      HasTransientUserActivation() ||
       (transient_allow_popup_.IsActive() &&
        params->disposition == WindowOpenDisposition::NEW_POPUP);
+
+  if (!effective_transient_activation_state && params->allow_popup) {
+    bool bypass_allowed =
+        GetContentClient()->browser()->IsPopupBypassAllowed(this);
+    base::UmaHistogramBoolean("Security.PopupBypassDeniedByContentEmbedder",
+                              !bypass_allowed);
+    if (bypass_allowed) {
+      effective_transient_activation_state = true;
+    } else {
+      std::move(callback).Run(mojom::CreateNewWindowStatus::kBlocked, nullptr);
+      return;
+    }
+  }
 
   // Ignore window creation when sent from a frame that's not active or
   // created.
@@ -10129,9 +10184,16 @@ void RenderFrameHostImpl::CreateNewWindow(
 
   // The non-owning pointer |new_frame_tree| is valid in this stack frame at
   // least until the call to ShowCreatedWindow() below.
+  base::WeakPtr<RenderFrameHostImpl> weak_self = GetWeakPtr();
   FrameTree* new_frame_tree =
       delegate_->CreateNewWindow(this, *params, is_new_browsing_instance,
                                  was_consumed, cloned_namespace.get());
+  if (!weak_self) {
+    // This RFH may be deleted after CreateNewWindow() due to a nested message
+    // loop (e.g. showing the new window closes the window hosting `this`). See
+    // crbug.com/527676561.
+    return;
+  }
 
   transient_allow_popup_.Deactivate();
 
@@ -10401,17 +10463,12 @@ void RenderFrameHostImpl::CreateFencedFrame(
     return;
   }
 
-  // Ensure the devtools frame token doesn't exist in the FrameTree for
-  // this tab.
-  for (FrameTreeNode* node :
-       GetOutermostMainFrame()->frame_tree()->NodesIncludingInnerTreeNodes()) {
-    if (node->current_frame_host()->devtools_frame_token() ==
-        devtools_frame_token) {
-      bad_message::ReceivedBadMessage(
-          GetProcess(),
-          bad_message::RFHI_CREATE_FENCED_FRAME_BAD_DEVTOOLS_FRAME_TOKEN);
-      return;
-    }
+  // Ensure the devtools frame token doesn't exist globally.
+  if (DevToolsAgentHost::GetForId(devtools_frame_token.ToString())) {
+    bad_message::ReceivedBadMessage(
+        GetProcess(),
+        bad_message::RFHI_CREATE_FENCED_FRAME_BAD_DEVTOOLS_FRAME_TOKEN);
+    return;
   }
 
   // Inactive pages cannot create fenced frames. If the page is in the BFCache,
@@ -11128,6 +11185,12 @@ void RenderFrameHostImpl::StartDragging(
     const gfx::Vector2d& cursor_offset_in_dip,
     const gfx::Rect& drag_obj_rect_in_dip,
     blink::mojom::DragEventSourceInfoPtr event_info) {
+  if (IsInactiveAndDisallowActivation(
+          DisallowActivationReasonId::kStartDragging)) {
+    // Don't process dragging from inactive documents.
+    // TODO(crbug.com/523886022): Add more checks for e.g. visibility.
+    return;
+  }
 #if BUILDFLAG(IS_ANDROID)
   RenderWidgetHostImpl* widget = GetRenderWidgetHost();
   RenderWidgetHostViewBase* view = (widget) ? widget->GetView() : nullptr;
@@ -11438,7 +11501,9 @@ void RenderFrameHostImpl::BeginNavigation(
     }
   }
 
+  // TODO(crbug.com/40066983): Consider converting these into renderer kills.
   GetProcess()->FilterURL(true, &begin_params->searchable_form_url);
+  GetProcess()->FilterURL(true, &begin_params->client_side_redirect_url);
 
   // If the request was for a blob URL, but the validated URL is no longer a
   // blob URL, reset the blob_url_token to prevent hitting the ReportBadMessage
@@ -14604,6 +14669,10 @@ void RenderFrameHostImpl::BindMediaRemoterFactoryReceiver(
 
 void RenderFrameHostImpl::CreateWebSocketConnector(
     mojo::PendingReceiver<blink::mojom::WebSocketConnector> receiver) {
+  if (is_mhtml_document()) {
+    mojo::ReportBadMessage("WebSockets are not allowed in MHTML documents.");
+    return;
+  }
   mojo::MakeSelfOwnedReceiver(
       std::make_unique<WebSocketConnectorImpl>(
           GetProcess()->GetDeprecatedID(), routing_id_, last_committed_origin_,
@@ -14613,6 +14682,10 @@ void RenderFrameHostImpl::CreateWebSocketConnector(
 
 void RenderFrameHostImpl::CreateWebTransportConnector(
     mojo::PendingReceiver<blink::mojom::WebTransportConnector> receiver) {
+  if (is_mhtml_document()) {
+    mojo::ReportBadMessage("WebTransport is not allowed in MHTML documents.");
+    return;
+  }
   mojo::MakeSelfOwnedReceiver(
       std::make_unique<WebTransportConnectorImpl>(
           GetProcess()->GetDeprecatedID(), weak_ptr_factory_.GetWeakPtr(),
@@ -14623,6 +14696,11 @@ void RenderFrameHostImpl::CreateWebTransportConnector(
 
 void RenderFrameHostImpl::CreateNotificationService(
     mojo::PendingReceiver<blink::mojom::NotificationService> receiver) {
+  if (GetSiteInstance()->GetSiteInfo().is_pdf()) {
+    mojo::ReportBadMessage(
+        "PDF renderers may not bind blink.mojom.NotificationService");
+    return;
+  }
   GetProcess()->CreateNotificationService(
       GetGlobalId(),
       RenderProcessHost::NotificationServiceCreatorType::kDocument,
@@ -14953,6 +15031,21 @@ void RenderFrameHostImpl::CreatePermissionService(
 
 void RenderFrameHostImpl::GetWebAuthenticationService(
     mojo::PendingReceiver<blink::mojom::Authenticator> receiver) {
+  if (!IsActive()) {
+    return;
+  }
+
+  // PDF renderer processes are not permitted to access password/passkey-class
+  // data for any origin (see
+  // ChildProcessSecurityPolicyImpl::IsAccessAllowedForPdfProcess). Refuse to
+  // bind blink.mojom.Authenticator for them, mirroring the gate already present
+  // for blink.mojom.PasswordManagerDriver.
+  if (GetProcess()->IsPdf()) {
+    bad_message::ReceivedBadMessage(
+        GetProcess(), bad_message::RFH_AUTHENTICATOR_PDF_PROCESS_BLOCKED);
+    return;
+  }
+
 #if !BUILDFLAG(IS_ANDROID)
   AuthenticatorImpl::Create(this, std::move(receiver));
 #else
@@ -15396,6 +15489,17 @@ bool RenderFrameHostImpl::ValidateDidCommitParams(
           process, bad_message::RFH_UNEXPECTED_EMBEDDING_TOKEN);
       return false;
     }
+  }
+
+  ui::AXActionHandlerRegistry* action_handler_registry =
+      ui::AXActionHandlerRegistry::GetInstance();
+  if (navigation_request && !is_page_activation &&
+      !is_same_document_navigation && params->embedding_token.has_value() &&
+      action_handler_registry->GetActionHandler(
+          ui::AXTreeID::FromToken(params->embedding_token.value()))) {
+    bad_message::ReceivedBadMessage(
+        process, bad_message::RFH_UNEXPECTED_EMBEDDING_TOKEN);
+    return false;
   }
 
   // Note: document_policy_header is the document policy state used to
@@ -19053,6 +19157,12 @@ void RenderFrameHostImpl::SetEmbeddingToken(
   const ui::AXTreeID old_id = GetAXTreeID();
   ui::AXTreeID ax_tree_id = ui::AXTreeID::FromToken(embedding_token);
   DCHECK_NE(old_id, ax_tree_id);
+
+  // Should be enforced by ValidateDidCommitParams().
+  CHECK_EQ(
+      nullptr,
+      ui::AXActionHandlerRegistry::GetInstance()->GetActionHandler(ax_tree_id));
+
   SetAXTreeID(ax_tree_id);
   needs_ax_root_id_ = true;
   ui::AXActionHandlerRegistry::GetInstance()->SetFrameIDForAXTreeID(

@@ -242,9 +242,6 @@ ScriptPromise<IDLUndefined> IdentityProvider::resolve(
       MakeGarbageCollected<ScriptPromiseResolver<IDLUndefined>>(script_state);
   auto promise = resolver->Promise();
 
-  auto* request =
-      CredentialManagerProxy::From(script_state)->FederatedAuthRequest();
-
   std::unique_ptr<base::Value> token_base_value;
   if (RuntimeEnabledFeatures::FedCmNonStringTokenEnabled()) {
     std::unique_ptr<WebV8ValueConverter> converter =
@@ -269,6 +266,16 @@ ScriptPromise<IDLUndefined> IdentityProvider::resolve(
     token_base_value = std::make_unique<base::Value>(token_string.Utf8());
   }
 
+  if (!script_state->ContextIsValid()) {
+    // Conversion of the token value may trigger side effects that destroy the
+    // document. With an invalid context, we can no longer safely reject.
+    return promise;
+  }
+
+  // There must not be JavaScript execution between getting the request pointer
+  // and using it.
+  auto* request =
+      CredentialManagerProxy::From(script_state)->FederatedAuthRequest();
   request->ResolveTokenRequest(
       account_id, std::move(*token_base_value),
       BindOnce(&OnResolveTokenRequest, WrapPersistent(resolver)));

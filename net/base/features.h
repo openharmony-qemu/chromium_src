@@ -26,6 +26,11 @@ namespace net::features {
 // https://vasilvv.github.io/httpbis-alps/draft-vvv-httpbis-alps.html.
 NET_EXPORT BASE_DECLARE_FEATURE(kAlpsForHttp2);
 
+// If enabled, HttpNetworkTransaction will use a hybrid retry strategy for
+// connection errors: retrying synchronously initially, and switching to
+// asynchronous (yielding to the message loop) after many attempts.
+NET_EXPORT BASE_DECLARE_FEATURE(kAsyncRetryOnTooManyConnectionErrors);
+
 // Disable H2 reprioritization, in order to measure its impact.
 NET_EXPORT BASE_DECLARE_FEATURE(kAvoidH2Reprioritization);
 
@@ -162,6 +167,15 @@ NET_EXPORT extern const base::FeatureParam<int> kObservationBufferSize;
 // connection type. Set to non-zero value as a performance optimization.
 NET_EXPORT extern const base::FeatureParam<base::TimeDelta>
     kEffectiveConnectionTypeRecomputationInterval;
+
+// When disabled, HttpContentDisposition incorrectly handles multiple
+// comma-delimited Content-Disposition lines, treating them all as a single
+// Content-Disposition string.
+//
+// This is a temporary escape valve in case the fix for
+// https://crbug.com/517466133 causes issues.
+// TODO(crbug.com/519218483): Remove this in late Q3/Q4 2026.
+NET_EXPORT BASE_DECLARE_FEATURE(kOnlyParseFirstContentDisposition);
 
 // Splits cache entries by the request's includeCredentials.
 NET_EXPORT BASE_DECLARE_FEATURE(kSplitCacheByIncludeCredentials);
@@ -559,6 +573,10 @@ NET_EXPORT BASE_DECLARE_FEATURE(kAddressTrackerLinuxIsProxied);
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
 NET_EXPORT BASE_DECLARE_FEATURE(kEnableNetworkPreload);
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_IPV6_SLAAC_FILTER)
+NET_EXPORT BASE_DECLARE_FEATURE(kArkWebIPv6SlaacFilter);
 #endif
 
 // Enables binding of cookies to the port that originally set them by default.

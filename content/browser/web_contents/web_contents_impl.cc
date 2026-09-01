@@ -180,6 +180,7 @@
 #include "content/public/common/content_switches.h"
 #include "content/public/common/referrer_type_converters.h"
 #include "content/public/common/url_constants.h"
+#include "content/public/common/widget_type.h"
 #include "ipc/constants.mojom.h"
 #include "media/base/media_switches.h"
 #include "net/base/url_util.h"
@@ -2057,6 +2058,17 @@ RenderWidgetHostView* WebContentsImpl::GetTopLevelRenderWidgetHostView() {
     return GetOuterWebContents()->GetTopLevelRenderWidgetHostView();
   }
   return GetRenderManager()->GetRenderWidgetHostView();
+}
+
+std::vector<RenderWidgetHostView*> WebContentsImpl::GetPopupWidgets() {
+  std::vector<RenderWidgetHostView*> result;
+  for (const auto& [_, host] : created_widgets_) {
+    RenderWidgetHostViewBase* view = host->GetView();
+    if (view && view->GetWidgetType() == WidgetType::kPopup) {
+      result.push_back(view);
+    }
+  }
+  return result;
 }
 
 RenderWidgetHost* WebContentsImpl::FindWidgetAtPoint(const gfx::PointF& point) {
@@ -4833,7 +4845,13 @@ void WebContentsImpl::EnterFullscreenMode(
   }
 
   if (delegate_) {
+    // This may spin the message loop and destroy this object.
+    // See crbug.com/1506535, crbug.com/498752242.
+    base::WeakPtr<WebContents> weak_ptr = GetWeakPtr();
     delegate_->EnterFullscreenModeForTab(requesting_frame, options);
+    if (!weak_ptr) {
+      return;
+    }
 
     if (keyboard_lock_widget_) {
       delegate_->RequestKeyboardLock(this, esc_key_locked_);
@@ -4861,8 +4879,9 @@ void WebContentsImpl::ExitFullscreenMode(bool will_cause_resize) {
                          base::TimeTicks::Now());
 
   if (delegate_) {
-    // This may spin the message loop and destroy this object crbug.com/1506535
-    base::WeakPtr<WebContentsImpl> weak_ptr = weak_factory_.GetWeakPtr();
+    // This may spin the message loop and destroy this object.
+    // See crbug.com/1506535, crbug.com/498752242.
+    base::WeakPtr<WebContents> weak_ptr = GetWeakPtr();
     delegate_->ExitFullscreenModeForTab(this);
     if (!weak_ptr) {
       return;
@@ -5341,6 +5360,24 @@ void WebContentsImpl::LostPointerLock(
   }
 }
 
+bool WebContentsImpl::IsPointerLockSandboxedForWidget(
+    RenderWidgetHostImpl* render_widget_host) {
+  // Check the sandbox flags of the frame that owns the requesting widget.
+  // It is ok to only check the top-most frame of the widget, because any
+  // subframes within the widget will be at least as restrictive as it. Any
+  // additional restrictions imposed on subframes of the widget cannot be
+  // enforced by the browser process, because they share a renderer process
+  // with the top-most frame of the widget.
+  // Note: crbug.com/492211919
+  for (FrameTreeNode* node : GetPrimaryFrameTree().Nodes()) {
+    RenderFrameHostImpl* rfh = node->current_frame_host();
+    if (rfh && rfh->GetRenderWidgetHost() == render_widget_host) {
+      return rfh->IsSandboxed(network::mojom::WebSandboxFlags::kPointerLock);
+    }
+  }
+  return false;
+}
+
 bool WebContentsImpl::HasPointerLock(RenderWidgetHostImpl* render_widget_host) {
   // To verify if the mouse is locked, the mouse_lock_widget_ needs to be
   // assigned to the widget that requested the mouse lock, and the top-level
@@ -5694,11 +5731,19 @@ FrameTree* WebContentsImpl::CreateNewWindow(
   bool was_blocked = false;
   base::WeakPtr<WebContentsImpl> weak_new_contents =
       new_contents_impl->weak_factory_.GetWeakPtr();
+  base::WeakPtr<WebContentsImpl> weak_this = weak_factory_.GetWeakPtr();
   WebContentsImpl* contents_to_load = new_contents_impl;
   if (delegate_) {
     WebContents* web_contents_navigated = delegate_->AddNewContents(
         this, std::move(new_contents), params.target_url, params.disposition,
         *params.features, has_user_gesture, &was_blocked);
+
+    if (!weak_this) {
+      // `this` may be deleted after AddNewContents() due to a nested message
+      // loop (e.g. the window hosting the opener is closed). See
+      // crbug.com/527676561.
+      return nullptr;
+    }
 
     if (base::FeatureList::IsEnabled(features::kPwaNavigationCapturing)) {
       // The delegate may delete |new_contents_impl| during AddNewContents().
@@ -10528,6 +10573,14 @@ void WebContentsImpl::OnFocusedElementChangedInFrame(
   OPTIONAL_TRACE_EVENT1("content",
                         "WebContentsImpl::OnFocusedElementChangedInFrame",
                         "render_frame_host", frame);
+  // Only apply focus updates from the currently focused frame. We ignore
+  // updates from unfocused frames (instead of treating them as bad messages)
+  // because document-local focus changes are allowed, and focus transitions
+  // can race asynchronously. Focus theft is already handled and blocked (with
+  // bad messages) in `RenderFrameHostImpl::VerifyFencedFrameFocusChange`.
+  if (frame != GetFocusedFrame()) {
+    return;
+  }
   RenderWidgetHostViewBase* root_view =
       static_cast<RenderWidgetHostViewBase*>(GetRenderWidgetHostView());
 #if BUILDFLAG(ARKWEB_PDF)

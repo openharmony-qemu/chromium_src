@@ -5,6 +5,7 @@
 #include "components/payments/content/payment_request.h"
 
 #include <algorithm>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -45,6 +46,7 @@
 #include "content/public/common/content_features.h"
 #include "services/metrics/public/cpp/ukm_source_id.h"
 #include "services/network/public/cpp/is_potentially_trustworthy.h"
+#include "url/origin.h"
 
 namespace payments {
 namespace {
@@ -406,6 +408,18 @@ void PaymentRequest::UpdateWith(mojom::PaymentDetailsPtr details) {
     return;
   }
 
+  // The "secure-payment-confirmation" dialog displays a snapshot of the
+  // payment details at the time it is shown and does not refresh, so the only
+  // permitted update is the resolution of the promise passed into show()
+  // before the dialog has displayed anything.
+  if (spec_->IsSecurePaymentConfirmationRequested() && spec_->IsInitialized()) {
+    log_.Error(errors::kSecurePaymentConfirmationUpdateWithNotAllowed);
+    mojo::ReportBadMessage(
+        errors::kSecurePaymentConfirmationUpdateWithNotAllowed);
+    ResetAndDeleteThis();
+    return;
+  }
+
   // ID cannot be updated. Updating the total is optional.
   if (!details || details->id) {
     log_.Error(errors::kInvalidPaymentDetails);
@@ -439,7 +453,13 @@ void PaymentRequest::UpdateWith(mojom::PaymentDetailsPtr details) {
 
   bool is_resolving_promise_passed_into_show_method = !spec_->IsInitialized();
 
+  // spec_->UpdateWith() can synchronously trigger observers that destroy the
+  // payment window's WebContents and delete `this`.
+  auto weak_this = weak_ptr_factory_.GetWeakPtr();
   spec_->UpdateWith(std::move(details));
+  if (!weak_this) {
+    return;
+  }
 
   if (is_resolving_promise_passed_into_show_method) {
     DCHECK(spec_->details().total);
@@ -979,6 +999,9 @@ void PaymentRequest::Pay() {
   // Log the correct "selected method".
   journey_logger_.SetSelectedMethod(GetSelectedMethodCategory());
 
+  display_handle_->SetPaymentHandlerOrigin(
+      state_->selected_app()->GetPaymentHandlerOrigin());
+
   state_->selected_app()->SetPaymentHandlerHost(
       payment_handler_host_->AsWeakPtr());
   state_->GeneratePaymentResponse();
@@ -1102,9 +1125,14 @@ void PaymentRequest::ShowErrorMessageAndAbortPayment() {
   if (display_handle_ && display_handle_->was_shown()) {
     // Will invoke OnUserCancelled() asynchronously when the user closes the
     // error message UI.
+    // ShowErrorMessage() can synchronously close the dialog and destroy `this`.
+    // We save `observer_for_testing_` locally so it can be safely invoked
+    // even during teardown. Do not access `this` below this point.
+    base::WeakPtr<ObserverForTest> observer = observer_for_testing_;
     delegate_->ShowErrorMessage();
-    if (observer_for_testing_)
-      observer_for_testing_->OnErrorDisplayed();
+    if (observer) {
+      observer->OnErrorDisplayed();
+    }
   } else {
     // Only app store billing apps do not display any browser payment UI.
     DCHECK(spec_->IsAppStoreBillingAlsoRequested());

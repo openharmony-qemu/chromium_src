@@ -1283,6 +1283,98 @@ void TargetHandler::ExposeDevToolsProtocol(
                              permissions, std::move(callback));
 }
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+void TargetHandler::CreateTarget(
+    const std::string& url,
+    std::optional<int> left,
+    std::optional<int> top,
+    std::optional<int> width,
+    std::optional<int> height,
+    std::optional<std::string> window_state,
+    std::optional<std::string> browser_context_id,
+    std::optional<bool> enable_begin_frame_control,
+    std::optional<bool> new_window,
+    std::optional<bool> background,
+    std::optional<bool> for_tab,
+    std::optional<bool> hidden,
+    std::unique_ptr<CreateTargetCallback> callback) {
+  if (access_mode_ == AccessMode::kAutoAttachOnly) {
+    callback->sendFailure(Response::ServerError(kNotAllowedError));
+    return;
+  }
+
+  GURL gurl(url);
+  if (gurl.is_empty()) {
+    gurl = GURL(url::kAboutBlankURL);
+  }
+
+  if (hidden.value_or(false)) {
+    DevToolsManagerDelegate* delegate =
+        DevToolsManager::GetInstance()->delegate();
+    if (!delegate || delegate
+                         ->RemoteDebuggingTargets(
+                             DevToolsManagerDelegate::TargetType::kFrame)
+                         .empty()) {
+      callback->sendFailure(protocol::Response::ServerError(
+          "Hidden target can be created only when remote debugging is enabled"));
+      return;
+    }
+    if (for_tab.value_or(false)) {
+      callback->sendFailure(protocol::Response::InvalidParams(
+          "Hidden target cannot be created for tab"));
+      return;
+    }
+    if (new_window) {
+      callback->sendFailure(protocol::Response::InvalidParams(
+          "Hidden target cannot be created in a new window"));
+      return;
+    }
+    if (!background.value_or(true)) {
+      callback->sendFailure(protocol::Response::InvalidParams(
+          "Hidden target can be created only in background"));
+      return;
+    }
+
+    BrowserContext* browser_context = nullptr;
+    Response response = BrowserHandler::FindBrowserContext(browser_context_id,
+                                                           &browser_context);
+    if (!response.IsSuccess()) {
+      callback->sendFailure(response);
+      return;
+    }
+
+    std::string target_id =
+        hidden_target_manager_.CreateHiddenTarget(gurl, browser_context);
+    callback->sendSuccess(target_id);
+    return;
+  }
+
+  DevToolsManagerDelegate* delegate =
+      DevToolsManager::GetInstance()->delegate();
+  if (!delegate) {
+    callback->sendFailure(Response::ServerError("Not supported"));
+    return;
+  }
+  DevToolsManagerDelegate::TargetType target_type =
+      for_tab.value_or(session_mode_ ==
+                       DevToolsSession::Mode::kSupportsTabTarget)
+          ? DevToolsManagerDelegate::kTab
+          : DevToolsManagerDelegate::kFrame;
+  delegate->CreateNewTargetAsync(
+      gurl, target_type, new_window.value_or(false),
+      base::BindOnce(
+          [](std::unique_ptr<CreateTargetCallback> callback, bool success,
+             const std::string& result) {
+            if (success) {
+              callback->sendSuccess(result);
+            } else {
+              callback->sendFailure(
+                  Response::ServerError(result.empty() ? "Not supported" : result));
+            }
+          },
+          std::move(callback)));
+}
+#else
 Response TargetHandler::CreateTarget(
     const std::string& url,
     std::optional<int> left,
@@ -1360,6 +1452,7 @@ Response TargetHandler::CreateTarget(
   *out_target_id = agent_host->GetId();
   return Response::Success();
 }
+#endif
 
 Response TargetHandler::GetTargets(
     std::unique_ptr<protocol::Array<protocol::Target::FilterEntry>> filter,

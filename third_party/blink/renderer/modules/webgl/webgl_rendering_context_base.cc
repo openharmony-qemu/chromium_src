@@ -551,27 +551,6 @@ class ScopedFramebufferRestorer {
   WebGLRenderingContextBase* context_;
 };
 
-class ScopedUnpackParametersResetRestore {
-  STACK_ALLOCATED();
-
- public:
-  explicit ScopedUnpackParametersResetRestore(
-      WebGLRenderingContextBase* context,
-      bool enabled = true)
-      : context_(context), enabled_(enabled) {
-    if (enabled)
-      context_->ResetUnpackParameters();
-  }
-
-  ~ScopedUnpackParametersResetRestore() {
-    if (enabled_)
-      context_->RestoreUnpackParameters();
-  }
-
- private:
-  WebGLRenderingContextBase* context_;
-  bool enabled_;
-};
 
 class ScopedDisableRasterizerDiscard {
   STACK_ALLOCATED();
@@ -884,16 +863,17 @@ ScriptPromise<IDLUndefined> WebGLRenderingContextBase::makeXRCompatible(
   if (xr_compatible_)
     return ToResolvedUndefinedPromise(script_state);
 
-  // If there's a request currently in progress, return the same promise.
-  if (make_xr_compatible_resolver_)
-    return make_xr_compatible_resolver_->Promise();
+  auto* resolver = MakeGarbageCollected<ScriptPromiseResolver<IDLUndefined>>(
+    script_state, exception_state.GetContext());
+  auto promise = resolver->Promise();
 
-  make_xr_compatible_resolver_ =
-      MakeGarbageCollected<ScriptPromiseResolver<IDLUndefined>>(
-          script_state, exception_state.GetContext());
-  auto promise = make_xr_compatible_resolver_->Promise();
-
-  MakeXrCompatibleAsync();
+  // If there's a request currently in progress, share its result; otherwise
+  // start a new one.
+  bool request_in_progress = !make_xr_compatible_resolvers_.empty();
+  make_xr_compatible_resolvers_.push_back(resolver);
+  if (!request_in_progress) {
+    MakeXrCompatibleAsync();
+  }
 
   return promise;
 }
@@ -991,21 +971,20 @@ void WebGLRenderingContextBase::OnMakeXrCompatibleFinished(
   }
 }
 
-void WebGLRenderingContextBase::CompleteXrCompatiblePromiseIfPending(
-    DOMExceptionCode exception_code) {
-  if (make_xr_compatible_resolver_) {
-    if (xr_compatible_) {
+ void WebGLRenderingContextBase::CompleteXrCompatiblePromiseIfPending(
+     DOMExceptionCode exception_code) {
+  HeapVector<Member<ScriptPromiseResolver<IDLUndefined>>> resolvers;
+  resolvers.swap(make_xr_compatible_resolvers_);
+  for (auto& resolver : resolvers) {
+     if (xr_compatible_) {
       DCHECK(exception_code == DOMExceptionCode::kNoError);
-      make_xr_compatible_resolver_->Resolve();
-    } else {
+      resolver->Resolve();
+     } else {
       DCHECK(exception_code != DOMExceptionCode::kNoError);
-      make_xr_compatible_resolver_->Reject(
-          MakeGarbageCollected<DOMException>(exception_code));
-    }
-
-    make_xr_compatible_resolver_ = nullptr;
-  }
-}
+      resolver->Reject(MakeGarbageCollected<DOMException>(exception_code));
+     }
+   }
+ }
 
 void WebGLRenderingContextBase::
     UpdateNumberOfUserAllocatedMultisampledRenderbuffers(int delta) {
@@ -6333,8 +6312,10 @@ void WebGLRenderingContextBase::TexImageHelperMediaVideoFrame(
       unpack_color_space_is_srgb) {
     // Try using optimized CPU-GPU path for some formats: e.g. Y16 and Y8. It
     // leaves early for other formats or if frame is stored on GPU.
-    ScopedUnpackParametersResetRestore unpack_params(
-        this, unpack_flip_y_ || unpack_premultiply_alpha_);
+    // Unconditionally reset unpack state: PaintCanvasVideoRenderer hands a
+    // tightly-sized buffer to gl->Tex(Sub)Image2D, so any active
+    // UNPACK_ROW_LENGTH/SKIP_* would make the GLES2 client over-read it.
+    ScopedUnpackParametersResetRestore unpack_params(this);
 
     // TODO(crbug.com/378688985): UNPACK_COLORSPACE_CONVERSION_WEBGL shouldn't
     // affect alpha type (and the format doesn't even have alpha channel).
@@ -7311,10 +7292,9 @@ void WebGLRenderingContextBase::ForceLostContext(
     tracker->LoseExtension(false);
   }
 
-  // This resolver is non-null during a makeXRCompatible call, while waiting
-  // for a response from the browser and XR process. If the WebGL context is
-  // lost before we get a response, the resolver has to be rejected to be
-  // be properly disposed of.
+  // makeXRCompatible() resolvers are pending while waiting for a response from
+  // the browser and XR process. If the WebGL context is lost before we get a
+  // response, the resolvers have to be rejected to be properly disposed of.
   xr_compatible_ = false;
   CompleteXrCompatiblePromiseIfPending(DOMExceptionCode::kInvalidStateError);
 
@@ -9027,7 +9007,7 @@ void WebGLRenderingContextBase::Trace(Visitor* visitor) const {
   visitor->Trace(renderbuffer_binding_);
   visitor->Trace(texture_units_);
   visitor->Trace(extensions_);
-  visitor->Trace(make_xr_compatible_resolver_);
+  visitor->Trace(make_xr_compatible_resolvers_);
   visitor->Trace(program_completion_query_list_);
   visitor->Trace(program_completion_query_map_);
   WebGLContextObjectSupport::Trace(visitor);

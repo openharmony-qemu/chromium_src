@@ -4,7 +4,9 @@
 
 #include "chrome/browser/actor/tools/attempt_form_filling_tool.h"
 
+#include <cmath>
 #include <sstream>
+#include <variant>
 
 #include "base/command_line.h"
 #include "base/containers/to_vector.h"
@@ -25,7 +27,11 @@
 #include "components/autofill/core/common/unique_ids.h"
 #include "components/optimization_guide/content/browser/page_content_proto_util.h"
 #include "content/public/browser/render_frame_host.h"
+#include "content/public/browser/render_widget_host.h"
+#include "content/public/browser/render_widget_host_view.h"
 #include "content/public/browser/web_contents.h"
+#include "ui/gfx/geometry/point.h"
+#include "ui/gfx/geometry/point_f.h"
 
 namespace actor {
 
@@ -42,13 +48,56 @@ FieldGlobalId GetFieldIdFromPageTarget(
     const optimization_guide::proto::AnnotatedPageContent* last_observation,
     tabs::TabInterface* tab,
     const PageTarget& target) {
-  if (std::optional<TargetNodeInfo> node_info =
-          FindLastObservedNodeForActionTarget(last_observation, target)) {
-    if (WebContents* web_contents = tab->GetContents()) {
+  if (!tab) {
+    return {};
+  }
+  if (WebContents* web_contents = tab->GetContents()) {
+    std::optional<TargetNodeInfo> node_info;
+    if (std::holds_alternative<gfx::Point>(target)) {
+      content::RenderWidgetHostView* view =
+          web_contents->GetRenderWidgetHostView();
+      if (!view) {
+        return {};
+      }
+      const float dsf = view->GetDeviceScaleFactor();
+      if (!std::isfinite(dsf) || dsf <= 0.0f) {
+        return {};
+      }
+      // APC geometry is in BlinkSpace, while PageTarget coordinates are
+      // view-relative DIPs. Scale only the APC lookup coordinate.
+      node_info = FindLastObservedNodeForActionTargetPoint(
+          last_observation,
+          gfx::ScaleToRoundedPoint(std::get<gfx::Point>(target), dsf));
+    } else {
+      CHECK(std::holds_alternative<DomNode>(target));
+      node_info = FindLastObservedNodeForActionTargetId(
+          last_observation, std::get<DomNode>(target));
+    }
+    if (node_info) {
       if (RenderFrameHost* rfh =
               optimization_guide::GetRenderFrameForDocumentIdentifier(
                   *web_contents,
                   node_info->document_identifier.serialized_token())) {
+        // Validation check: ensure that the target frame's underlying widget
+        // matches the widget returned by compositor-trusted hit testing at the
+        // targeted coordinate. This prevents a compromised renderer from
+        // redirecting a coordinate-targeted action to its own frame via a
+        // spoofed popup_window. FindWidgetAtPoint expects view-relative DIPs,
+        // which is the PageTarget's native coordinate space.
+        // (Upstream: CL 7895486 added this check; CL 7925869 corrected the
+        // coordinate space — the point must be passed unscaled as DIPs.)
+        if (std::holds_alternative<gfx::Point>(target)) {
+          // A compositor hit test requires a live top-level view.
+          if (!web_contents->GetTopLevelRenderWidgetHostView()) {
+            return {};
+          }
+          const gfx::Point& point = std::get<gfx::Point>(target);
+          content::RenderWidgetHost* actual_rwh =
+              web_contents->FindWidgetAtPoint(gfx::PointF(point));
+          if (!actual_rwh || actual_rwh != rfh->GetRenderWidgetHost()) {
+            return {};
+          }
+        }
         return FieldGlobalId(
             autofill::LocalFrameToken(rfh->GetFrameToken().value()),
             autofill::FieldRendererId(node_info->node->content_attributes()

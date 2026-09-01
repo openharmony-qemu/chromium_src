@@ -906,13 +906,12 @@ void WidgetBase::FinishRequestNewLayerTreeFrameSink(
   constexpr bool automatic_flushes = false;
   constexpr bool support_locking = false;
   constexpr bool enable_gpu_rasterization = false;
-  constexpr bool lose_context_when_out_of_memory = true;
 
   auto context_provider = viz::ContextProviderCommandBuffer::CreateForRaster(
       gpu_channel_host, kGpuStreamIdDefault, kGpuStreamPriorityDefault,
       GURL(url), automatic_flushes, support_locking, limits,
       viz::command_buffer_metrics::ContextType::RENDERER_COMPOSITOR,
-      enable_gpu_rasterization, lose_context_when_out_of_memory);
+      enable_gpu_rasterization);
 
 #if BUILDFLAG(IS_ANDROID)
   if (Platform::Current()->IsSynchronousCompositingEnabledForAndroidWebView() &&
@@ -1392,8 +1391,15 @@ void WidgetBase::UpdateCompositionInfo(bool immediate_request) {
     // Composition information is only available on editable node.
     range = gfx::Range::InvalidRange();
   } else {
+    base::WeakPtr<WidgetBase> weak_this = weak_ptr_factory_.GetWeakPtr();
     GetCompositionRange(&range);
+    if (!weak_this) {
+      return;
+    }
     GetCompositionCharacterBounds(&character_bounds);
+    if (!weak_this) {
+      return;
+    }
   }
 
   if (!immediate_request &&
@@ -1409,8 +1415,7 @@ void WidgetBase::UpdateCompositionInfo(bool immediate_request) {
     frame_widget->UpdateCursorAnchorInfo(/*update_requested=*/true);
     return;
   }
-  if (mojom::blink::WidgetInputHandlerHost* host =
-          widget_input_handler_manager_->GetWidgetInputHandlerHost()) {
+  if (auto host = widget_input_handler_manager_->GetWidgetInputHandlerHost()) {
     host->ImeCompositionRangeChanged(composition_range_,
                                      composition_character_bounds_);
   }
@@ -1579,12 +1584,17 @@ void WidgetBase::ImeSetComposition(
   }
 
   ImeEventGuard guard(weak_ptr_factory_.GetWeakPtr());
-  if (!frame_widget->SetComposition(text, ime_text_spans, replacement_range,
-                                    selection_start, selection_end)) {
+  bool success =
+      frame_widget->SetComposition(text, ime_text_spans, replacement_range,
+                                   selection_start, selection_end);
+  if (!guard.IsValid()) {
+    return;
+  }
+  if (!success) {
     // If we failed to set the composition text, then we need to let the browser
     // process to cancel the input method's ongoing composition session, to make
     // sure we are in a consistent state.
-    if (mojom::blink::WidgetInputHandlerHost* host =
+    if (auto host =
             widget_input_handler_manager_->GetWidgetInputHandlerHost()) {
       host->ImeCancelComposition();
     }
@@ -1612,6 +1622,9 @@ void WidgetBase::ImeCommitText(const String& text,
   input_handler_.set_handling_input_event(true);
   frame_widget->CommitText(text, ime_text_spans, replacement_range,
                            relative_cursor_pos);
+  if (!guard.IsValid()) {
+    return;
+  }
   input_handler_.set_handling_input_event(false);
   UpdateCompositionInfo(false /* not an immediate request */);
 }
@@ -1631,6 +1644,9 @@ void WidgetBase::ImeFinishComposingText(bool keep_selection) {
   ImeEventGuard guard(weak_ptr_factory_.GetWeakPtr());
   input_handler_.set_handling_input_event(true);
   frame_widget->FinishComposingText(keep_selection);
+  if (!guard.IsValid()) {
+    return;
+  }
   input_handler_.set_handling_input_event(false);
   UpdateCompositionInfo(false /* not an immediate request */);
 }
@@ -1678,8 +1694,7 @@ void WidgetBase::FlushInputProcessedCallback() {
 }
 
 void WidgetBase::CancelComposition() {
-  if (mojom::blink::WidgetInputHandlerHost* host =
-          widget_input_handler_manager_->GetWidgetInputHandlerHost()) {
+  if (auto host = widget_input_handler_manager_->GetWidgetInputHandlerHost()) {
     host->ImeCancelComposition();
   }
 #if BUILDFLAG(IS_MAC) || defined(USE_AURA)

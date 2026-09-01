@@ -92,7 +92,8 @@ Suggestion::PasswordSuggestionDetails GetSuggestionDetailsForRecoveryFlow(
 
   return Suggestion::PasswordSuggestionDetails(
       credential.username_value, credential.password_value,
-      credential.backup_password_value.value());
+      credential.backup_password_value.value(), credential.realm,
+      credential.is_grouped_affiliation);
 }
 
 void MaybeAppendManagePasswordsEntry(std::vector<Suggestion>* suggestions) {
@@ -345,8 +346,10 @@ void AppendManualFallbackSuggestions(
     suggestion.filtration_policy = filtration_policy;
 
     if (!replaced) {
-      suggestion.children.emplace_back(
-          maybe_username, SuggestionType::kPasswordFieldByFieldFilling);
+      Suggestion fill_username_suggestion{
+          maybe_username, SuggestionType::kPasswordFieldByFieldFilling};
+      fill_username_suggestion.payload = payload;
+      suggestion.children.emplace_back(std::move(fill_username_suggestion));
     }
     suggestion.children.push_back(
         CreateFillPasswordChildSuggestion(credential, is_cross_origin));
@@ -605,8 +608,16 @@ PasswordSuggestionGenerator::GetManualFallbackSuggestions(
         ui_entry.stored_in.contains(PasswordForm::Store::kAccountStore);
     const bool favicon_can_be_requested_from_google =
         (is_sync_passwords_enabled || is_from_account) && !is_passphrase_user;
+    bool is_cross_domain = false;
+    if (base::FeatureList::IsEnabled(
+            password_manager::features::
+                kShowConfirmationForGroupedCredentials)) {
+      is_cross_domain = form.match_type.has_value() &&
+                        password_manager_util::GetMatchType(form) ==
+                            password_manager_util::GetLoginMatchType::kGrouped;
+    }
     AppendManualFallbackSuggestions(
-        ui_entry, on_password_form, IsCrossDomain(false),
+        ui_entry, on_password_form, IsCrossDomain(is_cross_domain),
         favicon_can_be_requested_from_google, &suggestions,
         Suggestion::FiltrationPolicy::kPresentOnlyWithoutFilter);
   }

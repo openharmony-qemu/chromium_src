@@ -268,14 +268,17 @@ std::u16string GetFillValueForEntity(
     return u"";
   }
 
+  const bool should_obfuscate =
+      action_persistence != mojom::ActionPersistence::kFill &&
+      attribute->type().is_obfuscated();
+  if (should_obfuscate && field.IsSelectElement()) {
+    return u"";
+  }
+
   std::u16string fill_value =
       field.IsSelectElement()
           ? GetValueForSelect(*attribute, field, app_locale, address_normalizer)
           : GetValueForInput(*attribute, field, app_locale);
-
-  const bool should_obfuscate =
-      action_persistence != mojom::ActionPersistence::kFill &&
-      !field.IsSelectElement() && attribute->type().is_obfuscated();
 
   // TODO(crbug.com/394011769): Investigate whether the obfuscation should
   // should include some of the attribute's value, e.g. the last x characters.

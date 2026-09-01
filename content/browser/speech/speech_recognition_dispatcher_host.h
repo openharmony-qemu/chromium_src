@@ -9,6 +9,7 @@
 #include <string>
 
 #include "base/memory/weak_ptr.h"
+#include "content/common/content_export.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/speech_recognition_event_listener.h"
 #include "media/mojo/mojom/speech_recognizer.mojom.h"
@@ -42,7 +43,7 @@ class SpeechRecognitionDispatcherHost : public media::mojom::SpeechRecognizer {
       const SpeechRecognitionDispatcherHost&) = delete;
 
   ~SpeechRecognitionDispatcherHost() override;
-  static void Create(
+  static CONTENT_EXPORT void Create(
       int render_process_id,
       int render_frame_id,
       mojo::PendingReceiver<media::mojom::SpeechRecognizer> receiver);

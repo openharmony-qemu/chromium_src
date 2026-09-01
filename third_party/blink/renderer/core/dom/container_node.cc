@@ -281,6 +281,15 @@ bool ContainerNode::EnsurePreInsertionValidity(
     // Step 3:
     if (!CheckReferenceChildParent(*this, next, old_child, exception_state))
       return false;
+    // Re-check prereqs for Document parent in case of multi-node insertion
+    // reentrancy.
+    if (new_children && new_children->size() != 1u &&
+        RuntimeEnabledFeatures::
+            RecheckParentDuringNodeVectorInsertionEnabled() &&
+        !RecheckNodeInsertionStructuralPrereq(*new_children, next,
+                                             exception_state)) {
+      return false;
+    }
     // Step 4-6.
     return document->CanAcceptChild(new_child, new_children, next, old_child,
                                     exception_state);

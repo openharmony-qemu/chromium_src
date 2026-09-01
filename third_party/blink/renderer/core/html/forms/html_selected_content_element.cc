@@ -4,8 +4,12 @@
 
 #include "third_party/blink/renderer/core/html/forms/html_selected_content_element.h"
 
+#include "base/functional/bind.h"
+#include "third_party/blink/renderer/core/dom/document.h"
+#include "third_party/blink/renderer/core/execution_context/agent.h"
 #include "third_party/blink/renderer/core/html/forms/html_option_element.h"
 #include "third_party/blink/renderer/core/html/forms/html_select_element.h"
+#include "third_party/blink/renderer/platform/wtf/functional.h"
 
 namespace blink {
 
@@ -14,6 +18,13 @@ HTMLSelectedContentElement::HTMLSelectedContentElement(Document& document)
 
 void HTMLSelectedContentElement::CloneContentsFromOptionElement(
     const HTMLOptionElement* option) {
+  if (GetDocument().StatePreservingAtomicMoveInProgress()) {
+    GetDocument().GetAgent().event_loop()->EnqueueMicrotask(
+        BindOnce(&HTMLSelectedContentElement::CloneContentsFromOptionElement,
+                 WrapWeakPersistent(this), WrapWeakPersistent(option)));
+    return;
+  }
+  CHECK(!GetDocument().StatePreservingAtomicMoveInProgress());
   if (disabled_) {
     return;
   }
@@ -75,6 +86,23 @@ void HTMLSelectedContentElement::RemovedFrom(ContainerNode& container) {
     }
   }
   disabled_ = false;
+}
+
+void HTMLSelectedContentElement::MovedFrom(ContainerNode& old_parent) {
+  GetDocument().GetAgent().event_loop()->EnqueueMicrotask(
+      BindOnce(&HTMLSelectedContentElement::UpdateFromAncestorSelect,
+               WrapWeakPersistent(this)));
+}
+
+void HTMLSelectedContentElement::UpdateFromAncestorSelect() {
+  if (disabled_) {
+    return;
+  }
+  if (auto* select = Traversal<HTMLSelectElement>::FirstAncestor(*this)) {
+    if (!select->IsMultiple()) {
+      select->UpdateAllSelectedcontents(select->SelectedOption());
+    }
+  }
 }
 
 }  // namespace blink

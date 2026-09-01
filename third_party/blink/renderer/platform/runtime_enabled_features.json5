@@ -656,7 +656,6 @@
     {
       name: "AutoDarkMode",
       base_feature: "none",
-      origin_trial_feature_name: "AutoDarkMode",
     },
     {
       name: "Autofill",
@@ -1043,6 +1042,12 @@
       // Support ClipboardItemData of Promise<DOMString> type according to spec
       // https://w3c.github.io/clipboard-apis/#typedefdef-clipboarditemdata
       name: "ClipboardItemWithDOMStringSupport",
+      status: "stable",
+    },
+    {
+      // Make selection-buffer image paste respect the active clipboard buffer.
+      // crbug.com/524931675
+      name: "ClipboardPasteImageRespectBuffer",
       status: "stable",
     },
     {
@@ -4616,6 +4621,16 @@
       },
     },
     {
+      // Make select popup anchor stay within web contents to prevent
+      // overlapping browser UI.
+      // TODO(https://issues.chromium.org/issues/511869411): Remove this flag
+      // after it has been shipped for long enough.
+      // Shipped in M150, changed slightly in M151, disabled in M151-M152,
+      // re-enabled in M153, safe to remove in M155.
+      name: "SelectAnchorInViewport",
+      status: "stable",
+    },
+    {
       // SelectAudioOutput API
       // https://chromestatus.com/feature/5164535504437248
       name: "SelectAudioOutput",
@@ -5035,6 +5050,10 @@
     {
       // Disable "external" XSLT stylesheets in SVGImage.
       name: "SvgImageNoExternalXslt",
+      status: "stable",
+    },
+    {
+      name: "SvgFeImageEXIFOrientation",
       status: "stable",
     },
     {

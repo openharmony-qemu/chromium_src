@@ -46,11 +46,9 @@ ContextResult RasterInProcessContext::Initialize(
     bool enable_gpu_rasterization,
     gpu::raster::GrShaderCache* gr_shader_cache,
     GpuProcessShmCount* use_shader_cache_shm_count) {
-  constexpr bool lose_context_when_out_of_memory = false;
   auto attribs = mojom::ContextCreationAttribs::NewRaster(
       mojom::RasterCreationAttribs::New(
-          /*enable_gpu_rasterization=*/enable_gpu_rasterization,
-          /*lose_context_when_out_of_memory=*/lose_context_when_out_of_memory));
+          /*enable_gpu_rasterization=*/enable_gpu_rasterization));
 
   command_buffer_ =
       std::make_unique<InProcessCommandBuffer>(task_executor, GURL());
@@ -76,8 +74,7 @@ ContextResult RasterInProcessContext::Initialize(
 
   raster_implementation_ = std::make_unique<raster::RasterImplementation>(
       raster_helper.get(), transfer_buffer_.get(),
-      /*lose_context_when_out_of_memory=*/lose_context_when_out_of_memory,
-      command_buffer_.get());
+      /*lose_context_when_out_of_memory=*/true, command_buffer_.get());
   result = raster_implementation_->Initialize(memory_limits);
   raster_implementation_->SetLostContextCallback(base::BindOnce(
       []() { EXPECT_TRUE(false) << "Unexpected lost context."; }));

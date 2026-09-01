@@ -170,7 +170,14 @@ void WindowModalityController::OnWindowVisibilityChanged(aura::Window* window,
                                                          bool visible) {
   if (visible && window->GetProperty(aura::client::kModalKey) !=
                      ui::mojom::ModalType::kNone) {
+    // CancelTouchesOnTransientWindowTree() dispatches touch cancellation events
+    // synchronously, which can run arbitrary handlers that destroy the window.
+    // Use base::WeakPtr to check if the window is still alive.
+    base::WeakPtr<ui::GestureConsumer> weak_window = window->GetWeakPtr();
     CancelTouchesOnTransientWindowTree(window);
+    if (!weak_window) {
+      return;
+    }
 
     // Make sure no other window has capture, otherwise |window| won't get mouse
     // events.

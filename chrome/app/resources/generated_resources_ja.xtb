@@ -1450,7 +1450,7 @@
 <translation id="1969654639948595766">WebRTC テキストログ（<ph name="WEBRTC_TEXT_LOG_COUNT" />）</translation>
 <translation id="1972313920920745320">追加したサイトは常にアクティブになり、メモリの解放は行われません。<ph name="BEGIN_LINK" />特定のサイトを常にアクティブにする方法について<ph name="END_LINK" /></translation>
 <translation id="1972325230031091483">表示中のウェブページに基づいてコンテンツが事前に読み込まれるので、すばやくブラウジングできます</translation>
-<translation id="197288927597451399">保存</translation>
+<translation id="197288927597451399">保持</translation>
 <translation id="1973886230221301399">ChromeVox</translation>
 <translation id="1974043046396539880">CRL 配布ポイント</translation>
 <translation id="1974060860693918893">詳細設定</translation>
@@ -1558,6 +1558,7 @@
 <translation id="2040822390690632244">更新、ヘルプ、デベロッパー オプション</translation>
 <translation id="2040894699575719559">位置情報をブロック中</translation>
 <translation id="2041246176170574368">まもなくセキュリティ アップデートの提供が終了します。新しい Chromebook を 50 ドル以上お得に手に入れましょう。</translation>
+<translation id="2041681409552851212">この拡張機能は、ブラウザによる審査を受けていないコードを実行できるようになります。安全でない可能性があるため、どのような影響が出るかを理解している場合にのみ有効にしてください。</translation>
 <translation id="2042279886444479655">有効なプロファイル</translation>
 <translation id="2044014337866019681">セッションのロックを解除するには、<ph name="ACCOUNT" /> の確認を行ってください。</translation>
 <translation id="2044750031738659219">{0,plural, =1{ゲストモードを終了}other{ゲストモードを終了（# 個のウィンドウ）}}</translation>
@@ -2309,6 +2310,7 @@
 <translation id="2541400104619216245">商品の絞り込みに役立つ比較情報が提案されます</translation>
 <translation id="2541706104884128042">お休み時間が変更されました</translation>
 <translation id="2542050502251273923">ff_debug を使用して、ネットワーク接続マネージャーと他のサービスのデバッグレベルを設定します。</translation>
+<translation id="25436473744628215">更新中…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{「<ph name="APP_NAME" />」に許可した権限は、このアプリにも適用されます。<ph name="MANAGE_LINK" />}other{「<ph name="APP_NAME" />」に許可した権限は、これらのアプリにも適用されます。<ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">このタブ</translation>
 <translation id="2545743249923338554">新しいタブ</translation>
@@ -3157,7 +3159,7 @@
 <translation id="3132277757485842847">スマートフォンとの接続を維持できませんでした。Bluetooth 搭載のスマートフォンが近くにあり、Wi-Fi がオンになっていて、ロックも解除されていることを確認してください。</translation>
 <translation id="3132896062549112541">ルール</translation>
 <translation id="3132996321662585180">毎日更新する</translation>
-<translation id="3134312457920437826">サポートされていないマニフェスト バージョンを使用しているため、拡張機能をインストールできません。</translation>
+<translation id="3134312457920437826">拡張機能はサポートされていないマニフェストバージョンを使用しているため、インストールできません。</translation>
 <translation id="3134393957315651797"><ph name="EXPERIMENT_NAME" /> テストの試験運用機能の状態を選択します。テストの説明: <ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">デフォルトの黄のアバター</translation>
 <translation id="3141093262818886744">開く</translation>
@@ -11524,6 +11526,7 @@
 <translation id="8890170499370378450">モバイルデータ通信料が発生することがあります</translation>
 <translation id="8890516388109605451">ソース</translation>
 <translation id="8890529496706615641">プロファイルの名前を変更できませんでした。もう一度お試しいただくか、ご利用の携帯通信会社のテクニカル サポートにお問い合わせください。</translation>
+<translation id="889095128849097287">ユーザースクリプトを許可</translation>
 <translation id="8892168913673237979">設定完了。</translation>
 <translation id="8892246501904593980">[ブックマーク] と [リスト] にすべてのブックマークが表示されます</translation>
 <translation id="8893779047492837414">現在、<ph name="NUMBERED_ITEM_1" />、<ph name="NUMBERED_ITEM_2" /> などのデータがあります。組織（<ph name="ACCOUNT_MANAGER" />）はこのデータを確認、管理できます。</translation>

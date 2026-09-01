@@ -44,6 +44,8 @@
 #include "components/permissions/permission_util.h"
 #include "components/sync_preferences/testing_pref_service_syncable.h"
 #include "content/public/browser/render_process_host.h"
+#include "content/public/browser/site_instance.h"
+#include "content/public/browser/storage_partition_config.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/test/browser_task_environment.h"
 #include "content/public/test/test_renderer_host.h"
@@ -518,6 +520,21 @@ class ChromeFileSystemAccessPermissionContextTest : public testing::Test {
     }));
   }
 
+  std::unique_ptr<content::WebContents> CreateGuestWebContents(
+      const GURL& url) {
+    const content::StoragePartitionConfig kGuestConfig =
+        content::StoragePartitionConfig::Create(
+            profile(), "test_partition", "guest_partition", /*in_memory=*/true);
+    scoped_refptr<content::SiteInstance> guest_instance =
+        content::SiteInstance::CreateForGuest(profile(), kGuestConfig);
+    std::unique_ptr<content::WebContents> guest_contents =
+        content::WebContentsTester::CreateTestWebContents(profile(),
+                                                          guest_instance);
+    content::WebContentsTester::For(guest_contents.get())
+        ->NavigateAndCommit(url);
+    return guest_contents;
+  }
+
   content::BrowserTaskEnvironment task_environment_{
       base::test::TaskEnvironment::TimeSource::MOCK_TIME};
   base::ScopedTempDir temp_dir_;
@@ -555,6 +572,27 @@ class ChromeFileSystemAccessPermissionContextSymbolicLinkCheckTest
  protected:
   base::test::ScopedFeatureList scoped_feature_list_;
 };
+
+TEST_F(ChromeFileSystemAccessPermissionContextTest,
+       CanShowFilePicker_BlocksGuestViews) {
+  // 1. Test HTTPS Guest (should be blocked)
+  {
+    std::unique_ptr<content::WebContents> guest =
+        CreateGuestWebContents(GURL("https://example.com/"));
+    EXPECT_FALSE(permission_context()
+                     ->CanShowFilePicker(guest->GetPrimaryMainFrame())
+                     .has_value());
+  }
+
+  // 2. Test about:blank Guest (should be blocked)
+  {
+    std::unique_ptr<content::WebContents> guest =
+        CreateGuestWebContents(GURL("about:blank"));
+    EXPECT_FALSE(permission_context()
+                     ->CanShowFilePicker(guest->GetPrimaryMainFrame())
+                     .has_value());
+  }
+}
 
 TEST_F(ChromeFileSystemAccessPermissionContextTest,
        ConfirmSensitiveEntryAccess_NoSpecialPath) {
@@ -3441,6 +3479,77 @@ TEST_F(ChromeFileSystemAccessPermissionContextTest,
   // Verify the path is still NOT in the downgraded paths set.
   EXPECT_FALSE(permission_context()->IsPathInDowngradedReadPathsForTesting(
       kTestOrigin, file_path_info.path));
+}
+
+// Tests that calling NotifyEntryRemoved with a directory path correctly revokes
+// read permission grants for all descendants of that directory.
+// Regression test for crbug.com/501810874.
+TEST_F(ChromeFileSystemAccessPermissionContextTest,
+       NotifyEntryRemoved_RecursiveDir_DescendantFileGrantDowngraded) {
+  base::test::ScopedFeatureList feature_list;
+  feature_list.InitAndEnableFeature(
+      blink::features::kFileSystemAccessRevokeReadOnRemove);
+  FileSystemAccessPermissionRequestManager::FromWebContents(web_contents())
+      ->set_auto_response_for_test(PermissionAction::GRANTED);
+
+  // Sets up a directory path and a child file path to be the test targets.
+  const auto dir_info = kTestPathInfo;
+  const auto file_info = PathInfo(dir_info.path.AppendASCII("config.json"));
+
+  // Grant a standalone read permission for the child file.
+  auto file_read_grant = permission_context()->GetReadPermissionGrant(
+      kTestOrigin, file_info, HandleType::kFile, UserAction::kOpen);
+  ASSERT_EQ(file_read_grant->GetStatus(), PermissionStatus::GRANTED);
+
+  // Grant read and write permission to the directory.
+  auto dir_read_grant = permission_context()->GetReadPermissionGrant(
+      kTestOrigin, dir_info, HandleType::kDirectory, UserAction::kOpen);
+  {
+    base::test::TestFuture<PermissionRequestOutcome> f;
+    dir_read_grant->RequestPermission(
+        frame_id(), UserActivationState::kNotRequired, f.GetCallback());
+    ASSERT_EQ(f.Get(), PermissionRequestOutcome::kUserGranted);
+  }
+  auto dir_write_grant = permission_context()->GetWritePermissionGrant(
+      kTestOrigin, dir_info, HandleType::kDirectory, UserAction::kOpen);
+  {
+    base::test::TestFuture<PermissionRequestOutcome> f;
+    dir_write_grant->RequestPermission(
+        frame_id(), UserActivationState::kNotRequired, f.GetCallback());
+    ASSERT_EQ(f.Get(), PermissionRequestOutcome::kUserGranted);
+  }
+  ASSERT_EQ(dir_read_grant->GetStatus(), PermissionStatus::GRANTED);
+  ASSERT_EQ(dir_write_grant->GetStatus(), PermissionStatus::GRANTED);
+
+  // Revoke permissions for the directory. This represents a recursive removal
+  // of the directory.
+  permission_context()->NotifyEntryRemoved(kTestOrigin, dir_info);
+
+  // Verify that the directory's own read permission is downgraded.
+  EXPECT_EQ(dir_read_grant->GetStatus(), PermissionStatus::DENIED);
+  EXPECT_TRUE(permission_context()->IsPathInDowngradedReadPathsForTesting(
+      kTestOrigin, dir_info.path));
+
+  // Verify that the descendant file's read permission is also downgraded.
+  EXPECT_EQ(file_read_grant->GetStatus(), PermissionStatus::DENIED);
+  EXPECT_TRUE(permission_context()->IsPathInDowngradedReadPathsForTesting(
+      kTestOrigin, file_info.path));
+
+  // Verify that a fresh lookup also sees the downgraded status while the grant
+  // is still in memory.
+  EXPECT_EQ(permission_context()
+                ->GetReadPermissionGrant(kTestOrigin, file_info,
+                                         HandleType::kFile, UserAction::kNone)
+                ->GetStatus(),
+            PermissionStatus::DENIED);
+
+  // Once the grant is no longer in memory, its status should revert to ASK.
+  file_read_grant.reset();
+  EXPECT_EQ(permission_context()
+                ->GetReadPermissionGrant(kTestOrigin, file_info,
+                                         HandleType::kFile, UserAction::kNone)
+                ->GetStatus(),
+            PermissionStatus::ASK);
 }
 
 // Tests that moving a file to a destination with a pre-existing permission

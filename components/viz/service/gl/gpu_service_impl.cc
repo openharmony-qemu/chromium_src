@@ -10,6 +10,9 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+#include "arkweb/chromium_ext/base/ohos/dynamic_frame_loss_monitor.h"
+#endif
 #include "base/allocator/partition_alloc_support.h"
 #include "base/android/android_info.h"
 #include "base/command_line.h"
@@ -303,6 +306,13 @@ GpuServiceImpl::~GpuServiceImpl() {
 
   bind_task_tracker_.TryCancelAll();
 
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  if (oop_gpu_enabled_) {
+    base::ohos::DynamicFrameLossMonitor::GetInstance().SetHiAppEventCallback(
+        base::ohos::HiAppEventCallback());
+  }
+#endif
+
 #if BUILDFLAG(IS_WIN)
   gl::DirectCompositionOverlayCapsMonitor::GetInstance()->RemoveObserver(this);
 #endif
@@ -485,6 +495,10 @@ void GpuServiceImpl::InitializeWithHostInternal(
                           gpu_info_for_hardware_gpu_,
                           gpu_feature_info_for_hardware_gpu_, gpu_extra_info_);
   gpu_host_ = mojo::SharedRemote<mojom::GpuHost>(gpu_host.Unbind(), io_runner_);
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  InitFrameLossMonitor();
+#endif
 
   // Defer creation of the render thread. This is to prevent it from handling
   // IPC messages before the sandbox has been enabled and all other necessary
@@ -773,6 +787,7 @@ void GpuServiceImpl::DidLoseContext(gpu::error::ContextLostReason reason,
 }
 
 std::string GpuServiceImpl::GetShaderPrefixKey() {
+  base::AutoLock lock(shader_prefix_key_lock_);
   if (shader_prefix_key_.empty()) {
     const gpu::GPUInfo::GPUDevice& active_gpu = gpu_info_.active_gpu();
     std::string product =

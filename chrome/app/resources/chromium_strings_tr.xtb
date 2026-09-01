@@ -228,6 +228,7 @@
 <translation id="3530103706039034513"><ph name="EXISTING_USER" /> zaten oturum açmış durumda.  Göz atma işlemlerinizi ayrı tutmak için Chromium'da kendi profilinizde <ph name="USER_EMAIL_ADDRESS" /> olarak oturum açın.</translation>
 <translation id="3561853857681580870">Ekranınızı paylaşmak için Sistem Ayarları'nda Chromium'un ekranı kaydetmesine izin verin.</translation>
 <translation id="3597003331831379823">Kurulum, üst düzey ayrıcalıklarla çalıştırılamadı. <ph name="METAINSTALLER_ERROR" /></translation>
+<translation id="360610872308168435">Tarayıcı bu uzantıyı incelemenizi öneriyor</translation>
 <translation id="3639635944603682591">Bu kullanıcının tarama verileri bu cihazdan silinecektir. Verileri kurtarmak için Chromium'da <ph name="USER_EMAIL" /> olarak oturum açın.</translation>
 <translation id="364817392622123556">{COUNT,plural, =0{Chromium için yeni bir güncelleme var. Yeniden başlattığınızda güncelleme hemen uygulanacaktır.}=1{Chromium için yeni bir güncelleme var. Yeniden başlattığınızda güncelleme hemen uygulanacaktır. Gizli pencereniz yeniden açılmayacak.}other{Chromium için yeni bir güncelleme var. Yeniden başlattığınızda güncelleme hemen uygulanacaktır. # Gizli pencereniz yeniden açılmayacak.}}</translation>
 <translation id="3651803019964686660"><ph name="ORIGIN" /> sitesinden Android telefonunuza numara göndermek için iki cihazdan da Chromium'da oturum açın.</translation>
@@ -339,6 +340,7 @@
 <translation id="4788777615168560705">Chromium, şifrelerinizi kontrol edemiyor. 24 saat sonra tekrar deneyin veya <ph name="BEGIN_LINK" />şifreleri Google Hesabınızda kontrol edin<ph name="END_LINK" />.</translation>
 <translation id="479167709087336770">Bu işlev, Google Arama'da kullanılan yazım denetiminin aynısını kullanır. Tarayıcıda yazdığınız metin Google'a gönderilir. Bu davranışı istediğiniz zaman ayarlardan değiştirebilirsiniz.</translation>
 <translation id="4814736265800133385">Chromium'u hesap olmadan kullan</translation>
+<translation id="483739396253020185">Tarayıcı bu uzantının nereden geldiğini doğrulayamıyor ve uzantı güvenli olmayabilir. Kişisel bilgileriniz de dahil olmak üzere ziyaret ettiğiniz sitelerdeki verilerinizi artık görememesi veya değiştirememesi için Tarayıcı'dan kaldırın.</translation>
 <translation id="4888717733111232871">Chromium'un mDNS trafiğine izin vermeyi sağlayan gelen trafik kuralı.</translation>
 <translation id="4893347770495441059">&amp;Chromium'u Güncellemek İçin Yeniden Başlat</translation>
 <translation id="4918844574251943176">Resim kopyalandı</translation>
@@ -348,6 +350,7 @@
 <translation id="4987820182225656817">Misafirler Chromium'u geride hiçbir şey bırakmadan kullanabilir.</translation>
 <translation id="4992938037305302429">Chromium'daki Hesabınız</translation>
 <translation id="4994636714258228724">Kendinizi Chromium'a ekleyin</translation>
+<translation id="5123338831436904301">Bu ayarda yapılan değişiklikler Tarayıcı yeniden başlatıldıktan sonra geçerli olacaktır.</translation>
 <translation id="5123973130450702873">Chromium'un ellerinizi takip etmek için izne ihtiyacı var</translation>
 <translation id="5141988424377517949">Son zamanlarda ziyaret etmediniz. Chromium; <ph name="PERMISSION_1" />, <ph name="PERMISSION_2" /> ve <ph name="PERMISSION_3" /> iznini kaldırdı.</translation>
 <translation id="5167819546851111585">Aklınızda ne var?</translation>

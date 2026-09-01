@@ -33,6 +33,7 @@
 
 #include "base/task/sequenced_task_runner.h"
 #include "base/trace_event/trace_event.h"
+#include "services/network/public/mojom/content_security_policy.mojom-blink.h"
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/mojom/fetch/fetch_api_request.mojom-blink.h"
 #include "third_party/blink/public/mojom/script/script_type.mojom-blink.h"
@@ -45,6 +46,7 @@
 #include "third_party/blink/renderer/core/css/parser/sizes_attribute_parser.h"
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/execution_context/security_context.h"
+#include "third_party/blink/renderer/core/frame/csp/content_security_policy.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/frame/settings.h"
 #include "third_party/blink/renderer/core/frame/viewport_data.h"
@@ -219,7 +221,30 @@ class TokenPreloadScanner::StartTagScanner {
       String attribute_value = html_token_attribute.Value();
       ProcessAttribute(attribute_name, attribute_value);
     }
+    MaybeClearNonceForDanglingMarkup(attributes);
     PostProcessAfterAttributes();
+  }
+
+  // Mirror the dangling-markup-injection mitigation in
+  // ContentSecurityPolicy::IsNonceableElement so the preload scanner cannot
+  // be tricked into authorizing a speculative fetch with a hijacked nonce.
+  // This is done as a separate pass after ProcessAttributes so we can skip
+  // the work entirely when no nonce is present.
+  void MaybeClearNonceForDanglingMarkup(
+      const HTMLToken::AttributeList& attributes) {
+    if (nonce_.IsNull() || nonce_.empty())
+      return;
+    HashSet<AtomicString> seen_names;
+    for (const HTMLToken::Attribute& html_token_attribute : attributes) {
+      AtomicString attribute_name(html_token_attribute.GetName());
+      String attribute_value = html_token_attribute.Value();
+      if (!seen_names.insert(attribute_name).is_new_entry ||
+          ContentSecurityPolicy::ContainsDanglingMarkupSignal(
+              attribute_name, attribute_value)) {
+        SetNonce(String());
+        return;
+      }
+    }
   }
 
   void PostProcessAfterAttributes() {
@@ -1134,7 +1159,10 @@ void TokenPreloadScanner::UpdatePredictedBaseURL(const HTMLToken& token) {
     KURL url(document_url_,
              StripLeadingAndTrailingHTMLSpaces(href_attribute->Value()));
     bool is_valid_base_url =
-        url.IsValid() && !url.ProtocolIsData() && !url.ProtocolIsJavaScript();
+        url.IsValid() && !url.ProtocolIsData() && !url.ProtocolIsJavaScript() &&
+        ContentSecurityPolicy::AllowBaseURI(
+            url, document_parameters_->content_security_policy);
+
     predicted_base_element_url_ = is_valid_base_url ? url : KURL();
   }
 }
@@ -1318,6 +1346,14 @@ CachedDocumentParameters::CachedDocumentParameters(Document* document) {
           : kPreloadLazyLoadImageType;
   probe::GetDisabledImageTypes(document->GetExecutionContext(),
                                &disabled_image_types);
+  if (document->GetExecutionContext() &&
+      document->GetExecutionContext()->GetContentSecurityPolicy()) {
+    for (const auto& policy : document->GetExecutionContext()
+                                  ->GetContentSecurityPolicy()
+                                  ->GetParsedPolicies()) {
+      content_security_policy.push_back(policy->Clone());
+    }
+  }
 }
 
 // static

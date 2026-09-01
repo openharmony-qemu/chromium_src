@@ -1464,7 +1464,7 @@
 <translation id="1969654639948595766">WebRTC 텍스트 로그(<ph name="WEBRTC_TEXT_LOG_COUNT" />)</translation>
 <translation id="1972313920920745320">추가한 사이트는 항상 활성 상태로 유지되며 이러한 사이트에서 메모리가 확보되지 않습니다. <ph name="BEGIN_LINK" />특정 사이트를 활성 상태로 유지하는 방법 자세히 알아보기<ph name="END_LINK" /></translation>
 <translation id="1972325230031091483">현재 웹페이지 방문을 토대로 콘텐츠가 미리 로드되므로 더 빠르게 탐색할 수 있습니다.</translation>
-<translation id="197288927597451399">계속</translation>
+<translation id="197288927597451399">보관</translation>
 <translation id="1973886230221301399">ChromeVox</translation>
 <translation id="1974043046396539880">CRL 배포 지점</translation>
 <translation id="1974060860693918893">고급</translation>
@@ -1572,6 +1572,7 @@
 <translation id="2040822390690632244">업데이트, 도움말, 개발자 옵션</translation>
 <translation id="2040894699575719559">위치가 차단됨</translation>
 <translation id="2041246176170574368">보안 업데이트가 곧 종료됩니다. 새 Chromebook을 50달러 이상 할인된 가격에 구매하세요.</translation>
+<translation id="2041681409552851212">확장 프로그램이 브라우저에서 검토되지 않은 코드를 실행할 수 있게 됩니다. 안전하지 않을 수 있으므로, 실행에 따른 결과를 알고 있는 경우에만 실행해야 합니다.</translation>
 <translation id="2042279886444479655">활성화된 프로필</translation>
 <translation id="2044014337866019681">세션을 잠금 해제하려면 <ph name="ACCOUNT" /> 계정을 인증하세요.</translation>
 <translation id="2044750031738659219">{0,plural, =1{게스트 창 닫기}other{게스트 창(창 #개) 닫기}}</translation>
@@ -2329,6 +2330,7 @@
 <translation id="2541400104619216245">제품을 선택할 때 참고할 비교 세부정보를 제안합니다.</translation>
 <translation id="2541706104884128042">새 취침 시간이 설정됨</translation>
 <translation id="2542050502251273923">ff_debug를 사용해 네트워크 연결 관리자와 다른 서비스의 디버깅 수준을 설정합니다.</translation>
+<translation id="25436473744628215">업데이트 중…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{"<ph name="APP_NAME" />"에 허용하는 권한은 이 앱에서도 허용됩니다. <ph name="MANAGE_LINK" />}other{"<ph name="APP_NAME" />"에 허용하는 권한은 이 앱에서도 허용됩니다. <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">현재 탭</translation>
 <translation id="2545743249923338554">새 탭</translation>
@@ -3177,7 +3179,7 @@
 <translation id="3132277757485842847">휴대전화와 연결을 유지할 수 없습니다. 휴대전화가 근처에 있고, 잠금이 해제되어 있으며, 블루투스와 Wi-Fi가 켜져 있는지 확인하세요.</translation>
 <translation id="3132896062549112541">규칙</translation>
 <translation id="3132996321662585180">매일 새로고침</translation>
-<translation id="3134312457920437826">지원되지 않는 매니페스트 버전을 사용하고 있으므로 확장 프로그램을 설치할 수 없습니다.</translation>
+<translation id="3134312457920437826">지원되지 않는 매니페스트 버전을 사용하므로 확장 프로그램을 설치할 수 없습니다.</translation>
 <translation id="3134393957315651797"><ph name="EXPERIMENT_NAME" /> 실험의 상태를 선택하세요. 실험 설명: <ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">기본 노란색 아바타</translation>
 <translation id="3141093262818886744">무시하고 열기</translation>
@@ -11556,6 +11558,7 @@ https://support.google.com/chromebook/?p=sm</translation>
 <translation id="8890170499370378450">모바일 데이터 요금이 발생할 수 있음</translation>
 <translation id="8890516388109605451">소스</translation>
 <translation id="8890529496706615641">프로필 이름을 바꿀 수 없습니다. 다시 시도하거나 이동통신사에 기술 지원을 요청하세요.</translation>
+<translation id="889095128849097287">사용자 스크립트 허용</translation>
 <translation id="8892168913673237979">설정 완료</translation>
 <translation id="8892246501904593980">북마크 및 목록에서 모든 북마크 보기</translation>
 <translation id="8893779047492837414">현재 <ph name="NUMBERED_ITEM_1" />, <ph name="NUMBERED_ITEM_2" /> 등이 있습니다. 조직(<ph name="ACCOUNT_MANAGER" />)에서 이 데이터를 보고 관리할 수 있습니다.</translation>

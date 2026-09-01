@@ -136,6 +136,10 @@
 #include "content/public/common/content_switches.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+#include "arkweb/chromium_ext/components/safe_browsing/content/browser/ohos_navigation_entry_safe_browsing_data.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 #include "content/browser/renderer_host/navigation_transitions/navigation_entry_screenshot_cache.h"
 #include "content/browser/renderer_host/navigation_transitions/navigation_entry_screenshot_manager.h"
@@ -1726,6 +1730,18 @@ bool NavigationControllerImpl::RendererDidNavigate(
     NavigationRequest* navigation_request) {
   DCHECK(navigation_request);
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  NavigationEntry* last_entry = GetLastCommittedEntry();
+  std::vector<GURL> previous_redirect_chain;
+  base::flat_map<GURL, ohos_safe_browsing::OhosSbBlockingPageInfo> previous_blocking_page_info_cache;
+  if (last_entry) {
+    ohos_safe_browsing::NavigationEntrySafeBrowsingData* last_entry_safe_browsing_data =
+        ohos_safe_browsing::NavigationEntrySafeBrowsingData::GetOrCreate(last_entry);
+    previous_redirect_chain = last_entry_safe_browsing_data->GetRedirectChain();
+    previous_blocking_page_info_cache = last_entry_safe_browsing_data->GetSbBlockingPageInfoCache();
+  }
+#endif // ARKWEB_SAFEBROWSING
+
   // Create a scoped object that will ensure at most one NavigationStateChanged
   // notification is sent (if any) at the end of RendererDidNavigate. This
   // avoids redundant notifications (which can be expensive) without risking a
@@ -2040,6 +2056,25 @@ bool NavigationControllerImpl::RendererDidNavigate(
     frame_entry->SetBindings(rfh->GetEnabledBindings());
   }
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  ohos_safe_browsing::NavigationEntrySafeBrowsingData* safe_browsing_data =
+          ohos_safe_browsing::NavigationEntrySafeBrowsingData::GetOrCreate(active_entry);
+  bool is_renderer_initiated = navigation_request ? navigation_request->IsRendererInitiated() : false;
+  bool has_user_gesture = navigation_request ? navigation_request->HasUserGesture() : false;
+  safe_browsing_data->set_is_js_redirect(is_renderer_initiated && !has_user_gesture);
+
+  if (!has_user_gesture &&
+      is_renderer_initiated &&
+      details->did_replace_entry &&
+      last_entry) {
+    details->redirect_chain = previous_redirect_chain;
+    safe_browsing_data->SetSbBlockingPageInfoCache(previous_blocking_page_info_cache);
+    LOG(INFO) << "SafeBrowsing " << __func__ << " added redirect chain size: "
+              << previous_redirect_chain.size()
+              << " for url: " << url::LogUtils::ConvertUrlWithMask(navigation_request->GetURL().spec());
+  }
+#endif  // ARKWEB_SAFEBROWSING
+
   // Once it is committed, we no longer need to track several pieces of state on
   // the entry.
   active_entry->ResetForCommit(frame_entry);
@@ -2253,6 +2288,9 @@ void NavigationControllerImpl::UpdateNavigationEntryDetails(
     entry->set_error_code(request ? request->GetNetErrorCode() : net::OK);
   }
 #endif  
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  entry->set_extended_error_code(request ? request->GetNetExtendedErrorCode() : 0);
+#endif
   entry->set_page_type((request && request->DidEncounterError())
                            ? PAGE_TYPE_ERROR
                            : PAGE_TYPE_NORMAL);
@@ -5095,8 +5133,21 @@ void NavigationControllerImpl::SetSkippableForSameDocumentEntries(
       reference_entry->root_node()->frame_entry->document_sequence_number();
   for (int index = 0; index < GetEntryCount(); index++) {
     auto* entry = GetEntryAtIndex(index);
+
+    // A compromised renderer could forge a document sequence number (DSN) to
+    // match a cross-origin entry, attempting to mark a victim site's history
+    // entry as skippable. Enforcing a SiteInstance check prevents this.
+    //
+    // Note: When restoring a tab, NavigationEntries do not get SiteInstances
+    // until they are visited again. We allow the check to pass if `entry`'s
+    // SiteInstance is null to ensure same-document entries are correctly
+    // marked skippable after a restore. The risk is acceptable because an
+    // attacker cannot trigger a tab restore, DSNs are difficult to guess
+    // across sessions, and the impact is minimal.
     if (entry->root_node()->frame_entry->document_sequence_number() ==
-        document_sequence_number) {
+            document_sequence_number &&
+        (!entry->site_instance() ||
+         entry->site_instance() == reference_entry->site_instance())) {
       entry->set_should_skip_on_back_forward_ui(skippable);
     }
   }
@@ -5371,9 +5422,9 @@ blink::mojom::NavigationApiHistoryEntryArraysPtr
 NavigationControllerImpl::GetNavigationApiHistoryEntryVectors(
     FrameTreeNode* node,
     NavigationRequest* request) {
-  url::Origin pending_origin = request
-                                   ? request->GetOriginToCommit().value()
-                                   : url::Origin::Create(node->current_url());
+  url::Origin pending_origin =
+      request ? request->GetOriginToCommit().value()
+              : node->current_frame_host()->GetLastCommittedOrigin();
 
   scoped_refptr<SiteInstance> site_instance =
       node->current_frame_host()->GetSiteInstance();

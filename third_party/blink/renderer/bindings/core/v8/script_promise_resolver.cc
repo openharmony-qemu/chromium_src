@@ -31,16 +31,16 @@ ScriptPromiseResolverBase::ScriptPromiseResolverBase(
       exception_context_(exception_context) {
   // A call pro Promise::Resolver::New() would reset a pending
   // excepiton, so make sure we don't get here with one.
-  CHECK(!script_state_->GetIsolate()->HasPendingException());
+  v8::Isolate* isolate = script_state->GetIsolate();
+  ExceptionState::AssertNoPendingException(isolate);
   resolver_.Reset(
-      script_state->GetIsolate(),
+      isolate,
       v8::Promise::Resolver::New(script_state->GetContext()).ToLocalChecked());
   if (RuntimeEnabledFeatures::LongAnimationFrameSourceCharPositionEnabled()) {
-    lazy_source_location_ =
-        LazySourceLocation::FromCurrentStack(script_state->GetIsolate());
+    lazy_source_location_ = LazySourceLocation::FromCurrentStack(isolate);
   } else {
     lazy_source_location_ = MakeGarbageCollected<LazySourceLocation>(
-        CaptureCurrentScriptUrl(script_state->GetIsolate()));
+        CaptureCurrentScriptUrl(isolate));
   }
 }
 
@@ -184,7 +184,7 @@ void ScriptPromiseResolverBase::ResolveOrRejectImmediately() {
       v8::MicrotasksScope::kDoNotRunMicrotasks);
   auto resolver = resolver_.Get(script_state_->GetIsolate());
   if (state_ == kResolving) {
-    CHECK(!script_state_->GetIsolate()->HasPendingException());
+    ExceptionState::AssertNoPendingException(script_state_->GetIsolate());
     std::ignore = resolver->Resolve(script_state_->GetContext(),
                                     value_.Get(script_state_->GetIsolate()));
   } else {

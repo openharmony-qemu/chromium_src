@@ -879,7 +879,13 @@ void PageHandler::Navigate(const std::string& url,
         Response::ServerError("Cannot navigate to invalid URL"));
     return;
   }
-  if (gurl.SchemeIsFile() && !may_read_local_files_) {
+
+  GURL inner_url = gurl;
+  if (gurl.SchemeIs(content::kViewSourceScheme)) {
+    inner_url = GURL(gurl.GetContent());
+  }
+
+  if (inner_url.SchemeIsFile() && !may_read_local_files_) {
     callback->sendFailure(
         Response::ServerError("Navigating to local URL is not allowed"));
     return;
@@ -892,8 +898,8 @@ void PageHandler::Navigate(const std::string& url,
 
   // chrome-untrusted:// WebUIs might perform high-priviledged actions on
   // navigation, disallow navigation to them unless the client is trusted.
-  if ((gurl.SchemeIs(kChromeUIUntrustedScheme) ||
-       gurl.SchemeIs(kChromeDevToolsScheme)) &&
+  if ((inner_url.SchemeIs(kChromeUIUntrustedScheme) ||
+       inner_url.SchemeIs(kChromeDevToolsScheme)) &&
       !is_trusted_) {
     callback->sendFailure(Response::ServerError(
         "Navigating to a URL with a privileged scheme is not allowed"));
@@ -1351,6 +1357,16 @@ void PageHandler::CaptureScreenshot(
           Response::ServerError("Only screenshots from surface are allowed."));
       return;
     }
+#if BUILDFLAG(IS_OHOS)
+    // OSR mode does not have a native window,
+    // GrabViewSnapshot will crash. Return error instead.
+    if (!widget_host->GetView()->GetNativeView()) {
+      pending_request->callback->sendFailure(
+          Response::ServerError(
+              "Screenshot from window is not supported, use fromSurface=true."));
+      return;
+    }
+#endif
     widget_host->GetSnapshotFromBrowser(
         base::BindOnce(&PageHandler::ScreenshotCaptured,
                        weak_factory_.GetWeakPtr(), std::move(pending_request)),

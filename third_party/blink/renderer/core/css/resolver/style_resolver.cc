@@ -1709,8 +1709,7 @@ bool CanApplyInlineStyleIncrementally(Element* element,
       // in this path; thus, we cannot support them.
       if (property.Value().IsUnparsedDeclaration() ||
           property.Value().IsPendingSubstitutionValue() ||
-          property.Value().IsRevertValue() ||
-          property.Value().IsRevertLayerValue()) {
+          property.Value().IsCascadeDependentKeyword()) {
         return false;
       }
       // Even though they are not substitution functions (and therefore not

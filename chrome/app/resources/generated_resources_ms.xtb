@@ -1463,7 +1463,7 @@ Kebenaran yang telah anda berikan kepada apl mungkin dikenakan pada akaun ini. A
 <translation id="1969654639948595766">Log teks WebRTC (<ph name="WEBRTC_TEXT_LOG_COUNT" />)</translation>
 <translation id="1972313920920745320">Laman yang anda tambahkan akan sentiasa aktif dan memori tidak akan dikosongkan daripada laman tersebut. <ph name="BEGIN_LINK" />Ketahui lebih lanjut tentang memastikan laman tertentu aktif<ph name="END_LINK" /></translation>
 <translation id="1972325230031091483">Anda akan menyemak imbas dengan lebih pantas kerana kandungan dimuatkan secara proaktif berdasarkan lawatan halaman web semasa anda</translation>
-<translation id="197288927597451399">Simpan</translation>
+<translation id="197288927597451399">Kekalkan</translation>
 <translation id="1973886230221301399">ChromeVox</translation>
 <translation id="1974043046396539880">Titik Pengedaran CRL</translation>
 <translation id="1974060860693918893">Lanjutan</translation>
@@ -1571,6 +1571,7 @@ Anda boleh mengurus tetapan akaun ini dengan memasang apl Family Link pada peran
 <translation id="2040822390690632244">Pilihan kemaskinian, bantuan dan pembangun</translation>
 <translation id="2040894699575719559">Lokasi disekat</translation>
 <translation id="2041246176170574368">Kemaskinian keselamatan akan ditamatkan tidak lama lagi. Jimat $50 atau lebih untuk Chromebook baharu.</translation>
+<translation id="2041681409552851212">Sambungan akan dapat menjalankan kod yang belum disemak oleh Pelayar. Ia mungkin tidak selamat dan anda hendaklah mendayakan ini hanya apabila anda sedar akan tindakan anda.</translation>
 <translation id="2042279886444479655">Aktifkan profil</translation>
 <translation id="2044014337866019681">Sila pastikan anda mengesahkan <ph name="ACCOUNT" /> untuk membuka kunci sesi.</translation>
 <translation id="2044750031738659219">{0,plural, =1{Tutup Tetamu}other{Tutup Tetamu (# windows)}}</translation>
@@ -2327,6 +2328,7 @@ Anda boleh mengurus tetapan akaun ini dengan memasang apl Family Link pada peran
 <translation id="2541400104619216245">Mencadangkan butiran perbandingan untuk diteliti semasa membuat pilihan antara produk</translation>
 <translation id="2541706104884128042">Waktu tidur baharu ditetapkan</translation>
 <translation id="2542050502251273923">Menetapkan tahap penyahpepijatan pengurus sambungan rangkaian dan perkhidmatan lain yang menggunakan ff_debug.</translation>
+<translation id="25436473744628215">Mengemas kini…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{Kebenaran yang anda berikan untuk "<ph name="APP_NAME" />" akan diberikan kepada apl ini juga. <ph name="MANAGE_LINK" />}other{Kebenaran yang anda berikan untuk "<ph name="APP_NAME" />" akan diberikan kepada apl ini juga. <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">Tab Ini</translation>
 <translation id="2545743249923338554">Tab Baharu</translation>
@@ -3175,7 +3177,7 @@ Anda boleh mengurus tetapan akaun ini dengan memasang apl Family Link pada peran
 <translation id="3132277757485842847">Kami tidak dapat mengekalkan sambungan dengan telefon anda. Pastikan telefon anda berada berdekatan, dibuka kunci dan Bluetooth serta Wi-Fi dihidupkan.</translation>
 <translation id="3132896062549112541">Peraturan</translation>
 <translation id="3132996321662585180">Muat semula setiap hari</translation>
-<translation id="3134312457920437826">Tidak dapat memasang sambungan kerana sambungan menggunakan versi manifes yang tidak disokong.</translation>
+<translation id="3134312457920437826">Tidak boleh memasang sambungan kerana ia menggunakan versi manifes tidak disokong.</translation>
 <translation id="3134393957315651797">Pilih status percubaan untuk percubaan <ph name="EXPERIMENT_NAME" />. Perihalan percubaan: <ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">Avatar kuning lalai</translation>
 <translation id="3141093262818886744">Buka juga</translation>
@@ -11557,6 +11559,7 @@ Maklumat ini termasuk maklumat tentang perisian yang dipasang, fail, penyemak im
 <translation id="8890170499370378450">Mungkin dikenakan caj data mudah alih</translation>
 <translation id="8890516388109605451">Sumber</translation>
 <translation id="8890529496706615641">Profil tidak dapat dinamakan semula. Sila cuba lagi atau hubungi pembawa anda untuk mendapatkan sokongan teknikal.</translation>
+<translation id="889095128849097287">Benarkan skrip pengguna</translation>
 <translation id="8892168913673237979">Sudah bersedia!</translation>
 <translation id="8892246501904593980">Lihat semua penanda halaman anda dalam Penanda Halaman dan Senarai</translation>
 <translation id="8893779047492837414">Kini anda mempunyai <ph name="NUMBERED_ITEM_1" />, <ph name="NUMBERED_ITEM_2" /> dan pelbagai lagi. Organisasi anda, <ph name="ACCOUNT_MANAGER" />, akan dapat melihat dan mengurus data ini.</translation>

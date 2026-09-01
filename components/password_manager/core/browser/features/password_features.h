@@ -104,7 +104,15 @@ BASE_DECLARE_FEATURE(kDisableFillingOnPageLoadForLeakedCredentials);
 // Enables the Mojo JavaScript API for the password manager, replacing the
 // legacy passwordsPrivate extension API.
 BASE_DECLARE_FEATURE(kEnablePasswordManagerMojoApi);
+
+// Performs additional security checks wrt. the triggering frame before adding
+// the "Select password" entry to the context menu.
+BASE_DECLARE_FEATURE(kPasswordManualFallbackSecurityChecks);
 #endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
+
+// Cross domain credential data is not previewed by the manual fallback
+// suggestion popup.
+BASE_DECLARE_FEATURE(kFallbackNoPreviewForCrossDomainCredentials);
 
 // Fetches change password url if the credential has been identified as leaked.
 // Later change password url is used during password change.
@@ -180,6 +188,10 @@ BASE_DECLARE_FEATURE(kRestartToGainAccessToKeychain);
 // Shows recovery password for the improved password change flow in the
 // management UI.
 BASE_DECLARE_FEATURE(kShowRecoveryPassword);
+
+// Shows a confirmation dialog before filling grouped credentials from the
+// manual fallback popup on Desktop.
+BASE_DECLARE_FEATURE(kShowConfirmationForGroupedCredentials);
 
 // Shows a tab with password change instead of bubble/settings page after
 // successful password change.

@@ -264,6 +264,9 @@
       <message name="IDS_EXTENSION_MANIFEST_UNREADABLE" desc="">
         Manifest file is missing or unreadable
       </message>
+      <message name="IDS_EXTENSION_MANIFEST_UNREADABLE_V2" desc="">
+        Manifest file is missing or unreadable.
+      </message>
       <message name="IDS_EXTENSION_MANIFEST_INVALID" desc="">
         Manifest file is invalid
       </message>

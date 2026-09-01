@@ -470,6 +470,7 @@ AutofillAgent::AutofillAgent(
   form_tracker_->SetUserGestureRequired(config_.user_gesture_required);
   registry->AddInterface<mojom::AutofillAgent>(base::BindRepeating(
       &AutofillAgent::BindPendingReceiver, base::Unretained(this)));
+  ResetTokenBucket();
 }
 
 // The destructor is not guaranteed to be called. Destruction happens (only)
@@ -502,6 +503,9 @@ void AutofillAgent::Reset() {
   // Navigation to a new page or a page refresh.
   last_queried_element_ = {};
   form_cache_.Reset();
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+  AsAutofillAgentExt()->ResetPositionRequestState();
+#endif
   is_dom_content_loaded_ = false;
   select_option_change_batch_timer_.clear();
   datalist_option_change_batch_timer_.Stop();
@@ -511,6 +515,7 @@ void AutofillAgent::Reset() {
   form_tracker_->ResetLastInteractedElements();
   form_tracker_->OnFormNoLongerSubmittable();
   timing_ = {};
+  ResetTokenBucket();
 }
 
 void AutofillAgent::DidDispatchDOMContentLoadedEvent() {
@@ -549,6 +554,14 @@ void AutofillAgent::DidChangeScrollOffset() {
     HidePopup();
   }
 }
+
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+void AutofillAgent::OnMainFrameViewportRectangleChanged(
+    const gfx::Rect& main_frame_viewport_rect) {
+  AsAutofillAgentExt()->OnAutofillMainFrameViewportRectangleChanged(
+      main_frame_viewport_rect);
+}
+#endif
 
 void AutofillAgent::DidChangeScrollOffsetImpl(FieldRendererId element_id) {
   WebFormControlElement element =
@@ -591,9 +604,11 @@ void AutofillAgent::FocusedElementChanged(
     const WebElement& new_focused_element) {
   ObserveCaret(new_focused_element);
 
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+  AsAutofillAgentExt()->OnAutofillFocusedElementChanged(new_focused_element);
+#endif
   HidePopup();
 #if BUILDFLAG(ARKWEB_AUTOFILL)
-  AsAutofillAgentExt()->SetIsPopupCreatedByFocusChange(false);
   AsAutofillAgentExt()->SetIsNeedToCreatedPopup(false);
 #endif
 
@@ -615,6 +630,13 @@ void AutofillAgent::FocusedElementChanged(
           !base::FeatureList::IsEnabled(
               features::kAutofillAndroidDisableSuggestionsOnJSFocus) ||
           !config_.focus_requires_scroll;
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+      if (AsAutofillAgentExt()->MaybeDeferFocusedElementRequest(
+              focused_node_was_last_clicked,
+              /*restart_if_sent=*/false)) {
+        return;
+      }
+#endif
       HandleFocusChangeComplete(
           /*focused_node_was_last_clicked=*/focused_node_was_last_clicked,
           extracted_form && GetDocument() &&
@@ -630,7 +652,6 @@ void AutofillAgent::FocusedElementChanged(
               : SynchronousFormCache());
 #if BUILDFLAG(ARKWEB_AUTOFILL)
       if (focused_node_was_last_clicked) {
-        AsAutofillAgentExt()->SetIsPopupCreatedByFocusChange(true);
         AsAutofillAgentExt()->SetIsNeedToCreatedPopup(true);
         AsAutofillAgentExt()->SetCreatedPopupTime(base::TimeTicks::Now());
       }
@@ -1420,7 +1441,18 @@ void AutofillAgent::PreviewPasswordGenerationSuggestion(
   password_generation_agent_->PreviewGenerationSuggestion(password);
 }
 
+void AutofillAgent::ResetTokenBucket() {
+  ask_for_values_to_fill_throttle_.tokens =
+      features::kAutofillThrottleBruteForceProbingMaxTokens.Get();
+  ask_for_values_to_fill_throttle_.last_replenish_time = base::TimeTicks::Now();
+}
+
 bool AutofillAgent::ShouldThrottleAskForValuesToFill(FieldRendererId field) {
+  // 1. Apply 100ms *per field* throttle to AskForValuesToFill.
+  // At least on Android, multiple AskForValuesToFill() events may be fired in
+  // short succession. Since getting the event handling right in AutofillAgent
+  // is difficult we ignore duplicate AskForValuesToFill() as a workaround.
+  // See crbug.com/40284788 for details.
   static constexpr base::TimeDelta kThrottle = base::Milliseconds(100);
   base::TimeTicks now = base::TimeTicks::Now();
   if (field == last_ask_for_values_to_fill_.field &&
@@ -1428,6 +1460,43 @@ bool AutofillAgent::ShouldThrottleAskForValuesToFill(FieldRendererId field) {
     return true;
   }
   last_ask_for_values_to_fill_ = {now, field};
+
+  // 2. Apply a *per frame* throttle to AskForValuesToFill.
+  // This exists because malicious web pages can attempt to steal saved
+  // autofill data via a side-channel brute-force attack by rapidly cycling
+  // input prefixes and monitoring :autofill state changes.
+  if (base::FeatureList::IsEnabled(
+          features::kAutofillThrottleBruteForceProbing)) {
+    base::TimeDelta replenish_rate =
+        features::kAutofillThrottleBruteForceProbingReplenishRate.Get();
+    const int max_tokens =
+        features::kAutofillThrottleBruteForceProbingMaxTokens.Get();
+
+    if (replenish_rate.is_positive()) {
+      int64_t earned_tokens =
+          (now - ask_for_values_to_fill_throttle_.last_replenish_time)
+              .IntDiv(replenish_rate);
+      if (earned_tokens > 0) {
+        if (earned_tokens >= max_tokens ||
+            ask_for_values_to_fill_throttle_.tokens + earned_tokens >=
+                max_tokens) {
+          ask_for_values_to_fill_throttle_.tokens = max_tokens;
+          ask_for_values_to_fill_throttle_.last_replenish_time = now;
+        } else {
+          ask_for_values_to_fill_throttle_.tokens +=
+              static_cast<int>(earned_tokens);
+          ask_for_values_to_fill_throttle_.last_replenish_time +=
+              earned_tokens * replenish_rate;
+        }
+      }
+    }
+
+    if (ask_for_values_to_fill_throttle_.tokens <= 0) {
+      return true;  // Throttled due to burst budget exhaustion.
+    }
+    ask_for_values_to_fill_throttle_.tokens--;
+  }
+
   return false;
 }
 
@@ -1856,6 +1925,14 @@ void AutofillAgent::DidCompleteFocusChangeInFrame() {
        base::FeatureList::IsEnabled(
            features::kAutofillAndroidKeyboardAccessoryDynamicPositioning)) &&
       config_.focus_requires_scroll) {
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+    if (AsAutofillAgentExt()->MaybeDeferFocusedElementRequest(
+            last_left_mouse_down_or_gesture_tap_in_node_caused_focus_,
+            /*restart_if_sent=*/false)) {
+      last_left_mouse_down_or_gesture_tap_in_node_caused_focus_ = false;
+      return;
+    }
+#endif
     HandleFocusChangeComplete(
         /*focused_node_was_last_clicked=*/
         last_left_mouse_down_or_gesture_tap_in_node_caused_focus_,
@@ -1877,7 +1954,7 @@ void AutofillAgent::DidReceiveLeftMouseDownOrGestureTapInNode(
 #endif
 
 #if BUILDFLAG(ARKWEB_AUTOFILL)
-  AsAutofillAgentExt()->OhAutoFillFormControlElementClicked(node);
+  AsAutofillAgentExt()->OhAutoFillEditableElementClicked(node);
 #endif
 
 #if defined(ANDROID)
@@ -2002,6 +2079,12 @@ void AutofillAgent::HandleFocusChangeComplete(
 
   if (auto focused_control = focused_element.DynamicTo<WebFormControlElement>();
       form_util::IsTextAreaElementOrTextInput(focused_control)) {
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+    if (AsAutofillAgentExt()->MaybeDeferPositionRequest(
+            focused_control, focused_node_was_last_clicked)) {
+      return;
+    }
+#endif
     std::optional<PasswordSuggestionRequest> password_request;
     if (auto input_element = focused_control.DynamicTo<WebInputElement>()) {
       password_request = password_autofill_agent_->CreateRequestForDomain(
@@ -2034,6 +2117,13 @@ void AutofillAgent::HandleFocusChangeComplete(
   // TODO(crbug.com/40284726): This seems to be redundant. Remove call to
   // ShowSuggestionsForContentEditable.
   if (focused_node_was_last_clicked) {
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+    if (focused_element.IsContentEditable() &&
+        AsAutofillAgentExt()->MaybeDeferPositionRequest(
+            focused_element, focused_node_was_last_clicked)) {
+      return;
+    }
+#endif
     ShowSuggestionsForContentEditable(
         focused_element,
         AutofillSuggestionTriggerSource::kContentEditableClicked);

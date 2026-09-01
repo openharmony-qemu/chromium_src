@@ -3027,11 +3027,11 @@ void RenderFrameHostImpl::DidEnterBackForwardCacheInternal() {
   GetProcess()->PauseSocketManagerForRenderFrameHost(GetGlobalId());
 #endif  // BUILDFLAG(IS_P2P_ENABLED)
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#if BUILDFLAG(ARKWEB_SAME_LAYER) || BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   if (delegate_) {
     delegate_->OnRenderFrameHostEnterBackForwardCache(GetGlobalId());
   }
-#endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
+#endif  // BUILDFLAG(ARKWEB_SAME_LAYER) || BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
   if (auto* permission_service_context =
           PermissionServiceContext::GetForCurrentDocument(this)) {
@@ -3081,11 +3081,11 @@ void RenderFrameHostImpl::WillLeaveBackForwardCacheInternal() {
   GetProcess()->ResumeSocketManagerForRenderFrameHost(GetGlobalId());
 #endif  // BUILDFLAG(IS_P2P_ENABLED)
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#if BUILDFLAG(ARKWEB_SAME_LAYER) || BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   if (delegate_) {
     delegate_->OnRenderFrameHostLeaveBackForwardCache(GetGlobalId());
   }
-#endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
+#endif  // BUILDFLAG(ARKWEB_SAME_LAYER) || BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 }
 
 void RenderFrameHostImpl::StartBackForwardCacheEvictionTimer() {

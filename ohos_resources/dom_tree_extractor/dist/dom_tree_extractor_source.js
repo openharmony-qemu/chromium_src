@@ -692,11 +692,6 @@
                 rect = { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
             }
 
-            if (!isFixedOrSticky && !isMetaTag
-                && (!style.transform || style.transform === 'none')) {
-                continue;
-            }
-
             if (isSuspiciousShadowDOM(element)) continue;
 
             if (!isMetaTag) {
@@ -868,11 +863,6 @@
                 rect = getCachedBoundingRect(element);
             } else {
                 rect = { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
-            }
-
-            if (!isFixedOrSticky && !isMetaTag
-                && (!style.transform || style.transform === 'none')) {
-                continue;
             }
 
             if (isSuspiciousShadowDOM(element)) continue;

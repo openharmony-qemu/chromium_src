@@ -47,14 +47,14 @@ DedicatedWorkerServiceImpl* GetDedicatedWorkerServiceImplForRenderProcessHost(
 DedicatedWorkerHostFactoryImpl::DedicatedWorkerHostFactoryImpl(
     int worker_process_id,
     DedicatedWorkerCreator creator,
-    GlobalRenderFrameHostId ancestor_render_frame_host_id,
+    WeakDocumentPtr ancestor_document,
     const blink::StorageKey& creator_storage_key,
     const net::IsolationInfo& isolation_info,
     network::mojom::ClientSecurityStatePtr creator_client_security_state,
     base::WeakPtr<CrossOriginEmbedderPolicyReporter> creator_coep_reporter)
     : worker_process_id_(worker_process_id),
       creator_(creator),
-      ancestor_render_frame_host_id_(ancestor_render_frame_host_id),
+      ancestor_document_(std::move(ancestor_document)),
       creator_storage_key_(creator_storage_key),
       isolation_info_(isolation_info),
       creator_client_security_state_(std::move(creator_client_security_state)),
@@ -101,8 +101,8 @@ void DedicatedWorkerHostFactoryImpl::CreateWorkerHostAndStartScriptLoad(
   // If the renderer claims it has storage access but the browser has no record
   // of granting the permission then deny the request.
   if (storage_access_api_status != net::StorageAccessApiStatus::kNone) {
-    RenderFrameHostImpl* ancestor_render_frame_host =
-        RenderFrameHostImpl::FromID(ancestor_render_frame_host_id_);
+    RenderFrameHostImpl* ancestor_render_frame_host = RenderFrameHostImpl::From(
+        ancestor_document_.AsRenderFrameHostIfValid());
     if (!ancestor_render_frame_host ||
         !ancestor_render_frame_host->IsFullCookieAccessAllowed()) {
       mojo::ReportBadMessage("DWH_STORAGE_ACCESS_NOT_GRANTED");
@@ -123,9 +123,9 @@ void DedicatedWorkerHostFactoryImpl::CreateWorkerHostAndStartScriptLoad(
                                     ? url::Origin()
                                     : creator_storage_key_.origin();
   auto* host = new DedicatedWorkerHost(
-      service, token, worker_process_host, creator_,
-      ancestor_render_frame_host_id_, creator_storage_key_, renderer_origin,
-      isolation_info_, std::move(creator_client_security_state_),
+      service, token, worker_process_host, creator_, ancestor_document_,
+      creator_storage_key_, renderer_origin, isolation_info_,
+      std::move(creator_client_security_state_),
       std::move(creator_coep_reporter_),
       pending_remote_host.InitWithNewPipeAndPassReceiver(),
       storage_access_api_status);
@@ -150,9 +150,11 @@ void DedicatedWorkerHostFactoryImpl::CreateWorkerHostAndStartScriptLoad(
   // We are about to start fetching from the browser process and we want
   // devtools to be able to instrument the URLLoaderFactory. This call will
   // create a DevtoolsAgentHost.
+  RenderFrameHost* ancestor_rfh = ancestor_document_.AsRenderFrameHostIfValid();
   WorkerDevToolsManager::GetInstance().WorkerCreated(
       host, worker_process_host->GetDeprecatedID(),
-      ancestor_render_frame_host_id_, std::move(devtools_throttle_handle));
+      ancestor_rfh ? ancestor_rfh->GetGlobalId() : GlobalRenderFrameHostId(),
+      std::move(devtools_throttle_handle));
   base::UmaHistogramTimes("Worker.BrowserProcess.StartScriptLoadTime",
                           base::TimeTicks::Now() - start_time);
   base::UmaHistogramTimes("Worker.BrowserProcess.DevToolsCreateTime",

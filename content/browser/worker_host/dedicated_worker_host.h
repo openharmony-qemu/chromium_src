@@ -21,6 +21,7 @@
 #include "content/public/browser/global_routing_id.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_process_host_observer.h"
+#include "content/public/browser/weak_document_ptr.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/receiver.h"
@@ -105,7 +106,7 @@ class CONTENT_EXPORT DedicatedWorkerHost final
       const blink::DedicatedWorkerToken& token,
       RenderProcessHost* worker_process_host,
       DedicatedWorkerCreator creator,
-      GlobalRenderFrameHostId ancestor_render_frame_host_id,
+      WeakDocumentPtr ancestor_document,
       const blink::StorageKey& creator_storage_key,
       const url::Origin& renderer_origin,
       const net::IsolationInfo& isolation_info,
@@ -125,9 +126,10 @@ class CONTENT_EXPORT DedicatedWorkerHost final
   const blink::DedicatedWorkerToken& GetToken() const { return token_; }
   RenderProcessHost* GetProcessHost() const { return worker_process_host_; }
   const blink::StorageKey& GetStorageKey() const { return storage_key_; }
-  const GlobalRenderFrameHostId& GetAncestorRenderFrameHostId() const {
-    return ancestor_render_frame_host_id_;
-  }
+  GlobalRenderFrameHostId GetAncestorRenderFrameHostId() const;
+  // Returns the ancestor RenderFrameHost if it still hosts the document that
+  // created this worker, or nullptr otherwise.
+  RenderFrameHostImpl* GetAncestorRenderFrameHost() const;
   DedicatedWorkerCreator GetCreator() const { return creator_; }
   const std::optional<GURL>& GetFinalResponseURL() const {
     return final_response_url_;
@@ -327,9 +329,9 @@ class CONTENT_EXPORT DedicatedWorkerHost final
   // worker is nested.
   const DedicatedWorkerCreator creator_;
 
-  // The ID of the frame that owns this worker, either directly, or (in the case
-  // of nested workers) indirectly via a tree of dedicated workers.
-  const GlobalRenderFrameHostId ancestor_render_frame_host_id_;
+  // The document that owns this worker, either directly, or (in the case of
+  // nested workers) indirectly via a tree of dedicated workers.
+  const WeakDocumentPtr ancestor_document_;
 
   // The origin of the frame or dedicated worker that starts this worker.
   const url::Origin creator_origin_;

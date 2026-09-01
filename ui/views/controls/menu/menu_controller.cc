@@ -819,7 +819,14 @@ bool MenuController::IsContextMenu() const {
 
 void MenuController::SelectItemAndOpenSubmenu(MenuItemView* item) {
   DCHECK(item);
+  auto this_ref = AsWeakPtr();
   SetSelection(item, SELECTION_OPEN_SUBMENU | SELECTION_UPDATE_IMMEDIATELY);
+
+  // Accessibility events fired as a result of the selection changing may have
+  // closed the menu and deleted `this`. Guard against that.
+  if (!this_ref) {
+    return;
+  }
 
   // If `item` has not a submenu, hot track `item`'s initial focusable button
   // if any.
@@ -1303,6 +1310,7 @@ int MenuController::OnDragUpdated(SubmenuView* source,
   }
   MenuDelegate::DropPosition drop_position = MenuDelegate::DropPosition::kNone;
   int drop_operation = ui::DragDropTypes::DRAG_NONE;
+  auto this_ref = AsWeakPtr();
   if (menu_item) {
     gfx::Point menu_item_loc(event.location());
     View::ConvertPointToTarget(source, menu_item, &menu_item_loc);
@@ -1337,6 +1345,11 @@ int MenuController::OnDragUpdated(SubmenuView* source,
     }
   } else {
     SetSelection(source->GetMenuItem(), SELECTION_OPEN_SUBMENU);
+  }
+  // Accessibility events fired as a result of the selection changing may have
+  // closed the menu and deleted `this`. Guard against that.
+  if (!this_ref) {
+    return drop_operation;
   }
   SetDropMenuItem(menu_item, drop_position);
   last_drop_operation_ = drop_operation;
@@ -3253,7 +3266,14 @@ void MenuController::OpenSubmenuChangeSelectionIfCan() {
   }
 
   // Show the sub-menu.
+  auto this_ref = AsWeakPtr();
   SetSelection(item, SELECTION_OPEN_SUBMENU | SELECTION_UPDATE_IMMEDIATELY);
+
+  // Accessibility events fired as a result of the selection changing may have
+  // closed the menu and deleted `this`. Guard against that.
+  if (!this_ref) {
+    return;
+  }
 
   MenuItemView* to_select = nullptr;
   if (!item->GetSubmenu()->GetMenuItems().empty()) {
@@ -3716,7 +3736,14 @@ void MenuController::SetInitialHotTrackedView(
   if (!item) {
     return;
   }
+  auto this_ref = AsWeakPtr();
   SetSelection(item, SELECTION_DEFAULT);
+
+  // Accessibility events fired as a result of the selection changing may have
+  // closed the menu and deleted `this`. Guard against that.
+  if (!this_ref) {
+    return;
+  }
   View* hot_view =
       GetInitialFocusableView(item, direction == INCREMENT_SELECTION_DOWN);
   SetHotTrackedButton(Button::AsButton(hot_view));

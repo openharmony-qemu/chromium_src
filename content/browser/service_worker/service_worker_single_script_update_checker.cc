@@ -274,7 +274,14 @@ void ServiceWorkerSingleScriptUpdateChecker::OnReceiveResponse(
 
   network_accessed_ = response_head->network_accessed;
 
+  // WriteHeaders() may complete synchronously and run the result callback,
+  // which is allowed to destroy |this|.
+  base::WeakPtr<ServiceWorkerSingleScriptUpdateChecker> weak_this =
+      weak_factory_.GetWeakPtr();
   WriteHeaders(std::move(response_head));
+  if (!weak_this) {
+    return;
+  }
 
   if (!consumer)
     return;
@@ -432,6 +439,12 @@ void ServiceWorkerSingleScriptUpdateChecker::WriteHeaders(
   // MaybeWriteHeaders() doesn't run the callback if it finishes synchronously,
   // so explicitly call it here.
   OnWriteHeadersComplete(error);
+}
+
+void ServiceWorkerSingleScriptUpdateChecker::FlushRemotesForTesting() {
+  if (cache_writer_) {
+    cache_writer_->FlushRemotesForTesting();  // IN-TEST
+  }
 }
 
 void ServiceWorkerSingleScriptUpdateChecker::OnWriteHeadersComplete(

@@ -1450,4 +1450,21 @@ TEST_F(P2PSocketUdpWithInterceptorTest, ReentrantDestructionSend) {
   AdvanceClock(base::Milliseconds(100));
 }
 
+TEST_F(P2PSocketUdpTest, SendRejectsRestrictedPort) {
+  base::test::ScopedFeatureList feature_list;
+  feature_list.InitAndEnableFeature(kEnforceP2PSocketPortRestrictions);
+  std::vector<uint8_t> request_packet;
+  CreateStunRequest(&request_packet);
+
+  net::IPEndPoint restricted_dest = ParseAddress(kTestIpAddress1, 25);
+
+  socket_ = nullptr;
+  P2PSocketUdp* socket_impl_ptr = socket_impl_.get();
+  socket_delegate_.ExpectDestruction(std::move(socket_impl_));
+  socket_impl_ptr->Send(request_packet, P2PPacketInfo(restricted_dest, {}, 0));
+
+  EXPECT_TRUE(
+      base::test::RunUntil([&]() { return fake_client_->connection_error(); }));
+}
+
 }  // namespace network

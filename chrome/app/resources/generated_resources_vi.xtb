@@ -4881,6 +4881,7 @@ Bạn có thể quản lý các tùy chọn cài đặt của tài khoản này 
 <translation id="428715201724021596">Đang kết nối với hồ sơ. Quá trình này có thể mất vài phút.</translation>
 <translation id="4287157641315808225">Có, kích hoạt ChromeVox</translation>
 <translation id="4287502603002637393">{MUTED_NOTIFICATIONS_COUNT,plural, =1{Hiển thị}other{Hiển thị tất cả}}</translation>
+<translation id="4289004521405268796">Bật chế độ Nhà phát triển để sử dụng tiện ích mở rộng này. Lưu ý rằng tính bảo mật của tiện ích này chưa thể xác minh.</translation>
 <translation id="4289540628985791613">Tổng quan</translation>
 <translation id="428963538941819373">Các trang web này có thể sử dụng thông tin mà họ đã lưu về bạn khi bạn duyệt xem <ph name="HOST" /></translation>
 <translation id="4289732974614035569">Hãy chọn một mã PIN</translation>

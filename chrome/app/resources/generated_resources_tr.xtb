@@ -4864,6 +4864,7 @@ Sunucunun mesajı: <ph name="SERVER_MSG" /></translation>
 <translation id="428715201724021596">Profile bağlanılıyor. Bu işlem birkaç dakika sürebilir.</translation>
 <translation id="4287157641315808225">Evet, ChromeVox'u etkinleştir</translation>
 <translation id="4287502603002637393">{MUTED_NOTIFICATIONS_COUNT,plural, =1{Göster}other{Tümünü Göster}}</translation>
+<translation id="4289004521405268796">Bu uzantıyı kullanmak için Geliştirici modunu etkinleştirin. Güvenliğinin doğrulanamayacağını lütfen unutmayın.</translation>
 <translation id="4289540628985791613">Genel bakış</translation>
 <translation id="428963538941819373">Bu siteler, <ph name="HOST" /> sitesinde gezinirken hakkınızda kaydettikleri bilgileri kullanabilir</translation>
 <translation id="4289732974614035569">PIN seçin</translation>

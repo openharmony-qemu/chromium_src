@@ -468,6 +468,16 @@ RenderWidgetHostImpl::RenderWidgetHostImpl(
   }
 
   const auto* command_line = base::CommandLine::ForCurrentProcess();
+#if BUILDFLAG(IS_ARKWEB)
+  if (command_line->HasSwitch(switches::kNwebExContentRenderingDelay)) {
+    std::string delay_str = command_line->GetSwitchValueASCII(
+        switches::kNwebExContentRenderingDelay);
+    int delay_ms = 0;
+    if (base::StringToInt(delay_str, &delay_ms) && delay_ms >= 0) {
+      new_content_rendering_delay_ = base::Milliseconds(delay_ms);
+    }
+  }
+#endif
   if (!command_line->HasSwitch(switches::kDisableNewContentRenderingTimeout)) {
     new_content_rendering_timeout_ = std::make_unique<input::TimeoutMonitor>(
         base::BindRepeating(&RenderWidgetHostImpl::ClearDisplayedGraphics,

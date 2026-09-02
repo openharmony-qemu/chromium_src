@@ -24,6 +24,10 @@ class DownloadManager;
 
 namespace protocol {
 
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+extern const char kArkWebAllowAndNameKey[];
+#endif
+
 class DevToolsDownloadManagerDelegate
     : public base::SupportsUserData::Data,
       public content::DownloadManagerDelegate {

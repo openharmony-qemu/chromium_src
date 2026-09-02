@@ -510,7 +510,7 @@ SharedWorkerHost::CreateNetworkFactoryParamsForSubresources() {
           static_cast<StoragePartitionImpl*>(
               GetProcessHost()->GetStoragePartition())
               ->CreateURLLoaderNetworkObserverForServiceOrSharedWorker(
-                  GetProcessHost()->GetDeprecatedID(), origin),
+                  GetProcessHost()->GetDeprecatedID(), origin, GetStorageKey()),
           /*devtools_observer=*/mojo::NullRemote(),
           mojo::Clone(worker_client_security_state_),
           /*debug_tag=*/

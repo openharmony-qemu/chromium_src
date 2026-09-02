@@ -482,7 +482,8 @@ class CONTENT_EXPORT StoragePartitionImpl
   mojo::PendingRemote<network::mojom::URLLoaderNetworkServiceObserver>
   CreateURLLoaderNetworkObserverForServiceOrSharedWorker(
       int process_id,
-      const url::Origin& worker_origin);
+      const url::Origin& worker_origin,
+      const std::optional<blink::StorageKey>& storage_key = std::nullopt);
 
   mojo::PendingRemote<network::mojom::DeviceBoundSessionAccessObserver>
   CreateDeviceBoundSessionObserverForServiceWorker();
@@ -642,7 +643,10 @@ class CONTENT_EXPORT StoragePartitionImpl
         GlobalRenderFrameHostId global_render_frame_host_id);
 
     // Used when `type` is `kSharedOrServiceWorkerContext`.
-    URLLoaderNetworkContext(int process_id, const url::Origin& worker_origin);
+    URLLoaderNetworkContext(
+        int process_id,
+        const url::Origin& worker_origin,
+        const std::optional<blink::StorageKey>& storage_key = std::nullopt);
 
     // Used when `type` is `kNavigationRequestContext`.
     explicit URLLoaderNetworkContext(NavigationRequest& navigation_request);
@@ -659,6 +663,9 @@ class CONTENT_EXPORT StoragePartitionImpl
     int process_id() const { return process_id_; }
     const std::optional<url::Origin>& worker_origin() const {
       return worker_origin_;
+    }
+    const std::optional<blink::StorageKey>& storage_key() const {
+      return storage_key_;
     }
 
     // If `type_` is kSharedOrServiceWorkerContext, returns nullptr. Otherwise
@@ -677,6 +684,14 @@ class CONTENT_EXPORT StoragePartitionImpl
 
     // Only valid and non-nullopt when `type_` is kSharedOrServiceWorkerContext.
     std::optional<url::Origin> worker_origin_;
+
+    // Only valid when `type_` is kSharedOrServiceWorkerContext.
+    // Holds the storage key of the worker that owns this network context.
+    // When present, `CalculateStorageKey()` uses this key to scope
+    // Clear-Site-Data filter deletions to the worker's top-level site
+    // partition. Is `std::nullopt` for contexts that lack a worker storage
+    // key.
+    std::optional<blink::StorageKey> storage_key_;
   };
 
   // `relative_partition_path` is the relative path under `profile_path` to the

@@ -121,9 +121,16 @@ void CheckExtensionDirectory(const base::FilePath& path,
 void CheckUnpackedExtensionDirectory(
     const base::FilePath& extension_directory,
     const ExtensionPathsMultimap& installed_extension_dirs) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  base::FilePath temp = base::MakeAbsoluteFilePath(extension_directory);
+#endif // ARKWEB_ARKWEB_EXTENSIONS
   // Check to see if the extension is installed and don't proceed if it is.
   for (auto const& [_, installed_extension_dir] : installed_extension_dirs) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    if (temp == installed_extension_dir) {
+#else
     if (extension_directory == installed_extension_dir) {
+#endif // ARKWEB_ARKWEB_EXTENSIONS
       return;
     }
   }

@@ -682,6 +682,9 @@ input[type="hidden" i], input[type="image" i], input[type="file" i] {
 input[type="file" i] {
     align-items: baseline;
     color: inherit;
+    /* ArkWeb not use Chromium's new input element default CSS style about "overflow:clip",
+       but still use "overflow:hidden". crbug.com/40877677 */
+    overflow: hidden !important;
     text-align: start !important;
     /* Prevent a malicious author from using a custom string for text-overflow
        to spoof a filename. */
@@ -825,8 +828,8 @@ option:-internal-spatial-navigation-focus {
     outline-offset: -1px;
 }
 
-/* ArkWeb not use Chromium's input element default CSS style about "overflow:clip". */
-/* https://chromium-review.googlesource.com/c/chromium/src/+/5777174 */
+/* ArkWeb not use Chromium's new input element default CSS style about "overflow:clip",
+   but still use "overflow:hidden". crbug.com/40877677 */
 
 /* https://html.spec.whatwg.org/multipage/rendering.html#hidden-elements */
 /* TODO(crbug.com/1231263): <area> should be display:none. */

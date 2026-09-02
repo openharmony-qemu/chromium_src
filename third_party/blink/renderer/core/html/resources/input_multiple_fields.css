@@ -15,6 +15,9 @@ input[type="month" i],
 input[type="time" i],
 input[type="week" i] {
     font-family: monospace;
+    /* ArkWeb not use Chromium's new input element default CSS style about "overflow:clip",
+       but still use "overflow:hidden". crbug.com/40877677 */
+    overflow: hidden;
     padding: 0;
     padding-inline-start: 1px;
     cursor: default;

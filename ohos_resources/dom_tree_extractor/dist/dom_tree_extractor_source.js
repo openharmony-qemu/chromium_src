@@ -638,7 +638,7 @@
             if (node.nodeType === Node.TEXT_NODE) {
                 if (frame.inherited.isInTable) continue;
                 const text = node.textContent.trim();
-                if (!text || text.replace(/[​-‍﻿]/g, '').length === 0) continue;
+                if (!text || text.replace(/[\u200B-\u200D\uFEFF]/g, '').length === 0) continue;
 
                 frame.parentChildren.push({
                     $type: '$TEXT_NODE$',
@@ -806,7 +806,7 @@
             if (node.nodeType === Node.TEXT_NODE) {
                 if (frame.inherited.isInTable) continue;
                 const text = node.textContent.trim();
-                if (!text || text.replace(/[​-‍﻿]/g, '').length === 0) continue;
+                if (!text || text.replace(/[\u200B-\u200D\uFEFF]/g, '').length === 0) continue;
 
                 frame.parentChildren.push({
                     $type: '$TEXT_NODE$',

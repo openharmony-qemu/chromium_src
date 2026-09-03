@@ -46,6 +46,10 @@ class VIZ_SERVICE_EXPORT OverlayProcessorOhos
                                   bool is_single_screen) override;
 
  private:
+#if BUILDFLAG(ARKWEB_AI_HDR)
+  void CalculateOverlayCandidateRects(OverlayCandidate& candidate);
+#endif
+
   gfx::OverlayTransform display_transform_ = gfx::OVERLAY_TRANSFORM_NONE;
   gfx::Size viewport_size_;
   bool is_focused_ = false;

@@ -24,7 +24,9 @@
 #include "components/viz/service/display/overlay_strategy_underlay.h"
 #include "ui/gfx/geometry/rect_conversions.h"
 #include "ui/gfx/overlay_transform_utils.h"
-
+#if BUILDFLAG(ARKWEB_AI_HDR)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 namespace viz {
 namespace {
 constexpr float kMinScale = 0.5;
@@ -100,7 +102,25 @@ void OverlayProcessorOhos::CheckOverlaySupportImpl(
     return;
   }
   DCHECK(!candidates->empty());
+
   for (auto& candidate : *candidates) {
+#if BUILDFLAG(ARKWEB_AI_HDR)
+    // AI HDR frames must use delegated compositing. When the frame has been
+    // processed by VPE (is_ai_hdr_active), force overlay_handled so the frame
+    // goes through the delegated compositing path.
+    // Bypass focus/screen/transform checks because: VPE output buffer lives on
+    // ConsumerSurface that only overlay can consume; interrupting the VPE pipeline
+    // on focus loss would cause visual flickering.
+    if (base::ohos::IsAiHdrEnabledOhos() && candidate.is_ai_hdr_active) {
+      CalculateOverlayCandidateRects(candidate);
+      candidate.overlay_handled = true;
+      TRACE_EVENT2("viz", "CheckOverlaySupportImpl AI HDR force overlay_handled",
+                   "display_rect", candidate.display_rect.ToString(),
+                   "uv_rect", candidate.uv_rect.ToString());
+      continue;
+    }
+#endif
+
     if (!is_focused_) {
       TRACE_EVENT0("viz", "CheckOverlaySupportImpl reject due to lost focus");
       LOG(DEBUG) << "Overlay rejected due to candidates unfocus";
@@ -114,6 +134,7 @@ void OverlayProcessorOhos::CheckOverlaySupportImpl(
       candidate.overlay_handled = false;
       continue;
     }
+
     // Aggregator adds `display_transform_` to all quads, which is then added to
     // `candidate.transform` here. `display_transform_` only applies to content
     // on the main plane so it needs to be removed candidate it its own plane.
@@ -140,6 +161,7 @@ void OverlayProcessorOhos::CheckOverlaySupportImpl(
     // offset.
     display_rect = ClipFromOrigin(display_rect);
     if (display_rect.IsEmpty()) {
+      TRACE_EVENT0("viz", "CheckOverlaySupportImpl display_rect.IsEmpty");
       LOG(DEBUG) << "Overlay rejected due to display_rect empty";
       candidate.overlay_handled = false;
       continue;
@@ -207,6 +229,50 @@ void OverlayProcessorOhos::CheckOverlaySupportImpl(
     TRACE_EVENT0("viz", "Ohos CheckOverlaySupportImpl success");
   }
 }
+
+#if BUILDFLAG(ARKWEB_AI_HDR)
+void OverlayProcessorOhos::CalculateOverlayCandidateRects(
+    OverlayCandidate& candidate) {
+  // Transform correction: remove display_transform_ from candidate's own plane.
+  gfx::OverlayTransform candidate_overlay_transform = OverlayTransformsConcat(
+      std::get<gfx::OverlayTransform>(candidate.transform),
+      InvertOverlayTransform(display_transform_));
+  candidate.transform = candidate_overlay_transform;
+
+  // Clip display_rect by clip_rect and remove negative offsets.
+  gfx::RectF orig_display_rect = candidate.display_rect;
+  gfx::RectF display_rect = orig_display_rect;
+  if (candidate.clip_rect) {
+    display_rect.Intersect(gfx::RectF(*candidate.clip_rect));
+  }
+
+  display_rect = ClipFromOrigin(display_rect);
+
+  // Map display rects from display space to logical screen space.
+  const gfx::Transform display_inverse = gfx::OverlayTransformToTransform(
+      gfx::InvertOverlayTransform(display_transform_),
+      gfx::SizeF(viewport_size_));
+  orig_display_rect = display_inverse.MapRect(orig_display_rect);
+  display_rect = display_inverse.MapRect(display_rect);
+
+  // Save unclipped values for downstream rendering.
+  candidate.unclipped_display_rect = orig_display_rect;
+  candidate.unclipped_uv_rect = candidate.uv_rect;
+
+  candidate.display_rect = gfx::RectF(gfx::ToEnclosingRect(display_rect));
+
+  // Transform uv_rect to display space, scale proportionally to clipped rect,
+  // then transform back.
+  candidate.uv_rect = gfx::OverlayTransformToTransform(
+                          candidate_overlay_transform, gfx::SizeF(1, 1))
+                          .MapRect(candidate.uv_rect);
+  candidate.uv_rect = cc::MathUtil::ScaleRectProportional(
+      candidate.uv_rect, orig_display_rect, candidate.display_rect);
+  candidate.uv_rect = gfx::OverlayTransformToTransform(
+      gfx::InvertOverlayTransform(candidate_overlay_transform),
+      gfx::SizeF(1, 1)).MapRect(candidate.uv_rect);
+}
+#endif
 
 gfx::Rect OverlayProcessorOhos::GetOverlayDamageRectForOutputSurface(
     const OverlayCandidate& candidate) const {

@@ -50,6 +50,9 @@ void VideoFrameMetadata::MergeMetadataFrom(
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   MERGE_VALUE_FIELD(render_video_view, metadata_source);
 #endif
+#if BUILDFLAG(ARKWEB_AI_HDR)
+  MERGE_VALUE_FIELD(is_ai_hdr_active, metadata_source);
+#endif
   MERGE_VALUE_FIELD(wants_promotion_hint, metadata_source);
   MERGE_VALUE_FIELD(dcomp_surface, metadata_source);
   MERGE_VALUE_FIELD(protected_video, metadata_source);
@@ -86,6 +89,9 @@ void VideoFrameMetadata::ClearTextureFrameMetadata() {
   read_lock_fences_enabled = false;
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   render_video_view = false;
+#endif
+#if BUILDFLAG(ARKWEB_AI_HDR)
+  is_ai_hdr_active = false;
 #endif
 }
 

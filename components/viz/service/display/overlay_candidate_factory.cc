@@ -707,6 +707,11 @@ OverlayCandidate::CandidateStatus OverlayCandidateFactory::FromTextureQuad(
         resource_provider_->IsBackedBySurfaceView(quad->resource_id);
 #endif
 
+#if BUILDFLAG(ARKWEB_AI_HDR)
+    candidate.is_ai_hdr_active =
+        resource_provider_->IsAiHdrActive(quad->resource_id);
+#endif
+
     candidate.has_rounded_display_masks =
         !quad->rounded_display_masks_info.IsEmpty();
   }

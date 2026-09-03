@@ -144,10 +144,12 @@ void MojoDecoderBufferReader::ReadDecoderBuffer(
         perfetto::Track(media_buffer->timestamp().InMicroseconds()));
     read_cb = base::BindOnce(
         [](ReadCB read_cb, scoped_refptr<DecoderBuffer> buffer) {
-          TRACE_EVENT_END("media,gpu",
-                          perfetto::Track(buffer->timestamp().InMicroseconds()),
-                          "timestamp", buffer->timestamp().InMicroseconds(),
-                          "read_bytes", buffer->size());
+          if (buffer) {
+            TRACE_EVENT_END("media,gpu",
+                            perfetto::Track(buffer->timestamp().InMicroseconds()),
+                            "timestamp", buffer->timestamp().InMicroseconds(),
+                            "read_bytes", buffer->size());
+          }
           std::move(read_cb).Run(std::move(buffer));
         },
         std::move(read_cb));

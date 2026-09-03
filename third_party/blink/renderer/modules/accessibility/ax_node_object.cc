@@ -8196,10 +8196,6 @@ AXObject* AXNodeObject::AccessibilityHitTest(const gfx::Point& point) const {
   DCHECK(layer);
 #if !BUILDFLAG(ARKWEB_ACCESSIBILITY)
   HitTestRequest request(HitTestRequest::kReadOnly | HitTestRequest::kActive);
-#else
-  HitTestRequest request(HitTestRequest::kReadOnly | HitTestRequest::kActive |
-                         HitTestRequest::kIgnorePointerEventsNone);
-#endif
   HitTestLocation location(point);
   HitTestResult hit_test_result = HitTestResult(request, location);
   layer->HitTest(location, hit_test_result, PhysicalRect(InfiniteIntRect()));
@@ -8208,6 +8204,38 @@ AXObject* AXNodeObject::AccessibilityHitTest(const gfx::Point& point) const {
   if (!node) {
     return nullptr;
   }
+#else
+  HitTestRequest with_flag_request(HitTestRequest::kReadOnly |
+                                   HitTestRequest::kActive |
+                                   HitTestRequest::kIgnorePointerEventsNone);
+  HitTestLocation location(point);
+  HitTestResult with_flag_result(with_flag_request, location);
+  layer->HitTest(location, with_flag_result, PhysicalRect(InfiniteIntRect()));
+  Node* node = with_flag_result.InnerNode();
+  if (!node)
+    return nullptr;
+
+  AXObject* ax_obj = node->GetLayoutObject()
+                         ? AXObjectCache().Get(node->GetLayoutObject())
+                         : nullptr;
+  auto role = ax_obj ? ax_obj->RoleValue() : ax::mojom::blink::Role::kUnknown;
+  bool use_with_flag =
+      ui::IsControlOnOHOS(role, ax_obj && ax_obj->CanSetFocusAttribute()) ||
+      role == ax::mojom::blink::Role::kStaticText;
+
+  LOG(DEBUG) << "AccessibilityHitTest with-flag: axRole="
+            << AXObject::InternalRoleName(role).Utf8()
+            << ", useWithFlag=" << use_with_flag;
+
+  if (!use_with_flag) {
+    HitTestRequest no_flag_request(HitTestRequest::kReadOnly |
+                                   HitTestRequest::kActive);
+    HitTestResult no_flag_result(no_flag_request, location);
+    layer->HitTest(location, no_flag_result, PhysicalRect(InfiniteIntRect()));
+    if (Node* no_flag_node = no_flag_result.InnerNode())
+      node = no_flag_node;
+  }
+#endif
 
   if (auto* area = DynamicTo<HTMLAreaElement>(node)) {
     return AccessibilityImageMapHitTest(area, point);

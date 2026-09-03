@@ -7,7 +7,7 @@
 
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
-#include "base/memory/weak_ptr.h"
+#include "ui/ozone/platform/wayland/host/wayland_window_observer.h"
 #include "ui/ozone/test/mock_platform_window_delegate.h"
 
 namespace ui {
@@ -15,7 +15,8 @@ class WaylandConnection;
 class WaylandWindow;
 struct PlatformWindowInitProperties;
 
-class MockWaylandPlatformWindowDelegate : public MockPlatformWindowDelegate {
+class MockWaylandPlatformWindowDelegate : public MockPlatformWindowDelegate,
+                                          public WaylandWindowObserver {
  public:
   MockWaylandPlatformWindowDelegate(raw_ptr<WaylandConnection> connection);
   MockWaylandPlatformWindowDelegate(const MockWaylandPlatformWindowDelegate&) =
@@ -43,9 +44,11 @@ class MockWaylandPlatformWindowDelegate : public MockPlatformWindowDelegate {
   }
 
  private:
+  // WaylandWindowObserver:
+  void OnWindowRemoved(WaylandWindow* window) override;
   raw_ptr<WaylandConnection> connection_ = nullptr;
 
-  base::WeakPtr<WaylandWindow> wayland_window_;
+  raw_ptr<WaylandWindow> wayland_window_ = nullptr;
 
   // |viz_seq_| is used to save an incrementing sequence point on each
   // call to InsertSequencePoint. Test code can check this value to know

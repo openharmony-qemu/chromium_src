@@ -133,6 +133,9 @@ interface DisplayPrivate {
 
   [EnableIf=arkweb_vsync_schedule]
   SetBypassVsyncCondition(int32 condition);
+
+  [EnableIf=arkweb_dfx_dump]
+  SetAsyncStackId(uint64 stackId);
 };
 
 // DisplayClient allows privileged clients to receive events from the Display.

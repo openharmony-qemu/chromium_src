@@ -192,6 +192,11 @@ class VIZ_SERVICE_EXPORT SkiaOutputDevice {
   virtual void SetBypassVsyncCondition(int32_t condition) {}
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  virtual void SetAsyncStackId(uint64_t stackId) {}
+  virtual uint64_t GetAsyncStackId() { return 0; }
+#endif
+
   // Acknowledges a SwapBuffers request without actually attempting to swap.
   // This should be called when the GPU thread decides to skip a swap that was
   // invoked by the viz thread to ensure that we still run the relevant metrics

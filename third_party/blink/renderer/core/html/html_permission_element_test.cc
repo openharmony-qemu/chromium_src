@@ -308,7 +308,6 @@ class HTMLPermissionElementTest : public HTMLPermissionElementTestBase {
                                        AtomicString(""));
     }
     GetDocument().body()->AppendChild(permission_element);
-    GetDocument().UpdateStyleAndLayout(DocumentUpdateReason::kTest);
     GetDocument().View()->UpdateAllLifecyclePhasesForTest();
     return permission_element;
   }
@@ -1620,6 +1619,61 @@ class HTMLPermissionElementIntersectionTest
     checker.CheckClickingEnabled(/*expected_enabled*/ false);
   }
 };
+
+TEST_F(HTMLPermissionElementIntersectionTest,
+       MovePEPCFromIframeAndDestroyIframe) {
+  GetDocument().GetSettings()->SetDefaultFontSize(12);
+  SimRequest main_resource("https://example.test/", "text/html");
+  SimRequest iframe_resource("https://example.test/foo.html", "text/html");
+  LoadURL("https://example.test/");
+  main_resource.Complete(R"HTML(
+    <body>
+      <style>
+        #occluder {
+          position:absolute;
+          left:0;
+          top:0;
+          width:100px;
+          height:100px;
+          background:black;
+        }
+        #iframe {
+          position:absolute;
+          left:0;
+          top:150px;
+        }
+      </style>
+      <div id="occluder"></div>
+      <iframe id="iframe" src='https://example.test/foo.html' allow="camera *">
+      </iframe>
+    </body>
+  )HTML");
+  iframe_resource.Complete(R"HTML(
+    <!DOCTYPE html><permission id='camera' type='camera'></permission>
+  )HTML");
+
+  Compositor().BeginFrame();
+
+  auto* subframe = To<WebLocalFrameImpl>(MainFrame().FirstChild())->GetFrame();
+  auto* permission_element = To<HTMLPermissionElement>(
+      subframe->GetDocument()->QuerySelector(AtomicString("permission")));
+  DeferredChecker checker(permission_element);
+  checker.CheckClickingEnabledAfterDelay(kDefaultTimeout,
+                                          /*expected_enabled*/ true);
+
+  // Move permission element to main document and remove iframe
+  auto& main_document = *MainFrame().GetFrame()->GetDocument();
+  main_document.body()->AppendChild(permission_element);
+  main_document.getElementById(AtomicString("iframe"))->remove();
+
+  Compositor().BeginFrame();
+
+  // Verify it is occluded and clicking is disabled.
+  WaitForIntersectionVisibilityChanged(
+      permission_element,
+      HTMLPermissionElement::IntersectionVisibility::kOccludedOrDistorted);
+  EXPECT_FALSE(permission_element->IsClickingEnabled());
+}
 
 TEST_F(HTMLPermissionElementIntersectionTest, IntersectionChanged) {
   GetDocument().GetSettings()->SetDefaultFontSize(12);

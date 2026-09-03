@@ -1,9 +1,9 @@
 /**
- * dom_tree_extractor_source.js - ArkWeb DOM树状结构提取
+ * dom_tree_extractor_viewport_source.js - Extract DOM tree within the viewport
  *
- * 主要功能：
- * - 提取可视区域的DOM节点
- * - 提取TextNode节点
+ * Features:
+ * - Extract DOM nodes within the visible viewport area
+ * - Extract TextNode nodes
  */
 (function () {
     const print = (message) => {
@@ -21,14 +21,8 @@
         return;
     }
 
-    // ========================
-    // == 原始extractor.js核心函数（v4改进版） ==
-    // ========================
-    // ========================
-    // == 工具函数定义 ==
-    // ========================
 
-    // v002: one extraction owns one coherent set of read caches. They are
+    // One extraction owns one coherent set of read caches. They are
     // reset before every public full extraction, so nothing survives across
     // DOM revisions or reports.
     let extractionXPathCache = new WeakMap();
@@ -76,7 +70,7 @@
                 tagCounts.set(child.nodeName, count);
                 siblingInfo.set(child, {
                     index: count,
-                    // Preserve v0's exact rule: only the immediate next
+                    // Preserve the exact rule: only the immediate next
                     // element sibling determines whether the first item gets
                     // an explicit [1].
                     hasSimilarNextSibling: child.nextElementSibling?.nodeName === child.nodeName
@@ -88,16 +82,14 @@
     }
 
     /**
-     * 获取元素的 xpath 路径
-     * @param {Node} element 元素节点
-     * @returns {string} 元素的 xpath 路径
+     * @param {Node} node
+     * @returns {string}
      */
     function getXPath(node) {
         if (!(node instanceof Node)) {
             return null;
         }
 
-        // 直接返回ID路径（最短且最高效）
         if (node.nodeType === Node.ELEMENT_NODE && node.id) {
             return `//*[@id="${node.id}"]`;
         }
@@ -136,27 +128,22 @@
             return false;
         }
 
-        // 获取计算后的样式
         const computedStyle = getCachedComputedStyle(element);
         const overflowX = computedStyle.overflowX;
         const overflowY = computedStyle.overflowY;
 
-        // 检查 overflow 属性是否允许滚动
         const hasScrollableOverflowX = ['scroll', 'auto'].includes(overflowX);
         const hasScrollableOverflowY = ['scroll', 'auto'].includes(overflowY);
 
-        // 特殊处理 html 和 body 元素
         const isHtmlOrBody = element === document.documentElement;
 
         let canScrollVertical = false;
         let canScrollHorizontal = false;
 
         if (isHtmlOrBody) {
-            // 对于 html 和 body，检查文档是否可以滚动
             const docElement = document.documentElement;
             const body = document.body;
 
-            // 垂直滚动检查
             if (hasScrollableOverflowY || overflowY === 'visible') {
                 const scrollHeight = Math.max(
                     body.scrollHeight,
@@ -169,7 +156,6 @@
                 canScrollVertical = scrollHeight > clientHeight;
             }
 
-            // 水平滚动检查
             if (hasScrollableOverflowX || overflowX === 'visible') {
                 const scrollWidth = Math.max(
                     body.scrollWidth,
@@ -182,19 +168,15 @@
                 canScrollHorizontal = scrollWidth > clientWidth;
             }
         } else {
-            // 普通元素的滚动检查
-            // 垂直滚动：内容高度 > 可见高度
             if (hasScrollableOverflowY) {
                 canScrollVertical = element.scrollHeight > element.clientHeight;
             }
 
-            // 水平滚动：内容宽度 > 可见宽度
             if (hasScrollableOverflowX) {
                 canScrollHorizontal = element.scrollWidth > element.clientWidth;
             }
         }
 
-        // 根据指定方向返回结果
         if (direction === 'vertical') {
             return canScrollVertical;
         } else if (direction === 'horizontal') {
@@ -207,12 +189,10 @@
     let shouldAbortExtraction = false;
 
     function isSuspiciousShadowDOM(element) {
-        // 探测是否存在 Shadow DOM (Open 或 Closed)
         const hasOpenShadow = !!element.shadowRoot;
         const hasClosedShadow = typeof element.hasArkWebShadowRoot === 'function' && element.hasArkWebShadowRoot();
         if (hasOpenShadow || hasClosedShadow) {
             const rect = getCachedBoundingRect(element);
-            // 宽高都超过视口的 80%
             const isMassiveByDimension = (rect.width > window.innerWidth * 0.8) && (rect.height > window.innerHeight * 0.8);
             if (isMassiveByDimension) {
                 shouldAbortExtraction = true;
@@ -221,16 +201,11 @@
                 return false;
             }
         }
-        // 安全节点，正常放行
         return false;
     }
 
-    // ========================
-    // == 语义角色相关配置 ==
-    // ========================
 
     /**
-     * 一组 ARIA 语义区域名称，用于识别页面结构。
      * @type {Set<string>}
      */
     const semanticRoles = new Set([
@@ -238,7 +213,6 @@
     ]);
 
     /**
-     * HTML5 标签到 ARIA 角色的映射表。
      * @type {Object}
      */
     const html5ToAriaRole = {
@@ -253,8 +227,7 @@
 
 
     /**
-     * 获取元素的"自身文本内容"（不包括子元素内容）。
-     * @param {Node} el 元素或文本节点。
+     * @param {Node} el
      * @returns {string}
      */
     function getOwnTextContent(el) {
@@ -271,9 +244,8 @@
     }
 
     /**
-     * 判断两个矩形是否相交，且目标矩形至少保留 90% 的面积。
-     * @param {DOMRect} rectA 目标矩形
-     * @param {DOMRect} rectB 祖先矩形
+     * @param {DOMRect} rectA
+     * @param {DOMRect} rectB
      * @returns {boolean}
      */
     function hasIntersection(rectA, rectB) {
@@ -297,9 +269,8 @@
     }
 
     /**
-     * 判断目标元素是否在祖先元素的水平可见区域内。
-     * @param {DOMRect} rectA 目标矩形
-     * @param {DOMRect} rectB 祖先矩形
+     * @param {DOMRect} rectA
+     * @param {DOMRect} rectB
      * @returns {boolean}
      */
     function hasIntersectionXOnly(rectA, rectB) {
@@ -318,9 +289,8 @@
     }
 
     /**
-     * 判断节点是否在其祖先节点的可见区域内（未被裁剪）。
-     * @param {Node} node 当前节点
-     * @param {string|null} semanticRole 当前节点的语义角色
+     * @param {Node} node
+     * @param {string|null} semanticRole
      * @returns {boolean}
      */
     function isVisibleByAncestorIntersections(node, semanticRole) {
@@ -339,7 +309,7 @@
         }
 
         const targetRect = getCachedBoundingRect(element);
-        // v004: hoisted once instead of re-evaluating per clipping ancestor.
+        // Hoisted once instead of re-evaluating per clipping ancestor.
         const requiresFullIntersection = semanticRole === 'banner';
 
         let current = element.parentElement;
@@ -353,25 +323,19 @@
                 continue;
             }
 
-            // 判断 overflow 类型
             const hasOverflowClip =
                 style.overflow !== 'visible' ||
                 style.overflowX !== 'visible' ||
                 style.overflowY !== 'visible';
 
-            // 判断 transform（与跳过分支同一份样式值）
             const hasTransform = transform !== 'none';
 
-            // 判断 filter
             const hasFilter = style.filter !== 'none';
 
-            // 判断 clip-path
             const hasClipPath = style.clipPath !== 'none' && style.clipPath !== '';
 
-            // contain: layout 或 strict
             const hasContainLayout = /layout|strict/.test(style.contain);
 
-            // mask
             const hasMask = style.mask !== 'none' || style.webkitMaskImage !== 'none';
 
             if (hasOverflowClip || hasTransform || hasFilter || hasClipPath || hasContainLayout || hasMask) {
@@ -391,7 +355,6 @@
         return true;
     }
 
-    //获取textNode节点的rect
     function getTextNodeRect(textNode) {
         const range = document.createRange();
         range.selectNodeContents(textNode);
@@ -399,23 +362,19 @@
     }
 
     function isOccluded(element) {
-        // 检查元素是否存在且可见
         if (!element || !element.getBoundingClientRect) {
             return false;
         }
         const rect = getCachedBoundingRect(element);
-        // 如果元素尺寸为0，认为不可见
         if (rect.width === 0 || rect.height === 0) {
             return true;
         }
-        // 检查元素的样式
         const computedStyle = getCachedComputedStyle(element);
         if (computedStyle.display === 'none' ||
             computedStyle.visibility === 'hidden' ||
             computedStyle.opacity === '0') {
             return true;
         }
-        // 获取5个检测点坐标：中心 + 九宫格中的上下左右中点
         const points = [
             { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 },
             { x: rect.left + rect.width * 0.25, y: rect.top + rect.height * 0.25 },
@@ -426,25 +385,20 @@
         let occlusionCount = 0;
         for (const point of points) {
             const topElement = document.elementFromPoint(point.x, point.y);
-            // 如果命中的是目标元素或其子元素，说明未被遮挡
             if (topElement === element || element.contains(topElement)) {
                 continue;
             }
-            // 如果命中的是目标元素的父元素，也不算遮挡
             if (topElement && topElement.contains(element)) {
                 continue;
             }
-            // 如果没有命中任何元素（如超出视窗），不算遮挡
             if (!topElement) {
                 continue;
             }
-            // 检查遮挡元素是否透明
             const occludingStyle = getCachedComputedStyle(topElement);
             const opacity = parseFloat(occludingStyle.opacity);
             if (opacity === 0) {
                 continue;
             }
-            // 检查背景是否透明并无内容
             const backgroundColor = occludingStyle.backgroundColor;
             const isBackgroundTransparent =
                 backgroundColor === 'transparent' ||
@@ -456,15 +410,13 @@
             if (isBackgroundTransparent && !hasVisibleContent) {
                 continue;
             }
-            // 其他情况视为遮挡
             occlusionCount++;
         }
-        // 投票机制：超过半数被遮挡，则返回 true（被遮挡）
         return occlusionCount >= 3;
     }
 
     /**
-     * 检查元素是否可见（v4改进：优化检查逻辑）
+     * @returns {boolean}
      */
     function isVisible(node) {
         let element = node;
@@ -472,23 +424,19 @@
             element = node.parentElement;
         }
 
-        // 基础检查
         if (element && !(element instanceof Element)) {
             return true;
         }
         if (!element || !document.contains(element)) {
             return false;
         }
-        // CSS 检查
         const style = getCachedComputedStyle(element);
         if (style.display === 'none' || style.visibility === 'hidden') {
             return false;
         }
-        // 只有完全透明才算不可见
         if (parseFloat(style.opacity) === 0) {
             return false;
         }
-        // 尺寸检查
         const rect = getCachedBoundingRect(element);
         if (rect.width < 0.5 && rect.height < 0.5) {
             return false;
@@ -528,9 +476,6 @@
         return ((element.tagName === 'INPUT' && element.type !== 'password') || element.tagName === 'TEXTAREA');
     }
 
-    // ========================
-    // == v4改进：基于DOM结构的树状构建 ==
-    // ========================
     function getRefinedElementData(element) {
         const rect = getCachedBoundingRect(element);
         let scrollable = isScrollable(element);
@@ -563,9 +508,6 @@
         return treeNode;
     }
 
-    // ========================
-    // == v5: Single-pass extraction with viewport culling ==
-    // ========================
 
     const VIEWPORT_MARGIN = 200;
 
@@ -638,7 +580,7 @@
             if (node.nodeType === Node.TEXT_NODE) {
                 if (frame.inherited.isInTable) continue;
                 const text = node.textContent.trim();
-                if (!text || text.replace(/[​-‍﻿]/g, '').length === 0) continue;
+                if (!text || text.replace(/[\u200B-\u200D\uFEFF]/g, '').length === 0) continue;
 
                 frame.parentChildren.push({
                     $type: '$TEXT_NODE$',
@@ -812,7 +754,7 @@
             if (node.nodeType === Node.TEXT_NODE) {
                 if (frame.inherited.isInTable) continue;
                 const text = node.textContent.trim();
-                if (!text || text.replace(/[​-‍﻿]/g, '').length === 0) continue;
+                if (!text || text.replace(/[\u200B-\u200D\uFEFF]/g, '').length === 0) continue;
 
                 frame.parentChildren.push({
                     $type: '$TEXT_NODE$',
@@ -1001,13 +943,7 @@
         return wrapDomTree(treeChildren);
     }
 
-    // ========================
-    // == v4精简输出版本 ==
-    // ========================
 
-    /**
-     * 全局状态管理
-     */
     const ExtractorStateV4 = {
         isFirstRun: true,
         lastDomTree: null,
@@ -1018,7 +954,7 @@
         isAsync: true
     };
 
-    // v003: a single lifecycle/scheduler owns every listener, timer and
+    // A single lifecycle/scheduler owns every listener, timer and
     // extraction. Input handlers only update state; expensive extraction is
     // never started from a touch/scroll callback.
     const SchedulerState = {
@@ -1100,7 +1036,6 @@
     }
 
     /**
-     * 执行首次完整提取（精简版本v4）
      */
     function performInitialExtractionV4() {
         const generation = beginExtractionTask('initial');
@@ -1110,7 +1045,6 @@
         try {
             const startTime = performance.now();
 
-            // 提取DOM树状结构
             const domTree = extractDOMTreeV5();
 
             const result = domTree;
@@ -1119,7 +1053,6 @@
                 return null;
             }
 
-            // 更新状态
             ExtractorStateV4.isFirstRun = false;
             ExtractorStateV4.lastDomTree = domTree;
 
@@ -1131,7 +1064,6 @@
                 data: { log: `use time: ${extractionTime.toFixed(3)}ms` }
             });
 
-            // 调用native接口
             if (typeof window._arkWebDomTree !== 'undefined' &&
                 typeof window._arkWebDomTree.init === 'function') {
                 window._arkWebDomTree.init(JSON.stringify(result));
@@ -1142,7 +1074,6 @@
                 });
             }
 
-            // 启动变化监听
             startChangeObserverV4();
 
             return result;
@@ -1158,6 +1089,8 @@
         }
     }
 
+    /**
+     */
     async function performInitialExtractionV4Async() {
         const generation = beginExtractionTask('initial');
         if (generation === null) {
@@ -1166,7 +1099,6 @@
         try {
             const startTime = performance.now();
 
-            // 提取DOM树状结构
             const domTree = await extractDOMTreeV5Async();
 
             const result = domTree;
@@ -1175,7 +1107,6 @@
                 return;
             }
 
-            // 更新状态
             ExtractorStateV4.isFirstRun = false;
             ExtractorStateV4.lastDomTree = domTree;
 
@@ -1187,7 +1118,6 @@
                 data: { log: `use time: ${extractionTime.toFixed(3)}ms` }
             });
 
-            // 调用native接口
             if (typeof window._arkWebDomTree !== 'undefined' &&
                 typeof window._arkWebDomTree.init === 'function') {
                 window._arkWebDomTree.init(JSON.stringify(result));
@@ -1198,7 +1128,6 @@
                 });
             }
 
-            // 启动变化监听
             startChangeObserverV4();
 
         } catch (error) {
@@ -1218,7 +1147,6 @@
     }
 
     /**
-     * 执行增量提取（精简版本v4）
      */
     function performIncrementalExtractionV4() {
         const generation = beginExtractionTask('incremental');
@@ -1228,7 +1156,6 @@
         try {
             const startTime = performance.now();
 
-            // 重新提取DOM树状结构
             const currentDomTree = extractDOMTreeV5();
             const result = currentDomTree;
 
@@ -1236,7 +1163,6 @@
                 return null;
             }
 
-            // 更新状态
             ExtractorStateV4.lastDomTree = result;
 
             const endTime = performance.now();
@@ -1245,7 +1171,6 @@
                 data: { log: `incremental use time: ${(endTime - startTime).toFixed(3)}ms` }
             });
 
-            // 调用native接口
             if (typeof window._arkWebDomTree !== 'undefined' &&
                 typeof window._arkWebDomTree.incremental === 'function') {
                 window._arkWebDomTree.incremental(JSON.stringify(result));
@@ -1269,6 +1194,8 @@
         }
     }
 
+    /**
+     */
     async function performIncrementalExtractionV4Async() {
         const generation = beginExtractionTask('incremental');
         if (generation === null) {
@@ -1278,7 +1205,6 @@
         try {
             const startTime = performance.now();
 
-            // 重新提取DOM树状结构
             const currentDomTree = await extractDOMTreeV5Async();
             const result = currentDomTree;
 
@@ -1286,7 +1212,6 @@
                 return;
             }
 
-            // 更新状态
             ExtractorStateV4.lastDomTree = currentDomTree;
 
             const endTime = performance.now();
@@ -1295,7 +1220,6 @@
                 data: { log: `incremental use time: ${(endTime - startTime).toFixed(3)}ms` }
             });
 
-            // 调用native接口
             if (typeof window._arkWebDomTree !== 'undefined' &&
                 typeof window._arkWebDomTree.incremental === 'function') {
                 window._arkWebDomTree.incremental(JSON.stringify(result));
@@ -1323,13 +1247,11 @@
     }
 
     /**
-     * 主动执行提取
      */
     function performGetDomTree() {
         try {
             const startTime = performance.now();
 
-            // 重新提取DOM树状结构
             const currentDomTree = extractDOMTreeV5();
 
             const result = currentDomTree;
@@ -1352,7 +1274,6 @@
     }
 
     /**
-     * 启动DOM变化监听（v4版本）
      */
     function startChangeObserverV4() {
         if (!window.MutationObserver || !ExtractorStateV4.changeDetection.enabled) {
@@ -1363,13 +1284,11 @@
             return;
         }
 
-        // 停止现有监听器
         stopChangeObserverV4();
 
         const observer = new MutationObserver((mutations) => {
             let hasSignificantChange = false;
 
-            // 预处理变化记录，过滤重要变化
             for (const mutation of mutations) {
                 if (mutation.type === 'childList' &&
                     (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0)) {
@@ -1398,7 +1317,6 @@
     }
 
     /**
-     * 停止DOM变化监听（v4版本）
      */
     function stopChangeObserverV4() {
         if (ExtractorStateV4.changeDetection.observer) {
@@ -1408,8 +1326,7 @@
     }
 
     /**
-     * 手动触发提取（v4版本）
-     * @param {boolean} forceFull 是否强制完整提取
+     * @param {boolean} forceFull
      */
     function triggerExtractionV4(forceFull = false) {
         if (ExtractorStateV4.isFirstRun || forceFull) {
@@ -1420,8 +1337,7 @@
     }
 
     /**
-     * 手动触发提取（v4版本）
-     * @param {boolean} forceFull 是否强制完整提取
+     * @param {boolean} forceFull
      */
     function triggerExtractionV4Async(forceFull = false) {
         if (ExtractorStateV4.isFirstRun || forceFull) {
@@ -1432,7 +1348,6 @@
     }
 
     /**
-     * 重置提取器状态（v4版本）
      */
     function resetExtractorV4() {
         SchedulerState.active = false;
@@ -1469,14 +1384,11 @@
         let top;
         let left;
         if (targetElement === document) {
-            // document.scrollingElement 是现代浏览器标准
             top = targetElement.scrollingElement.scrollTop * window.devicePixelRatio;
             left = targetElement.scrollingElement.scrollLeft * window.devicePixelRatio;
             target = targetElement.scrollingElement;
         }
 
-        // 情况 2: target 是普通 Element (如 div, ul 等局部滚动容器)
-        // 只有 Element 节点才有 scrollTop 属性
         if (targetElement instanceof Element) {
             top = targetElement.scrollTop * window.devicePixelRatio;
             left = targetElement.scrollLeft * window.devicePixelRatio;
@@ -1505,11 +1417,9 @@
         }
     }
 
-    // 滚动过程中异步打断报错
     const USER_INTERRUPT = 'USER_INTERRUPT';
     const TASK_CANCELLED = 'TASK_CANCELLED';
 
-    // 滚动过程中中断相关状态
     const InterruptedState = {
         isScrolling: false,
         isScrollingInterrupted: false,
@@ -1524,13 +1434,10 @@
         }
         const now = performance.now();
 
-        // 只有距离上次检查超过阈值时，才真正释放主线程
         if (now - lastInterruptedCheckTime > threshold) {
-            // 核心：释放主线程，让浏览器执行 touchstart 回调
             await new Promise(resolve => setTimeout(resolve, 0));
             lastInterruptedCheckTime = performance.now();
 
-            // 感知并抛出异常
             if (InterruptedState.shouldInterrupted) {
                 throw USER_INTERRUPT;
             }
@@ -1545,7 +1452,6 @@
     }
 
     const interruptTouchEnd = () => {
-        // 手指抬起时，开启一个短延时判断，如果没触发scroll，就还原状态
         clearTimeout(interruptScrollEndTimer);
         interruptScrollEndTimer = setTimeout(interruptScrollEnd, 150);
     }
@@ -1554,7 +1460,6 @@
         InterruptedState.shouldInterrupted = true;
         InterruptedState.isScrolling = true;
 
-        // 150ms 没动静就强制还原
         clearTimeout(interruptScrollEndTimer);
         interruptScrollEndTimer = setTimeout(interruptScrollEnd, 150);
     }
@@ -1611,9 +1516,6 @@
         }, 500);
     }
 
-    // ========================
-    // == 自动执行v4 ==
-    // ========================
     function activateExtractor(isAsync) {
         if (SchedulerState.active) {
             resetExtractorV4();

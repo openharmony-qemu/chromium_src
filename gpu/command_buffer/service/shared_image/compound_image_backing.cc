@@ -133,7 +133,10 @@ class WrappedGLTextureCompoundImageRepresentation
   bool BeginAccess(GLenum mode) final {
     AccessMode access_mode =
         mode == kReadAccessMode ? AccessMode::kRead : AccessMode::kWrite;
-    compound_backing()->NotifyBeginAccess(wrapped_->backing(), access_mode);
+    if (!compound_backing()->NotifyBeginAccess(wrapped_->backing(), access_mode,
+                                            SharedImageAccessStream::kGL)) {
+      return false;
+    }
     return wrapped_->BeginAccess(mode);
   }
 
@@ -176,7 +179,10 @@ class WrappedGLTexturePassthroughCompoundImageRepresentation
   bool BeginAccess(GLenum mode) final {
     AccessMode access_mode =
         mode == kReadAccessMode ? AccessMode::kRead : AccessMode::kWrite;
-    compound_backing()->NotifyBeginAccess(wrapped_->backing(), access_mode);
+    if (!compound_backing()->NotifyBeginAccess(wrapped_->backing(), access_mode,
+                                            SharedImageAccessStream::kGL)) {
+      return false;
+    }
     return wrapped_->BeginAccess(mode);
   }
   void EndAccess() final { wrapped_->EndAccess(); }
@@ -228,8 +234,11 @@ class WrappedSkiaGaneshCompoundImageRepresentation
       std::vector<GrBackendSemaphore>* begin_semaphores,
       std::vector<GrBackendSemaphore>* end_semaphores,
       std::unique_ptr<skgpu::MutableTextureState>* end_state) final {
-    compound_backing()->NotifyBeginAccess(wrapped_->backing(),
-                                          AccessMode::kWrite);
+    if (!compound_backing()->NotifyBeginAccess(wrapped_->backing(),
+                                            AccessMode::kWrite,
+                                            SharedImageAccessStream::kSkia)) {
+      return {};
+    }
     return wrapped_->BeginWriteAccess(final_msaa_count, surface_props,
                                       update_rect, begin_semaphores,
                                       end_semaphores, end_state);
@@ -238,8 +247,11 @@ class WrappedSkiaGaneshCompoundImageRepresentation
       std::vector<GrBackendSemaphore>* begin_semaphores,
       std::vector<GrBackendSemaphore>* end_semaphores,
       std::unique_ptr<skgpu::MutableTextureState>* end_state) final {
-    compound_backing()->NotifyBeginAccess(wrapped_->backing(),
-                                          AccessMode::kWrite);
+    if (!compound_backing()->NotifyBeginAccess(wrapped_->backing(),
+                                            AccessMode::kWrite,
+                                            SharedImageAccessStream::kSkia)) {
+      return {};
+    }
     return wrapped_->BeginWriteAccess(begin_semaphores, end_semaphores,
                                       end_state);
   }
@@ -249,8 +261,11 @@ class WrappedSkiaGaneshCompoundImageRepresentation
       std::vector<GrBackendSemaphore>* begin_semaphores,
       std::vector<GrBackendSemaphore>* end_semaphores,
       std::unique_ptr<skgpu::MutableTextureState>* end_state) final {
-    compound_backing()->NotifyBeginAccess(wrapped_->backing(),
-                                          AccessMode::kRead);
+    if (!compound_backing()->NotifyBeginAccess(wrapped_->backing(),
+                                            AccessMode::kRead,
+                                            SharedImageAccessStream::kSkia)) {
+      return {};
+    }
     return wrapped_->BeginReadAccess(begin_semaphores, end_semaphores,
                                      end_state);
   }
@@ -285,20 +300,29 @@ class WrappedSkiaGraphiteCompoundImageRepresentation
   std::vector<sk_sp<SkSurface>> BeginWriteAccess(
       const SkSurfaceProps& surface_props,
       const gfx::Rect& update_rect) final {
-    compound_backing()->NotifyBeginAccess(wrapped_->backing(),
-                                          AccessMode::kWrite);
+    if (!compound_backing()->NotifyBeginAccess(wrapped_->backing(),
+                                            AccessMode::kWrite,
+                                            SharedImageAccessStream::kSkia)) {
+      return {};
+    }
     return wrapped_->BeginWriteAccess(surface_props, update_rect);
   }
   std::vector<scoped_refptr<GraphiteTextureHolder>> BeginWriteAccess() final {
-    compound_backing()->NotifyBeginAccess(wrapped_->backing(),
-                                          AccessMode::kWrite);
+    if (!compound_backing()->NotifyBeginAccess(wrapped_->backing(),
+                                            AccessMode::kWrite,
+                                            SharedImageAccessStream::kSkia)) {
+      return {};
+    }
     return wrapped_->BeginWriteAccess();
   }
   void EndWriteAccess() final { wrapped_->EndWriteAccess(); }
 
   std::vector<scoped_refptr<GraphiteTextureHolder>> BeginReadAccess() final {
-    compound_backing()->NotifyBeginAccess(wrapped_->backing(),
-                                          AccessMode::kRead);
+    if (!compound_backing()->NotifyBeginAccess(wrapped_->backing(),
+                                            AccessMode::kRead,
+                                            SharedImageAccessStream::kSkia)) {
+      return {};
+    }
     return wrapped_->BeginReadAccess();
   }
   void EndReadAccess() final { wrapped_->EndReadAccess(); }
@@ -331,7 +355,10 @@ class WrappedDawnCompoundImageRepresentation : public DawnImageRepresentation {
     if (internal_usage & kWriteUsage) {
       access_mode = AccessMode::kWrite;
     }
-    compound_backing()->NotifyBeginAccess(wrapped_->backing(), access_mode);
+    if (!compound_backing()->NotifyBeginAccess(wrapped_->backing(), access_mode,
+                                            SharedImageAccessStream::kDawn)) {
+      return wgpu::Texture();
+    }
     return wrapped_->BeginAccess(webgpu_usage, internal_usage);
   }
   void EndAccess() final { wrapped_->EndAccess(); }
@@ -359,8 +386,11 @@ class WrappedOverlayCompoundImageRepresentation
 
   // OverlayImageRepresentation implementation.
   bool BeginReadAccess(gfx::GpuFenceHandle& acquire_fence) final {
-    compound_backing()->NotifyBeginAccess(wrapped_->backing(),
-                                          AccessMode::kRead);
+    if (!compound_backing()->NotifyBeginAccess(wrapped_->backing(),
+                                            AccessMode::kRead,
+                                            SharedImageAccessStream::kOverlay)) {
+      return false;
+    }
 
     return wrapped_->BeginReadAccess(acquire_fence);
   }
@@ -647,12 +677,13 @@ CompoundImageBacking::~CompoundImageBacking() {
   }
 }
 
-void CompoundImageBacking::NotifyBeginAccess(SharedImageBacking* backing,
-                                             RepresentationAccessMode mode) {
+bool CompoundImageBacking::NotifyBeginAccess(SharedImageBacking* backing,
+                                             RepresentationAccessMode mode,
+                                             SharedImageAccessStream stream) {
   ElementHolder* access_element = GetElement(backing);
   if (!access_element) {
     LOG(ERROR) << "backing not in the element list.";
-    return;
+    return false;
   }
 
   // If this element already has the latest content, we're good for read access.
@@ -662,7 +693,7 @@ void CompoundImageBacking::NotifyBeginAccess(SharedImageBacking* backing,
       ++latest_content_id_;
       access_element->content_id_ = latest_content_id_;
     }
-    return;
+    return true;
   }
 
   // This backing is stale. We need to find the element which has the latest
@@ -679,7 +710,7 @@ void CompoundImageBacking::NotifyBeginAccess(SharedImageBacking* backing,
     // continue to fail, requiring client-level context/resource re-creation.
     LOG(ERROR) << "No element with latest content available for sync to "
                << backing->GetName();
-    return;
+    return false;
   }
 
   bool updated_backing = false;
@@ -695,8 +726,16 @@ void CompoundImageBacking::NotifyBeginAccess(SharedImageBacking* backing,
     access_element->GetBacking()->SetClearedRect(src_cleared_rect);
     SetClearedRect(src_cleared_rect);
   } else {
-    LOG(ERROR)
-        << "Failed to copy between backings. Backing can be using stale data";
+    LOG(ERROR) << "Failed to copy from "
+               << latest_content_element->GetBacking()->GetName() << " to "
+               << backing->GetName();
+  }
+
+  if (!updated_backing) {
+    // The destination backing was not updated so it must not be exposed to
+    // the caller. Do not advance versioning so a future access can retry
+    // the sync.
+    return false;
   }
 
   // Update content IDs. In case of write, we are updating the
@@ -711,6 +750,7 @@ void CompoundImageBacking::NotifyBeginAccess(SharedImageBacking* backing,
   } else if (updated_backing) {
     access_element->content_id_ = latest_content_id_;
   }
+  return true;
 }
 
 SharedImageBackingType CompoundImageBacking::GetType() const {

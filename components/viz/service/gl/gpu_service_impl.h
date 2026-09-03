@@ -64,6 +64,10 @@
 #include "components/viz/common/frame_sinks/copy_output_result.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+#include "arkweb/ohos_adapter_ndk/interfaces/hiappevent_adapter.h"
+#endif
+
 namespace gpu {
 class DawnContextProvider;
 class GpuWatchdogThread;
@@ -409,6 +413,9 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
   void StartMonitor(int32_t nweb_id) override;
   void StopMonitor() override;
+  void ReportDynamicFrameLoss(
+      const OHOS::NWeb::HiAppeventAdapter::DynamicFrameDropInfo& info);
+  void InitFrameLossMonitor();
 #endif
 
 #if BUILDFLAG(ARKWEB_D_VSYNC)
@@ -603,7 +610,8 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
 
   base::RepeatingClosure wake_up_closure_;
 
-  std::string shader_prefix_key_;
+  base::Lock shader_prefix_key_lock_;
+  std::string shader_prefix_key_ GUARDED_BY(shader_prefix_key_lock_);
 
   // This is flag is controlled by the finch experiment
   // ClearGrShaderDiskCacheOnInvalidPrefix. Earlier this flag was assigned in
@@ -612,11 +620,15 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
   // browser start after the disk cache is cleared.
   const bool clear_shader_cache_;
 
-  base::WeakPtr<GpuServiceImpl> weak_ptr_;
-  base::WeakPtrFactory<GpuServiceImpl> weak_ptr_factory_{this};
-  
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  bool oop_gpu_enabled_ = false;
+#endif
+
   bool allow_snapshot_ = false;
   std::mutex allow_snapshot_mtx_;
+
+  base::WeakPtr<GpuServiceImpl> weak_ptr_;
+  base::WeakPtrFactory<GpuServiceImpl> weak_ptr_factory_{this};
 };
 
 }  // namespace viz

@@ -369,8 +369,6 @@ bool HostResolverManager::Job::ServeFromHosts() {
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   dns_status_ = kDnsResolvedFromHosts;
-#if defined(ARKWEB_EXT_NAVIGATION_TODO)
-#endif
 #endif
 
   std::set<std::unique_ptr<HostResolverInternalResult>> results =
@@ -703,10 +701,11 @@ void HostResolverManager::Job::OnSystemTaskComplete(
           resolver_->CanUseSecureDnsFallback(&*key_.resolve_context);
     }
 
+    std::vector<IPEndPoint> truncation_results;
     if (AsArkWebHostResolverManagerJobExt()) {
       AsArkWebHostResolverManagerJobExt()->MaybeModifyProcResolveResults(
           std::string(key_.host.GetHostnameWithoutBrackets()),
-          secure_dns_fallback_available, net_error, new_addr_list);
+          secure_dns_fallback_available, net_error, new_addr_list, truncation_results);
 
       if (AsArkWebHostResolverManagerJobExt()->CheckDnsFallBackTask(
               net_error)) {
@@ -724,12 +723,10 @@ void HostResolverManager::Job::OnSystemTaskComplete(
                 ? AddressList::CopyWithPort(new_addr_list, 0).endpoints()
                 : std::vector<IPEndPoint>(),
             std::set<std::string>(), HostCache::Entry::SOURCE_UNKNOWN),
-        ttl, /*allow_cache=*/true, /*secure=*/false, TaskType::SYSTEM);
+        ttl, /*allow_cache=*/true, /*secure=*/false, TaskType::SYSTEM, truncation_results);
 
     return;
   }
-#if defined(ARKWEB_EXT_NAVIGATION_TODO)
-#endif
 #endif
 
   // Source unknown because the system resolver could have gotten it from a
@@ -886,8 +883,8 @@ void HostResolverManager::Job::OnDnsTaskComplete(
   if (base::FeatureList::IsEnabled(
           network::features::kEnableNwebExHttpDnsFallback) &&
       AsArkWebHostResolverManagerJobExt()) {
-      AsArkWebHostResolverManagerJobExt()->ReportDnsFallBackTaskResult(results,
-                                                                     duration);
+    AsArkWebHostResolverManagerJobExt()->ReportDnsFallBackTaskResult(
+        legacy_results, duration);
   }
 #endif
   if (legacy_results.error() != OK) {

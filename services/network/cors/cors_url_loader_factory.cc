@@ -540,7 +540,7 @@ void CorsURLLoaderFactory::Clone(
 
 void CorsURLLoaderFactory::DeleteIfNeeded() {
   if (url_loaders_.empty() && cors_url_loaders_.empty() &&
-      !owner_->HasAdditionalReferences()) {
+      !owner_->HasAdditionalReferences() && !prevent_self_deletion_) {
     owner_->DestroyURLLoaderFactory(this);
   }
 }
@@ -696,6 +696,31 @@ bool CorsURLLoaderFactory::IsValidRequest(const ResourceRequest& request,
     mojo::ReportBadMessage(
         "CorsURLLoaderFactory: original_destination is unexpectedly set to "
         "kDocument");
+    return false;
+  }
+
+  // A request whose destination is a frame type must be a navigation. A
+  // renderer-initiated subresource fetch must never claim to be a document /
+  // frame load, otherwise downstream consumers (e.g. Android WebView's
+  // shouldInterceptRequest) may misclassify it as a main-frame navigation.
+  // See 2.2.5 Requests: https://fetch.spec.whatwg.org/#requests
+  // See Navigation Request: https://fetch.spec.whatwg.org/#navigation-request
+  // See fenced frames: https://github.com/WICG/fenced-frame/issues/239
+  //
+  // This intentionally excludes destination types (see
+  // https://chromium-review.git.corp.google.com/c/chromium/src/+/7952612?tab=checks
+  // for details):
+  // * kEmbed: used by PDF pages to embed subresources.
+  // * kObject: used by wpt tests.
+  if (base::FeatureList::IsEnabled(
+          features::kRestrictFrameDestinationsToNavigate) &&
+      (request.destination == mojom::RequestDestination::kDocument ||
+       request.destination == mojom::RequestDestination::kFrame ||
+       request.destination == mojom::RequestDestination::kIframe ||
+       request.destination == mojom::RequestDestination::kFencedframe) &&
+      request.mode != mojom::RequestMode::kNavigate) {
+    mojo::ReportBadMessage(
+        "CorsURLLoaderFactory: frame destination requires kNavigate mode");
     return false;
   }
 
@@ -919,13 +944,8 @@ bool CorsURLLoaderFactory::IsValidRequest(const ResourceRequest& request,
     return false;
   }
 
-  // Don't allow forbidden methods for any requests except RequestMode::kNoCors.
-  // Don't allow CONNECT method for any request.
-  if ((request.mode != mojom::RequestMode::kNoCors &&
-       cors::IsForbiddenMethod(request.method)) ||
-      (request.mode == mojom::RequestMode::kNoCors &&
-       base::EqualsCaseInsensitiveASCII(
-           request.method, net::HttpRequestHeaders::kConnectMethod))) {
+  // Don't allow forbidden methods.
+  if (cors::IsForbiddenMethod(request.method)) {
     mojo::ReportBadMessage("CorsURLLoaderFactory: Forbidden method");
     return false;
   }
@@ -1013,6 +1033,8 @@ net::handles::NetworkHandle CorsURLLoaderFactory::GetBoundNetworkForTesting()
 void CorsURLLoaderFactory::CancelRequestsIfNonceMatchesAndUrlNotExempted(
     const base::UnguessableToken& nonce,
     const std::set<GURL>& exemptions) {
+  CHECK(!prevent_self_deletion_);
+  prevent_self_deletion_ = true;
   auto iterate_over_set = [&nonce, &exemptions](auto& url_loaders) {
     // Cancelling the request may cause the URL loader to be deleted from the
     // data structure, invalidating the iterator if it is currently pointing to
@@ -1028,6 +1050,8 @@ void CorsURLLoaderFactory::CancelRequestsIfNonceMatchesAndUrlNotExempted(
 
   iterate_over_set(url_loaders_);
   iterate_over_set(cors_url_loaders_);
+  prevent_self_deletion_ = false;
+  DeleteIfNeeded();
 }
 
 }  // namespace network::cors

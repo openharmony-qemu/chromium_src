@@ -217,7 +217,7 @@ int32_t WebRtcAudioDeviceImpl::Terminate() {
     base::AutoLock auto_lock(lock_);
     DCHECK(!renderer_ || !renderer_->IsStarted())
         << "The shared audio renderer shouldn't be running";
-    renderer_to_disconnect = renderer_;
+    renderer_to_disconnect = std::move(renderer_);
     capturers_.clear();
   }
 

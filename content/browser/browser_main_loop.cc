@@ -155,7 +155,9 @@
 #include "services/data_decoder/data_decoder_service.h"
 #include "services/data_decoder/public/cpp/service_provider.h"
 #include "services/data_decoder/public/mojom/data_decoder_service.mojom.h"
+#include "services/network/public/cpp/features.h"
 #include "services/network/public/cpp/network_switches.h"
+#include "services/network/public/cpp/simple_url_loader.h"
 #include "services/network/public/mojom/network_service.mojom.h"
 #include "services/network/transitional_url_loader_factory_owner.h"
 #include "services/tracing/public/cpp/trace_startup_config.h"
@@ -848,6 +850,24 @@ int BrowserMainLoop::PreCreateThreads() {
   if (parsed_command_line_->HasSwitch(switches::kSingleProcess))
     RenderProcessHost::SetRunRendererInProcess(true);
 #endif
+
+  // Set up the callbacks used by the network layer to track and validate
+  // file access for browser-initiated uploads.
+  if (base::FeatureList::IsEnabled(
+          network::features::kBrowserInitiatedFileUploadValidation)) {
+    network::SimpleURLLoader::FileUploadEventCallbacks callbacks;
+    callbacks.register_callback = base::BindRepeating(
+        [](const base::UnguessableToken& token, const base::FilePath& path) {
+          ChildProcessSecurityPolicyImpl::GetInstance()
+              ->GrantFileForBrowserUpload(token, path);
+        });
+    callbacks.revoke_callback =
+        base::BindRepeating([](const base::UnguessableToken& token) {
+          ChildProcessSecurityPolicyImpl::GetInstance()
+              ->RevokeFileForBrowserUpload(token);
+        });
+    network::SimpleURLLoader::SetFileUploadEventCallbacks(callbacks);
+  }
 
   // Initialize origins that require process isolation.  Must be done
   // after base::FeatureList is initialized, but before any navigations can

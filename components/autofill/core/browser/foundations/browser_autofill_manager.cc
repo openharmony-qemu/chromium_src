@@ -636,28 +636,19 @@ void MaybeImportFromSubmittedForm(AutofillClient& client,
   fields_for_autocomplete.reserve(form_structure.fields().size());
   for (const auto& autofill_field : form_structure) {
     fields_for_autocomplete.push_back(*autofill_field);
-    if (autofill_field->Type().GetCreditCardType() ==
-        CREDIT_CARD_VERIFICATION_CODE) {
-      // However, if Autofill has recognized a field as CVC, that shouldn't be
-      // saved.
-      fields_for_autocomplete.back().set_should_autocomplete(false);
-    }
-
-    if (autofill_field->Type().GetLoyaltyCardType() == LOYALTY_MEMBERSHIP_ID &&
-        autofill_field->is_autofilled()) {
-      // Only store loyalty cards values in Autocomplete if they were filled
-      // manually.
-      fields_for_autocomplete.back().set_should_autocomplete(false);
-    }
+    // CVC and autofilled loyalty card fields are suppressed in
+    // AutocompleteHistoryManager::IsFieldTypeSaveable() based on their field
+    // type. Plus addresses are suppressed here because the check is based on
+    // the field value rather than the field type.
     const std::u16string& value = autofill_field->value_for_import();
     if (plus_address_delegate &&
         (plus_address_delegate->IsPlusAddress(base::UTF16ToUTF8(value)) ||
          plus_address_delegate->MatchesPlusAddressFormat(value))) {
-      // Similarly to CVC, any plus addresses needn't be saved to autocomplete.
-      // Note that the feature is experimental, and `plus_address_delegate`
-      // will be null if the feature is not enabled (it's disabled by default).
-      // If the plus address format happens to change or gets extended, we still
-      // keep filtering existing plus addresses.
+      // Any plus addresses needn't be saved to autocomplete. Note that the
+      // feature is experimental, and `plus_address_delegate` will be null if
+      // the feature is not enabled (it's disabled by default). If the plus
+      // address format happens to change or gets extended, we still keep
+      // filtering existing plus addresses.
       fields_for_autocomplete.back().set_should_autocomplete(false);
     }
   }
@@ -808,6 +799,11 @@ BrowserAutofillManager::~BrowserAutofillManager() {
 }
 
 base::WeakPtr<AutofillManager> BrowserAutofillManager::GetWeakPtr() {
+  return weak_ptr_factory_.GetWeakPtr();
+}
+
+base::WeakPtr<BrowserAutofillManager>
+BrowserAutofillManager::GetBrowserAutofillManagerWeakPtr() {
   return weak_ptr_factory_.GetWeakPtr();
 }
 

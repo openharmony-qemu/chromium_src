@@ -13,6 +13,8 @@
 #include "components/autofill/core/browser/integrators/optimization_guide/autofill_optimization_guide_decider.h"
 #include "components/autofill/core/browser/payments/iban_manager.h"
 #include "components/autofill/core/browser/suggestions/payments/payments_suggestion_generator.h"
+#include "components/strings/grit/components_strings.h"
+#include "ui/base/l10n/l10n_util.h"
 
 namespace autofill {
 namespace {
@@ -145,7 +147,20 @@ void IbanSuggestionGenerator::GenerateSuggestions(
         return std::get<autofill::Iban>(std::move(suggestion_data));
       });
 
-  callback({FillingProduct::kIban, GetSuggestionsForIbans(ibans)});
+  std::vector<Suggestion> suggestions = GetSuggestionsForIbans(ibans);
+
+  // Don't provide IBAN suggestions for non-secure pages, but do provide them
+  // for secure pages with passive mixed content (see implementation of
+  // IsContextSecure).
+  if (!suggestions.empty() && !client.IsContextSecure()) {
+    // Replace the suggestion content with a warning message explaining why
+    // Autofill is disabled for a website.
+    suggestions = {Suggestion(
+        l10n_util::GetStringUTF16(IDS_AUTOFILL_WARNING_INSECURE_CONNECTION),
+        SuggestionType::kInsecureContextPaymentDisabledMessage)};
+  }
+
+  callback({FillingProduct::kIban, std::move(suggestions)});
 }
 
 void IbanSuggestionGenerator::FilterIbansToSuggest(

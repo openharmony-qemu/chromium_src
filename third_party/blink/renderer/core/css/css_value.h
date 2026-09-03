@@ -129,6 +129,9 @@ class CORE_EXPORT CSSValue : public GarbageCollected<CSSValue> {
   bool IsRevertValue() const { return class_type_ == kRevertClass; }
   bool IsRevertLayerValue() const { return class_type_ == kRevertLayerClass; }
   bool IsRevertRuleValue() const { return class_type_ == kRevertRuleClass; }
+  bool IsCascadeDependentKeyword() const {
+    return IsRevertValue() || IsRevertLayerValue() || IsRevertRuleValue();
+  }
   bool IsCSSWideKeyword() const {
     return class_type_ >= kInheritedClass && class_type_ <= kRevertRuleClass;
   }

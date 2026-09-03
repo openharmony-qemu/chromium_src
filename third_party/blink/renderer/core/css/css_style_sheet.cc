@@ -313,6 +313,12 @@ void CSSStyleSheet::ReattachChildRuleCSSOMWrappers() {
   }
 }
 
+void CSSStyleSheet::DetachCSSOMWrappers() {
+  for (Member<CSSRule>& wrapper : child_rule_cssom_wrappers_) {
+    wrapper->SetParentStyleSheet(nullptr);
+  }
+}
+
 void CSSStyleSheet::setDisabled(bool disabled) {
   if (disabled == is_disabled_) {
     return;
@@ -630,6 +636,7 @@ void CSSStyleSheet::SetLoadCompleted(bool completed) {
 }
 
 void CSSStyleSheet::SetText(const String& text, CSSImportRules import_rules) {
+  DetachCSSOMWrappers();
   child_rule_cssom_wrappers_.clear();
 
   CSSStyleSheet::RuleMutationScope mutation_scope(this);

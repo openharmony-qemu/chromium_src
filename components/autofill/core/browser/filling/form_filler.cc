@@ -443,8 +443,8 @@ struct FormFiller::RefillContext {
   const base::TimeTicks original_fill_time;
   // The timer used to trigger a refill.
   base::OneShotTimer on_refill_timer;
-  // The field type groups that were initially filled.
-  DenseSet<FieldTypeGroup> type_groups_originally_filled;
+  // The field types that were initially filled.
+  FieldTypeSet types_originally_filled;
   // If populated, this map determines which values will be filled into a
   // field (it does not matter whether the field already contains a value).
   std::map<FieldGlobalId, ValueAndType> forced_fill_values;
@@ -460,7 +460,7 @@ FormFiller::RefillOptions FormFiller::RefillOptions::NotRefill() {
 }
 
 FormFiller::RefillOptions FormFiller::RefillOptions::Refill(
-    DenseSet<FieldTypeGroup> originally_filled) {
+    FieldTypeSet originally_filled) {
   RefillOptions r;
   r.originally_filled_ = originally_filled;
   return r;
@@ -473,8 +473,26 @@ bool FormFiller::RefillOptions::is_refill() const {
 bool FormFiller::RefillOptions::may_refill(
     const FieldTypeSet& field_types) const {
   CHECK(is_refill());
-  return originally_filled_->contains_all(
-      DenseSet<FieldTypeGroup>(field_types, &GroupTypeOfFieldType));
+  FieldTypeGroupSet requested_groups(field_types, &GroupTypeOfFieldType);
+  FieldTypeGroupSet filled_groups(*originally_filled_, &GroupTypeOfFieldType);
+  if (!filled_groups.contains_all(requested_groups)) {
+    return false;
+  }
+
+  // Rule for CCs: Filling other CC information without Credit Card Number or
+  // CVC does not allow refilling CCN/CVC.
+  if (requested_groups.contains(FieldTypeGroup::kCreditCard) ||
+      requested_groups.contains(FieldTypeGroup::kStandaloneCvcField)) {
+    auto contains_sensitive_cc = [](const FieldTypeSet& types) {
+      return types.contains_any({CREDIT_CARD_NUMBER,
+                                 CREDIT_CARD_VERIFICATION_CODE,
+                                 CREDIT_CARD_STANDALONE_VERIFICATION_CODE});
+    };
+    return contains_sensitive_cc(*originally_filled_) ||
+           !contains_sensitive_cc(field_types);
+  }
+
+  return true;
 }
 
 DenseSet<FieldFillingSkipReason> FormFiller::GetFillingSkipReasonsForField(
@@ -825,7 +843,7 @@ void FormFiller::FillOrPreviewForm(
                               !refill_trigger_reason;
   RefillOptions refill_options =
       refill_trigger_reason.has_value() && refill_context
-          ? RefillOptions::Refill(refill_context->type_groups_originally_filled)
+          ? RefillOptions::Refill(refill_context->types_originally_filled)
           : RefillOptions::NotRefill();
 
   std::vector<FormFieldData> result_fields = form.fields();
@@ -897,8 +915,7 @@ void FormFiller::FillOrPreviewForm(
       skip_reasons[form.fields()[i].global_id()].insert(
           FieldFillingSkipReason::kNoValueToFill);
     } else if (could_attempt_refill) {
-      refill_context->type_groups_originally_filled.insert_all(
-          autofill_field.Type().GetGroups());
+      refill_context->types_originally_filled.insert(*filled_field_type);
     }
 
     if (filled_field_type) {
@@ -1044,7 +1061,8 @@ void FormFiller::MaybeTriggerRefill(
       if (const bool allow_refill =
               field && field->IsSelectElement() &&
               field->Type().GetGroups().contains_any(
-                  refill_context->type_groups_originally_filled);
+                  FieldTypeGroupSet(refill_context->types_originally_filled,
+                                    &GroupTypeOfFieldType));
           !allow_refill && base::FeatureList::IsEnabled(
                                features::kAutofillFewerTrivialRefills)) {
         // The element in question is not fillable as a result of this signal.

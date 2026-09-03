@@ -172,14 +172,14 @@ PaintTimingDetector::PaintTimingDetector(LocalFrameView* frame_view)
           MakeGarbageCollected<ImagePaintTimingDetector>(frame_view)) {
 #endif
   if (PaintTimingVisualizer::IsTracingEnabled()) {
-    visualizer_.emplace();
+    visualizer_ = std::make_unique<PaintTimingVisualizer>();
   }
 }
 
 void PaintTimingDetector::NotifyPaintFinished() {
   if (PaintTimingVisualizer::IsTracingEnabled()) {
     if (!visualizer_) {
-      visualizer_.emplace();
+      visualizer_ = std::make_unique<PaintTimingVisualizer>();
     }
     visualizer_->RecordMainFrameViewport(*frame_view_);
   } else {

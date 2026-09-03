@@ -29,6 +29,7 @@
 
 #include "third_party/blink/renderer/core/css/media_query_exp.h"
 
+#include "third_party/blink/renderer/core/css/css_markup.h"
 #include "third_party/blink/renderer/core/css/css_math_expression_node.h"
 #include "third_party/blink/renderer/core/css/css_math_function_value.h"
 #include "third_party/blink/renderer/core/css/css_numeric_literal_value.h"
@@ -655,7 +656,7 @@ String MediaQueryExp::Serialize() const {
   // <mf-plain>  e.g. (width: 100px)
   if (!bounds_.IsRange()) {
     if (HasMediaFeature() || IsCustomMedia()) {
-      result.Append(media_feature_);
+      SerializeIdentifier(media_feature_, result);
     } else {
       result.Append(reference_value_->CssText());
     }
@@ -673,7 +674,7 @@ String MediaQueryExp::Serialize() const {
       result.Append(" ");
     }
     if (HasMediaFeature()) {
-      result.Append(media_feature_);
+      SerializeIdentifier(media_feature_, result);
     } else {
       result.Append(reference_value_->CssText());
     }

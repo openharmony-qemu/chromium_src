@@ -1453,7 +1453,7 @@ Los permisos que hayas dado a aplicaciones se pueden aplicar a esta cuenta. Pued
 <translation id="1969654639948595766">Registros de texto de WebRTC (<ph name="WEBRTC_TEXT_LOG_COUNT" />)</translation>
 <translation id="1972313920920745320">Los sitios que añadas siempre permanecerán activos y no se liberará memoria de ellos. <ph name="BEGIN_LINK" />Más información sobre cómo mantener activos determinados sitios<ph name="END_LINK" /></translation>
 <translation id="1972325230031091483">Navegarás más rápido porque el contenido se carga de forma proactiva en función de la página web en la que estás</translation>
-<translation id="197288927597451399">Descargar</translation>
+<translation id="197288927597451399">Conservar</translation>
 <translation id="1973886230221301399">ChromeVox</translation>
 <translation id="1974043046396539880">Puntos de distribución de listas de revocación de certificados</translation>
 <translation id="1974060860693918893">Avanzado</translation>
@@ -1561,6 +1561,7 @@ Puedes gestionar la configuración de esta cuenta instalando la aplicación Fami
 <translation id="2040822390690632244">Actualizaciones, ayuda y opciones para desarrolladores</translation>
 <translation id="2040894699575719559">Ubicación bloqueada</translation>
 <translation id="2041246176170574368">Este dispositivo pronto dejará de recibir actualizaciones de seguridad. Ahorra 50 $ o más al adquirir un Chromebook nuevo.</translation>
+<translation id="2041681409552851212">La extensión podrá ejecutar un código que el Navegador no haya revisado. Puede ser inseguro, por lo que solo debes habilitar esta opción si sabes lo que estás haciendo.</translation>
 <translation id="2042279886444479655">Perfiles activos</translation>
 <translation id="2044014337866019681">Asegúrate de que estás verificando <ph name="ACCOUNT" /> para desbloquear la sesión.</translation>
 <translation id="2044750031738659219">{0,plural, =1{Cerrar ventana de invitado}other{Cerrar ventanas de invitado (# ventanas)}}</translation>
@@ -2315,6 +2316,7 @@ Puedes gestionar la configuración de esta cuenta instalando la aplicación Fami
 <translation id="2541400104619216245">Sugiere detalles de comparación para tener en cuenta al elegir un producto</translation>
 <translation id="2541706104884128042">Se ha definido una nueva hora de dormir</translation>
 <translation id="2542050502251273923">Establece el nivel de depuración del administrador de conexión de red y de otros servicios con ff_debug.</translation>
+<translation id="25436473744628215">Actualizando…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{Los permisos que concedas a <ph name="APP_NAME" /> también se concederán a esta aplicación. <ph name="MANAGE_LINK" />}other{Los permisos que concedas a <ph name="APP_NAME" /> también se concederán a estas aplicaciones. <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">Esta pestaña</translation>
 <translation id="2545743249923338554">Nuevas pestañas</translation>
@@ -3163,7 +3165,7 @@ Puedes gestionar la configuración de esta cuenta instalando la aplicación Fami
 <translation id="3132277757485842847">No se ha podido mantener la conexión con tu teléfono. Asegúrate de que tengas el teléfono cerca, de que esté desbloqueado y de que el Bluetooth y el Wi‑Fi estén activados.</translation>
 <translation id="3132896062549112541">Regla</translation>
 <translation id="3132996321662585180">Actualizar todos los días</translation>
-<translation id="3134312457920437826">No se puede instalar la extensión porque usa una versión del archivo de manifiesto no compatible.</translation>
+<translation id="3134312457920437826">No se puede instalar la extensión porque utiliza una versión de manifiesto no compatible.</translation>
 <translation id="3134393957315651797">Selecciona el estado del experimento <ph name="EXPERIMENT_NAME" />. Descripción del experimento: <ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">Avatar amarillo predeterminado</translation>
 <translation id="3141093262818886744">Abrir de todos modos</translation>
@@ -11540,6 +11542,7 @@ Puede tratarse de información sobre el software instalado, los archivos, el nav
 <translation id="8890170499370378450">Es posible que se apliquen cargos por el uso de datos móviles</translation>
 <translation id="8890516388109605451">Fuentes</translation>
 <translation id="8890529496706615641">No se ha podido cambiar el nombre del perfil. Inténtalo de nuevo o ponte en contacto con tu operador para obtener asistencia técnica.</translation>
+<translation id="889095128849097287">Permitir secuencia de comandos de usuario</translation>
 <translation id="8892168913673237979">¡Todo listo!</translation>
 <translation id="8892246501904593980">Ver todos tus marcadores en Marcadores y listas</translation>
 <translation id="8893779047492837414">Actualmente tienes <ph name="NUMBERED_ITEM_1" />, <ph name="NUMBERED_ITEM_2" /> y más. Tu organización, <ph name="ACCOUNT_MANAGER" />, podrá ver y gestionar estos datos.</translation>

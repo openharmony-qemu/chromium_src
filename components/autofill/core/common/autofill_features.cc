@@ -781,6 +781,12 @@ BASE_FEATURE(kAutofillPolicyControlledFeatureAutofill,
 BASE_FEATURE(kAutofillPolicyControlledFeatureManualText,
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+// If the feature is enabled, Autofill popups perform additional check to
+// detect if they are obscured by top-level HTML form popups (e.g color picker).
+// If so, Autofill Popup won't be shown.
+BASE_FEATURE(kAutofillPopupCheckHtmlFormPopupOverlap,
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
 // If the feature is enabled, before triggering suggestion acceptance, the row
 // view checks that a substantial portion of its content was visible for some
 // minimum required period.
@@ -881,6 +887,25 @@ BASE_FEATURE(kAutofillSupportSplitZipCode, base::FEATURE_DISABLED_BY_DEFAULT);
 // TODO(crbug.com/448144129): Clean up after M144 branch point (Dec 1, 2025).
 BASE_FEATURE(kAutofillSynchronousAfterParsing,
              base::FEATURE_ENABLED_BY_DEFAULT);
+
+// Mitigates side-channel brute-force probing of autofill data by rate-limiting
+// AskForValuesToFill() invocations per RenderFrame via a token bucket.
+BASE_FEATURE(kAutofillThrottleBruteForceProbing,
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
+// The burst budget of AskForValuesToFill() calls permitted per RenderFrame.
+BASE_FEATURE_PARAM(int,
+                   kAutofillThrottleBruteForceProbingMaxTokens,
+                   &kAutofillThrottleBruteForceProbing,
+                   "AutofillThrottleBruteForceProbingMaxTokens",
+                   15);
+
+// The rate at which AskForValuesToFill() token budget replenishes.
+BASE_FEATURE_PARAM(base::TimeDelta,
+                   kAutofillThrottleBruteForceProbingReplenishRate,
+                   &kAutofillThrottleBruteForceProbing,
+                   "AutofillThrottleBruteForceProbingReplenishRate",
+                   base::Milliseconds(750));
 
 #if BUILDFLAG(IS_ANDROID)
 // If enabled, Autofill Services can query whether Chrome provides forms as

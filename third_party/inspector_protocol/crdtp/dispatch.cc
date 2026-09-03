@@ -90,7 +90,7 @@ DispatchResponse DispatchResponse::SessionNotFound(std::string message) {
 // Dispatchable - a shallow parser for CBOR encoded DevTools messages
 // =============================================================================
 Dispatchable::Dispatchable(span<uint8_t> serialized) : serialized_(serialized) {
-  Status s = cbor::CheckCBORMessage(serialized);
+  Status s = cbor::CheckCBORMessage(serialized).status();
   if (!s.ok()) {
     status_ = {Error::MESSAGE_MUST_BE_AN_OBJECT, s.pos};
     return;

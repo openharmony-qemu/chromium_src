@@ -904,8 +904,9 @@ class MODULES_EXPORT WebGLRenderingContextBase
       device::mojom::blink::XrCompatibleResult xr_compatible_result);
   void CompleteXrCompatiblePromiseIfPending(DOMExceptionCode exception_code);
   bool xr_compatible_;
-  Member<ScriptPromiseResolver<IDLUndefined>> make_xr_compatible_resolver_;
-
+  HeapVector<Member<ScriptPromiseResolver<IDLUndefined>>>
+    make_xr_compatible_resolvers_;
+    
   HeapVector<TextureUnitState> texture_units_;
   wtf_size_t active_texture_unit_;
 
@@ -2088,6 +2089,30 @@ struct DowncastTraits<WebGLRenderingContextBase> {
   static bool AllowFrom(const CanvasRenderingContext& context) {
     return context.IsWebGL();
   }
+};
+
+class ScopedUnpackParametersResetRestore {
+  STACK_ALLOCATED();
+
+ public:
+  explicit ScopedUnpackParametersResetRestore(
+      WebGLRenderingContextBase* context,
+      bool enabled = true)
+      : context_(context), enabled_(enabled) {
+    if (enabled) {
+      context_->ResetUnpackParameters();
+    }
+  }
+
+  ~ScopedUnpackParametersResetRestore() {
+    if (enabled_) {
+      context_->RestoreUnpackParameters();
+    }
+  }
+
+ private:
+  WebGLRenderingContextBase* context_;
+  bool enabled_;
 };
 
 }  // namespace blink

@@ -72,6 +72,7 @@
 #include "components/password_manager/content/browser/bad_message.h"
 #include "components/password_manager/content/browser/content_password_manager_driver.h"
 #include "components/password_manager/content/browser/content_password_manager_driver_factory.h"
+#include "components/password_manager/content/browser/content_password_manager_util.h"
 #include "components/password_manager/content/browser/form_meta_data.h"
 #include "components/password_manager/content/browser/password_manager_log_router_factory.h"
 #include "components/password_manager/content/browser/password_requirements_service_factory.h"
@@ -203,6 +204,7 @@ using password_manager::PasswordCredentialFillerImpl;
 using autofill::mojom::FocusedFieldType;
 using autofill::password_generation::PasswordGenerationType;
 using password_manager::BadMessageReason;
+using password_manager::CheckFrameActiveAndNotPrerendering;
 using password_manager::ContentPasswordManagerDriverFactory;
 using password_manager::FieldInfoManager;
 using password_manager::PasswordForm;
@@ -1530,7 +1532,7 @@ void ChromePasswordManagerClient::AutomaticGenerationAvailable(
               CPMD_BAD_ORIGIN_AUTOMATIC_GENERATION_STATUS_CHANGED)) {
     return;
   }
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(rfh)) {
+  if (!CheckFrameActiveAndNotPrerendering(rfh)) {
     return;
   }
   password_manager::ContentPasswordManagerDriver* driver =
@@ -1607,7 +1609,7 @@ void ChromePasswordManagerClient::PresaveGeneratedPassword(
           BadMessageReason::CPMD_BAD_ORIGIN_PRESAVE_GENERATED_PASSWORD)) {
     return;
   }
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(rfh)) {
+  if (!CheckFrameActiveAndNotPrerendering(rfh)) {
     return;
   }
 
@@ -1640,7 +1642,7 @@ void ChromePasswordManagerClient::PasswordNoLongerGenerated(
           BadMessageReason::CPMD_BAD_ORIGIN_PASSWORD_NO_LONGER_GENERATED)) {
     return;
   }
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(rfh)) {
+  if (!CheckFrameActiveAndNotPrerendering(rfh)) {
     return;
   }
   PasswordManagerDriver* driver =
@@ -1672,7 +1674,7 @@ void ChromePasswordManagerClient::ShowPasswordEditingPopup(
     const std::u16string& password_value) {
   content::RenderFrameHost* rfh =
       password_generation_driver_receivers_.GetCurrentTargetFrame();
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(rfh)) {
+  if (!CheckFrameActiveAndNotPrerendering(rfh)) {
     return;
   }
   if (!password_manager::bad_message::CheckGeneratedPassword(rfh,
@@ -1711,7 +1713,7 @@ void ChromePasswordManagerClient::ShowPasswordEditingPopup(
 void ChromePasswordManagerClient::PasswordGenerationRejectedByTyping() {
   content::RenderFrameHost* rfh =
       password_generation_driver_receivers_.GetCurrentTargetFrame();
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(rfh)) {
+  if (!CheckFrameActiveAndNotPrerendering(rfh)) {
     return;
   }
   if (popup_controller_) {
@@ -1722,7 +1724,7 @@ void ChromePasswordManagerClient::PasswordGenerationRejectedByTyping() {
 void ChromePasswordManagerClient::FrameWasScrolled() {
   content::RenderFrameHost* rfh =
       password_generation_driver_receivers_.GetCurrentTargetFrame();
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(rfh)) {
+  if (!CheckFrameActiveAndNotPrerendering(rfh)) {
     return;
   }
   if (popup_controller_) {
@@ -1733,7 +1735,7 @@ void ChromePasswordManagerClient::FrameWasScrolled() {
 void ChromePasswordManagerClient::GenerationElementLostFocus() {
   content::RenderFrameHost* rfh =
       password_generation_driver_receivers_.GetCurrentTargetFrame();
-  if (!password_manager::bad_message::CheckFrameNotPrerendering(rfh)) {
+  if (!CheckFrameActiveAndNotPrerendering(rfh)) {
     return;
   }
   // TODO(crbug.com/40629608): Look into removing this since FocusedInputChanged
@@ -1976,7 +1978,7 @@ void ChromePasswordManagerClient::PropagatePredictionsToPasswordManager(
     auto* driver =
         password_manager::ContentPasswordManagerDriver::GetForRenderFrameHost(
             rfh);
-    if (!driver) {
+    if (!driver || !driver->HasValidURL(/*may_kill_renderer=*/false)) {
       continue;
     }
 

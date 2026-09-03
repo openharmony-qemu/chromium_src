@@ -536,4 +536,43 @@ TEST_F(ActorLoginDelegateImplTest, FillingReauthRequiredWindowNotActive) {
             LoginStatusResult::kErrorDeviceReauthRequired);
 }
 
+TEST_F(ActorLoginDelegateImplTest,
+       PrimaryPageChangedDuringPasswordAttemptLogin) {
+  base::test::ScopedFeatureList feature_list(
+      password_manager::features::kActorLogin);
+  const url::Origin origin = url::Origin::Create(GURL(kTestUrl));
+  const Credential credential =
+      CreateTestCredential(kTestUsername, origin.GetURL(), origin);
+  const FormData form_data = CreateSigninFormData(origin.GetURL());
+
+  std::vector<password_manager::PasswordForm> saved_forms;
+  saved_forms.push_back(
+      CreateSavedPasswordForm(origin.GetURL(), kTestUsername));
+  form_fetcher_.SetBestMatches(saved_forms);
+
+  ON_CALL(mock_driver_, GetLastCommittedOrigin())
+      .WillByDefault(ReturnRef(origin));
+  ON_CALL(mock_driver_, IsInPrimaryMainFrame).WillByDefault(Return(true));
+  ON_CALL(mock_driver_, IsNestedWithinFencedFrame).WillByDefault(Return(false));
+
+  std::vector<std::unique_ptr<PasswordFormManager>> form_managers;
+  form_managers.push_back(
+      CreateFormManagerWithParsedForm(origin, form_data, mock_driver_));
+
+  SetUpActorCredentialFillerDeps();
+  EXPECT_CALL(mock_form_cache_, GetFormManagers)
+      .WillRepeatedly(Return(base::span(form_managers)));
+
+  base::test::TestFuture<LoginStatusResultOrError> future;
+  delegate_->AttemptLogin(credential, false, mqls_logger(),
+                          future.GetCallback());
+
+  // Trigger `PrimaryPageChanged` before the message loop runs.
+  delegate_->PrimaryPageChanged(web_contents()->GetPrimaryPage());
+
+  ASSERT_TRUE(future.Get().has_value());
+  EXPECT_EQ(future.Get().value(),
+            LoginStatusResult::kErrorPageChangedDuringFilling);
+}
+
 }  // namespace actor_login

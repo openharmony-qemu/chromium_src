@@ -85,8 +85,9 @@ std::optional<PreflightRequiredReason> NeedsPreflight(
     return PreflightRequiredReason::kCorsWithForcedPreflightMode;
   }
 
-  if (request.cors_preflight_policy ==
-      mojom::CorsPreflightPolicy::kPreventPreflight) {
+  if (!base::FeatureList::IsEnabled(features::kIgnoreCorsPreflightPolicy) &&
+      request.cors_preflight_policy ==
+          mojom::CorsPreflightPolicy::kPreventPreflight) {
     return std::nullopt;
   }
 
@@ -476,16 +477,34 @@ void CorsURLLoader::FollowRedirect(
   }
 
   const std::string original_method = std::move(request_.method);
-  request_.url = redirect_info_.new_url;
-  request_.method = redirect_info_.new_method;
-  request_.referrer = GURL(redirect_info_.new_referrer);
-  request_.referrer_policy = redirect_info_.new_referrer_policy;
-  request_.site_for_cookies = redirect_info_.new_site_for_cookies;
+  request_.UpdateOnRedirect(redirect_info_);
 
-  if (request_.trusted_params) {
-    request_.trusted_params->isolation_info =
-        request_.trusted_params->isolation_info.CreateForRedirect(
-            url::Origin::Create(request_.url));
+  // Update isolation_info_ and the shared dictionary storage location if they
+  // changed as a result of the redirect for a browser-initiated request (e.g.
+  // navigation, prefetch).
+  if (request_.trusted_params &&
+      !request_.trusted_params->isolation_info.IsEmpty()) {
+    isolation_info_ = request_.trusted_params->isolation_info;
+    if (shared_dictionary_storage_) {
+      // `client_security_state` is not set for top-level navigation requests.
+      const bool secure_context =
+          request_.trusted_params->client_security_state
+              ? request_.trusted_params->client_security_state
+                    ->is_web_secure_context
+              : network::IsUrlPotentiallyTrustworthy(request_.url);
+      const auto shared_dictionary_isolation_key =
+          (secure_context && context_->GetSharedDictionaryManager())
+              ? net::SharedDictionaryIsolationKey::MaybeCreate(isolation_info_)
+              : std::nullopt;
+      if (!shared_dictionary_isolation_key) {
+        shared_dictionary_storage_.reset();
+      } else if (shared_dictionary_storage_->isolation_key() !=
+                 *shared_dictionary_isolation_key) {
+        shared_dictionary_storage_ =
+            context_->GetSharedDictionaryManager()->GetStorage(
+                *shared_dictionary_isolation_key);
+      }
+    }
   }
 
   // The request method can be changed to "GET". In this case we need to

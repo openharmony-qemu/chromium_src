@@ -1562,6 +1562,7 @@ Możesz zarządzać ustawieniami konta, korzystając z aplikacji Family Link na
 <translation id="2040822390690632244">Aktualizacje, pomoc, opcje dla programistów</translation>
 <translation id="2040894699575719559">Lokalizacja zablokowana</translation>
 <translation id="2041246176170574368">Aktualizacje zabezpieczeń wkrótce się zakończą. Kup nowego Chromebooka taniej o co najmniej 50 USD.</translation>
+<translation id="2041681409552851212">Rozszerzenie będzie mogło uruchamiać kod, który nie został zweryfikowany przez Przeglądarkę. Może to być niebezpieczne i należy je włączyć tylko, jeśli się wie, co się robi.</translation>
 <translation id="2042279886444479655">Aktywne profile</translation>
 <translation id="2044014337866019681">Aby odblokować sesję, upewnij się, że potwierdzasz własność konta <ph name="ACCOUNT" />.</translation>
 <translation id="2044750031738659219">{0,plural, =1{Zamknij okno gościa}few{Zamknij okna gościa (# okna)}many{Zamknij okna gościa (# okien)}other{Zamknij okna gościa (# okna)}}</translation>
@@ -2300,6 +2301,7 @@ Możesz zarządzać ustawieniami konta, korzystając z aplikacji Family Link na
 <translation id="2541400104619216245">Sugeruje szczegóły porównania, które warto wziąć pod uwagę przy wyborze produktów</translation>
 <translation id="2541706104884128042">Ustawiono nową porę snu</translation>
 <translation id="2542050502251273923">Korzysta z ff_debug do ustawiania poziomu debugowania menedżera połączenia sieciowego i innych usług.</translation>
+<translation id="25436473744628215">Aktualizowanie…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{Uprawnienia przyznane aplikacji „<ph name="APP_NAME" />” będą też obowiązywać w tej aplikacji. <ph name="MANAGE_LINK" />}few{Uprawnienia przyznane aplikacji „<ph name="APP_NAME" />” będą też obowiązywać w tych aplikacjach. <ph name="MANAGE_LINK" />}many{Uprawnienia przyznane aplikacji „<ph name="APP_NAME" />” będą też obowiązywać w tych aplikacjach. <ph name="MANAGE_LINK" />}other{Uprawnienia przyznane aplikacji „<ph name="APP_NAME" />” będą też obowiązywać w tych aplikacjach. <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">Ta karta</translation>
 <translation id="2545743249923338554">Nowe karty</translation>
@@ -3148,7 +3150,7 @@ Domena <ph name="DOMAIN" /> wymaga, by karta inteligentna pozostała w gnieźdz
 <translation id="3132277757485842847">Nie udało się utrzymać połączenia z Twoim telefonem. Sprawdź, czy telefon jest w pobliżu, jest odblokowany i ma włączone Bluetooth oraz Wi-Fi.</translation>
 <translation id="3132896062549112541">Reguła</translation>
 <translation id="3132996321662585180">Odświeżaj codziennie</translation>
-<translation id="3134312457920437826">Nie można zainstalować rozszerzenia, ponieważ używa ono nieobsługiwanej wersji pliku manifestu.</translation>
+<translation id="3134312457920437826">Nie można zainstalować rozszerzenia, ponieważ korzysta z nieobsługiwanej wersji manifestu.</translation>
 <translation id="3134393957315651797">Wybierz stan eksperymentu <ph name="EXPERIMENT_NAME" />. Opis eksperymentu: <ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">Domyślny żółty awatar</translation>
 <translation id="3141093262818886744">Otwórz mimo to</translation>
@@ -11518,6 +11520,7 @@ Domena <ph name="DOMAIN" /> wymaga, by karta inteligentna pozostała w gnieźdz
 <translation id="8890170499370378450">Mogą się z tym wiązać opłaty</translation>
 <translation id="8890516388109605451">Źródła</translation>
 <translation id="8890529496706615641">Nie udało się zmienić nazwy profilu. Spróbuj jeszcze raz lub skontaktuj się z operatorem, by uzyskać pomoc techniczną.</translation>
+<translation id="889095128849097287">Zezwalaj na skrypty użytkownika</translation>
 <translation id="8892168913673237979">Wszystko gotowe.</translation>
 <translation id="8892246501904593980">Wszystkie swoje zakładki znajdziesz w sekcji Zakładki i listy</translation>
 <translation id="8893779047492837414">Obecnie masz <ph name="NUMBERED_ITEM_1" />, <ph name="NUMBERED_ITEM_2" /> i inne elementy. Twoja organizacja (<ph name="ACCOUNT_MANAGER" />) będzie mogła wyświetlać te dane i nimi zarządzać</translation>

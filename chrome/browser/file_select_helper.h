@@ -9,6 +9,7 @@
 #include <memory>
 #include <vector>
 
+#include "base/callback_list.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
@@ -33,6 +34,10 @@ class ScopedTuckPictureInPicture;
 namespace content {
 class FileSelectListener;
 class WebContents;
+}
+
+namespace tabs {
+class TabInterface;
 }
 
 namespace ui {
@@ -144,6 +149,8 @@ class FileSelectHelper : public base::RefCountedThreadSafe<
                               content::RenderFrameHost* new_host) override;
   void RenderFrameDeleted(content::RenderFrameHost* render_frame_host) override;
   void WebContentsDestroyed() override;
+
+  void OnTabDeactivated(tabs::TabInterface* tab);
 
   void EnumerateDirectoryImpl(
       content::WebContents* tab,
@@ -321,6 +328,8 @@ class FileSelectHelper : public base::RefCountedThreadSafe<
 
   // Set to false in unit tests since there is no WebContents.
   bool abort_on_missing_web_contents_in_tests_ = true;
+
+  base::CallbackListSubscription tab_deactivated_subscription_;
 
 #if !BUILDFLAG(IS_ANDROID)
   // When not null, this prevents picture-in-picture windows from opening.

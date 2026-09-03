@@ -77,8 +77,7 @@ scoped_refptr<viz::ContextProviderCommandBuffer> CreateContextProvider(
   return viz::ContextProviderCommandBuffer::CreateForRaster(
       std::move(gpu_channel_host), kGpuStreamIdDefault, kGpuStreamPriorityUI,
       std::move(url), kAutomaticFlushes, supports_locking, memory_limits, type,
-      /*enable_gpu_rasterization=*/supports_gpu_rasterization,
-      /*lose_context_when_out_of_memory=*/true);
+      /*enable_gpu_rasterization=*/supports_gpu_rasterization);
 }
 
 bool IsContextLost(viz::RasterContextProvider* context_provider) {

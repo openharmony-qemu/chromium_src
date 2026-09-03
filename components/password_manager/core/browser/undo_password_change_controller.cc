@@ -30,6 +30,24 @@ namespace {
 constexpr char kPasswordChangeRecoveryFlowStateHistogram[] =
     "PasswordManager.PasswordChangeRecoveryFlow";
 
+bool IsFormEligibleForProactiveRecovery(
+    const PasswordForm* form_best_match,
+    const std::u16string& failed_password_value) {
+  if (!form_best_match) {
+    return false;
+  }
+
+  if (!form_best_match->GetPasswordBackup()) {
+    return false;
+  }
+
+  if (form_best_match->GetPasswordBackup() == failed_password_value) {
+    return false;
+  }
+
+  return true;
+}
+
 }  // namespace
 
 UndoPasswordChangeController::UndoPasswordChangeController() = default;
@@ -168,9 +186,8 @@ void UndoPasswordChangeController::OnPasswordFormParsed(
     const PasswordForm* form_best_match =
         password_manager_util::FindFormByUsername(
             form_manager->GetBestMatches(), failed_login_form_->username_value);
-    if (!form_best_match || !form_best_match->GetPasswordBackup() ||
-        form_best_match->GetPasswordBackup() ==
-            failed_login_form_->password_value ||
+    if (!IsFormEligibleForProactiveRecovery(
+            form_best_match, failed_login_form_->password_value) ||
         !base::FeatureList::IsEnabled(features::kShowRecoveryPassword)) {
       FinishObserving();
       return;

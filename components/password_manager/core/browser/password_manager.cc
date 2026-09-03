@@ -727,7 +727,9 @@ void PasswordManager::OnPresaveGeneratedPassword(
     PasswordManagerDriver* driver,
     const FormData& form_data,
     const std::u16string& generated_password) {
-  DCHECK(client_->IsSavingAndFillingEnabled(form_data.url()));
+  if (!client_->IsSavingAndFillingEnabled(form_data.url())) {
+    return;
+  }
   PasswordFormManager* form_manager =
       GetMatchedManagerForForm(driver, form_data.renderer_id());
   UMA_HISTOGRAM_BOOLEAN("PasswordManager.GeneratedFormHasNoFormManager",
@@ -1096,7 +1098,7 @@ void PasswordManager::OnPasswordFormsParsed(
       driver ? driver->GetPasswordGenerationHelper() : nullptr;
   if (password_generation_manager) {
     password_generation_manager->PrefetchSpec(
-        client_->GetLastCommittedOrigin().GetURL());
+        driver->GetLastCommittedOrigin().GetURL());
   }
 }
 

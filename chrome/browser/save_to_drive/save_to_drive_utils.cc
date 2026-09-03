@@ -4,6 +4,7 @@
 
 #include "chrome/browser/save_to_drive/save_to_drive_utils.h"
 
+#include "base/files/file_path.h"
 #include "base/memory/weak_ptr.h"
 #include "chrome/browser/pdf/pdf_viewer_stream_manager.h"
 #include "extensions/browser/guest_view/mime_handler_view/mime_handler_view_guest.h"
@@ -25,6 +26,14 @@ base::WeakPtr<extensions::StreamContainer> GetStreamWeakPtr(
   auto* manager =
       pdf::PdfViewerStreamManager::FromRenderFrameHost(embedder_host);
   return manager ? manager->GetStreamContainer(embedder_host) : nullptr;
+}
+
+std::u16string EnsurePdfExtension(const std::u16string& title) {
+  static constexpr base::FilePath::StringViewType kPdfExtensionFilePath =
+      FILE_PATH_LITERAL(".pdf");
+  base::FilePath file_path = base::FilePath::FromUTF16Unsafe(title);
+  file_path = file_path.RemoveExtension().AddExtension(kPdfExtensionFilePath);
+  return file_path.AsUTF16Unsafe();
 }
 
 }  // namespace save_to_drive

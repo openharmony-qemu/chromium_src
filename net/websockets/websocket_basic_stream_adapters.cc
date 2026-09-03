@@ -24,7 +24,6 @@
 #include "net/spdy/spdy_buffer.h"
 #include "net/third_party/quiche/src/quiche/quic/core/http/quic_header_list.h"
 #include "net/third_party/quiche/src/quiche/quic/core/http/spdy_utils.h"
-#include "net/third_party/quiche/src/quiche/quic/core/quic_ack_listener_interface.h"
 #include "net/third_party/quiche/src/quiche/quic/core/quic_error_codes.h"
 #include "net/websockets/websocket_quic_spdy_stream.h"
 
@@ -166,8 +165,12 @@ void WebSocketSpdyStreamAdapter::OnDataReceived(
   }
 
   read_data_.Enqueue(std::move(buffer));
-  if (read_callback_)
-    std::move(read_callback_).Run(CopySavedReadDataIntoBuffer());
+  if (read_callback_) {
+    // Avoid UAF due to C++17 sequencing rules. See crbug.com/499194333.
+    auto callback = std::move(read_callback_);
+    int rv = CopySavedReadDataIntoBuffer();
+    std::move(callback).Run(rv);
+  }
 }
 
 void WebSocketSpdyStreamAdapter::OnDataSent() {
@@ -256,7 +259,7 @@ WebSocketQuicStreamAdapter::WebSocketQuicStreamAdapter(
 
 WebSocketQuicStreamAdapter::~WebSocketQuicStreamAdapter() {
   if (websocket_quic_spdy_stream_) {
-    websocket_quic_spdy_stream_->set_delegate(nullptr);
+    websocket_quic_spdy_stream_->DetachDelegate();
   }
 }
 
@@ -272,7 +275,7 @@ int WebSocketQuicStreamAdapter::Read(IOBuffer* buf,
                                      int buf_len,
                                      CompletionOnceCallback callback) {
   if (!websocket_quic_spdy_stream_) {
-    return ERR_UNEXPECTED;
+    return stream_error_;
   }
 
   int rv = websocket_quic_spdy_stream_->Read(buf, buf_len);
@@ -291,13 +294,51 @@ int WebSocketQuicStreamAdapter::Write(
     int buf_len,
     CompletionOnceCallback callback,
     const NetworkTrafficAnnotationTag& traffic_annotation) {
-  // TODO(momoka): Write implementation.
-  return OK;
+  DCHECK(!write_callback_);
+  CHECK_GT(buf_len, 0);
+  DCHECK(callback);
+
+  if (!websocket_quic_spdy_stream_) {
+    return stream_error_;
+  }
+
+  // Queue data to the QUIC stream. WriteOrBufferBody() either sends the data
+  // immediately if flow control allows, or buffers it internally.
+  // It can also synchronously close the connection on socket write errors.
+  base::WeakPtr<WebSocketQuicStreamAdapter> weak_this =
+      weak_factory_.GetWeakPtr();
+  websocket_quic_spdy_stream_->WriteOrBufferBody(
+      {buf->data(), static_cast<size_t>(buf_len)},
+      /*fin=*/false);
+  // If the adapter was destroyed by a callback during the write, return
+  // safely without accessing member variables.
+  if (!weak_this) {
+    return ERR_CONNECTION_CLOSED;
+  }
+  if (!websocket_quic_spdy_stream_) {
+    return stream_error_;
+  }
+
+  // Check CanWriteNewData() after queuing rather than before. This is necessary
+  // because WriteOrBufferBody() may have caused the send buffer to cross its
+  // threshold or exhausted the flow control window, blocking further writes.
+  // If the stream can still accept new data, complete the write synchronously.
+  // Otherwise, save |callback| to invoke later when OnCanWriteNewData() is
+  // called (triggered when buffered data is sent and buffer size drops below
+  // the threshold, allowing more data to be accepted).
+  if (websocket_quic_spdy_stream_->CanWriteNewData()) {
+    return buf_len;
+  }
+
+  write_length_ = buf_len;
+  write_callback_ = std::move(callback);
+  return ERR_IO_PENDING;
 }
 
 void WebSocketQuicStreamAdapter::Disconnect() {
   if (websocket_quic_spdy_stream_) {
-    websocket_quic_spdy_stream_->Reset(quic::QUIC_STREAM_CANCELLED);
+    websocket_quic_spdy_stream_->DetachDelegate();
+    ClearStream();
   }
 }
 
@@ -340,7 +381,7 @@ void WebSocketQuicStreamAdapter::OnBodyAvailable() {
   }
 
   DCHECK(read_buffer_);
-  DCHECK_GT(read_length_, 0);
+  CHECK_GT(read_length_, 0);
 
   int rv = websocket_quic_spdy_stream_->Read(read_buffer_, read_length_);
 
@@ -353,9 +394,45 @@ void WebSocketQuicStreamAdapter::OnBodyAvailable() {
   std::move(read_callback_).Run(rv);
 }
 
+void WebSocketQuicStreamAdapter::OnClose(int status) {
+  CHECK_LE(status, 0);
+  if (status == OK) {
+    status = ERR_CONNECTION_CLOSED;
+  }
+  stream_error_ = status;
+
+  base::WeakPtr<WebSocketQuicStreamAdapter> weak_this =
+      weak_factory_.GetWeakPtr();
+  ClearStream();
+
+  // Running a completion callback can delete the current
+  // WebSocketQuicStreamAdapter. In that case, `weak_this` becomes invalid and
+  // OnClose() must return before accessing more member variables.
+  if (read_callback_) {
+    std::move(read_callback_).Run(status);
+    if (!weak_this) {
+      return;
+    }
+  }
+  if (write_callback_) {
+    std::move(write_callback_).Run(status);
+    if (!weak_this) {
+      return;
+    }
+  }
+  if (delegate_) {
+    delegate_->OnClose(status);
+  }
+}
+
 void WebSocketQuicStreamAdapter::ClearStream() {
-  if (websocket_quic_spdy_stream_) {
-    websocket_quic_spdy_stream_ = nullptr;
+  websocket_quic_spdy_stream_ = nullptr;
+}
+
+void WebSocketQuicStreamAdapter::OnCanWriteNewData() {
+  if (write_callback_) {
+    CHECK_GT(write_length_, 0);
+    std::move(write_callback_).Run(write_length_);
   }
 }
 

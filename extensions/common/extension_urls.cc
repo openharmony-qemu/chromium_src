@@ -187,7 +187,11 @@ bool IsWebstoreUpdateUrl(const GURL& update_url) {
 
 bool IsWebstoreApiUrl(const GURL& url) {
   url::Origin origin = url::Origin::Create(url);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  return origin.IsSameOriginWith(GetDefaultWebstoreApiUrl());
+#else
   return origin.IsSameOriginWith(GURL(kChromeWebstoreApiURL));
+#endif
 }
 
 bool IsBlocklistUpdateUrl(const GURL& url) {

@@ -1463,7 +1463,7 @@ Izin yang telah Anda berikan ke aplikasi dapat berlaku untuk akun ini. Anda dapa
 <translation id="1969654639948595766">Log teks WebRTC (<ph name="WEBRTC_TEXT_LOG_COUNT" />)</translation>
 <translation id="1972313920920745320">Situs yang Anda tambahkan akan selalu aktif dan memori tidak akan dikosongkan dari situs tersebut. <ph name="BEGIN_LINK" />Pelajari lebih lanjut cara membuat situs tertentu tetap aktif<ph name="END_LINK" /></translation>
 <translation id="1972325230031091483">Anda akan menjelajah lebih cepat karena konten dimuat secara proaktif berdasarkan halaman web yang sedang Anda buka</translation>
-<translation id="197288927597451399">Tetap Download</translation>
+<translation id="197288927597451399">Simpan</translation>
 <translation id="1973886230221301399">ChromeVox</translation>
 <translation id="1974043046396539880">Titik Distribusi CRL</translation>
 <translation id="1974060860693918893">Lanjutan</translation>
@@ -1571,6 +1571,7 @@ Anda dapat mengelola setelan akun ini dengan menginstal aplikasi Family Link di 
 <translation id="2040822390690632244">Update, bantuan, opsi developer</translation>
 <translation id="2040894699575719559">Lokasi diblokir</translation>
 <translation id="2041246176170574368">Update keamanan akan segera berakhir. Hemat $50 atau lebih untuk Chromebook baru.</translation>
+<translation id="2041681409552851212">Ekstensi akan dapat menjalankan kode yang belum ditinjau oleh Browser. Ekstensi tersebut mungkin tidak aman dan Anda hanya boleh mengaktifkan ini jika Anda tahu apa yang Anda lakukan.</translation>
 <translation id="2042279886444479655">Profil aktif</translation>
 <translation id="2044014337866019681">Pastikan Anda memverifikasi <ph name="ACCOUNT" /> untuk membuka kunci sesi.</translation>
 <translation id="2044750031738659219">{0,plural, =1{Tutup Jendela Tamu}other{Tutup Jendela Tamu (# jendela)}}</translation>
@@ -2327,6 +2328,7 @@ Anda dapat mengelola setelan akun ini dengan menginstal aplikasi Family Link di 
 <translation id="2541400104619216245">Mengajukan detail perbandingan untuk dilihat saat memilih di antara produk</translation>
 <translation id="2541706104884128042">Waktu tidur baru disetel</translation>
 <translation id="2542050502251273923">Menyetel level proses debug pengelola koneksi jaringan dan layanan lainnya menggunakan ff_debug.</translation>
+<translation id="25436473744628215">Memperbarui…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{Izin yang Anda berikan untuk "<ph name="APP_NAME" />" juga akan diberikan untuk aplikasi ini. <ph name="MANAGE_LINK" />}other{Izin yang Anda berikan untuk "<ph name="APP_NAME" />" juga akan diberikan untuk aplikasi ini. <ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">Tab Ini</translation>
 <translation id="2545743249923338554">Tab Baru</translation>
@@ -3175,7 +3177,7 @@ Anda dapat mengelola setelan akun ini dengan menginstal aplikasi Family Link di 
 <translation id="3132277757485842847">Kami tidak dapat mempertahankan koneksi dengan ponsel Anda. Pastikan ponsel berada di dekat Anda, tidak terkunci, serta Bluetooth dan Wi-Fi aktif.</translation>
 <translation id="3132896062549112541">Aturan</translation>
 <translation id="3132996321662585180">Perbarui tiap hari</translation>
-<translation id="3134312457920437826">Tidak dapat menginstal ekstensi karena ekstensi menggunakan versi manifes yang tidak didukung.</translation>
+<translation id="3134312457920437826">Tidak dapat memasang ekstensi karena menggunakan versi manifes yang tidak didukung.</translation>
 <translation id="3134393957315651797">Pilih status eksperimen untuk eksperimen <ph name="EXPERIMENT_NAME" />. Deskripsi eksperimen: <ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">Avatar kuning default</translation>
 <translation id="3141093262818886744">Tetap buka</translation>
@@ -11554,6 +11556,7 @@ Informasi ini dapat mencakup informasi tentang software yang diinstal, file, bro
 <translation id="8890170499370378450">Dapat dikenai biaya data seluler</translation>
 <translation id="8890516388109605451">Sumber</translation>
 <translation id="8890529496706615641">Nama profil tidak dapat diganti. Coba lagi atau hubungi operator Anda untuk meminta dukungan teknis.</translation>
+<translation id="889095128849097287">Izinkan skrip pengguna</translation>
 <translation id="8892168913673237979">Semua sudah siap!</translation>
 <translation id="8892246501904593980">Lihat semua bookmark Anda di Bookmark dan Daftar</translation>
 <translation id="8893779047492837414">Saat ini Anda memiliki <ph name="NUMBERED_ITEM_1" />, <ph name="NUMBERED_ITEM_2" />, dan lainnya. Organisasi Anda, <ph name="ACCOUNT_MANAGER" />, akan dapat melihat dan mengelola data ini.</translation>

@@ -1901,6 +1901,9 @@ class GLES2DecoderImpl : public GLES2Decoder,
                             const volatile GLint* params);
 
   // Wrappers for glTexParameter functions.
+  bool CheckTexParameterBaseLevel(TextureRef* texture,
+                                  GLenum pname,
+                                  GLint param);
   void DoTexParameterf(GLenum target, GLenum pname, GLfloat param);
   void DoTexParameteri(GLenum target, GLenum pname, GLint param);
   void DoTexParameterfv(GLenum target,
@@ -7081,6 +7084,7 @@ bool GLES2DecoderImpl::ClearUnclearedAttachments(GLenum target,
 
   GLbitfield clear_bits = 0;
   bool reset_draw_buffers = false;
+  bool rebound_draw_for_clear = cleared_int_renderbuffers;
   if (framebuffer->HasUnclearedColorAttachments()) {
     // We should always use alpha == 0 here, because 1) some draw buffers may
     // have alpha and some may not; 2) we won't have the same situation as the
@@ -7090,6 +7094,14 @@ bool GLES2DecoderImpl::ClearUnclearedAttachments(GLenum target,
     clear_bits |= GL_COLOR_BUFFER_BIT;
 
     if (SupportsDrawBuffers()) {
+      // Ensure |framebuffer| is bound as DRAW before preparing draw buffers.
+      // Otherwise glDrawBuffersARB mutates the wrong FBO's state, causing
+      // the glClear to skip clearing uncleared attachments.
+      if (!rebound_draw_for_clear && target == GL_READ_FRAMEBUFFER &&
+          draw_framebuffer != framebuffer) {
+        BindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer->service_id());
+        rebound_draw_for_clear = true;
+      }
       reset_draw_buffers =
           framebuffer->PrepareDrawBuffersForClearingUninitializedAttachments();
     }
@@ -7109,8 +7121,8 @@ bool GLES2DecoderImpl::ClearUnclearedAttachments(GLenum target,
   }
 
   if (clear_bits) {
-    if (!cleared_int_renderbuffers &&
-        target == GL_READ_FRAMEBUFFER && draw_framebuffer != framebuffer) {
+    if (!rebound_draw_for_clear && target == GL_READ_FRAMEBUFFER &&
+        draw_framebuffer != framebuffer) {
       // TODO(zmo): There is no guarantee that an FBO that is complete on the
       // READ attachment will be complete as a DRAW attachment.
       BindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer->service_id());
@@ -8114,9 +8126,12 @@ void GLES2DecoderImpl::DoRenderbufferStorageMultisampleCHROMIUM(
                                                width, height, kDoNotForce);
   GLenum error =
       LOCAL_PEEK_GL_ERROR("glRenderbufferStorageMultisampleCHROMIUM");
+
   if (error == GL_NO_ERROR) {
     renderbuffer_manager()->SetInfoAndInvalidate(renderbuffer, samples,
                                                  internalformat, width, height);
+  } else {
+    renderbuffer_manager()->SetAllocationFailed(renderbuffer);
   }
 }
 
@@ -8341,12 +8356,36 @@ void GLES2DecoderImpl::DoSamplerParameteriv(GLuint client_id,
                                    sampler, pname, params[0]);
 }
 
+bool GLES2DecoderImpl::CheckTexParameterBaseLevel(TextureRef* texture,
+                                                  GLenum pname,
+                                                  GLint param) {
+  if (pname == GL_TEXTURE_BASE_LEVEL &&
+      workarounds().dont_change_base_level_for_npot_immutable_textures) {
+    Texture* tex = texture->texture();
+    if (tex->base_level() != param && tex->target() == GL_TEXTURE_2D &&
+        tex->IsImmutable()) {
+      GLsizei width = 0, height = 0, depth = 0;
+      if (tex->GetLevelSize(tex->target(), 0, &width, &height, &depth) &&
+          (GLES2Util::IsNPOT(width) || GLES2Util::IsNPOT(height))) {
+        MarkContextLost(error::kGuilty);
+        group_->LoseContexts(error::kUnknown);
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 void GLES2DecoderImpl::DoTexParameterf(
     GLenum target, GLenum pname, GLfloat param) {
   TextureRef* texture = texture_manager()->GetTextureInfoForTarget(
       &state_, target);
   if (!texture) {
     LOCAL_SET_GL_ERROR(GL_INVALID_VALUE, "glTexParameterf", "unknown texture");
+    return;
+  }
+
+  if (!CheckTexParameterBaseLevel(texture, pname, static_cast<GLint>(param))) {
     return;
   }
 
@@ -8360,6 +8399,10 @@ void GLES2DecoderImpl::DoTexParameteri(
       &state_, target);
   if (!texture) {
     LOCAL_SET_GL_ERROR(GL_INVALID_VALUE, "glTexParameteri", "unknown texture");
+    return;
+  }
+
+  if (!CheckTexParameterBaseLevel(texture, pname, param)) {
     return;
   }
 
@@ -8377,6 +8420,11 @@ void GLES2DecoderImpl::DoTexParameterfv(GLenum target,
     return;
   }
 
+  if (!CheckTexParameterBaseLevel(texture, pname,
+                                  static_cast<GLint>(*params))) {
+    return;
+  }
+
   texture_manager()->SetParameterf("glTexParameterfv", error_state_.get(),
                                    texture, pname, *params);
 }
@@ -8389,6 +8437,10 @@ void GLES2DecoderImpl::DoTexParameteriv(GLenum target,
   if (!texture) {
     LOCAL_SET_GL_ERROR(
         GL_INVALID_VALUE, "glTexParameteriv", "unknown texture");
+    return;
+  }
+
+  if (!CheckTexParameterBaseLevel(texture, pname, *params)) {
     return;
   }
 
@@ -11485,6 +11537,13 @@ error::Error GLES2DecoderImpl::HandleReadPixels(uint32_t immediate_data_size,
         uint32_t leading_bytes = static_cast<uint32_t>(-x) * group_size;
         UNSAFE_TODO(pixels += leading_bytes);
       }
+      bool large_row_length_workaround =
+          pixels_shm_id == 0 &&
+          workarounds().pack_large_row_length_separately_pack_buffer &&
+          padded_row_size >= 0x10000000u;
+      if (large_row_length_workaround) {
+        api()->glPixelStoreiFn(GL_PACK_ROW_LENGTH, 0);
+      }
       for (GLint iy = rect.y(); iy < rect.bottom(); ++iy) {
         bool reset_row_length = false;
         if (iy + 1 == max_y && pixels_shm_id == 0 &&
@@ -11501,6 +11560,9 @@ error::Error GLES2DecoderImpl::HandleReadPixels(uint32_t immediate_data_size,
           api()->glPixelStoreiFn(GL_PACK_ROW_LENGTH, state_.pack_row_length);
         }
         UNSAFE_TODO(pixels += padded_row_size);
+      }
+      if (large_row_length_workaround) {
+        api()->glPixelStoreiFn(GL_PACK_ROW_LENGTH, state_.pack_row_length);
       }
     }
   } else {
@@ -11547,7 +11609,17 @@ error::Error GLES2DecoderImpl::HandleReadPixels(uint32_t immediate_data_size,
       }
     }
     if (pixels_shm_id == 0 &&
-        workarounds().pack_parameters_workaround_with_pack_buffer) {
+        workarounds().pack_large_row_length_separately_pack_buffer &&
+        padded_row_size >= 0x10000000u) {
+      api()->glPixelStoreiFn(GL_PACK_ROW_LENGTH, 0);
+      for (GLint iy = y; iy < max_y; ++iy) {
+        api()->glReadPixelsFn(x, iy, width, 1, format, type, pixels);
+        // SAFETY: maximum bounds were validated to be in-range above.
+        UNSAFE_BUFFERS(pixels += padded_row_size);
+      }
+      api()->glPixelStoreiFn(GL_PACK_ROW_LENGTH, state_.pack_row_length);
+    } else if (pixels_shm_id == 0 &&
+               workarounds().pack_parameters_workaround_with_pack_buffer) {
       // If we ever have a device that needs both of these workarounds, we'll
       // need to do some extra work to implement that correctly here.
       DCHECK(
@@ -12402,6 +12474,10 @@ bool GLES2DecoderImpl::ClearLevel3D(Texture* texture,
 
   TRACE_EVENT1("gpu", "GLES2DecoderImpl::ClearLevel3D", "size", size);
 
+  // Drain any pre-existing driver errors so the post-upload check below only
+  // reflects errors generated by this clear sequence.
+  LOCAL_COPY_REAL_GL_ERRORS_TO_WRAPPER("glClearLevel3D");
+
   {
     ScopedPixelUnpackState reset_restore(&state_);
     GLuint buffer_id = 0;
@@ -12431,6 +12507,15 @@ bool GLES2DecoderImpl::ClearLevel3D(Texture* texture,
       texture_manager()->GetTextureInfoForTarget(&state_, texture->target());
   api()->glBindTextureFn(texture->target(),
                          bound_texture ? bound_texture->service_id() : 0);
+
+  // glBufferData() may fail with GL_OUT_OF_MEMORY under VRAM pressure, leaving
+  // the PBO without a data store and causing every glTexSubImage3D above to
+  // fail GL_INVALID_OPERATION without writing zeros. Do not report the level as
+  // cleared in that case; routing the error through PeekGLError also ensures
+  // OnOutOfMemoryError() fires so lose_context_when_out_of_memory_ applies.
+  if (LOCAL_PEEK_GL_ERROR("glClearLevel3D") != GL_NO_ERROR) {
+    return false;
+  }
   return true;
 }
 

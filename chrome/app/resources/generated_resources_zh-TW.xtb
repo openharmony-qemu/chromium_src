@@ -1564,6 +1564,7 @@
 <translation id="2040822390690632244">更新、說明、開發人員選項</translation>
 <translation id="2040894699575719559">禁止取得位置資訊</translation>
 <translation id="2041246176170574368">安全性更新即將終止，購買新款 Chromebook 可省下 $50 美元以上</translation>
+<translation id="2041681409552851212">此擴充程式將能夠執行未經瀏覽器審核的代碼。這可能不安全，僅在您清楚瞭解相關風險並確認操作安全的情況下，才應啟用此功能。</translation>
 <translation id="2042279886444479655">使用中的設定檔</translation>
 <translation id="2044014337866019681">請確認你驗證的是 <ph name="ACCOUNT" />，才能解鎖工作階段。</translation>
 <translation id="2044750031738659219">{0,plural, =1{關閉訪客視窗}other{關閉訪客視窗 (# 個視窗)}}</translation>
@@ -2318,6 +2319,7 @@
 <translation id="2541400104619216245">提供詳細的產品比較資料，做為選擇時的參考</translation>
 <translation id="2541706104884128042">已設定新的就寢時間</translation>
 <translation id="2542050502251273923">使用 ff_debug 設定網路連線管理員和其他服務的偵錯等級。</translation>
+<translation id="25436473744628215">更新中…</translation>
 <translation id="2543780089903485983">{NUM_SUB_APP_INSTALLS,plural, =1{如果你將權限授予「<ph name="APP_NAME" />」，這個應用程式也會取得同樣的權限。<ph name="MANAGE_LINK" />}other{如果你將權限授予「<ph name="APP_NAME" />」，這些應用程式也會取得同樣的權限。<ph name="MANAGE_LINK" />}}</translation>
 <translation id="2544352060595557290">這個分頁</translation>
 <translation id="2545743249923338554">新分頁</translation>
@@ -3167,7 +3169,7 @@
 <translation id="3132277757485842847">無法與你的手機維持連線狀態。請確認你的手機在附近，且已解鎖及開啟藍牙和 Wi-Fi。</translation>
 <translation id="3132896062549112541">規則</translation>
 <translation id="3132996321662585180">每天更新</translation>
-<translation id="3134312457920437826">擴充功能使用不支援的資訊清單版本，因此無法安裝。</translation>
+<translation id="3134312457920437826">無法安裝擴充程式，因其使用不受支援的清單版本。</translation>
 <translation id="3134393957315651797">選取「<ph name="EXPERIMENT_NAME" />」的實驗狀態。實驗說明：<ph name="EXPERIMENT_DESCRIPTION" /></translation>
 <translation id="3139925690611372679">預設的黃色顯示圖片</translation>
 <translation id="3141093262818886744">仍要開啟</translation>
@@ -11542,6 +11544,7 @@
 <translation id="8890170499370378450">可能需要支付行動數據傳輸費用</translation>
 <translation id="8890516388109605451">來源</translation>
 <translation id="8890529496706615641">無法重新命名設定檔。請再試一次，或是向電信業者尋求技術支援。</translation>
+<translation id="889095128849097287">允許執行使用者指令碼</translation>
 <translation id="8892168913673237979">設定完成！</translation>
 <translation id="8892246501904593980">前往「書籤」和「清單」查看所有書籤</translation>
 <translation id="8893779047492837414">你目前有 <ph name="NUMBERED_ITEM_1" />、<ph name="NUMBERED_ITEM_2" />及其他資料。貴機構 (<ph name="ACCOUNT_MANAGER" />) 將可查看及管理這些資料</translation>

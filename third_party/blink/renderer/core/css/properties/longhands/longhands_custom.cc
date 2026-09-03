@@ -2565,8 +2565,8 @@ void Color::ApplyInitial(StyleResolverState& state) const {
 void Color::ApplyInherit(StyleResolverState& state) const {
   ComputedStyleBuilder& builder = state.StyleBuilder();
   if (builder.ShouldPreserveParentColor()) {
-    builder.SetColor(StyleColor(
-        state.ParentStyle()->VisitedDependentColor(GetCSSPropertyColor())));
+    builder.SetColor(StyleColor(GetCSSPropertyColor().ColorIncludingFallback(
+        /*visited_link=*/false, *state.ParentStyle())));
   } else {
     builder.SetColor(state.ParentStyle()->Color());
   }
@@ -4697,7 +4697,11 @@ const blink::Color FloodColor::ColorIncludingFallback(
   if (style.ShouldForceColor(flood_color)) {
     return style.GetInternalForcedCurrentColor(is_current_color);
   }
-  return style.ResolvedColor(flood_color, is_current_color);
+  blink::Color current_color = visited_link
+                                   ? style.GetInternalVisitedCurrentColor()
+                                   : style.GetCurrentColor();
+  return flood_color.Resolve(current_color, style.UsedColorScheme(),
+                             is_current_color);
 }
 
 const CSSValue* FloodColor::CSSValueFromComputedStyleInternal(
@@ -6767,7 +6771,11 @@ const blink::Color LightingColor::ColorIncludingFallback(
   if (style.ShouldForceColor(lighting_color)) {
     return style.GetInternalForcedCurrentColor(is_current_color);
   }
-  return style.ResolvedColor(lighting_color, is_current_color);
+  blink::Color current_color = visited_link
+                                   ? style.GetInternalVisitedCurrentColor()
+                                   : style.GetCurrentColor();
+  return lighting_color.Resolve(current_color, style.UsedColorScheme(),
+                                is_current_color);
 }
 
 const CSSValue* LightingColor::CSSValueFromComputedStyleInternal(
@@ -9742,7 +9750,11 @@ const blink::Color StopColor::ColorIncludingFallback(
   if (style.ShouldForceColor(stop_color)) {
     return style.GetInternalForcedCurrentColor(is_current_color);
   }
-  return style.ResolvedColor(stop_color, is_current_color);
+  blink::Color current_color = visited_link
+                                   ? style.GetInternalVisitedCurrentColor()
+                                   : style.GetCurrentColor();
+  return stop_color.Resolve(current_color, style.UsedColorScheme(),
+                            is_current_color);
 }
 
 const CSSValue* StopColor::CSSValueFromComputedStyleInternal(
@@ -11862,7 +11874,11 @@ const blink::Color WebkitTapHighlightColor::ColorIncludingFallback(
                ? style.GetInternalForcedVisitedCurrentColor(is_current_color)
                : style.GetInternalForcedCurrentColor(is_current_color);
   }
-  return style.ResolvedColor(style.TapHighlightColor(), is_current_color);
+  blink::Color current_color = visited_link
+                                   ? style.GetInternalVisitedCurrentColor()
+                                   : style.GetCurrentColor();
+  return highlight_color.Resolve(current_color, style.UsedColorScheme(),
+                                 is_current_color);
 }
 
 const CSSValue* WebkitTapHighlightColor::CSSValueFromComputedStyleInternal(

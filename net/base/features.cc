@@ -22,6 +22,9 @@ namespace net::features {
 
 BASE_FEATURE(kAlpsForHttp2, base::FEATURE_ENABLED_BY_DEFAULT);
 
+BASE_FEATURE(kAsyncRetryOnTooManyConnectionErrors,
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
 BASE_FEATURE(kAvoidH2Reprioritization, base::FEATURE_DISABLED_BY_DEFAULT);
 
 BASE_FEATURE(kCapReferrerToOriginOnCrossOrigin,
@@ -109,6 +112,9 @@ const base::FeatureParam<base::TimeDelta>
     kEffectiveConnectionTypeRecomputationInterval{
         &kNetworkQualityEstimator,
         "EffectiveConnectionTypeRecomputationInterval", base::Seconds(10)};
+
+BASE_FEATURE(kOnlyParseFirstContentDisposition,
+             base::FEATURE_ENABLED_BY_DEFAULT);
 
 BASE_FEATURE(kSplitCacheByIncludeCredentials,
              base::FEATURE_DISABLED_BY_DEFAULT);
@@ -468,6 +474,12 @@ BASE_FEATURE(kEnableNetworkPreload,
              "EnableNetworkPreload",
              base::FEATURE_ENABLED_BY_DEFAULT);
 #endif  // BUILDFLAG(ARKWEB_PRP_PRELOAD)
+
+#if BUILDFLAG(ARKWEB_NETWORK_IPV6_SLAAC_FILTER)
+BASE_FEATURE(kArkWebIPv6SlaacFilter,
+             "ArkWebIPv6SlaacFilter",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
 
 // Enables binding of cookies to the port that originally set them by default.
 BASE_FEATURE(kEnablePortBoundCookies, base::FEATURE_DISABLED_BY_DEFAULT);

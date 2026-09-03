@@ -92,6 +92,7 @@
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/device_service.h"
+#include "content/public/browser/disallow_activation_reason.h"
 #include "content/public/browser/keyboard_event_processing_result.h"
 #include "content/public/browser/peak_gpu_memory_tracker_factory.h"
 #include "content/public/browser/render_frame_metadata_provider.h"
@@ -2667,7 +2668,12 @@ void RenderWidgetHostImpl::SetPopupBounds(const gfx::Rect& bounds,
 
 input::RenderWidgetHostInputEventRouter*
 RenderWidgetHostImpl::GetInputEventRouter() {
-  return delegate()->GetInputEventRouter();
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (!delegate_) {
+    return nullptr;
+  }
+#endif
+  return delegate_->GetInputEventRouter();
 }
 
 input::RenderWidgetHostViewInput* RenderWidgetHostImpl::GetPointerLockView() {
@@ -2925,11 +2931,17 @@ void RenderWidgetHostImpl::UpdateBrowserControlsState(
 void RenderWidgetHostImpl::StartDragging(
     blink::mojom::DragDataPtr drag_data,
     const url::Origin& source_origin,
-    DragOperationsMask drag_operations_mask,
+    blink::DragOperationsMask drag_operations_mask,
     const SkBitmap& bitmap,
     const gfx::Vector2d& cursor_offset_in_dip,
     const gfx::Rect& drag_obj_rect_in_dip,
     blink::mojom::DragEventSourceInfoPtr event_info) {
+  if (frame_tree_ && frame_tree_->GetMainFrame() &&
+      frame_tree_->GetMainFrame()->IsInactiveAndDisallowActivation(
+          DisallowActivationReasonId::kStartDragging)) {
+    return;
+  }
+
   DropData drop_data = DragDataToDropData(*drag_data);
   DropData filtered_data(drop_data);
   RenderProcessHost* process = GetProcess();
@@ -3318,6 +3330,17 @@ void RenderWidgetHostImpl::RequestMouseLock(
     bool from_user_gesture,
     bool unadjusted_movement,
     input::InputRouterImpl::RequestMouseLockCallback response) {
+  // Browser-side enforcement of the kPointerLock sandbox flag.
+  // The renderer correctly blocks this via PointerLockController, but a
+  // compromised renderer can bypass that check via direct Mojo IPC.
+  // Note: crbug.com/492211919
+  if (delegate_ && delegate_->IsPointerLockSandboxedForWidget(this)) {
+    bad_message::ReceivedBadMessage(
+        GetProcess(), bad_message::RWH_POINTER_LOCK_FROM_SANDBOXED_FRAME);
+    std::move(response).Run(blink::mojom::PointerLockResult::kPermissionDenied,
+                            mojo::NullRemote());
+    return;
+  }
   if (pending_pointer_lock_request_ || IsPointerLocked()) {
     std::move(response).Run(blink::mojom::PointerLockResult::kAlreadyLocked,
                             /*context=*/mojo::NullRemote());

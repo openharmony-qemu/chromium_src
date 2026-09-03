@@ -1174,14 +1174,19 @@ struct NativeValueTraits<IDLRecord<K, V>>
              .ToLocal(&keys)) {
       return ImplType();
     }
-    if (keys->Length() > ImplType::MaxCapacity()) {
+
+    // Store the length because we use UncheckedAppend() below and we want to
+    // make sure that the length does not change during the loop.
+    uint32_t length = keys->Length();
+
+    if (length > ImplType::MaxCapacity()) {
       exception_state.ThrowRangeError("Array length exceeds supported limit.");
       return ImplType();
     }
 
     // "2. Let result be a new empty instance of record<K, V>."
     ImplType result;
-    result.ReserveInitialCapacity(keys->Length());
+    result.ReserveInitialCapacity(length);
 
     // The conversion algorithm needs a data structure with fast insertion at
     // the end while at the same time requiring fast checks for previous insert
@@ -1189,7 +1194,7 @@ struct NativeValueTraits<IDLRecord<K, V>>
     // the latter part.
     HashMap<String, uint32_t> seen_keys;
 
-    for (uint32_t i = 0; i < keys->Length(); ++i) {
+    for (uint32_t i = 0; i < length; ++i) {
       // "4. Repeat, for each element key of keys in List order:"
       v8::Local<v8::Value> key;
       if (!keys->Get(context, i).ToLocal(&key)) {
@@ -1649,15 +1654,16 @@ struct NativeValueTraits<T> : public NativeValueTraitsBase<T> {
                           v8::Local<v8::Value> value,
                           ExceptionState& exception_state) = delete;
 
-  static bindings::internal::ByteSpanWithInlineStorage<T::support_reentry>
+  static bindings::internal::ByteSpanWithInlineStorage<T::perform_detach_check>
   ArgumentValue(v8::Isolate* isolate,
                 int argument_index,
                 v8::Local<v8::Value> value,
                 ExceptionState& exception_state) {
-    bindings::internal::ByteSpanWithInlineStorage<T::support_reentry> result;
+    bindings::internal::ByteSpanWithInlineStorage<T::perform_detach_check>
+        result;
     if (value->IsArrayBuffer()) {
       v8::Local<v8::ArrayBuffer> array_buffer = value.As<v8::ArrayBuffer>();
-      result.MaybeSetBackingStore(array_buffer);
+      result.MaybeSetArrayBuffer(array_buffer);
       result.Assign(bindings::internal::GetArrayData(array_buffer));
       return result;
     }
@@ -1675,7 +1681,7 @@ struct NativeValueTraits<T> : public NativeValueTraitsBase<T> {
               "The provided ArrayBufferView value must not be shared.");
           return result;
         }
-        result.MaybeSetBackingStore(view->Buffer());
+        result.MaybeSetArrayBuffer(view->Buffer());
       }
       result.Assign(view->GetContents(result.GetInlineStorage()));
       return result;
@@ -1710,7 +1716,7 @@ struct NativeValueTraits<T> : public NativeValueTraitsBase<T> {
               "The provided ArrayBufferView value must not be shared.");
           return result;
         }
-        result.MaybeSetBackingStore(view->Buffer());
+        result.MaybeSetArrayBuffer(view->Buffer());
       }
       result.Assign(view->GetContents(result.GetInlineStorage()));
       return result;

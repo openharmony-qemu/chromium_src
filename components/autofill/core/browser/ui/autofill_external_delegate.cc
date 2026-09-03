@@ -82,6 +82,23 @@ namespace autofill {
 
 namespace {
 
+// Fills the queried form with the provided credit card using the specified
+// trigger source. Used as a callback for asynchronous card fetches. The `form`
+// and `field_id` are bound at suggestion-acceptance time so that the fill
+// targets the form/field that was current when the user accepted the
+// suggestion, rather than whatever `query_form_`/`query_field_` may point to by
+// the time the asynchronous fetch completes.
+void OnCreditCardFetched(base::WeakPtr<BrowserAutofillManager> manager,
+                         AutofillTriggerSource trigger_source,
+                         const FormData& form,
+                         const FieldGlobalId& field_id,
+                         const CreditCard& card) {
+  if (manager) {
+    manager->FillOrPreviewForm(mojom::ActionPersistence::kFill, form, field_id,
+                               &card, trigger_source);
+  }
+}
+
 std::optional<AutofillProfile> GetTestAddressByGUID(
     base::span<const AutofillProfile> test_addresses,
     const std::string& guid) {
@@ -826,9 +843,11 @@ void AutofillExternalDelegate::DidAcceptSuggestion(
         identity_credential_delegate->NotifySuggestionAccepted(
             suggestion, /*show_modal=*/true,
             base::BindOnce(
-                [](base::WeakPtr<AutofillExternalDelegate> delegate,
-                   const Suggestion& suggestion, bool accepted) {
-                  if (!delegate || !accepted) {
+                [](base::WeakPtr<BrowserAutofillManager> manager,
+                   const Suggestion& suggestion, const FormData& form,
+                   const FieldGlobalId& field_id,
+                   AutofillTriggerSource trigger_source, bool accepted) {
+                  if (!manager || !accepted) {
                     return;
                   }
 
@@ -836,13 +855,13 @@ void AutofillExternalDelegate::DidAcceptSuggestion(
                       suggestion
                           .GetPayload<Suggestion::IdentityCredentialPayload>()
                           .fields;
-                  delegate->manager_->FillOrPreviewForm(
-                      mojom::ActionPersistence::kFill, delegate->query_form_,
-                      delegate->query_field_.global_id(), &profile,
-                      TriggerSourceFromSuggestionTriggerSource(
-                          delegate->trigger_source_));
+                  manager->FillOrPreviewForm(mojom::ActionPersistence::kFill,
+                                             form, field_id, &profile,
+                                             trigger_source);
                 },
-                GetWeakPtr(), suggestion));
+                manager_->GetBrowserAutofillManagerWeakPtr(), suggestion,
+                query_form_, query_field_.global_id(),
+                TriggerSourceFromSuggestionTriggerSource(trigger_source_)));
       }
       break;
     }
@@ -1037,12 +1056,6 @@ FillingProduct AutofillExternalDelegate::GetMainFillingProduct() const {
 
 base::WeakPtr<AutofillExternalDelegate> AutofillExternalDelegate::GetWeakPtr() {
   return weak_ptr_factory_.GetWeakPtr();
-}
-
-void AutofillExternalDelegate::OnCreditCardScanned(const CreditCard& card) {
-  manager_->FillOrPreviewForm(mojom::ActionPersistence::kFill, query_form_,
-                              query_field_.global_id(), &card,
-                              AutofillTriggerSource::kScanCreditCard);
 }
 
 void AutofillExternalDelegate::PreviewAddressFieldByFieldFillingSuggestion(
@@ -1280,20 +1293,21 @@ void AutofillExternalDelegate::DidAcceptPaymentsSuggestion(
       manager_->client()
           .GetPaymentsAutofillClient()
           ->GetIbanAccessManager()
-          ->FetchValue(suggestion.payload,
-                       base::BindOnce(
-                           [](base::WeakPtr<AutofillExternalDelegate> delegate,
-                              const std::u16string& value) {
-                             if (delegate) {
-                               delegate->manager_->FillOrPreviewField(
-                                   mojom::ActionPersistence::kFill,
-                                   mojom::FieldActionType::kReplaceAll,
-                                   delegate->query_form_,
-                                   delegate->query_field_, value,
-                                   SuggestionType::kIbanEntry, IBAN_VALUE);
-                             }
-                           },
-                           GetWeakPtr()));
+          ->FetchValue(
+              suggestion.payload,
+              base::BindOnce(
+                  [](base::WeakPtr<BrowserAutofillManager> manager,
+                     const FormData& form, const FormFieldData& field,
+                     const std::u16string& value) {
+                    if (manager) {
+                      manager->FillOrPreviewField(
+                          mojom::ActionPersistence::kFill,
+                          mojom::FieldActionType::kReplaceAll, form, field,
+                          value, SuggestionType::kIbanEntry, IBAN_VALUE);
+                    }
+                  },
+                  manager_->GetBrowserAutofillManagerWeakPtr(), query_form_,
+                  query_field_));
       manager_->OnSingleFieldSuggestionSelected(
           suggestion, query_form_.global_id(), query_field_.global_id());
       break;
@@ -1323,17 +1337,10 @@ void AutofillExternalDelegate::DidAcceptPaymentsSuggestion(
       CHECK(save_and_fill_manager);
 
       save_and_fill_manager->OnDidAcceptCreditCardSaveAndFillSuggestion(
-          base::BindOnce(
-              [](base::WeakPtr<AutofillExternalDelegate> delegate,
-                 const CreditCard& card) {
-                if (delegate) {
-                  delegate->manager_->FillOrPreviewForm(
-                      mojom::ActionPersistence::kFill, delegate->query_form_,
-                      delegate->query_field_.global_id(), &card,
-                      AutofillTriggerSource::kCreditCardSaveAndFill);
-                }
-              },
-              GetWeakPtr()));
+          base::BindOnce(&OnCreditCardFetched,
+                         manager_->GetBrowserAutofillManagerWeakPtr(),
+                         AutofillTriggerSource::kCreditCardSaveAndFill,
+                         query_form_, query_field_.global_id()));
 
       manager_->GetCreditCardFormEventLogger()
           .OnDidAcceptSaveAndFillSuggestion();
@@ -1341,8 +1348,10 @@ void AutofillExternalDelegate::DidAcceptPaymentsSuggestion(
     }
     case SuggestionType::kScanCreditCard:
       manager_->client().GetPaymentsAutofillClient()->ScanCreditCard(
-          base::BindOnce(&AutofillExternalDelegate::OnCreditCardScanned,
-                         GetWeakPtr()));
+          base::BindOnce(&OnCreditCardFetched,
+                         manager_->GetBrowserAutofillManagerWeakPtr(),
+                         AutofillTriggerSource::kScanCreditCard, query_form_,
+                         query_field_.global_id()));
       break;
     case SuggestionType::kBnplEntry: {
       payments::BnplManager* bnpl_manager = manager_->GetPaymentsBnplManager();
@@ -1352,17 +1361,10 @@ void AutofillExternalDelegate::DidAcceptPaymentsSuggestion(
           /*final_checkout_amount=*/suggestion
               .GetPayload<Suggestion::PaymentsPayload>()
               .extracted_amount_in_micros,
-          base::BindOnce(
-              [](base::WeakPtr<AutofillExternalDelegate> delegate,
-                 const CreditCard& card) {
-                if (delegate) {
-                  delegate->manager_->FillOrPreviewForm(
-                      mojom::ActionPersistence::kFill, delegate->query_form_,
-                      delegate->query_field_.global_id(), &card,
-                      AutofillTriggerSource::kPopup);
-                }
-              },
-              GetWeakPtr()));
+          base::BindOnce(&OnCreditCardFetched,
+                         manager_->GetBrowserAutofillManagerWeakPtr(),
+                         AutofillTriggerSource::kPopup, query_form_,
+                         query_field_.global_id()));
       break;
     }
     default:

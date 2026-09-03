@@ -906,7 +906,7 @@ class CONTENT_EXPORT RenderProcessHostImpl
       mojo::PendingReceiver<network::mojom::P2PSocketManager> receiver,
       GlobalRenderFrameHostId render_frame_host_id);
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // Notifies the renderer process of memory pressure level.
   void NotifyMemoryPressureToRenderer(base::MemoryPressureLevel level);
 #endif
@@ -1464,10 +1464,8 @@ class CONTENT_EXPORT RenderProcessHostImpl
   // The globally-unique identifier for this RenderProcessHost.
   const ChildProcessId id_;
 
-  // This field is not a raw_ptr<> because problems related to passing to a
-  // templated && parameter, which is later forwarded to something that doesn't
-  // vibe with raw_ptr<T>.
-  RAW_PTR_EXCLUSION BrowserContext* browser_context_ = nullptr;
+  // The BrowserContext this RenderProcessHost exists within.
+  raw_ptr<BrowserContext> browser_context_ = nullptr;
 
   // Owned by `browser_context_`.
   raw_ptr<StoragePartitionImpl> storage_partition_impl_;

@@ -1232,6 +1232,8 @@
         documentBodyElementData.$children = treeChildren;
         htmlElementData.$children = [documentBodyElementData];
         htmlElementData.$attrs.isUnsafeContent = shouldAbortExtraction;
+        htmlElementData.$attrs.url = window.location.href;
+        htmlElementData.$attrs.title = document.title;
 
         const domTree = {
             $attrs: {

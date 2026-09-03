@@ -5,6 +5,7 @@
 #include "third_party/blink/renderer/core/frame/ad_tracker.h"
 
 #include <memory>
+#include <optional>
 
 #include "base/containers/contains.h"
 #include "base/run_loop.h"
@@ -902,6 +903,66 @@ TEST_P(AdTrackerVanillaOrAdSimTest, AdExternalStylesheetLoadsResources) {
   EXPECT_TRUE(ad_tracker_->RequestWithUrlTaggedAsAd(ad_stylesheet_url));
   EXPECT_TRUE(ad_tracker_->RequestWithUrlTaggedAsAd(font_url));
   EXPECT_TRUE(ad_tracker_->RequestWithUrlTaggedAsAd(image_url));
+}
+
+// Test that when a script ID from one AdTracker is used in
+// another AdTracker (e.g. if a node is moved between frames), the tracker
+// correctly handles the case where it doesn't recognize the script ID.
+TEST(AdTrackerTest, AdScriptAncestry_ScriptIdFromDifferentTracker) {
+  test::TaskEnvironment task_environment;
+  auto page_holder_a = std::make_unique<DummyPageHolder>();
+  auto page_holder_b = std::make_unique<DummyPageHolder>();
+
+  AdTracker* ad_tracker_a = MakeGarbageCollected<AdTracker>(
+      &page_holder_a->GetFrame().LocalFrameRoot());
+  AdTracker* ad_tracker_b = MakeGarbageCollected<AdTracker>(
+      &page_holder_b->GetFrame().LocalFrameRoot());
+
+  const int script_id_a = 1001;
+  const int script_id_b = 2001;
+  const int script_id_c = 3001;
+  v8_inspector::V8DebuggerId debugger_id;
+
+  // Registers a script by populating the tracker's private `ad_script_data_`
+  // map directly. The parent (if any) is recorded as the parent script's id,
+  // which is how `GetAncestry` walks the ancestry chain.
+  auto register_ad_script = [&](AdTracker* tracker, int script_id,
+                                const String& name,
+                                std::optional<int> parent_id) {
+    AdTracker::AdProvenance provenance;
+    if (parent_id) {
+      provenance = *parent_id;
+    }
+    tracker->ad_script_data_.insert(
+        script_id,
+        AdTracker::AdScriptData(
+            AdScriptIdentifier(debugger_id, script_id, name), provenance));
+  };
+
+  // Register `script_id_a` in `ad_tracker_a`, which is the only tracker to
+  // learn about this script id.
+  register_ad_script(ad_tracker_a, script_id_a, "script_a", std::nullopt);
+
+  // In `ad_tracker_b`, register `script_id_b` with `script_id_a` as parent.
+  // `ad_tracker_b` doesn't actually know about `script_id_a` though, since it
+  // was registered only in `ad_tracker_a`.
+  register_ad_script(ad_tracker_b, script_id_b, "script_b", script_id_a);
+
+  // Register `script_id_c` with `script_id_b` as parent in `ad_tracker_b`.
+  register_ad_script(ad_tracker_b, script_id_c, "script_c", script_id_b);
+
+  // `ad_tracker_b` knows `script_id_c` and `script_id_b`, but not
+  // `script_id_a`. `GetAncestry(script_id_c)` should return a chain of length 2
+  // (c and b), stopping gracefully when it reaches the unknown parent
+  // `script_id_a`.
+  AdTracker::AdScriptAncestry ancestry = ad_tracker_b->GetAncestry(
+      AdScriptIdentifier(debugger_id, script_id_c, "script_c"));
+  EXPECT_EQ(ancestry.ancestry_chain.size(), 2u);
+  EXPECT_EQ(ancestry.ancestry_chain[0].id, script_id_c);
+  EXPECT_EQ(ancestry.ancestry_chain[1].id, script_id_b);
+
+  ad_tracker_a->Shutdown();
+  ad_tracker_b->Shutdown();
 }
 
 TEST_P(AdTrackerVanillaOrAdSimTest, LinkRelStylesheetAddedByScript) {
@@ -3573,5 +3634,98 @@ TEST_F(AdTrackerDisabledSimTest, VerifyAdTrackingDisabled) {
 INSTANTIATE_TEST_SUITE_P(All,
                          AdTrackerVanillaOrAdSimTest,
                          ::testing::Values(true, false));
+
+// Regression test for https://crbug.com/501591293.
+//
+// This test verifies that the AdTracker's monkey-patch heuristic safely aborts
+// and falls back to standard stack-based ad detection if it encounters an
+// author-defined JavaScript getter. This ensures that the tracker evaluates the
+// actual state of the object without handing control over to the script it is
+// trying to evaluate, preventing evasion, side effects, or crashes.
+//
+// This test overrides `window.Node` with a getter that attempts to
+// synchronously mutate the DOM. It asserts that the monkey patch heuristic
+// bails out (defaulting to 'not a monkeypatch') and flags the frame as an ad,
+// without actually evaluating the getter and causing a DOM mutation.
+TEST_F(AdTrackerSimTest, NoScriptExecutionDuringAdTrackerMonkeyPatchCheck) {
+  String ad_script_url = "https://example.com/script.js?ad=true";
+  String vanilla_script_url = "https://example.com/script.js";
+  SimSubresourceRequest ad_script(ad_script_url, "text/javascript");
+  SimSubresourceRequest vanilla_script(vanilla_script_url, "text/javascript");
+
+  main_resource_->Complete(R"HTML(
+    <body><script src="script.js?ad=true"></script>
+          <script src="script.js"></script></body>
+  )HTML");
+
+  // The ad script defines a getter on `window.Node`.
+  // It also monkey-patches appendChild so that the ad script is on the stack
+  // when appendChild is called, triggering the monkey-patch heuristic.
+  ad_script.Complete(R"SCRIPT(
+    window.getterFired = false;
+    let originalNode = window.Node;
+
+    const originalAppendChild = originalNode.prototype.appendChild;
+    originalNode.prototype.appendChild = function(child) {
+      return originalAppendChild.call(this, child);
+    };
+
+    Object.defineProperty(window, 'Node', {
+      configurable: true,
+      get() {
+        console.log("Getter executing!");
+        window.getterFired = true;
+        // Malicious payload: mutate the DOM tree synchronously.
+        // If this runs during AdTracker's inspection (which happens in the
+        // middle of a C++ node insertion loop), it will cause a DOM mutation
+        // re-entrancy and hard-crash the renderer.
+        if (window.iframeElement) {
+          document.body.appendChild(window.iframeElement);
+        }
+        return originalNode;
+      }
+    });
+    )SCRIPT");
+
+  // The vanilla script calls the monkey-patched appendChild.
+  vanilla_script.Complete(R"SCRIPT(
+    let fragment = document.createDocumentFragment();
+    let video = document.createElement("video");
+    window.iframeElement = document.createElement("iframe");
+
+    // 1. The <video> element is necessary because its 'InsertedInto' lifecycle
+    //    triggers the AdTracker to inspect for monkey-patches (evaluating
+    //    window.Node).
+    fragment.appendChild(video);
+
+    // 2. The <iframe> is included in the fragment so that the outer C++
+    //    insertion loop intends to process it *after* the video. If the getter
+    //    above secretly inserts it first, the C++ loop will try to insert it a
+    //    second time, corrupting the tree and crashing the browser.
+    fragment.appendChild(window.iframeElement);
+
+    // Call the monkey-patched appendChild, putting ad script on the stack
+    document.body.appendChild(fragment);
+
+    console.log(window.getterFired ? "Getter Fired" : "Getter Not Fired");
+    )SCRIPT");
+
+  base::RunLoop().RunUntilIdle();
+
+  // The getter should NOT have fired during the check.
+  ASSERT_EQ(1u, ConsoleMessages().size());
+  EXPECT_EQ("Getter Not Fired", ConsoleMessages()[0]);
+
+  // Verify that the iframe is created.
+  auto* child_frame =
+      To<LocalFrame>(GetDocument().GetFrame()->Tree().FirstChild());
+  ASSERT_TRUE(child_frame);
+
+  // Since we bailed out of the monkey-patch check, the exception should be
+  // denied, meaning it falls back to the stack. Since the ad script is on the
+  // stack (via the monkey-patched appendChild), the frame should be correctly
+  // flagged as an ad frame.
+  EXPECT_TRUE(child_frame->IsFrameCreatedByAdScript());
+}
 
 }  // namespace blink

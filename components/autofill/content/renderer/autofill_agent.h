@@ -273,6 +273,10 @@ class AutofillAgent : public content::RenderFrameObserver,
   void DidCreateDocumentElement() override;
   void DidDispatchDOMContentLoadedEvent() override;
   void DidChangeScrollOffset() override;
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+  void OnMainFrameViewportRectangleChanged(
+      const gfx::Rect& main_frame_viewport_rect) override;
+#endif
   void AccessibilityModeChanged(const ui::AXMode& mode) override;
   void OnDestruct() override;
 
@@ -369,11 +373,11 @@ class AutofillAgent : public content::RenderFrameObserver,
 
   void DidChangeScrollOffsetImpl(FieldRendererId element_id);
 
-  // At least on Android, multiple AskForValuesToFill() events may be fired in
-  // short succession. Since getting the event handling right in AutofillAgent
-  // is difficult we ignore duplicate AskForValuesToFill() as a workaround.
-  // See crbug.com/40284788 for details.
+  // Returns if a call to `AskForValuesToFill()` should be skipped.
+  // Rate limits exist per field and per frame. See the function
+  // body for further details.
   bool ShouldThrottleAskForValuesToFill(FieldRendererId field);
+  void ResetTokenBucket();
 
   // Shows Password Manager, password generation, or Autofill suggestions for
   // `element`. This call is asynchronous and may or may not lead to the showing
@@ -522,6 +526,14 @@ class AutofillAgent : public content::RenderFrameObserver,
     base::TimeTicks time;
     FieldRendererId field = {};
   } last_ask_for_values_to_fill_;
+
+  struct {
+    // Remaining tokens. Calls to AskForValuesToFill() are only permitted
+    // while tokens remain. Each call consumes a token. Tokens are replenished
+    // at a capped rate.
+    int tokens = 0;
+    base::TimeTicks last_replenish_time;
+  } ask_for_values_to_fill_throttle_;
 
   const bool replace_form_element_observer_ = false;
 

@@ -55,6 +55,7 @@
 <translation id="8047248493720652249">Rozszerzenie nie może odczytać nazwy pobieranego pliku „<ph name="ATTEMPTED_FILENAME" />”, ponieważ inne rozszerzenie (<ph name="EXTENSION_NAME" />) odczytało odmienną jego nazwę „<ph name="ACTUAL_FILENAME" />”.</translation>
 <translation id="8284835137979141223"><ph name="PRODUCT_NAME" /> od <ph name="VENDOR_NAME" /></translation>
 <translation id="8517576857589387417">Brak pliku manifestu lub nie można go odczytać</translation>
+<translation id="8602184400052594090">Plik manifestu jest nieczytelny lub go brakuje.</translation>
 <translation id="8621383749470166852">Nie udało się wczytać pliku „<ph name="RELATIVE_PATH" />” dla skryptu treści. Skrypty treści mogą być wczytywane tylko z obsługiwanych plików JavaScript, takich jak pliki .js.</translation>
 <translation id="8636666366616799973">Pakiet jest nieprawidłowy. Szczegółowe informacje: „<ph name="ERROR_MESSAGE" />”.</translation>
 <translation id="8761756413268424715"><ph name="APP_NAME" /> żąda dostępu do jednego z Twoich urządzeń:</translation>

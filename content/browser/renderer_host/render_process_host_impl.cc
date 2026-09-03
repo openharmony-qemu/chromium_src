@@ -2697,7 +2697,7 @@ void RenderProcessHostImpl::WriteIntoTrace(
     const {
   proto->set_id(GetDeprecatedID());
   proto->set_process_lock(GetProcessLock().ToString());
-  proto.Set(TraceProto::kBrowserContext, browser_context_);
+  proto.Set(TraceProto::kBrowserContext, browser_context_.get());
 
   // Pid() can be called only on valid process, so we should check for this
   // before accessing it. In addition, Pid() should only be read once the
@@ -3113,6 +3113,22 @@ bool RenderProcessHostImpl::MayReuseHost() {
 #if BUILDFLAG(IS_ARKWEB)
   if (is_dead_) {
     LOG(ERROR) << "RenderProcessHostImpl is dead";
+    return false;
+  }
+  // Reject RPHs that have no process launcher at all (Init() never completed
+  // successfully, or launcher was reset after process death). Also reject RPHs
+  // where the launcher exists but the launch has completed without producing a
+  // valid handle - this indicates an abnormal state (e.g. process launch
+  // failed silently). Do NOT reject RPHs where the launcher is still starting
+  // (IsStarting()=true), as that is a normal transient state.
+  if (child_process_launcher_.get() && !child_process_launcher_->IsStarting() && !GetProcess().Handle()) {
+    LOG(ERROR) << "RenderProcessHostImpl has no valid process (launcher="
+               << !!child_process_launcher_.get()
+               << ", starting="
+               << (child_process_launcher_.get()
+                       ? child_process_launcher_->IsStarting()
+                       : false)
+               << ", handle=" << GetProcess().Handle() << ")";
     return false;
   }
 #endif
@@ -6409,7 +6425,7 @@ void RenderProcessHostImpl::ProvideSwapFileForRenderer() {
           std::move(allocator)));
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
 void RenderProcessHostImpl::NotifyMemoryPressureToRenderer(
     base::MemoryPressureLevel level) {

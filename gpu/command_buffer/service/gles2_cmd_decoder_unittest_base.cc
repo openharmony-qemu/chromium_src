@@ -404,22 +404,20 @@ ContextResult GLES2DecoderTestBase::MaybeInitDecoderWithWorkarounds(
       .Times(1)
       .RetiresOnSaturation();
 
-  // TODO(boliu): Remove OS_ANDROID once crbug.com/259023 is fixed and the
-  // workaround has been reverted.
-#if !BUILDFLAG(IS_ANDROID)
-  if (normalized_init.has_alpha && !normalized_init.request_alpha) {
-    EXPECT_CALL(*gl_, ClearColor(0, 0, 0, 1)).Times(1).RetiresOnSaturation();
-  }
+  if (surface_->GetHandle()) {
+    if (normalized_init.has_alpha && !normalized_init.request_alpha) {
+      EXPECT_CALL(*gl_, ClearColor(0, 0, 0, 1)).Times(1).RetiresOnSaturation();
+    }
 
-  EXPECT_CALL(*gl_, Clear(
-      GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT))
-      .Times(1)
-      .RetiresOnSaturation();
+    EXPECT_CALL(*gl_, Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |
+                            GL_STENCIL_BUFFER_BIT))
+        .Times(1)
+        .RetiresOnSaturation();
 
-  if (normalized_init.has_alpha && !normalized_init.request_alpha) {
-    EXPECT_CALL(*gl_, ClearColor(0, 0, 0, 0)).Times(1).RetiresOnSaturation();
+    if (normalized_init.has_alpha && !normalized_init.request_alpha) {
+      EXPECT_CALL(*gl_, ClearColor(0, 0, 0, 0)).Times(1).RetiresOnSaturation();
+    }
   }
-#endif
 
   if (init.context_type == CONTEXT_TYPE_WEBGL2 &&
       group_->feature_info()->gl_version_info().is_es3) {
@@ -810,6 +808,9 @@ void GLES2DecoderTestBase::SetupClearTexture3DExpectations(
     base::span<GLsizei> depth,
     GLuint bound_pixel_unpack_buffer) {
   InSequence seq;
+  EXPECT_CALL(*gl_, GetError())
+      .WillOnce(Return(GL_NO_ERROR))
+      .RetiresOnSaturation();
   EXPECT_CALL(*gl_, PixelStorei(GL_UNPACK_ALIGNMENT, 1))
       .Times(1)
       .RetiresOnSaturation();
@@ -859,6 +860,9 @@ void GLES2DecoderTestBase::SetupClearTexture3DExpectations(
         .RetiresOnSaturation();
   }
   EXPECT_CALL(*gl_, BindTexture(target, _)).Times(1).RetiresOnSaturation();
+  EXPECT_CALL(*gl_, GetError())
+      .WillOnce(Return(GL_NO_ERROR))
+      .RetiresOnSaturation();
 }
 
 void GLES2DecoderTestBase::SetupExpectationsForFramebufferClearing(

@@ -26,6 +26,7 @@
 #include "base/strings/string_split.h"
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
+#include "base/unguessable_token.h"
 #include "build/build_config.h"
 #include "content/browser/bad_message.h"
 #include "content/browser/isolated_origin_util.h"
@@ -629,7 +630,7 @@ class ChildProcessSecurityPolicyImpl::SecurityState {
     int skip = 0;
     while (current_path != last_path) {
       base::FilePath base_name = current_path.BaseName();
-      if (base_name.value() == base::FilePath::kParentDirectory) {
+      if (base_name.ReferencesParent()) {
         ++skip;
       } else if (skip > 0) {
         if (base_name.value() != base::FilePath::kCurrentDirectory) {
@@ -1564,6 +1565,33 @@ bool ChildProcessSecurityPolicyImpl::CanCommitURL(int child_id,
 bool ChildProcessSecurityPolicyImpl::CanReadFile(int child_id,
                                                  const base::FilePath& file) {
   return HasPermissionsForFile(child_id, file, READ_FILE_GRANT);
+}
+
+void ChildProcessSecurityPolicyImpl::GrantFileForBrowserUpload(
+    const base::UnguessableToken& owner_token,
+    const base::FilePath& file) {
+  base::AutoLock lock(lock_);
+  browser_granted_files_[file].push_back(owner_token);
+}
+
+void ChildProcessSecurityPolicyImpl::RevokeFileForBrowserUpload(
+    const base::UnguessableToken& owner_token) {
+  base::AutoLock lock(lock_);
+  for (auto it = browser_granted_files_.begin();
+       it != browser_granted_files_.end();) {
+    std::erase(it->second, owner_token);
+    if (it->second.empty()) {
+      browser_granted_files_.erase(it++);
+    } else {
+      it++;
+    }
+  }
+}
+
+bool ChildProcessSecurityPolicyImpl::CanReadFileForBrowserUpload(
+    const base::FilePath& file) {
+  base::AutoLock lock(lock_);
+  return browser_granted_files_.contains(file);
 }
 
 bool ChildProcessSecurityPolicyImpl::CanReadAllFiles(

@@ -919,6 +919,9 @@ bool MenuController::OnMouseDragged(SubmenuView* source,
     }
     return true;
   }
+  // Changing the selection or showing a sibling menu can cause `this` to be
+  // deleted as a side effect of accessibility notifications.
+  auto this_ref = AsWeakPtr();
   MenuItemView* mouse_menu = nullptr;
   if (part.type == MenuPartType::kMenuItem) {
     // If there is no menu target, but a submenu target, then we are interacting
@@ -946,6 +949,9 @@ bool MenuController::OnMouseDragged(SubmenuView* source,
       }
     }
   }
+  if (!this_ref) {
+    return false;
+  }
   UpdateActiveMouseView(source, event, mouse_menu);
 
   return true;
@@ -954,6 +960,8 @@ bool MenuController::OnMouseDragged(SubmenuView* source,
 void MenuController::OnMouseReleased(SubmenuView* source,
                                      const ui::MouseEvent& event) {
   current_mouse_pressed_state_ &= ~event.changed_button_flags();
+
+  auto this_ref = AsWeakPtr();
 
   if (current_mouse_event_target_) {
     // If this was the final mouse button, then remove the forwarding target.
@@ -1030,6 +1038,12 @@ void MenuController::OnMouseReleased(SubmenuView* source,
     // User either clicked on empty space, or a menu that has children.
     SetSelection(part.menu ? part.menu.get() : state_.item.get(),
                  SELECTION_OPEN_SUBMENU | SELECTION_UPDATE_IMMEDIATELY);
+    // On the rare, off chance that an accessibility event is fired as a result
+    // of the selection changing *and* the Accessibility tool causes the menu to
+    // be closed, `this` will be otherwise dangling. Guard against that.
+    if (!this_ref) {
+      return;
+    }
   }
   SendMouseCaptureLostToActiveView();
   MaybeForwardToAnnotation(source, event);
@@ -1068,7 +1082,13 @@ void MenuController::OnMouseMoved(SubmenuView* source,
     new_hot_tracked_button = Button::AsButton(view);
   }
 
+  // `HandleMouseLocation()` may change the selection, which can cause `this` to
+  // be deleted as a side effect of accessibility notifications.
+  auto this_ref = AsWeakPtr();
   HandleMouseLocation(source, event.location());
+  if (!this_ref) {
+    return;
+  }
 
   // Updating the hot tracked button should be after `HandleMouseLocation()`
   // which may reset the current hot tracked button.
@@ -2520,7 +2540,14 @@ void MenuController::OpenMenuImpl(MenuItemView* item, bool show) {
     } else {
       params.context = owner_;
     }
+    auto weak_this = AsWeakPtr();
     item->GetSubmenu()->ShowAt(params);
+    // It is possible that the ShowAt() above can synchronously re-enter and
+    // destroy `this` and the entire MenuItemView tree. We do a CHECK() here
+    // instead of a early return. There are still other things up the stack that
+    // would require additional guarding. It is also unknown what state things
+    // would be left in should it be allowed to continue.
+    CHECK(weak_this);
 
     // Figure out if the mouse is under the menu; if so, remember the mouse
     // location so we can ignore the first mouse move event(s) with that
@@ -3544,17 +3571,23 @@ void MenuController::ExitMenu() {
   // ExitTopMostMenu unwinds nested delegates
   internal::MenuControllerDelegate* delegate = delegate_;
   int accept_event_flags = accept_event_flags_;
+  // Since |delegate| may delete this, get a weak pointer first, and ensure
+  // |result| is safe from deletion (it can be freed but will be quarantined).
   base::WeakPtr<MenuController> this_ref = AsWeakPtr();
-  MenuItemView* result = ExitTopMostMenu();
+  // Dangling since a lot of tests in `views_unittests` and
+  // `interactive_ui_tests` detect this (likely correctly) as a dangling
+  // pointer.
+  raw_ptr<MenuItemView, DanglingUntriaged> result =
+      ExitTopMostMenu().ExtractAsDangling();
   delegate->OnMenuClosed(internal::MenuControllerDelegate::NOTIFY_DELEGATE,
-                         result, accept_event_flags);
+                         result.get(), accept_event_flags);
   // |delegate| may have deleted this.
   if (this_ref && nested && exit_type_ == ExitType::kAll) {
     ExitMenu();
   }
 }
 
-MenuItemView* MenuController::ExitTopMostMenu() {
+raw_ptr<MenuItemView> MenuController::ExitTopMostMenu() {
   // Release the lock which prevents Chrome from shutting down while the menu is
   // showing.
   base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
@@ -3610,8 +3643,9 @@ MenuItemView* MenuController::ExitTopMostMenu() {
     did_capture_ = false;
   }
 
-  MenuItemView* result = result_;
-  // In case we're nested, reset |result_|.
+  // In case we're nested, reset |result_|, but use a raw_ptr to ensure we keep
+  // UaF protection.
+  raw_ptr<MenuItemView> result = result_;
   result_ = nullptr;
 
   if (exit_type_ == ExitType::kOutermost) {

@@ -198,6 +198,10 @@ const GURL& IOSPasswordManagerDriver::GetLastCommittedURL() const {
 }
 
 const url::Origin& IOSPasswordManagerDriver::GetLastCommittedOrigin() const {
+  return security_origin_;
+}
+
+bool IOSPasswordManagerDriver::HasCrossOriginAncestor() const {
   NOTREACHED();
 }
 

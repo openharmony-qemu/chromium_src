@@ -334,4 +334,33 @@ TEST_F(NegotiatingAuthenticatorTest,
   ASSERT_NE(&host_->implementing_authenticator(), host_.get());
 }
 
+TEST_F(NegotiatingAuthenticatorTest,
+       CreateAuthenticatorForCurrentMethod_SynchronousRejectionTeardown) {
+  protocol::ClientAuthenticationConfig client_auth_config;
+  client_auth_config.host_id = kTestHostId;
+
+  std::unique_ptr<NegotiatingClientAuthenticator> client;
+
+  client_auth_config.fetch_secret_callback = base::BindRepeating(
+      [](std::unique_ptr<NegotiatingClientAuthenticator>* client_ptr,
+         bool pairing_supported,
+         const protocol::SecretFetchedCallback& secret_fetched_callback) {
+        secret_fetched_callback.Run(kTestPin);
+        client_ptr->reset();
+      },
+      &client);
+
+  client = std::make_unique<NegotiatingClientAuthenticator>(
+      kClientJid, kHostJid, client_auth_config);
+
+  std::ignore = client->GetNextMessage();
+
+  JingleAuthentication host_message;
+  host_message.method = AuthenticationMethod::SHARED_SECRET_SPAKE2_CURVE25519;
+
+  client->ProcessMessage(host_message, base::DoNothing());
+
+  EXPECT_EQ(client, nullptr);
+}
+
 }  // namespace remoting::protocol

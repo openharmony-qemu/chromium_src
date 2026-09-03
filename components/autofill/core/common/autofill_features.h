@@ -269,6 +269,8 @@ BASE_DECLARE_FEATURE(kAutofillPolicyControlledFeatureAutofill);
 COMPONENT_EXPORT(AUTOFILL)
 BASE_DECLARE_FEATURE(kAutofillPolicyControlledFeatureManualText);
 COMPONENT_EXPORT(AUTOFILL)
+BASE_DECLARE_FEATURE(kAutofillPopupCheckHtmlFormPopupOverlap);
+COMPONENT_EXPORT(AUTOFILL)
 BASE_DECLARE_FEATURE(kAutofillPopupDontAcceptNonVisibleEnoughSuggestion);
 COMPONENT_EXPORT(AUTOFILL)
 BASE_DECLARE_FEATURE(kAutofillPopupZOrderSecuritySurface);
@@ -296,6 +298,13 @@ BASE_DECLARE_FEATURE(kAutofillSupportPresentationRole);
 COMPONENT_EXPORT(AUTOFILL) BASE_DECLARE_FEATURE(kAutofillSupportSplitZipCode);
 COMPONENT_EXPORT(AUTOFILL)
 BASE_DECLARE_FEATURE(kAutofillSynchronousAfterParsing);
+COMPONENT_EXPORT(AUTOFILL)
+BASE_DECLARE_FEATURE(kAutofillThrottleBruteForceProbing);
+COMPONENT_EXPORT(AUTOFILL)
+BASE_DECLARE_FEATURE_PARAM(int, kAutofillThrottleBruteForceProbingMaxTokens);
+COMPONENT_EXPORT(AUTOFILL)
+BASE_DECLARE_FEATURE_PARAM(base::TimeDelta,
+                           kAutofillThrottleBruteForceProbingReplenishRate);
 #if BUILDFLAG(IS_ANDROID)
 COMPONENT_EXPORT(AUTOFILL)
 BASE_DECLARE_FEATURE(kAutofillThirdPartyModeContentProvider);

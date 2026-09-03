@@ -194,6 +194,7 @@ class GPU_GLES2_EXPORT SharedImageFactory {
       const gfx::Size& size,
       base::span<const uint8_t> pixel_data,
       gfx::GpuMemoryBufferType gmb_type);
+  SharedImageBackingFactory* GetFactoryByType(SharedImageBackingType type);
   void LogGetFactoryFailed(gpu::SharedImageUsageSet usage,
                            viz::SharedImageFormat format,
                            gfx::GpuMemoryBufferType gmb_type,

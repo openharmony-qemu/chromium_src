@@ -319,6 +319,7 @@
 #include "ui/views/layout/fill_layout.h"
 #include "ui/views/view.h"
 #include "ui/views/view_class_properties.h"
+#include "ui/views/view_utils.h"
 #include "ui/views/views_features.h"
 #include "ui/views/widget/native_widget.h"
 #include "ui/views/widget/root_view.h"
@@ -1522,7 +1523,11 @@ void BrowserView::SetBounds(const gfx::Rect& bounds) {
     return;
   }
 
+  auto weak_ptr = weak_ptr_factory_.GetWeakPtr();
   exclusive_access_context_->ExitFullscreen();
+  if (!weak_ptr) {
+    return;
+  }
 
   // If the BrowserFrameView has been created, give it a chance to handle the
   // BrowserWidget's bounds change.
@@ -2193,7 +2198,7 @@ void BrowserView::FullscreenStateChanging() {
 void BrowserView::FullscreenStateChanged() {
 #if BUILDFLAG(IS_CHROMEOS)
   const auto* frame_view =
-      static_cast<BrowserFrameViewChromeOS*>(GetFrameView());
+      views::AsViewClass<BrowserFrameViewChromeOS>(GetFrameView());
   ImmersiveModeController::From(browser())->SetEnabled(
       frame_view->ShouldEnableImmersiveModeController());
 #endif
@@ -2463,7 +2468,7 @@ void BrowserView::OnLockedForOnTaskUpdated() {
 
 bool BrowserView::IsLockedFullscreen() const {
   const auto* frame_view =
-      static_cast<const BrowserFrameViewChromeOS*>(GetFrameView());
+      views::AsViewClass<BrowserFrameViewChromeOS>(GetFrameView());
   return frame_view->IsLockedFullscreen();
 }
 
@@ -3222,7 +3227,8 @@ BrowserView::ShowSendTabToSelfPromoBubble(content::WebContents* web_contents,
 
 #if BUILDFLAG(IS_CHROMEOS)
 void BrowserView::ToggleMultitaskMenu() {
-  auto* frame_view = static_cast<BrowserFrameViewChromeOS*>(GetFrameView());
+  auto* frame_view =
+      views::AsViewClass<BrowserFrameViewChromeOS>(GetFrameView());
   if (!frame_view) {
     return;
   }

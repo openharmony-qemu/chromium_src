@@ -42,7 +42,7 @@ viz_component("host") {
     ]
   }
 
-  if (arkweb_safebrowsing) {
+  if (arkweb_safebrowsing && enable_arkweb_ext) {
     sources += [
       "//arkweb/chromium_ext/components/viz/host/safebrowsing_data_controller.cc",
       "//arkweb/chromium_ext/components/viz/host/safebrowsing_data_controller.h",

@@ -3500,6 +3500,14 @@ void NavigationRequest::ResetStateForSiteInstanceChange() {
   // ISNs and DSNs are process-specific.
   frame_entry_item_sequence_number_ = -1;
   frame_entry_document_sequence_number_ = -1;
+
+  // If this was not a redirect that preserves POST submissions (e.g., 307), or
+  // if this will be an error page that may end up in another process, then
+  // clear the post_data as well to prevent leaking file references to a
+  // different SiteInstance.
+  if (!IsPost() || DidEncounterError()) {
+    common_params_->post_data.reset();
+  }
 }
 
 void NavigationRequest::RegisterSubresourceOverride(
@@ -3779,10 +3787,10 @@ void NavigationRequest::OnRequestRedirected(
     return;
   }
 
-  // For now, DevTools needs the POST data sent to the renderer process even if
-  // it is no longer a POST after the redirect.
-  if (redirect_info.new_method != "POST")
+  // If the navigation is no longer a POST, the POST data should be reset.
+  if (redirect_info.new_method != "POST") {
     common_params_->post_data.reset();
+  }
 
   const bool is_first_response = commit_params_->redirects.empty();
   UpdateNavigationHandleTimingsOnResponseReceived(/*is_redirect=*/true,
@@ -3817,6 +3825,12 @@ void NavigationRequest::OnRequestRedirected(
           .IsSameOriginWith(redirect_info.new_url);
 
   did_encounter_cross_origin_redirect_ |= !is_same_origin_redirect;
+
+  // Reset the LCPP hint as the hint is for the original page and not for the
+  // redirected one. Only for cross-origin redirects.
+  if (!is_same_origin_redirect) {
+    commit_params_->lcpp_hint = nullptr;
+  }
 
   // Only same-origin navigations without cross-origin redirects can
   // expose response details (status-code / mime-type).
@@ -6650,8 +6664,8 @@ void NavigationRequest::CommitErrorPage(
     net_error = original_error_code_;
     if (net_error == net::OK) {
       LOG(ERROR) << "CommitErrorPage with fallback proxy, url "
-                 << url::LogUtils::ConvertUrl(
-                        common_params_->url.possibly_invalid_spec(), true)
+                 << url::LogUtils::ConvertUrlWithMask(
+                        common_params_->url.possibly_invalid_spec())
                  << ", net_error " << net_error_;
       SCOPED_CRASH_KEY_STRING256("ErrorPageProxy", "url",
                                  common_params_->url.possibly_invalid_spec());
@@ -6659,10 +6673,23 @@ void NavigationRequest::CommitErrorPage(
       base::debug::DumpWithoutCrashing();
     }
   }
+
+  // Before sending the commit parameters to the renderer process, sanitize
+  // the redirect URLs to avoid leaking potentially sensitive data into
+  // processes which are cross-site. There is no dependency on the
+  // cross-site-ness, therefore just sanitize unilaterally.
+  SanitizeRedirectsForCommit(commit_params_);
+
   GetRenderFrameHost()->FailedNavigation(
       this, *common_params_, *commit_params_, has_stale_copy_in_cache_,
       net_error, extended_error_code_, error_page_content, *document_token_);
-#else      
+#else
+  // Before sending the commit parameters to the renderer process, sanitize
+  // the redirect URLs to avoid leaking potentially sensitive data into
+  // processes which are cross-site. There is no dependency on the
+  // cross-site-ness, therefore just sanitize unilaterally.
+  SanitizeRedirectsForCommit(commit_params_);
+
   GetRenderFrameHost()->FailedNavigation(
       this, *common_params_, *commit_params_, has_stale_copy_in_cache_,
       net_error_, extended_error_code_, error_page_content, *document_token_);
@@ -7150,6 +7177,18 @@ void NavigationRequest::CommitNavigation() {
   SendDeferredConsoleMessages();
 }
 
+void NavigationRequest::UpdateViewTransitionStateForDestinationOrigin(
+    const url::Origin& origin) {
+  if (!commit_params().view_transition_state && !view_transition_resources_) {
+    return;
+  }
+  // Disallow cross origin view transitions.
+  if (!view_transition_source_origin_.IsSameOriginWith(origin)) {
+    commit_params_->view_transition_state.reset();
+    view_transition_resources_.reset();
+  }
+}
+
 void NavigationRequest::CommitPageActivation() {
   TRACE_EVENT("navigation", "NavigationRequest::CommitPageActivation",
               perfetto::Flow::FromPointer(this));
@@ -7231,6 +7270,11 @@ void NavigationRequest::CommitPageActivation() {
     // ReadyToCommitNavigation call).
     page_activation_commit_time_ = base::TimeTicks::Now();
 
+    // Make sure to update the view transition state before passing the state to
+    // `activated_entry`. This may need to clear the state if the origin
+    // changed.
+    UpdateViewTransitionStateForDestinationOrigin(GetOriginToCommit().value());
+
     // Use std::exchange instead of move, so that we clear out the optional on
     // the commit_params.
     activated_entry->SetViewTransitionState(
@@ -7277,6 +7321,11 @@ void NavigationRequest::CommitPageActivation() {
     // Treat this as the commit start time for the activation (i.e., after the
     // ReadyToCommitNavigation call).
     page_activation_commit_time_ = base::TimeTicks::Now();
+
+    // Make sure to update the view transition state before passing the state to
+    // `stored_page`. This may need to clear the state if the origin
+    // changed.
+    UpdateViewTransitionStateForDestinationOrigin(GetOriginToCommit().value());
 
     // Use std::exchange instead of move, so that we clear out the optional on
     // the commit_params.
@@ -8330,12 +8379,13 @@ void NavigationRequest::Resume(NavigationThrottle* resuming_throttle) {
       CHECK(response_body_callback_);
       response_body_watcher_.reset();
       base::WeakPtr<NavigationRequest> this_ptr(weak_factory_.GetWeakPtr());
+      std::string throttle_name = resuming_throttle->GetNameForLogging();
       std::move(response_body_callback_).Run(std::string());
       if (this_ptr.WasInvalidated()) {
         // TODO(https://crbug.com/411238078): Replace the debug code with a
         // comment once we ensure that this is the root cause.
         SCOPED_CRASH_KEY_STRING32("Bug411238078", "throttle",
-                                  resuming_throttle->GetNameForLogging());
+                                  throttle_name.c_str());
         base::debug::DumpWithoutCrashing();
         return;
       }
@@ -11481,11 +11531,13 @@ NavigationRequest::GetJavaNavigationHandle() {
 #endif
 
 void NavigationRequest::SetViewTransitionState(
+    const url::Origin& source_origin,
     std::unique_ptr<ScopedViewTransitionResources> resources,
     blink::ViewTransitionState view_transition_state) {
   commit_params_->view_transition_state = std::move(view_transition_state);
   CHECK(resources);
   view_transition_resources_ = std::move(resources);
+  view_transition_source_origin_ = source_origin;
 }
 
 void NavigationRequest::ResetViewTransitionState() {

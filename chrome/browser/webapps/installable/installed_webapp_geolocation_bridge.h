@@ -12,7 +12,7 @@
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "services/device/public/mojom/geolocation.mojom.h"
 #include "services/device/public/mojom/geoposition.mojom.h"
-#include "url/gurl.h"
+#include "url/origin.h"
 
 class InstalledWebappGeolocationContext;
 
@@ -22,7 +22,7 @@ class InstalledWebappGeolocationBridge : public device::mojom::Geolocation {
   // |context| must outlive this object.
   InstalledWebappGeolocationBridge(
       mojo::PendingReceiver<device::mojom::Geolocation> receiver,
-      const GURL& origin,
+      const url::Origin& origin,
       InstalledWebappGeolocationContext* context);
   InstalledWebappGeolocationBridge(const InstalledWebappGeolocationBridge&) =
       delete;
@@ -56,7 +56,7 @@ class InstalledWebappGeolocationBridge : public device::mojom::Geolocation {
                               jdouble speed);
   void OnNewErrorAvailable(JNIEnv* env, std::string& message);
 
-  const GURL& url() { return url_; }
+  const url::Origin& origin() const { return origin_; }
 
  private:
   // device::mojom::Geolocation:
@@ -80,7 +80,7 @@ class InstalledWebappGeolocationBridge : public device::mojom::Geolocation {
 
   device::mojom::GeopositionResultPtr current_position_;
 
-  const GURL url_;
+  const url::Origin origin_;
 
   // Whether this instance is currently observing location updates with high
   // accuracy.

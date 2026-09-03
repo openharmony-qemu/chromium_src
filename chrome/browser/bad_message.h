@@ -35,6 +35,7 @@ enum BadMessageReason {
   PVM_PRINT_FENCED_FRAME = 12,
 
   // Please add new elements here. The naming convention is abbreviated class
+  SAGPC_INVALID_PERMISSION_REQUEST_CONTEXT = 13,
   // name (e.g. RenderFrameHost becomes RFH) plus a unique description of the
   // reason. After making changes, you MUST update histograms.xml by running:
   // "python tools/metrics/histograms/update_bad_message_reasons.py"

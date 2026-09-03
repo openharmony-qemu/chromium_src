@@ -660,8 +660,7 @@ bool PopupViewViews::AcceptSelectedContentOrCreditCardCell(
     return false;
   }
 
-  controller_->AcceptSuggestion(index->first, accept_method);
-  return true;
+  return GetPopupRowViewAt(index->first).Accept(accept_method);
 }
 
 bool PopupViewViews::RemoveSelectedCell() {
@@ -1316,6 +1315,15 @@ bool PopupViewViews::DoUpdateBoundsAndRedrawPopup(bool prefer_prev_arrow_side) {
                                              controller_->GetWebContents())) {
     controller_->Hide(SuggestionHidingReason::kOverlappingWithAnotherPrompt);
     return false;
+  }
+
+  if (base::FeatureList::IsEnabled(
+          features::kAutofillPopupCheckHtmlFormPopupOverlap)) {
+    if (BoundsOverlapWithHtmlFormPopup(popup_bounds,
+                                       controller_->GetWebContents())) {
+      controller_->Hide(SuggestionHidingReason::kOverlappingWithAnotherPrompt);
+      return false;
+    }
   }
 
   // The pip surface is given the most preference while rendering. So, the

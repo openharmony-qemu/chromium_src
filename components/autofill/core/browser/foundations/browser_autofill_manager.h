@@ -266,6 +266,7 @@ class BrowserAutofillManager : public AutofillManager {
 
   // AutofillManager:
   base::WeakPtr<AutofillManager> GetWeakPtr() override;
+  base::WeakPtr<BrowserAutofillManager> GetBrowserAutofillManagerWeakPtr();
   bool ShouldClearPreviewedForm() override;
   void OnFocusOnNonFormFieldImpl() override;
   void OnFocusOnFormFieldImpl(const FormData& form,

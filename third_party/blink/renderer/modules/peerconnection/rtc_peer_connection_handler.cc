@@ -66,6 +66,7 @@
 #include "third_party/blink/renderer/platform/peerconnection/rtc_stats.h"
 #include "third_party/blink/renderer/platform/peerconnection/rtc_void_request.h"
 #include "third_party/blink/renderer/platform/scheduler/public/post_cross_thread_task.h"
+#include "third_party/blink/renderer/platform/wtf/bind_post_task.h"
 #include "third_party/blink/renderer/platform/wtf/cross_thread_copier_base.h"
 #include "third_party/blink/renderer/platform/wtf/cross_thread_copier_std.h"
 #include "third_party/blink/renderer/platform/wtf/cross_thread_functional.h"
@@ -161,12 +162,12 @@ class CreateSessionDescriptionRequest
   void OnSuccessUniquePtr(
       std::unique_ptr<webrtc::SessionDescriptionInterface> desc) {
     if (!main_thread_->BelongsToCurrentThread()) {
-      PostCrossThreadTask(
-          *main_thread_.get(), FROM_HERE,
+      BindPostTask(
+          main_thread_,
           CrossThreadBindOnce(
               &CreateSessionDescriptionRequest::OnSuccessUniquePtr,
-              webrtc::scoped_refptr<CreateSessionDescriptionRequest>(this),
-              std::move(desc)));
+              webrtc::scoped_refptr<CreateSessionDescriptionRequest>(this)))
+          .Run(std::move(desc));
       return;
     }
 
@@ -194,12 +195,12 @@ class CreateSessionDescriptionRequest
   }
   void OnFailure(webrtc::RTCError error) override {
     if (!main_thread_->BelongsToCurrentThread()) {
-      PostCrossThreadTask(
-          *main_thread_.get(), FROM_HERE,
+      BindPostTask(
+          main_thread_,
           CrossThreadBindOnce(
               &CreateSessionDescriptionRequest::OnFailure,
-              webrtc::scoped_refptr<CreateSessionDescriptionRequest>(this),
-              std::move(error)));
+              webrtc::scoped_refptr<CreateSessionDescriptionRequest>(this)))
+          .Run(std::move(error));
       return;
     }
 
@@ -226,25 +227,20 @@ class CreateSessionDescriptionRequest
   }
 
   const scoped_refptr<base::SingleThreadTaskRunner> main_thread_;
-  Persistent<RTCSessionDescriptionRequest> webkit_request_;
+  CrossThreadPersistent<RTCSessionDescriptionRequest> webkit_request_;
   const base::WeakPtr<RTCPeerConnectionHandler> handler_;
   const CrossThreadWeakPersistent<PeerConnectionTracker> tracker_;
   PeerConnectionTracker::Action action_;
 };
 
-using RTCStatsReportCallbackInternal =
-    CrossThreadOnceFunction<void(std::unique_ptr<RTCStatsReportPlatform>)>;
-
 void GetRTCStatsOnSignalingThread(
     const scoped_refptr<base::SingleThreadTaskRunner>& main_thread,
     webrtc::scoped_refptr<webrtc::PeerConnectionInterface>
         native_peer_connection,
-    RTCStatsReportCallbackInternal callback) {
+    RTCStatsReportCallback callback) {
   TRACE_EVENT0("webrtc", "GetRTCStatsOnSignalingThread");
   native_peer_connection->GetStats(
-      CreateRTCStatsCollectorCallback(
-          main_thread, ConvertToBaseOnceCallback(std::move(callback)))
-          .get());
+      CreateRTCStatsCollectorCallback(main_thread, std::move(callback)).get());
 }
 
 std::set<RTCPeerConnectionHandler*>* GetPeerConnectionHandlers() {
@@ -832,6 +828,7 @@ void RTCPeerConnectionHandler::CloseAndUnregister() {
   // Clear the pointer to client_ so that it does not interfere with
   // garbage collection.
   client_ = nullptr;
+  frame_ = nullptr;
   is_unregistered_ = true;
 
   // Reset the `PeerConnectionDependencyFactory` so we don't prevent it from

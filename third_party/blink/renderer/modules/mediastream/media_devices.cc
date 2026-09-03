@@ -201,7 +201,8 @@ enum class ProduceTargetFunctionResult {
   kDuplicateCallBeforePromiseResolution = 3,
   kDuplicateCallAfterPromiseResolution = 4,
   kElementAndMediaDevicesNotInSameExecutionContext = 5,
-  kMaxValue = kElementAndMediaDevicesNotInSameExecutionContext
+  kFencedFrameNotAllowed = 6,
+  kMaxValue = kFencedFrameNotAllowed
 };
 
 void RecordUma(SubCaptureTarget::Type type,
@@ -915,11 +916,17 @@ ScriptPromise<IDLUndefined> MediaDevices::setPreferredSinkId(
     return ScriptPromise<IDLUndefined>();
   }
 
+  LocalFrame* frame = LocalDOMWindow::From(script_state)->GetFrame();
+  if (!frame || !frame->IsOutermostMainFrame()) {
+    exception_state.ThrowDOMException(
+        DOMExceptionCode::kInvalidStateError,
+        "Can only be called from the top-level document.");
+    return ScriptPromise<IDLUndefined>();
+  }
+
   auto* resolver =
       MakeGarbageCollected<ScriptPromiseResolver<IDLUndefined>>(script_state);
   auto promise = resolver->Promise();
-
-  LocalFrame* frame = LocalDOMWindow::From(script_state)->GetFrame();
   GetDispatcherHost(frame).SetPreferredSinkId(
       sink_id,
       BindOnce(&MediaDevices::SetPreferredSinkIdResultReceived,
@@ -1515,6 +1522,17 @@ bool MediaDevices::MayProduceSubCaptureTarget(ScriptState* script_state,
   if (!element) {
     exception_state.ThrowDOMException(DOMExceptionCode::kNotSupportedError,
                                       "Invalid element.");
+    return false;
+  }
+
+  if (window->GetFrame() && window->GetFrame()->IsInFencedFrameTree()) {
+    RecordUma(type, ProduceTargetFunctionResult::kFencedFrameNotAllowed);
+    exception_state.ThrowDOMException(
+        DOMExceptionCode::kNotAllowedError,
+        type == SubCaptureTarget::Type::kCropTarget
+            ? "CropTarget.fromElement is not allowed in a fenced frame tree."
+            : "RestrictionTarget.fromElement is not allowed in a fenced frame "
+              "tree.");
     return false;
   }
 

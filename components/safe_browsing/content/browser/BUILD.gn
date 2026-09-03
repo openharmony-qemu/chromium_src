@@ -4,6 +4,10 @@
 
 import("//components/safe_browsing/buildflags.gni")
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 # NOTE: This target is separated from :browser as
 # //components/safe_browsing/content/browser/web_ui, which :browser depends on, depends
 # on this.
@@ -15,6 +19,8 @@ source_set("safe_browsing_service") {
     "safe_browsing_service_interface.cc",
     "safe_browsing_service_interface.h",
   ]
+
+  sources += arkweb_components_safe_browsing_content_browser_sources
 
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
 

@@ -9,6 +9,7 @@
   <release seq="1">
     <includes>
       <include name="IDR_DOM_TREE_EXTRACTOR_JS" file="dist/dom_tree_extractor.js" type="BINDATA" preprocess="false" compress="false"/>
+      <include name="IDR_DOM_TREE_EXTRACTOR_VIEWPORT_JS" file="dist/dom_tree_extractor_viewport.js" type="BINDATA" preprocess="false" compress="false"/>
     </includes>
   </release>
 </grit>

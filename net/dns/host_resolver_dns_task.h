@@ -234,9 +234,15 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
 
   void CancelNonFatalTransactions();
 
-  void OnFailure(int net_error,
-                 bool allow_fallback,
-                 const Results* base_results = nullptr);
+  void OnFailure(
+      int net_error,
+      bool allow_fallback,
+      const Results* base_results = nullptr
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      ,
+      std::optional<DnsQueryType> failed_transaction_type = std::nullopt
+#endif
+  );
   void OnDeferredFailure(bool allow_fallback = true);
 
   void OnSuccess(Results results);

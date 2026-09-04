@@ -3863,6 +3863,15 @@
       "features": [
         "pack_large_row_length_separately_pack_buffer"
       ]
+    },
+    {
+      "id": 488,
+      "cr_bugs": [534468209],
+      "description": "Flush pending GPU jobs/queries before unbinding or deleting a user framebuffer object on ARM Mali Valhall/Avalon GPUs to avoid driver crash.",
+      "gl_vendor": "ARM.*",
+      "features": [
+        "flush_queries_before_deleting_or_unbinding_fbo"
+      ]
     }
   ]
 }

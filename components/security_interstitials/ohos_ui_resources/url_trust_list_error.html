@@ -12,6 +12,26 @@
       var MIN_PADDING_GAP = 48;
       var MIN_WIDTH = 188;
 
+      const SecurityInterstitialCommandId = {
+        CMD_DONT_PROCEED: 0,
+        CMD_PROCEED: 1
+      };
+
+      function sendCommand(cmd) {
+        if (window.certificateErrorPageController) {
+          switch (cmd) {
+            case SecurityInterstitialCommandId.CMD_DONT_PROCEED:
+              certificateErrorPageController.dontProceed();
+              break;
+            case SecurityInterstitialCommandId.CMD_PROCEED:
+              certificateErrorPageController.proceed();
+              break;
+          }
+          return;
+        }
+        window.domAutomationController?.send(cmd);
+      }
+
       function onFillErrorPageHtml() {
         mainPanel = document.getElementById('main')
         var ua = navigator.userAgent

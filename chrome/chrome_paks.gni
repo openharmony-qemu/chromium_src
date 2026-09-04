@@ -219,6 +219,8 @@ template("chrome_extra_paks") {
     if (is_arkweb_ext && arkweb_ai) {
       sources += [ "$root_gen_dir/ohos_resources/dom_tree_extractor/dom_tree_extractor_resources.pak" ]
       deps += [ "//ohos_resources/dom_tree_extractor:dom_tree_extractor_resources" ]
+      sources += [ "$root_gen_dir/ohos_resources/page_scene_query/page_scene_query_resources.pak" ]
+      deps += [ "//ohos_resources/page_scene_query:page_scene_query_resources" ]
     }    
 
     if (enable_extensions_core) {

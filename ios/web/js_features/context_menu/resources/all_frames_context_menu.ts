@@ -387,14 +387,11 @@ function processElementForFindElementAtPoint(
 
   // if element is a frame, tell it to respond to this element request
   if (tagName === 'iframe' || tagName === 'frame') {
-    const rect = element.getBoundingClientRect();
-    const absoluteLeft = rect.left + window.pageXOffset;
-    const absoluteTop = rect.top + window.pageYOffset;
     const payload = {
       type: 'org.chromium.contextMenuMessage',
       requestId: requestId,
-      x: centerX - absoluteLeft,
-      y: centerY - absoluteTop,
+      x: centerX - element.offsetLeft,
+      y: centerY - element.offsetTop,
     };
     // The message will not be sent if `targetOrigin` is null or "about:blank",
     // so use * which allows the message to be delievered to the contentWindow

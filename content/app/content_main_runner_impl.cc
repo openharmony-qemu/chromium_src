@@ -1324,9 +1324,9 @@ bool ContentMainRunnerImpl::RunRenderRemoteProxy(
     return true;
   }
   RenderRemoteProxy::CreateAndRegist(command_line, process_type);
-  if (process_type == switches::kGpuProcess ||
-      !RenderRemoteProxy::IsFdsChannelReady()) {
-    return RenderRemoteProxy::WaitForBrowserFd();
+  bool is_gpu = (process_type == switches::kGpuProcess);
+  if (is_gpu || !RenderRemoteProxy::IsFdsChannelReady()) {
+    return RenderRemoteProxy::WaitForBrowserFd(is_gpu);
   }
   return true;
 }

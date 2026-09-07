@@ -85,7 +85,10 @@ source_set("browser_tests") {
 source_set("unit_tests") {
   testonly = true
   sources = [ "new_tab_footer_handler_unittest.cc" ]
-  deps = [ ":test_support" ]
+  deps = [
+    ":test_support",
+    "//chrome/browser/ui/webui:webui_util",
+  ]
 }
 
 mojom("mojo_bindings") {

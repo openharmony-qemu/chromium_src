@@ -853,13 +853,15 @@ bool SharedContextState::InitializeGL(
   return true;
 }
 
-void SharedContextState::FlushGraphiteRecorder() {
+bool SharedContextState::FlushGraphiteRecorder() {
   auto recording = gpu_main_graphite_recorder()->snap();
-  if (recording) {
-    skgpu::graphite::InsertRecordingInfo info = {};
-    info.fRecording = recording.get();
-    graphite_shared_context()->insertRecording(info);
+  if (!recording) {
+    return false;
   }
+
+  skgpu::graphite::InsertRecordingInfo info = {};
+  info.fRecording = recording.get();
+  return graphite_shared_context()->insertRecording(info);
 }
 
 void SharedContextState::FlushAndSubmit(bool sync_to_cpu) {

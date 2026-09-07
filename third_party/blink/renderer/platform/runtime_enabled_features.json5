@@ -3173,6 +3173,10 @@
       status: "stable",
     },
     {
+      name: "LayoutOOFCollectInlinesFix",
+      status: "stable",
+    },
+    {
       name: "LayoutTableCellAlignmentSafe",
       status: "stable",
     },

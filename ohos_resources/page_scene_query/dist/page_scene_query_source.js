@@ -2,13 +2,13 @@
  * page_scene_query_source.js - PageScene input control query script for ArkWeb
  *
  * Exposes window.__pageSceneQuery with one method:
- *   request(ruleJsonStr, ruleId, nodeTypesStr) - Query controls, optionally observe if nodeTypes non-empty
+ *   request(ruleJsonStr, ruleId, nodeTypesStr) - Query controls, start observer if not running
  *
- * nodeTypes empty []  -> query only, return result via IIFE
- * nodeTypes non-empty -> query; if no results, set MutationObserver; observer results via onDomReady
+ * Observer watches for ANY DOM change (childList + attributes + characterData).
+ * When change detected, reports errorCode=3 to C++, which re-triggers request() after delay.
  *
  * Query result format: { errorCode: number, controls: [...] }
- * Error codes: 0 = success, 2 = exception, 3 = DOM pending
+ * Error codes: 0 = success, 2 = exception, 3 = page changed (re-query needed)
  *
  * Observer callback: window.ArkWebPageSceneReady.onDomReady(result, ruleJson)
  */
@@ -24,7 +24,20 @@
             return '';
         }
         if (el.id) {
-            return '//*[@id="' + el.id.replace(/"/g, '&quot;') + '"]';
+            const id = el.id;
+            const hasSingle = id.indexOf("'") !== -1;
+            const hasDouble = id.indexOf('"') !== -1;
+            if (!hasSingle) {
+                return "//*[@id='" + id + "']";
+            }
+            if (!hasDouble) {
+                return '//*[@id="' + id + '"]';
+            }
+            const parts = id.split("'");
+            const concatArgs = parts.map(function (p) {
+                return '"' + p + '"';
+            }).join(",'\"',");
+            return '//*[@id=concat(' + concatArgs + ')]';
         }
         const parts = [];
         while (el && el.nodeType === 1) {
@@ -54,7 +67,6 @@
     }
 
     // ========== Query sub-functions ==========
-
     function matchAttrRules(el, nodeType, attrRules) {
         if (!attrRules || attrRules.length === 0) {
             return true;
@@ -145,7 +157,7 @@
         try {
             config = JSON.parse(selectorConfigStr);
         } catch (e) {
-            return JSON.stringify({ errorCode: 2, controls: [], error: e.message });
+            return JSON.stringify({ errorCode: 2, controls: [], error: e.message || String(e) });
         }
         const results = [];
 
@@ -159,9 +171,6 @@
                     return;
                 }
                 if (config.onlyVisible && !isVisible(el)) {
-                    if (queryControls._pendingVisible) {
-                        queryControls._pendingVisible.push({ el: el, nodeType: nodeType, config: config });
-                    }
                     return;
                 }
                 results.push(buildControl(el, nodeType, config));
@@ -177,13 +186,17 @@
         window.__pageSceneObservers = {};
     }
 
-    // Scroll detection state
     let isScrolling = false;
     let scrollEndTimer = null;
     const scrollEndDelay = 200;
     const mutationDebounceMs = 200;
+    const observerTimeoutMs = 3500;
+    const scrollCheckMaxRetries = 15;
 
     function stopObserver(ruleId) {
+        if (!window.__pageSceneObservers) {
+            return;
+        }
         const entry = window.__pageSceneObservers[ruleId];
         if (!entry) {
             return;
@@ -206,41 +219,7 @@
         }
     }
 
-    function nodeMatchesNodeTypes(node, nodeTypes) {
-        for (let k = 0; k < nodeTypes.length; k++) {
-            if (node.tagName && node.tagName.toLowerCase() === nodeTypes[k]) {
-                return true;
-            }
-            const descendants = node.getElementsByTagName ? node.getElementsByTagName(nodeTypes[k]) : [];
-            if (descendants.length > 0) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function mutationMatchesNodeTypes(mutations, nodeTypes) {
-        for (let i = 0; i < mutations.length; i++) {
-            const mutation = mutations[i];
-            if (mutation.type !== 'childList') {
-                continue;
-            }
-            const addedNodes = mutation.addedNodes;
-            for (let j = 0; j < addedNodes.length; j++) {
-                if (nodeMatchesNodeTypes(addedNodes[j], nodeTypes)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    // Scroll event handlers — only manage isScrolling state
-    // touchstart/mousedown do NOT set isScrolling: a tap without scroll is not scrolling.
-    // Only actual scroll/touchmove sets isScrolling = true.
-    function onScrollStart() {
-        // no-op: tap is not scroll
-    }
+    function onScrollStart() {}
 
     let lastScrollReset = 0;
 
@@ -282,18 +261,16 @@
         window.addEventListener('mouseup', onScrollEnd);
     }
 
-    const scrollCheckMaxRetries = 15;
-    const observerTimeoutMs = 2000;
-    const visibleRetryMs = 300;
-    const visibleRetryMax = 5;
-
-    function setupObserver(selectorConfigStr, selectorJsonStr, ruleId, nodeTypes) {
-        if (!nodeTypes || nodeTypes.length === 0) {
+    function setupObserver(selectorConfigStr, selectorJsonStr, ruleId) {
+        if (!window.__pageSceneObservers) {
+            window.__pageSceneObservers = {};
+        }
+        if (window.__pageSceneObservers[ruleId]) {
             return;
         }
 
         const observer = new MutationObserver(function (mutations) {
-            if (!mutationMatchesNodeTypes(mutations, nodeTypes)) {
+            if (!window.__pageSceneObservers) {
                 return;
             }
             const entry = window.__pageSceneObservers[ruleId];
@@ -304,64 +281,26 @@
                 clearTimeout(entry.debounceTimer);
             }
             let scrollRetries = 0;
-            let visibleRetries = 0;
-            let pendingVisible = [];
-            function check() {
+            function notifyChanged() {
                 if (isScrolling && scrollRetries < scrollCheckMaxRetries) {
                     scrollRetries++;
-                    entry.debounceTimer = setTimeout(check, scrollEndDelay);
+                    entry.debounceTimer = setTimeout(notifyChanged, scrollEndDelay);
                     return;
                 }
-                queryControls._pendingVisible = [];
-                const resultStr = queryControls(selectorConfigStr);
-                const parsed = JSON.parse(resultStr);
-                if (parsed.controls.length > 0) {
-                    entry.debounceTimer = null;
-                    stopObserver(ruleId);
-                    reportResult(resultStr, selectorJsonStr);
-                } else if (queryControls._pendingVisible.length > 0 && visibleRetries < visibleRetryMax) {
-                    pendingVisible = queryControls._pendingVisible;
-                    visibleRetries++;
-                    entry.debounceTimer = setTimeout(checkPending, visibleRetryMs);
-                } else {
-                    entry.debounceTimer = null;
-                    stopObserver(ruleId);
-                    reportResult(resultStr, selectorJsonStr);
-                }
+                reportResult(JSON.stringify({ errorCode: 3, controls: [] }), selectorJsonStr);
+                entry.debounceTimer = null;
+                stopObserver(ruleId);
             }
-            function checkPending() {
-                const newlyVisible = [];
-                for (let i = 0; i < pendingVisible.length; i++) {
-                    const item = pendingVisible[i];
-                    if (isVisible(item.el)) {
-                        newlyVisible.push(buildControl(item.el, item.nodeType, item.config));
-                    }
-                }
-                if (newlyVisible.length > 0) {
-                    entry.debounceTimer = null;
-                    stopObserver(ruleId);
-                    reportResult(JSON.stringify({ errorCode: 0, controls: newlyVisible }), selectorJsonStr);
-                } else if (visibleRetries < visibleRetryMax) {
-                    visibleRetries++;
-                    entry.debounceTimer = setTimeout(checkPending, visibleRetryMs);
-                } else {
-                    entry.debounceTimer = null;
-                    stopObserver(ruleId);
-                    reportResult(JSON.stringify({ errorCode: 0, controls: [] }), selectorJsonStr);
-                }
-            }
-            entry.debounceTimer = setTimeout(check, mutationDebounceMs);
+            entry.debounceTimer = setTimeout(notifyChanged, mutationDebounceMs);
         });
 
-        observer.observe(document.documentElement, { childList: true, subtree: true });
+        observer.observe(document.documentElement, {
+            childList: true, subtree: true,
+            attributes: true, characterData: true
+        });
 
         const timeoutId = setTimeout(function () {
             stopObserver(ruleId);
-            const resultStr = queryControls(selectorConfigStr);
-            const parsed = JSON.parse(resultStr);
-            if (parsed.controls.length > 0) {
-                reportResult(resultStr, selectorJsonStr);
-            }
         }, observerTimeoutMs);
 
         const entry = {
@@ -373,42 +312,34 @@
         window.__pageSceneObservers[ruleId] = entry;
     }
 
-    function onDomReadyForObserver(selectorConfigStr, selectorJsonStr, ruleId, nodeTypes) {
-        const resultStr = queryControls(selectorConfigStr);
-        const parsed = JSON.parse(resultStr);
-        if (parsed.controls.length > 0) {
-            reportResult(resultStr, selectorJsonStr);
-        } else {
-            setupObserver(selectorConfigStr, selectorJsonStr, ruleId, nodeTypes);
-        }
-    }
-
-    function startObserver(selectorConfigStr, selectorJsonStr, ruleId, nodeTypes) {
-        stopObserver(ruleId);
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function () {
-                setTimeout(function () {
-                    onDomReadyForObserver(selectorConfigStr, selectorJsonStr, ruleId, nodeTypes);
-                }, 100);
-            });
-            return;
-        }
-        setupObserver(selectorConfigStr, selectorJsonStr, ruleId, nodeTypes);
-    }
-
     // ========== Public API ==========
     window.__pageSceneQuery = {
         request: function (ruleJsonStr, ruleId, nodeTypesStr) {
-            const nodeTypes = JSON.parse(nodeTypesStr);
+            let nodeTypes;
+            try {
+                nodeTypes = JSON.parse(nodeTypesStr);
+            } catch (e) {
+                return JSON.stringify({ errorCode: 2, controls: [], error: 'nodeTypesStr parse: ' + e.message });
+            }
             const resultStr = queryControls(ruleJsonStr);
-            const parsed = JSON.parse(resultStr);
-            if (parsed.controls.length === 0 && nodeTypes && nodeTypes.length > 0) {
-                startObserver(ruleJsonStr, ruleJsonStr, ruleId, nodeTypes);
+            let parsed;
+            try {
+                parsed = JSON.parse(resultStr);
+            } catch (e) {
+                return resultStr;
+            }
+            if (nodeTypes && nodeTypes.length > 0) {
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', function () {
+                        setupObserver(ruleJsonStr, ruleJsonStr, ruleId);
+                    });
+                } else {
+                    setupObserver(ruleJsonStr, ruleJsonStr, ruleId);
+                }
             }
             return resultStr;
         }
     };
 
-    // Initialize scroll listener once
     setupScrollListener();
 })();

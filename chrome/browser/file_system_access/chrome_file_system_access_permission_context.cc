@@ -669,11 +669,12 @@ std::string_view GetGrantKeyFromGrantType(GrantType type) {
 
 #if BUILDFLAG(SAFE_BROWSING_AVAILABLE)
 safe_browsing::DownloadFileType::DangerLevel GetFileTypeDangerLevel(
-    const base::FilePath& path,
-    const url::Origin& origin,
-    Profile* profile) {
+    const base::FilePath& path) {
+  // Passing an empty source URL and null prefs ensures the result reflects
+  // only the configured danger level for the file type, without applying any
+  // download-specific overrides.
   return safe_browsing::FileTypePolicies::GetInstance()->GetFileDangerLevel(
-      path, origin.GetURL(), profile->GetPrefs());
+      path, GURL(), /*prefs=*/nullptr);
 }
 #endif
 
@@ -1962,11 +1963,9 @@ bool ChromeFileSystemAccessPermissionContext::CanObtainWritePermission(
 }
 
 bool ChromeFileSystemAccessPermissionContext::IsFileTypeDangerous(
-    const base::FilePath& path,
-    const url::Origin& origin) {
+    const base::FilePath& path) {
 #if BUILDFLAG(SAFE_BROWSING_AVAILABLE)
-  return GetFileTypeDangerLevel(path, origin,
-                                Profile::FromBrowserContext(profile_)) ==
+  return GetFileTypeDangerLevel(path) ==
          safe_browsing::DownloadFileType::DANGEROUS;
 #else
   return false;
@@ -2253,8 +2252,7 @@ void ChromeFileSystemAccessPermissionContext::DidCheckPathAgainstBlocklist(
   if (handle_type == HandleType::kFile && user_action == UserAction::kSave) {
     // See https://crbug.com/1320877#c4 for justification for why we show the
     // prompt if `danger_level` is ALLOW_ON_USER_GESTURE as well as DANGEROUS.
-    auto danger_level = GetFileTypeDangerLevel(
-        path_info.path, origin, Profile::FromBrowserContext(profile_));
+    auto danger_level = GetFileTypeDangerLevel(path_info.path);
     if (danger_level == safe_browsing::DownloadFileType::DANGEROUS ||
         danger_level ==
             safe_browsing::DownloadFileType::ALLOW_ON_USER_GESTURE) {

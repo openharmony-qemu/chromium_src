@@ -457,6 +457,10 @@ void HTMLPermissionElement::DetachLayoutTree(bool performing_reattach) {
   if (auto* view = GetDocument().View()) {
     view->UnregisterFromLifecycleNotifications(this);
   }
+  if (!performing_reattach && intersection_observer_) {
+    intersection_observer_->disconnect();
+    intersection_observer_ = nullptr;
+  }
 }
 
 void HTMLPermissionElement::RemovedFrom(ContainerNode& insertion_point) {

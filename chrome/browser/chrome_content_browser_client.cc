@@ -6080,6 +6080,11 @@ ChromeContentBrowserClient::CreateURLLoaderThrottles(
   if (signin_throttle) {
     result.push_back(std::move(signin_throttle));
   }
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  ChromeContentBrowserClientUtils::AddSBURLLoaderThrottle(request, frame_tree_node_id, result);
+#endif // BUILDFLAG(ARKWEB_SAFEBROWSING)
+
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
   ChromeContentBrowserClientUtils::NoStatePrefetchContentsExt(
       browser_context, wc_getter, result);

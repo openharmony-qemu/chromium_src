@@ -208,10 +208,6 @@
 #include "base/debug/asan_service.h"
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "content/renderer/render_remote_proxy_ohos.h"
-#endif
-
 namespace content {
 extern int GpuMain(MainFunctionParams);
 extern int RendererMain(MainFunctionParams);
@@ -1323,11 +1319,9 @@ bool ContentMainRunnerImpl::RunRenderRemoteProxy(
       process_type != switches::kGpuProcess) {
     return true;
   }
-  RenderRemoteProxy::CreateAndRegist(command_line, process_type);
-  if (process_type == switches::kGpuProcess ||
-      !RenderRemoteProxy::IsFdsChannelReady()) {
-    return RenderRemoteProxy::WaitForBrowserFd();
-  }
+  // Native child-process entry points receive the global descriptors and GPU
+  // browser proxy directly. The legacy RenderRemoteProxy handshake would wait
+  // for the same descriptors a second time.
   return true;
 }
 #endif

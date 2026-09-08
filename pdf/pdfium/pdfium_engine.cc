@@ -4761,11 +4761,16 @@ void PDFiumEngine::MoveRangeSelectionExtent(const gfx::Point& extent) {
     range_moved_ = true;
     client_->ResetResponsePendingInputEvent();
   }
-#endif  // BUILDFLAG(ARKWEB_PDF)
-
+  point_data = GetPointData(gfx::PointF(range_selection_base_));
+  if (!PageIndexInBounds(point_data.page_index) || point_data.char_index < 0) {
+    return;
+  }
+  ExtendSelection(point_data);
+#else
   // This should always succeed because the range selection base should have
   // already been selected.
   ExtendSelection(GetPointData(gfx::PointF(range_selection_base_)));
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 void PDFiumEngine::SetSelectionBounds(const gfx::Point& base,

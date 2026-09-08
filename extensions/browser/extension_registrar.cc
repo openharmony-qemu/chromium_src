@@ -42,6 +42,10 @@
 #include "extensions/common/permissions/permissions_data.h"
 #include "third_party/blink/public/common/service_worker/service_worker_status_code.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/browser/extension_log_reporter.h"
+#endif
+
 using content::DevToolsAgentHost;
 using extensions::mojom::ManifestLocation;
 
@@ -704,6 +708,7 @@ bool ExtensionRegistrar::UninstallExtension(
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   extension_prefs_->pref_service()->CommitPendingWrite();
+  ExtensionLogReporter::ReportUninstallationSuccess(reason, extension->id());
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
   return true;

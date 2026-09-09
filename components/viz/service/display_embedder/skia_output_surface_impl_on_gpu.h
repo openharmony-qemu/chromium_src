@@ -337,6 +337,10 @@ class SkiaOutputSurfaceImplOnGpu
   void SetBypassVsyncCondition(int32_t condition);
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  void SetAsyncStackId(uint64_t stackId);
+#endif
+
   std::shared_ptr<SkiaOutputSurfaceImplOnGpuUtils> impl_utils() {	
     return impl_utils_;	
   }

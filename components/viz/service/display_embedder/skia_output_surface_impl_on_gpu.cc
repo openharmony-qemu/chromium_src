@@ -155,6 +155,9 @@
 #include "components/viz/service/display_embedder/output_presenter_ohos.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
 namespace viz {
 
 namespace {
@@ -491,6 +494,19 @@ void SkiaOutputSurfaceImplOnGpu::FinishPaintCurrentFrame(
     std::vector<gpu::SyncToken> sync_tokens,
     base::OnceClosure on_finished,
     base::OnceCallback<void(gfx::GpuFenceHandle)> return_release_fence_cb) {
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  uint64_t stackId = output_device_ ? output_device_->GetAsyncStackId() : 0;
+  std::optional<base::ScopedClosureRunner> dfx_pop_submitter_stack_id;
+  if (stackId) {
+    LOG(DEBUG) << "SkiaOutputSurfaceImplOnGpu::FinishPaintCurrentFrame::GetAsyncStackId: " << stackId;
+    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetHiViewDfxAdapterInstance().DfxSetSubmitterStackId(stackId);
+    dfx_pop_submitter_stack_id.emplace(base::BindOnce(
+      [](uint64_t id) {
+        OHOS::NWeb::OhosAdapterHelper::GetInstance().GetHiViewDfxAdapterInstance().DfxPopSubmitterStackId(id);
+      },
+      stackId));
+  }
+#endif
   TRACE_EVENT0("viz", "SkiaOutputSurfaceImplOnGpu::FinishPaintCurrentFrame");
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   DCHECK(!scoped_output_device_paint_);

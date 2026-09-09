@@ -109,6 +109,10 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
   void SetBypassVsyncCondition(int32_t condition);
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  void SetAsyncStackId(uint64_t stackId);
+#endif
+
 #if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
   void SetNextFrameSkipsDrawRenderPasses(bool skip) {
     next_frame_skips_draw_render_passes_ = skip;

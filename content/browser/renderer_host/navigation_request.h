@@ -1764,6 +1764,9 @@ class CONTENT_EXPORT NavigationRequest
 
  private:
   friend class NavigationRequestTest;
+  FRIEND_TEST_ALL_PREFIXES(
+      NavigationRequestDownloadBrowserTest,
+      OpenerCrossOrigin_BrowserOverridesCompromisedRenderer);
   FRIEND_TEST_ALL_PREFIXES(NavigationRequestTest, SanitizeRedirectsForCommit);
 
   struct ConsoleMessage {
@@ -2973,6 +2976,10 @@ class CONTENT_EXPORT NavigationRequest
   // the navigation is not in a new window. Can only be true for renderer
   // initiated navigations which use `CreateBrowserInitiated()`.
   const bool was_opener_suppressed_ = false;
+
+  // Indicates whether the initiator is navigating its opener frame at the time
+  // of request creation.
+  bool is_opener_navigation_ = false;
 
   // This tracks a connection between the current pending entry and this
   // request, such that the pending entry can be discarded if no requests are

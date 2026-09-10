@@ -214,6 +214,7 @@ HTTPHeaderSet ExtractCorsExposedHeaderNamesList(
 }
 
 bool IsCorsSafelistedResponseHeader(const String& name) {
+  // LINT.IfChange(allowed_cross_origin_response_headers)
   // https://fetch.spec.whatwg.org/#cors-safelisted-response-header-name
   // TODO(dcheng): Consider using a flat_set here with a transparent comparator.
   DEFINE_THREAD_SAFE_STATIC_LOCAL(HTTPHeaderSet,
@@ -227,6 +228,7 @@ bool IsCorsSafelistedResponseHeader(const String& name) {
                                       "last-modified",
                                       "pragma",
                                   }));
+  // LINT.ThenChange(third_party/blink/common/service_worker/service_worker_loader_helpers.cc:kCorsSafelistedResponseHeaderNames)
   return base::Contains(allowed_cross_origin_response_headers, name.Ascii());
 }
 

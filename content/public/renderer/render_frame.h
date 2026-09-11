@@ -117,6 +117,34 @@ class CONTENT_EXPORT RenderFrame :
                                        const std::vector<std::string>& values) {
     return 11;  // WebCommandErrorCode::FAILED
   }
+  virtual int32_t ExecuteFocusCommand(const std::string& xpath, bool suppress_keyboard) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
+  virtual int32_t ExecuteInputModifyCommand(const std::string& content) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
+  virtual int32_t ExecuteInputInsertCommand(const std::string& content, int32_t index) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
+  virtual int32_t ExecuteAutoFillCommand(const std::string& xpath,
+                                         const std::string& content,
+                                         int32_t index, int32_t mode) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
+  virtual int32_t ExecuteClickCommand(const std::string& xpath) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
+  virtual int32_t ExecuteScrollCommand(const std::string& xpath,
+                                       const std::string& align,
+                                       int32_t offset) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
+  virtual int32_t ExecuteInputSelectCommand(int32_t start_index, int32_t finish_index) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
+  virtual int32_t ExecuteInputSetCursorCommand(int32_t index) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   virtual gfx::Vector2dF GetOverScrollOffset() = 0;
 #endif

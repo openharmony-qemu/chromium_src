@@ -3708,7 +3708,7 @@ void LocalFrame::SaveImageAt(const gfx::Point& window_point) {
     return;
 
   auto params = mojom::blink::DownloadURLParams::New();
-  params->is_context_menu_save = true;
+  params->should_prompt_for_save_location = true;
   params->data_url_blob = DataURLToBlob(url);
   GetLocalFrameHostRemote().DownloadURL(std::move(params));
 }
@@ -3748,7 +3748,7 @@ void LocalFrame::MediaPlayerActionAtViewportPoint(
             data_buffer->ToDataURL(encoding_mime_type, /*quality=*/0);
 
         auto params = mojom::blink::DownloadURLParams::New();
-        params->is_context_menu_save = true;
+        params->should_prompt_for_save_location = true;
         // Suggested name always starts with "videoframe_", plus the timestamp
         // of the video frame in milliseconds.
         auto timestamp_ms = base::saturated_cast<uint32_t>(

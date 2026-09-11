@@ -40,6 +40,7 @@
 #include "components/viz/common/frame_sinks/copy_output_result.h"
 #include "content/browser/browser_url_handler_impl.h"
 #include "content/browser/child_process_security_policy_impl.h"
+#include "content/browser/renderer_host/navigation_entry_impl.h"
 #include "content/browser/renderer_host/navigation_request.h"
 #include "content/browser/renderer_host/navigation_state_keep_alive.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
@@ -10188,6 +10189,47 @@ IN_PROC_BROWSER_TEST_F(HstsUpgradeBrowserTest, UpgradeTopLevelOnly) {
 
   ASSERT_TRUE(fenced_frame);
   EXPECT_EQ(url_of_hsts_frame_http, fenced_frame->GetLastCommittedURL());
+}
+
+// Verify that navigating an about:blank iframe (which sets
+// client_side_redirect_url to about:blank) succeeds.
+IN_PROC_BROWSER_TEST_F(NavigationBrowserTest,
+                       AboutBlankFrameClientSideRedirectUrl) {
+  GURL start_url(embedded_test_server()->GetURL("a.com", "/title1.html"));
+  EXPECT_TRUE(NavigateToURL(shell(), start_url));
+
+  WebContentsImpl* web_contents =
+      static_cast<WebContentsImpl*>(shell()->web_contents());
+  FrameTreeNode* root = web_contents->GetPrimaryFrameTree().root();
+
+  // Create an iframe and navigate it to about:blank so that it is a committed,
+  // non-initial document.
+  EXPECT_TRUE(ExecJs(root->current_frame_host(),
+                     "var frame = document.createElement('iframe'); "
+                     "frame.id = 'child'; "
+                     "document.body.appendChild(frame);"));
+  EXPECT_TRUE(
+      NavigateIframeToURL(web_contents, "child", GURL(url::kAboutBlankURL)));
+
+  // Perform a client-side redirect (replacement navigation) from about:blank.
+  GURL target_url(embedded_test_server()->GetURL("b.com", "/title2.html"));
+  TestNavigationObserver nav_observer(web_contents);
+  EXPECT_TRUE(ExecJs(root->current_frame_host(),
+                     JsReplace("document.getElementById('child').contentWindow."
+                               "location.replace($1);",
+                               target_url)));
+  nav_observer.Wait();
+  EXPECT_TRUE(nav_observer.last_navigation_succeeded());
+
+  // Check that the client side redirect URL (about:blank) is pushed as the
+  // first URL onto the subframe's redirect chain.
+  NavigationEntryImpl* entry =
+      web_contents->GetController().GetLastCommittedEntry();
+  FrameNavigationEntry* frame_entry = entry->GetFrameEntry(root->child_at(0));
+  ASSERT_TRUE(frame_entry);
+  EXPECT_EQ(frame_entry->redirect_chain().size(), 2u);
+  EXPECT_EQ(frame_entry->redirect_chain()[0], GURL(url::kAboutBlankURL));
+  EXPECT_EQ(frame_entry->redirect_chain()[1], target_url);
 }
 
 }  // namespace content

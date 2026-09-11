@@ -359,6 +359,43 @@ bool VerifyBeginNavigationCommonParams(
   return true;
 }
 
+bool VerifyClientSideRedirectUrl(const RenderFrameHostImpl& current_rfh,
+                                 GURL* client_side_redirect_url) {
+  CHECK_CURRENTLY_ON(BrowserThread::UI);
+  CHECK(client_side_redirect_url);
+
+  // `client_side_redirect_url` is only populated if the navigation's transition
+  // type is a client side redirect. For all other renderer-initiated
+  // navigations, it is intentionally empty.
+  if (client_side_redirect_url->is_empty()) {
+    return true;
+  }
+
+  RenderProcessHost* process = current_rfh.GetProcess();
+  CHECK(process);
+
+  process->FilterURL(false, client_side_redirect_url);
+
+  // Verify that `process` has hosted `redirect_origin` either as a standard
+  // tuple origin or as the precursor of an opaque origin (e.g. when the
+  // redirect is initiated by a sandboxed document). URLs blocked by FilterURL()
+  // are rewritten to about:blank#blocked, which is treated as the
+  // `current_rfh`'s origin.
+  url::Origin redirect_origin = url::Origin::Resolve(
+      *client_side_redirect_url, current_rfh.GetLastCommittedOrigin());
+  auto* policy = ChildProcessSecurityPolicyImpl::GetInstance();
+  ChildProcessId process_id = process->GetID();
+  if (!policy->HostsOrigin(process_id.GetUnsafeValue(), redirect_origin) &&
+      !policy->HostsOrigin(process_id.GetUnsafeValue(),
+                           redirect_origin.DeriveNewOpaqueOrigin())) {
+    bad_message::ReceivedBadMessage(
+        process, bad_message::RFHI_INVALID_CLIENT_SIDE_REDIRECT_URL);
+    return false;
+  }
+
+  return true;
+}
+
 bool VerifyCreateNewWindowParams(const RenderFrameHostImpl& current_rfh,
                                  const mojom::CreateNewWindowParams& params) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);

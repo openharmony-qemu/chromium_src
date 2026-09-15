@@ -37,6 +37,9 @@
 #include "base/threading/thread_id_name_manager.h"
 #include "base/threading/thread_type_delegate.h"
 #include "build/build_config.h"
+#if BUILDFLAG(IS_OHOS)
+#include "arkweb/chromium_ext/base/threading/platform_thread_ohos.h"
+#endif
 
 namespace base {
 
@@ -117,6 +120,10 @@ void SetCurrentThreadTypeImpl(ThreadType thread_type,
       g_thread_type_delegate->HandleThreadTypeChange(thread_id, thread_type)) {
     return;
   }
+
+#if BUILDFLAG(IS_OHOS)
+  SetCurrentThreadTypeForOhos(thread_type);
+#endif
 
   internal::SetThreadType(getpid(), thread_id, thread_type, IsViaIPC(false));
 }

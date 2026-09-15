@@ -51,6 +51,7 @@
 #include "base/task/single_thread_task_runner.h"
 #include "base/task/task_traits.h"
 #include "base/task/thread_pool.h"
+#include "base/threading/platform_thread.h"
 #include "base/threading/simple_thread.h"
 #include "base/threading/thread_restrictions.h"
 #include "base/trace_event/memory_dump_manager.h"
@@ -623,6 +624,9 @@ void RenderThreadImpl::Init() {
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   ChildProcess::current()->SetIOThreadType(base::ThreadType::kDisplayCritical);
+#endif
+#if BUILDFLAG(IS_OHOS)
+  base::PlatformThread::SetCurrentThreadType(base::ThreadType::kDisplayCritical);
 #endif
 
   process_foregrounded_count_ = 0;

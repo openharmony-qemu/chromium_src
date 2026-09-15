@@ -36,6 +36,7 @@
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/task_traits.h"
 #include "base/task/thread_pool.h"
+#include "base/threading/platform_thread.h"
 #include "base/timer/timer.h"
 #include "base/types/pass_key.h"
 #include "base/values.h"
@@ -503,6 +504,9 @@ void NetworkService::Initialize(mojom::NetworkServiceParamsPtr params,
 #endif
 
   metrics_updater_ = std::make_unique<RestrictedCookieManagerMetrics>();
+#if BUILDFLAG(IS_OHOS)
+  base::PlatformThread::SetCurrentThreadType(base::ThreadType::kDisplayCritical);
+#endif
 }
 
 NetworkService::~NetworkService() {

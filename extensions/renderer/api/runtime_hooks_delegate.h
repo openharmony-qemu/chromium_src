@@ -5,6 +5,7 @@
 #ifndef EXTENSIONS_RENDERER_API_RUNTIME_HOOKS_DELEGATE_H_
 #define EXTENSIONS_RENDERER_API_RUNTIME_HOOKS_DELEGATE_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "extensions/renderer/bindings/api_binding_hooks_delegate.h"
 #include "extensions/renderer/bindings/api_signature.h"
@@ -61,6 +62,11 @@ class RuntimeHooksDelegate : public APIBindingHooksDelegate {
   APIBindingHooks::RequestResult HandleSendNativeMessage(
       ScriptContext* script_context,
       const APISignature::V8ParseResult& parse_result);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+  APIBindingHooks::RequestResult HandleSendBrowserMessage(
+      ScriptContext* script_context,
+      const APISignature::V8ParseResult& parse_result);
+#endif
   APIBindingHooks::RequestResult HandleConnect(
       ScriptContext* script_context,
       const APISignature::V8ParseResult& parse_result);

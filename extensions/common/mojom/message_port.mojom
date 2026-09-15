@@ -28,7 +28,10 @@ enum ChannelType {
   // A native message channel. Note that unlike above, both one-time and
   // long-lived native message channels use the same type (because they don't
   // have associated channel names).
-  kNative
+  kNative,
+  // A one-time message channel to the host browser application.
+  [EnableIf=arkweb_arkweb_extensions&is_arkweb_ext]
+  kBrowser
 };
 
 // Type of the messaging source or destination - i.e., the type of the

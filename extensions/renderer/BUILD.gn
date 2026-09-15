@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//components/guest_view/buildflags/buildflags.gni")
 import("//extensions/buildflags/buildflags.gni")
 import("//pdf/features.gni")
@@ -442,6 +443,20 @@ source_set("unit_tests") {
     sources += [
       "api/automation/automation_internal_custom_bindings_unittests.cc",
       "api/feedback_private_hooks_delegate_unittest.cc",
+    ]
+  }
+}
+
+if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
+  source_set("messaging_unit_tests") {
+    testonly = true
+
+    sources = [ "//arkweb/chromium_ext/extensions/renderer/api/messaging/message_target_unittest.cc" ]
+
+    deps = [
+      ":renderer",
+      "//extensions/common",
+      "//testing/gtest",
     ]
   }
 }

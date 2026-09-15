@@ -6,6 +6,7 @@
 
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/strings/strcat.h"
 #include "base/strings/string_number_conversions.h"
@@ -274,6 +275,24 @@ void ExtensionFrameHost::OpenChannelToNativeApp(
       render_frame_host->GetBrowserContext(), render_frame_host, port_id,
       native_app_name, std::move(port), std::move(port_host));
 }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+void ExtensionFrameHost::OpenChannelToBrowser(
+    const PortId& port_id,
+    mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
+    mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
+        port_host) {
+  content::RenderFrameHost* render_frame_host =
+      receivers_.GetCurrentTargetFrame();
+  auto* process = render_frame_host->GetProcess();
+  TRACE_EVENT("extensions", "ExtensionFrameHost::OpenChannelToBrowser",
+              ChromeTrackEvent::kRenderProcessHost, *process);
+
+  MessageServiceApi::GetMessageService()->OpenChannelToBrowser(
+      render_frame_host->GetBrowserContext(), render_frame_host, port_id,
+      std::move(port), std::move(port_host));
+}
+#endif
 
 void ExtensionFrameHost::OpenChannelToTab(
     int32_t tab_id,

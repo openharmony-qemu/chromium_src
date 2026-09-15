@@ -73,6 +73,25 @@ v8::Local<v8::Value> SendMessageTester::TestSendNativeMessage(
   return output;
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+v8::Local<v8::Value> SendMessageTester::TestSendBrowserMessage(
+    const std::string& args,
+    const std::string& expected_message) {
+  SCOPED_TRACE(
+      base::StringPrintf("Send Browser Message Args: `%s`", args.c_str()));
+
+  // Browser messages are handled by the browser process, so the port remains
+  // open until the browser-side receiver replies.
+  PortStatus expected_port_status = OPEN;
+  MessageTarget expected_target(MessageTarget::ForBrowser());
+
+  v8::Local<v8::Value> output;
+  TestSendMessageOrRequest(args, expected_message, expected_target,
+                           expected_port_status, SEND_BROWSER_MESSAGE, output);
+  return output;
+}
+#endif
+
 void SendMessageTester::TestConnect(const std::string& args,
                                     const std::string& expected_channel,
                                     const MessageTarget& expected_target) {
@@ -139,6 +158,13 @@ void SendMessageTester::TestSendMessageOrRequest(
       // sendNativeMessage doesn't have name channels so we don't need to change
       // expected_channel from an empty string.
       break;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+    case SEND_BROWSER_MESSAGE:
+      method_name = "sendBrowserMessage";
+      channel_type = mojom::ChannelType::kBrowser;
+      // sendBrowserMessage doesn't have named channels.
+      break;
+#endif
   }
 
   MockMessagePortHost mock_message_port_host;

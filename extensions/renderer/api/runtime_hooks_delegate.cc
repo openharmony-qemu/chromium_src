@@ -6,6 +6,7 @@
 
 #include <string_view>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/containers/span.h"
 #include "base/strings/strcat.h"
@@ -92,6 +93,9 @@ constexpr char kConnect[] = "runtime.connect";
 constexpr char kConnectNative[] = "runtime.connectNative";
 constexpr char kSendMessage[] = "runtime.sendMessage";
 constexpr char kSendNativeMessage[] = "runtime.sendNativeMessage";
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+constexpr char kSendBrowserMessage[] = "runtime.sendBrowserMessage";
+#endif
 constexpr char kGetBackgroundPage[] = "runtime.getBackgroundPage";
 constexpr char kGetPackageDirectoryEntry[] = "runtime.getPackageDirectoryEntry";
 constexpr char kRequestUpdateCheck[] = "runtime.requestUpdateCheck";
@@ -228,6 +232,9 @@ RequestResult RuntimeHooksDelegate::HandleRequest(
       {&RuntimeHooksDelegate::HandleGetVersion, kGetVersion},
       {&RuntimeHooksDelegate::HandleConnectNative, kConnectNative},
       {&RuntimeHooksDelegate::HandleSendNativeMessage, kSendNativeMessage},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+      {&RuntimeHooksDelegate::HandleSendBrowserMessage, kSendBrowserMessage},
+#endif
       {&RuntimeHooksDelegate::HandleGetBackgroundPage, kGetBackgroundPage},
       {&RuntimeHooksDelegate::HandleGetPackageDirectoryEntryCallback,
        kGetPackageDirectoryEntry},
@@ -415,6 +422,47 @@ RequestResult RuntimeHooksDelegate::HandleSendNativeMessage(
   }
   return result;
 }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+RequestResult RuntimeHooksDelegate::HandleSendBrowserMessage(
+    ScriptContext* script_context,
+    const APISignature::V8ParseResult& parse_result) {
+  const v8::LocalVector<v8::Value>& arguments = *parse_result.arguments;
+  DCHECK_EQ(2u, arguments.size());
+
+  v8::Local<v8::Value> v8_message = arguments[0];
+  DCHECK(!v8_message.IsEmpty());
+  std::string error;
+
+  std::unique_ptr<Message> message =
+      messaging_util::MessageFromV8(script_context->v8_context(), v8_message,
+                                    mojom::SerializationFormat::kJson, &error);
+  if (!message) {
+    RequestResult result(RequestResult::INVALID_INVOCATION);
+    result.error = std::move(error);
+    return result;
+  }
+
+  v8::Local<v8::Function> response_callback;
+  if (!arguments[1]->IsNull()) {
+    response_callback = arguments[1].As<v8::Function>();
+  }
+
+  v8::Local<v8::Promise> promise = messaging_service_->SendOneTimeMessage(
+      script_context, MessageTarget::ForBrowser(), mojom::ChannelType::kBrowser,
+      *message, parse_result.async_type, response_callback);
+  DCHECK_EQ(parse_result.async_type == binding::AsyncResponseType::kPromise,
+            !promise.IsEmpty())
+      << "SendOneTimeMessage should only return a Promise for promise based "
+         "API calls, otherwise it should be empty";
+
+  RequestResult result(RequestResult::HANDLED);
+  if (parse_result.async_type == binding::AsyncResponseType::kPromise) {
+    result.return_value = promise;
+  }
+  return result;
+}
+#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
 
 RequestResult RuntimeHooksDelegate::HandleConnect(
     ScriptContext* script_context,

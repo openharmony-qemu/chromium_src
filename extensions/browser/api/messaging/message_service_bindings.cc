@@ -514,6 +514,30 @@ void MessageService::OpenChannelToNativeApp(
                              std::move(port), std::move(port_host));
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+void MessageService::OpenChannelToBrowser(
+    const ChannelEndpoint& source,
+    const PortId& source_port_id,
+    mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
+    mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
+        port_host) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  auto* process =
+      content::RenderProcessHost::FromID(source.render_process_id());
+  if (!process) {
+    return;
+  }
+  debug::ScopedPortContextCrashKeys port_context_crash_keys(
+      source.port_context());
+  if (!IsValidSourceContext(*process, source.port_context())) {
+    return;
+  }
+
+  OpenChannelToBrowserImpl(source, source_port_id, std::move(port),
+                           std::move(port_host));
+}
+#endif
+
 void MessageService::OpenChannelToTab(
     const ChannelEndpoint& source,
     const PortId& source_port_id,

@@ -362,6 +362,25 @@ void ServiceWorkerHost::OpenChannelToNativeApp(
       std::move(port_host));
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+void ServiceWorkerHost::OpenChannelToBrowser(
+    const PortId& port_id,
+    mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
+    mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
+        port_host) {
+  TRACE_EVENT("extensions", "ServiceWorkerHost::OpenChannelToBrowser",
+              ChromeTrackEvent::kRenderProcessHost, *render_process_host_);
+  content::BrowserContext* browser_context = GetBrowserContext();
+  if (!browser_context) {
+    return;
+  }
+
+  MessageServiceApi::GetMessageService()->OpenChannelToBrowser(
+      browser_context, worker_id_, port_id, std::move(port),
+      std::move(port_host));
+}
+#endif
+
 void ServiceWorkerHost::OpenChannelToTab(
     int32_t tab_id,
     int32_t frame_id,

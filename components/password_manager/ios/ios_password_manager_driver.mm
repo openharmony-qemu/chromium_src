@@ -217,6 +217,14 @@ void IOSPasswordManagerDriver::CheckViewAreaVisible(
   NOTREACHED();
 }
 
+bool IOSPasswordManagerDriver::HasValidURL(bool may_kill_renderer) {
+  NOTREACHED();
+}
+
+bool IOSPasswordManagerDriver::IsRenderFrameHostSupported() {
+  NOTREACHED();
+}
+
 autofill::AutofillDriver* IOSPasswordManagerDriver::GetAutofillDriver() const {
   NOTIMPLEMENTED();
   return nullptr;

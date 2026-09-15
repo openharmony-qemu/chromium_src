@@ -1017,15 +1017,20 @@ void DocumentLoader::RunURLAndHistoryUpdateSteps(
     bool should_skip_screenshot,
     bool is_browser_initiated,
     bool is_synchronously_committed,
-    std::optional<scheduler::TaskAttributionId> task_state_id) {
-  // We use the security origin of this frame since callers of this method must
-  // already have performed same origin checks.
+    std::optional<scheduler::TaskAttributionId> task_state_id,
+    const SecurityOrigin* initiator_origin) {
+  // Unless the caller has explicitly provided an initiator (e.g. when
+  // committing an intercepted navigate event that was started by a different
+  // frame), use the security origin of this frame since callers of this
+  // method must already have performed same origin checks.
   // is_browser_initiated is false and is_synchronously_committed is true
   // because anything invoking this algorithm is a renderer-initiated navigation
   // in this process.
   UpdateForSameDocumentNavigation(
       new_url, history_item, same_document_navigation_type, std::move(data),
-      type, fire_popstate, frame_->DomWindow()->GetSecurityOrigin(),
+      type, fire_popstate,
+      initiator_origin ? initiator_origin
+                       : frame_->DomWindow()->GetSecurityOrigin(),
       is_browser_initiated, is_synchronously_committed, task_state_id,
       LocalFrame::HasTransientUserActivation(frame_),
       /*has_ua_visual_transition*/ false, should_skip_screenshot);
@@ -1093,7 +1098,12 @@ void DocumentLoader::UpdateForSameDocumentNavigation(
     http_method_ = http_names::kGET;
     http_body_ = nullptr;
   }
-
+  // Same-document text fragment navigations are restricted to same-origin or
+  // browser-initiated navigations for security. We must use the original
+  // initiator origin (which might be passed from an intercepted navigate event)
+  // rather than the target frame's origin.
+  // See
+  // https://wicg.github.io/scroll-to-text-fragment/#restricting-the-text-fragment
   last_navigation_had_trusted_initiator_ =
       !initiator_origin || (initiator_origin->IsSameOriginWith(
                                 frame_->DomWindow()->GetSecurityOrigin()) &&
@@ -1108,7 +1118,9 @@ void DocumentLoader::UpdateForSameDocumentNavigation(
   // history API.
   if (type == WebFrameLoadType::kStandard ||
       same_document_navigation_type ==
-          mojom::blink::SameDocumentNavigationType::kFragment) {
+          mojom::blink::SameDocumentNavigationType::kFragment ||
+      same_document_navigation_type ==
+          mojom::blink::SameDocumentNavigationType::kNavigationApiIntercept) {
     has_text_fragment_token_ =
         TextFragmentAnchor::GenerateNewTokenForSameDocument(
             *this, type, same_document_navigation_type);
@@ -1743,6 +1755,7 @@ mojom::CommitResult DocumentLoader::CommitSameDocumentNavigation(
     }
     params->source_element = source_element;
     params->destination_item = history_item;
+    params->initiator_origin = initiator_origin;
     params->is_browser_initiated = is_browser_initiated;
     params->has_ua_visual_transition = has_ua_visual_transition;
     params->is_synchronously_committed_same_document =

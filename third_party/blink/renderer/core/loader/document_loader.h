@@ -257,7 +257,8 @@ class CORE_EXPORT DocumentLoader : public GarbageCollected<DocumentLoader>,
       bool should_skip_screenshot,
       bool is_browser_initiated = false,
       bool is_synchronously_committed = true,
-      std::optional<scheduler::TaskAttributionId> task_state_id = std::nullopt);
+      std::optional<scheduler::TaskAttributionId> task_state_id = std::nullopt,
+      const SecurityOrigin* initiator_origin = nullptr);
 
   // |is_synchronously_committed| is described in comment for
   // CommitSameDocumentNavigation.

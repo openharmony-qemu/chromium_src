@@ -21,7 +21,8 @@ config("compiler") {
     "-Wno-global-constructors",
     "-Wno-vla-cxx-extension",
     "-Wno-deprecated-this-capture",
-    "-Wno-return-type",
+    # TODO(crbug.com/XXXX): Fix all missing-return paths and upgrade to -Werror=return-type
+    "-Wno-error=return-type",
   ]
 
   cflags_cc = [

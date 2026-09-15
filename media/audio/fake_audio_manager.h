@@ -56,7 +56,7 @@ class MEDIA_EXPORT FakeAudioManager : public AudioManagerBase {
 
 #if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_WEBRTC)
   AudioParameters GetPreferredInputStreamParameters(
-      const std::string& input_device_id) override {}
+      const std::string& input_device_id) override { return AudioParameters(); }
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 };
 

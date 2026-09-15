@@ -102,7 +102,7 @@ class MediaSessionPlayerObserver {
 #endif
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAST)
-  virtual int32_t GetMediaCastCurrentTime(int player_id) {}
+  virtual int32_t GetMediaCastCurrentTime(int player_id) { return 0; }
 
   virtual void PullUpCastBackGround(int player_id, const std::string& device_name) {}
 

@@ -424,6 +424,10 @@ CONTENT_EXPORT bool IsVideoCaptureServiceEnabledForOutOfProcess();
 CONTENT_EXPORT bool IsVideoCaptureServiceEnabledForBrowserProcess();
 CONTENT_EXPORT bool IsPushSubscriptionChangeEventEnabled();
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+CONTENT_EXPORT BASE_DECLARE_FEATURE(kExtraHeaderOptEnable);
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
+
 }  // namespace features
 
 #endif  // CONTENT_PUBLIC_COMMON_CONTENT_FEATURES_H_

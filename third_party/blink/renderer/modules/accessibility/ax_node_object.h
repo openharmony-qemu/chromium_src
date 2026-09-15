@@ -357,6 +357,9 @@ class MODULES_EXPORT AXNodeObject : public AXObject {
                          Vector<int>& word_ends) const override;
 
  private:
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  void SerializeArkWebHtmlAttributes(ui::AXNodeData* node_data) const;
+#endif
   // Store values that could change over the lifetime of the AXObject, but
   // are repeatedly looked up during serialization. While the tree is frozen,
   // the value remains constant. The generation ID is incremented each time

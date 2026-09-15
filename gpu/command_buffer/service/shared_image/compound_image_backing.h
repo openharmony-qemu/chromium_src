@@ -103,11 +103,9 @@ class GPU_GLES2_EXPORT CompoundImageBacking
 
   // Called by wrapped representations before access. This will update
   // the backing that is going to be accessed if most recent pixels are in
-  // a different backing. Returns false if a required content sync failed,
-  // in which case the caller must not proceed with the access.
-  [[nodiscard]] bool NotifyBeginAccess(SharedImageBacking* backing,
-                                       RepresentationAccessMode mode,
-                                       SharedImageAccessStream stream);
+  // a different backing.
+  void NotifyBeginAccess(SharedImageBacking* backing,
+                         RepresentationAccessMode mode);
 
   // SharedImageBacking implementation.
   SharedImageBackingType GetType() const override;

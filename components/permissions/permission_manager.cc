@@ -14,6 +14,7 @@
 #include "build/build_config.h"
 #include "components/content_settings/core/browser/host_content_settings_map.h"
 #include "components/content_settings/core/common/content_settings_pattern.h"
+#include "components/content_settings/core/common/content_settings_types.h"
 #include "components/permissions/content_setting_permission_context_base.h"
 #include "components/permissions/features.h"
 #include "components/permissions/permission_decision.h"
@@ -276,8 +277,23 @@ void PermissionManager::RequestPermissionsInternal(
             context, request_id, request_description,
             canonical_requesting_origin.DeprecatedGetOriginAsURL(), GURL(), i),
         base::BindOnce(
-            &PermissionResponseCallback::OnPermissionsRequestResponse,
-            std::move(response_callback)));
+            [](base::WeakPtr<PermissionManager> manager,
+               ContentSettingsType permission,
+               base::OnceCallback<void(content::PermissionResult)> callback,
+               content::PermissionResult result) {
+              if (!manager) {
+                return;
+              }
+
+              if (auto* context = manager->GetPermissionContext(permission)) {
+                context->MaybeOverridePermissionResultToReturn(result);
+              }
+              std::move(callback).Run(std::move(result));
+            },
+            weak_factory_.GetWeakPtr(), permission,
+            base::BindOnce(
+                &PermissionResponseCallback::OnPermissionsRequestResponse,
+                std::move(response_callback))));
   }
 }
 
@@ -634,6 +650,7 @@ content::PermissionResult PermissionManager::GetPermissionStatusInternal(
     // maybe notify observers.
     context->MaybeUpdateCachedHasDevicePermission(web_contents);
   }
+  context->MaybeOverridePermissionResultToReturn(result);
   DCHECK(result.status == PermissionStatus::GRANTED ||
          result.status == PermissionStatus::ASK ||
          result.status == PermissionStatus::DENIED)

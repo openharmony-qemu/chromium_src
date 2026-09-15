@@ -412,11 +412,12 @@ PDFiumPage::~PDFiumPage() {
   DCHECK_EQ(0, preventing_unload_count_);
 }
 
-void PDFiumPage::Unload() {
+bool PDFiumPage::Unload() {
   // Do not unload while in the middle of a load, or if some external source
   // expects `this` to stay loaded.
-  if (preventing_unload_count_)
-    return;
+  if (preventing_unload_count_) {
+    return false;
+  }
 
   text_page_.reset();
 
@@ -426,6 +427,7 @@ void PDFiumPage::Unload() {
     }
     page_.reset();
   }
+  return true;
 }
 
 FPDF_PAGE PDFiumPage::GetPage() {

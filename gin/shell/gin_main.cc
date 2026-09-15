@@ -18,10 +18,13 @@
 #include "gin/array_buffer.h"
 #include "gin/modules/console.h"
 #include "gin/object_template_builder.h"
+#include "gin/public/cppgc.h"
 #include "gin/public/isolate_holder.h"
+#include "gin/public/v8_platform.h"
 #include "gin/shell_runner.h"
 #include "gin/try_catch.h"
 #include "gin/v8_initializer.h"
+#include "v8/include/v8-cppgc.h"
 
 namespace gin {
 namespace {
@@ -80,9 +83,19 @@ int main(int argc, char** argv) {
   {
     gin::IsolateHolder::Initialize(gin::IsolateHolder::kStrictMode,
                                    gin::ArrayBufferAllocator::SharedInstance());
+    gin::InitializeCppgcFromV8Platform();
     gin::IsolateHolder instance(
         base::SingleThreadTaskRunner::GetCurrentDefault(),
-        gin::IsolateHolder::IsolateType::kBlinkMainThread);
+        gin::IsolateHolder::AccessMode::kSingleThread,
+        gin::IsolateHolder::AllowAtomicsWaitMode::kAllowAtomicsWait,
+        gin::IsolateHolder::IsolateType::kBlinkMainThread,
+        gin::IsolateHolder::IsolateCreationMode::kNormal,
+        /*create_histogram_callback=*/nullptr,
+        /*add_histogram_sample_callback=*/nullptr,
+        /*user_visible_task_runner=*/nullptr,
+        /*best_effort_task_runner=*/nullptr,
+        v8::CppHeap::Create(gin::V8Platform::Get(),
+                            v8::CppHeapCreateParams({})));
 
     gin::GinShellRunnerDelegate delegate;
     gin::ShellRunner runner(&delegate, instance.isolate());
@@ -105,6 +118,7 @@ int main(int argc, char** argv) {
 
     base::RunLoop().RunUntilIdle();
   }
+  gin::MaybeShutdownCppgc();
 
   // gin::IsolateHolder waits for tasks running in ThreadPool in its
   // destructor and thus must be destroyed before ThreadPool starts skipping

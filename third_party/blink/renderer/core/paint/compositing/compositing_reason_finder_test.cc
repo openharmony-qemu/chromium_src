@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "third_party/blink/renderer/core/paint/compositing/compositing_reason_finder.h"
-
 #include "base/test/scoped_feature_list.h"
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/renderer/core/animation/animation_clock.h"

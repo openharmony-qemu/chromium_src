@@ -16,6 +16,7 @@
 #include "third_party/blink/renderer/core/animation/element_animations.h"
 #include "third_party/blink/renderer/core/css/clip_path_paint_image_generator.h"
 #include "third_party/blink/renderer/core/dom/dom_node_ids.h"
+#include "third_party/blink/renderer/core/dom/flat_tree_traversal.h"
 #include "third_party/blink/renderer/core/dom/pseudo_element.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/frame/local_frame_client.h"
@@ -539,6 +540,16 @@ static bool NeedsAnchorPositionScrollTranslation(const LayoutObject& object) {
   return false;
 }
 
+static HTMLCanvasElement* FindCanvasParent(const LayoutObject& object) {
+  const Element* element = DynamicTo<Element>(object.GetNode());
+  if (!element) {
+    return nullptr;
+  }
+  const Element* parent =
+      FlatTreeTraversal::ParentElementSkippingSlots(*element);
+  return DynamicTo<HTMLCanvasElement>(const_cast<Element*>(parent));
+}
+
 static bool NeedsPaintOffsetTranslation(
     const LayoutObject& object,
     CompositingReasons direct_compositing_reasons,
@@ -566,7 +577,7 @@ static bool NeedsPaintOffsetTranslation(
 
   // TODO(crbug.com/349835587): Should Element or LayoutObject have a public
   // IsCanvasDrawElementImage() function?
-  if (object.Parent() && object.Parent()->IsCanvas()) {
+  if (FindCanvasParent(object)) {
     // The object may be drawn with drawElementImage and should ignore the paint
     // offset.
     return true;

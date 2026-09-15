@@ -47,6 +47,7 @@ WebPreferences::WebPreferences()
       native_embed_mode_enabled(false),
       intrinsic_size_enabled(false),
       css_display_change_enabled(false),
+      transform_rotate_and_skew_enabled(false),
       embed_tag(kEmbedTag),
       embed_tag_type(kNativeType),
 #endif

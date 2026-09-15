@@ -145,7 +145,7 @@ class PressureServiceForDedicatedWorkerTest
     CHECK_EQ(rfh->GetLastCommittedOrigin(), rfh->GetStorageKey().origin());
     worker_host_ = std::make_unique<DedicatedWorkerHost>(
         &worker_service_, blink::DedicatedWorkerToken(), rfh->GetProcess(),
-        rfh->GetGlobalId(), rfh->GetGlobalId(), rfh->GetStorageKey(),
+        rfh->GetGlobalId(), rfh->GetWeakDocumentPtr(), rfh->GetStorageKey(),
         rfh->GetStorageKey().origin(), rfh->GetIsolationInfoForSubresources(),
         rfh->BuildClientSecurityState(), /*creator_coep_reporter=*/nullptr,
         mojo::PendingReceiver<blink::mojom::DedicatedWorkerHost>(),

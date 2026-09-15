@@ -28,6 +28,7 @@
 #include "content/public/browser/permission_descriptor_util.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/storage_partition.h"
+#include "content/public/browser/weak_document_ptr.h"
 #include "content/public/common/content_client.h"
 #include "content/public/common/origin_util.h"
 #include "mojo/public/cpp/bindings/message.h"
@@ -89,8 +90,8 @@ void ServiceWorkerHost::CreateWebTransportConnector(
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   mojo::MakeSelfOwnedReceiver(
       std::make_unique<WebTransportConnectorImpl>(
-          worker_process_id_, /*frame=*/nullptr, version_->key().origin(),
-          GetNetworkAnonymizationKey(),
+          worker_process_id_, /*frame=*/nullptr, WeakDocumentPtr(),
+          version_->key().origin(), GetNetworkAnonymizationKey(),
           version_->BuildClientSecurityState()->Clone()),
       std::move(receiver));
 }
@@ -102,8 +103,8 @@ void ServiceWorkerHost::CreateWebSocketConnector(
   const blink::StorageKey& storage_key = version_->key();
   mojo::MakeSelfOwnedReceiver(
       std::make_unique<WebSocketConnectorImpl>(
-          worker_process_id_, IPC::mojom::kRoutingIdNone, storage_key.origin(),
-          storage_key.ToPartialNetIsolationInfo(),
+          worker_process_id_, IPC::mojom::kRoutingIdNone, WeakDocumentPtr(),
+          storage_key.origin(), storage_key.ToPartialNetIsolationInfo(),
           version_->BuildClientSecurityState()->Clone()),
       std::move(receiver));
 }

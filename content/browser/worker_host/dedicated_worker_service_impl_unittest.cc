@@ -10,11 +10,16 @@
 #include "base/functional/callback_helpers.h"
 #include "base/run_loop.h"
 #include "base/scoped_observation.h"
+#include "base/test/scoped_feature_list.h"
+#include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/browser/site_instance_impl.h"
 #include "content/browser/worker_host/dedicated_worker_host.h"
 #include "content/browser/worker_host/dedicated_worker_host_factory_impl.h"
 #include "content/public/browser/storage_partition.h"
+#include "content/public/common/content_features.h"
+#include "content/public/test/navigation_simulator.h"
 #include "content/public/test/test_browser_context.h"
+#include "content/public/test/test_utils.h"
 #include "content/test/test_render_view_host.h"
 #include "content/test/test_web_contents.h"
 #include "mojo/public/cpp/bindings/remote.h"
@@ -53,7 +58,9 @@ class MockDedicatedWorker
     mojo::MakeSelfOwnedReceiver(
         std::make_unique<DedicatedWorkerHostFactoryImpl>(
             worker_process_id, /*creator=*/render_frame_host_id,
-            render_frame_host_id, blink::StorageKey::CreateFirstParty(origin),
+            RenderFrameHostImpl::FromID(render_frame_host_id)
+                ->GetWeakDocumentPtr(),
+            blink::StorageKey::CreateFirstParty(origin),
             net::IsolationInfo::CreateTransient(/*nonce=*/std::nullopt),
             network::mojom::ClientSecurityState::New(),
             coep_reporter->GetWeakPtr()),
@@ -273,6 +280,64 @@ TEST_F(DedicatedWorkerServiceImplTest, DedicatedWorkerServiceObserver) {
 
   // The service sent a OnBeforeWorkerTerminated() notification.
   EXPECT_TRUE(observer.dedicated_worker_infos().empty());
+}
+
+class DedicatedWorkerHostNavigationTest
+    : public DedicatedWorkerServiceImplTest {
+ public:
+  DedicatedWorkerHostNavigationTest() {
+    // Force same-site main-frame navigations to reuse the RenderFrameHost.
+    feature_list_.InitAndDisableFeature(features::kRenderDocument);
+  }
+
+ private:
+  base::test::ScopedFeatureList feature_list_;
+};
+
+TEST_F(DedicatedWorkerHostNavigationTest,
+       AncestorLookupAfterSameSiteNavigation) {
+  TestDedicatedWorkerServiceObserver observer;
+  base::ScopedObservation<DedicatedWorkerService,
+                          DedicatedWorkerService::Observer>
+      scoped_observation(&observer);
+  scoped_observation.Observe(GetDedicatedWorkerService());
+
+  const GURL kUrlA("http://example.com/a.html");
+  std::unique_ptr<TestWebContents> web_contents = CreateWebContents(kUrlA);
+  RenderFrameHostImpl* render_frame_host = web_contents->GetPrimaryMainFrame();
+  const blink::DocumentToken creator_document_token =
+      render_frame_host->GetDocumentToken();
+
+  auto mock_dedicated_worker = std::make_unique<MockDedicatedWorker>(
+      render_frame_host->GetProcess()->GetDeprecatedID(),
+      render_frame_host->GetGlobalId(), url::Origin::Create(kUrlA));
+  observer.RunUntilWorkerEvent();
+  ASSERT_EQ(observer.dedicated_worker_infos().size(), 1u);
+  const blink::DedicatedWorkerToken worker_token =
+      observer.dedicated_worker_infos().begin()->first;
+  DedicatedWorkerHost* host =
+      static_cast<DedicatedWorkerServiceImpl*>(GetDedicatedWorkerService())
+          ->GetDedicatedWorkerHostFromToken(worker_token);
+  ASSERT_TRUE(host);
+  EXPECT_EQ(host->GetAncestorRenderFrameHost(), render_frame_host);
+
+  DisableProactiveBrowsingInstanceSwapFor(render_frame_host);
+  const GURL kUrlB("http://example.com/b.html");
+  NavigationSimulator::NavigateAndCommitFromDocument(kUrlB, render_frame_host);
+  ASSERT_EQ(web_contents->GetPrimaryMainFrame(), render_frame_host);
+  ASSERT_NE(render_frame_host->GetDocumentToken(), creator_document_token);
+  ASSERT_EQ(
+      static_cast<DedicatedWorkerServiceImpl*>(GetDedicatedWorkerService())
+          ->GetDedicatedWorkerHostFromToken(worker_token),
+      host);
+
+  // The frame id is still live, but it now identifies a different document.
+  // The worker must not resolve capabilities against that replacement.
+  EXPECT_FALSE(host->GetAncestorRenderFrameHost());
+  EXPECT_EQ(host->GetAncestorRenderFrameHostId(), GlobalRenderFrameHostId());
+
+  mock_dedicated_worker = nullptr;
+  observer.RunUntilWorkerEvent();
 }
 
 }  // namespace content

@@ -9,6 +9,7 @@
 
 #include "base/memory/weak_ptr.h"
 #include "content/browser/webtransport/web_transport_throttle_context.h"
+#include "content/public/browser/weak_document_ptr.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "net/base/network_anonymization_key.h"
 #include "services/network/public/mojom/client_security_state.mojom.h"
@@ -34,6 +35,7 @@ class WebTransportConnectorImpl final
   WebTransportConnectorImpl(
       int process_id,
       base::WeakPtr<RenderFrameHostImpl> frame,
+      WeakDocumentPtr weak_document,
       const url::Origin& origin,
       const net::NetworkAnonymizationKey& network_anonymization_key,
       network::mojom::ClientSecurityStatePtr client_security_state);
@@ -71,6 +73,10 @@ class WebTransportConnectorImpl final
 
   const int process_id_;
   const base::WeakPtr<RenderFrameHostImpl> frame_;
+  const WeakDocumentPtr weak_document_;
+  // Distinguishes document-scoped frame/dedicated-worker connectors from
+  // document-independent shared/service-worker connectors.
+  const bool has_document_;
   const url::Origin origin_;
   const net::NetworkAnonymizationKey network_anonymization_key_;
   const network::mojom::ClientSecurityStatePtr client_security_state_;

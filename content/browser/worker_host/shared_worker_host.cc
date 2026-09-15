@@ -40,6 +40,7 @@
 #include "content/public/browser/permission_controller.h"
 #include "content/public/browser/permission_descriptor_util.h"
 #include "content/public/browser/service_worker_context.h"
+#include "content/public/browser/weak_document_ptr.h"
 #include "content/public/common/content_client.h"
 #include "content/public/common/content_features.h"
 #include "net/base/isolation_info.h"
@@ -613,8 +614,9 @@ void SharedWorkerHost::CreateWebTransportConnector(
   const url::Origin origin = url::Origin::Create(instance().url());
   mojo::MakeSelfOwnedReceiver(
       std::make_unique<WebTransportConnectorImpl>(
-          GetProcessHost()->GetDeprecatedID(), /*frame=*/nullptr, origin,
-          GetNetworkAnonymizationKey(), worker_client_security_state_->Clone()),
+          GetProcessHost()->GetDeprecatedID(), /*frame=*/nullptr,
+          WeakDocumentPtr(), origin, GetNetworkAnonymizationKey(),
+          worker_client_security_state_->Clone()),
       std::move(receiver));
 }
 
@@ -626,7 +628,8 @@ void SharedWorkerHost::CreateWebSocketConnector(
   mojo::MakeSelfOwnedReceiver(
       std::make_unique<WebSocketConnectorImpl>(
           GetProcessHost()->GetDeprecatedID(), IPC::mojom::kRoutingIdNone,
-          storage_key.origin(), storage_key.ToPartialNetIsolationInfo(),
+          WeakDocumentPtr(), storage_key.origin(),
+          storage_key.ToPartialNetIsolationInfo(),
           worker_client_security_state_->Clone()),
       std::move(receiver));
 }

@@ -161,11 +161,14 @@ class InterceptingHandshakeClient final : public WebTransportHandshakeClient {
 WebTransportConnectorImpl::WebTransportConnectorImpl(
     int process_id,
     base::WeakPtr<RenderFrameHostImpl> frame,
+    WeakDocumentPtr weak_document,
     const url::Origin& origin,
     const net::NetworkAnonymizationKey& network_anonymization_key,
     network::mojom::ClientSecurityStatePtr client_security_state)
     : process_id_(process_id),
       frame_(std::move(frame)),
+      weak_document_(std::move(weak_document)),
+      has_document_(weak_document_.AsRenderFrameHostIfValid() != nullptr),
       origin_(origin),
       network_anonymization_key_(network_anonymization_key),
       client_security_state_(std::move(client_security_state)),
@@ -181,6 +184,10 @@ void WebTransportConnectorImpl::Connect(
     mojo::PendingRemote<network::mojom::WebTransportHandshakeClient>
         handshake_client) {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
+
+  if (has_document_ && !weak_document_.AsRenderFrameHostIfValid()) {
+    return;
+  }
 
   RenderProcessHost* process = RenderProcessHost::FromID(process_id_);
   if (!process) {

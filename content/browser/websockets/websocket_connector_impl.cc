@@ -64,11 +64,13 @@ constexpr net::NetworkTrafficAnnotationTag kTrafficAnnotation =
 WebSocketConnectorImpl::WebSocketConnectorImpl(
     int process_id,
     int frame_id,
+    WeakDocumentPtr weak_document,
     const url::Origin& origin,
     const net::IsolationInfo& isolation_info,
     network::mojom::ClientSecurityStatePtr client_security_state)
     : process_id_(process_id),
       frame_id_(frame_id),
+      weak_document_(std::move(weak_document)),
       origin_(MaybeTreatLocalOriginAsOpaque(origin)),
       isolation_info_(isolation_info),
       client_security_state_(std::move(client_security_state)) {}
@@ -85,6 +87,14 @@ void WebSocketConnectorImpl::Connect(
         handshake_client,
     const std::optional<base::UnguessableToken>& throttling_profile_id) {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
+
+  // Frame and dedicated-worker connectors are scoped to the document that
+  // created them. Shared and service workers use kRoutingIdNone and are not
+  // tied to a document lifecycle.
+  if (frame_id_ != IPC::mojom::kRoutingIdNone &&
+      !weak_document_.AsRenderFrameHostIfValid()) {
+    return;
+  }
 
   if (auto error = network::VerifyWebSocketConnectParameters(
           url, requested_protocols, isolation_info_)) {

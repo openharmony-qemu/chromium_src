@@ -9,6 +9,7 @@
 #include "content/common/content_export.h"
 #include "content/public/browser/dedicated_worker_creator.h"
 #include "content/public/browser/global_routing_id.h"
+#include "content/public/browser/weak_document_ptr.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "net/base/isolation_info.h"
 #include "net/storage_access_api/status.h"
@@ -36,7 +37,7 @@ class CONTENT_EXPORT DedicatedWorkerHostFactoryImpl
   DedicatedWorkerHostFactoryImpl(
       int worker_process_id,
       DedicatedWorkerCreator creator,
-      GlobalRenderFrameHostId ancestor_render_frame_host_id,
+      WeakDocumentPtr ancestor_document,
       const blink::StorageKey& creator_storage_key,
       const net::IsolationInfo& isolation_info,
       network::mojom::ClientSecurityStatePtr creator_client_security_state,
@@ -67,7 +68,7 @@ class CONTENT_EXPORT DedicatedWorkerHostFactoryImpl
 
   // See comments on the corresponding members of DedicatedWorkerHost.
   const DedicatedWorkerCreator creator_;
-  const GlobalRenderFrameHostId ancestor_render_frame_host_id_;
+  const WeakDocumentPtr ancestor_document_;
 
   // Storage key is used for storage partitioning, and for retrieving the
   // worker's origin.

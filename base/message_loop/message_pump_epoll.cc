@@ -424,6 +424,18 @@ void MessagePumpEpoll::UnregisterInterest(
   auto& interests = entry.interests;
   auto* it = std::ranges::find(interests, interest);
   CHECK(it != interests.end());
+
+#if BUILDFLAG(IS_ARKWEB)
+  // Mark the interest inactive before erasing it. An in-progress
+  // OnEpollEvent() still holds this interest in its local `interests`
+  // snapshot; if it stayed active there, the dispatch loop could
+  // touch `entry` (HandleEvent(entry.fd, ...) at :620) after the erase
+  // below destroyed the entry. An entry is destroyed only after ALL its
+  // interests are unregistered here, so every interest of a destroyed
+  // entry is guaranteed to be skipped by the active() check at :595.
+  interest->set_active(false);
+#endif
+
   interests.erase(it);
 
   if (interests.empty()) {

@@ -17,6 +17,7 @@
 #include "net/traffic_annotation/network_traffic_annotation.h"
 #include "ui/gfx/image/image.h"
 #include "url/gurl.h"
+#include "url/url_constants.h"
 
 namespace autofill {
 namespace {
@@ -71,6 +72,11 @@ void PasswordFaviconLoaderImpl::Load(
     base::CancelableTaskTracker* task_tracker,
     OnLoadSuccess on_success,
     OnLoadFail on_fail) {
+  if (!favicon_details.domain_url.SchemeIs(url::kHttpsScheme)) {
+    std::move(on_fail).Run();
+    return;
+  }
+
   auto cached_image_it = cache_.Get(favicon_details.domain_url);
   if (cached_image_it != cache_.end()) {
     std::move(on_success).Run(cached_image_it->second);

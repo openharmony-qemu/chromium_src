@@ -155,6 +155,9 @@ struct VIZ_COMMON_EXPORT TransferableResource {
 #elif BUILDFLAG(IS_WIN)
            wants_promotion_hint == o.wants_promotion_hint &&
 #endif
+#if BUILDFLAG(ARKWEB_AI_HDR)
+           is_ai_hdr_active == o.is_ai_hdr_active &&
+#endif
            synchronization_type == o.synchronization_type &&
            resource_source == o.resource_source;
   }
@@ -224,6 +227,12 @@ struct VIZ_COMMON_EXPORT TransferableResource {
   // out in advance, since one has no fallback path for displaying a
   // SurfaceView except via promoting it to an overlay.
   bool is_backed_by_surface_view = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_AI_HDR)
+  // ArkWeb OHOS: when true, the video frame has been processed by VPE
+  // (Video Processing Engine) for AI HDR enhancement.
+  bool is_ai_hdr_active = false;
 #endif
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)

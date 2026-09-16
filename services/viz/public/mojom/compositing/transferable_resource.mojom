@@ -65,6 +65,9 @@ struct TransferableResource {
   [EnableIf=is_android]
   bool is_backed_by_surface_view;
 
+  [EnableIf=arkweb_ai_hdr]
+  bool is_ai_hdr_active;
+
   [EnableIf=is_android|is_win]
   bool wants_promotion_hint;
 

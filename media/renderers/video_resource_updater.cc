@@ -850,6 +850,11 @@ VideoFrameExternalResource VideoResourceUpdater::CreateForHardwareFrame(
       video_frame->metadata().in_surface_view;
 #endif
 
+#if BUILDFLAG(ARKWEB_AI_HDR)
+  transfer_resource.is_ai_hdr_active =
+      video_frame->metadata().is_ai_hdr_active;
+#endif
+
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)
   transfer_resource.wants_promotion_hint =
       video_frame->metadata().wants_promotion_hint;

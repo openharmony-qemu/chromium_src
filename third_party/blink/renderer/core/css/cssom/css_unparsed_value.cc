@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/core/css/cssom/css_unparsed_value.h"
 
+#include "third_party/blink/renderer/core/css/css_markup.h"
 #include "third_party/blink/renderer/core/css/css_unparsed_declaration_value.h"
 #include "third_party/blink/renderer/core/css/css_variable_data.h"
 #include "third_party/blink/renderer/core/css/cssom/css_style_variable_reference_value.h"
@@ -204,7 +205,7 @@ bool CSSUnparsedValue::AppendUnparsedString(
         const auto* reference_value =
             segments_[i]->GetAsCSSVariableReferenceValue();
         builder.Append("var(");
-        builder.Append(reference_value->variable());
+        SerializeIdentifier(reference_value->variable(), builder);
         if (reference_value->fallback()) {
           builder.Append(",");
           if (!reference_value->fallback()->AppendUnparsedString(

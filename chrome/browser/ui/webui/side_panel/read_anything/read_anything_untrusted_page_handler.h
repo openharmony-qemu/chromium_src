@@ -280,6 +280,8 @@ class ReadAnythingUntrustedPageHandler :
   bool AreInnerContentsPdfContent(
       std::vector<content::WebContents*> inner_contents);
 
+  bool HasTransientUserActivation() const;
+
   void OnScreenAIServiceInitialized(bool successful);
 
   // Called to notify this instance that the dependency parser loader

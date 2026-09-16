@@ -111,13 +111,26 @@
         return true;
     }
 
+    function isEditable(el, nodeType) {
+        if (el.readOnly || el.disabled) {
+            return false;
+        }
+        if (nodeType === 'input' || nodeType === 'textarea') {
+            return true;
+        }
+        if (el.contentEditable === 'true') {
+            return true;
+        }
+        return false;
+    }
+
     function buildControl(el, nodeType, config) {
         const control = {};
         control.nodeId = typeof el.getArkWebDomNodeId === 'function'
             ? el.getArkWebDomNodeId(el) : 0;
         control.nodeType = nodeType;
         control.focusable = !el.disabled && el.tabIndex >= 0;
-        control.editable = (nodeType === 'input' || nodeType === 'textarea' || el.contentEditable === 'true');
+        control.editable = isEditable(el, nodeType);
 
         const rect = el.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 0;
@@ -219,8 +232,6 @@
         }
     }
 
-    function onScrollStart() {}
-
     let lastScrollReset = 0;
 
     function onScroll() {
@@ -252,8 +263,6 @@
     }
 
     function setupScrollListener() {
-        window.addEventListener('touchstart', onScrollStart, { passive: true });
-        window.addEventListener('mousedown', onScrollStart);
         window.addEventListener('scroll', onScroll, { passive: true });
         window.addEventListener('touchmove', onScroll, { passive: true });
         window.addEventListener('touchend', onScrollEnd, { passive: true });
@@ -319,7 +328,7 @@
             try {
                 nodeTypes = JSON.parse(nodeTypesStr);
             } catch (e) {
-                return JSON.stringify({ errorCode: 2, controls: [], error: 'nodeTypesStr parse: ' + e.message });
+                return JSON.stringify({ errorCode: 2, controls: [], error: 'nodeTypesStr parse: ' + (e.message || String(e)) });
             }
             const resultStr = queryControls(ruleJsonStr);
             let parsed;

@@ -531,6 +531,11 @@ bool Sanitizer::ReplaceElement(const QualifiedName& name) {
   DCHECK(isValid());
   // Step 3: Set element to the result of canonicalize a sanitizer element
   // with element. (Done by caller.)
+  // https://github.com/WICG/sanitizer-api/issues/365:
+  // If name is "html", return false.
+  if (html_names::kHTMLTag.Matches(name)) {
+    return false;
+  }
   // Step 4: If configuration["replaceWithChildrenElements"] contains element:
   // Step 4.1: Return false.
   bool contains_name = replace_elements_ && replace_elements_->Contains(name);
@@ -751,26 +756,26 @@ void Sanitizer::SanitizeJavascriptNavigationAttributes(Element* element,
 
   // Attributes that trigger navigation:
   const QualifiedName& qname = element->TagQName();
-  if (qname == html_names::kATag || qname == html_names::kAreaTag ||
-      qname == html_names::kBaseTag) {
+  if (html_names::kATag.Matches(qname) || html_names::kAreaTag.Matches(qname) ||
+      html_names::kBaseTag.Matches(qname)) {
     RemoveAttributeIfProtocolIsJavaScript(element, html_names::kHrefAttr);
-  } else if (qname == svg_names::kATag ||
+  } else if (svg_names::kATag.Matches(qname) ||
              element->namespaceURI() == mathml_names::kNamespaceURI) {
     RemoveAttributeIfProtocolIsJavaScript(element, html_names::kHrefAttr);
     RemoveAttributeIfProtocolIsJavaScript(element, xlink_names::kHrefAttr);
-  } else if (qname == html_names::kButtonTag ||
-             qname == html_names::kInputTag) {
+  } else if (html_names::kButtonTag.Matches(qname) ||
+             html_names::kInputTag.Matches(qname)) {
     RemoveAttributeIfProtocolIsJavaScript(element, html_names::kFormactionAttr);
-  } else if (qname == html_names::kFormTag) {
+  } else if (html_names::kFormTag.Matches(qname)) {
     RemoveAttributeIfProtocolIsJavaScript(element, html_names::kActionAttr);
-  } else if (qname == html_names::kIFrameTag) {
+  } else if (html_names::kIFrameTag.Matches(qname)) {
     RemoveAttributeIfProtocolIsJavaScript(element, html_names::kSrcAttr);
 
     // SVG animations of navigating attributes:
-  } else if (qname == svg_names::kAnimateTag ||
-             qname == svg_names::kAnimateMotionTag ||
-             qname == svg_names::kAnimateTransformTag ||
-             qname == svg_names::kSetTag) {
+  } else if (svg_names::kAnimateTag.Matches(qname) ||
+             svg_names::kAnimateMotionTag.Matches(qname) ||
+             svg_names::kAnimateTransformTag.Matches(qname) ||
+             svg_names::kSetTag.Matches(qname)) {
     RemoveAttributeIfValueIsHref(element, svg_names::kAttributeNameAttr);
   }
 }

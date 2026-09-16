@@ -103,7 +103,6 @@ void FedCmAccountSelectionView::ShowDialogWidget() {
     return;
   }
 
-  input_protector_->VisibilityChanged(true);
   auto params = std::make_unique<tabs::TabDialogManager::Params>();
   params->close_on_navigate = true;
   params->close_on_detach = true;
@@ -538,6 +537,7 @@ void FedCmAccountSelectionView::CreateOrUpdateViewAndWidget(
                          rp_mode, &dialog_type_);
   }
   dialog_widget_ = CreateDialogWidget();
+  dialog_widget_observation_.Observe(dialog_widget_.get());
   dialog_widget_->MakeCloseSynchronous(base::BindOnce(
       &FedCmAccountSelectionView::OnUserClosedDialog, base::Unretained(this)));
 }
@@ -1091,16 +1091,23 @@ void FedCmAccountSelectionView::HideDialogWidget() {
   UpdateDialogVisibility(false);
   scoped_ignore_input_events_.reset();
   tab_accept_mouse_events_.reset();
-  // TODO(crbug.com/331166928): This is only null in one test. Fix the test to
-  // match production.
-  if (input_protector_) {
-    input_protector_->VisibilityChanged(false);
-  }
 }
 
 base::WeakPtr<FedCmAccountSelectionView>
 FedCmAccountSelectionView::GetWeakPtr() {
   return weak_ptr_factory_.GetWeakPtr();
+}
+
+void FedCmAccountSelectionView::OnWidgetVisibilityChanged(views::Widget* widget,
+                                                          bool visible) {
+  if (widget != dialog_widget_.get()) {
+    return;
+  }
+  // TODO(crbug.com/331166928): This is only null in one test. Fix the test to
+  // match production.
+  if (input_protector_) {
+    input_protector_->VisibilityChanged(visible);
+  }
 }
 
 void FedCmAccountSelectionView::TabForegrounded(tabs::TabInterface* tab) {
@@ -1220,6 +1227,7 @@ void FedCmAccountSelectionView::CloseWidget(bool notify_delegate,
     parked_dialog_view_.reset();
   }
   scoped_ignore_input_events_.reset();
+  dialog_widget_observation_.Reset();
   dialog_widget_.reset();
   widget_delegate_.reset();
 
@@ -1252,6 +1260,7 @@ void FedCmAccountSelectionView::UpdateDialogVisibilityAndPosition() {
   if (should_show_dialog) {
     if (!dialog_widget_) {
       dialog_widget_ = CreateDialogWidget();
+      dialog_widget_observation_.Observe(dialog_widget_.get());
       dialog_widget_->MakeCloseSynchronous(
           base::BindOnce(&FedCmAccountSelectionView::OnUserClosedDialog,
                          base::Unretained(this)));

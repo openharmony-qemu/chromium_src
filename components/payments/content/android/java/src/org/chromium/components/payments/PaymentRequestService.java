@@ -968,7 +968,8 @@ public class PaymentRequestService
             sNativeObserverForTest.onContactSectionVisibilityChange(
                     mBrowserPaymentRequest.isContactSectionVisible());
             sNativeObserverForTest.onAppListReady(
-                    mBrowserPaymentRequest.getPaymentApps(), mSpec.getRawTotal());
+                    mBrowserPaymentRequest.getPaymentApps(),
+                    mBrowserPaymentRequest.getPaymentApps().get(0).getTotalForSpc());
         }
         boolean shouldSkip = shouldSkipAppSelector();
         String showError =

@@ -471,6 +471,8 @@ public class ChromePaymentRequestService
                                         ErrorStrings.WEB_AUTHN_OPERATION_TIMED_OUT_OR_NOT_ALLOWED,
                                         PaymentErrorReason.NOT_ALLOWED_ERROR);
                                 break;
+            PaymentItem total = selectedPaymentApp.getTotalForSpc();
+
                             case SpcResponseStatus.CANCEL:
                                 mJourneyLogger.setAborted(AbortReason.ABORTED_BY_USER);
                                 disconnectFromClientWithDebugMessage(
@@ -690,7 +692,7 @@ public class ChromePaymentRequestService
                     mSpcAuthnUiController.show(
                             selectedPaymentApp.getDrawableIcon(),
                             selectedPaymentApp.getLabel(),
-                            mSpec.getRawTotal(),
+                            total,
                             responseCallback,
                             optOutCallback,
                             spcMethodData.securePaymentConfirmation.payeeName,

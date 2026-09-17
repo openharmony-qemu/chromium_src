@@ -934,6 +934,7 @@ TEST_P(ChildProcessSecurityPolicyTest, FilePermissionGrantingAndRevoking) {
 
   p->AddForTesting(kRendererID, browser_context());
   LockProcessIfNeeded(kRendererID, browser_context(), GURL("http://foo/"));
+  p->AddCommittedOrigin(kRendererID, url::Origin::Create(GURL("http://foo/")));
 
   base::FilePath file(TEST_PATH("/dir/testfile"));
   file = file.NormalizePathSeparators();
@@ -986,6 +987,7 @@ TEST_P(ChildProcessSecurityPolicyTest, FilePermissionGrantingAndRevoking) {
   p->AddForTesting(kRendererID, browser_context());
   CheckHasNoFileSystemFilePermission(p, file, url);
   LockProcessIfNeeded(kRendererID, browser_context(), GURL("http://foo/"));
+  p->AddCommittedOrigin(kRendererID, url::Origin::Create(GURL("http://foo/")));
   CheckHasNoFileSystemFilePermission(p, file, url);
 
   // Cleanup.
@@ -1759,6 +1761,64 @@ TEST_P(ChildProcessSecurityPolicyTest, PdfProcessEnforcements) {
 
   p->Remove(kRendererID);
 }
+
+// Verify that a PDF process is denied access to the sandboxed filesystem of
+// the origin it has committed. This mirrors the data-access expectations in
+// PdfProcessEnforcements above for the FileSystemURL-based entry points, which
+// reach HasPermissionsForFileSystemFile() instead of going through Open().
+TEST_P(ChildProcessSecurityPolicyTest, PdfProcessSandboxedFileSystem) {
+  ChildProcessSecurityPolicyImpl* p =
+      ChildProcessSecurityPolicyImpl::GetInstance();
+
+  p->RegisterFileSystemPermissionPolicy(storage::kFileSystemTypeTemporary,
+                                        storage::FILE_PERMISSION_SANDBOX);
+
+  TestBrowserContext browser_context;
+  p->AddForTesting(kRendererID, &browser_context);
+
+  // M144 expresses the PDF restriction through UrlInfo::WithIsPdf(true); the
+  // upstream test used EmbedderIsolationInfo::CreateForPdf(), which does not
+  // exist on this branch.
+  UrlInfo pdf_url_info(UrlInfoInit(GURL("https://foo.com")).WithIsPdf(true));
+  scoped_refptr<SiteInstanceImpl> pdf_instance =
+      SiteInstanceImpl::CreateForUrlInfo(&browser_context, pdf_url_info,
+                                         /*is_guest=*/false,
+                                         /*is_fenced=*/false,
+                                         /*is_fixed_storage_partition=*/false);
+  p->LockProcess(pdf_instance->GetIsolationContext(), kRendererID,
+                 /*is_process_used=*/false,
+                 ProcessLock::FromSiteInfo(pdf_instance->GetSiteInfo()));
+
+  auto foo_origin = url::Origin::Create(GURL("https://foo.com"));
+  p->AddCommittedOrigin(kRendererID, foo_origin);
+
+  base::FilePath file(TEST_PATH("/dir/testfile"));
+  file = file.NormalizePathSeparators();
+  storage::FileSystemURL url = storage::FileSystemURL::CreateForTest(
+      blink::StorageKey::CreateFirstParty(foo_origin),
+      storage::kFileSystemTypeTemporary, file);
+
+  // A PDF process should not be able to access data for any origin, including
+  // an origin that it has committed, so all sandboxed filesystem operations
+  // for that origin should be rejected.
+  EXPECT_FALSE(p->CanReadFileSystemFile(kRendererID, url));
+  EXPECT_FALSE(p->CanWriteFileSystemFile(kRendererID, url));
+  EXPECT_FALSE(p->CanCreateFileSystemFile(kRendererID, url));
+  EXPECT_FALSE(p->CanCreateReadWriteFileSystemFile(kRendererID, url));
+  EXPECT_FALSE(p->CanCopyIntoFileSystemFile(kRendererID, url));
+  EXPECT_FALSE(p->CanDeleteFileSystemFile(kRendererID, url));
+  EXPECT_FALSE(p->CanMoveFileSystemFile(kRendererID, url, url));
+  EXPECT_FALSE(p->CanCopyFileSystemFile(kRendererID, url, url));
+
+  // ChildProcessSecurityPolicyImpl::Handle only exposes the read accessor on
+  // this branch; it delegates to the same HasPermissionsForFileSystemFile
+  // origin check, so it is the only Handle assertion that can be ported.
+  auto handle = p->CreateHandle(kRendererID);
+  EXPECT_FALSE(handle.CanReadFileSystemFile(url));
+
+  p->Remove(kRendererID);
+}
+
 
 // Test the granting of origin permissions, and their interactions with
 // granting scheme permissions.

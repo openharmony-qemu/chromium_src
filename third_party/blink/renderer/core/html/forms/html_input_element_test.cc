@@ -25,6 +25,7 @@
 #include "third_party/blink/renderer/core/input_type_names.h"
 #include "third_party/blink/renderer/core/layout/layout_object.h"
 #include "third_party/blink/renderer/core/loader/empty_clients.h"
+#include "third_party/blink/renderer/core/style/computed_style.h"
 #include "third_party/blink/renderer/core/testing/null_execution_context.h"
 #include "third_party/blink/renderer/core/testing/page_test_base.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
@@ -436,5 +437,20 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(PasswordFieldResetParam{"password", "some_value", true},
                       PasswordFieldResetParam{"text", "some_value", true},
                       PasswordFieldResetParam{"range", "51", false}));
+
+TEST_F(HTMLInputElementTest, SuggestedValueFontFamilyIsGeneric) {
+  GetDocument().body()->SetInnerHTMLWithoutTrustedTypes("<input id=test>");
+  HTMLInputElement& input = TestElement();
+  UpdateAllLifecyclePhasesForTest();
+
+  input.SetSuggestedValue("preview");
+  UpdateAllLifecyclePhasesForTest();
+
+  HTMLElement* placeholder = input.PlaceholderElement();
+  ASSERT_TRUE(placeholder);
+  const ComputedStyle* style = placeholder->GetComputedStyle();
+  ASSERT_TRUE(style);
+  EXPECT_TRUE(style->GetFontDescription().Family().FamilyIsGeneric());
+}
 
 }  // namespace blink

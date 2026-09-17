@@ -4217,10 +4217,17 @@ bool LocalFrame::ScriptEnabled() {
   const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   if (command_line && command_line->HasSwitch(switches::kEnableNwebExExceptionList)) {
     if(GetDocument() && !GetDocument()->Url().IsNull()){
-    return allow_script_content_setting;
+      // 作用：exception list 不绕过 CDP JS 禁用；
+      // 合理性：exception list 仅绕过 ContentSetting 限制，不应绕过 CDP setScriptExecutionDisabled；
+      // 必要性：不加则 exception list 中页面 JS 无法被 CDP 禁用
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+      return allow_script_renderer && allow_script_content_setting;
+#else
+      return allow_script_content_setting;
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
+    }
   }
-  }
-#endif
+#endif  // BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
   return allow_script_renderer && allow_script_content_setting;
 }
 

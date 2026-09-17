@@ -4039,6 +4039,15 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences(
   GetContentClient()->browser()->OverrideWebPreferences(
       this, *main_frame->GetSiteInstance(), &prefs);
 
+  // 作用：CDP禁用JS时覆盖javascript_enabled=false；合理性：ArkWeb的PageBroadcast
+  // pipe未绑定，需在ComputeWebPreferences计算阶段覆盖；必要性：删除后导航到新renderer
+  // 进程时JS会被恢复启用
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  if (cdp_script_execution_disabled_) {
+    prefs.javascript_enabled = false;
+  }
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   prefs.video_assistant_enabled =
       AsWebContentsImplExt()->video_assistant_ ? AsWebContentsImplExt()->video_assistant_->Enabled() : false;
@@ -7665,6 +7674,15 @@ void WebContentsImpl::ReadyToCommitNavigation(
                "navigation_handle", navigation_handle);
   CHECK(!navigation_handle->IsSameDocument());
 
+  // 作用：导航提交前同步JS禁用状态到renderer；合理性：ArkWeb的PageBroadcast不工作，
+  // 需在ReadyToCommitNavigation中主动推送WebPreferences；必要性：删除后新renderer进程
+  // 可能在WebPreferences到达前执行内联<script>
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  if (cdp_script_execution_disabled_) {
+    OnWebPreferencesChanged();
+  }
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
+
   // Cross-document navigation of the top-level frame resets the capture
   // handle config. Using IsInPrimaryMainFrame is valid here since the browser
   // caches this state for the active main frame only.
@@ -7816,6 +7834,9 @@ void WebContentsImpl::DidFinishNavigation(NavigationHandle* navigation_handle) {
   // preferences for the navigation here and adjust the guest, but for now
   // SetWebPreferences does not adjust the guest frame tree so we look for the
   // preferences matching the primary main frame.
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  UpdateWebPreferencesAfterNavigation(navigation_handle);
+#else
   if (web_preferences_) {
     // Update the WebPreferences for this WebContents that depends on changes
     // that might occur during navigation. This will only update the preferences
@@ -7838,6 +7859,7 @@ void WebContentsImpl::DidFinishNavigation(NavigationHandle* navigation_handle) {
       SetWebPreferences(*web_preferences_.get());
     }
   }
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
 
   if (navigation_handle->HasCommitted() &&
       navigation_handle->IsPrerenderedPageActivation()) {

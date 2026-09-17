@@ -15634,7 +15634,16 @@ bool RenderFrameHostImpl::ValidateURLAndOrigin(
   // the setting is disabled (e.g., due to document.open), they are allowed a
   // narrower exemption in ChildProcessSecurityPolicyImpl::CanCommitOriginAndUrl
   // due to compatibility requirements for existing apps.
-  if (origin.scheme() == url::kFileScheme) {
+  //
+  // This exemption is conditioned on the browser-side last committed origin
+  // already being a file origin, so that documents which were not loaded from
+  // file URLs cannot use it to commit unexpected origins.
+  //
+  // In case of multiple same-document navigations, the last_committed_origin_
+  // is kept as the original file: origin, so each same-document navigation can
+  // still pass this check.
+  if (origin.scheme() == url::kFileScheme &&
+      last_committed_origin_.scheme() == url::kFileScheme) {
     auto prefs = GetOrCreateWebPreferences();
     if (prefs.allow_universal_access_from_file_urls) {
       return true;
@@ -15950,6 +15959,15 @@ bool RenderFrameHostImpl::DidCommitNavigationInternal(
     return false;
   }
 
+  if (!ValidateDidCommitParams(navigation_request.get(), params.get(),
+                               is_same_document_navigation)) {
+    if (navigation_request) {
+      navigation_request->set_navigation_discard_reason(
+          NavigationDiscardReason::kFailedSecurityCheck);
+    }
+    return false;
+  }
+
   // Any opaque origin loaded with LoadDataWithBaseURL can bypass some of the
   // URL and origin validation checks in unlocked processes, including both the
   // original document and any about:blank frames that inherit the same origin.
@@ -15964,6 +15982,10 @@ bool RenderFrameHostImpl::DidCommitNavigationInternal(
   // allow_universal_access_from_file_urls setting is enabled, in case that
   // setting is later disabled and then a previously-exempted URL is inherited
   // by a new same-origin document via document.open.
+  //
+  // These exemptions are granted only after `params->origin` has been
+  // validated above, so that they are not based on values that the browser
+  // would otherwise reject.
   //
   // TODO(crbug.com/40092527): Move these to UpdatePermissionsForNavigation
   // once origin can be reliably computed by NavigationRequest at commit time.
@@ -15991,15 +16013,6 @@ bool RenderFrameHostImpl::DidCommitNavigationInternal(
         "ever_had_universal_access_exemption",
         base::debug::CrashKeySize::Size32);
     base::debug::SetCrashKeyString(crash_key, "true");
-  }
-
-  if (!ValidateDidCommitParams(navigation_request.get(), params.get(),
-                               is_same_document_navigation)) {
-    if (navigation_request) {
-      navigation_request->set_navigation_discard_reason(
-          NavigationDiscardReason::kFailedSecurityCheck);
-    }
-    return false;
   }
 
   // TODO(clamy): We should stop having a special case for same-document

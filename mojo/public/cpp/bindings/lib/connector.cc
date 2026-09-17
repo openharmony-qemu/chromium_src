@@ -113,7 +113,15 @@ class Connector::RunLoopNestingObserver
 
 Connector::ActiveDispatchTracker::ActiveDispatchTracker(
     const base::WeakPtr<Connector>& connector)
+#if BUILDFLAG(ARKWEB_MOJO_CONNECTOR_TEARDOWN_GUARD)
+    : connector_(connector),
+      nesting_observer_(connector.get() ? connector.get()->nesting_observer_
+                                        : nullptr) {
+  if (!nesting_observer_)
+    return;  // 空 observer ⇒ 本 tracker 完全 no-op，不入链
+#else
     : connector_(connector), nesting_observer_(connector_->nesting_observer_) {
+#endif
   DCHECK(nesting_observer_);
   if (nesting_observer_->top_tracker_) {
     outer_tracker_ = nesting_observer_->top_tracker_;
@@ -123,6 +131,10 @@ Connector::ActiveDispatchTracker::ActiveDispatchTracker(
 }
 
 Connector::ActiveDispatchTracker::~ActiveDispatchTracker() {
+#if BUILDFLAG(ARKWEB_MOJO_CONNECTOR_TEARDOWN_GUARD)
+  if (!nesting_observer_)
+    return;
+#endif
   if (nesting_observer_->top_tracker_ == this)
     nesting_observer_->top_tracker_ = outer_tracker_;
   else if (inner_tracker_)
@@ -510,6 +522,12 @@ bool Connector::DispatchMessage(ScopedMessageHandle handle) {
   base::WeakPtr<Connector> weak_self = weak_self_;
   std::optional<ActiveDispatchTracker> dispatch_tracker;
   if (!is_dispatching_ && nesting_observer_) {
+#if BUILDFLAG(ARKWEB_MOJO_CONNECTOR_TEARDOWN_GUARD)
+    if (!weak_self) {
+      HandleError(/*force_pipe_reset=*/true, /*force_async_handler=*/false);
+      return false;
+    }
+#endif
     is_dispatching_ = true;
     dispatch_tracker.emplace(weak_self);
   }

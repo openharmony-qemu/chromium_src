@@ -181,6 +181,16 @@ Response EmulationHandler::Disable() {
   pressure_overrides_.clear();
 #endif  // BUILDFLAG(ENABLE_COMPUTE_PRESSURE)
   ClearDevicePostureOverride();
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  // 作用：DevTools session断开时重置CDP JS禁用状态；合理性：browser_only session的
+  // Mojo pipe未绑定到renderer，无法自动重置；必要性：删除后JS在DevTools关闭后仍被禁用
+  if (auto* wc = GetWebContents()) {
+    auto* wci = static_cast<WebContentsImpl*>(wc);
+    if (wci && wci->IsCdpScriptExecutionDisabled()) {
+      wci->SetCdpScriptExecutionDisabled(false);
+    }
+  }
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
   return Response::Success();
 }
 

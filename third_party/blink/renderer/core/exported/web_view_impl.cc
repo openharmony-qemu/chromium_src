@@ -3815,6 +3815,17 @@ void WebViewImpl::UpdateWebPreferences(
   }
 
   ApplyWebPreferences(web_preferences_, this);
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  // 作用：UpdateWebPreferences中同步DevToolsEmulator的双层脚本状态；
+  // 合理性：SetScriptExecutionDisabled必须在SetScriptEnabled之前（guard依赖顺序）；
+  // 必要性：删除后javascript_enabled=false不会同步到DevToolsEmulator，后续
+  // SetScriptEnabled(true)会绕过CDP禁用恢复JS
+  if (dev_tools_emulator_) {
+    dev_tools_emulator_->SetScriptExecutionDisabled(
+        !web_preferences_.javascript_enabled);
+    dev_tools_emulator_->SetScriptEnabled(web_preferences_.javascript_enabled);
+  }
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
   ApplyCommandLineToSettings(SettingsImpl());
 }
 

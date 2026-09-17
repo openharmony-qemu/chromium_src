@@ -566,6 +566,9 @@ DownloadItem* GetDownload(content::BrowserContext* context,
   DownloadItem* download_item = manager->GetDownload(id);
   if (!download_item && incognito_manager)
     download_item = incognito_manager->GetDownload(id);
+  if (download_item && !ShouldExport(*download_item)) {
+    return nullptr;
+  }
   return download_item;
 }
 

@@ -95,6 +95,12 @@ class SupervisedUserNavigationObserver
     return requested_hosts_;
   }
 
+  content::RenderFrameHostReceiverSet<
+      supervised_user::mojom::SupervisedUserCommands>&
+  receivers_for_test() {
+    return receivers_;
+  }
+
  private:
   friend class content::WebContentsUserData<SupervisedUserNavigationObserver>;
 
@@ -121,6 +127,10 @@ class SupervisedUserNavigationObserver
   // Filters the RenderFrameHost if render frame is live.
   void FilterRenderFrame(content::RenderFrameHost* render_frame_host);
 
+  // Returns the active (showing) interstitial for the current frame, or nullptr
+  // if there is no active interstitial.
+  supervised_user::SupervisedUserInterstitial* GetInterstitialForFrame();
+
   // supervised_user::mojom::SupervisedUserCommands implementation. Should not
   // be called when an interstitial is no longer showing. This should be
   // enforced by the mojo caller.
@@ -140,8 +150,6 @@ class SupervisedUserNavigationObserver
   // Called when the url filter changes i.e. allowlist or denylist change to
   // clear up  entries in |requested_hosts_| which have been allowed.
   void MaybeUpdateRequestedHosts();
-
-  content::FrameTreeNodeId frame_tree_node_id();
 
   supervised_user::SupervisedUserService* supervised_user_service() const;
 

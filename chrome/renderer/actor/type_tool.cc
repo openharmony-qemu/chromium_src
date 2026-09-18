@@ -447,6 +447,9 @@ mojom::ActionResultPtr TypeTool::SimulateKeyPress(
   if (params.dom_key != "Dead") {
     WebInputEventResult char_result =
         CreateAndDispatchKeyEvent(*widget, WebInputEvent::Type::kChar, params);
+    if (!weak_this) {
+      return nullptr;
+    }
     if (char_result == WebInputEventResult::kHandledSuppressed) {
       ACTOR_LOG() << "Warning: Char event for key " << params.dom_key
                   << " suppressed.";
@@ -464,6 +467,9 @@ mojom::ActionResultPtr TypeTool::SimulateKeyPress(
 
   WebInputEventResult up_result =
       CreateAndDispatchKeyEvent(*widget, WebInputEvent::Type::kKeyUp, params);
+  if (!weak_this) {
+    return nullptr;
+  }
   if (up_result == WebInputEventResult::kHandledSuppressed) {
     ACTOR_LOG() << "Warning: KeyUp event for key " << params.dom_key
                 << " suppressed.";
@@ -566,7 +572,11 @@ void TypeTool::OnFocusingClickComplete(ToolFinishedCallback callback,
     journal_->Log(
         task_id_, "TypeTool::Execute::FocusElementEditable",
         JournalDetailsBuilder().Add("focus", focused_element).Build());
+    base::WeakPtr<TypeTool> weak_this = weak_ptr_factory_.GetWeakPtr();
     PrepareTargetForMode(*focused_frame, action_->mode);
+    if (!weak_this) {
+      return;
+    }
   } else {
     if (focused_element) {
       journal_->Log(
@@ -604,8 +614,12 @@ void TypeTool::OnFocusingClickComplete(ToolFinishedCallback callback,
 
   if (can_simulate_typing) {
     if (!base::FeatureList::IsEnabled(features::kGlicActorIncrementalTyping)) {
+      base::WeakPtr<TypeTool> weak_this = weak_ptr_factory_.GetWeakPtr();
       for (const auto& param : key_sequence_) {
         mojom::ActionResultPtr result = SimulateKeyPress(param);
+        if (!weak_this) {
+          return;
+        }
         if (!IsOk(*result)) {
           // The initial click may have changed the page.
           result->requires_page_stabilization = true;
@@ -634,8 +648,12 @@ void TypeTool::OnFocusingClickComplete(ToolFinishedCallback callback,
                       .Add("text", action_->text)
                       .Add("focus", focused_element)
                       .Build());
+    base::WeakPtr<TypeTool> weak_this = weak_ptr_factory_.GetWeakPtr();
     focused_element.PasteText(WebString::FromUTF8(action_->text),
                               /*replace_all=*/false);
+    if (!weak_this) {
+      return;
+    }
     std::move(callback).Run(MakeOkResult());
   } else {
     std::move(callback).Run(MakeResult(

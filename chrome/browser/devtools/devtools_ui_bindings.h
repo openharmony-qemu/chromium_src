@@ -29,10 +29,18 @@
 #include "components/prefs/pref_change_registrar.h"
 #include "content/public/browser/devtools_agent_host.h"
 #include "content/public/browser/devtools_frontend_host.h"
+#include "extensions/buildflags/buildflags.h"
 #include "ui/gfx/geometry/size.h"
 
 #if !BUILDFLAG(IS_ANDROID)
 #include "chrome/browser/themes/theme_service_observer.h"
+#endif
+
+#if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
+#include "base/scoped_observation.h"
+#include "extensions/browser/extension_registry.h"
+#include "extensions/browser/extension_registry_observer.h"
+#include "extensions/common/extension_id.h"
 #endif
 
 namespace content {
@@ -65,6 +73,9 @@ class DevToolsUIBindings : public DevToolsEmbedderMessageDispatcher::Delegate,
                            public content::DevToolsAgentHostClient,
 #if !BUILDFLAG(IS_ANDROID)
                            public ThemeServiceObserver,
+#endif
+#if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
+                           public extensions::ExtensionRegistryObserver,
 #endif
                            public DevToolsFileHelper::Delegate {
   friend class DevToolsUIBindingsDispatchHttpRequestTest;
@@ -405,6 +416,14 @@ class DevToolsUIBindings : public DevToolsEmbedderMessageDispatcher::Delegate,
   // Extensions support.
   void AddDevToolsExtensionsToClient();
 
+#if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
+  // extensions::ExtensionRegistryObserver:
+  void OnExtensionUnloaded(content::BrowserContext* browser_context,
+                           const extensions::Extension* extension,
+                           extensions::UnloadedExtensionReason reason) override;
+  void OnShutdown(extensions::ExtensionRegistry* registry) override;
+#endif
+
   static DevToolsUIBindingsList& GetDevToolsUIBindings();
 
   class FrontendWebContentsObserver;
@@ -440,6 +459,12 @@ class DevToolsUIBindings : public DevToolsEmbedderMessageDispatcher::Delegate,
   using ExtensionsAPIs = std::map<std::string, std::string>;
   ExtensionsAPIs extensions_api_;
   std::string initial_target_id_;
+#if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
+  base::ScopedObservation<extensions::ExtensionRegistry,
+                          extensions::ExtensionRegistryObserver>
+      extension_registry_observation_{this};
+  std::set<extensions::ExtensionId> devtools_extension_ids_;
+#endif
 
   DevToolsSettings settings_;
   base::TimeTicks session_start_time_;

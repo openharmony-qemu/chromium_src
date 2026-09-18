@@ -125,6 +125,8 @@ std::optional<DriveInfo> GetFileDriveInfo(const FilePath& file_path) {
   }
 
   return drive_info;
+#else
+  return std::nullopt;
 #endif
 }
 

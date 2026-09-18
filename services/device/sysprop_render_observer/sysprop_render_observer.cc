@@ -18,6 +18,10 @@
 #include "base/logging.h"
 #include "base/memory/ptr_util.h"
 #include "base/trace_event/trace_event.h"
+#if BUILDFLAG(IS_OHOS)
+#include "build/build_config.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
 #include "third_party/icu/source/common/unicode/unistr.h"
 
 namespace device {
@@ -61,4 +65,14 @@ void SysPropRenderObserver::Detach(
     mojo::PendingRemote<device::mojom::SysPropRenderObserverClient> client) {
   DCHECK(thread_checker_.CalledOnValidThread());
 }
+
+#if BUILDFLAG(IS_OHOS)
+void SysPropRenderObserver::QueryInt(const std::string& key,
+    int32_t default_value, QueryIntCallback callback) {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  int32_t value = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetSystemPropertiesInstance().GetIntParameter(key, default_value);
+  std::move(callback).Run(value);
+}
+#endif
 }  // namespace device

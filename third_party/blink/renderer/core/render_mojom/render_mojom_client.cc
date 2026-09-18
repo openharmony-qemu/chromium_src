@@ -101,6 +101,20 @@ void SysPropRenderObserverClientRep::Init() {
   SysPropRenderObserverClientImpl::Init();
 }
 
+bool SysPropRenderObserverClientRep::QueryInt(const std::string& key, int32_t default_value, int32_t* result) {
+  // Create a thread-local Remote on the calling thread (same pattern as ResSchedReportClient).
+  // This avoids cross-sequence access — the Remote is bound to and used on the current thread.
+  if (!Platform::Current() || !Platform::Current()->GetBrowserInterfaceBroker()) {
+    return false;
+  }
+  mojo::Remote<device::mojom::blink::SysPropRenderObserver> observer;
+  Platform::Current()->GetBrowserInterfaceBroker()->GetInterface(
+      observer.BindNewPipeAndPassReceiver());
+  *result = default_value;
+  bool ok = observer->QueryInt(String::FromUTF8(key.c_str()), default_value, result);
+  return ok;
+}
+
 void SysPropRenderObserverClientRep::AttachSysPropObserver(uint8_t key, OHOS::NWeb::SystemPropertiesObserver* callback) {
   SysPropRenderObserverClientImpl::instance().AttachSysPropObserver(key, callback);
 }

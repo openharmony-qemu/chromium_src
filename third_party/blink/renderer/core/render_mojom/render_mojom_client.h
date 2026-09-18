@@ -43,6 +43,11 @@ class SysPropRenderObserverClientRep {
   // This will call the Init method for SysPropRenderObserverClientImpl as it is invisble for other object.
   static void Init();
 
+  // Synchronous Mojo query via a thread-local Remote.
+  // Returns true on success (result written to *result).
+  // Returns false if Mojo is unavailable (no Platform/broker); caller should fall back to OH IPC.
+  static bool QueryInt(const std::string& key, int32_t default_value, int32_t* result);
+
   // This will call the Attach and Detach method for SysPropRenderObserverClientImpl.
   void AttachSysPropObserver(uint8_t key, OHOS::NWeb::SystemPropertiesObserver* callback);
 

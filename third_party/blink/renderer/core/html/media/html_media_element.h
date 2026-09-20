@@ -511,10 +511,6 @@ class CORE_EXPORT HTMLMediaElement
   // the correct execution context.
   ExecutionContext* GetExecutionContextForPlayer() const;
 
-  // WebAudio audio destination node is connected. The HTMLMediaElement could
-  // stop the sink at this time if it is still playing.
-  void ConnectToDestinationReady();
-
   AudioOutputDeviceController* GetAudioOutputDeviceController() const {
     return audio_output_device_controller_;
   }
@@ -1117,8 +1113,6 @@ class CORE_EXPORT HTMLMediaElement
   // Whether the media content is encrypted.
   bool is_encrypted_media_ = false;
 
-  // Whether webaudio destination is connected.
-  bool is_audio_destination_connected_ = false;
   WebString remote_device_friendly_name_;
   std::optional<media::AudioCodec> audio_codec_ = std::nullopt;
   std::optional<media::VideoCodec> video_codec_ = std::nullopt;
@@ -1180,19 +1174,12 @@ class CORE_EXPORT HTMLMediaElement
     void SetClient(AudioSourceProviderClient*) override;
     void ProvideInput(AudioBus*, int frames_to_process) override;
 
-    void ConnectToDestinationReady() override;
-
     void Trace(Visitor*) const;
 
    private:
     base::Lock provide_input_lock;
     scoped_refptr<WebAudioSourceProviderImpl> web_audio_source_provider_
         GUARDED_BY(provide_input_lock);
-
-    // Resampling case, connect to the destination can be called before
-    // `audio_source_provider_` is ready. We have to call it during
-    // `audio_source_provider_` assignment.
-    bool connection_to_destination_ready_ = false;
 
     Member<AudioClientImpl> client_;
   };

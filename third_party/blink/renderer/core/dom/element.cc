@@ -5694,57 +5694,59 @@ void Element::RebuildLayoutTree(WhitespaceAttacher& whitespace_attacher) {
   } else if (NeedsRebuildChildLayoutTrees(whitespace_attacher) &&
              !ChildStyleRecalcBlockedByDisplayLock() &&
              !SkippedContainerStyleRecalc()) {
-    // TODO(crbug.com/972752): Make the condition above a DCHECK instead when
-    // style recalc and dirty bit propagation uses flat-tree traversal.
-    // We create a local WhitespaceAttacher when rebuilding children of an
-    // element with a LayoutObject since whitespace nodes do not rely on layout
-    // objects further up the tree. Also, if this Element's layout object is an
-    // out-of-flow box, in-flow children should not affect whitespace siblings
-    // of the out-of-flow box. However, if this element is a display:contents
-    // element. Continue using the passed in attacher as display:contents
-    // children may affect whitespace nodes further up the tree as they may be
-    // layout tree siblings.
-    WhitespaceAttacher local_attacher;
-    WhitespaceAttacher* child_attacher;
-    RebuildPseudoElementLayoutTree(kPseudoIdScrollMarkerGroupAfter,
-                                   local_attacher);
-    LayoutObject* layout_object = GetLayoutObject();
-    if (layout_object || !HasDisplayContentsStyle()) {
-      whitespace_attacher.DidVisitElement(this);
-      if (layout_object && layout_object->WhitespaceChildrenMayChange()) {
-        layout_object->SetWhitespaceChildrenMayChange(false);
-        local_attacher.SetReattachAllWhitespaceNodes();
+    {
+      // TODO(crbug.com/972752): Make the condition above a DCHECK instead when
+      // style recalc and dirty bit propagation uses flat-tree traversal.
+      // We create a local WhitespaceAttacher when rebuilding children of an
+      // element with a LayoutObject since whitespace nodes do not rely on layout
+      // objects further up the tree. Also, if this Element's layout object is an
+      // out-of-flow box, in-flow children should not affect whitespace siblings
+      // of the out-of-flow box. However, if this element is a display:contents
+      // element. Continue using the passed in attacher as display:contents
+      // children may affect whitespace nodes further up the tree as they may be
+      // layout tree siblings.
+      WhitespaceAttacher local_attacher;
+      WhitespaceAttacher* child_attacher;
+      RebuildPseudoElementLayoutTree(kPseudoIdScrollMarkerGroupAfter,
+                                     local_attacher);
+      LayoutObject* layout_object = GetLayoutObject();
+      if (layout_object || !HasDisplayContentsStyle()) {
+        whitespace_attacher.DidVisitElement(this);
+        if (layout_object && layout_object->WhitespaceChildrenMayChange()) {
+          layout_object->SetWhitespaceChildrenMayChange(false);
+          local_attacher.SetReattachAllWhitespaceNodes();
+        }
+        child_attacher = &local_attacher;
+      } else {
+        child_attacher = &whitespace_attacher;
       }
-      child_attacher = &local_attacher;
-    } else {
-      child_attacher = &whitespace_attacher;
+      RebuildTransitionLayoutTree(*child_attacher);
+      RebuildPseudoElementLayoutTree(kPseudoIdAfter, *child_attacher);
+      RebuildPseudoElementLayoutTree(kPseudoIdPickerIcon, *child_attacher);
+      RebuildPseudoElementLayoutTree(kPseudoIdInterestHint, *child_attacher);
+      if (GetShadowRoot()) {
+        RebuildShadowRootLayoutTree(*child_attacher);
+      } else {
+        RebuildChildrenLayoutTrees(*child_attacher);
+      }
+      RebuildPseudoElementLayoutTree(kPseudoIdCheckMark, *child_attacher);
+      RebuildPseudoElementLayoutTree(kPseudoIdBefore, *child_attacher);
+      RebuildPseudoElementLayoutTree(kPseudoIdMarker, *child_attacher);
+      RebuildPseudoElementLayoutTree(kPseudoIdScrollButtonBlockEnd,
+                                     local_attacher);
+      RebuildPseudoElementLayoutTree(kPseudoIdScrollButtonInlineEnd,
+                                     local_attacher);
+      RebuildPseudoElementLayoutTree(kPseudoIdScrollButtonInlineStart,
+                                     local_attacher);
+      RebuildPseudoElementLayoutTree(kPseudoIdScrollButtonBlockStart,
+                                     local_attacher);
+      RebuildPseudoElementLayoutTree(kPseudoIdScrollMarkerGroupBefore,
+                                     local_attacher);
+      RebuildPseudoElementLayoutTree(kPseudoIdBackdrop, *child_attacher);
+      RebuildPseudoElementLayoutTree(kPseudoIdScrollMarker, *child_attacher);
+      RebuildColumnLayoutTrees(*child_attacher);
     }
-    RebuildTransitionLayoutTree(*child_attacher);
-    RebuildPseudoElementLayoutTree(kPseudoIdAfter, *child_attacher);
-    RebuildPseudoElementLayoutTree(kPseudoIdPickerIcon, *child_attacher);
-    RebuildPseudoElementLayoutTree(kPseudoIdInterestHint, *child_attacher);
-    if (GetShadowRoot()) {
-      RebuildShadowRootLayoutTree(*child_attacher);
-    } else {
-      RebuildChildrenLayoutTrees(*child_attacher);
-    }
-    RebuildPseudoElementLayoutTree(kPseudoIdCheckMark, *child_attacher);
-    RebuildPseudoElementLayoutTree(kPseudoIdBefore, *child_attacher);
-    RebuildPseudoElementLayoutTree(kPseudoIdMarker, *child_attacher);
-    RebuildPseudoElementLayoutTree(kPseudoIdScrollButtonBlockEnd,
-                                   local_attacher);
-    RebuildPseudoElementLayoutTree(kPseudoIdScrollButtonInlineEnd,
-                                   local_attacher);
-    RebuildPseudoElementLayoutTree(kPseudoIdScrollButtonInlineStart,
-                                   local_attacher);
-    RebuildPseudoElementLayoutTree(kPseudoIdScrollButtonBlockStart,
-                                   local_attacher);
-    RebuildPseudoElementLayoutTree(kPseudoIdScrollMarkerGroupBefore,
-                                   local_attacher);
-    RebuildPseudoElementLayoutTree(kPseudoIdBackdrop, *child_attacher);
     RebuildFirstLetterLayoutTree();
-    RebuildPseudoElementLayoutTree(kPseudoIdScrollMarker, *child_attacher);
-    RebuildColumnLayoutTrees(*child_attacher);
     ClearChildNeedsReattachLayoutTree();
   }
   DCHECK(!NeedsStyleRecalc());

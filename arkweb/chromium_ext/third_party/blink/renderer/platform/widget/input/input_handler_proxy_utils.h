@@ -151,6 +151,10 @@ public:
       std::unique_ptr<EventWithCallback> event_with_callback,
       int32_t finger_id);
   void SendNativeInQueueFrontSeq(size_t finger_id);
+  void ConvertToNativeCoordinates(float& x,
+                                  float& y,
+                                  cc::LayerImpl* layer_impl,
+                                  const gfx::RectF& native_rect);
 #endif
  private:
  raw_ptr<InputHandlerProxy> proxy_;

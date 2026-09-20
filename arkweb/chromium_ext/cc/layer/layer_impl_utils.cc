@@ -38,6 +38,8 @@ void LayerImplUtils::LayerImplPushPropertiesTo(LayerImpl* layer) {
   layer->layer_impl_utils()->set_native_embed_id(native_embed_id_);
   layer->layer_impl_utils()->SetNativeRect(native_rect_);
   layer->layer_impl_utils()->SetInitScale(init_scale_);
+  layer->layer_impl_utils()->set_native_embed_transform_rotate_and_skew_enabled(
+      native_embed_transform_rotate_and_skew_enabled_);
 }
 
 gfx::RectF LayerImplUtils::NativeRect() const {
@@ -81,6 +83,16 @@ gfx::RectF LayerImplUtils::GetNativeRect() {
   if (rf.IsEmpty()) {
     rf.set_width(layer_impl_->bounds().width());
     rf.set_height(layer_impl_->bounds().height());
+  }
+  if (native_embed_transform_rotate_and_skew_enabled_ &&
+      !transform.IsScaleOrTranslation()) {
+    gfx::PointF mapped_origin = transform.MapPoint(rf.origin());
+    gfx::Vector2dF scale =
+        gfx::ComputeTransform2dScaleComponents(transform, 1.0f);
+    rf.set_origin(mapped_origin);
+    rf.set_width(rf.width() * scale.x());
+    rf.set_height(rf.height() * scale.y());
+    return rf;
   }
   return transform.MapRect(rf);
 }

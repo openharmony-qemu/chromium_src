@@ -42,6 +42,9 @@ class LayerUtils {
 
   void SetNativeRect(const gfx::RectF& rect);
 
+  void SetNativeEmbedTransformRotateAndSkewEnabled(bool enabled);
+  bool native_embed_transform_rotate_and_skew_enabled() const;
+
   void PushPropertiesToImpl(LayerImpl* layer_impl);
 #endif
 
@@ -57,6 +60,7 @@ class LayerUtils {
   ProtectedSequenceReadable<bool> native_;
   ProtectedSequenceReadable<int> native_embed_id_;
   gfx::RectF native_rect_;
+  bool native_embed_transform_rotate_and_skew_enabled_ = false;
 #endif
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   ProtectedSequenceReadable<bool> should_intercept_touch_event_{false};

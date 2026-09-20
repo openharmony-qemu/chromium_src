@@ -23,6 +23,7 @@
 #include "third_party/blink/renderer/platform/widget/input/native_embed_event_queue.h"
 #include "third_party/blink/renderer/platform/widget/input/scroll_predictor.h"
 #include "cc/input/input_handler_utils.h"
+#include "ui/gfx/geometry/transform_util.h"
 #include <deque>
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
@@ -156,6 +157,30 @@ void InputHandlerProxyUtils::NativeMouseHitTestResult(bool native,
   }
 }
 
+void InputHandlerProxyUtils::ConvertToNativeCoordinates(
+    float& x,
+    float& y,
+    cc::LayerImpl* layer_impl,
+    const gfx::RectF& native_rect) {
+  if (layer_impl->layer_impl_utils()
+          ->native_embed_transform_rotate_and_skew_enabled()) {
+    const gfx::Transform& transform = layer_impl->ScreenSpaceTransform();
+    if (!transform.IsScaleOrTranslation()) {
+      gfx::Transform inverse;
+      if (transform.GetInverse(&inverse)) {
+        gfx::PointF local = inverse.MapPoint(gfx::PointF(x, y));
+        gfx::Vector2dF scale =
+            gfx::ComputeTransform2dScaleComponents(transform, 1.0f);
+        x = local.x() * scale.x();
+        y = local.y() * scale.y();
+        return;
+      }
+    }
+  }
+  x = x - native_rect.x();
+  y = y - native_rect.y();
+}
+
 void InputHandlerProxyUtils::SendMouseNativeEvent(
     const WebMouseEvent& mouse_event,
     WebInputEvent::Type type,
@@ -177,8 +202,7 @@ void InputHandlerProxyUtils::SendMouseNativeEvent(
       }
       embed_id_ =
           std::to_string(layer_impl->layer_impl_utils()->native_embed_id());
-      x = x - nativeRect_.x();
-      y = y - nativeRect_.y();
+      ConvertToNativeCoordinates(x, y, layer_impl, nativeRect_);
       LOG(DEBUG) << "[NativeEmbed] SendMouseNativeEvent";
 
       proxy_->client_->DidNativeEmbedMouseEvent(type, modifiers, embed_id_, result, x, y);
@@ -211,8 +235,7 @@ void InputHandlerProxyUtils::SendNativeEvent(const WebTouchEvent& touch_event,
         nativeRect_ = layer_impl->layer_impl_utils()->GetNativeRect();
       }
       embed_id_ = std::to_string(layer_impl->layer_impl_utils()->native_embed_id());
-      x = x - nativeRect_.x();
-      y = y - nativeRect_.y();
+      ConvertToNativeCoordinates(x, y, layer_impl, nativeRect_);
       LOG(DEBUG) << "[NativeEmbed] SendNativeEvent";
       proxy_->client_->DidNativeEmbedEvent(type, embed_id_, id, x, y);
     } else {
@@ -964,8 +987,7 @@ void InputHandlerProxyUtils::SendEventToNativeByIndex(const WebTouchEvent& touch
     }
     embed_id_ =
         std::to_string(layer_impl->layer_impl_utils()->native_embed_id());
-    x = x - nativeRects_[finger_id].x();
-    y = y - nativeRects_[finger_id].y();
+    ConvertToNativeCoordinates(x, y, layer_impl, nativeRects_[finger_id]);
     LOG(DEBUG) << "[NativeEmbedGesture] SendNativeEvent";
     std::string trace_name = "InputHandlerProxyUtils::SendEventToNative";
     TRACE_EVENT1(
@@ -1185,8 +1207,7 @@ void InputHandlerProxyUtils::SendEventToNative(const WebTouchEvent& touch_event)
     }
     embed_id_ =
         std::to_string(layer_impl->layer_impl_utils()->native_embed_id());
-    x = x - nativeRects_[finger_id].x();
-    y = y - nativeRects_[finger_id].y();
+    ConvertToNativeCoordinates(x, y, layer_impl, nativeRects_[finger_id]);
     LOG(DEBUG) << "[NativeEmbedGesture] SendNativeEvent";
     std::string trace_name = "InputHandlerProxyUtils::SendEventToNative";
     TRACE_EVENT1(

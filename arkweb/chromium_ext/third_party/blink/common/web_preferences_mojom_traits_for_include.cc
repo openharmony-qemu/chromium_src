@@ -70,6 +70,8 @@ static void WebPreferenceMojomExt(blink::mojom::WebPreferencesDataView data,
   out->native_embed_mode_enabled = data.native_embed_mode_enabled();
   out->intrinsic_size_enabled = data.intrinsic_size_enabled();
   out->css_display_change_enabled = data.css_display_change_enabled();
+  out->transform_rotate_and_skew_enabled =
+      data.transform_rotate_and_skew_enabled();
 #endif
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
   out->draw_mode = data.draw_mode();

@@ -76,6 +76,14 @@ bool HTMLPlugInElementUtils::IsCssDisplayChangeEnabled() const {
   }
   return settings->GetCSSDisplayChangeEnabled();
 }
+
+bool HTMLPlugInElementUtils::IsTransformRotateAndSkewEnabled() const {
+  auto settings = plugin_->GetDocument().GetSettings();
+  if (!settings || !settings->GetNativeEmbedModeEnabled() || !plugin_->IsNativeType()) {
+    return false;
+  }
+  return settings->GetTransformRotateAndSkewEnabled();
+}
 // LCOV_EXCL_STOP
 
 void HTMLPlugInElementUtils::SetNativeEmbedOverlay(bool native_embed_overlay) {

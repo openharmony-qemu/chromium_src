@@ -267,6 +267,10 @@
 #if BUILDFLAG(ARKWEB_CRASHPAD)
 #include "arkweb/chromium_ext/content/browser/dfx/memory_monitor_render_impl.h"
 #endif
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#include "arkweb/chromium_ext/content/renderer/dfx_event_sender.h"
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_JSHEAP_DUMP)
 #include "arkweb/chromium_ext/v8/heap_dump/mojom_impl/binary_writer_render_impl.h"
@@ -4032,6 +4036,24 @@ void RenderFrameImpl::DidCommitNavigation(
     }
     v8_oom::V8OOMMonitorImpl::GetInstance()->Trigger(document_loader->GetUrl().GetString().Utf8());
 #endif
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  if (!DfxEventSender::GetInstance()->IsBound()) {
+    GetBrowserInterfaceBroker().GetInterface(
+        DfxEventSender::GetInstance()->GetPendingReceiver());
+  }
+
+  static bool forwarder_registered = false;
+  if (!forwarder_registered) {
+    forwarder_registered = true;
+    SetHiSysEventForwarder(base::BindRepeating(
+        [](const std::string& event_name, base::Value::Dict info) {
+          DfxEventSender::GetInstance()->ReportHiSysEvent(event_name,
+                                                          std::move(info));
+        }));
+    LOG(INFO) << "HiSysEventForwarder registered in renderer process";
   }
 #endif
 

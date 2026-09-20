@@ -95,8 +95,6 @@ class BLINK_PLATFORM_EXPORT WebAudioSourceProviderImpl
 
   bool IsAudioBeingCaptured() const;
 
-  void ConnectToDestinationReady();
-
  private:
   ~WebAudioSourceProviderImpl() override;
 

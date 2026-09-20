@@ -924,7 +924,7 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
           shared_context_state_->vk_context_provider(), &flush_info);
       auto flush_result =
           shared_context_state_->gr_context()->flush(flush_info);
-      DCHECK(flush_result == GrSemaphoresSubmitted::kYes);
+      DCHECK(flush_result.fSubmitted == GrSemaphoresSubmitted::kYes);
       shared_context_state_->gr_context()->submit();
     }
 
@@ -2514,7 +2514,7 @@ bool WebGPUDecoderImpl::ClearSharedImageWithSkia(const Mailbox& mailbox) {
     AddVulkanCleanupTaskForSkiaFlush(
         shared_context_state_->vk_context_provider(), &flush_info);
     auto flush_result = shared_context_state_->gr_context()->flush(flush_info);
-    DCHECK(flush_result == GrSemaphoresSubmitted::kYes);
+    DCHECK(flush_result.fSubmitted == GrSemaphoresSubmitted::kYes);
     shared_context_state_->gr_context()->submit();
   }
 

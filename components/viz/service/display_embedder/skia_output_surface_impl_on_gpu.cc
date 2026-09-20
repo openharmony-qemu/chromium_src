@@ -1247,13 +1247,13 @@ bool SkiaOutputSurfaceImplOnGpu::FlushSurface(
     flush_info.fFinishedContext = finished_context;
     gpu::AddVulkanCleanupTaskForSkiaFlush(vulkan_context_provider_,
                                           &flush_info);
-    GrSemaphoresSubmitted flush_result =
+    GrDirectContext::FlushResult flush_result =
         surface ? gr_context()->flush(surface, flush_info)
                 : gr_context()->flush(flush_info);
     if (scoped_write_access) {
       scoped_write_access->ApplyBackendSurfaceEndState();
     }
-    return flush_result == GrSemaphoresSubmitted::kYes ||
+    return flush_result.fSubmitted == GrSemaphoresSubmitted::kYes ||
            end_semaphores.empty();
   }
 

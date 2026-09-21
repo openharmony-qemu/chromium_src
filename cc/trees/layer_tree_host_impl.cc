@@ -4742,7 +4742,7 @@ void LayerTreeHostImpl::ReleaseLayerTreeFrameSink() {
   // To minimize risk, only avoid waiting for the UI layer tree.
   should_finish &= !settings_.is_layer_tree_for_ui;
 #elif BUILDFLAG(IS_ARKWEB)
-  should_finish = !settings_.is_layer_tree_for_ui || !is_ohos_pc_ui_setting_;
+  should_finish &= !settings_.is_layer_tree_for_ui || !is_ohos_pc_ui_setting_;
 #endif
 
   if (should_finish && layer_tree_frame_sink_->context_provider()) {

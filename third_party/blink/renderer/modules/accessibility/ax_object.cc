@@ -2311,9 +2311,19 @@ void AXObject::SerializeUnignoredAttributes(ui::AXNodeData* node_data,
     // Do not send the value attribute for non-atomic text fields in order to
     // improve the performance of the cross-process communication with the
     // browser process, and since it can be easily computed in that process.
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+    // ArkWeb: For non-atomic text fields (contenteditable), serialize kValue
+    // from DOM inner text. The browser-side computation from child nodes can be
+    // stale when child updates arrive in a separate AXTreeUpdate (e.g. ctrl+v
+    // paste after ctrl+x cut), causing OnDataChanged to miss the value change.
+    TruncateAndAddStringAttribute(node_data,
+                                  ax::mojom::blink::StringAttribute::kValue,
+                                  SlowGetValueForControlIncludingContentEditable());
+#else
     TruncateAndAddStringAttribute(node_data,
                                   ax::mojom::blink::StringAttribute::kValue,
                                   GetValueForControl());
+#endif
 
     if (auto* input = DynamicTo<HTMLInputElement>(element)) {
       String type = element->getAttribute(html_names::kTypeAttr);

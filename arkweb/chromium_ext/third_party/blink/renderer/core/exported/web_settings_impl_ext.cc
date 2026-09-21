@@ -104,6 +104,10 @@ void WebSettingsImplExt::SetCssDisplayChangeEnabled(bool enabled) {
   settings_->SetCSSDisplayChangeEnabled(enabled);
 }
 
+void WebSettingsImplExt::SetTransformRotateAndSkewEnabled(bool enabled) {
+  settings_->SetTransformRotateAndSkewEnabled(enabled);
+}
+
 void WebSettingsImplExt::RegisterNativeEmbedRule(const WebString& tag,
                                               const WebString& type) {
   settings_->RegisterNativeEmbedRule(tag, type);

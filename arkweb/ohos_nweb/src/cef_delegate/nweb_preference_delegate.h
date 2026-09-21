@@ -192,6 +192,8 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool GetIntrinsicSizeEnable();
   void SetCssDisplayChangeEnabled(bool enable) override;
   bool GetCssDisplayChangeEnabled();
+  void SetTransformRotateAndSkewEnabled(bool enable) override;
+  bool GetTransformRotateAndSkewEnabled();
   bool IsEnableCustomVideoPlayer();
 #endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
 
@@ -392,6 +394,7 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool enable_embed_mode_{false};
   bool enable_intrinsic_size_{false};
   bool enable_css_display_change_{false};
+  bool enable_transform_rotate_and_skew_{false};
   std::string embed_tag_{"embed"};
   std::string embed_tag_type_{"native/"};
 #endif  // BUILDFLAG(ARKWEB_SAME_LAYER)

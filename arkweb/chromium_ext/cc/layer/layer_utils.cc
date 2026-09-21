@@ -30,6 +30,8 @@ void LayerUtils::PushPropertiesToImpl(LayerImpl* layer_impl) {
   layer_impl->layer_impl_utils()->set_may_contain_native(may_contain_native());
   layer_impl->layer_impl_utils()->set_native_embed_id(native_embed_id());
   layer_impl->layer_impl_utils()->SetNativeRect(native_rect_);
+  layer_impl->layer_impl_utils()->set_native_embed_transform_rotate_and_skew_enabled(
+      native_embed_transform_rotate_and_skew_enabled_);
   layer_impl->layer_impl_utils()->SetShouldInterceptTouchEvent(
       ShouldInterceptTouchEvent());
 }
@@ -48,6 +50,18 @@ int LayerUtils::native_embed_id() const {
 
 void LayerUtils::SetNativeRect(const gfx::RectF& rect) {
   native_rect_ = rect;
+}
+
+void LayerUtils::SetNativeEmbedTransformRotateAndSkewEnabled(bool enabled) {
+  if (native_embed_transform_rotate_and_skew_enabled() == enabled) {
+    return;
+  }
+  native_embed_transform_rotate_and_skew_enabled_ = enabled;
+  layer_->SetNeedsPushProperties();
+}
+
+bool LayerUtils::native_embed_transform_rotate_and_skew_enabled() const {
+  return native_embed_transform_rotate_and_skew_enabled_;
 }
 // LCOV_EXCL_STOP
 

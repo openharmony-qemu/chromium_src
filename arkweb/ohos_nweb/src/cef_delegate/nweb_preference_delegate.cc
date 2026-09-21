@@ -215,6 +215,8 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
       GetIntrinsicSizeEnable() ? STATE_ENABLED : STATE_DISABLED;
   browser_settings.css_display_change_enabled =
       GetCssDisplayChangeEnabled() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.transform_rotate_and_skew_enabled =
+      GetTransformRotateAndSkewEnabled() ? STATE_ENABLED : STATE_DISABLED;
   str = CefString(embed_tag_);
   cef_string_set(str.c_str(), str.length(), &(browser_settings.embed_tag),
                  true);
@@ -862,6 +864,15 @@ void NWebPreferenceDelegate::SetCssDisplayChangeEnabled(bool enable) {
 
 bool NWebPreferenceDelegate::GetCssDisplayChangeEnabled() {
   return enable_css_display_change_;
+}
+
+void NWebPreferenceDelegate::SetTransformRotateAndSkewEnabled(bool enable) {
+  enable_transform_rotate_and_skew_ = enable;
+  WebPreferencesChanged();
+}
+
+bool NWebPreferenceDelegate::GetTransformRotateAndSkewEnabled() {
+  return enable_transform_rotate_and_skew_;
 }
 
 void NWebPreferenceDelegate::RegisterNativeEmbedRule(const std::string& tag,

@@ -74,6 +74,7 @@ class CORE_EXPORT WebSettingsImplExt final : public WebSettingsImpl {
   bool NativeEmbedModeEnabled() const;
   void SetIntrinsicSizeEnabled(bool) override;
   void SetCssDisplayChangeEnabled(bool) override;
+  void SetTransformRotateAndSkewEnabled(bool) override;
   void RegisterNativeEmbedRule(const WebString& tag,
                                const WebString& type) override;
 #endif

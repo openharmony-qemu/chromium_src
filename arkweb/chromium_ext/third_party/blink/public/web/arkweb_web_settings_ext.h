@@ -52,6 +52,7 @@ public:
   virtual void SetNativeEmbedModeEnabled(bool) = 0;
   virtual void SetIntrinsicSizeEnabled(bool) = 0;
   virtual void SetCssDisplayChangeEnabled(bool) = 0;
+  virtual void SetTransformRotateAndSkewEnabled(bool) = 0;
   virtual void RegisterNativeEmbedRule(const WebString&, const WebString&) = 0;
 #endif
 

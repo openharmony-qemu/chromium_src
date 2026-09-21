@@ -47,6 +47,7 @@
 #include "third_party/blink/renderer/platform/web_native_bridge.h"
 #include "third_party/blink/renderer/platform/wtf/cross_thread_functional.h"
 #include "third_party/blink/renderer/platform/wtf/functional.h"
+#include "ui/gfx/geometry/transform_util.h"
 
 namespace blink {
 
@@ -167,10 +168,19 @@ gfx::Rect NativeLoader::TransformRect(gfx::Rect rect) {
   LayoutObject* layoutObject = plugin_element_->GetLayoutObject();
   if (layoutObject) {
     gfx::Transform transform = layoutObject->LocalToAbsoluteTransform();
-    auto trandfromRect = transform.MapRect(gfx::RectF(rect));
-    rect.set_width(std::round(trandfromRect.size().width()));
-    rect.set_height(std::round(trandfromRect.size().height()));
-    LOG(INFO) << "NativeEmbed NativeLoader::TransformRect: " << rect.ToString();
+    bool transform_rotate_and_skew_enabled =
+        plugin_element_->Utils()->IsTransformRotateAndSkewEnabled();
+    if (transform_rotate_and_skew_enabled &&
+        !transform.IsScaleOrTranslation()) {
+      gfx::Vector2dF scale =
+          gfx::ComputeTransform2dScaleComponents(transform, 1.0f);
+      rect.set_width(std::round(rect.width() * scale.x()));
+      rect.set_height(std::round(rect.height() * scale.y()));
+    } else {
+      auto trandfromRect = transform.MapRect(gfx::RectF(rect));
+      rect.set_width(std::round(trandfromRect.size().width()));
+      rect.set_height(std::round(trandfromRect.size().height()));
+    }
   }
   return rect;
 }
@@ -200,6 +210,8 @@ void NativeLoader::OnCreateNativeSurface(int native_embed_id,
   bounding_rect_changed_cb_ = rect_changed_cb;
   cc_layer_->layer_utils()->SetNativeEmbedId(native_embed_id_);
   cc_layer_->layer_utils()->SetMayContainNative(true);
+  cc_layer_->layer_utils()->SetNativeEmbedTransformRotateAndSkewEnabled(
+      plugin_element_->Utils()->IsTransformRotateAndSkewEnabled());
   cc_layer_->SetNeedsCommit();
 
   auto embed_info = media::mojom::blink::NativeEmbedInfo::New();

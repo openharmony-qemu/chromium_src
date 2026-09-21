@@ -380,6 +380,8 @@ enum BadMessageReason {
   RFH_CREATE_NEW_WINDOW_INVALID_PIP_OPTIONS = 356,
   RFHI_INVALID_CLIENT_SIDE_REDIRECT_URL = 357,
   RFH_ERROR_PAGE_URL_MISMATCH = 361,
+  PMM_UNSUBSCRIBE_IN_FENCED_FRAME = 367,
+  PMM_GET_SUBSCRIPTION_IN_FENCED_FRAME = 368,
 
   // Please add new elements here. The naming convention is abbreviated class
   // name (e.g. RenderFrameHost becomes RFH) plus a unique description of the

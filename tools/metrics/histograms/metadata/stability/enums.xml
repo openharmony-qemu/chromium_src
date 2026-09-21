@@ -524,6 +524,8 @@ Called by update_bad_message_reasons.py.-->
   <int value="355" label="RFH_AUTHENTICATOR_PDF_PROCESS_BLOCKED"/>
   <int value="357" label="RFHI_INVALID_CLIENT_SIDE_REDIRECT_URL"/>
   <int value="361" label="RFH_ERROR_PAGE_URL_MISMATCH"/>
+  <int value="367" label="PMM_UNSUBSCRIBE_IN_FENCED_FRAME"/>
+  <int value="368" label="PMM_GET_SUBSCRIPTION_IN_FENCED_FRAME"/>
 </enum>
 
 <enum name="BadMessageReasonExtensions">

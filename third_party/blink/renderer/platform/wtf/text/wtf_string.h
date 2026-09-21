@@ -192,6 +192,8 @@ class WTF_EXPORT String {
     return std::u16string_view(chars.begin(), chars.end());
   }
 
+  // Returns a code unit at the specified index.
+  // This operator returns 0 if the specified index is out of range.
   UChar operator[](wtf_size_t index) const {
     if (!impl_ || index >= impl_->length())
       return 0;

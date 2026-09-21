@@ -126,7 +126,7 @@ void SVGAElement::DefaultEventHandler(Event& event) {
     if (IsLinkClick(event)) {
       String url = StripLeadingAndTrailingHTMLSpaces(HrefString());
 
-      if (url[0] == '#') {
+      if (url.StartsWith('#')) {
         Element* target_element =
             GetTreeScope().getElementById(AtomicString(url.Substring(1)));
         if (auto* svg_smil_element =

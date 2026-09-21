@@ -9313,6 +9313,17 @@ class SharedStorageCreateWorkletCustomDataOriginBrowserTest
                      base::Value::List()
                          .Append("https://y.test:{{port}}")
                          .Append("https://a.test:{{port}}")))));
+    // We expect failure for script with origin "https://b.test:{{port}}" and
+    // context origin "https://a.test:{{port}}" when one of the following values
+    // is served.
+    trusted_origins_lists.push_back(static_cast<base::Value>(
+        base::Value::List()
+            .Append(base::Value::Dict()
+                        .Set("scriptOrigin", "https://b.test:{{port}}")
+                        .Set("contextOrigin", "https://d.test:{{port}}"))
+            .Append(base::Value::Dict()
+                        .Set("scriptOrigin", "https://d.test:{{port}}")
+                        .Set("contextOrigin", "https://a.test:{{port}}"))));
     return trusted_origins_lists;
   }
 };
@@ -9668,6 +9679,26 @@ IN_PROC_BROWSER_TEST_P(
         SharedStorageEventParams::CreateForCreateWorklet(
             module_script_url, custom_data_origin_str,
             /*worklet_ordinal=*/0, GetFirstWorkletHostDevToolsToken())}});
+}
+
+IN_PROC_BROWSER_TEST_P(SharedStorageCreateWorkletCustomDataOriginBrowserTest,
+                       CrossOriginScript_Failure_CrossEntryCarryOver) {
+  set_trusted_origins_list_index(14);
+  GURL url = https_server()->GetURL("a.test", kSimplePagePath);
+  EXPECT_TRUE(NavigateToURL(shell(), url));
+
+  GURL module_script_url = https_server()->GetURL(
+      "b.test", "/shared_storage/module_with_cors_header.js");
+
+  url::Origin custom_data_origin =
+      url::Origin::Create(https_server()->GetURL("c.test", kSimplePagePath));
+
+  EXPECT_THAT(
+      EvalJs(
+          shell(),
+          JsReplace("sharedStorage.createWorklet($1, {dataOrigin: $2})",
+                    module_script_url.spec(), custom_data_origin.Serialize())),
+      EvalJsResult::ErrorIs(testing::HasSubstr("has not been allowed")));
 }
 
 IN_PROC_BROWSER_TEST_P(SharedStorageBrowserTest,

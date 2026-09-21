@@ -2674,9 +2674,12 @@ void RenderWidgetHostViewAura::OnWindowFocused(aura::Window* gained_focus,
 
   UpdateActiveState(false);
   host()->LostFocus();
-
+  auto weak_this = weak_ptr_factory_.GetWeakPtr();
   DetachFromInputMethod(false);
-
+  if (!weak_this) {
+    return;
+  }
+  
   // TODO(wjmaclean): Do we need to let TouchSelectionControllerClientAura
   // handle this, just in case it stomps on a new highlight in another view
   // that has just become focused? So far it doesn't appear to be a problem,
@@ -2758,6 +2761,7 @@ RenderWidgetHostViewAura::~RenderWidgetHostViewAura() {
   delegated_frame_host_.reset();
   window_observer_.reset();
   if (window_) {
+    aura::client::SetFocusChangeObserver(window_, nullptr);
     if (window_->GetHost())
       window_->GetHost()->RemoveObserver(this);
     UnlockPointer();

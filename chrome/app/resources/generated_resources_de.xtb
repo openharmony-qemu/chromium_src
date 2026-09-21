@@ -4863,6 +4863,7 @@ Möchtest du <ph name="CONTROL_PANEL_APPLET_NAME" /> starten?</translation>
 <translation id="428715201724021596">Verbindung zum Profil wird hergestellt. Das kann einige Minuten dauern.</translation>
 <translation id="4287157641315808225">Ja, ChromeVox aktivieren</translation>
 <translation id="4287502603002637393">{MUTED_NOTIFICATIONS_COUNT,plural, =1{Anzeigen}other{Alle anzeigen}}</translation>
+<translation id="4289004521405268796">Aktivieren Sie den Entwicklermodus, um diese Erweiterung zu nutzen. Beachten Sie, dass ihre Sicherheit nicht überprüft werden kann.</translation>
 <translation id="4289540628985791613">Übersicht</translation>
 <translation id="428963538941819373">Diese Websites dürfen Informationen, die sie zu deiner Person gespeichert haben, nutzen, wenn du auf <ph name="HOST" /> surfst</translation>
 <translation id="4289732974614035569">PIN auswählen</translation>

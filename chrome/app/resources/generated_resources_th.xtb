@@ -4866,6 +4866,7 @@
 <translation id="428715201724021596">กำลังเชื่อมต่อโปรไฟล์ การดำเนินการนี้อาจใช้เวลาสักครู่</translation>
 <translation id="4287157641315808225">ใช่ เปิดใช้งาน ChromeVox</translation>
 <translation id="4287502603002637393">{MUTED_NOTIFICATIONS_COUNT,plural, =1{แสดง}other{แสดงทั้งหมด}}</translation>
+<translation id="4289004521405268796">เปิดใช้งานโหมดนักพัฒนาเพื่อใช้โน้ตขยายนี้ โปรดทราบว่าไม่สามารถตรวจสอบความปลอดภัยได้</translation>
 <translation id="4289540628985791613">ภาพรวม</translation>
 <translation id="428963538941819373">เว็บไซต์เหล่านี้สามารถใช้ข้อมูลที่บันทึกไว้เกี่ยวกับตัวคุณขณะที่คุณเรียกดู <ph name="HOST" /></translation>
 <translation id="4289732974614035569">เลือก PIN</translation>

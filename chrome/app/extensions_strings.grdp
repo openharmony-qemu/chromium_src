@@ -91,6 +91,9 @@
   <message name="IDS_EXTENSIONS_DISABLED_UNSUPPORTED_DEVELOPER_MODE" desc="Text shown in the extension card for extensions disabled due to unsupported developer mode.">
     Turn on developer mode to use this extension, which can't be reviewed by the Chrome Web Store.
   </message>
+  <message name="IDS_EXTENSIONS_DISABLED_UNSUPPORTED_DEVELOPER_MODE_V2" desc="Text shown in the extension card for extensions disabled due to unsupported developer mode.">
+    Enable Developer mode to use this extension. Please note that its security cannot be verified.
+  </message>
   <message name="IDS_EXTENSIONS_DISABLED_UNSUPPORTED_DEVELOPER_MODE_DETAILS" desc="Text shown in the details extension view for extensions disabled due to unsupported developer mode.">
     Turn on developer mode to use this extension, but only if you trust the extension. It may contain experimental features and hasn't been reviewed by the Chrome Web Store.
   </message>

@@ -4868,6 +4868,7 @@ Puedes gestionar la configuración de esta cuenta instalando la aplicación Fami
 <translation id="428715201724021596">Conectándose al perfil. Este proceso puede durar unos minutos.</translation>
 <translation id="4287157641315808225">Sí, activar ChromeVox</translation>
 <translation id="4287502603002637393">{MUTED_NOTIFICATIONS_COUNT,plural, =1{Mostrar}other{Mostrar todo}}</translation>
+<translation id="4289004521405268796">Habilita el modo Desarrollador para usar esta extensión. Ten en cuenta que no se puede verificar su seguridad.</translation>
 <translation id="4289540628985791613">Vista general</translation>
 <translation id="428963538941819373">Estos sitios pueden usar información que hayan guardado sobre ti cuando navegas por <ph name="HOST" /></translation>
 <translation id="4289732974614035569">Elige un PIN</translation>

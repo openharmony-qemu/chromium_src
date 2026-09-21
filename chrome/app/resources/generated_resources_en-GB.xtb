@@ -4890,6 +4890,7 @@ You can manage this account’s settings by installing the Family Link app on yo
 <translation id="428715201724021596">Connecting to profile. This may take a few minutes.</translation>
 <translation id="4287157641315808225">Yes, activate ChromeVox</translation>
 <translation id="4287502603002637393">{MUTED_NOTIFICATIONS_COUNT,plural, =1{Show}other{Show All}}</translation>
+<translation id="4289004521405268796">Enable Developer mode to use this extension. Please note that its security cannot be verified.</translation>
 <translation id="4289540628985791613">Overview</translation>
 <translation id="428963538941819373">These sites can use info they've saved about you as you browse <ph name="HOST" /></translation>
 <translation id="4289732974614035569">Choose a PIN</translation>

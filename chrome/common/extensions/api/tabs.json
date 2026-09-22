@@ -84,7 +84,8 @@
           "incognito": {"type": "boolean", "description": "Whether the tab is in an incognito window."},
           "width": {"type": "integer", "optional": true, "description": "The width of the tab in pixels."},
           "height": {"type": "integer", "optional": true, "description": "The height of the tab in pixels."},
-          "sessionId": {"type": "string", "optional": true, "description": "The session ID used to uniquely identify a tab obtained from the $(ref:sessions) API."}
+          "sessionId": {"type": "string", "optional": true, "description": "The session ID used to uniquely identify a tab obtained from the $(ref:sessions) API."},
+          "agentProcessing": {"type": "integer", "optional": true, "description": "Status of AI agent control over the tab."}
         }
       },
       {
@@ -480,6 +481,11 @@
                 "optional": true,
                 "description": "Whether the tabs are highlighted."
               },
+              "agentProcessing": {
+                "type": "integer",
+                "optional": true,
+                "description": "Status of AI agent control over the tab."
+              },
               "frozen": {
                 "type": "boolean",
                 "optional": true,
@@ -662,6 +668,11 @@
                 "type": "boolean",
                 "optional": true,
                 "description": "Whether the tab should be discarded automatically by the browser when resources are low."
+              },
+              "agentProcessing": {
+                "type": "integer",
+                "optional": true,
+                "description": "Status of AI agent control over the tab."
               }
             }
           }

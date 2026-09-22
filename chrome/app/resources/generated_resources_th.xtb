@@ -5010,6 +5010,7 @@
 <translation id="4385905942116811558">กำลังค้นหาอุปกรณ์บลูทูธและอุปกรณ์ USB</translation>
 <translation id="4385985255515673508">{NUM_EXTENSIONS,plural, =1{ระบบปิดส่วนขยายนี้เนื่องจากไม่มีการรองรับอีกต่อไป}other{ระบบปิดส่วนขยายเหล่านี้เนื่องจากไม่มีการรองรับอีกต่อไป}}</translation>
 <translation id="4386604394450371010">ภาพรวม</translation>
+<translation id="4386813704801763616">เปิดโหมดนักพัฒนาเพื่อใช้ส่วนขยายนี้เฉพาะในกรณีที่คุณเชื่อถือส่วนขยายดังกล่าวเท่านั้น โดยส่วนขยายนี้อาจมีฟีเจอร์ทดลองและยังไม่ได้รับการตรวจสอบ</translation>
 <translation id="4387890294700445764">รหัสผ่านที่ไม่รัดกุม</translation>
 <translation id="4388650384344483842">ใช้อักขระอย่างน้อย 8 ตัว</translation>
 <translation id="4390396490617716185"><ph name="FIRST_SWITCH" />, <ph name="SECOND_SWITCH" />, <ph name="THIRD_SWITCH" /> และสวิตช์อื่นๆ อีก <ph name="NUMBER_OF_OTHER_SWITCHES" /> รายการ</translation>

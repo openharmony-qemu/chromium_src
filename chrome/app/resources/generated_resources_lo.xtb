@@ -5024,6 +5024,7 @@
 <translation id="4385905942116811558">ກຳລັງຊອກຫາອຸປະກອນ Bluetooth ແລະ USB</translation>
 <translation id="4385985255515673508">{NUM_EXTENSIONS,plural, =1{ລະບົບປິດສ່ວນຂະຫຍາຍນີ້ເນື່ອງຈາກບໍ່ມີການຮອງຮັບອີກຕໍ່ໄປ}other{ລະບົບປິດສ່ວນຂະຫຍາຍເຫຼົ່ານີ້ເນື່ອງຈາກບໍ່ມີການຮອງຮັບອີກຕໍ່ໄປ}}</translation>
 <translation id="4386604394450371010">ພາບຮວມ</translation>
+<translation id="4386813704801763616">ເປີດໂໝດນັກພັດທະນາເພື່ອໃຊ້ສ່ວນຂະຫຍາຍນີ້, ແຕ່ສະເພາະຖ້າທ່ານເຊື່ອໝັ້ນສ່ວນຂະຫຍາຍເທົ່ານັ້ນ. ມັນອາດມີຄຸນສົມບັດທົດລອງໃຊ້ ແລະ ບໍ່ໄດ້ຖືກທວນຄືນ.</translation>
 <translation id="4387890294700445764">ລະຫັດຜ່ານທີ່ຖືກລະເມີດ</translation>
 <translation id="4388650384344483842">ໃຊ້ຕົວອັກສອນຢ່າງໜ້ອຍ 8 ຕົວ</translation>
 <translation id="4390396490617716185"><ph name="FIRST_SWITCH" />, <ph name="SECOND_SWITCH" />, <ph name="THIRD_SWITCH" /> ແລະ ອີກ <ph name="NUMBER_OF_OTHER_SWITCHES" /> ປຸ່ມ</translation>

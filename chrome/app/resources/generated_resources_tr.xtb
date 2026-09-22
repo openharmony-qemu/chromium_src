@@ -5008,6 +5008,7 @@ Sunucunun mesajı: <ph name="SERVER_MSG" /></translation>
 <translation id="4385905942116811558">Bluetooth ve USB cihazları aranıyor</translation>
 <translation id="4385985255515673508">{NUM_EXTENSIONS,plural, =1{Bu uzantı artık desteklenmediği için kapatıldı}other{Bu uzantılar artık desteklenmediği için kapatıldı}}</translation>
 <translation id="4386604394450371010">genel bakış</translation>
+<translation id="4386813704801763616">Uzantıya güveniyorsanız bu uzantıyı kullanmak için Geliştirici modunu açın. Deneysel özellikler içerebilir ve incelenmemiştir.</translation>
 <translation id="4387890294700445764">Güvenliği ihlal edilmiş şifreler</translation>
 <translation id="4388650384344483842">En az 8 karakter kullanın</translation>
 <translation id="4390396490617716185"><ph name="FIRST_SWITCH" />, <ph name="SECOND_SWITCH" />, <ph name="THIRD_SWITCH" /> ve <ph name="NUMBER_OF_OTHER_SWITCHES" /> düğme tuşu daha</translation>

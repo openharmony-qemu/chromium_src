@@ -5003,6 +5003,7 @@
 <translation id="4385905942116811558">Bluetooth デバイスと USB デバイスを探しています</translation>
 <translation id="4385985255515673508">{NUM_EXTENSIONS,plural, =1{この拡張機能はサポートが終了したため、オフになりました}other{これらの拡張機能はサポートが終了したため、オフになりました}}</translation>
 <translation id="4386604394450371010">概要</translation>
+<translation id="4386813704801763616">この拡張機能を使用するには、開発者モードを有効にしてください。ただし、信頼できる拡張機能のみを使用してください。この拡張機能には試験的な機能が含まれている可能性があり、審査されていません</translation>
 <translation id="4387890294700445764">不正使用されたパスワード</translation>
 <translation id="4388650384344483842">8 文字以上で指定してください</translation>
 <translation id="4390396490617716185"><ph name="FIRST_SWITCH" />、<ph name="SECOND_SWITCH" />、<ph name="THIRD_SWITCH" />、他 <ph name="NUMBER_OF_OTHER_SWITCHES" /> 個のスイッチ</translation>

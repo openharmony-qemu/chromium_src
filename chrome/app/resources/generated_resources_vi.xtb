@@ -5025,6 +5025,7 @@ Bạn có thể quản lý các tùy chọn cài đặt của tài khoản này 
 <translation id="4385905942116811558">Tìm kiếm thiết bị Bluetooth và USB</translation>
 <translation id="4385985255515673508">{NUM_EXTENSIONS,plural, =1{Tiện ích này đã bị tắt vì không còn được hỗ trợ}other{Các tiện ích này đã bị tắt vì không còn được hỗ trợ}}</translation>
 <translation id="4386604394450371010">tổng quan</translation>
+<translation id="4386813704801763616">Bật chế độ Nhà phát triển để sử dụng tiện ích mở rộng này, nhưng chỉ khi bạn tin tưởng tiện ích đó. Tiện ích này có thể chứa các tính năng thử nghiệm và chưa được kiểm duyệt.</translation>
 <translation id="4387890294700445764">Mật khẩu bị lộ</translation>
 <translation id="4388650384344483842">Nhập tối thiểu 8 ký tự</translation>
 <translation id="4390396490617716185"><ph name="FIRST_SWITCH" />, <ph name="SECOND_SWITCH" />, <ph name="THIRD_SWITCH" /> và <ph name="NUMBER_OF_OTHER_SWITCHES" /> công tắc khác</translation>

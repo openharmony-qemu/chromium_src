@@ -5016,6 +5016,7 @@
 <translation id="4385905942116811558">搜尋藍牙裝置和 USB 裝置</translation>
 <translation id="4385985255515673508">{NUM_EXTENSIONS,plural, =1{系統不再支援這項擴充功能，因此已停用}other{系統不再支援這些擴充功能，因此已停用}}</translation>
 <translation id="4386604394450371010">總覽</translation>
+<translation id="4386813704801763616">開啟開發者模式即可使用此擴充程式，但請務必確認您信任此擴充程式。它可能包含實驗性功能，且尚未經過審核。</translation>
 <translation id="4387890294700445764">遭外洩的密碼</translation>
 <translation id="4388650384344483842">請至少輸入 8 個半形字元</translation>
 <translation id="4390396490617716185"><ph name="FIRST_SWITCH" />、<ph name="SECOND_SWITCH" />、<ph name="THIRD_SWITCH" />，以及另外 <ph name="NUMBER_OF_OTHER_SWITCHES" /> 個按鍵</translation>

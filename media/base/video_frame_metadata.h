@@ -147,6 +147,13 @@ struct MEDIA_EXPORT VideoFrameMetadata {
   bool render_video_view = false;
 #endif
 
+#if BUILDFLAG(ARKWEB_AI_HDR)
+  // ArkWeb OHOS: when true, the video frame has been processed by VPE
+  // (Video Processing Engine) for AI HDR enhancement. Drives overlay_handled
+  // in CheckOverlaySupportImpl to force delegated compositing for AI HDR frames.
+  bool is_ai_hdr_active = false;
+#endif
+
   // Android & Windows only: if set, then this frame's resource would like to
   // be notified about its promotability to an overlay.
   bool wants_promotion_hint = false;

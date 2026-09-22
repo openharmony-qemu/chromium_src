@@ -83,6 +83,12 @@ struct StructTraits<media::mojom::VideoFrameMetadataDataView,
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_AI_HDR)
+  static bool is_ai_hdr_active(const media::VideoFrameMetadata& input) {
+    return input.is_ai_hdr_active;
+  }
+#endif
+
   static bool wants_promotion_hint(const media::VideoFrameMetadata& input) {
     return input.wants_promotion_hint;
   }

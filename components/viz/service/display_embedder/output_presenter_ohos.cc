@@ -571,6 +571,32 @@ void OutputPresenterOHOS::Present(SwapCompletionCallback completion_callback,
   std::swap(previous_frame_, pending_frame_);
 }
 
+#if BUILDFLAG(ARKWEB_AI_HDR)
+gfx::SizeF OutputPresenterOHOS::MaybeCorrectBufferSize(
+    const OutputPresenter::OverlayPlaneCandidate& overlay_plane,
+    ScopedOverlayAccess* access,
+    const gfx::SizeF& buffer_size) {
+  if (!overlay_plane.is_ai_hdr_active || !access) {
+    return buffer_size;
+  }
+  OH_NativeBuffer* nb = access->GetOHNativeBuffer();
+  if (!nb) {
+    return buffer_size;
+  }
+  OH_NativeBuffer_Config config = {};
+  OH_NativeBuffer_GetConfig(nb, &config);
+  if (config.width > 0 && config.height > 0 &&
+      (config.width != overlay_plane.resource_size_in_pixels.width() ||
+       config.height != overlay_plane.resource_size_in_pixels.height())) {
+    TRACE_EVENT2("viz", "OutputPresenterOHOS buffer_size corrected",
+                 "stale_size", buffer_size.ToString(),
+                 "actual_size", gfx::SizeF(config.width, config.height).ToString());
+    return gfx::SizeF(config.width, config.height);
+  }
+  return buffer_size;
+}
+#endif
+
 void OutputPresenterOHOS::ScheduleOverlayPlane(
     const OutputPresenter::OverlayPlaneCandidate& overlay_plane,
     ScopedOverlayAccess* access) {
@@ -590,7 +616,13 @@ void OutputPresenterOHOS::ScheduleOverlayPlane(
     DCHECK(!root_overlay_access_);
     root_overlay_access_ = access;
   } else if (!overlay_plane.is_solid_color) {
+#if BUILDFLAG(ARKWEB_AI_HDR)
+    gfx::SizeF buffer_size =
+        MaybeCorrectBufferSize(overlay_plane, access,
+                               gfx::SizeF(overlay_plane.resource_size_in_pixels));
+#else
     const gfx::SizeF buffer_size(overlay_plane.resource_size_in_pixels);
+#endif
     src_rect = gfx::ScaleRect(overlay_plane.uv_rect, buffer_size);
     if (src_rect.width() == 0) {
       src_rect.set_width(1);

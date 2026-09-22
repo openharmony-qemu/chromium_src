@@ -80,6 +80,9 @@ mojom("mojom") {
   if (arkweb_video_assistant) {
     enabled_features += ["arkweb_render_video_view"]
   }
+  if (arkweb_ai_hdr) {
+    enabled_features += ["arkweb_ai_hdr"]
+  }
 
   public_deps = [
     ":shared_image_format",

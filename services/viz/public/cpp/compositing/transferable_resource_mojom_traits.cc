@@ -189,6 +189,10 @@ bool StructTraits<viz::mojom::TransferableResourceDataView,
   out->is_backed_by_surface_view = data.is_backed_by_surface_view();
 #endif
 
+#if BUILDFLAG(ARKWEB_AI_HDR)
+  out->is_ai_hdr_active = data.is_ai_hdr_active();
+#endif
+
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)
   out->wants_promotion_hint = data.wants_promotion_hint();
 #endif

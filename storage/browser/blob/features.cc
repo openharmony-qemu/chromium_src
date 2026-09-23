@@ -7,6 +7,9 @@
 namespace features {
 
 // Please keep features in alphabetical order.
+BASE_FEATURE(kBlobURLFetchRangeHeaderValidation,
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
 BASE_FEATURE(kBlockCrossPartitionBlobUrlFetching,
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
              base::FEATURE_DISABLED_BY_DEFAULT);

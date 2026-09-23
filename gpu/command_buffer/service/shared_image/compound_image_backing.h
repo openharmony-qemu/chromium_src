@@ -279,8 +279,8 @@ class GPU_GLES2_EXPORT CompoundImageBacking
   // can support the |stream|.
   SharedImageBacking* GetOrAllocateBacking(SharedImageAccessStream stream);
 
-  // Returns the gpu backing from the list of |element_| which has a shm and a
-  // gpu backing.
+  // Returns the GPU backing that holds the latest content from |elements_|, or
+  // nullptr if no GPU backing holds the latest content.
   SharedImageBacking* GetGpuBacking();
 
   bool HasLatestContent(ElementHolder& element);

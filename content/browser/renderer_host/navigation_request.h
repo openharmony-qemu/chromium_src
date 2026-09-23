@@ -2933,6 +2933,9 @@ class CONTENT_EXPORT NavigationRequest
   // NavigationRequest is associated with (if any).
   int64_t frame_entry_item_sequence_number_ = -1;
   int64_t frame_entry_document_sequence_number_ = -1;
+  // The origin that was recorded when the FrameNavigationEntry was previously
+  // committed, if any. May be nullopt for entries that have never committed.
+  std::optional<url::Origin> frame_entry_committed_origin_;
 
   // If non-empty, it represents the IsolationInfo explicitly asked to be used
   // for this NavigationRequest.

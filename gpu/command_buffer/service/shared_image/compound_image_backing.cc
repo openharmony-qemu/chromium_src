@@ -735,9 +735,14 @@ bool CompoundImageBacking::CopyToGpuMemoryBuffer() {
   }
 
   auto* gpu_backing = GetGpuBacking();
-  if (!gpu_backing ||
-      !copy_manager_->CopyImage(gpu_backing, shm_element.GetBacking())) {
-    DLOG(ERROR) << "Failed to copy from GPU backing to shared memory";
+  if (!gpu_backing) {
+    LOG(ERROR) << "Failed to copy from GPU backing to shared memory: no GPU "
+                  "backing with latest content";
+    return false;
+  }
+  if (!copy_manager_->CopyImage(gpu_backing, shm_element.GetBacking())) {
+    LOG(ERROR) << "Failed to copy from GPU backing (" << gpu_backing->GetName()
+               << ") to shared memory";
     return false;
   }
 
@@ -762,7 +767,8 @@ void CompoundImageBacking::CopyToGpuMemoryBufferAsync(
 
   auto* gpu_backing = GetGpuBacking();
   if (!gpu_backing) {
-    DLOG(ERROR) << "Failed to copy from GPU backing to shared memory";
+    LOG(ERROR) << "Failed to copy from GPU backing to shared memory: no GPU "
+                  "backing with latest content";
     std::move(callback).Run(false);
     return;
   }
@@ -1056,11 +1062,12 @@ SharedImageBacking* CompoundImageBacking::GetOrAllocateBacking(
 
 SharedImageBacking* CompoundImageBacking::GetGpuBacking() {
   for (auto& element : elements_) {
-    if (!element.access_streams.Has(SharedImageAccessStream::kMemory)) {
+    if (!element.access_streams.Has(SharedImageAccessStream::kMemory) &&
+        HasLatestContent(element) && element.GetBacking()) {
       return element.GetBacking();
     }
   }
-  LOG(ERROR) << "No GPU backing found.";
+  LOG(ERROR) << "No GPU backing with latest content found.";
   return nullptr;
 }
 

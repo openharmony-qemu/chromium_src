@@ -4,6 +4,10 @@
 
 import("//build/config/features.gni")
 
+if (is_ohos) {
+  import("//arkweb/chromium_ext/device/gamepad/device_gamepad_ext.gni")
+}
+
 if (is_android) {
   import("//build/config/android/config.gni")
   import("//build/config/android/rules.gni")
@@ -73,6 +77,13 @@ component("gamepad") {
     "//third_party/blink/public:blink_headers",
   ]
 
+  if (is_ohos) {
+    include_dirs = [
+      "//arkweb/ohos_adapter_ndk/gamepad_adapter",
+      "//arkweb/chromium_ext",
+    ]
+  }
+
   public_deps = [ "//services/device/public/mojom" ]
 
   defines = [ "DEVICE_GAMEPAD_IMPLEMENTATION" ]
@@ -126,6 +137,10 @@ component("gamepad") {
       "haptic_gamepad_android.h",
     ]
     deps += [ ":jni_headers" ]
+  }
+
+  if (is_ohos) {
+    sources += arkweb_device_gamepad_ext_sources
   }
 
   if (!is_android && !is_fuchsia && !is_ios && !is_ohos) {

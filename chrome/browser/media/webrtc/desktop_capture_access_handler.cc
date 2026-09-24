@@ -723,7 +723,7 @@ void DesktopCaptureAccessHandler::AcceptRequest(
   auto on_desktop_capture_devices_obtained_callback = base::BindOnce(
       &DesktopCaptureAccessHandler::OnDesktopCaptureDevicesObtained,
       base::Unretained(this), web_contents->GetWeakPtr(),
-      std::move(pending_request));
+      std::move(pending_request), media_id);
   std::move(get_devices_for_desktop_capture_callback)
       .Run(std::move(on_desktop_capture_devices_obtained_callback));
 }
@@ -731,6 +731,7 @@ void DesktopCaptureAccessHandler::AcceptRequest(
 void DesktopCaptureAccessHandler::OnDesktopCaptureDevicesObtained(
     base::WeakPtr<content::WebContents> web_contents,
     std::unique_ptr<PendingAccessRequest> pending_request,
+    const content::DesktopMediaID& media_id,
     blink::mojom::StreamDevices devices,
     std::unique_ptr<content::MediaStreamUI> ui) {
   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
@@ -742,6 +743,7 @@ void DesktopCaptureAccessHandler::OnDesktopCaptureDevicesObtained(
 
   UpdateExtensionTrusted(pending_request->request,
                          pending_request->is_allowlisted_extension);
+  UpdateTarget(pending_request->request, media_id);
 
   blink::mojom::StreamDevicesSet stream_devices_set;
   stream_devices_set.stream_devices.emplace_back(

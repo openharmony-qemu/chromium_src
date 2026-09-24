@@ -1508,7 +1508,7 @@ std::unique_ptr<NavigationRequest> NavigationRequest::CreateRendererInitiated(
 #if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
           0, /* custom_viewport_width */
 #endif
-          frame_tree_node->current_frame_host()->GetCachedPermissionStatuses(),
+          /*initial_permission_statuses=*/std::nullopt,
           /*should_skip_screenshot=*/false,
           /*force_new_document_sequence_number=*/false,
           /*navigation_metrics_token=*/base::UnguessableToken::Create(),
@@ -1677,7 +1677,7 @@ NavigationRequest::CreateForSynchronousRendererCommit(
 #if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
           0, /* custom_viewport_width */
 #endif
-          frame_tree_node->current_frame_host()->GetCachedPermissionStatuses(),
+          /*initial_permission_statuses=*/std::nullopt,
           /*should_skip_screenshot=*/false,
           /*force_new_document_sequence_number=*/false,
           /*navigation_metrics_token=*/base::UnguessableToken::Create(),

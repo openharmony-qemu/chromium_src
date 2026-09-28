@@ -93,6 +93,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkServiceProxyDelegate
   net::FallbackProxyStatus GetFallbackProxyStatus() override;
   bool IsFallbackProxyServer(const net::ProxyChain& proxy_chain) override;
   bool IsAccelerateProxyConfig() override;
+  bool IsDomainInProxyWhitelist(const std::string& domain) override;
 #endif
   bool AliasRequiresProxyOverride(
       const std::string scheme,
@@ -176,6 +177,8 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkServiceProxyDelegate
   int proxy_connect_timeout_ = 5000;
   // 云控配置的等待恶意网址查询时间，单位为millisecond.
   int malicious_url_check_wait_time_ = 3000;
+  // 云控配置的代理白名单域名列表.
+  std::vector<std::string> proxy_whitelist_domains_;
 #endif
 
   raw_ptr<net::ProxyResolutionService> proxy_resolution_service_ = nullptr;

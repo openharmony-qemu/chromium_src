@@ -1320,12 +1320,30 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
     return false;
   }
 
-  if (request_->isolation_info().request_type() !=
-      IsolationInfo::RequestType::kMainFrame) {
+  std::string hostname = request_->url().GetHost();
+  auto* context_ext = const_cast<URLRequestContext*>(request_->context())
+                          ->AsURLRequestContextExt();
+  if (context_ext->IsDomainInWhitelist(hostname)) {
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    LOG_FEEDBACK(INFO) << "DOH-Fallback request is not mainframe";
+    LOG_FEEDBACK(INFO) << "DOH-Fallback domain is in whitelist, allow retry: "
+                       << url::LogUtils::ConvertUrlWithMask(hostname);
 #endif
-    return false;
+  } else {
+    bool is_main_frame = request_->isolation_info().request_type() ==
+                         IsolationInfo::RequestType::kMainFrame;
+    bool is_iframe = request_->isolation_info().request_type() ==
+                     IsolationInfo::RequestType::kSubFrame;
+    bool enable_iframe = context_ext->IsIframeFallbackEnabled();
+
+    if (!is_main_frame && !(is_iframe && enable_iframe)) {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      LOG_FEEDBACK(INFO)
+          << "DOH-Fallback request is not mainframe or iframe with "
+             "enable_iframe, url: "
+          << url::LogUtils::ConvertUrlWithMask(request_->url().spec());
+#endif
+      return false;
+    }
   }
 
   if (transaction_ && transaction_->GetResponseInfo() &&

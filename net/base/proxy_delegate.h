@@ -158,6 +158,7 @@ class NET_EXPORT ProxyDelegate {
   virtual net::FallbackProxyStatus GetFallbackProxyStatus() = 0;
   virtual bool IsFallbackProxyServer(const net::ProxyChain& proxy_chain) = 0;
   virtual bool IsAccelerateProxyConfig() = 0;
+  virtual bool IsDomainInProxyWhitelist(const std::string& domain) = 0;
 #endif
 };
 

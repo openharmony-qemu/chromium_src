@@ -164,6 +164,7 @@ class TestProxyDelegate : public ProxyDelegate {
   net::FallbackProxyStatus GetFallbackProxyStatus() override;
   bool IsFallbackProxyServer(const net::ProxyChain& proxy_chain) override;
   bool IsAccelerateProxyConfig() override;
+  bool IsDomainInProxyWhitelist(const std::string& domain) override;
 #endif
 
  private:

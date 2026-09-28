@@ -563,8 +563,21 @@ void HostResolverDnsTask::OnDnsTransactionComplete(
   bool fatal_error =
       IsFatalTransactionFailure(net_error, transaction_info, response);
   std::optional<DnsResponse> fake_response;
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  DnsResponseResultExtractor::ResultsOrError results;
+  bool anycast_fallback_used = false;
+  if (utils && utils->MaybeUseAnycastIPFallback(
+      std::string(host_.GetHostname()),
+      net_error, fatal_error, transaction_info.type, results)) {
+    anycast_fallback_used = true;
+  }
+  if (!anycast_fallback_used && net_error != OK &&
+      !(net_error == ERR_NAME_NOT_RESOLVED && response &&
+        response->IsValid())) {
+#else
   if (net_error != OK && !(net_error == ERR_NAME_NOT_RESOLVED && response &&
                            response->IsValid())) {
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
     if (transaction_info.error_behavior ==
             TransactionErrorBehavior::kFallback ||
         fatal_error) {
@@ -589,11 +602,17 @@ void HostResolverDnsTask::OnDnsTransactionComplete(
     }
   }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  DCHECK(anycast_fallback_used || response);
+
+  if (!anycast_fallback_used) {
+#else
   DCHECK(response);
 
   DnsResponseResultExtractor::ResultsOrError results;
   {
     // Scope the extractor to ensure it is destroyed before `response`.
+#endif
     DnsResponseResultExtractor extractor(*response);
     results = extractor.ExtractDnsResults(
         transaction_info.type,

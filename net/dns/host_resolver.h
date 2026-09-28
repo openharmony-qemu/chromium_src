@@ -589,6 +589,10 @@ class NET_EXPORT HostResolver {
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   virtual void GetLocalAddress(IPEndPoint* address) { *address = IPEndPoint(); }
   virtual bool CanUseSecureDnsFallback() const { return false; }
+  virtual bool IsDomainInWhitelist(const std::string& domain) const {
+    return false;
+  }
+  virtual bool IsIframeFallbackEnabled() const { return false; }
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)

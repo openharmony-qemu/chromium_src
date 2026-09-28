@@ -4,6 +4,7 @@
 
 #include "content/browser/devtools/devtools_session.h"
 
+#include <algorithm>
 #include <utility>
 #include <vector>
 
@@ -575,11 +576,47 @@ void DevToolsSession::FlushProtocolNotifications() {}
 // parsed and sent as is, since a renderer may be compromised; so therefore,
 // we're not sending them via the DevToolsAgentHostClientChannel interface
 // (::DispatchProtocolMessageToClient) but directly to the client instead.
+static bool ValidateMessage(base::span<const uint8_t> message,
+                            bool expect_cbor) {
+  std::vector<uint8_t> cbor_message;
+  crdtp::span<uint8_t> span_message = crdtp::SpanFrom(message);
+
+  const bool is_cbor = crdtp::cbor::IsCBORMessage(span_message);
+  if (expect_cbor != is_cbor) {
+    // The renderer has sent a message in the format different that we asked
+    // for, something is fishy.
+    return false;
+  }
+  if (!is_cbor) {
+    // '\0' is definitely not allowed unescaped in JSON and is of particular
+    // concern since it is used as a framing character for sending JSON via
+    // the remote debugging pipe.
+    if (std::ranges::find(span_message, '\0') != span_message.end()) {
+      return false;
+    }
+    if (!crdtp::json::ConvertJSONToCBOR(span_message, &cbor_message).ok()) {
+      return false;  // Safely terminate renderer on malformed JSON
+    }
+  } else {
+    if (!crdtp::cbor::CheckCBORMessage(span_message).ok()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void DevToolsSession::DispatchProtocolResponseOrNotification(
     DevToolsAgentHostClient* client,
     DevToolsAgentHostImpl* agent_host,
     blink::mojom::DevToolsMessagePtr message,
     const std::string& session_id) {
+  if (!ValidateMessage(message->data, client->UsesBinaryProtocol())) {
+    if (RenderProcessHost* process_host = agent_host->GetProcessHost()) {
+      bad_message::ReceivedBadMessage(
+          process_host, bad_message::RFH_INCONSISTENT_DEVTOOLS_MESSAGE);
+    }
+    return;
+  }
   base::span<const uint8_t> message_span = message->data;
   if (!ValidateSessionId(session_id, message_span)) {
     if (RenderProcessHost* process_host = agent_host->GetProcessHost()) {

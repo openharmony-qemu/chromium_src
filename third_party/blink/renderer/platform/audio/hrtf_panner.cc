@@ -25,7 +25,6 @@
 
 #include "third_party/blink/renderer/platform/audio/hrtf_panner.h"
 
-#include "base/compiler_specific.h"
 #include "base/containers/span.h"
 #include "base/memory/scoped_refptr.h"
 #include "third_party/blink/renderer/platform/audio/audio_bus.h"
@@ -299,17 +298,25 @@ void HRTFPanner::Pan(double desired_azimuth,
     // not currently cross-fading.
 
     if (crossfade_selection_ == kCrossfadeSelection1 || needs_crossfading) {
-      convolver_l1_.Process(kernel_l1->FftFrame(), segment_destination_l,
-                            convolution_destination_l1, kFramesPerSegment);
-      convolver_r1_.Process(kernel_r1->FftFrame(), segment_destination_r,
-                            convolution_destination_r1, kFramesPerSegment);
+      convolver_l1_.Process(
+          kernel_l1->FftFrame(),
+          base::span<float>(segment_destination_l, kFramesPerSegment),
+          base::span<float>(convolution_destination_l1, kFramesPerSegment));
+      convolver_r1_.Process(
+          kernel_r1->FftFrame(),
+          base::span<float>(segment_destination_r, kFramesPerSegment),
+          base::span<float>(convolution_destination_r1, kFramesPerSegment));
     }
 
     if (crossfade_selection_ == kCrossfadeSelection2 || needs_crossfading) {
-      convolver_l2_.Process(kernel_l2->FftFrame(), segment_destination_l,
-                            convolution_destination_l2, kFramesPerSegment);
-      convolver_r2_.Process(kernel_r2->FftFrame(), segment_destination_r,
-                            convolution_destination_r2, kFramesPerSegment);
+      convolver_l2_.Process(
+          kernel_l2->FftFrame(),
+          base::span<float>(segment_destination_l, kFramesPerSegment),
+          base::span<float>(convolution_destination_l2, kFramesPerSegment));
+      convolver_r2_.Process(
+          kernel_r2->FftFrame(),
+          base::span<float>(segment_destination_r, kFramesPerSegment),
+          base::span<float>(convolution_destination_r2, kFramesPerSegment));
     }
 
     if (needs_crossfading) {
@@ -317,12 +324,10 @@ void HRTFPanner::Pan(double desired_azimuth,
       float x = crossfade_x_;
       const float incr = crossfade_incr_;
       for (unsigned i = 0; i < kFramesPerSegment; ++i) {
-        UNSAFE_TODO(segment_destination_l[i]) =
-            (1 - x) * UNSAFE_TODO(convolution_destination_l1[i]) +
-            x * UNSAFE_TODO(convolution_destination_l2[i]);
-        UNSAFE_TODO(segment_destination_r[i]) =
-            (1 - x) * UNSAFE_TODO(convolution_destination_r1[i]) +
-            x * UNSAFE_TODO(convolution_destination_r2[i]);
+        segment_destination_l[i] = (1 - x) * convolution_destination_l1[i] +
+                                   x * convolution_destination_l2[i];
+        segment_destination_r[i] = (1 - x) * convolution_destination_r1[i] +
+                                   x * convolution_destination_r2[i];
         x += incr;
       }
       // Update cross-fade value from local.

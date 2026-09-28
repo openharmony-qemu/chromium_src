@@ -68,6 +68,10 @@
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 static const int kMaxRenderTargetSize = 8192;
 #endif
+
+#if BUILDFLAG(IS_OHOS)
+extern int32_t QueryIntFromBrowserProcess(const std::string &key, int32_t default_value);
+#endif
 namespace cc {
 
 namespace {
@@ -968,9 +972,7 @@ size_t GpuImageDecodeCache::ImageData::GetTotalSize() const {
 namespace {
 bool ShouldEnableClippedImageScaling() {
   static bool enabled = [] {
-    int memtest = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                      .GetSystemPropertiesInstance()
-                      .GetIntParameter("web.debug.memtest", 0);
+    int memtest = QueryIntFromBrowserProcess("web.debug.memtest", 0);
     bool result = base::ohos::IsOhosLowEndDevice() && (memtest == 0 || memtest == 3);
     LOG(DEBUG) << "ArkWebClipImgCache ShouldEnableClippedImageScaling memtest="
                << memtest << " result=" << result;
@@ -1984,9 +1986,7 @@ bool GpuImageDecodeCache::ExceedsCacheLimits() const {
   }
 
 #if BUILDFLAG(ARKWEB_GPU_IMAGE_PERSISTENT_CACHE_LIMIT)
-  static int persistent_cache_memory_limit = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                 .GetSystemPropertiesInstance()
-                                 .GetIntParameter("web.debug.memtest", 0);
+  static int persistent_cache_memory_limit = QueryIntFromBrowserProcess("web.debug.memtest", 0);
   if (base::ohos::IsOhosLowEndDevice() && 
       (persistent_cache_memory_limit == 0 || persistent_cache_memory_limit == 4) && 
       persistent_cache_memory_size_ > kArkWebMaxPersistentCacheMemoryBytes) {

@@ -70,6 +70,11 @@ class SysPropRenderObserver : public device::mojom::SysPropRenderObserver {
   void Detach(mojo::PendingRemote<device::mojom::SysPropRenderObserverClient>
                      client) override;
 
+#if BUILDFLAG(IS_OHOS)
+  void QueryInt(const std::string& key,
+                int32_t default_value, QueryIntCallback callback) override;
+#endif
+
   mojo::ReceiverSet<device::mojom::SysPropRenderObserver> receivers_;
   mojo::RemoteSet<device::mojom::SysPropRenderObserverClient> clients_;
 };

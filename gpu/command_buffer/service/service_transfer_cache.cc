@@ -27,6 +27,7 @@
 #if BUILDFLAG(IS_OHOS)
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+extern int32_t QueryIntFromBrowserProcess(const std::string &key, int32_t default_value);
 #endif // BUILDFLAG(IS_OHOS)
 
 namespace gpu {
@@ -65,8 +66,7 @@ size_t DiscardableCacheSizeLimit() {
     return kNormalCacheSizeBytes;
   }
 #elif BUILDFLAG(IS_OHOS)
-  static int memtest = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
-                     .GetIntParameter("web.debug.memtest", 0);
+  static int memtest = QueryIntFromBrowserProcess("web.debug.memtest", 0);
   if (base::ohos::IsOhosLowEndDevice() && (memtest == 0 || memtest == 1)) {
       return kLowEndCacheSizeBytes;
   } else {

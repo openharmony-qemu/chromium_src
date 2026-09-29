@@ -66,21 +66,18 @@ void FileSystemAccessBucketPathWatcher::Initialize(
     return;
   }
 
-  GetIOThreadTaskRunner({})->PostTaskAndReply(
+  // Observer registration must happen on the IO thread to avoid a data race
+  // with concurrent file operations reading the observer list.
+  // The callback `on_source_initialized` is run as a reply on the UI thread
+  // once registration is complete.
+  content::GetIOThreadTaskRunner({})->PostTaskAndReply(
       FROM_HERE,
       base::BindOnce(
-          [](storage::SandboxFileSystemBackendDelegate* sandbox_delegate,
-             base::WeakPtr<FileSystemAccessBucketPathWatcher> watcher,
-             scoped_refptr<base::SequencedTaskRunner> task_runner) {
-            if (!watcher) {
-              return;
-            }
-            sandbox_delegate->AddFileChangeObserver(
-                storage::FileSystemType::kFileSystemTypeTemporary,
-                watcher.get(), task_runner.get());
-          },
-          base::Unretained(sandbox_delegate), weak_factory_.GetWeakPtr(),
-          base::SequencedTaskRunner::GetCurrentDefault()),
+          &storage::SandboxFileSystemBackendDelegate::AddFileChangeObserver,
+          base::Unretained(sandbox_delegate),
+          storage::FileSystemType::kFileSystemTypeTemporary,
+          base::WrapRefCounted(this),
+          base::RetainedRef(base::SequencedTaskRunner::GetCurrentDefault())),
       base::BindOnce(std::move(on_source_initialized),
                      file_system_access_error::Ok()));
 }

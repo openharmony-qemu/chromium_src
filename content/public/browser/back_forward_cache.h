@@ -126,7 +126,11 @@ class CONTENT_EXPORT BackForwardCache {
     kCacheLimitPrunedOnCriticalMemoryPressure = 71,
     kSharedWorkerMessage = 72,
     kSharedWorkerWithNoActiveClient = 73,
-    kMaxValue = kSharedWorkerWithNoActiveClient,
+    kRfhEnforceInsecureNavigationsSet = 74,
+    kRfhEnforceInsecureRequestPolicy = 75,
+    kRfhHadStickyUserActivationBeforeNavigationChanged = 76,
+    kRfhUpdateIsAdFrame = 77,
+    kMaxValue = kRfhUpdateIsAdFrame,
   };
   // LINT.ThenChange(//tools/metrics/histograms/metadata/navigation/enums.xml:BackForwardCacheNotRestoredReason)
 

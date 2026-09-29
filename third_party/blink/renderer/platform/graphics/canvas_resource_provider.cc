@@ -705,7 +705,7 @@ CanvasResourceProviderSharedImage::WillDrawInternal() {
       auto src_access = old_resource->BeginAccess(/*readonly=*/true);
       RasterInterface()->CopySharedImage(old_mailbox, mailbox, 0, 0, 0, 0,
                                          Size().width(), Size().height());
-      gpu::RasterScopedAccess::EndAccess(std::move(src_access));
+      old_resource_shared_image->EndAccess(std::move(src_access));
     } else {
       // If we're not copying over the previous contents, we need to ensure
       // that the image is cleared on the next BeginRasterCHROMIUM.

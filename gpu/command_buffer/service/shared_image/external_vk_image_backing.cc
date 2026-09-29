@@ -576,7 +576,7 @@ bool ExternalVkImageBacking::BeginAccess(
       flush_info.fNumSemaphores = 1;
       flush_info.fSignalSemaphores = &semaphore;
 
-      if (gr_context->flush(flush_info) != GrSemaphoresSubmitted::kYes) {
+      if (gr_context->flush(flush_info).fSubmitted != GrSemaphoresSubmitted::kYes) {
         LOG(ERROR) << "Failed to create a signaled semaphore";
         return false;
       }

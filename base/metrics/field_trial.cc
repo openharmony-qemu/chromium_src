@@ -26,6 +26,7 @@
 #include "base/no_destructor.h"
 #include "base/notreached.h"
 #include "base/numerics/safe_conversions.h"
+#include "base/numerics/checked_math.h"
 #include "base/process/memory.h"
 #include "base/process/process_handle.h"
 #include "base/process/process_info.h"
@@ -892,8 +893,9 @@ bool FieldTrialList::GetParamsFromSharedMemory(
           field_trial->ref_, &allocated_size);
   CHECK(entry);
 
-  uint64_t actual_size = sizeof(internal::FieldTrialEntry) + entry->pickle_size;
-  if (allocated_size < actual_size) {
+  base::CheckedNumeric<uint64_t> actual_size = sizeof(internal::FieldTrialEntry);
+  actual_size += entry->pickle_size;
+  if (!actual_size.IsValid() || allocated_size < actual_size.ValueOrDie()) {
     return false;
   }
 

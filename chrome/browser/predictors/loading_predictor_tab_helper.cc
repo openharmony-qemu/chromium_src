@@ -221,7 +221,7 @@ void MaybeSetLCPPNavigationHint(content::NavigationHandle& navigation_handle,
     hint->for_testing = true;
   }
   if (hint) {
-    navigation_handle.SetLCPPNavigationHint(*hint);
+    navigation_handle.SetLCPPNavigationHint(hint->Clone());
     base::UmaHistogramEnumeration(
         "LoadingPredictor.SetLCPPNavigationHint.Status",
         LcppHintStatus::kSucceedToSet);

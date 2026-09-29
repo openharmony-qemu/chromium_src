@@ -8605,6 +8605,8 @@ data/shared_storage/shared-storage-writable.html
 data/shared_storage/shared-storage-writable.html.mock-http-headers
 data/shared_storage/simple_module.js
 data/shared_storage/simple_module2.js
+data/shared_storage/simple_module_with_custom_header.js
+data/shared_storage/simple_module_with_custom_header.js.mock-http-headers
 data/shared_storage/slow_and_fast_module.js
 data/simple_links.html
 data/simple_page.html

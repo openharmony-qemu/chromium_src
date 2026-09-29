@@ -19,6 +19,10 @@
 #include "chrome/common/extensions/api/web_authentication_proxy.h"
 #include "extensions/buildflags/buildflags.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "chrome/common/chrome_paths.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace extensions {
@@ -68,6 +72,18 @@ bool WebAuthenticationProxyRemoteSessionStateChangeNotifier::
   // The path must be stable, i.e. the remote desktop app should not need to do
   // any sort of discovery, which rules out the User Data Directory. It also has
   // to be user-writable, because the app isn't expected to run as root.
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  // On ArkWeb, DIR_USER_DATA is redirected under the web data dir (e.g.
+  // .../files/__arkweb), so the directory is created there instead of
+  // directly under the app data root.
+  base::FilePath user_data_dir;
+  if (!base::PathService::Get(chrome::DIR_USER_DATA, &user_data_dir)) {
+    return false;
+  }
+  *out = user_data_dir.Append(
+      FILE_PATH_LITERAL("WebAuthenticationProxyRemoteSessionStateChange"));
+  return true;
+#else
   base::FilePath default_udd;
   if (!chrome::GetDefaultUserDataDirectory(&default_udd)) {
     return false;
@@ -75,6 +91,7 @@ bool WebAuthenticationProxyRemoteSessionStateChangeNotifier::
   *out = default_udd.Append(
       FILE_PATH_LITERAL("WebAuthenticationProxyRemoteSessionStateChange"));
   return true;
+#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 }
 
 WebAuthenticationProxyRemoteSessionStateChangeNotifier::

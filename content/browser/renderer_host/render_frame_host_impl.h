@@ -3644,7 +3644,9 @@ class CONTENT_EXPORT RenderFrameHostImpl
   FRIEND_TEST_ALL_PREFIXES(SecurityExploitBrowserTest,
                            WindowOpenDisallowedFromSandboxedFrame);
   FRIEND_TEST_ALL_PREFIXES(SecurityExploitBrowserTest,
-                           ModalDialogDisallowedFromSandboxedFrame);                           
+                           ModalDialogDisallowedFromSandboxedFrame);
+  FRIEND_TEST_ALL_PREFIXES(SecurityExploitBrowserTest,
+                           CreateNewWindowInvalidDisposition);
   FRIEND_TEST_ALL_PREFIXES(SecurityExploitBrowserTest,
                            CreateNewWindowWithInaccessibleFile);
   FRIEND_TEST_ALL_PREFIXES(SitePerProcessBrowserTest,

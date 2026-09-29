@@ -181,6 +181,7 @@ source_set("unit_tests") {
     "//components/prefs",
     "//components/prefs:test_support",
     "//components/sync/model",
+    "//content/test:test_support",
     "//sql",
     "//sql:test_support",
     "//testing/gmock",

@@ -35,6 +35,12 @@
 #include "components/password_manager/core/browser/password_store/password_store_interface.h"
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/testing_pref_service.h"
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+#include "content/public/test/browser_task_environment.h"
+#include "sql/database.h"
+#include "sql/statement.h"
+#include "sql/test/test_helpers.h"
+#endif
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -148,11 +154,7 @@ class PasswordStoreBuiltInBackendBaseTest : public testing::Test {
   }
 
   void TearDown() override {
-    PasswordStoreBackend* backend = store_.get();
-    backend->Shutdown(base::BindOnce(
-        [](std::unique_ptr<PasswordStoreBackend> backend) { backend.reset(); },
-        std::move(store_)));
-    RunUntilIdle();
+    ClosePasswordStore();
     ASSERT_TRUE(temp_dir_.Delete());
   }
 
@@ -167,6 +169,17 @@ class PasswordStoreBuiltInBackendBaseTest : public testing::Test {
   }
 
  protected:
+  void ClosePasswordStore() {
+    if (!store_) {
+      return;
+    }
+    PasswordStoreBackend* backend = store_.get();
+    backend->Shutdown(base::BindOnce(
+        [](std::unique_ptr<PasswordStoreBackend> backend) { backend.reset(); },
+        std::move(store_)));
+    RunUntilIdle();
+  }
+
   base::FilePath test_login_db_file_path() const {
     return temp_dir_.GetPath().Append(FILE_PATH_LITERAL("login_test"));
   }
@@ -177,11 +190,14 @@ class PasswordStoreBuiltInBackendBaseTest : public testing::Test {
  private:
   void SetupTempDir();
 
-  void ClosePasswordStore();
-
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  content::BrowserTaskEnvironment task_environment_{
+      base::test::TaskEnvironment::TimeSource::MOCK_TIME};
+#else
   base::test::TaskEnvironment task_environment_{
       base::test::TaskEnvironment::MainThreadType::UI,
       base::test::TaskEnvironment::TimeSource::MOCK_TIME};
+#endif
 
   base::ScopedTempDir temp_dir_;
   TestingPrefServiceSimple pref_service_;
@@ -993,5 +1009,9 @@ INSTANTIATE_TEST_SUITE_P(
       }
       return test_suffix;
     });
+
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+#include "arkweb/chromium_ext/components/password_manager/core/browser/password_store/login_database_async_helper_for_include_unittest.cc"
+#endif
 
 }  // namespace password_manager

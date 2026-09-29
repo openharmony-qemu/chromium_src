@@ -145,6 +145,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ThrottlingNetworkTransaction
 
   // True if Fail was already invoked.
   bool failed_ = false;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  base::WeakPtrFactory<ThrottlingNetworkTransaction> weak_ptr_factory_{this};
+#endif
 };
 
 }  // namespace network

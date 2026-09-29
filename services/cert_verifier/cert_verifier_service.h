@@ -125,6 +125,7 @@ class CertVerifierServiceImpl : public mojom::CertVerifierService,
       service_factory_impl_;
   // Will queue requests for processing until this is false.
   bool waiting_for_update_;
+  bool enable_network_access_called_ = false;
   base::TimeTicks wait_start_time_;
   std::vector<QueuedCertVerifyRequest> queued_requests_;
   WaitUntilNextUpdateForTestingCallback update_complete_callback_;

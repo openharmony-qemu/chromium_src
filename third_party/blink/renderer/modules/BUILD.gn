@@ -12,6 +12,10 @@ import("//third_party/blink/renderer/build/scripts/scripts.gni")
 import("//third_party/blink/renderer/modules/modules.gni")
 import("//arkweb/build/features/features.gni")
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 if (is_android) {
   import("//build/config/android/rules.gni")
 }
@@ -666,6 +670,10 @@ source_set("unit_tests") {
       # preventing meaningful testing.
       "mediastream/capture_controller_test.cc",
     ]
+  }
+
+  if (is_arkweb && arkweb_ai) {
+    sources += arkweb_third_party_blink_renderer_modules_unittest_sources
   }
 
   configs += [

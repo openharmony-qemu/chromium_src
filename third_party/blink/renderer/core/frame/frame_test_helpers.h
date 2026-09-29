@@ -322,7 +322,9 @@ class TestWebFrameWidget : public WebFrameWidgetImpl {
   void NotifyOverlayStateChanged() override {};
   void OnDataDetectorSelectText() override {};
   void SelectRangeV2(const ::gfx::Point& position, bool is_base) override {};
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
   void ShowFreeCopyMenu() override {};
+#endif
   void RegisterClippedVisualViewportSelectionBounds(
       gfx::Rect clipped_selection_bounds) override {};
   void CleanFocusCache() override {};

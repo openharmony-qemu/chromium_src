@@ -3,6 +3,10 @@
 # found in the LICENSE file.
 
 import("//arkweb/build/features/features.gni")
+if (is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+
 import("//base/debug/debug.gni")
 import("//build/config/cast.gni")
 import("//build/config/chrome_build.gni")
@@ -1115,10 +1119,12 @@ if (use_blink) {
       "//arkweb/chromium_ext/chrome/browser/notifications/notification_platform_bridge_ohos_unittest.cc",
     ]
 
-    sources += [
-      "//arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_interceptor_unittest.cc",
-      #"//arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_navigation_throttle_unittest.cc",
-    ]
+    if (is_arkweb_ext && arkweb_ext_https_upgrades) {
+      sources += [
+        "//arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_interceptor_unittest.cc",
+        #"//arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_navigation_throttle_unittest.cc",
+      ]
+    }
 
     if (is_android && target_cpu == "arm64") {
       sources += [ "memory_system/memory_system_tests.cc" ]
@@ -1141,6 +1147,7 @@ if (use_blink) {
       "//base/test:test_support",
       "//components/autofill/content/browser",
       "//components/autofill/content/browser:browser_tests",
+      "//components/autofill/content/browser:test_support",
       "//components/autofill/content/renderer",
       "//components/autofill/content/renderer:browser_tests",
       "//components/autofill/content/renderer:test_support",

@@ -332,12 +332,14 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
       {"itemUnsupportedDeveloperMode",
        IDS_EXTENSIONS_DISABLED_UNSUPPORTED_DEVELOPER_MODE_V2},
+      {"itemUnsupportedDeveloperModeDetails",
+       IDS_EXTENSIONS_DISABLED_UNSUPPORTED_DEVELOPER_MODE_DETAILS_V2},
 #else
       {"itemUnsupportedDeveloperMode",
        IDS_EXTENSIONS_DISABLED_UNSUPPORTED_DEVELOPER_MODE},
-#endif
       {"itemUnsupportedDeveloperModeDetails",
        IDS_EXTENSIONS_DISABLED_UNSUPPORTED_DEVELOPER_MODE_DETAILS},
+#endif
       {"itemUnsupportedDeveloperModeToast",
        IDS_EXTENSIONS_DISABLED_UNSUPPORTED_DEVELOPER_MODE_TOAST},
       {"loadErrorCouldNotLoadManifest",

@@ -5023,6 +5023,7 @@
 <translation id="4385905942116811558">ဘလူးတုသ်နှင့် USB ကိရိယာများကို ရှာနေသည်</translation>
 <translation id="4385985255515673508">{NUM_EXTENSIONS,plural, =1{ဤနောက်ဆက်တွဲကို ပံ့ပိုးခြင်း မရှိတော့သဖြင့် ပိတ်ထားသည်}other{ဤနောက်ဆက်တွဲများကို ပံ့ပိုးခြင်း မရှိတော့သဖြင့် ပိတ်ထားသည်}}</translation>
 <translation id="4386604394450371010">အနှစ်ချုပ်</translation>
+<translation id="4386813704801763616">ဤ Extension ကို အသုံးပြုရန် ဆော့ဖ်ဝဲရေးသားသူ စနစ်ကို ဖွင့်ပါ၊ သို့သော် ဤ Extension ကို သင် ယုံကြည်မှသာ ဖွင့်ပါ။ ၎င်းတွင် စမ်းသပ်ဆဲ လုပ်ဆောင်ချက်များ ပါဝင်နိုင်ပြီး သုံးသပ်စိစစ်ထားခြင်း မရှိသေးပါ။</translation>
 <translation id="4387890294700445764">ကျိုးပေါက်ထားသည့် စကားဝှက်များ</translation>
 <translation id="4388650384344483842">အနည်းဆုံး အက္ခရာ ၈ လုံး သုံးပါ</translation>
 <translation id="4390396490617716185"><ph name="FIRST_SWITCH" />၊ <ph name="SECOND_SWITCH" />၊ <ph name="THIRD_SWITCH" /> နှင့် နောက်ထပ် အသွင်တူခလုတ် <ph name="NUMBER_OF_OTHER_SWITCHES" /> ခု</translation>

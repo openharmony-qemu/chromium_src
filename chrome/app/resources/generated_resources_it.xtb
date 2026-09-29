@@ -5012,6 +5012,7 @@ Puoi gestire le impostazioni dell'account installando l'app Family Link su quest
 <translation id="4385905942116811558">Ricerca di dispositivi Bluetooth e USB</translation>
 <translation id="4385985255515673508">{NUM_EXTENSIONS,plural, =1{Questa estensione è stata disattivata perché non è più supportata}other{Queste estensioni sono state disattivate perché non sono più supportate}}</translation>
 <translation id="4386604394450371010">panoramica</translation>
+<translation id="4386813704801763616">Attiva la modalità Sviluppatore per utilizzare questa estensione, ma solo se la ritieni affidabile. Potrebbe contenere funzioni sperimentali e non è stata revisionata.</translation>
 <translation id="4387890294700445764">Password compromesse</translation>
 <translation id="4388650384344483842">Utilizza almeno 8 caratteri</translation>
 <translation id="4390396490617716185"><ph name="FIRST_SWITCH" />, <ph name="SECOND_SWITCH" />, <ph name="THIRD_SWITCH" /> e altri <ph name="NUMBER_OF_OTHER_SWITCHES" /> sensori</translation>

@@ -398,4 +398,86 @@ TEST_P(HTMLCanvasElementTest, IsCanvasOrInCanvasSubtree) {
   EXPECT_TRUE(nested_input_shadow->IsInCanvasSubtree());
 }
 
+TEST_P(HTMLCanvasElementTest, StaleSlotAssignmentDoesNotCorruptMovedChild) {
+  SetBodyInnerHTML(R"HTML(
+    <canvas id="c1">
+      <div id="host">
+        <template shadowrootmode="open">
+          <slot id="slot"></slot>
+        </template>
+        <div id="child">Child</div>
+      </div>
+    </canvas>
+    <canvas id="c2"></canvas>
+  )HTML");
+  UpdateAllLifecyclePhasesForTest();
+
+  auto* host = GetDocument().getElementById(AtomicString("host"));
+  auto* child = GetDocument().getElementById(AtomicString("child"));
+  auto* c2 =
+      To<HTMLCanvasElement>(GetDocument().getElementById(AtomicString("c2")));
+
+  EXPECT_TRUE(child->IsCanvasOrInCanvasSubtree());
+  child->remove();
+  c2->appendChild(child);
+  EXPECT_TRUE(child->IsCanvasOrInCanvasSubtree());
+  host->remove();
+  EXPECT_TRUE(child->IsCanvasOrInCanvasSubtree());
+}
+
+TEST_P(HTMLCanvasElementTest, AppendHostWithUnslottedChildToCanvas) {
+  SetBodyInnerHTML(R"HTML(
+    <canvas id="c"></canvas>
+  )HTML");
+  auto* c =
+      To<HTMLCanvasElement>(GetDocument().getElementById(AtomicString("c")));
+  auto* host = GetDocument().CreateRawElement(html_names::kDivTag);
+  host->AttachShadowRootForTesting(ShadowRootMode::kOpen);
+  auto* child = GetDocument().CreateRawElement(html_names::kDivTag);
+  host->appendChild(child);
+  UpdateAllLifecyclePhasesForTest();
+
+  EXPECT_FALSE(child->IsCanvasOrInCanvasSubtree());
+
+  c->appendChild(host);
+  UpdateAllLifecyclePhasesForTest();
+
+  EXPECT_TRUE(host->IsCanvasOrInCanvasSubtree());
+  EXPECT_FALSE(child->IsCanvasOrInCanvasSubtree());
+}
+
+TEST_P(HTMLCanvasElementTest, MoveConnectedHostWithSlottedChildIntoCanvas) {
+  GetDocument().body()->SetHTMLUnsafeWithoutTrustedTypes(R"HTML(
+    <div id="container">
+      <div id="host">
+        <template shadowrootmode="open">
+          <slot id="slot"></slot>
+        </template>
+        <div id="child">
+          <div id="grandchild"></div>
+        </div>
+      </div>
+    </div>
+    <canvas id="c"></canvas>
+  )HTML");
+  UpdateAllLifecyclePhasesForTest();
+
+  auto* host = GetDocument().getElementById(AtomicString("host"));
+  auto* child = GetDocument().getElementById(AtomicString("child"));
+  auto* grandchild = GetDocument().getElementById(AtomicString("grandchild"));
+  auto* c =
+      To<HTMLCanvasElement>(GetDocument().getElementById(AtomicString("c")));
+
+  EXPECT_FALSE(host->IsCanvasOrInCanvasSubtree());
+  EXPECT_FALSE(child->IsCanvasOrInCanvasSubtree());
+  EXPECT_FALSE(grandchild->IsCanvasOrInCanvasSubtree());
+
+  c->appendChild(host);
+  UpdateAllLifecyclePhasesForTest();
+
+  EXPECT_TRUE(host->IsCanvasOrInCanvasSubtree());
+  EXPECT_TRUE(child->IsCanvasOrInCanvasSubtree());
+  EXPECT_TRUE(grandchild->IsCanvasOrInCanvasSubtree());
+}
+
 }  // namespace blink

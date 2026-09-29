@@ -998,12 +998,12 @@ BASE_FEATURE(kImageLoadingPrioritizationFix, base::FEATURE_DISABLED_BY_DEFAULT);
 #if BUILDFLAG(ARKWEB_OHOS_MEM_USAGE_REPORT)
 BASE_FEATURE(kMemUsageReport,
              "kMemUsageReport",
-             base::FEATURE_DISABLED_BY_DEFAULT);
+             base::FEATURE_ENABLED_BY_DEFAULT);
 BASE_FEATURE_PARAM(int,
                    kMemUsageReportCount,
                    &kMemUsageReport,
                    "mur_count",
-                   0);
+                   2);
 #endif // ARKWEB_OHOS_MEM_USAGE_REPORT
 
 #if !BUILDFLAG(IS_ANDROID)

@@ -215,6 +215,9 @@ ui::Accelerator Command::ParseImpl(std::string_view accelerator,
       platform_key != ui::kKeybindingPlatformMac &&
       platform_key != ui::kKeybindingPlatformChromeOs &&
       platform_key != ui::kKeybindingPlatformLinux &&
+#if BUILDFLAG(IS_ARKWEB)
+      platform_key != ui::kKeybindingPlatformOHOS &&
+#endif
       platform_key != ui::kKeybindingPlatformDefault) {
     std::move(error_callback)
         .Run(ui::AcceleratorParseError::kUnsupportedPlatform);

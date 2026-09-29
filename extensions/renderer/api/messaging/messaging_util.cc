@@ -4,10 +4,9 @@
 
 #include "extensions/renderer/api/messaging/messaging_util.h"
 
-#include "arkweb/build/features/features.h"
-
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/notimplemented.h"
 #include "base/notreached.h"

@@ -5,6 +5,8 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_PLATFORM_BINDINGS_STRING_RESOURCE_H_
 #define THIRD_PARTY_BLINK_RENDERER_PLATFORM_BINDINGS_STRING_RESOURCE_H_
 
+#include <atomic>
+
 #include "base/compiler_specific.h"
 #include "base/dcheck_is_on.h"
 #include "third_party/blink/renderer/platform/bindings/parkable_string.h"
@@ -90,7 +92,15 @@ class StringResourceBase {
     }
   }
 
-  virtual ~StringResourceBase() = default;
+  virtual ~StringResourceBase() {
+    // TODO(crbug.com/562847435): This is temporary hardening until an
+    // architectural fix for resource lifetimes is developed.
+    CHECK_EQ(disposal_lock_count_, 0);
+  }
+
+  void LockDisposal() const { disposal_lock_count_ += 1; }
+
+  void UnlockDisposal() const { disposal_lock_count_ -= 1; }
 
   String GetWTFString() {
     if (!parkable_string_.IsNull()) {
@@ -156,6 +166,7 @@ class StringResourceBase {
   // members above are null.
   ParkableString parkable_string_;
 
+  mutable std::atomic_int disposal_lock_count_{0};
   NO_UNIQUE_ADDRESS V8ExternalMemoryAccounterBase memory_accounter_;
 };
 
@@ -192,6 +203,9 @@ class StringResource16Base : public StringResourceBase,
       SharedMemoryUsageRecorder* recorder) const override {
     return StringResourceBase::EstimateSharedMemoryUsage(recorder);
   }
+
+  void Lock() const override { StringResourceBase::LockDisposal(); }
+  void Unlock() const override { StringResourceBase::UnlockDisposal(); }
 };
 
 class StringResource16 final : public StringResource16Base {
@@ -223,9 +237,15 @@ class ParkableStringResource16 final : public StringResource16Base {
     return !GetParkableString().may_be_parked();
   }
 
-  void Lock() const override { GetParkableString().Lock(); }
+  void Lock() const override {
+    StringResource16Base::Lock();
+    GetParkableString().Lock();
+  }
 
-  void Unlock() const override { GetParkableString().Unlock(); }
+  void Unlock() const override {
+    GetParkableString().Unlock();
+    StringResource16Base::Unlock();
+  }
 
   size_t length() const override { return GetParkableString().length(); }
 
@@ -262,6 +282,9 @@ class StringResource8Base : public StringResourceBase,
       SharedMemoryUsageRecorder* recorder) const override {
     return StringResourceBase::EstimateSharedMemoryUsage(recorder);
   }
+
+  void Lock() const override { StringResourceBase::LockDisposal(); }
+  void Unlock() const override { StringResourceBase::UnlockDisposal(); }
 };
 
 class StringResource8 final : public StringResource8Base {
@@ -293,9 +316,15 @@ class ParkableStringResource8 final : public StringResource8Base {
     return !GetParkableString().may_be_parked();
   }
 
-  void Lock() const override { GetParkableString().Lock(); }
+  void Lock() const override {
+    StringResource8Base::Lock();
+    GetParkableString().Lock();
+  }
 
-  void Unlock() const override { GetParkableString().Unlock(); }
+  void Unlock() const override {
+    GetParkableString().Unlock();
+    StringResource8Base::Unlock();
+  }
 
   size_t length() const override { return GetParkableString().length(); }
 

@@ -34,6 +34,10 @@
 #include "content/public/browser/web_contents_delegate.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+#include "arkweb/chromium_ext/chrome/browser/download/download_request_limiter_for_include.cc"
+#endif
+
 using content::BrowserThread;
 using content::NavigationController;
 using content::NavigationEntry;
@@ -583,7 +587,57 @@ void DownloadRequestLimiter::OnCanDownloadDecided(
   }
 
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-  std::move(orig_callback).Run(allow);
+  {
+    bool is_browser = base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebEx);
+    if (!(is_browser && base::ohos::IsPcDevice())) {
+      std::move(orig_callback).Run(allow);
+      return;
+    }
+
+    url::Origin origin = request_initiator
+                             ? request_initiator.value()
+                             : url::Origin::Resolve(url, url::Origin());
+    // If there is no HostContentSettingsMap, fall back to the original
+    // behavior (Run(allow)) instead of treating it as ASK and prompting.
+    HostContentSettingsMap* content_settings =
+        GetContentSettings(originating_contents);
+    if (!content_settings) {
+      std::move(orig_callback).Run(allow);
+      return;
+    }
+
+    // Always allow download resulted from a cross-origin redirect from a previous
+    // download attempt, and there's no need to update any state.
+    if (from_download_cross_origin_redirect) {
+      std::move(orig_callback).Run(allow);
+      return;
+    }
+
+    ContentSetting setting = content_settings->GetContentSetting(
+        origin.GetURL(), origin.GetURL(),
+        ContentSettingsType::AUTOMATIC_DOWNLOADS);
+    if (setting == CONTENT_SETTING_BLOCK) {
+      TabDownloadState* state = GetDownloadState(originating_contents, true);
+      if (state->download_count() > 0) {
+        std::move(orig_callback).Run(false);
+      } else {
+        state->increment_download_count();
+        std::move(orig_callback).Run(allow);
+      }
+    } else if (setting == CONTENT_SETTING_ASK) {
+      TabDownloadState* state = GetDownloadState(originating_contents, true);
+      if (state->download_count() > 0) {
+        state->increment_download_count();
+        ohos::ShowDownloadPermissionPrompt(originating_contents, origin,
+                                           std::move(orig_callback));
+      } else {
+        state->increment_download_count();
+        std::move(orig_callback).Run(allow);
+      }
+    } else {
+      std::move(orig_callback).Run(allow);
+    }
+  }
 #else
   CanDownloadImpl(
       url, originating_contents, request_method, std::move(request_initiator),

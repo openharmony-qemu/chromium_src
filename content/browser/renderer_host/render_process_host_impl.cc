@@ -3706,9 +3706,15 @@ void RenderProcessHostImpl::AppendRendererCommandLine(
 
 #if BUILDFLAG(ARKWEB_OHOS_MEM_USAGE_REPORT)
     if(base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableNwebEx)){
-      int count = blink::features::kMemUsageReportCount.Get();
-      if (count > 0){
-        command_line->AppendSwitchASCII("mur", std::to_string(count));
+      if (base::FeatureList::IsEnabled(blink::features::kMemUsageReport)) {
+        int count = blink::features::kMemUsageReportCount.Get();
+        LOG(INFO) << "kMemUsageReport enabled, count = " << count;
+        if (count > 0) {
+          command_line->AppendSwitchASCII("mur", std::to_string(count));
+        }
+      } else {
+        LOG(INFO) << "kMemUsageReport disabled";
+        command_line->AppendSwitchASCII("mur", "0");
       }
     }
 #endif  // BUILDFLAG(ARKWEB_OHOS_MEM_USAGE_REPORT)

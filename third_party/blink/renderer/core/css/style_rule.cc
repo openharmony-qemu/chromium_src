@@ -786,9 +786,13 @@ StyleRuleBase* StyleRuleBase::Clone(
     case kCounterStyle:
       return MakeGarbageCollected<StyleRuleCounterStyle>(
           To<StyleRuleCounterStyle>(*this));
-    case kKeyframe:
+    case kKeyframe: {
+      auto* keyframe_rule = To<StyleRuleKeyframe>(this);
+      std::unique_ptr<Vector<KeyframeOffset>> keys =
+          std::make_unique<Vector<KeyframeOffset>>(keyframe_rule->Keys());
       return MakeGarbageCollected<StyleRuleKeyframe>(
-          To<StyleRuleKeyframe>(*this));
+          std::move(keys), keyframe_rule->Properties().ImmutableCopyIfNeeded());
+    }
     case kCharset:
       return MakeGarbageCollected<StyleRuleCharset>(
           To<StyleRuleCharset>(*this));

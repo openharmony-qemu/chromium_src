@@ -456,6 +456,14 @@ class PLATFORM_EXPORT ResourceRequestHead {
 
   bool IsRevalidating() const { return is_revalidating_; }
   void SetIsRevalidating(bool value) { is_revalidating_ = value; }
+  const String& RevalidationEtag() const { return revalidation_etag_; }
+  void SetRevalidationEtag(const String& etag) { revalidation_etag_ = etag; }
+  const String& RevalidationLastModified() const {
+    return revalidation_last_modified_;
+  }
+  void SetRevalidationLastModified(const String& last_modified) {
+    revalidation_last_modified_ = last_modified;
+  }
   void SetIsAutomaticUpgrade(bool is_automatic_upgrade) {
     is_automatic_upgrade_ = is_automatic_upgrade;
   }
@@ -747,6 +755,8 @@ class PLATFORM_EXPORT ResourceRequestHead {
   bool is_ad_resource_ : 1;
   bool upgrade_if_insecure_ : 1;
   bool is_revalidating_ : 1;
+  String revalidation_etag_;
+  String revalidation_last_modified_;
   bool is_automatic_upgrade_ : 1;
   bool is_from_origin_dirty_style_sheet_ : 1;
   bool is_fetch_like_api_ : 1;

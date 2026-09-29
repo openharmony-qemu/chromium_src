@@ -2566,6 +2566,13 @@ void RequestService::PreventSilentAccess(PreventSilentAccessCallback callback) {
 void RequestService::Disconnect(
     blink::mojom::IdentityCredentialDisconnectOptionsPtr options,
     DisconnectCallback callback) {
+  if (render_frame_host().GetLastCommittedOrigin().opaque() ||
+      render_frame_host().IsNestedWithinFencedFrame() ||
+      !render_frame_host().GetPage().IsPrimary()) {
+    std::move(callback).Run(blink::mojom::DisconnectStatus::kError);
+    return;
+  }
+
   std::unique_ptr<Metrics> disconnect_metrics = CreateFedCmMetrics();
   if (disconnect_request_) {
     // Since we do not send any fetches in this case, consider the request to be

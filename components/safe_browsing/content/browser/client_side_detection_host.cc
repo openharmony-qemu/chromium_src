@@ -8,6 +8,7 @@
 #include <optional>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/containers/fixed_flat_set.h"
@@ -464,8 +465,13 @@ class ClientSideDetectionHost::ShouldClassifyUrlRequest {
       // Track the first reason why we stopped classifying for phishing.
       RecordPreClassificationCheckResultWithAndWithoutSuffix(
           reason, phishing_detection_request_type_);
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+      if (host_ && host_->pref_service_ &&
+          IsEnhancedProtectionEnabled(*host_->pref_service_) &&
+#else
       if (host_ && host_->delegate_->GetPrefs() &&
           IsEnhancedProtectionEnabled(*host_->delegate_->GetPrefs()) &&
+#endif
           // Cancelation happens when the WebContents is destroyed, but we
           // cannot access ClientSideDetectionFeatureCache at that time.
           !web_contents_->IsBeingDestroyed()) {

@@ -113,6 +113,12 @@ bool JniPaymentApp::CanPreselect(JNIEnv* env) {
   return payment_app_->CanPreselect();
 }
 
+ScopedJavaLocalRef<jbyteArray> JniPaymentApp::GetTotalForSpc(JNIEnv* env) {
+  const mojom::PaymentItemPtr& total = payment_app_->GetTotalForSpc();
+  return base::android::ToJavaByteArray(env,
+                                        mojom::PaymentItem::Serialize(&total));
+}
+
 void JniPaymentApp::InvokePaymentApp(JNIEnv* env,
                                      const JavaParamRef<jobject>& jcallback) {
   invoke_callback_ = jcallback;

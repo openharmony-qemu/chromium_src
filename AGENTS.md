@@ -98,6 +98,13 @@ arkweb/
 
 读取原文件时，遇到 `BUILDFLAG(ARKWEB_*)` 或 `BUILDFLAG(IS_ARKWEB)` 即说明有定制修改，必须查看 `arkweb/chromium_ext/` 下对应的 `_for_include` / `_ext` / `_utils` 文件，才能获得完整实现。
 
+首次编写定制代码时，参考以下范例对齐写法：
+- `_for_include` 片段注入范式：`arkweb/chromium_ext/content/renderer/render_thread_impl_for_include.cc`（片段随宿主文件编译，顶部带 `#error` 守卫）
+- `_ext` 独立扩展类范式：`arkweb/chromium_ext/content/renderer/render_thread_impl_ext.cc`（不依赖宿主上下文）
+- `_utils` 工具类范式：`arkweb/chromium_ext/base/sys_info_utils_ext.h`
+
+若 `arkweb/` 未挂载（单仓 checkout），无法读到 `_for_include` / `_ext` / `_utils` 实现时，先声明该实现缺失并向用户确认，不要仅凭原文件的门控宏推断定制逻辑的实现。
+
 ### GN Label 重定向
 
 根目录下同时存在同名的 `ohos_*` 文件和 `ohos_*` 目录。文件是 GN label 重定向，使 GN target `//ohos_nweb` 等指向 `arkweb/` 下的实际目录（由 chromium_arkweb 仓库联合编译时挂载）：
@@ -124,6 +131,10 @@ chromium_src (本仓库)         ← Chromium 内核 + ohos/adapter 系统适配
 NWeb.hap (ArkWebCore)
 ```
 
+### 嵌套指令文件
+
+本文件为仓库根级默认指引。子目录若含自身 `AGENTS.md` / `CLAUDE.md` / skill，以就近文件为准，其规则优先于本文件。进入 `ohos/adapter/`、`arkweb/chromium_ext/` 等子目录作业前，先检查是否存在更具体的指令文件。
+
 ## 知识路由
 
 | 遇到什么问题 | 读什么 | 关键概念 |
@@ -142,6 +153,16 @@ NWeb.hap (ArkWebCore)
 | 新增 Chromium 功能定制 | `arkweb/build/features/features.gni` → `BUILD.gn` → `chromium_ext.gni` → `_for_include` 文件 | 四步走：定义 Flag → 注册到 features.h → 注册源文件到 chromium_ext.gni → 创建 _for_include 片段 |
 | 理解某个 Feature Flag 的作用 | `arkweb/build/features/features.gni` | 命名规则 `arkweb_<模块>_<子功能>`，C++ 中用 `BUILDFLAG(ARKWEB_<UPPER>)` |
 
+### 修改前须先声明
+
+修改 Chromium 原文件前，先说明以下三点，再动手：
+
+1. **命中的路由**：命中哪个 `BUILDFLAG(IS_ARKWEB)` / `BUILDFLAG(ARKWEB_*)` 或注入点（`#include "arkweb/chromium_ext/..."`）
+2. **已读的实现**：已查阅的 `arkweb/chromium_ext/` 对应 `_for_include` / `_ext` / `_utils` 文件
+3. **采用的形态**：本次改动用哪种注入形态（`_for_include` 片段 / `_ext` 独立类 / `_utils` 工具类），以及涉及的 Feature Flag
+
+改 `ohos/adapter/` 时同样先声明：对接的 OH 系统服务、依赖的接口与版本、以及数据是否需经 Mojo IPC 由浏览器进程中转（渲染进程不得直连 adapter）。
+
 ## 专家经验与约束
 
 ### 硬约束
@@ -150,6 +171,29 @@ NWeb.hap (ArkWebCore)
 - `ohos/adapter/` 中的适配器接口需与 OH 系统服务版本对齐
 - 安全沙箱内的进程（渲染/Utility/GPU）不能直接访问系统资源，必须通过 browser 进程中转
 - GN label 重定向（根目录 `ohos_*` 文件）指向 chromium_arkweb 仓库挂载的 `arkweb/` 目录，不是本仓库代码
+
+### 不可手改（生成物）
+
+以下为构建产物，只改数据源，勿直接编辑产物：
+
+- `features.h`（由 `arkweb/build/features/features.gni` + `BUILD.gn` 生成）：改 Feature Flag 只动 `features.gni`
+- GRIT 生成的头文件（由 `ohos_resources/**/*.grd` 生成）：改字符串/资源只动 `.grd`
+- GN 构建缓存与 `out/` 目录产物：不纳入版本控制，不手改
+
+### 改动前须确认（升级）
+
+触及以下边界时，先说明兼容性影响并与用户确认，再动手：
+
+- `content/public/` 等公共接口的签名、语义、生命周期、错误码——破坏兼容会波及所有调用方
+- 沙箱 / 权限 / 信任边界（`sandbox/`、进程隔离策略）
+- 序列化 / 协议格式 / 持久化数据结构 / 跨版本行为
+- 第三方依赖版本或 license 敏感变更
+
+### 真机与破坏性操作
+
+- 真机部署（so 替换 / hap 替换 / 刷机）前，先确认目标设备与架构（rk3568 vs rk3568_64），设备型号不匹配的 so 会导致启动崩溃
+- 不执行会清空设备数据或抹除分区的命令（如 `hdc` 全量擦除、`rm -rf` 系统目录）——需要时先说明影响并等用户确认
+- 签名证书（`ohos_sdk/` 下）不提交、不外传、不改动
 
 ### 依赖方向禁止
 
@@ -174,6 +218,7 @@ NWeb.hap (ArkWebCore)
 - 不要忽略 `ohos/adapter/BUILD.gn` 中的 `is_ohos` 条件编译
 - 不要在 Chromium 原文件中直接编写大量 ArkWeb 逻辑，应拆分到 `_for_include` 文件
 - 不要将 `_for_include` 文件当作独立源文件使用（它依赖宿主文件的命名空间和头文件上下文）
+- 不要新增未分类的日志标签或改动崩溃归因（DFX）逻辑，须沿用现有 hilog / 日志标签规范；涉及故障归因、可观测性行为变更时先说明影响并确认
 
 ### 模块级修改约束
 
@@ -214,3 +259,49 @@ NWeb.hap (ArkWebCore)
 ```
 
 提交使用 `git commit -s`，保留 DCO Signed-off-by 签名。
+
+## 验证与完成标准
+
+### 最小验证
+
+- 编译：改动涉及的 target 能编译通过 —— `./build.sh -A rk3568`（或对应架构 `rk3568_64`）
+- 依赖检查：涉及 `BUILD.gn` 依赖变更时跑 `gn check`（本机 gn 在 `/opt/gn/gn`，ninja 在 `/opt/ninja/ninja`）
+- 代码风格：C++ 改动用仓库根 `.clang-format` 格式化 —— `/opt/llvm/bin/clang-format -i --style=file <改动文件>`
+- 提交前检查：本仓库带 Chromium 标准 `PRESUBMIT.py`，如本机装有 depot_tools，用 `git cl presubmit --upload` 跑；无 depot_tools 时至少人工核对本节 checklist
+
+### 关于单元测试
+
+本仓库以「目标架构编译通过」为主验证手段，`ohos/adapter/` 下暂无标准独立单测入口。若改动位于带 Chromium 单测的目录（如 `base/`、`net/`），可用 gn 生成对应 `*_unittests` target 并经 ninja 编译运行；否则以编译 + 真机冒烟为准，并在汇报中注明未跑单测的原因。
+
+可直接运行的单测示例（以 `base/` 为例，按实际改动目录替换 target 与用例过滤）：
+
+```sh
+/opt/gn/gn gen out/rk3568
+/opt/ninja/ninja -C out/rk3568 base_unittests
+./out/rk3568/base_unittests --gtest_filter='<相关用例>'
+```
+
+无对应单测目录时以「编译通过 + 真机冒烟」为准，并在汇报中注明未跑单测的原因。
+
+### 任务特定检查
+
+- 改 `_for_include` 片段：确认 `#if` / `#else` 双分支都能编译通过（ArkWeb 与非 ArkWeb 构建各验证一次）
+- 改 Feature Flag：确认声明与实现使用同一个 flag，`_for_include_private.h` 成员变量与使用它的方法门控一致
+- 改 `ohos/adapter/`：确认 `BUILD.gn` 的 `is_ohos` 条件编译正确
+- 改字符串/资源：确认从 `.grd` 重新生成，未手改生成头文件
+
+### 完成定义（Done）
+
+- 目标架构编译通过
+- `_for_include` 双分支均可编译，门控 flag 前后一致
+- C++ 改动已过 `.clang-format`，`BUILD.gn` 依赖变更已过 `gn check`
+- 无遗留的直接改 Chromium 原有逻辑（改动限于 `#include` 注入或条件编译块）
+
+### 汇报要求
+
+完成后说明：改了哪些文件、命中哪个 Feature Flag / 注入点、跑了哪些验证命令，并附上每条命令的通过/失败结果（编译是否通过、单测 pass/fail 数、`gn check` / `clang-format` 是否干净）。命令失败或被跳过时如实说明，不得以「已完成」概括未验证项。
+
+### 无法验证时
+
+若因环境限制无法编译或运行检查，明确说明受阻原因和已完成/未完成的部分，不得谎报完成。
+

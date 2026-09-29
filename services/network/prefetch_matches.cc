@@ -101,6 +101,8 @@ namespace {
   DO_FIELD(previews_state) __VA_ARGS__                             \
   DO_FIELD(upgrade_if_insecure) __VA_ARGS__                        \
   DO_FIELD(is_revalidating) __VA_ARGS__                            \
+  DO_FIELD(revalidation_etag) __VA_ARGS__                           \
+  DO_FIELD(revalidation_last_modified) __VA_ARGS__                  \
   DO_FIELD(throttling_profile_id) __VA_ARGS__                      \
   DO_FIELD(fetch_window_id) __VA_ARGS__                            \
   DO_FIELD(devtools_request_id) __VA_ARGS__                        \
@@ -229,7 +231,9 @@ enum class FieldsForUma {
   kExpectedPublicKeys = 64,
   kPermissionsPolicy = 65,
   kClientSideContentDecodingEnabled = 66,
-  kMaxValue = kClientSideContentDecodingEnabled,
+  kRevalidationEtag = 67,
+  kRevalidationLastModified = 68,
+  kMaxValue = kRevalidationLastModified,
 };
 #endif
 // LINT.ThenChange(//tools/metrics/histograms/metadata/network/enums.xml:PrefetchMatchesResourceRequestField)
@@ -282,6 +286,9 @@ constexpr auto kUmaEnumMap = base::MakeFixedFlatMap<Fields, FieldsForUma>({
     {Fields::kpreviews_state, FieldsForUma::kPreviewsState},
     {Fields::kupgrade_if_insecure, FieldsForUma::kUpgradeIfInsecure},
     {Fields::kis_revalidating, FieldsForUma::kIsRevalidating},
+    {Fields::krevalidation_etag, FieldsForUma::kRevalidationEtag},
+    {Fields::krevalidation_last_modified,
+     FieldsForUma::kRevalidationLastModified},
     {Fields::kthrottling_profile_id, FieldsForUma::kThrottlingProfileId},
     {Fields::kfetch_window_id, FieldsForUma::kFetchWindowId},
     {Fields::kdevtools_request_id, FieldsForUma::kDevtoolsRequestId},

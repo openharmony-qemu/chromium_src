@@ -68,6 +68,13 @@ std::optional<std::string> GetHeaderString(
   return headers->GetNormalizedHeader(header_name);
 }
 
+bool IsRevalidatingForHeadersCheck(const ResourceRequest& request) {
+  if (base::FeatureList::IsEnabled(features::kSafeRevalidation)) {
+    return false;
+  }
+  return request.is_revalidating;
+}
+
 // Algorithm step 3 of the CORS-preflight fetch,
 // https://fetch.spec.whatwg.org/#cors-preflight-fetch-0, that requires
 //  - CORS-safelisted request-headers excluded
@@ -130,7 +137,7 @@ std::unique_ptr<ResourceRequest> CreatePreflightRequest(
       header_names::kAccessControlRequestMethod, request.method);
 
   std::string request_headers = CreateAccessControlRequestHeadersHeader(
-      request.headers, request.is_revalidating);
+      request.headers, IsRevalidatingForHeadersCheck(request));
   if (!request_headers.empty()) {
     preflight_request->headers.SetHeader(
         header_names::kAccessControlRequestHeaders, request_headers);
@@ -320,7 +327,7 @@ std::optional<CorsErrorStatus> CheckPreflightResult(
     return status;
 
   return result.EnsureAllowedCrossOriginHeaders(
-      original_request.headers, original_request.is_revalidating,
+      original_request.headers, IsRevalidatingForHeadersCheck(original_request),
       non_wildcard_request_headers_support);
 }
 
@@ -631,7 +638,8 @@ void PreflightController::PerformPreflightCheck(
       cache_.CheckIfRequestCanSkipPreflight(
           request.request_initiator.value(), request.url, network_isolation_key,
           request.credentials_mode, request.method, request.headers,
-          request.is_revalidating, net_log, acam_preflight_spec_conformant)) {
+          IsRevalidatingForHeadersCheck(request), net_log,
+          acam_preflight_spec_conformant)) {
     std::move(callback).Run(net::OK, std::nullopt, false);
     return;
   }

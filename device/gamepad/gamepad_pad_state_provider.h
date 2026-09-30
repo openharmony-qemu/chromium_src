@@ -11,6 +11,7 @@
 #include <memory>
 
 #include "base/containers/heap_array.h"
+#include "build/build_config.h"
 #include "device/gamepad/gamepad_export.h"
 #include "device/gamepad/gamepad_standard_mappings.h"
 #include "device/gamepad/public/cpp/gamepad.h"
@@ -41,13 +42,19 @@ enum class GamepadSource {
   kOpenxr,
   kWinWgi,
   kSimulated,
+#if BUILDFLAG(IS_OHOS)
+  kOhos,
+  kMaxValue = kOhos,
+#else
   kMaxValue = kSimulated,
+#endif
 };
 
+// PadState must not have a user-provided constructor so that it remains
+// value-initializable. This ensures that structural padding is zeroed when
+// initialized as `PadState()`, preventing information leaks of
+// browser-process stack memory (crbug.com/501747804).
 struct PadState {
-  PadState();
-  ~PadState();
-
   // Index of the slot occupied by this gamepad.
   int pad_index;
 

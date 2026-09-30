@@ -41,7 +41,7 @@ namespace viz {
 namespace {
 constexpr int kVec3Size = 3;
 constexpr int kPoint2Size = 2;
-constexpr int kNumberOfBuffers = 5;
+constexpr int kNumberOfBuffers = 4;
 constexpr int kColorChannelSize = 4;
 constexpr int kColorRed = 0;
 constexpr int kColorGreen = 1;
@@ -499,15 +499,15 @@ void OutputPresenterOHOS::Present(SwapCompletionCallback completion_callback,
                                  root_overlay_access_);
   if (has_previous) {
     auto& prev_data = completion_datas_[completion_datas_.size() - 2];
-    if (prev_data.access == root_overlay_access_) {
+    if (prev_data.access && root_overlay_access_ && prev_data.access.get() == root_overlay_access_.get()) {
       // If root plane buffer is not changed, reset previous frame access to
       // nullptr, so TriggerOnCompleteCallbacks() can trigger the previous
       // completion callback without waiting for OnOverlayReleased() being called.
-      prev_data.access = nullptr;
+      prev_data.access.reset();
     }
   }
 
-  root_overlay_access_ = nullptr;
+  root_overlay_access_.reset();
   presentation_callbacks_.emplace_back(std::move(presentation_callback));
 
   transaction_adapter_.Commit(transaction_);
@@ -562,7 +562,7 @@ void OutputPresenterOHOS::ScheduleOverlayPlane(
 
   if (is_root) {
     DCHECK(!root_overlay_access_);
-    root_overlay_access_ = access;
+    root_overlay_access_ = access->GetWeakPtr();
   } else {
 #if BUILDFLAG(ARKWEB_AI_HDR)
     gfx::SizeF buffer_size =
@@ -639,7 +639,7 @@ void OutputPresenterOHOS::ScheduleOverlayPlane(
                          std::move(callback));
       surface->SetMailbox(mailbox);
       DCHECK(in_used_buffers_.find(buffer) == in_used_buffers_.end());
-      in_used_buffers_[buffer] = std::make_pair(access, is_root);
+      in_used_buffers_[buffer] = std::make_pair(access->GetWeakPtr(), is_root);
 
       switch (access->representation()->surface_origin()) {
         case kTopLeft_GrSurfaceOrigin:
@@ -659,21 +659,19 @@ void OutputPresenterOHOS::ScheduleOverlayPlane(
       if (iter != in_used_buffers_.end()) {
         auto& item = iter->second;
         auto old_access = item.first;
-        item.first = access;
+        item.first = access->GetWeakPtr();
         if (old_access) {
           old_access->InUseByWindowServerDec();
         }
       } else {
-        in_used_buffers_[buffer] = std::make_pair(access, is_root);
+        in_used_buffers_[buffer] = std::make_pair(access->GetWeakPtr(), is_root);
       }
       surface->SetMailbox(mailbox);
     }
-  } else {
-    root_overlay_access_ = nullptr;
   }
 
   if (surface == nullptr) {
-    LOG(ERROR) << "DelegateDebug surface is nullptr, set info failed";
+    LOG(ERROR) << "DelegateDebug surface is nullptr, is_root: " << is_root;
     return;
   }
 
@@ -753,7 +751,7 @@ void OutputPresenterOHOS::OnOverlayReleased(OH_NativeBuffer* buffer,
   }
   auto [access, is_root] = it->second;
   in_used_buffers_.erase(it);
-  if (access) {
+  if (access.get()) {
     if (release_fence_fd.is_valid()) {
       gfx::GpuFenceHandle fence_handle;
       fence_handle.Adopt(std::move(release_fence_fd));
@@ -763,13 +761,13 @@ void OutputPresenterOHOS::OnOverlayReleased(OH_NativeBuffer* buffer,
     // render, so the buffer can be reused or released.
     access->InUseByWindowServerDec();
   } else {
-    LOG(ERROR) << "DelegateDebug access is nullptr";
+    LOG(ERROR) << "DelegateDebug access has expired before overlay released, is_root: " << is_root;
   }
 
   if (is_root) {
     for (auto& data : completion_datas_) {
-      if (data.access == access) {
-        data.access = nullptr;
+      if (data.access && access && data.access.get() == access.get()) {
+        data.access.reset();
         TriggerOnCompleteCallbacks();
         break;
       }
@@ -785,11 +783,9 @@ void OutputPresenterOHOS::DiscardCompositingResources(bool is_clean_all) {
     }
   }
 
-  for (auto& [buffer, value] : in_used_buffers_) {
-    auto* access = value.first;
-    if (access) {
+  for (auto& [buffer, access_info] : in_used_buffers_) {
+    if (auto access = access_info.first) {
       access->InUseByWindowServerDec();
-      value.first = nullptr;
     }
   }
   in_used_buffers_.clear();

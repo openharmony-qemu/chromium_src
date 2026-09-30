@@ -239,6 +239,40 @@ class NET_EXPORT_PRIVATE ResolveContext : public base::CheckedObserver {
   }
 
   bool IsHttpsDnsFallbackEnabled() { return is_https_dns_fallback_enabled_; }
+
+  void SetHttpsDnsFallbackServerTemplate(const std::string& value) {
+    https_dns_fallback_server_template_ = value;
+  }
+
+  const std::string& GetHttpsDnsFallbackServerTemplate() {
+    return https_dns_fallback_server_template_;
+  }
+
+  void SetHttpsDnsFallbackEnableIframe(bool value) {
+    is_https_dns_fallback_enable_iframe_ = value;
+  }
+
+  bool IsHttpsDnsFallbackEnableIframe() {
+    return is_https_dns_fallback_enable_iframe_;
+  }
+
+  void SetHttpsDnsFallbackAnycastIP(const std::vector<std::string>& value) {
+    https_dns_fallback_anycast_ip_ = value;
+  }
+
+  const std::vector<std::string>& GetHttpsDnsFallbackAnycastIP() {
+    return https_dns_fallback_anycast_ip_;
+  }
+
+  void SetHttpsDnsFallbackWhitelistDomains(const std::vector<std::string>& value) {
+    https_dns_fallback_whitelist_domains_ = value;
+  }
+
+  const std::vector<std::string>& GetHttpsDnsFallbackWhitelistDomains() {
+    return https_dns_fallback_whitelist_domains_;
+  }
+
+  bool IsDomainInWhitelist(const std::string& domain) const;
 #endif
 
  private:
@@ -360,6 +394,10 @@ class NET_EXPORT_PRIVATE ResolveContext : public base::CheckedObserver {
 
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   bool is_https_dns_fallback_enabled_{false};
+  std::string https_dns_fallback_server_template_;
+  bool is_https_dns_fallback_enable_iframe_{false};
+  std::vector<std::string> https_dns_fallback_anycast_ip_;
+  std::vector<std::string> https_dns_fallback_whitelist_domains_;
 #endif
 
   base::WeakPtrFactory<ResolveContext> weak_ptr_factory_{this};

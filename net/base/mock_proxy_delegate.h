@@ -149,6 +149,10 @@ class MockProxyDelegate : public ProxyDelegate {
               IsAccelerateProxyConfig,
               (),
               (override));
+  MOCK_METHOD(bool,
+              IsDomainInProxyWhitelist,
+              (const std::string& domain),
+              (override));
 #endif
 };
 

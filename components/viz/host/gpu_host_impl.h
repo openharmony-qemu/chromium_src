@@ -206,6 +206,12 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost,
   void SetChannelClientPid(int client_id, base::ProcessId client_pid);
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
   std::string GetSurfaceId(int32_t native_embed_id);
+  // Async overload. Avoids blocking the UI thread on a synchronous Mojo IPC. The
+  // callback receives the surface id string; an empty string indicates failure
+  // (e.g. GPU process crash, where the callback is still invoked with the
+  // default value via WrapCallbackWithDefaultInvokeIfNotRun).
+  using GetSurfaceIdCallback = base::OnceCallback<void(const std::string&)>;
+  void GetSurfaceId(int32_t native_embed_id, GetSurfaceIdCallback callback);
   void SetTransformHint(uint32_t rotation, uint32_t window_id);
   void DestroyNativeWindow(uint32_t native_window_id);
   void Discard(uint32_t native_window_id);

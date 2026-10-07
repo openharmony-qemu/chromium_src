@@ -44,7 +44,7 @@ class VIZ_SERVICE_EXPORT OutputPresenter {
   virtual void SetVSyncDisplayID(int64_t display_id) {}
 
 #if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
-  virtual void DiscardCompositingResources(bool is_clean_all) {}
+  virtual void DiscardCompositingResources(bool is_clean_all, bool is_clean_video_surface) {}
 #endif
 
 #if BUILDFLAG(IS_APPLE)

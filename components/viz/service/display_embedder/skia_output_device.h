@@ -173,7 +173,7 @@ class VIZ_SERVICE_EXPORT SkiaOutputDevice {
 #endif
 
 #if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
-  virtual void DiscardCompositingResources(bool is_clean_all) {}
+  virtual void DiscardCompositingResources(bool is_clean_all, bool is_clean_video_surface) {}
 #endif
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)

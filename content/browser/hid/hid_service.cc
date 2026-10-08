@@ -12,6 +12,8 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/functional/callback_helpers.h"
+#include "build/build_config.h"
+#include "content/browser/renderer_host/frame_tree_node.h"
 #include "content/browser/service_worker/service_worker_context_core.h"
 #include "content/browser/service_worker/service_worker_hid_delegate_observer.h"
 #include "content/browser/web_contents/web_contents_impl.h"
@@ -25,6 +27,8 @@
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 #include "services/device/public/cpp/device_features.h"
 #include "services/network/public/mojom/permissions_policy/permissions_policy_feature.mojom.h"
+#include "third_party/blink/public/mojom/frame/user_activation_notification_type.mojom.h"
+#include "third_party/blink/public/mojom/frame/user_activation_update_types.mojom.h"
 
 namespace content {
 
@@ -301,6 +305,11 @@ void HidService::RequestDevice(
     RequestDeviceCallback callback) {
   HidDelegate* delegate = GetContentClient()->browser()->GetHidDelegate();
   if (!render_frame_host_ ||
+      !FrameTreeNode::From(render_frame_host_)
+           ->UpdateUserActivationState(
+               blink::mojom::UserActivationUpdateType::
+                   kConsumeTransientActivation,
+               blink::mojom::UserActivationNotificationType::kNone) ||
       !delegate->CanRequestDevicePermission(GetBrowserContext(), origin_)) {
     std::move(callback).Run(std::vector<device::mojom::HidDeviceInfoPtr>());
     return;

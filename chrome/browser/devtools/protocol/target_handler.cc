@@ -106,14 +106,6 @@ protocol::Response TargetHandler::CreateTarget(
     // Rely on web contents implementation.
     return protocol::Response::FallThrough();
   }
-#if BUILDFLAG(ARKWEB_DEVTOOLS)
-  // ArkWeb: delegate to the content layer which calls
-  // ohos::DevToolsManagerDelegate::CreateNewTarget to create an Alloy-style
-  // browser. The Chrome path below (Navigate + ChromeBrowserHostImpl) would
-  // crash because AlloyBrowserHostImpl::GetBrowserForHost() finds
-  // ChromeBrowserHostImpl and CHECK(IsAlloyStyle()) fails.
-  return protocol::Response::FallThrough();
-#endif
   Profile* profile = nullptr;
   if (browser_context_id.has_value()) {
     std::string profile_id = browser_context_id.value();
@@ -206,6 +198,14 @@ protocol::Response TargetHandler::CreateTarget(
     }
   }
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  // ArkWeb: delegate to the content layer which calls
+  // ohos::DevToolsManagerDelegate::CreateNewTarget to create an Alloy-style
+  // browser. The Chrome path below (Navigate + ChromeBrowserHostImpl) would
+  // crash because AlloyBrowserHostImpl::GetBrowserForHost() finds
+  // ChromeBrowserHostImpl and CHECK(IsAlloyStyle()) fails.
+  return protocol::Response::FallThrough();
+#endif
   NavigateParams params = CreateNavigateParams(
       profile, gurl, ui::PAGE_TRANSITION_AUTO_TOPLEVEL, create_new_window,
       create_in_background, target_browser_interface);

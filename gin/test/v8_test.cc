@@ -6,9 +6,12 @@
 
 #include "base/task/single_thread_task_runner.h"
 #include "gin/array_buffer.h"
+#include "gin/public/cppgc.h"
 #include "gin/public/isolate_holder.h"
+#include "gin/public/v8_platform.h"
 #include "gin/v8_initializer.h"
 #include "v8/include/v8-context.h"
+#include "v8/include/v8-cppgc.h"
 #include "v8/include/v8-initialization.h"
 
 using v8::Context;
@@ -33,6 +36,7 @@ void V8Test::SetUp() {
 #endif
   gin::IsolateHolder::Initialize(gin::IsolateHolder::kStrictMode,
                                  gin::ArrayBufferAllocator::SharedInstance());
+  gin::InitializeCppgcFromV8Platform();
 
   instance_ = CreateIsolateHolder();
   if (AccessMode() == gin::IsolateHolder::AccessMode::kUseLocker) {
@@ -53,12 +57,21 @@ void V8Test::TearDown() {
   instance_->isolate()->Exit();
   locker_.reset();
   instance_.reset();
+  gin::MaybeShutdownCppgc();
 }
 
 std::unique_ptr<gin::IsolateHolder> V8Test::CreateIsolateHolder() const {
   return std::make_unique<gin::IsolateHolder>(
       base::SingleThreadTaskRunner::GetCurrentDefault(), AccessMode(),
-      gin::IsolateHolder::IsolateType::kBlinkMainThread);
+      gin::IsolateHolder::AllowAtomicsWaitMode::kAllowAtomicsWait,
+      gin::IsolateHolder::IsolateType::kBlinkMainThread,
+      gin::IsolateHolder::IsolateCreationMode::kNormal,
+      /*create_histogram_callback=*/nullptr,
+      /*add_histogram_sample_callback=*/nullptr,
+      /*user_visible_task_runner=*/nullptr,
+      /*best_effort_task_runner=*/nullptr,
+      v8::CppHeap::Create(gin::V8Platform::Get(),
+                          v8::CppHeapCreateParams({})));
 }
 
 gin::IsolateHolder::AccessMode V8Test::AccessMode() const {

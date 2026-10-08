@@ -836,7 +836,10 @@ ColorChooser* ChromeClientImpl::OpenColorChooser(
     const Color&) {
   NotifyPopupOpeningObservers();
   ColorChooserUIController* controller = nullptr;
-
+#if BUILDFLAG(IS_ARKWEB)
+  controller =
+      MakeGarbageCollected<ColorChooserUIController>(frame, chooser_client);
+#else
   if (RuntimeEnabledFeatures::PagePopupEnabled()) {
     controller = MakeGarbageCollected<ColorChooserPopupUIController>(
         frame, this, chooser_client);
@@ -848,6 +851,7 @@ ColorChooser* ChromeClientImpl::OpenColorChooser(
         MakeGarbageCollected<ColorChooserUIController>(frame, chooser_client);
 #endif
   }
+#endif
   controller->OpenUI();
   return controller;
 }

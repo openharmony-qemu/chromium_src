@@ -82,6 +82,10 @@
 
 #include "arkweb/chromium_ext/ui/compositor/compositor_utils.h"
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 namespace ui {
 
 #if !BUILDFLAG(IS_IOS)
@@ -369,6 +373,12 @@ void Compositor::SetLayerTreeFrameSink(
 #endif
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   compositor_utils_->SetAsyncStackId(compositor_utils_->stackId_);
+#endif
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  if (base::ohos::IsDelegatedCompositingEnabledOhos()) {
+    compositor_utils_->UpdateFocusAndScreenStatus(
+        compositor_utils_->is_focused_, compositor_utils_->is_single_screen_);
+  }
 #endif
   host_->SetLayerTreeFrameSink(std::move(layer_tree_frame_sink));
   // Display properties are reset when the output surface is lost, so update it

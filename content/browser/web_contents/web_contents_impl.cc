@@ -5273,6 +5273,14 @@ void WebContentsImpl::SetIsOfflineWebComponent() {
 void WebContentsImpl::DiscardCompositingResources() {
   implUtils_->DiscardCompositingResources();
 }
+
+bool WebContentsImpl::IsWebContentsFocused() const {
+  return implUtils_ && implUtils_->IsWebContentsFocused();
+}
+
+bool WebContentsImpl::IsSingleScreen() const {
+  return implUtils_ && implUtils_->IsSingleScreen();
+}
 #endif
 
 #if BUILDFLAG(IS_ANDROID)

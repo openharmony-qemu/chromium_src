@@ -14,6 +14,7 @@
 #include "base/memory/ptr_util.h"
 #include "base/no_destructor.h"
 #include "base/notreached.h"
+#include "arkweb/build/features/features.h"
 #include "content/browser/generic_sensor/frame_sensor_provider_proxy.h"
 #include "content/public/browser/device_service.h"
 
@@ -112,6 +113,13 @@ void WebContentsSensorProviderProxy::AddObserver(Observer* observer) {
 void WebContentsSensorProviderProxy::RemoveObserver(Observer* observer) {
   observers_.RemoveObserver(observer);
 }
+
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+bool WebContentsSensorProviderProxy::HasVirtualSensorOverrideForDevTools(
+    device::mojom::SensorType type) const {
+  return base::Contains(virtual_sensor_types_for_devtools_, type);
+}
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
 
 void WebContentsSensorProviderProxy::GetSensor(
     SensorType type,

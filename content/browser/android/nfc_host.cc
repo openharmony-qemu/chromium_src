@@ -60,6 +60,10 @@ void NFCHost::GetNFC(RenderFrameHost* render_frame_host,
     return;
   }
 
+  if (render_frame_host->GetLastCommittedOrigin().opaque()) {
+    return;
+  }
+
   if (render_frame_host->GetBrowserContext()
           ->GetPermissionController()
           ->GetPermissionStatusForCurrentDocument(

@@ -92,6 +92,10 @@
 #include "chrome/browser/ui/browser_window.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "base/uuid.h"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 using content::BrowserContext;
@@ -1155,6 +1159,9 @@ ExtensionFunction::ResponseAction DownloadsDownloadFunction::Run() {
   // Prevent login prompts for 401/407 responses.
   download_params->set_do_not_prompt_for_login(true);
   download_params->set_download_source(download::DownloadSource::EXTENSION_API);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  download_params->set_guid(base::Uuid::GenerateRandomV4().AsLowercaseString());
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
   DownloadManager* manager = browser_context()->GetDownloadManager();
   manager->DownloadUrl(std::move(download_params));

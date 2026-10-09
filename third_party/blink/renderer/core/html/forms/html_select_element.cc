@@ -1667,7 +1667,7 @@ void HTMLSelectElement::showPicker(ExceptionState& exception_state) {
 
   if (!LocalFrame::HasTransientUserActivation(frame)) {
     exception_state.ThrowDOMException(DOMExceptionCode::kNotAllowedError,
-                                      "showPicker() requires a user gesture.");
+                                      "showPicker() requires user activation.");
     return;
   }
 
@@ -1680,9 +1680,13 @@ void HTMLSelectElement::showPicker(ExceptionState& exception_state) {
     return;
   }
 
-  LocalFrame::ConsumeTransientUserActivation(frame);
-
+  if (!RuntimeEnabledFeatures::PopupWidgetRequiresUserActivationEnabled()) {
+    LocalFrame::ConsumeTransientUserActivation(frame);
+  }
   select_type_->ShowPicker();
+  if (RuntimeEnabledFeatures::PopupWidgetRequiresUserActivationEnabled()) {
+    LocalFrame::ConsumeTransientUserActivation(frame);
+  }
 }
 
 bool HTMLSelectElement::IsValidBuiltinCommand(HTMLElement& invoker,

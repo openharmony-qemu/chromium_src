@@ -1750,6 +1750,7 @@ class WebAuthnUAFReproductionTest
 
   void OnDestroy(ChromeAuthenticatorRequestDelegate* delegate) override {
     delegate_ = nullptr;
+    delegate_shown_future_.Clear();
   }
 
   // AuthenticatorRequestDialogModel::Observer:
@@ -1791,9 +1792,12 @@ class WebAuthnUAFReproductionTest
     WebAuthnBrowserTest::TearDownOnMainThread();
   }
 
-  raw_ptr<ChromeAuthenticatorRequestDelegate> delegate_ = nullptr;
-  raw_ptr<AuthenticatorRequestDialogModel> model_ = nullptr;
-  base::test::TestFuture<ChromeAuthenticatorRequestDelegate*>
+  raw_ptr<ChromeAuthenticatorRequestDelegate, DisableDanglingPtrDetection>
+      delegate_ = nullptr;
+  raw_ptr<AuthenticatorRequestDialogModel, DisableDanglingPtrDetection> model_ =
+      nullptr;
+  base::test::TestFuture<
+      raw_ptr<ChromeAuthenticatorRequestDelegate, DisableDanglingPtrDetection>>
       delegate_shown_future_;
   bool web_contents_deleted_ = false;
 #if BUILDFLAG(IS_WIN)

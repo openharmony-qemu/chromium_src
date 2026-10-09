@@ -1734,11 +1734,13 @@ bool NavigationControllerImpl::RendererDidNavigate(
   NavigationEntry* last_entry = GetLastCommittedEntry();
   std::vector<GURL> previous_redirect_chain;
   base::flat_map<GURL, ohos_safe_browsing::OhosSbBlockingPageInfo> previous_blocking_page_info_cache;
+  bool previous_is_js_redirect = false;
   if (last_entry) {
     ohos_safe_browsing::NavigationEntrySafeBrowsingData* last_entry_safe_browsing_data =
         ohos_safe_browsing::NavigationEntrySafeBrowsingData::GetOrCreate(last_entry);
     previous_redirect_chain = last_entry_safe_browsing_data->GetRedirectChain();
     previous_blocking_page_info_cache = last_entry_safe_browsing_data->GetSbBlockingPageInfoCache();
+    previous_is_js_redirect = last_entry_safe_browsing_data->is_js_redirect();
   }
 #endif // ARKWEB_SAFEBROWSING
 
@@ -2067,6 +2069,7 @@ bool NavigationControllerImpl::RendererDidNavigate(
       is_renderer_initiated &&
       details->did_replace_entry &&
       last_entry) {
+    safe_browsing_data->set_is_js_redirect(previous_is_js_redirect);
     details->redirect_chain = previous_redirect_chain;
     safe_browsing_data->SetSbBlockingPageInfoCache(previous_blocking_page_info_cache);
     LOG(INFO) << "SafeBrowsing " << __func__ << " added redirect chain size: "

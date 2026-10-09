@@ -492,8 +492,7 @@ EGLImageBacking::GenEGLImageSiblings(base::span<const uint8_t> pixel_data) {
     AutoLock auto_lock(this);
     create_egl_images = egl_images_.empty();
     if (create_egl_images) {
-      while (api->glGetErrorFn() != GL_NO_ERROR) {
-      }
+      DrainGLErrors(api);
       for (int plane = 0; plane < num_planes; plane++) {
         gl::ScopedEGLImage egl_image =
             GenEGLImageSibling(pixel_data, service_ids, plane);

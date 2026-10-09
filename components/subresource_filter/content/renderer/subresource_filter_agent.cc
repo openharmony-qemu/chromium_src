@@ -399,6 +399,13 @@ void SubresourceFilterAgent::WillCreateWorkerFetchContext(
   if (!filter_for_last_created_document_) {
     return;
   }
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  if (filter_for_last_created_document_->filter()
+          .activation_state()
+          .activation_level == mojom::ActivationLevel::kDisabled) {
+    return;
+  }
+#endif
   if (!ruleset_dealer_->IsRulesetFileAvailable()) {
     return;
   }

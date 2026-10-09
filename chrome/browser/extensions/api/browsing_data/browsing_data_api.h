@@ -21,6 +21,9 @@
 #include "content/public/browser/browsing_data_remover.h"
 #include "extensions/browser/extension_function.h"
 #include "extensions/buildflags/buildflags.h"
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "ohos_nweb/src/capi/web_extension_browsing_data_items.h"
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
@@ -105,6 +108,13 @@ class BrowsingDataSettingsFunction : public ExtensionFunction {
                           browsing_data::ClearBrowsingDataTab tab);
 
   raw_ptr<PrefService> prefs_ = nullptr;
+ #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  static void OnGetSettings(const base::WeakPtr<BrowsingDataSettingsFunction>& function,
+                            const NWebExtensionBrowsingDataSettings& settings,
+                            const std::optional<std::string>& error);
+  bool call_get_settings_ = false;
+  base::WeakPtrFactory<BrowsingDataSettingsFunction> weak_ptr_factory_settings_{this};
+#endif
 };
 
 // This serves as a base class from which the browsing data API removal

@@ -153,7 +153,7 @@ class BlobRegistryImplTest : public testing::Test {
     mojo::PendingRemote<blink::mojom::BytesProvider> result;
     auto provider = std::make_unique<MockBytesProvider>(
         std::vector<uint8_t>(bytes.begin(), bytes.end()), &reply_request_count_,
-        &stream_request_count_, &file_request_count_);
+        &stream_request_count_, &file_request_count_, base::Time::Now());
     bytes_provider_runner_->PostTask(
         FROM_HERE, base::BindOnce(&BindBytesProvider, std::move(provider),
                                   result.InitWithNewPipeAndPassReceiver()));
@@ -169,7 +169,7 @@ class BlobRegistryImplTest : public testing::Test {
     }
     auto provider = std::make_unique<MockBytesProvider>(
         std::vector<uint8_t>(bytes.begin(), bytes.end()), &reply_request_count_,
-        &stream_request_count_, &file_request_count_);
+        &stream_request_count_, &file_request_count_, base::Time::Now());
     bytes_provider_runner_->PostTask(
         FROM_HERE, base::BindOnce(&BindBytesProvider, std::move(provider),
                                   std::move(receiver)));

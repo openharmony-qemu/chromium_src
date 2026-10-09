@@ -412,6 +412,51 @@ TEST_F(BlobTransportStrategyTest, Files_WriteFailed) {
   EXPECT_EQ(BlobStatus::ERR_FILE_WRITE_FAILED, status);
 }
 
+TEST_F(BlobTransportStrategyTest, Files_NullTime_Rejected) {
+  BlobDataBuilder builder(kId);
+
+  base::RunLoop loop;
+  std::string data = base::RandBytesAsString(kTestBlobStorageMaxFileSizeBytes);
+  blink::mojom::DataElementBytes bytes(data.size(), std::nullopt,
+                                       mojo::NullRemote());
+
+  mojo::Remote<blink::mojom::BytesProvider> bytes_provider(
+      CreateBytesProvider(data, base::Time()));
+
+  BlobStatus status = BlobStatus::PENDING_TRANSPORT;
+  auto strategy = BlobTransportStrategy::Create(
+      MemoryStrategy::FILE, &builder,
+      base::BindOnce(
+          [](BlobStatus* result_out, base::OnceClosure closure,
+             BlobStatus result) {
+            *result_out = result;
+            std::move(closure).Run();
+          },
+          &status, loop.QuitClosure()),
+      limits_);
+
+  strategy->AddBytesElement(&bytes, bytes_provider);
+
+  FileInfoVector files(1);
+  {
+    base::ScopedAllowBlockingForTesting allow_blocking;
+    base::FilePath path;
+    ASSERT_TRUE(base::CreateTemporaryFileInDir(data_dir_.GetPath(), &path));
+    files[0].file =
+        base::File(path, base::File::FLAG_OPEN | base::File::FLAG_WRITE);
+    files[0].file_deletion_runner =
+        base::SingleThreadTaskRunner::GetCurrentDefault();
+    files[0].file_reference = ShareableFileReference::GetOrCreate(
+        path, ShareableFileReference::DELETE_ON_FINAL_RELEASE,
+        bytes_provider_runner_.get());
+  }
+
+  strategy->BeginTransport(std::move(files));
+  loop.Run();
+
+  EXPECT_EQ(BlobStatus::ERR_FILE_WRITE_FAILED, status);
+}
+
 TEST_F(BlobTransportStrategyTest, Files_ValidBytesOneElement) {
   BlobDataBuilder builder(kId);
   BlobDataBuilder expected(kId);

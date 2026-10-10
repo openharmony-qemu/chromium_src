@@ -74,6 +74,8 @@ class CONTENT_EXPORT NavigationInterceptor
       bool is_auto_selected);
 
   RequestServiceBuilder service_builder_;
+  bool is_inside_onheaderparsed_ = false;
+  bool should_cancel_ = false;
   // Tracks the document present in the target RenderFrameHost at the time the
   // relevant navigation began. This will be navigated to complete the FedCM
   // flow after the initiating navigation is canceled and replaced. A

@@ -4,6 +4,7 @@
 
 #include "content/browser/webid/navigation_interceptor.h"
 
+#include "base/auto_reset.h"
 #include "base/functional/callback.h"
 #include "base/logging.h"
 #include "base/strings/string_split.h"
@@ -143,12 +144,18 @@ void NavigationInterceptor::OnHeaderParsed(
     return;
   }
 
-  service_builder_.Run(rfh)->RequestToken(
-      std::move(*idp_get_params_vector),
-      password_manager::CredentialMediationRequirement::kOptional,
-      navigation_handle(),
-      base::BindOnce(&NavigationInterceptor::OnTokenResponse,
-                     weak_ptr_factory_.GetWeakPtr()));
+  should_cancel_ = false;
+
+  {
+    base::AutoReset<bool> inside_guard(&is_inside_onheaderparsed_, true);
+    service_builder_.Run(rfh)->RequestToken(
+        std::move(*idp_get_params_vector),
+        password_manager::CredentialMediationRequirement::kOptional,
+        navigation_handle(),
+        base::BindOnce(&NavigationInterceptor::OnTokenResponse,
+                       weak_ptr_factory_.GetWeakPtr()));
+  }
+
 }
 
 void NavigationInterceptor::OnTokenResponse(
@@ -157,6 +164,23 @@ void NavigationInterceptor::OnTokenResponse(
     std::optional<base::Value> token,
     blink::mojom::TokenErrorPtr error,
     bool is_auto_selected) {
+  if (status == blink::mojom::RequestTokenStatus::kErrorTooManyRequests) {
+    // A token request was not actually started, so we shouldn't cancel the
+    // original navigation. Let it proceed.
+    return;
+  }
+
+  if (is_inside_onheaderparsed_) {
+    // If the callback evaluates synchronously inside Run(), we cannot call
+    // CancelDeferredNavigation(CANCEL) immediately because that would
+    // synchronously destroy this NavigationInterceptor instance while
+    // OnHeaderParsed is still using the instance to continue its execution,
+    // leading to a UAF. Instead, signal an intent to cancel and let
+    // OnHeaderParsed perform the cancellation after Run() finishes.
+    should_cancel_ = true;
+    return;
+  }
+
   // TODO(http://crbug.com/455614294): expose the redirect_to URL outside
   // of the token so that either one or the other can be used.
   // TODO(http://crbug.com/455614294): consider supporting the redirect_to

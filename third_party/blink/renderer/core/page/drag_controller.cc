@@ -230,17 +230,12 @@ void DragController::ClearDragCaret() {
 
 void DragController::DragEnded() {
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
-  AsDragControllerExt()->RestoreDragLinkEffects();
   AsDragControllerExt()->SetIsDragging(false);
 #endif
   drag_initiator_ = nullptr;
   did_initiate_drag_ = false;
   drag_pointer_id_.reset();
   page_->GetDragCaret().Clear();
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  AsDragControllerExt()->RestoreDragTextEffects();
-  AsDragControllerExt()->RestoreDragImageEffects();
-#endif
   // When dragging occurs, the mousedown event is triggered, causing the caret's
   // blinking state to be suspended. Therefore, it is necessary to reset the
   // blinking state after dragging.
@@ -1503,11 +1498,6 @@ void DragController::DoSystemDrag(DragImage* image,
   DragOperationsMask drag_operation_mask = data_transfer->SourceOperation();
 
   SkBitmap drag_image = image ? image->Bitmap() : SkBitmap();
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  AsDragControllerExt()->StartDragTextEffects();
-  AsDragControllerExt()->StartDragImageEffects();
-  AsDragControllerExt()->StartDragLinkEffects();
-#endif
   page_->GetChromeClient().StartDragging(frame, drag_data, drag_operation_mask,
                                          std::move(drag_image), cursor_offset,
                                          drag_obj_rect);

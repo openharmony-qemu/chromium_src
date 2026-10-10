@@ -18,11 +18,28 @@
 #include <memory>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+
 namespace crashpad {
 
 class MinidumpFileWriter;
 class MinidumpUserExtensionStreamDataSource;
 class ProcessSnapshot;
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+// GWP-ASan crash detection result, read by DFX reporting (PROCESS_CRASH).
+// Set by components/gwp_asan's UserStreamDataSource after detection, and reset
+// to kNone at the start of each AddUserExtensionStreams call so that a
+// long-lived handler does not carry over the previous crash's result.
+enum class GwpAsanDetection {
+  kNone = 0,             // This crash is not GWP-ASan related
+  kDetected = 1,         // Confirmed GWP-ASan (has allocation_address/error_type)
+  kMissingMetadata = 2,  // GWP-ASan detected but metadata is missing
+};
+
+void SetGwpAsanDetection(GwpAsanDetection detection);
+GwpAsanDetection GetGwpAsanDetection();
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
 
 //! \brief Extensibility interface for embedders who wish to add custom streams
 //!     to minidumps.

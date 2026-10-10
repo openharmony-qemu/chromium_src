@@ -5013,6 +5013,7 @@ Quer pará-lo?</translation>
 <translation id="4385905942116811558">Pesquisar dispositivos Bluetooth e USB</translation>
 <translation id="4385985255515673508">{NUM_EXTENSIONS,plural, =1{Esta extensão foi desativada porque já não é suportada}other{Estas extensões foram desativadas porque já não são suportadas}}</translation>
 <translation id="4386604394450371010">vista geral</translation>
+<translation id="4386813704801763616">Ative o modo de programador para utilizar esta extensão, mas apenas se confiar nela. Pode conter funcionalidades experimentais e não foi revista.</translation>
 <translation id="4387890294700445764">Palavras-passe comprometidas</translation>
 <translation id="4388650384344483842">Use, pelo menos, 8 carateres</translation>
 <translation id="4390396490617716185"><ph name="FIRST_SWITCH" />, <ph name="SECOND_SWITCH" />, <ph name="THIRD_SWITCH" /> e mais <ph name="NUMBER_OF_OTHER_SWITCHES" /> interruptores</translation>

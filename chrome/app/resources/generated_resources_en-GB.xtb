@@ -5034,6 +5034,7 @@ You can manage this account’s settings by installing the Family Link app on yo
 <translation id="4385905942116811558">Searching for Bluetooth and USB devices</translation>
 <translation id="4385985255515673508">{NUM_EXTENSIONS,plural, =1{This extension was turned off because it's no longer supported}other{These extensions were turned off because they're no longer supported}}</translation>
 <translation id="4386604394450371010">overview</translation>
+<translation id="4386813704801763616">Turn on Developer mode to use this extension, but only if you trust the extension. It may contain experimental features and hasn't been reviewed.</translation>
 <translation id="4387890294700445764">Compromised passwords</translation>
 <translation id="4388650384344483842">Use at least eight characters</translation>
 <translation id="4390396490617716185"><ph name="FIRST_SWITCH" />, <ph name="SECOND_SWITCH" />, <ph name="THIRD_SWITCH" /> and <ph name="NUMBER_OF_OTHER_SWITCHES" /> more switches</translation>

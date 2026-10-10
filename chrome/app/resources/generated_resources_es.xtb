@@ -5012,6 +5012,7 @@ Puedes gestionar la configuración de esta cuenta instalando la aplicación Fami
 <translation id="4385905942116811558">Buscar dispositivos Bluetooth y USB</translation>
 <translation id="4385985255515673508">{NUM_EXTENSIONS,plural, =1{Esta extensión se ha desactivado porque ya no es compatible}other{Estas extensiones se han desactivado porque ya no son compatibles}}</translation>
 <translation id="4386604394450371010">vista general</translation>
+<translation id="4386813704801763616">Activa el modo Desarrollador para usar esta extensión, pero solo si confías en ella. Puede contener funciones experimentales y no se ha revisado.</translation>
 <translation id="4387890294700445764">Contraseñas vulneradas</translation>
 <translation id="4388650384344483842">Usa 8 caracteres como mínimo</translation>
 <translation id="4390396490617716185"><ph name="FIRST_SWITCH" />, <ph name="SECOND_SWITCH" />, <ph name="THIRD_SWITCH" /> y <ph name="NUMBER_OF_OTHER_SWITCHES" /> interruptores más</translation>

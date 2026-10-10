@@ -67,7 +67,7 @@ class GPU_GLES2_EXPORT GraphiteSharedContext {
   std::unique_ptr<skgpu::graphite::PrecompileContext> makePrecompileContext();
 
   bool insertRecording(const skgpu::graphite::InsertRecordingInfo& info);
-  void submit(skgpu::graphite::SyncToCpu = skgpu::graphite::SyncToCpu::kNo);
+  bool submit(skgpu::graphite::SyncToCpu = skgpu::graphite::SyncToCpu::kNo);
 
   // The difference between this and submit() is that it will trigger the
   // provided backend_flush_callback in addition to calling submit(). This is

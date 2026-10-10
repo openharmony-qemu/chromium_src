@@ -1177,7 +1177,7 @@ VideoImageRepresentation::BeginScopedWriteAccess() {
 VideoImageRepresentation::ScopedReadAccess::ScopedReadAccess(
     base::PassKey<VideoImageRepresentation> /* pass_key */,
     VideoImageRepresentation* representation)
-    : ScopedAccessBase(representation, AccessMode::kWrite) {}
+    : ScopedAccessBase(representation, AccessMode::kRead) {}
 
 VideoImageRepresentation::ScopedReadAccess::~ScopedReadAccess() {
   representation()->EndReadAccess();
@@ -1185,6 +1185,13 @@ VideoImageRepresentation::ScopedReadAccess::~ScopedReadAccess() {
 
 std::unique_ptr<VideoImageRepresentation::ScopedReadAccess>
 VideoImageRepresentation::BeginScopedReadAccess() {
+  if (!IsCleared()) {
+    LOG(ERROR)
+        << "Attempt to read from an uninitialized SharedImage. debug_label: "
+        << debug_label();
+    return nullptr;
+  }
+
   if (!BeginReadAccess()) {
     return nullptr;
   }

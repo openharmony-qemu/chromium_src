@@ -63,12 +63,23 @@ content::WebContents* FedCmModalDialogView::ShowPopupWindow(
     return nullptr;
   }
 
+  content::WebContentsDelegate* delegate = source_window_->GetDelegate();
+  if (!delegate) {
+    return nullptr;
+  }
   content::OpenURLParams params(
       url, content::Referrer(), WindowOpenDisposition::NEW_POPUP,
       ui::PAGE_TRANSITION_AUTO_TOPLEVEL, /*is_renderer_initiated=*/false);
-  popup_window_ = source_window_->GetDelegate()->OpenURLFromTab(
+  base::WeakPtr<FedCmModalDialogView> weak_this =
+      weak_ptr_factory_.GetWeakPtr();
+  content::WebContents* popup_window = delegate->OpenURLFromTab(
       source_window_, params, /*navigation_handle_callback=*/{});
 
+  if (!weak_this) {
+    return nullptr;
+  }
+
+  popup_window_ = popup_window;
   if (!popup_window_) {
     UMA_HISTOGRAM_ENUMERATION(
         "Blink.FedCm.IdpSigninStatus.ShowPopupWindowResult",
@@ -78,6 +89,9 @@ content::WebContents* FedCmModalDialogView::ShowPopupWindow(
   }
 
   ResizeAndFocusPopupWindow();
+  if (!weak_this) {
+    return nullptr;
+  }
   Observe(popup_window_);
 
   UMA_HISTOGRAM_ENUMERATION("Blink.FedCm.IdpSigninStatus.ShowPopupWindowResult",

@@ -176,6 +176,7 @@ struct BLINK_COMMON_EXPORT WebPreferences {
   bool native_embed_mode_enabled;
   bool intrinsic_size_enabled;
   bool css_display_change_enabled;
+  bool transform_rotate_and_skew_enabled;
   std::string embed_tag;
   std::string embed_tag_type;
 #endif

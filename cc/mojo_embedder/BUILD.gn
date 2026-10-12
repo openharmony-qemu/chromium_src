@@ -24,9 +24,12 @@ cc_component("mojo_embedder") {
     "//components/viz/common",
     "//gpu/ipc/client",
     "//mojo/public/cpp/bindings",
-    "//services/viz/public/mojom",
     "//ui/gfx/animation",
     "//ui/gfx/animation/keyframe",
+  ]
+
+  public_deps = [
+    "//services/viz/public/mojom",
   ]
 
   if (arkweb_software_compositor) {
@@ -40,6 +43,15 @@ cc_component("mojo_embedder") {
       "//arkweb/chromium_ext/cc/mojo_embedder/software_compositor_renderer_ohos.h",
       "//arkweb/chromium_ext/cc/mojo_embedder/async_layer_tree_frame_sink_utils.h",
       "//arkweb/chromium_ext/cc/mojo_embedder/async_layer_tree_frame_sink_utils.cc",
+    ]
+  }
+
+  if (arkweb_blank_screen_monitor) {
+    public_deps += [
+      "//arkweb/chromium_ext/components/blank_screen:blank_screen_monitor",
+    ]
+    deps += [
+      "//arkweb/chromium_ext/components/blank_screen:frame_analysis",
     ]
   }
 

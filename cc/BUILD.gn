@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 import("//build/config/sanitizers/sanitizers.gni")
+import("//arkweb/build/features/features.gni")
 import("//gpu/vulkan/features.gni")
 import("//skia/features.gni")
 import("//third_party/jni_zero/jni_zero.gni")
@@ -556,6 +557,9 @@ cc_component("cc") {
     sources += arkweb_cc_input_source
     sources += arkweb_cc_trees_source
     deps += [ "//arkweb/build/features" ]
+    if (arkweb_blank_screen_monitor) {
+      deps += [ "//arkweb/chromium_ext/components/blank_screen:blank_screen_monitor" ]
+    }
   }
 
   defines = [ "CC_IMPLEMENTATION=1" ]

@@ -846,6 +846,9 @@ void LayerTreeImpl::PullLayerTreePropertiesFrom(CommitState& commit_state) {
 #if BUILDFLAG(ARKWEB_MENU)
   utils_->RegisterClippedVisualViewportSelectionBounds(commit_state.clipped_selection_bounds);
 #endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  host_impl_->SetArkWebFrameSinkIdToFrameSink(commit_state.arkweb_frame_sink_id);
+#endif
 
   PushPageScaleFromMainThread(commit_state.page_scale_factor,
                               commit_state.min_page_scale_factor,

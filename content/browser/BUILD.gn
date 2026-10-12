@@ -2612,6 +2612,20 @@ source_set("browser") {
     deps += [ "//components/dom_distiller/content/common/mojom" ]
   }
 
+  if (arkweb_blank_screen_monitor) {
+    deps += [
+      "//arkweb/chromium_ext/components/blank_screen:frame_analysis",
+      "//arkweb/chromium_ext/components/blank_screen:blank_screen_monitor",
+      "//arkweb/chromium_ext/components/blank_screen:blank_screen_monitor_browser",
+    ]
+    sources += [
+      "//arkweb/chromium_ext/components/blank_screen/gpu_evidence_collector.cc",
+      "//arkweb/chromium_ext/components/blank_screen/gpu_evidence_collector.h",
+      "//arkweb/chromium_ext/components/blank_screen/blank_screen_monitor.cc",
+      "//arkweb/chromium_ext/components/blank_screen/blank_screen_monitor.h",
+    ]
+  }
+
   if (arkweb_software_compositor) {
     sources += [
       "//arkweb/chromium_ext/content/browser/ohos/software_compositor_host_ohos.cc",

@@ -373,6 +373,10 @@ target(link_target_type, "renderer") {
       deps += [ "//arkweb/chromium_ext/v8/dfx/oom_mojom:dfx_v8oom_render" ]
     }
 
+    if (arkweb_blank_screen_monitor) {
+      deps += [ "//arkweb/chromium_ext/components/blank_screen:blank_screen_monitor" ]
+    }
+
     sources += arkweb_content_renderer_sources
     sources += arkweb_content_render_sources
 

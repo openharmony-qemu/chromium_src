@@ -7,6 +7,7 @@
 #include <utility>
 #include <variant>
 
+#include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
 #include "base/functional/bind.h"
 #include "base/metrics/histogram.h"
@@ -268,6 +269,10 @@ void AsyncLayerTreeFrameSink::SubmitCompositorFrame(
 
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   async_layer_tree_frame_sink_utils_->SubmitCompositorFrameDfxDumpLog(local_surface_id_);
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  async_layer_tree_frame_sink_utils_->AnalyzeFrameForBlankScreen(frame);
 #endif
 
   if (last_submitted_local_surface_id_ != local_surface_id_) {

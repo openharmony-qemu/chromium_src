@@ -144,6 +144,10 @@
 #include "arkweb/chromium_ext/content/renderer/ark_web_render_frame_impl.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+#include "components/viz/common/surfaces/frame_sink_id.h"
+#endif
+
 namespace blink {
 namespace scheduler {
 class WebAgentGroupScheduler;
@@ -385,6 +389,13 @@ class CONTENT_EXPORT RenderFrameImpl
 #if BUILDFLAG(ARKWEB_AI)
   void CloseImageOverlaySelection() override;
 #endif  // BUILDFLAG(ARKWEB_AI)
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  void InitBlankScreenMonitor();
+  void DidCreateScriptContextForBlankScreen(v8::Local<v8::Context> context,
+                                            int world_id);
+  void CleanupBlankScreenMonitor();
+  void ResetBlankScreenMonitorForNavigation();
+#endif
 #if BUILDFLAG(ARKWEB_DFX_TRACING) && !defined(COMPONENT_BUILD)
   void SendCommitNavigationTime(int64_t start_time) override;
 #endif  // BUILDFLAG(ARKWEB_DFX_TRACING)
@@ -1769,6 +1780,9 @@ class CONTENT_EXPORT RenderFrameImpl
   uint64_t blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
   uint64_t frame_sink_id_ = 0;
   int64_t pref_hash_ = 0;
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  viz::FrameSinkId cached_blank_screen_frame_sink_id_;
 #endif
 #if BUILDFLAG(ARKWEB_USERAGENT)
   bool viewport_meta_enabled_{false};

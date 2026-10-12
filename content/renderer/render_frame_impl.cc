@@ -2011,6 +2011,9 @@ RenderFrameImpl::~RenderFrameImpl() {
   tracing::TrackNameRecorder::GetInstance()->RemoveProcessLabel(
       process_label_id_);
   agent_scheduling_group_->RemoveFrameRoute(frame_token_);
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  CleanupBlankScreenMonitor();
+#endif
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
   delete implUtils;
 #endif
@@ -2026,6 +2029,10 @@ void RenderFrameImpl::Initialize(blink::WebFrame* parent) {
                frame_token_);
 
   RegisterMojoInterfaces();
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  InitBlankScreenMonitor();
+#endif
 
   {
     TRACE_EVENT("navigation", "ContentRendererClient::RenderFrameCreated");
@@ -4052,6 +4059,10 @@ void RenderFrameImpl::DidCommitNavigation(
   for (auto& observer : observers_)
     observer.DidCreateNewDocument();
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  ResetBlankScreenMonitorForNavigation();
+#endif
+
   DVLOG(1) << "Committed provisional load: "
            << TrimURL(GetLoadingUrl().possibly_invalid_spec());
   TRACE_EVENT2("navigation,rail", "RenderFrameImpl::didCommitProvisionalLoad",
@@ -4180,6 +4191,9 @@ void RenderFrameImpl::DidCommitDocumentReplacementNavigation(
     observer.ReadyToCommitNavigation(document_loader);
   for (auto& observer : observers_)
     observer.DidCreateNewDocument();
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  ResetBlankScreenMonitorForNavigation();
+#endif
   auto navigation_state = NavigationState::CreateForSynchronousCommit();
   ui::PageTransition transition =
       GetTransitionType(document_loader, navigation_state.get(), IsMainFrame(),
@@ -4909,6 +4923,10 @@ void RenderFrameImpl::DidCreateScriptContext(v8::Local<v8::Context> context,
 
   for (auto& observer : observers_)
     observer.DidCreateScriptContext(context, world_id);
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  DidCreateScriptContextForBlankScreen(context, world_id);
+#endif
 }
 
 void RenderFrameImpl::WillReleaseScriptContext(v8::Local<v8::Context> context,

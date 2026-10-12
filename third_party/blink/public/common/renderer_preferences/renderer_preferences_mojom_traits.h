@@ -313,6 +313,13 @@ struct BLINK_COMMON_EXPORT
     return data.is_custom_reader_mode_enabled;
   }
 #endif
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  static const bool& blank_screen_monitor_enabled(
+      const ::blink::RendererPreferences& data) {
+    return data.blank_screen_monitor_enabled;
+  }
+#endif
 };
 
 }  // namespace mojo

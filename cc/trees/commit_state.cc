@@ -41,6 +41,9 @@ CommitState::CommitState(const CommitState& prev)
 #if BUILDFLAG(ARKWEB_MENU)
       clipped_selection_bounds(prev.clipped_selection_bounds),
 #endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+      arkweb_frame_sink_id(prev.arkweb_frame_sink_id),
+#endif
       debug_state(prev.debug_state),
       overscroll_behavior(prev.overscroll_behavior),
       background_color(prev.background_color),

@@ -124,7 +124,7 @@ PaymentsMetadata Iban::GetMetadata() const {
 // static
 bool Iban::IsValid(const std::u16string& value) {
   std::u16string iban_value = RemoveIbanSeparators(value);
-  iban_value = base::i18n::ToUpper(iban_value);
+  iban_value = base::ToUpperASCII(iban_value);
   // IBANs must be at least 16 digits and at most 33 digits long.
   if (iban_value.length() < 16 || iban_value.length() > 33) {
     return false;
@@ -151,7 +151,7 @@ bool Iban::IsValid(const std::u16string& value) {
 // static
 std::string Iban::GetCountryCode(const std::u16string& iban_value) {
   CHECK(iban_value.length() >= 2);
-  return base::UTF16ToUTF8(base::i18n::ToUpper(iban_value.substr(0, 2)));
+  return base::UTF16ToUTF8(base::ToUpperASCII(iban_value.substr(0, 2)));
 }
 
 // static

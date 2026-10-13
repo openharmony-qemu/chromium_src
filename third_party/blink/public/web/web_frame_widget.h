@@ -140,6 +140,7 @@ class WebFrameWidget : public WebWidget {
     return 11;  // WebCommandErrorCode::FAILED
   }
   virtual int32_t ExecuteAutoFillCommand(const std::string& xpath,
+                                         int32_t node_id,
                                          const std::string& content,
                                          int32_t index, int32_t mode) {
     return 11;  // WebCommandErrorCode::FAILED

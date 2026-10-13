@@ -93,8 +93,7 @@ LayoutObject* MathMLPaddedElement::CreateLayoutObject(
     const ComputedStyle& style) {
 #if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
   if (Cssutils::IsMathFormulaDisabledMode()) {
-    MathMLElement::CreateLayoutObject(style);
-    return;
+    return MathMLElement::CreateLayoutObject(style);
   }
 #endif
   if (!style.IsDisplayMathType()) {

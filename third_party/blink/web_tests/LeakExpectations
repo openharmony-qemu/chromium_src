@@ -58,3 +58,5 @@ crbug.com/422282936 external/wpt/streams/piping/crashtests/cross-piping2.https.h
 crbug.com/422282936 virtual/not-site-per-process/external/wpt/* [ Crash ]
 # Reftest mismatch.
 crbug.com/422282936 external/wpt/css/css-overflow/root-scroll-button.html [ Failure ]
+
+crbug.com/567487270 external/wpt/trusted-types/navigate-to-javascript-url-009-crash.html [ Crash ]

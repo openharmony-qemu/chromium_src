@@ -2663,7 +2663,7 @@ void CSSAnimations::CalculateTransitionUpdateForPropertyHandle(
     bool is_attr_tainted = false;
     if (property.IsCSSCustomProperty()) {
       CSSPropertyRef custom_ref(property.GetCSSPropertyName(), document);
-      CSSVariableData* old_data = state.old_style.GetVariableData(
+      CSSVariableData* old_data = before_change_style.GetVariableData(
           property.CustomPropertyName(),
           custom_ref.GetProperty().IsInherited());
       CSSVariableData* new_data = after_change_style.GetVariableData(

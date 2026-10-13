@@ -32,6 +32,11 @@ EventLoop::EventLoop(EventLoop::Delegate* delegate,
 }
 
 EventLoop::~EventLoop() {
+  // `microtask_queue_` may be cleared before sweeping during heap termination.
+  if (microtask_queue_) {
+    microtask_queue_->RemoveMicrotasksCompletedCallback(
+        &EventLoop::RunEndOfCheckpointTasks, this);
+  }
   DCHECK(schedulers_.empty());
 }
 

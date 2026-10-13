@@ -265,6 +265,10 @@
 #include "arkweb/chromium_ext/content/browser/browser_main_loop_ext.cc"
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+#include "arkweb/chromium_ext/base/trace_event/hitrace_export_oh.h"
+#endif
+
 // One of the linux specific headers defines this as a macro.
 #ifdef DestroyAll
 #undef DestroyAll
@@ -1597,6 +1601,12 @@ void BrowserMainLoop::InitializeMojo() {
   // We can only do this after starting the main message loop to avoid calling
   // MessagePumpForUI::ScheduleWork() before MessagePumpForUI::Start().
   StartupTracingController::GetInstance().StartIfNeeded();
+
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  // Start browser-side consumer session to enable service-side
+  // periodic incremental-state clears for the HiTrace interceptor.
+  base::hitrace::StartHiTraceConsumerSession();
+#endif  // BUILDFLAG(ARKWEB_DFX_TRACING)
 
 #if BUILDFLAG(MOJO_RANDOM_DELAYS_ENABLED)
   mojo::BeginRandomMojoDelays();

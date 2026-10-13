@@ -342,6 +342,11 @@ class MODULES_EXPORT BaseAudioContext
   // if the execution context does not exist.
   bool CheckExecutionContextAndThrowIfNecessary(ExceptionState&);
 
+  // Called when an allocation fails during rendering.  Used by the
+  // OfflineAudioContext to abort rendering early.
+  bool HasAllocationFailed() const { return allocation_failed_; }
+  void SetAllocationFailed() { allocation_failed_ = true; }
+
  protected:
   enum class ContextType { kRealtimeContext, kOfflineContext };
 
@@ -412,6 +417,10 @@ class MODULES_EXPORT BaseAudioContext
       V8AudioContextState::Enum::kSuspended;
 
   bool is_cleared_ = false;
+
+  // Set to true if an allocation fails during rendering. Used to abort
+  // offline rendering early.
+  bool allocation_failed_ = false;
 
   // Listener for the PannerNodes
   Member<AudioListener> listener_;

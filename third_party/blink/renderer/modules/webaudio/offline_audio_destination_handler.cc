@@ -183,6 +183,11 @@ void OfflineAudioDestinationHandler::DoOfflineRendering() {
   // do continue to render quanta. Then calling OfflineAudioContext.resume()
   // will pick up the render loop again from where it was suspended.
   while (frames_to_process_ > 0) {
+    if (Context()->HasAllocationFailed()) {
+      FinishOfflineRendering();
+      return;
+    }
+
     // Suspend the rendering if a scheduled suspend found at the current
     // sample frame. Otherwise render one quantum.
     if (RenderIfNotSuspended(nullptr, render_bus_.get(),
@@ -222,6 +227,13 @@ void OfflineAudioDestinationHandler::SuspendOfflineRendering() {
 
 void OfflineAudioDestinationHandler::FinishOfflineRendering() {
   DCHECK(!IsMainThread());
+
+  if (shared_render_target_ &&
+      frames_processed_ < shared_render_target_->length()) {
+    // Rendering finished early, perhaps due to an allocation failure. Ensure
+    // that unrendered frames in the destination buffer are zeroed.
+    shared_render_target_->Zero(/*start_frame=*/frames_processed_);
+  }
 
   // The actual rendering has been completed. Notify the context.
   PostCrossThreadTask(

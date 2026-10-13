@@ -145,7 +145,7 @@ class SharedAudioBuffer final {
 
   const Vector<ArrayBufferContents>& channels() { return channels_; }
 
-  void Zero();
+  void Zero(size_t start_frame = 0);
 
  private:
   float sample_rate_;

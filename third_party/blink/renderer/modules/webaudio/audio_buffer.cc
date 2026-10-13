@@ -30,6 +30,7 @@
 
 #include <memory>
 
+#include "base/check_op.h"
 #include "base/compiler_specific.h"
 #include "base/containers/span.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_audio_buffer_options.h"
@@ -334,10 +335,12 @@ SharedAudioBuffer::SharedAudioBuffer(AudioBuffer* buffer)
   }
 }
 
-void SharedAudioBuffer::Zero() {
+void SharedAudioBuffer::Zero(size_t start_frame) {
+  DCHECK_LE(start_frame, length_);
   for (auto& channel : channels_) {
     float* data = static_cast<float*>(channel.Data());
-    UNSAFE_TODO(memset(data, 0, length() * sizeof(*data)));
+    UNSAFE_TODO(
+        memset(data + start_frame, 0, (length_ - start_frame) * sizeof(*data)));
   }
 }
 

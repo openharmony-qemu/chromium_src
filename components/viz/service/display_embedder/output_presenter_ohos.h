@@ -121,6 +121,9 @@ class VIZ_SERVICE_EXPORT OutputPresenterOHOS : public OutputPresenter {
   scoped_refptr<base::SequencedTaskRunner> task_runner_;
   OH_SurfaceTransaction* transaction_;
   gfx::OverlayTransform transform_ = gfx::OVERLAY_TRANSFORM_NONE;
+  // Whether we are running a GPU thread inside the browser process instead
+  // of a separate GPU process.
+  bool in_process_ = false;
 
   OHOS::NWeb::SurfaceControlAdapter& surface_control_adapter_;
   OHOS::NWeb::SurfaceTransactionAdapter& transaction_adapter_;

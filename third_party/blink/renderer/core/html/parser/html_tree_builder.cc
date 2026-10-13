@@ -1713,7 +1713,7 @@ void HTMLTreeBuilder::CallTheAdoptionAgency(AtomicHTMLToken* token) {
 
       // 9.8
       if (last_node == furthest_block)
-        bookmark.MoveToAfter(node_entry);
+        bookmark.MoveToAfter(node->GetElement());
       // 9.9
       tree_.Reparent(node, last_node);
       // 9.10
@@ -1721,6 +1721,10 @@ void HTMLTreeBuilder::CallTheAdoptionAgency(AtomicHTMLToken* token) {
     }
     // 10.
     tree_.InsertAlreadyParsedChild(common_ancestor, last_node);
+    if (!tree_.OpenElements()->Contains(formatting_element) ||
+        !tree_.OpenElements()->Contains(furthest_block->GetElement())) {
+      return;
+    }
     // 11.
     HTMLStackItem* new_item =
         tree_.CreateElementFromSavedToken(formatting_element_item);

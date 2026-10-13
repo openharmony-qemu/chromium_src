@@ -386,6 +386,7 @@ enum BadMessageReason {
   PMM_GET_SUBSCRIPTION_IN_FENCED_FRAME = 368,
   RFH_BLOB_URL_STORE_ASSOCIATED_PDF_PROCESS_BLOCKED = 372,
   RFH_BLOB_URL_STORE_RECEIVER_PDF_PROCESS_BLOCKED = 373,
+  MSDH_REQUEST_ALL_SCREENS_WITH_INVALID_STREAM_TYPE = 374,
 
   // Please add new elements here. The naming convention is abbreviated class
   // name (e.g. RenderFrameHost becomes RFH) plus a unique description of the

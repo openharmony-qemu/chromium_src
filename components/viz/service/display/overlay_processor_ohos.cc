@@ -29,16 +29,11 @@
 #endif
 namespace viz {
 namespace {
-constexpr float kMinScale = 0.5;
-constexpr float kMaxScale = 30;
-constexpr int32_t kMinDisplayWidth = 480;
-constexpr int32_t kMaxDisplayWidth = 4096;
-constexpr int32_t kMinDisplayHeight = 360;
-constexpr int32_t kMaxDisplayHeight = 4096;
-constexpr int32_t kMinSrcWidth = 480;
-constexpr int32_t kMaxSrcWidth = 4096;
-constexpr int32_t kMinSrcHeight = 360;
-constexpr int32_t kMaxSrcHeight = 4096;
+constexpr float kMinScale = 0.5f;
+constexpr float kMaxScale = 60.0f;
+constexpr int32_t kMinSize = 16;
+constexpr int32_t kMaxWidth = 2560;
+constexpr int32_t kMaxHeight = 4096;
 
 gfx::RectF ClipFromOrigin(gfx::RectF input) {
   if (input.x() < 0.f) {
@@ -192,8 +187,7 @@ void OverlayProcessorOhos::CheckOverlaySupportImpl(
 
     auto displayWidth = display_rect.width();
     auto displayHeight = display_rect.height();
-    if (displayWidth < kMinDisplayWidth || displayWidth > kMaxDisplayWidth ||
-      displayHeight < kMinDisplayHeight || displayHeight > kMaxDisplayHeight) {
+    if (IsSizeOutOfBounds(displayWidth, displayHeight)) {
       TRACE_EVENT2("viz", "CheckOverlaySupportImpl reject",
           "displayWidth", displayWidth, "displayHeight", displayHeight);
       LOG(DEBUG) << "Overlay rejected due to size limits. " <<
@@ -205,8 +199,7 @@ void OverlayProcessorOhos::CheckOverlaySupportImpl(
                                    candidate.resource_size_in_pixels);
     auto srcWidth = src_rect.width();
     auto srcHeight = src_rect.height();
-    if (srcWidth < kMinSrcWidth || srcWidth > kMaxSrcWidth ||
-      srcHeight < kMinSrcHeight || srcHeight > kMaxSrcHeight) {
+    if (IsSizeOutOfBounds(srcWidth, srcHeight)) {
       TRACE_EVENT2("viz", "CheckOverlaySupportImpl reject",
                    "srcWidth", srcWidth, "srcHeight", srcHeight);
       LOG(DEBUG) << "Overlay rejected due to size limits. "
@@ -327,6 +320,11 @@ void OverlayProcessorOhos::UpdateFocusAndScreenStatus(bool is_focused,
                                                      bool is_single_screen) {
   is_focused_ = is_focused;
   is_single_screen_ = is_single_screen;
+}
+
+bool OverlayProcessorOhos::IsSizeOutOfBounds(int32_t width, int32_t height) const {
+  return width > kMaxWidth || width < kMinSize ||
+         height > kMaxHeight || height < kMinSize;
 }
 #endif
 

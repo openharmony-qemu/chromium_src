@@ -206,6 +206,11 @@ VIZ_COMMON_EXPORT bool ShouldAckCOREarlyForViewTransition();
 #if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
 VIZ_COMMON_EXPORT bool IsEvictUnlockFrameEnabled();
 #endif
+
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE(kDelegatedCompositingOhos);
+VIZ_COMMON_EXPORT bool IsDelegatedCompositingFeatureEnabledOhos();
+#endif
 }  // namespace features
 
 #endif  // COMPONENTS_VIZ_COMMON_FEATURES_H_

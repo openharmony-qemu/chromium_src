@@ -5683,6 +5683,15 @@ NavigationRequest::ComputeErrorPageProcess() {
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+        switches::kEnableNwebEx)) {
+    if (net_error_ == net::ERR_BLOCKED_BY_CLIENT) {
+      return ErrorPageProcess::kDestinationProcess;
+    }
+  }
+#endif  // ARKWEB_SAFEBROWSING
+
   // Decide whether to leave the error page in the original process.
   // * If this was a renderer-initiated navigation, and the request is blocked
   //   because the initiating document wasn't allowed to make the request,

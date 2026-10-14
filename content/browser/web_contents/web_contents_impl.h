@@ -707,6 +707,13 @@ class CONTENT_EXPORT WebContentsImpl
   const blink::web_pref::WebPreferences& GetOrCreateWebPreferences() override;
   void NotifyPreferencesChanged() override;
   void SetWebPreferences(const blink::web_pref::WebPreferences& prefs) override;
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  // 作用：CDP脚本执行禁用状态管理；合理性：ArkWeb的PageBroadcast不工作，需在
+  // WebContentsImpl中持久化CDP JS禁用状态以跨导航传播；必要性：删除后JS禁用无法跨导航
+  void SetCdpScriptExecutionDisabled(bool disabled);
+  bool IsCdpScriptExecutionDisabled() const;
+  void UpdateWebPreferencesAfterNavigation(NavigationHandle* navigation_handle);
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   void OnWebPreferencesChanged(int32_t usage_scenario_type = 99) override;
 #else
@@ -2577,6 +2584,11 @@ class CONTENT_EXPORT WebContentsImpl
   std::unique_ptr<blink::web_pref::WebPreferences> web_preferences_;
 
   bool updating_web_preferences_ = false;
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  // 作用：CDP脚本执行禁用标志；合理性：放在WebContentsImpl以跨导航持久化；
+  // 必要性：ArkWeb的PageBroadcast不工作，需持久化此状态供ComputeWebPreferences使用
+  bool cdp_script_execution_disabled_ = false;
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
 
 #if BUILDFLAG(IS_ANDROID) || (BUILDFLAG(IS_IOS) && !BUILDFLAG(IS_IOS_TVOS))
   std::unique_ptr<NFCHost> nfc_host_;

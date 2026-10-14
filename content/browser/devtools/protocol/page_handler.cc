@@ -2000,6 +2000,10 @@ Page::BackForwardCacheNotRestoredReason NotRestoredReasonToProtocol(
       // Blocklisted features should be handled separately and be broken down
       // into sub reasons.
       NOTREACHED();
+    case Reason::kRfhEnforceInsecureNavigationsSet:
+    case Reason::kRfhEnforceInsecureRequestPolicy:
+    case Reason::kRfhHadStickyUserActivationBeforeNavigationChanged:
+    case Reason::kRfhUpdateIsAdFrame:
     case Reason::kUnknown:
       return Page::BackForwardCacheNotRestoredReasonEnum::Unknown;
     case Reason::kCacheControlNoStoreDeviceBoundSessionTerminated:
@@ -2320,6 +2324,10 @@ Page::BackForwardCacheNotRestoredReasonType MapNotRestoredReasonToType(
     case Reason::kUnloadHandlerExistsInSubFrame:
     case Reason::kCacheControlNoStoreDeviceBoundSessionTerminated:
       return Page::BackForwardCacheNotRestoredReasonTypeEnum::PageSupportNeeded;
+    case Reason::kRfhEnforceInsecureNavigationsSet:
+    case Reason::kRfhEnforceInsecureRequestPolicy:
+    case Reason::kRfhHadStickyUserActivationBeforeNavigationChanged:
+    case Reason::kRfhUpdateIsAdFrame:
     case Reason::kNetworkRequestDatapipeDrainedAsBytesConsumer:
     case Reason::kUnknown:
       return Page::BackForwardCacheNotRestoredReasonTypeEnum::SupportPending;

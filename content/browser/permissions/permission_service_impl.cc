@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <set>
 #include <utility>
 
@@ -105,8 +106,15 @@ bool HasDuplicatesOrInvalidPermissions(
 // Permission.
 bool CheckPageEmbeddedPermissionTypes(
     const std::vector<PermissionDescriptorPtr>& permissions) {
+  if (permissions.empty()) {
+    return false;
+  }
   for (const auto& permission_type : permissions) {
-    auto type = blink::PermissionDescriptorToPermissionType(permission_type);
+    std::optional<blink::PermissionType> type =
+        blink::MaybePermissionDescriptorToPermissionType(permission_type);
+    if (!type.has_value()) {
+      return false;
+    }
     if (type != blink::PermissionType::GEOLOCATION &&
         type != blink::PermissionType::AUDIO_CAPTURE &&
         type != blink::PermissionType::VIDEO_CAPTURE) {

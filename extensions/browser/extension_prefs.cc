@@ -108,7 +108,9 @@ constexpr const char kPrefExternalAcknowledged[] = "ack_external";
 // run of this profile.
 constexpr const char kPrefExternalInstallFirstRun[] = "external_first_run";
 
-// A list of all the reasons an extension is disabled.
+// A list of all the reasons an extension is disabled. This used to be a
+// bitflag, but `MaybeMigrateDisableReasonsBitflagToList()` will convert it to a
+// list if it's still a bitflag.
 constexpr const char kPrefDisableReasons[] = "disable_reasons";
 
 // The key for a serialized Time value indicating the start of the day (from the
@@ -2217,6 +2219,11 @@ ExtensionPrefs::ExtensionPrefs(
       clock_(clock),
       extensions_disabled_(extensions_disabled) {
   MakePathsRelative();
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  // Migrate before observers and the pref value map read extension state.
+  MaybeMigrateDisableReasonsBitflagToList();
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
   // Ensure that any early observers are watching before prefs are initialized.
   for (auto* observer : early_observers)

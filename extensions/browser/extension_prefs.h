@@ -792,6 +792,9 @@ class ExtensionPrefs : public KeyedService {
 
   void RemoveRuntimeUserBlockedPermissions(const ExtensionId& extension_id,
                                            const PermissionSet& permissions);
+  // Performs a one-time migration of the legacy disable reasons bitflag to a
+  // list of disable reasons before extension state is initialized.
+  void MaybeMigrateDisableReasonsBitflagToList();
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 
  private:

@@ -9,9 +9,18 @@
 #include "content/browser/picture_in_picture/picture_in_picture_session.h"
 #include "content/browser/picture_in_picture/video_picture_in_picture_window_controller_impl.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
+#include "content/public/browser/disallow_activation_reason.h"
 #include "content/public/browser/web_contents_delegate.h"
 
 namespace content {
+namespace {
+
+bool IsFrameActive(RenderFrameHost& rfh) {
+  return !rfh.IsInactiveAndDisallowActivation(
+      DisallowActivationReasonId::kPictureInPictureService);
+}
+
+}  // namespace
 
 // static
 void PictureInPictureServiceImpl::Create(
@@ -39,6 +48,10 @@ void PictureInPictureServiceImpl::StartSession(
     mojo::PendingRemote<blink::mojom::PictureInPictureSessionObserver> observer,
     const gfx::Rect& source_bounds,
     StartSessionCallback callback) {
+  if (!IsFrameActive(render_frame_host())) {
+    return;
+  }
+
   gfx::Size window_size;
   mojo::PendingRemote<blink::mojom::PictureInPictureSession> session_remote;
 

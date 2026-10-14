@@ -665,4 +665,87 @@ TEST_F(PictureInPictureServiceImplTest, StartSessionExtNoExistingWindow) {
   EXPECT_TRUE(contents()->HasPictureInPictureVideo());
 }
 #endif
+
+TEST_F(PictureInPictureServiceImplTest,
+       StartSession_InactiveFrameRunningUnloadHandlers) {
+  main_test_rfh()->SetLifecycleState(
+      RenderFrameHostImpl::LifecycleStateImpl::kRunningUnloadHandlers);
+  ASSERT_FALSE(main_test_rfh()->IsActive());
+
+  const int kPlayerVideoOnlyId = 30;
+  const VideoPictureInPictureWindowControllerImpl* controller =
+      VideoPictureInPictureWindowControllerImpl::GetOrCreateForWebContents(
+          contents());
+  ASSERT_TRUE(controller);
+
+  EXPECT_CALL(delegate(), EnterPictureInPicture(contents()))
+      .WillRepeatedly(testing::Return(PictureInPictureResult::kSuccess));
+
+  mojo::PendingRemote<blink::mojom::PictureInPictureSessionObserver>
+      observer_remote;
+  viz::SurfaceId surface_id = viz::SurfaceId(
+      viz::FrameSinkId(1, 1),
+      viz::LocalSurfaceId(
+          11, base::UnguessableToken::CreateForTesting(0x111111, 0)));
+  mojo::Remote<blink::mojom::PictureInPictureSession> session_remote;
+  gfx::Size window_size_out;
+  const gfx::Rect source_bounds(1, 2, 3, 4);
+  service().StartSession(
+      kPlayerVideoOnlyId, BindMediaPlayerReceiverAndPassRemote(), surface_id,
+      gfx::Size(42, 42), true /* show_play_pause_button */,
+      std::move(observer_remote), source_bounds,
+      base::BindLambdaForTesting(
+          [&](mojo::PendingRemote<blink::mojom::PictureInPictureSession> remote,
+              const gfx::Size& b) {
+            if (remote.is_valid())
+              session_remote.Bind(std::move(remote));
+            window_size_out = b;
+          }));
+
+  EXPECT_FALSE(controller->active_session_for_testing());
+  EXPECT_FALSE(session_remote);
+  EXPECT_EQ(gfx::Size(), window_size_out);
+}
+
+TEST_F(PictureInPictureServiceImplTest,
+       StartSession_InactiveFrameInBackForwardCache) {
+  main_test_rfh()->SetLifecycleState(
+      RenderFrameHostImpl::LifecycleStateImpl::kInBackForwardCache);
+  ASSERT_FALSE(main_test_rfh()->IsActive());
+
+  const int kPlayerVideoOnlyId = 30;
+  const VideoPictureInPictureWindowControllerImpl* controller =
+      VideoPictureInPictureWindowControllerImpl::GetOrCreateForWebContents(
+          contents());
+  ASSERT_TRUE(controller);
+
+  EXPECT_CALL(delegate(), EnterPictureInPicture(contents()))
+      .WillRepeatedly(testing::Return(PictureInPictureResult::kSuccess));
+
+  mojo::PendingRemote<blink::mojom::PictureInPictureSessionObserver>
+      observer_remote;
+  viz::SurfaceId surface_id = viz::SurfaceId(
+      viz::FrameSinkId(1, 1),
+      viz::LocalSurfaceId(
+          11, base::UnguessableToken::CreateForTesting(0x111111, 0)));
+  mojo::Remote<blink::mojom::PictureInPictureSession> session_remote;
+  gfx::Size window_size_out;
+  const gfx::Rect source_bounds(1, 2, 3, 4);
+  service().StartSession(
+      kPlayerVideoOnlyId, BindMediaPlayerReceiverAndPassRemote(), surface_id,
+      gfx::Size(42, 42), true /* show_play_pause_button */,
+      std::move(observer_remote), source_bounds,
+      base::BindLambdaForTesting(
+          [&](mojo::PendingRemote<blink::mojom::PictureInPictureSession> remote,
+              const gfx::Size& b) {
+            if (remote.is_valid())
+              session_remote.Bind(std::move(remote));
+            window_size_out = b;
+          }));
+
+  EXPECT_FALSE(controller->active_session_for_testing());
+  EXPECT_FALSE(session_remote);
+  EXPECT_EQ(gfx::Size(), window_size_out);
+}
+
 }  // namespace content

@@ -109,6 +109,10 @@ struct BLINK_COMMON_EXPORT RendererPreferences {
   bool is_custom_reader_mode_enabled{false};
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  bool blank_screen_monitor_enabled{false};
+#endif
+
   // The default value must be false to avoid performance problems on very large
   // source pages.
   bool view_source_line_wrap_enabled{false};

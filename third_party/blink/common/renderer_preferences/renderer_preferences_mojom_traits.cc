@@ -132,6 +132,10 @@ bool StructTraits<blink::mojom::RendererPreferencesDataView,
   out->is_custom_reader_mode_enabled = data.is_custom_reader_mode_enabled();
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  out->blank_screen_monitor_enabled = data.blank_screen_monitor_enabled();
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
   out->uses_platform_autofill = data.uses_platform_autofill();
 #endif  // BUILDFLAG(IS_ANDROID)

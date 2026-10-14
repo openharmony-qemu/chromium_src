@@ -696,7 +696,9 @@
 
             if (!isMetaTag) {
                 if (rect.width < 0.5 && rect.height < 0.5) continue;
-                if (rect.width === 0 || rect.height === 0) continue;
+                if (rect.width === 0 || rect.height === 0) {
+                    if (!element.children.length) continue;
+                }
             }
 
             const role = element.getAttribute('role') || html5ToAriaRole[element.tagName];
@@ -869,7 +871,9 @@
 
             if (!isMetaTag) {
                 if (rect.width < 0.5 && rect.height < 0.5) continue;
-                if (rect.width === 0 || rect.height === 0) continue;
+                if (rect.width === 0 || rect.height === 0) {
+                    if (!element.children.length) continue;
+                }
             }
 
             const role = element.getAttribute('role') || html5ToAriaRole[element.tagName];

@@ -58,9 +58,6 @@ class AudioSourceProvider {
   // changes.
   virtual void SetClient(AudioSourceProviderClient*) = 0;
 
-  // Connect to the destination node.
-  virtual void ConnectToDestinationReady() {}
-
 #if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
   // Sets a callback to invoke when the source pause state changes.
   // Default implementation does nothing.

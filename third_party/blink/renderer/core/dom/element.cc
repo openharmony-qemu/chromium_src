@@ -4022,7 +4022,12 @@ Node::InsertionNotificationRequest Element::InsertedInto(
 
   auto* parent = ParentOrShadowHostElement();
   if (parent && parent->IsCanvasOrInCanvasSubtree()) {
-    SetIsCanvasOrInCanvasSubtree(true);
+    const auto* slot = ToHTMLSlotElementIfSupportsAssignmentOrNull(*parent);
+    const bool is_inactive_fallback_content =
+        slot && !slot->AssignedNodesNoRecalc().empty();
+    if (!IsChildOfShadowHost() && !is_inactive_fallback_content) {
+      SetIsCanvasOrInCanvasSubtree(true);
+    }
   }
 
   if (AnchorElementObserver* observer = GetAnchorElementObserver()) {
@@ -4224,12 +4229,21 @@ void Element::SetIsCanvasOrInCanvasSubtree(bool value) {
         child->SetIsCanvasOrInCanvasSubtree(value);
       }
     }
-  }
-  for (Element& child : ElementTraversal::ChildrenOf(*this)) {
-    if (!child.IsPseudoElement() && child.AssignedSlotWithoutRecalc()) {
-      continue;
+    // Fallback content
+    for (Element& child : ElementTraversal::ChildrenOf(*this)) {
+      if (!child.IsPseudoElement() && child.AssignedSlotWithoutRecalc()) {
+        continue;
+      }
+      child.SetIsCanvasOrInCanvasSubtree(
+          value && slot->AssignedNodesNoRecalc().empty());
     }
-    child.SetIsCanvasOrInCanvasSubtree(value);
+  } else {
+    for (Element& child : ElementTraversal::ChildrenOf(*this)) {
+      if (!child.IsPseudoElement() && child.AssignedSlotWithoutRecalc()) {
+        continue;
+      }
+      child.SetIsCanvasOrInCanvasSubtree(value);
+    }
   }
 }
 

@@ -44,6 +44,7 @@
 #include "services/network/public/mojom/url_loader_network_service_observer.mojom.h"
 #include "services/network/public/mojom/url_response_head.mojom.h"
 #include "url/gurl.h"
+#include "url/origin.h"
 
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
 #include "arkweb/chromium_ext/services/network/cors/preflight_controller_for_include.cc"
@@ -487,9 +488,12 @@ class PreflightController::PreflightLoader final {
 
     if (!(original_request_.load_flags & net::LOAD_DISABLE_CACHE) &&
         net_error == net::OK) {
-      controller_->AppendToCache(*original_request_.request_initiator,
-                                 original_request_.url, network_isolation_key_,
-                                 std::move(result));
+      if (!tainted_ || !base::FeatureList::IsEnabled(
+                           features::kCorsPreflightCacheKeyTaintedOrigin)) {
+        controller_->AppendToCache(*original_request_.request_initiator,
+                                   original_request_.url,
+                                   network_isolation_key_, std::move(result));
+      }
     }
 
     std::move(completion_callback_)
@@ -622,6 +626,8 @@ void PreflightController::PerformPreflightCheck(
                 ? request.trusted_params->isolation_info.network_isolation_key()
                 : net::NetworkIsolationKey();
   if (!RetrieveCacheFlags(request.load_flags) &&
+      (!tainted || !base::FeatureList::IsEnabled(
+                       features::kCorsPreflightCacheKeyTaintedOrigin)) &&
       cache_.CheckIfRequestCanSkipPreflight(
           request.request_initiator.value(), request.url, network_isolation_key,
           request.credentials_mode, request.method, request.headers,

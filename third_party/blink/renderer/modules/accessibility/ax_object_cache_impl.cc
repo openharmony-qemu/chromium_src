@@ -4836,6 +4836,13 @@ void AXObjectCacheImpl::HandleAttributeChanged(const QualifiedName& attr_name,
       MarkElementDirty(document_);
     }
   }
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  if (attr_name.LocalName() == "data-accessibilitydescription") {
+    LOG(DEBUG) << "AXObjectCacheImpl::HandleAttributeChanged case "
+                  "data-accessibilitydescription MarkElementDirty";
+    MarkElementDirty(element);
+  }
+#endif
 }
 
 void AXObjectCacheImpl::HandleUseMapAttributeChangedWithCleanLayout(

@@ -3575,6 +3575,32 @@ String AXNodeObject::AutoComplete() const {
   return String();
 }
 
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+void AXNodeObject::SerializeArkWebHtmlAttributes(
+    ui::AXNodeData* node_data) const {
+  // Inject attributes to the HTML role, only for embed now
+  Element* element_node = DynamicTo<Element>(GetNode());
+  if (!element_node || !node_data) {
+    return;
+  }
+
+  bool is_embed = element_node->tagName() == "EMBED";
+  for (const Attribute& attr : element_node->Attributes()) {
+    std::string name = attr.GetName().LocalName().LowerASCII().Utf8();
+    if (is_embed && base::EqualsCaseInsensitiveASCII(name, "id")) {
+      std::string value = attr.Value().Utf8();
+      LOG(DEBUG) << "embed html element id: " << value;
+      node_data->html_attributes.push_back(std::make_pair(name, value));
+    }
+    if (base::EqualsCaseInsensitiveASCII(name,
+                                         "data-accessibilityDescription")) {
+      std::string value = attr.Value().Utf8();
+      node_data->html_attributes.push_back(std::make_pair(name, value));
+    }
+  }
+}
+#endif
+
 // TODO(nektar): Consider removing this method in favor of
 // AXInlineTextBox::GetDocumentMarkers, or add document markers to the tree data
 // instead of nodes objects.
@@ -3582,19 +3608,7 @@ void AXNodeObject::SerializeMarkerAttributes(ui::AXNodeData* node_data) const {
   if (!GetNode() || !GetDocument() || !GetDocument()->View())
     return;
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  // Inject attributes to the HTML role, only for embed now
-  Element *element_node = DynamicTo<Element>(GetNode());
-  if (element_node && node_data && element_node->tagName() == "EMBED") {
-    for (const Attribute &attr : element_node->Attributes()) {
-      std::string name = attr.GetName().LocalName().LowerASCII().Utf8();
-      if (base::EqualsCaseInsensitiveASCII(name, "id")) {
-        std::string value = attr.Value().Utf8();
-        LOG(DEBUG) << "embed html element id: " << value;
-        node_data->html_attributes.push_back(std::make_pair(name, value));
-        break;
-      }
-    }
-  }
+  SerializeArkWebHtmlAttributes(node_data);
 #endif
   auto* text_node = DynamicTo<Text>(GetNode());
   if (!text_node)

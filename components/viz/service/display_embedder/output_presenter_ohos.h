@@ -96,7 +96,7 @@ class VIZ_SERVICE_EXPORT OutputPresenterOHOS : public OutputPresenter {
       const OutputPresenter::OverlayPlaneCandidate& overlay_plane_candidate,
       ScopedOverlayAccess* access) final override;
 #if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
-  void DiscardCompositingResources(bool is_clean_all) final override;
+  void DiscardCompositingResources(bool is_clean_all, bool is_clean_video_surface) final override;
 #endif
 
  private:

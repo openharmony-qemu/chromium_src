@@ -440,7 +440,7 @@ bool OutputPresenterOHOS::Reshape(const ReshapeParams& params) {
     auto rect = gfx::RectF(GetRotatedSize(size_, transform_));
     root_surface_->SetBounds(rect);
   }
-  DiscardCompositingResources(false);
+  DiscardCompositingResources(false, false);
   return true;
 }
 
@@ -775,20 +775,21 @@ void OutputPresenterOHOS::OnOverlayReleased(OH_NativeBuffer* buffer,
   }
 }
 
-void OutputPresenterOHOS::DiscardCompositingResources(bool is_clean_all) {
+void OutputPresenterOHOS::DiscardCompositingResources(bool is_clean_all, bool is_clean_video_surface) {
   LOG(INFO) << "DelegateDebug call ClearBufferQueueCache id: " << dependency_->GetSurfaceHandle();
   for (const auto& surface : previous_frame_) {
-    if (surface) {
+    if (surface && (surface->name() == "delegate_child" || is_clean_video_surface)) {
       surface->ClearBufferQueueCache(transaction_, is_clean_all);
     }
   }
 
-  for (auto& [buffer, access_info] : in_used_buffers_) {
-    if (auto access = access_info.first) {
-      access->InUseByWindowServerDec();
+  for (auto it = in_used_buffers_.begin(); it != in_used_buffers_.end();) {
+    if (it->second.second) {
+      it = in_used_buffers_.erase(it);
+    } else {
+      ++it;
     }
   }
-  in_used_buffers_.clear();
 
   while (!completion_datas_.empty()) {
     auto& data = completion_datas_.front();

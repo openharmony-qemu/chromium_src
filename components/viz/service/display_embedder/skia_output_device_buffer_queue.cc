@@ -532,9 +532,9 @@ bool SkiaOutputDeviceBufferQueue::Reshape(const ReshapeParams& params) {
 }
 
 #if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
-void SkiaOutputDeviceBufferQueue::DiscardCompositingResources(bool is_clean_all) {
+void SkiaOutputDeviceBufferQueue::DiscardCompositingResources(bool is_clean_all, bool is_clean_video_surface) {
   if (presenter_) {
-    presenter_->DiscardCompositingResources(is_clean_all);
+    presenter_->DiscardCompositingResources(is_clean_all, is_clean_video_surface);
   }
 }
 #endif

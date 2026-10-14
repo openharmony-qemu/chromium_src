@@ -33,8 +33,13 @@ void ServiceWorkerForwardedRaceNetworkRequestURLLoaderFactory::
         mojo::PendingRemote<network::mojom::URLLoaderClient> client,
         const net::MutableNetworkTrafficAnnotationTag& traffic_annotation) {
   if (!is_data_pipe_fused_) {
-    // If the member data pipes are still not fused to mojo endpoints, fuse them
-    // to reuse the response.
+    // We fuse the URLLoaderClient pipes directly. The URLLoaderClient is a data
+    // delivery channel (outgoing from the network process to the renderer) and
+    // does not expose any control methods that the renderer can use to drive
+    // the network process. Note that
+    // ServiceWorkerRaceNetworkRequestURLLoaderClient omits navigation-only
+    // response head fields (such as load_timing_internal_info and ssl_info)
+    // before forwarding responses or redirects over this channel.
     bool result =
         mojo::FusePipes(std::move(client_receiver_), std::move(client));
     CHECK(result) << resource_request.url;

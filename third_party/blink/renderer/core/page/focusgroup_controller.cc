@@ -28,6 +28,9 @@ bool FocusgroupController::HandleArrowKeyboardEvent(KeyboardEvent* event,
                                                     const LocalFrame* frame) {
   DCHECK(frame);
   DCHECK(frame->DomWindow());
+  if (!event->isTrusted()) {
+    return false;
+  }
   ExecutionContext* context = frame->DomWindow()->GetExecutionContext();
   DCHECK(RuntimeEnabledFeatures::FocusgroupEnabled(context));
 

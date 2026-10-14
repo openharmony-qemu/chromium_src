@@ -58,6 +58,8 @@ extern "C" typedef struct AHardwareBuffer AHardwareBuffer;
 #endif
 
 #if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+#include "base/memory/weak_ptr.h"
+
 extern "C" typedef struct OH_NativeBuffer OH_NativeBuffer;
 #endif
 
@@ -1004,6 +1006,9 @@ class GPU_GLES2_EXPORT OverlayImageRepresentation
     scoped_refptr<gfx::NativePixmap> GetNativePixmap() {
       return representation()->GetNativePixmap();
     }
+    base::WeakPtr<ScopedReadAccess> GetWeakPtr() {
+      return weak_factory_.GetWeakPtr();
+    }
 #elif BUILDFLAG(IS_OZONE)
     scoped_refptr<gfx::NativePixmap> GetNativePixmap() {
       return representation()->GetNativePixmap();
@@ -1036,6 +1041,9 @@ class GPU_GLES2_EXPORT OverlayImageRepresentation
    private:
     gfx::GpuFenceHandle acquire_fence_;
     gfx::GpuFenceHandle release_fence_;
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+    base::WeakPtrFactory<ScopedReadAccess> weak_factory_{this};
+#endif
   };
 
   std::unique_ptr<ScopedReadAccess> BeginScopedReadAccess();

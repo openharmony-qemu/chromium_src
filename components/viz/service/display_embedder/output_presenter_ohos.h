@@ -126,17 +126,17 @@ class VIZ_SERVICE_EXPORT OutputPresenterOHOS : public OutputPresenter {
   OHOS::NWeb::SurfaceTransactionAdapter& transaction_adapter_;
 
   std::unique_ptr<SurfaceControl> root_surface_;
-  ScopedOverlayAccess* root_overlay_access_ = nullptr;
+  base::WeakPtr<ScopedOverlayAccess> root_overlay_access_;
   std::deque<std::unique_ptr<SurfaceControl>> pending_frame_;
   std::deque<std::unique_ptr<SurfaceControl>> previous_frame_;
 
   struct CompletionData {
     SwapCompletionCallback callback;
-    ScopedOverlayAccess* access = nullptr;
+    base::WeakPtr<ScopedOverlayAccess> access;
     bool completed = false;
   };
   base::circular_deque<CompletionData> completion_datas_;
-  base::flat_map<OH_NativeBuffer*, std::pair<ScopedOverlayAccess*, bool>>
+  base::flat_map<OH_NativeBuffer*, std::pair<base::WeakPtr<ScopedOverlayAccess>, bool>>
       in_used_buffers_;
   base::circular_deque<BufferPresentedCallback> presentation_callbacks_;
   using OnCompleteCallback = base::RepeatingCallback<void(uint64_t timestamp)>;

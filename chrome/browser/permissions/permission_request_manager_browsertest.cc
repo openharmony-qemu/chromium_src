@@ -1561,7 +1561,7 @@ IN_PROC_BROWSER_TEST_F(PermissionRequestManagerWithFencedFrameTest,
          const content::WebContentsConsoleObserver::Message& message) {
         return message.source_frame == render_frame_host;
       },
-      fenced_frame_host->GetOutermostMainFrame()));
+      fenced_frame_host));
   console_observer.SetPattern(kExpectedConsolePattern);
 
   base::MockOnceCallback<void(content::PermissionResult)> callback;

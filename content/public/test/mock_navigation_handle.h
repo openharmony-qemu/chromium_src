@@ -278,6 +278,8 @@ class MockNavigationHandle : public NavigationHandle {
               ());
   MOCK_METHOD(bool, NeedsUrlLoader, ());
   MOCK_METHOD(bool, IsInitialWebUISyncNavigation, ());
+  MOCK_METHOD(void, SetBypassRedirectChecksForNextRedirect, (bool));
+  MOCK_METHOD(bool, ConsumeBypassRedirectChecksForNextRedirect, ());
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
   MOCK_METHOD(void, SetCustomViewportWidth, (int32_t));

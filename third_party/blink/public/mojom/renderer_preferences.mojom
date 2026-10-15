@@ -220,6 +220,9 @@ struct RendererPreferences {
   [EnableIf=arkweb_reader_mode]
   bool is_custom_reader_mode_enabled = false;
 
+  [EnableIf=arkweb_blank_screen_monitor]
+  bool blank_screen_monitor_enabled = false;
+
   // Whether line wrapping should be enabled by default in view source pages.
   bool view_source_line_wrap_enabled = false;
 

@@ -425,6 +425,16 @@ HighlightStyleUtils::HighlightPaintingStyle(
     }
     highlight_style.selection_decoration_lines = TextDecorationLine::kNone;
     highlight_style.selection_decoration_color = Color::kBlack;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    // When painting the selection drag image, force a visible fill color.
+    // The kSelectionDragImageOnly flag sets ignored_selection=true, which
+    // skips the color resolution block below (including the InSelectionDragging
+    // kLightGray override). Without this, elements with transparent
+    // -webkit-text-fill-color produce an invisible drag preview.
+    if (paint_flags & PaintFlag::kSelectionDragImageOnly) {
+      highlight_style.fill_color = Color::kLightGray;
+    }
+#endif
   }
   Color text_decoration_color = Color::kBlack;
   Color background_color = Color::kTransparent;

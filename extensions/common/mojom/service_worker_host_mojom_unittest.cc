@@ -5,6 +5,7 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/test/task_environment.h"
 #include "extensions/common/extension_id.h"
 #include "extensions/common/mojom/event_dispatcher.mojom.h"
@@ -86,6 +87,13 @@ class TestServiceWorkerHostImpl : public mojom::ServiceWorkerHost {
       mojo::PendingAssociatedRemote<mojom::MessagePort> port,
       mojo::PendingAssociatedReceiver<mojom::MessagePortHost> port_host)
       override {}
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+  void OpenChannelToBrowser(
+      const PortId& port_id,
+      mojo::PendingAssociatedRemote<mojom::MessagePort> port,
+      mojo::PendingAssociatedReceiver<mojom::MessagePortHost> port_host)
+      override {}
+#endif
   void OpenChannelToTab(int32_t tab_id,
                         int32_t frame_id,
                         const std::optional<std::string>& document_id,

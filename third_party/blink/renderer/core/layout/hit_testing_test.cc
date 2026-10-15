@@ -313,6 +313,42 @@ TEST_F(HitTestingTest, OcclusionHitTestWith3DTransform) {
   EXPECT_EQ(result.InnerNode(), target);
 }
 
+TEST_F(HitTestingTest, ReferenceFilter) {
+  SetBodyInnerHTML(R"HTML(
+<style>
+  #target {
+    position:absolute;
+    top:100px;
+    left:100px;
+    width:100px;
+    height:100px;
+    background-color:blue;
+    filter:url(#displace);
+  }
+</style>
+<div id="target"></div>
+<svg width="100" height="100" viewBox="0 0 100 100">
+  <filter id="displace">
+      <feFlood />
+      <feDisplacementMap
+        scale="250"
+        xChannelSelector="R"
+        yChannelSelector="G" />
+  </filter>
+</svg>
+  )HTML");
+
+  Element* target = GetElementById("target");
+  LayoutBox* box = To<LayoutBox>(target->GetLayoutObject());
+  EXPECT_EQ(box->VisualOverflowRectIncludingFilters(),
+            PhysicalRect(-10, -10, 120, 120));
+
+  target->SetInlineStyleProperty(CSSPropertyID::kOpacity, "1");
+  UpdateAllLifecyclePhasesForTest();
+  EXPECT_EQ(box->VisualOverflowRectIncludingFilters(),
+            PhysicalRect(-10, -10, 120, 120));
+}
+
 }  // namespace blink
 
 #if BUILDFLAG(ARKWEB_TEST)

@@ -6981,6 +6981,83 @@ TEST_F(RenderWidgetHostViewAuraInputMethodTest,
   GetInputMethod()->RemoveObserver(this);
 }
 
+// Mock InputMethod that runs a closure when
+// SetVirtualKeyboardVisibilityIfEnabled is invoked. Simulates re-entrant
+// destruction of RenderWidgetHostViewAura during virtual keyboard show/hide.
+class DestroyingMockInputMethod : public ui::MockInputMethod {
+ public:
+  DestroyingMockInputMethod() : ui::MockInputMethod(nullptr) {}
+
+  void SetVirtualKeyboardVisibilityIfEnabled(bool should_show) override {
+    ui::MockInputMethod::SetVirtualKeyboardVisibilityIfEnabled(should_show);
+    if (on_set_virtual_keyboard_visibility_if_enabled_) {
+      std::move(on_set_virtual_keyboard_visibility_if_enabled_).Run();
+    }
+  }
+
+  void set_on_set_virtual_keyboard_visibility_if_enabled(
+      base::OnceClosure closure) {
+    on_set_virtual_keyboard_visibility_if_enabled_ = std::move(closure);
+  }
+
+ private:
+  base::OnceClosure on_set_virtual_keyboard_visibility_if_enabled_;
+};
+
+class RenderWidgetHostViewAuraReentrantDestructionIME
+    : public RenderWidgetHostViewAuraTest {
+ public:
+  void SetUp() override {
+    input_method_ = new DestroyingMockInputMethod();
+    // Ownership is transferred to the WindowTreeHost via the InputMethod
+    // factory; see SetUpInputMethodForTesting().
+    ui::SetUpInputMethodForTesting(input_method_);
+    SetUpEnvironment();
+  }
+
+  void TearDown() override {
+    input_method_ = nullptr;
+    RenderWidgetHostViewAuraTest::TearDown();
+  }
+
+ protected:
+  raw_ptr<DestroyingMockInputMethod> input_method_ = nullptr;
+};
+
+// RWHVA::OnUpdateTextInputStateCalled() calls
+// GetInputMethod()->SetVirtualKeyboardVisibilityIfEnabled(true) when the state
+// indicates that the virtual keyboard should be shown. If an observer or
+// virtual keyboard controller pumps messages and the view is destroyed
+// re-entrantly (e.g. on ChromeOS where KeyboardUIController runs the keyboard
+// show/hide cascade), on unwind the function must not dereference freed view
+// pointers or stale text input state.
+TEST_F(RenderWidgetHostViewAuraReentrantDestructionIME,
+       DestroyDuringSetVirtualKeyboardVisibilityIfEnabled) {
+  InitViewForFrame(nullptr);
+  ParentHostView(view_, parent_view_);
+  // `view_` shares the root window (and thus the InputMethod) with
+  // `parent_view_`.
+  ASSERT_EQ(static_cast<ui::InputMethod*>(input_method_.get()),
+            GetInputMethod());
+
+  // The virtual-keyboard branch requires the view to be the InputMethod's
+  // focused text input client.
+  input_method_->SetFocusedTextInputClient(view_.get());
+
+  // Arrange for the view to be synchronously destroyed inside
+  // SetVirtualKeyboardVisibilityIfEnabled.
+  input_method_->set_on_set_virtual_keyboard_visibility_if_enabled(
+      base::BindLambdaForTesting([&]() {
+        widget_host_ = nullptr;
+        view_.ExtractAsDangling()->Destroy();
+      }));
+
+  ui::mojom::TextInputState state;
+  state.type = ui::TEXT_INPUT_TYPE_TEXT;
+  state.mode = ui::TEXT_INPUT_MODE_TEXT;
+  state.show_ime_if_needed = true;
+  GetTextInputManager(view_.get())->UpdateTextInputState(view_.get(), state);
+}
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
 class MockVirtualKeyboardController final
     : public ui::VirtualKeyboardController {

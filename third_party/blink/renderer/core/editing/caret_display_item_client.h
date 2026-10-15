@@ -38,12 +38,12 @@
 #include "third_party/blink/renderer/platform/heap/member.h"
 #include "ui/gfx/selection_bound.h"
 
-#if BUILDFLAG(ARKWEB_MENU)
+#if BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(ARKWEB_CARET_COLOR)
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/caret_display_item_client_utils.h"
-#endif  // BUILDFLAG(ARKWEB_MENU)
+#endif  // BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(ARKWEB_CARET_COLOR)
 
 namespace blink {
-#if BUILDFLAG(ARKWEB_MENU)
+#if BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(ARKWEB_CARET_COLOR)
 class CaretDisplayItemClientUtils;
 #endif
 class GraphicsContext;
@@ -130,9 +130,9 @@ class CORE_EXPORT CaretDisplayItemClient final
   Member<const LayoutBlock> previous_layout_block_;
 
   WeakMember<const PhysicalBoxFragment> box_fragment_;
-#if BUILDFLAG(ARKWEB_MENU)
+#if BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(ARKWEB_CARET_COLOR)
   Member<CaretDisplayItemClientUtils> caret_display_item_client_utils_;
-#endif // BUILDFLAG(ARKWEB_MENU)
+#endif // BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(ARKWEB_CARET_COLOR)
   bool is_active_ = false;
   bool needs_paint_invalidation_ = false;
 };

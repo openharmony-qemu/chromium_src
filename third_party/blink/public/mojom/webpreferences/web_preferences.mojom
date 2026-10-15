@@ -243,6 +243,9 @@ struct WebPreferences {
   [EnableIf=arkweb_scrollbar]
   uint32 scrollbar_color;
 
+  [EnableIf=arkweb_caret_color]
+  uint32 caret_color = 0;
+
   [EnableIf=arkweb_media_cast]
   bool cast_enabled = false;
 

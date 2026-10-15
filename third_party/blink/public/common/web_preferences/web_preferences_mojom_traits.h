@@ -1073,6 +1073,12 @@ struct BLINK_COMMON_EXPORT StructTraits<blink::mojom::WebPreferencesDataView,
   }
 #endif  // defined(ARKWEB_SCROLLBAR)
 
+#if BUILDFLAG(ARKWEB_CARET_COLOR)
+  static uint32_t caret_color(const blink::web_pref::WebPreferences& r) {
+    return r.caret_color;
+  }
+#endif  // BUILDFLAG(ARKWEB_CARET_COLOR)
+
 #if BUILDFLAG(ARKWEB_NIGHT_MODE)
   static bool night_mode_enabled(const blink::web_pref::WebPreferences& r) {
     return r.night_mode_enabled;

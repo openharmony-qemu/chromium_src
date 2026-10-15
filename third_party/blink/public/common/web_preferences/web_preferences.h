@@ -367,6 +367,9 @@ struct BLINK_COMMON_EXPORT WebPreferences {
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
   uint32_t scrollbar_color;
 #endif  // BUILDFLAG(ARKWEB_SCROLLBAR)
+#if BUILDFLAG(ARKWEB_CARET_COLOR)
+  uint32_t caret_color = 0;
+#endif  // BUILDFLAG(ARKWEB_CARET_COLOR)
 #if BUILDFLAG(ARKWEB_MEDIA_CAST)
   bool cast_enabled = false;
 #endif

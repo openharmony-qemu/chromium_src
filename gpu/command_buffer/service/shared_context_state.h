@@ -144,8 +144,8 @@ class GPU_GLES2_EXPORT SharedContextState
                     scoped_refptr<gles2::FeatureInfo> feature_info);
   bool IsGLInitialized() const { return !!feature_info_; }
 
-  void FlushAndSubmit(bool sync_to_cpu);
-  void FlushWriteAccess(SkiaImageRepresentation::ScopedWriteAccess* access);
+  bool FlushAndSubmit(bool sync_to_cpu);
+  bool FlushWriteAccess(SkiaImageRepresentation::ScopedWriteAccess* access);
   void SubmitIfNecessary(std::vector<GrBackendSemaphore> signal_semaphores,
                          bool need_graphite_submit);
 

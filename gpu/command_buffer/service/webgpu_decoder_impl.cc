@@ -883,8 +883,9 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
 
       // It's ok to pass in empty GrFlushInfo here since SignalSemaphores()
       // will populate it with semaphores and call GrDirectContext::flush.
+      success = true;
       if (shared_context_state_->gr_context()) {
-        skgpu::ganesh::Flush(surface);
+        success = skgpu::ganesh::Flush(surface).fSuccess;
       } else {
         DCHECK(shared_context_state_->graphite_shared_context());
         DCHECK(shared_context_state_->gpu_main_graphite_recorder());
@@ -2492,7 +2493,10 @@ bool WebGPUDecoderImpl::ClearSharedImageWithSkia(const Mailbox& mailbox) {
   // It's ok to pass in empty GrFlushInfo here since SignalSemaphores()
   // will populate it with semaphores and call GrDirectContext::flush.
   if (shared_context_state_->gr_context()) {
-    skgpu::ganesh::Flush(surface);
+    if (!skgpu::ganesh::Flush(surface).fSuccess) {
+      DLOG(ERROR) << "ClearSharedImage: skgpu::ganesh::Flush failed";
+      return false;
+    }
   } else {
     DCHECK(shared_context_state_->graphite_shared_context());
     DCHECK(shared_context_state_->gpu_main_graphite_recorder());

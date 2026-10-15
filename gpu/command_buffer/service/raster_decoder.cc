@@ -909,6 +909,8 @@ class RasterDecoderImpl final : public RasterDecoder,
   float sk_surface_hdr_headroom_ = 1.f;
   std::unique_ptr<SharedImageProviderImpl> paint_op_shared_image_provider_;
 
+  bool should_clear_shared_image_ = false;
+
   sk_sp<SkSurface> sk_surface_for_testing_;
   std::vector<GrBackendSemaphore> end_semaphores_;
   std::unique_ptr<cc::ServicePaintCache> paint_cache_;
@@ -2804,6 +2806,7 @@ void RasterDecoderImpl::DoBeginRasterCHROMIUM(GLfloat r,
   FlushToWorkAroundMacCrashes();
 
   performed_raster_ = true;
+  should_clear_shared_image_ = false;
 
   if (sk_surface_) {
     LOCAL_SET_GL_ERROR(GL_INVALID_OPERATION, "glBeginRasterCHROMIUM",
@@ -2957,9 +2960,10 @@ void RasterDecoderImpl::DoBeginRasterCHROMIUM(GLfloat r,
   // incorrect.
   if (needs_clear) {
     raster_canvas_->drawColor(sk_color_4f, SkBlendMode::kSrc);
-    shared_image_->SetCleared();
+    // Remember that we can mark the shared image as cleared if the deferred
+    // GPU work is flushed successfully.
+    should_clear_shared_image_ = true;
   }
-  DCHECK(shared_image_->IsCleared());
 }
 
 scoped_refptr<Buffer> RasterDecoderImpl::GetShmBuffer(uint32_t shm_id) {
@@ -3143,7 +3147,8 @@ void RasterDecoderImpl::DoEndRasterCHROMIUM() {
     // scoped_shared_image_write_ can be nullptr if sk_surface_ was set by
     // SetUpForRasterCHROMIUMForTest.
     if (scoped_shared_image_write_) {
-      shared_context_state_->FlushWriteAccess(scoped_shared_image_write_.get());
+      bool flush_success = shared_context_state_->FlushWriteAccess(
+          scoped_shared_image_write_.get());
       // Flushing surface will cause vulkan command buffer to be recorded with
       // image layout transitions as necessary. Transitioning layout back to
       // desired need to be happening after.
@@ -3153,6 +3158,9 @@ void RasterDecoderImpl::DoEndRasterCHROMIUM() {
           scoped_shared_image_write_->NeedGraphiteContextSubmit();
       shared_context_state_->SubmitIfNecessary(std::move(end_semaphores_),
                                                need_graphite_submit);
+      if (flush_success && should_clear_shared_image_) {
+        shared_image_->SetCleared();
+      }
     } else {
       DCHECK(end_semaphores_.empty());
     }

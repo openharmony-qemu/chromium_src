@@ -237,9 +237,9 @@ bool GraphiteSharedContext::InsertRecordingImpl(
   return insert_status == skgpu::graphite::InsertStatus::kSuccess;
 }
 
-void GraphiteSharedContext::submit(skgpu::graphite::SyncToCpu syncToCpu) {
+bool GraphiteSharedContext::submit(skgpu::graphite::SyncToCpu syncToCpu) {
   AutoLock auto_lock(this);
-  CHECK(SubmitImpl(syncToCpu));
+  return SubmitImpl(syncToCpu);
 }
 
 bool GraphiteSharedContext::SubmitImpl(skgpu::graphite::SyncToCpu syncToCpu) {

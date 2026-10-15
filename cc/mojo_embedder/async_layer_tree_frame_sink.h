@@ -182,6 +182,12 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
   void SetTimeSourceOfInternalBeginFrameForTesting(
       std::unique_ptr<viz::DelayBasedTimeSource> source);
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  AsyncLayerTreeFrameSinkUtils* GetAsyncLayerTreeFrameSinkUtils() const {
+    return async_layer_tree_frame_sink_utils_;
+  }
+#endif
+
  private:
   friend class AsyncLayerTreeFrameSinkSimpleTest;
 

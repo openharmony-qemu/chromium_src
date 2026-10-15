@@ -922,6 +922,9 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds);
 #endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  void SetArkWebFrameSinkIdToFrameSink(const viz::FrameSinkId& frame_sink_id);
+#endif
 
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS) && BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
   void SetupScrollBy() override;

@@ -95,6 +95,7 @@
 #include "ui/views/controls/native/native_view_host.h"
 #include "ui/views/test/widget_activation_waiter.h"
 #include "ui/views/view.h"
+#include "ui/views/widget/any_widget_observer.h"
 #include "ui/views/widget/widget.h"
 #include "ui/views/window/dialog_delegate.h"
 
@@ -753,6 +754,94 @@ IN_PROC_BROWSER_TEST_F(TabDragControllerTest, GestureEndShouldEndDragTest) {
   HandleGestureEvent(tab_strip, &gesture_end);
   EXPECT_FALSE(TabDragController::IsActive());
   EXPECT_FALSE(tab_strip->GetDragContext()->IsDragSessionActive());
+}
+
+IN_PROC_BROWSER_TEST_F(TabDragControllerTest,
+                       DetachToNewBrowserWindowDestroyedDuringShow) {
+  TabStrip* tab_strip = GetTabStripForBrowser(browser());
+  if (!tab_strip->GetWidget()->IsMoveLoopSupported()) {
+    return;
+  }
+
+  AddTabsAndResetBrowser(browser(), 1);
+  Tab* tab1 = tab_strip->tab_at(1);
+  gfx::Point tab_1_center = GetCenterInScreenCoordinates(tab1);
+
+  ui::MouseEvent press_event(ui::EventType::kMousePressed,
+                             tab1->GetLocalBounds().CenterPoint(), tab_1_center,
+                             base::TimeTicks::Now(), ui::EF_LEFT_MOUSE_BUTTON,
+                             ui::EF_LEFT_MOUSE_BUTTON);
+  tab_strip->MaybeStartDrag(tab1, press_event, tab_strip->GetSelectionModel());
+  ASSERT_TRUE(TabDragController::IsActive());
+
+  TabDragController* controller =
+      tab_strip->GetDragContext()->GetDragController();
+  ASSERT_NE(controller, nullptr);
+
+  // First drag movement starts the drag session.
+  ASSERT_EQ(controller->Drag(tab_1_center + gfx::Vector2d(20, 0)),
+            TabDragController::Liveness::kAlive);
+
+  views::Widget* source_widget = tab_strip->GetWidget();
+  views::AnyWidgetObserver observer(views::test::AnyWidgetTestPasskey{});
+  bool closed_during_show = false;
+  observer.set_shown_callback(
+      base::BindLambdaForTesting([&](views::Widget* widget) {
+        if (widget != source_widget && !closed_during_show) {
+          closed_during_show = true;
+          widget->CloseNow();
+        }
+      }));
+
+  // Drag vertically enough to detach into a new browser window.
+  EXPECT_EQ(
+      controller->Drag(tab_1_center + gfx::Vector2d(0, GetDetachY(tab_strip))),
+      TabDragController::Liveness::kDeleted);
+  EXPECT_TRUE(closed_during_show);
+  EXPECT_FALSE(TabDragController::IsActive());
+}
+
+IN_PROC_BROWSER_TEST_F(TabDragControllerTest,
+                       DetachToNewBrowserDragEndedDuringShow) {
+  TabStrip* tab_strip = GetTabStripForBrowser(browser());
+  if (!tab_strip->GetWidget()->IsMoveLoopSupported()) {
+    return;
+  }
+
+  AddTabsAndResetBrowser(browser(), 1);
+  Tab* tab1 = tab_strip->tab_at(1);
+  gfx::Point tab_1_center = GetCenterInScreenCoordinates(tab1);
+
+  ui::MouseEvent press_event(ui::EventType::kMousePressed,
+                             tab1->GetLocalBounds().CenterPoint(), tab_1_center,
+                             base::TimeTicks::Now(), ui::EF_LEFT_MOUSE_BUTTON,
+                             ui::EF_LEFT_MOUSE_BUTTON);
+  tab_strip->MaybeStartDrag(tab1, press_event, tab_strip->GetSelectionModel());
+  ASSERT_TRUE(TabDragController::IsActive());
+
+  TabDragController* controller =
+      tab_strip->GetDragContext()->GetDragController();
+  ASSERT_NE(controller, nullptr);
+
+  ASSERT_EQ(controller->Drag(tab_1_center + gfx::Vector2d(20, 0)),
+            TabDragController::Liveness::kAlive);
+
+  views::Widget* source_widget = tab_strip->GetWidget();
+  views::AnyWidgetObserver observer(views::test::AnyWidgetTestPasskey{});
+  bool ended_during_show = false;
+  observer.set_shown_callback(
+      base::BindLambdaForTesting([&](views::Widget* widget) {
+        if (widget != source_widget && !ended_during_show) {
+          ended_during_show = true;
+          controller->EndDrag(EndDragReason::kCaptureLost);
+        }
+      }));
+
+  EXPECT_EQ(
+      controller->Drag(tab_1_center + gfx::Vector2d(0, GetDetachY(tab_strip))),
+      TabDragController::Liveness::kDeleted);
+  EXPECT_TRUE(ended_during_show);
+  EXPECT_FALSE(TabDragController::IsActive());
 }
 
 class DetachToBrowserTabDragControllerTest

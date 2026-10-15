@@ -201,6 +201,8 @@ class CORE_EXPORT HTMLPermissionElement
   FRIEND_TEST_ALL_PREFIXES(HTMLPermissionElementClickingEnabledTest,
                            UnclickableBeforeRegistered);
   FRIEND_TEST_ALL_PREFIXES(HTMLPermissionElementIntersectionTest,
+                           MovePEPCFromIframeAndDestroyIframe);
+  FRIEND_TEST_ALL_PREFIXES(HTMLPermissionElementIntersectionTest,
                            IntersectionChanged);
   FRIEND_TEST_ALL_PREFIXES(HTMLPermissionElementIntersectionTest,
                            IntersectionChangedDisableEnableDisable);

@@ -220,6 +220,14 @@ class CONTENT_EXPORT SharedWorkerHost : public blink::mojom::SharedWorkerHost,
   // be called right before deleting this instance.
   mojo::Remote<blink::mojom::SharedWorker> TerminateRemoteWorkerForTesting();
 
+  void set_client_security_state_for_testing(
+      network::mojom::ClientSecurityStatePtr client_security_state) {
+    worker_client_security_state_ = std::move(client_security_state);
+  }
+
+  // Computes the IsolationInfo used for WebSocket connections from this worker.
+  net::IsolationInfo ComputeIsolationInfoForWebSocket() const;
+
   base::WeakPtr<SharedWorkerHost> AsWeakPtr();
 
   net::NetworkIsolationPartition GetNetworkIsolationPartition() const;

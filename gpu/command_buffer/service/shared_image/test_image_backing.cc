@@ -404,6 +404,13 @@ std::unique_ptr<OverlayImageRepresentation> TestImageBacking::ProduceOverlay(
                                                           tracker);
 }
 
+std::unique_ptr<VideoImageRepresentation> TestImageBacking::ProduceVideo(
+    SharedImageManager* manager,
+    MemoryTypeTracker* tracker,
+    VideoDevice device) {
+  return std::make_unique<TestVideoImageRepresentation>(manager, this, tracker);
+}
+
 bool TestOverlayImageRepresentation::BeginReadAccess(
     gfx::GpuFenceHandle& acquire_fence) {
   return true;
@@ -424,5 +431,23 @@ bool TestOverlayImageRepresentation::IsInUseByWindowServer() const {
   return static_cast<TestImageBacking*>(backing())->in_use_by_window_server();
 }
 #endif  // BUILDFLAG(IS_APPLE)
+
+bool TestVideoImageRepresentation::BeginWriteAccess() {
+  return true;
+}
+
+void TestVideoImageRepresentation::EndWriteAccess() {}
+
+bool TestVideoImageRepresentation::BeginReadAccess() {
+  return true;
+}
+
+void TestVideoImageRepresentation::EndReadAccess() {}
+
+#if BUILDFLAG(IS_ANDROID)
+AHardwareBuffer* TestVideoImageRepresentation::GetAHardwareBuffer() const {
+  return nullptr;
+}
+#endif
 
 }  // namespace gpu

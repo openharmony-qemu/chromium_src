@@ -152,8 +152,13 @@
 #include "ui/gfx/geometry/transform.h"
 
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+#include "base/strings/string_number_conversions.h"
+#include "third_party/blink/renderer/core/css/css_image_value.h"
 #include "third_party/blink/renderer/core/editing/editor.h"
 #include "third_party/blink/renderer/core/events/input_event.h"
+#include "third_party/blink/renderer/core/style/computed_style.h"
+#include "third_party/blink/renderer/core/style/fill_layer.h"
+#include "third_party/blink/renderer/core/style/filter_operation.h"
 #include "arkweb/chromium_ext/third_party/blink/renderer/modules/accessibility/ax_object_for_include.cc"
 #endif  // BUILDFLAG(ARKWEB_ACCESSIBILITY)
 
@@ -1141,6 +1146,10 @@ void AXObject::Serialize(ui::AXNodeData* node_data,
   bool is_visible = IsVisible();
   if (!is_visible)
     node_data->AddState(ax::mojom::blink::State::kInvisible);
+
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  SerializeArkWebCSSAttributes(node_data);
+#endif  // BUILDFLAG(ARKWEB_ACCESSIBILITY)
 
   if (is_visible || CanSetFocusAttribute()) {
     // If the author applied the ARIA "textbox" role on something that is not

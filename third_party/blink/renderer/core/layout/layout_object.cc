@@ -146,6 +146,7 @@
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 #include "third_party/skia/include/docs/SkPDFDocument.h"
 #include "ui/gfx/geometry/rect_conversions.h"
+#include "arkweb/build/features/features.h"
 
 namespace blink {
 
@@ -3021,6 +3022,25 @@ void LayoutObject::StyleWillChange(StyleDifference diff,
       if (AXObjectCache* cache = GetDocument().ExistingAXObjectCache())
         cache->StyleChanged(this);
     }
+
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+    // ArkWeb: CSS properties that affect accJson serialization need to mark
+    // AXObject dirty so that accJson re-serializes these attributes.
+    // Includes: z-index, background-image/size, image-rendering,
+    // and cssVisible-related: opacity, filter, clip-path, effective-zoom.
+    // Note: visibility is already handled above; display:none triggers
+    // layout object destruction (handled via ChildrenChanged path).
+    if (style_->EffectiveZIndex() != new_style.EffectiveZIndex() ||
+        style_->BackgroundLayers() != new_style.BackgroundLayers() ||
+        style_->ImageRendering() != new_style.ImageRendering() ||
+        style_->Opacity() != new_style.Opacity() ||
+        style_->Filter() != new_style.Filter() ||
+        style_->ClipPath() != new_style.ClipPath() ||
+        style_->EffectiveZoom() != new_style.EffectiveZoom()) {
+      if (AXObjectCache* cache = GetDocument().ExistingAXObjectCache())
+        cache->StyleChanged(this);
+    }
+#endif  // BUILDFLAG(ARKWEB_ACCESSIBILITY)
 
     if (style_->ContentVisibility() != new_style.ContentVisibility()) {
       if (AXObjectCache* cache = GetDocument().ExistingAXObjectCache()) {

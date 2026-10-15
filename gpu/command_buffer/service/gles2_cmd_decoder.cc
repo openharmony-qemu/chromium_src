@@ -12507,6 +12507,8 @@ bool GLES2DecoderImpl::ClearCompressedTextureLevel(Texture* texture,
   TRACE_EVENT1("gpu", "GLES2DecoderImpl::ClearCompressedTextureLevel",
                "bytes_required", bytes_required);
 
+  bool cleared = true;
+
   api()->glBindBufferFn(GL_PIXEL_UNPACK_BUFFER, 0);
   {
     // Add extra scope to destroy zero and the object it owns right
@@ -12521,6 +12523,14 @@ bool GLES2DecoderImpl::ClearCompressedTextureLevel(Texture* texture,
     ScopedCompressedUnpackStateScrub scrub(&state_);
     api()->glCompressedTexSubImage2DFn(target, level, 0, 0, width, height,
                                        format, zero.size(), zero.data());
+    // Some compressed formats are not supported by CompressedTexSubImage*
+    // in some circumstances. If the driver rejects the call, report the failure
+    // to clear so the caller does not mark it cleared (which would let a draw
+    // sample uninitialized GPU memory).
+    if (LOCAL_PEEK_GL_ERROR("ClearCompressedTextureLevel") != GL_NO_ERROR) {
+      cleared = false;
+    }
+
   }
   TextureRef* bound_texture =
       texture_manager()->GetTextureInfoForTarget(&state_, texture->target());
@@ -12531,7 +12541,7 @@ bool GLES2DecoderImpl::ClearCompressedTextureLevel(Texture* texture,
   if (bound_buffer) {
     api()->glBindBufferFn(GL_PIXEL_UNPACK_BUFFER, bound_buffer->service_id());
   }
-  return true;
+  return cleared;
 }
 
 bool GLES2DecoderImpl::ClearCompressedTextureLevel3D(Texture* texture,
@@ -12558,6 +12568,8 @@ bool GLES2DecoderImpl::ClearCompressedTextureLevel3D(Texture* texture,
   TRACE_EVENT1("gpu", "GLES2DecoderImpl::ClearCompressedTextureLevel3D",
                "bytes_required", bytes_required);
 
+  bool cleared = true;
+
   api()->glBindBufferFn(GL_PIXEL_UNPACK_BUFFER, 0);
   {
     // Add extra scope to destroy zero and the object it owns right
@@ -12572,6 +12584,14 @@ bool GLES2DecoderImpl::ClearCompressedTextureLevel3D(Texture* texture,
     ScopedCompressedUnpackStateScrub scrub(&state_);
     api()->glCompressedTexSubImage3DFn(target, level, 0, 0, 0, width, height,
                                        depth, format, zero.size(), zero.data());
+    // Some compressed formats are not supported by CompressedTexSubImage*
+    // in some circumstances. If the driver rejects the call, report the failure
+    // to clear so the caller does not mark it cleared (which would let a draw
+    // sample uninitialized GPU memory).
+    if (LOCAL_PEEK_GL_ERROR("ClearCompressedTextureLevel3D") != GL_NO_ERROR) {
+      cleared = false;
+    }
+
   }
   TextureRef* bound_texture =
       texture_manager()->GetTextureInfoForTarget(&state_, texture->target());
@@ -12582,7 +12602,7 @@ bool GLES2DecoderImpl::ClearCompressedTextureLevel3D(Texture* texture,
   if (bound_buffer) {
     api()->glBindBufferFn(GL_PIXEL_UNPACK_BUFFER, bound_buffer->service_id());
   }
-  return true;
+  return cleared;
 }
 
 bool GLES2DecoderImpl::IsCompressedTextureFormat(unsigned format) {

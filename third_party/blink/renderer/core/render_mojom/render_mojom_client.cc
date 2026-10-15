@@ -118,9 +118,12 @@ SysPropRenderObserverClientImpl::~SysPropRenderObserverClientImpl() = default;
 
 void SysPropRenderObserverClientImpl::Init() {
   mojo::Remote<device::mojom::blink::SysPropRenderObserver> observer;
-  Platform::Current()->GetBrowserInterfaceBroker()->GetInterface(
-      observer.BindNewPipeAndPassReceiver());
-  observer->Attach(instance().receiver_.BindNewPipeAndPassRemote());
+  // In some particular circumstances Platform::Current() will be empty, this is not contralable.
+  if (Platform::Current() && Platform::Current()->GetBrowserInterfaceBroker()) {
+    Platform::Current()->GetBrowserInterfaceBroker()->GetInterface(
+        observer.BindNewPipeAndPassReceiver());
+    observer->Attach(instance().receiver_.BindNewPipeAndPassRemote());
+  }
 }
 
 SysPropRenderObserverClientImpl& SysPropRenderObserverClientImpl::instance() {

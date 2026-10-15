@@ -29,6 +29,7 @@ void WidgetFadeAnimator::FadeIn() {
   // Widgets cannot be shown when visible and fully transparent.
   widget_->SetOpacity(0.01f);
 
+  base::WeakPtr<WidgetFadeAnimator> weak_this = weak_factory_.GetWeakPtr();
   switch (show_type_) {
     case WidgetShowType::kNone:
       break;
@@ -38,6 +39,12 @@ void WidgetFadeAnimator::FadeIn() {
     case WidgetShowType::kShowInactive:
       widget_->ShowInactive();
       break;
+  }
+  
+  // Showing the widget can synchronously invoke native or observer callbacks
+  // that might destroy this animator or cancel the animation.
+  if (!weak_this || !IsFadingIn()) {
+    return;
   }
 
   fade_animation_.Start();

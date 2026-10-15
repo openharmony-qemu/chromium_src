@@ -256,6 +256,9 @@ struct WebPreferences {
   bool css_display_change_enabled;
 
   [EnableIf=arkweb_same_layer]
+  bool transform_rotate_and_skew_enabled;
+
+  [EnableIf=arkweb_same_layer]
   string embed_tag;
 
   [EnableIf=arkweb_same_layer]

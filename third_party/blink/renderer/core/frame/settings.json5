@@ -1318,6 +1318,12 @@
       type: "bool",
     },
     {
+      // Used for OHOS Native Embed transform rotate and skew.
+      name: "transformRotateAndSkewEnabled",
+      initial: false,
+      type: "bool",
+    },
+    {
       // Used for OHOS Media cast.
       name: "castEnabled",
       initial: false,

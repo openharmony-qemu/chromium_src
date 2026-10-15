@@ -5329,6 +5329,11 @@ NavigationRequest::CreateNavigationEarlyHintsManagerParams(
   CHECK(IsInMainFrame());
   DCHECK(!IsPageActivation());
 
+  // Early Hints are only valid for HTTP/HTTPS navigations.
+  if (!GetURL().SchemeIsHTTPOrHTTPS()) {
+    return std::nullopt;
+  }
+
   // Getting a RenderProcessHost from a tentative RenderFrameHost during
   // navigation is generally discouraged because it has potential performance
   // impact (the RenderProcessHost could be discarded without actually being

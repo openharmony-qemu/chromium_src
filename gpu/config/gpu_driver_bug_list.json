@@ -3918,6 +3918,18 @@
       "features": [
         "lose_gl_context_when_increase_texture_3d_depth"
       ]
+    },
+    {
+      "id": 499,
+      "description": "adjust src/dst region if blitting pixels outside framebuffer on Android Mali",
+      "cr_bugs": [546630009],
+      "os": {
+        "type": "android"
+      },
+      "gl_vendor": "ARM.*",
+      "features": [
+        "adjust_src_dst_region_for_blitframebuffer"
+      ]
     }
   ]
 }

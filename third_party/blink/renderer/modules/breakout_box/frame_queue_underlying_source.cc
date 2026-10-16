@@ -276,8 +276,10 @@ void FrameQueueUnderlyingSource<NativeFrameType>::TransferSource(
         transferred_source) {
   DCHECK(realm_task_runner_->RunsTasksInCurrentSequence());
   base::AutoLock locker(lock_);
-  DCHECK(!transferred_source_);
-  transferred_source_ = std::move(transferred_source);
+  if (!transferred_source_cleared_) {
+    DCHECK(!transferred_source_);
+    transferred_source_ = std::move(transferred_source);
+  }
   CloseController();
   frame_queue_handle_.Invalidate();
 }
@@ -285,6 +287,7 @@ void FrameQueueUnderlyingSource<NativeFrameType>::TransferSource(
 template <typename NativeFrameType>
 void FrameQueueUnderlyingSource<NativeFrameType>::ClearTransferredSource() {
   base::AutoLock locker(lock_);
+  transferred_source_cleared_ = true;
   transferred_source_.Clear();
 }
 

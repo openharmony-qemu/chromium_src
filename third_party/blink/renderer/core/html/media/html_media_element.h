@@ -547,6 +547,7 @@ class CORE_EXPORT HTMLMediaElement
   HTMLMediaElement(const QualifiedName&, Document&);
   ~HTMLMediaElement() override;
   void Dispose();
+  bool IsDisposing() const { return is_disposing_; }
 
   // Returns a constant reference to the HeapMojoAssociatedRemoteSet holding all
   // the bound remotes for the media::mojom::blink::MediaPlayerObserver
@@ -1294,6 +1295,8 @@ class CORE_EXPORT HTMLMediaElement
         HeapMojoWrapperMode::kForceWithoutContextObserver>
       video_experience_reporter_;
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
+  bool is_disposing_ = false;
 };
 
 template <>

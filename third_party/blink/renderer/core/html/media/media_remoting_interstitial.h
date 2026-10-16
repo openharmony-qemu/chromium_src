@@ -109,6 +109,7 @@ class MediaRemotingInterstitial final : public HTMLDivElement {
   void DidMoveToNewDocument(Document&) override;
 
   void ToggleInterstitialTimerFired(TimerBase*);
+  void DidHide();
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAST)
   void EnterFullscreen();

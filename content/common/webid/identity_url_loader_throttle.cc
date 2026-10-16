@@ -6,15 +6,18 @@
 
 #include <string_view>
 
+#include "base/command_line.h"
 #include "base/containers/contains.h"
 #include "base/functional/bind.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/strings/string_split.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/time/time.h"
+#include "components/network_session_configurator/common/network_switches.h"
 #include "content/common/features.h"
 #include "content/public/common/content_features.h"
 #include "content/public/common/content_switches.h"
+#include "net/cert/cert_status_flags.h"
 #include "net/http/http_response_headers.h"
 #include "services/network/public/cpp/is_potentially_trustworthy.h"
 #include "services/network/public/cpp/resource_request.h"
@@ -92,6 +95,12 @@ void IdentityUrlLoaderThrottle::HandleResponseOrRedirect(
     const network::mojom::URLResponseHead& response_head) {
   url::Origin idp_origin = url::Origin::Create(response_url);
   if (!network::IsOriginPotentiallyTrustworthy(idp_origin)) {
+    return;
+  }
+
+  if (net::IsCertStatusError(response_head.cert_status) &&
+      !base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kIgnoreCertificateErrors)) {
     return;
   }
 

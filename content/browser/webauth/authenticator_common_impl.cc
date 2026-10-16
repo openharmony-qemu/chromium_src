@@ -2543,8 +2543,8 @@ void AuthenticatorCommonImpl::OnSignResponse(
     return;
   }
   if (response_data->size() == 1) {
-    device::AuthenticatorGetAssertionResponse response =
-        std::move(response_data->at(0));
+    const device::AuthenticatorGetAssertionResponse& response =
+        response_data->at(0);
     if (response.response_extra) {
       if (status_code != device::GetAssertionStatus::kSuccess) {
         CompleteGetAssertionRequest(
@@ -2555,7 +2555,7 @@ void AuthenticatorCommonImpl::OnSignResponse(
             authenticator->GetType());
         CompleteGetAssertionRequest(
             blink::mojom::AuthenticatorStatus::SUCCESS,
-            CreateGetAssertionResponse(std::move(response)));
+            CreateGetAssertionResponse(std::move(response_data->at(0))));
       }
       return;
     }

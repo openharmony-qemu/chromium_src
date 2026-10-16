@@ -153,7 +153,11 @@ void TranslateAgent::PageCaptured(
   // ok as the translate service will make the final call and only results in a
   // slight overhead in running the model when unnecessary.
   if (url.is_empty() || url.SchemeIs(content::kChromeUIScheme) ||
-      url.SchemeIs(content::kChromeDevToolsScheme) || url.IsAboutBlank()) {
+      url.SchemeIs(content::kChromeDevToolsScheme)
+#if !BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+      || url.IsAboutBlank()
+#endif
+      ) {
     return;
   }
 

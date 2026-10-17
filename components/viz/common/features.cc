@@ -408,6 +408,12 @@ BASE_FEATURE(kEvictUnlockFrame,
              base::FEATURE_ENABLED_BY_DEFAULT);
 #endif // BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+BASE_FEATURE(kDelegatedCompositingOhos,
+             "kDelegatedCompositingOhos",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif  // BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+
 int DrawQuadSplitLimit() {
   constexpr int kDefaultDrawQuadSplitLimit = 5;
   constexpr int kMinDrawQuadSplitLimit = 1;
@@ -607,4 +613,9 @@ bool IsEvictUnlockFrameEnabled() {
 }
 #endif // BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+bool IsDelegatedCompositingFeatureEnabledOhos() {
+  return base::FeatureList::IsEnabled(kDelegatedCompositingOhos);
+}
+#endif  // BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
 }  // namespace features

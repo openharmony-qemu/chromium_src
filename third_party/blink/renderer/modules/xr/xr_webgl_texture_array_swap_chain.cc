@@ -94,12 +94,6 @@ void XRWebGLTextureArraySwapChain::OnFrameEnd() {
     return;
   }
 
-  // Generate an internal VAO if one hasn't been already to more easily handle
-  // the default vertex state needed for this copy.
-  if (!vao_) {
-    gl->GenVertexArraysOES(1, &vao_);
-  }
-
   // Copy from the layers texture to the side-by-side wrapped texture.
   // Note: This could be done with less state-shifting but a bug on Qualcomm
   // devices prevents copying from non-zero layers of an array textures.

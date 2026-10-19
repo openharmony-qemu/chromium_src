@@ -32,7 +32,6 @@ namespace blink {
 
 void IdTargetObserverRegistry::Trace(Visitor* visitor) const {
   visitor->Trace(registry_);
-  visitor->Trace(notifying_observers_in_set_);
 }
 
 void IdTargetObserverRegistry::AddObserver(const AtomicString& id,
@@ -56,8 +55,9 @@ void IdTargetObserverRegistry::RemoveObserver(const AtomicString& id,
 
   ObserverSet* set = iter->value.Get();
   set->erase(observer);
-  if (set->empty() && set != notifying_observers_in_set_)
+  if (set->empty()) {
     registry_.erase(iter);
+  }
 }
 
 void IdTargetObserverRegistry::NotifyObserversInternal(const AtomicString& id) {
@@ -65,21 +65,17 @@ void IdTargetObserverRegistry::NotifyObserversInternal(const AtomicString& id) {
   DCHECK(!registry_.empty());
 
   auto it_reg = registry_.find(id.Impl());
-  if (it_reg != registry_.end())
-    notifying_observers_in_set_ = it_reg->value;
-  if (!notifying_observers_in_set_)
+  if (it_reg == registry_.end()) {
     return;
-
-  HeapVector<Member<IdTargetObserver>> copy(*notifying_observers_in_set_);
-  for (const auto& observer : copy) {
-    if (notifying_observers_in_set_->Contains(observer))
-      observer->IdTargetChanged();
   }
 
-  if (notifying_observers_in_set_->empty())
-    registry_.erase(id.Impl());
-
-  notifying_observers_in_set_ = nullptr;
+  ObserverSet* set = it_reg->value.Get();
+  HeapVector<Member<IdTargetObserver>> copy(*set);
+  for (const auto& observer : copy) {
+    if (set->Contains(observer)) {
+      observer->IdTargetChanged();
+    }
+  }
 }
 
 bool IdTargetObserverRegistry::HasObservers(const AtomicString& id) const {

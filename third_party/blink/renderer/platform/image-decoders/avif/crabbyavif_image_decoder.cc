@@ -209,16 +209,17 @@ CrabbyAVIFImageDecoder::CrabbyAVIFImageDecoder(
     AlphaOption alpha_option,
     HighBitDepthDecodingOption hbd_option,
     ColorBehavior color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
     cc::AuxImage aux_image,
+#endif
     wtf_size_t max_decoded_bytes,
     AnimationOption animation_option)
     : ImageDecoder(alpha_option,
                    hbd_option,
                    color_behavior,
 #if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-                   cc::AuxImage::kDefault,
-#endif
                    aux_image,
+#endif
                    max_decoded_bytes),
       animation_option_(animation_option) {
 }
@@ -785,9 +786,11 @@ bool CrabbyAVIFImageDecoder::UpdateDemuxer() {
     // crbug.com/1198455.
     decoder_->strictFlags &= ~crabbyavif::AVIF_STRICT_PIXI_REQUIRED;
 
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
     if (aux_image_ == cc::AuxImage::kGainmap) {
       decoder_->imageContentToDecode = crabbyavif::AVIF_IMAGE_CONTENT_GAIN_MAP;
     }
+#endif
 
     avif_io_.destroy = nullptr;
     avif_io_.read = ReadFromSegmentReader;
@@ -1309,6 +1312,7 @@ bool CrabbyAVIFImageDecoder::GetGainmapInfoAndData(
 }
 
 crabbyavif::avifImage* CrabbyAVIFImageDecoder::GetDecoderImage() const {
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
   if (aux_image_ == cc::AuxImage::kGainmap) {
     if (!decoder_->image->gainMap) {
       DVLOG(1) << "Attempted to access gain map image, but gainMap is nullptr";
@@ -1316,6 +1320,7 @@ crabbyavif::avifImage* CrabbyAVIFImageDecoder::GetDecoderImage() const {
     }
     return decoder_->image->gainMap->image;
   }
+#endif
   return decoder_->image;
 }
 

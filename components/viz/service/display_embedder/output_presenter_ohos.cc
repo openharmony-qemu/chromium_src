@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
+#include "base/command_line.h"
 #include "base/logging.h"
 #include "base/native_library.h"
 #include "base/task/bind_post_task.h"
@@ -30,6 +31,7 @@
 #include "components/viz/common/gpu/vulkan_context_provider.h"
 #include "components/viz/service/display_embedder/output_presenter_ohos.h"
 #include "components/viz/service/display_embedder/skia_output_surface_dependency.h"
+#include "content/public/common/content_switches.h"
 #include "gpu/command_buffer/service/external_semaphore.h"
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
@@ -39,7 +41,6 @@
 
 namespace viz {
 namespace {
-constexpr int kVec3Size = 3;
 constexpr int kPoint2Size = 2;
 constexpr int kNumberOfBuffers = 4;
 constexpr int kColorChannelSize = 4;
@@ -94,23 +95,26 @@ class OutputPresenterOHOS::SurfaceControl {
         transaction_adapter_(transaction_adapter) {
     TRACE_EVENT1("viz", "Create SurfaceControl", "name", name_.c_str());
     if (!parent || !parent->surface_) {
-      LOG(ERROR) << "DelegateDebug Creating SurfaceControl, parent is null";
+      LOG(ERROR) << "DelegateTag Creating SurfaceControl, parent is null";
     }
   }
 
   explicit SurfaceControl(OHNativeWindow* window,
                           SurfaceControlAdapter& surface_adapter,
-                          TransactionAdapter& transaction_adapter)
+                          TransactionAdapter& transaction_adapter,
+                          OH_SurfaceTransaction* transaction,
+                          bool in_process)
       : name_("delegate_container"),
         surface_control_adapter_(surface_adapter),
         transaction_adapter_(transaction_adapter) {
     if (!window) {
-      LOG(ERROR) << "DelegateDebug Creating SurfaceControl, window is null";
+      LOG(ERROR) << "DelegateTag Creating SurfaceControl, window is null";
     }
     surface_ = reinterpret_cast<OH_SurfaceControl*>(surface_control_adapter_
-        .CreateSurfaceControlFromNativeWindow(window, name_.c_str()));
+      .CreateContainerSurfaceControl(transaction, window, name_.c_str(), in_process));
+    is_root_ = true;
     if (!surface_) {
-      LOG(ERROR) << "DelegateDebug Creating failed, surface_ is null";
+      LOG(ERROR) << "DelegateTag Creating failed, surface_ is null";
     }
   }
 
@@ -124,7 +128,7 @@ class OutputPresenterOHOS::SurfaceControl {
 
   void ClearBufferQueueCache(OH_SurfaceTransaction* transaction, bool is_clean_all) {
     if (surface_ == nullptr) {
-      LOG(ERROR) << "DelegateDebug ClearBufferQueueCache, surface_ is nullptr";
+      LOG(ERROR) << "DelegateTag ClearBufferQueueCache, surface_ is nullptr";
       return;
     }
 
@@ -133,7 +137,7 @@ class OutputPresenterOHOS::SurfaceControl {
 
   void Destroy(OH_SurfaceTransaction* transaction) {
     if (destroyed_) {
-      LOG(ERROR) << "DelegateDebug surface is already destroyed";
+      LOG(ERROR) << "DelegateTag surface is already destroyed";
       return;
     }
     destroyed_ = true;
@@ -153,7 +157,7 @@ class OutputPresenterOHOS::SurfaceControl {
   void SetSurface(SurfaceControl* surface) {
     DCHECK(!surface_);
     if (!surface) {
-      LOG(ERROR) << "DelegateDebug Set surface failed, surface_ is null";
+      LOG(ERROR) << "DelegateTag Set surface failed, surface_ is null";
       return;
     }
     surface_ = surface->ReleaseSurface();
@@ -216,10 +220,10 @@ class OutputPresenterOHOS::SurfaceControl {
     DCHECK(release_callback);
     DCHECK(!release_callback_);
     if (!release_callback) {
-      LOG(ERROR) << "DelegateDebug: SetBuffer release_callback is nullptr";
+      LOG(ERROR) << "DelegateTag: SetBuffer release_callback is nullptr";
     }
     if (release_callback_) {
-      LOG(ERROR) << "DelegateDebug: SetBuffer Unexpected release_callback_ presence";
+      LOG(ERROR) << "DelegateTag: SetBuffer Unexpected release_callback_ presence";
     }
     DCHECK_NE(buffer_, buffer);
     buffer_ = buffer;
@@ -231,13 +235,13 @@ class OutputPresenterOHOS::SurfaceControl {
 
   void SetMailbox(const gpu::Mailbox& mailbox) { mailbox_ = mailbox; }
 
-  void Sync(OH_SurfaceTransaction* transaction) {
+  void Sync(OH_SurfaceTransaction* transaction, bool in_process) {
     DCHECK(!destroyed_);
-    if (!surface_) {
-      surface_ = reinterpret_cast<OH_SurfaceControl*>(
-          surface_control_adapter_.Create(name_.c_str()));
+    if (!surface_ && !is_root_) {
+      surface_ = reinterpret_cast<OH_SurfaceControl*>(surface_control_adapter_
+        .CreateChildSurfaceControl(transaction, name_.c_str(), in_process));
       if (surface_ == nullptr) {
-        LOG(ERROR) << "DelegateDebug create surface_ failed";
+        LOG(ERROR) << "DelegateTag create surface_ failed";
       }
       transaction_adapter_.SetHardwareEnableHint(transaction, surface_, true);
       transaction_adapter_.Reparent(transaction, surface_, parent_);
@@ -337,6 +341,7 @@ class OutputPresenterOHOS::SurfaceControl {
   std::array<float, kColorChannelSize> background_color_ = {0.0f, 0.0f, 0.0f, 0.0f};
   float alpha_ = 1.0f;
   int32_t buffer_transform_ = OH_TRANSFORM_ROTATE_NONE;
+  bool is_root_ = false;
 
   OH_NativeBuffer* buffer_ = nullptr;
   base::ScopedFD fence_fd_;
@@ -350,9 +355,9 @@ class OutputPresenterOHOS::SurfaceControl {
 std::unique_ptr<OutputPresenterOHOS> OutputPresenterOHOS::Create(
     SkiaOutputSurfaceDependency* deps) {
   TRACE_EVENT0("viz", "OutputPresenterOHOS::Create");
-  LOG(INFO) << "DelegateDebug OutputPresenterOHOS Create";
+  LOG(INFO) << "DelegateTag OutputPresenterOHOS Create";
   if (!deps) {
-    LOG(ERROR) << "DelegateDebug deps is null";
+    LOG(ERROR) << "DelegateTag deps is null";
     return nullptr;
   }
 
@@ -369,9 +374,15 @@ OutputPresenterOHOS::OutputPresenterOHOS(SkiaOutputSurfaceDependency* deps)
   void* window = tracker->GetNativeWindow(dependency_->GetSurfaceHandle());
   transaction_ = reinterpret_cast<OH_SurfaceTransaction*>(transaction_adapter_.
       CreateSurfaceTransaction(reinterpret_cast<OHNativeWindow*>(window)));
+
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kSingleProcess) ||
+      base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kInProcessGPU)) {
+    in_process_ = true;
+  }
+
   root_surface_ = std::make_unique<SurfaceControl>(
       reinterpret_cast<OHNativeWindow*>(window),
-      surface_control_adapter_, transaction_adapter_);
+      surface_control_adapter_, transaction_adapter_, transaction_, in_process_);
 
   auto callback = base::BindRepeating(&OutputPresenterOHOS::OnComplete,
                                       weak_factory_.GetWeakPtr());
@@ -392,7 +403,7 @@ OutputPresenterOHOS::OutputPresenterOHOS(SkiaOutputSurfaceDependency* deps)
 
 OutputPresenterOHOS::~OutputPresenterOHOS() {
   TRACE_EVENT0("viz", "~OutputPresenterOHOS");
-  LOG(INFO) << "DelegateDebug ~OutputPresenterOHOS";
+  LOG(INFO) << "DelegateTag ~OutputPresenterOHOS";
   for (auto& surface : previous_frame_) {
     if (surface) {
       surface->Destroy(transaction_);
@@ -450,7 +461,7 @@ void OutputPresenterOHOS::Present(SwapCompletionCallback completion_callback,
   TRACE_EVENT0("viz", "OutputPresenterOHOS::Present");
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
 
-  root_surface_->Sync(transaction_);
+  root_surface_->Sync(transaction_, in_process_);
 
   // Sort pending frame by z order
   std::sort(pending_frame_.begin(), pending_frame_.end(),
@@ -482,7 +493,7 @@ void OutputPresenterOHOS::Present(SwapCompletionCallback completion_callback,
       int32_t z_order = surface->z_order() - first_surface_z;
       surface->SetZOrder(z_order);
     }
-    surface->Sync(transaction_);
+    surface->Sync(transaction_, in_process_);
   }
 
   // Clear all unused surface from previous frame.
@@ -671,7 +682,7 @@ void OutputPresenterOHOS::ScheduleOverlayPlane(
   }
 
   if (surface == nullptr) {
-    LOG(ERROR) << "DelegateDebug surface is nullptr, is_root: " << is_root;
+    LOG(ERROR) << "DelegateTag surface is nullptr, is_root: " << is_root;
     return;
   }
 
@@ -735,7 +746,7 @@ void OutputPresenterOHOS::TriggerOnCompleteCallbacks() {
       task_runner_->PostTask(
           FROM_HERE, base::BindOnce(std::move(presentation_callback), std::move(feedback)));
     } else {
-      LOG(ERROR) << "DelegateDebug presentation_callbacks_ is empty";
+      LOG(ERROR) << "DelegateTag presentation_callbacks_ is empty";
     }
   }
 }
@@ -746,7 +757,7 @@ void OutputPresenterOHOS::OnOverlayReleased(OH_NativeBuffer* buffer,
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   auto it = in_used_buffers_.find(buffer);
   if (it == in_used_buffers_.end()) {
-    LOG(WARNING) << "DelegateDebug Cannot find in used buffer";
+    LOG(WARNING) << "DelegateTag Cannot find in used buffer";
     return;
   }
   auto [access, is_root] = it->second;
@@ -761,7 +772,7 @@ void OutputPresenterOHOS::OnOverlayReleased(OH_NativeBuffer* buffer,
     // render, so the buffer can be reused or released.
     access->InUseByWindowServerDec();
   } else {
-    LOG(ERROR) << "DelegateDebug access has expired before overlay released, is_root: " << is_root;
+    LOG(ERROR) << "DelegateTag access has expired before overlay released, is_root: " << is_root;
   }
 
   if (is_root) {
@@ -776,7 +787,7 @@ void OutputPresenterOHOS::OnOverlayReleased(OH_NativeBuffer* buffer,
 }
 
 void OutputPresenterOHOS::DiscardCompositingResources(bool is_clean_all, bool is_clean_video_surface) {
-  LOG(INFO) << "DelegateDebug call ClearBufferQueueCache id: " << dependency_->GetSurfaceHandle();
+  LOG(INFO) << "DelegateTag call ClearBufferQueueCache id: " << dependency_->GetSurfaceHandle();
   for (const auto& surface : previous_frame_) {
     if (surface && (surface->name() == "delegate_child" || is_clean_video_surface)) {
       surface->ClearBufferQueueCache(transaction_, is_clean_all);
@@ -810,7 +821,7 @@ void OutputPresenterOHOS::DiscardCompositingResources(bool is_clean_all, bool is
       task_runner_->PostTask(
           FROM_HERE, base::BindOnce(std::move(presentation_callback), std::move(feedback)));
     } else {
-      LOG(ERROR) << "DelegateDebug presentation_callbacks_ is empty";
+      LOG(ERROR) << "DelegateTag presentation_callbacks_ is empty";
     }
   }
 }

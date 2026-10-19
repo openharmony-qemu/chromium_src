@@ -465,6 +465,18 @@ class MockRenderWidgetHostDelegate : public RenderWidgetHostDelegate {
     return mock_delegate_view();
   }
 
+  gfx::Rect ConstrainPopupBounds(const gfx::Rect& bounds) override {
+    if (constrain_popup_bounds_callback_) {
+      return constrain_popup_bounds_callback_.Run(bounds);
+    }
+    return RenderWidgetHostDelegate::ConstrainPopupBounds(bounds);
+  }
+
+  void set_constrain_popup_bounds_callback(
+      base::RepeatingCallback<gfx::Rect(const gfx::Rect&)> callback) {
+    constrain_popup_bounds_callback_ = std::move(callback);
+  }
+
   void SetIgnoreInputEvents(bool ignore_input_events) {
     ignore_input_events_ = ignore_input_events;
   }
@@ -562,6 +574,9 @@ class MockRenderWidgetHostDelegate : public RenderWidgetHostDelegate {
       viz::VerticalScrollDirection::kNull;
 
   bool is_fullscreen_ = false;
+
+  base::RepeatingCallback<gfx::Rect(const gfx::Rect&)>
+      constrain_popup_bounds_callback_;
 
   VisibleTimeRequestTrigger visible_time_request_trigger_;
 };
@@ -953,6 +968,31 @@ TEST_F(RenderWidgetHostTest, DoNotAcceptPopupBoundsUntilScreenRectsAcked) {
   // And the host must accept them now as the screen rects have been
   // acked.
   EXPECT_EQ(new_popup_view_bounds, view_->GetViewBounds());
+}
+
+TEST_F(RenderWidgetHostTest, SetPopupBoundsConstrainedByDelegate) {
+  ClearScreenRects();
+  base::RunLoop().RunUntilIdle();
+
+  // Default delegate implementation does not constrain bounds.
+  gfx::Rect unconstrained_bounds(5, 5, 20, 20);
+  EXPECT_EQ(delegate_->ConstrainPopupBounds(unconstrained_bounds),
+            unconstrained_bounds);
+
+  // Set a custom constraint on the delegate.
+  delegate_->set_constrain_popup_bounds_callback(
+      base::BindRepeating([](const gfx::Rect& bounds) {
+        gfx::Rect constrained = bounds;
+        if (constrained.y() < 100) {
+          constrained.set_y(100);
+        }
+        return constrained;
+      }));
+
+  // When SetPopupBounds is called, bounds are constrained by the delegate.
+  static_cast<blink::mojom::PopupWidgetHost*>(host_.get())
+      ->SetPopupBounds(unconstrained_bounds, base::DoNothing());
+  EXPECT_EQ(gfx::Rect(5, 100, 20, 20), view_->GetViewBounds());
 }
 
 TEST_F(RenderWidgetHostTest, SynchronizeVisualProperties) {

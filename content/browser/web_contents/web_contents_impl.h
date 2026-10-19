@@ -1035,6 +1035,7 @@ class CONTENT_EXPORT WebContentsImpl
                          int widget_route_id,
                          const gfx::Rect& initial_rect,
                          const gfx::Rect& initial_anchor_rect) override;
+  gfx::Rect ConstrainPopupBounds(const gfx::Rect& bounds) override;
   void CreateMediaPlayerHostForRenderFrameHost(
       RenderFrameHostImpl* frame_host,
       mojo::PendingAssociatedReceiver<media::mojom::MediaPlayerHost> receiver)

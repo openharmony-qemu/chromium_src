@@ -691,13 +691,6 @@ WebMediaPlayerImpl::~WebMediaPlayerImpl() {
   if (observer_)
     observer_->SetClient(nullptr);
 
-  // Explicitly reset `pipeline_controller_` to guarantee its destruction
-  // before DestructionHelper runs on `media_task_runner_`.
-  // This prevents possible dangling ptr's if `compositor` is destroyed
-  // before `pipeline_controller_`, which holds a VideoRendererSink
-  // in MediaFoundationRendererClient.
-  pipeline_controller_.reset();
-
   // Handle destruction of things that need to be destructed after the pipeline
   // completes stopping on the media thread.
   PostCrossThreadTask(
@@ -3595,7 +3588,7 @@ void WebMediaPlayerImpl::FinishMemoryUsageReport(int64_t demuxer_memory_usage) {
 
   const auto stats = GetPipelineStatistics();
   const int64_t data_source_memory_usage =
-      demuxer_manager_->GetDataSourceMemoryUsage();
+      demuxer_manager_ ? demuxer_manager_->GetDataSourceMemoryUsage() : 0;
 
   // If we have video and no video memory usage and we've rendered the first
   // frame, assume the VideoFrameCompositor is holding onto the last frame after

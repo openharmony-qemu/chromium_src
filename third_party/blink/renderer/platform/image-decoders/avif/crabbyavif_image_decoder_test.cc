@@ -41,24 +41,35 @@ std::unique_ptr<ImageDecoder> CreateAVIFDecoderWithOptions(
     ImageDecoder::AlphaOption alpha_option,
     ImageDecoder::HighBitDepthDecodingOption high_bit_depth_option,
     ColorBehavior color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
     cc::AuxImage aux_image,
+#endif
     ImageDecoder::AnimationOption animation_option) {
   return std::make_unique<CrabbyAVIFImageDecoder>(
-      alpha_option, high_bit_depth_option, color_behavior, aux_image,
+      alpha_option, high_bit_depth_option, color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      aux_image,
+#endif
       ImageDecoder::kNoDecodedImageByteLimit, animation_option);
 }
 
 std::unique_ptr<ImageDecoder> CreateAVIFDecoder() {
   return CreateAVIFDecoderWithOptions(
       ImageDecoder::kAlphaNotPremultiplied, ImageDecoder::kDefaultBitDepth,
-      ColorBehavior::kTag, cc::AuxImage::kDefault,
+      ColorBehavior::kTag,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kDefault,
+#endif
       ImageDecoder::AnimationOption::kUnspecified);
 }
 
 std::unique_ptr<ImageDecoder> CreateGainMapAVIFDecoder() {
   return CreateAVIFDecoderWithOptions(
       ImageDecoder::kAlphaNotPremultiplied, ImageDecoder::kDefaultBitDepth,
-      ColorBehavior::kTag, cc::AuxImage::kGainmap,
+      ColorBehavior::kTag,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kGainmap,
+#endif
       ImageDecoder::AnimationOption::kUnspecified);
 }
 
@@ -811,7 +822,10 @@ void InspectImage(
     ImageDecoder::HighBitDepthDecodingOption high_bit_depth_option) {
   std::unique_ptr<ImageDecoder> decoder = CreateAVIFDecoderWithOptions(
       param.alpha_option, high_bit_depth_option, param.color_behavior,
-      cc::AuxImage::kDefault, ImageDecoder::AnimationOption::kUnspecified);
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kDefault,
+#endif
+      ImageDecoder::AnimationOption::kUnspecified);
   scoped_refptr<SharedBuffer> data = ReadFileToSharedBuffer(param.path);
   ASSERT_TRUE(data.get());
 #if FIXME_DISTINGUISH_LOSSY_OR_LOSSLESS

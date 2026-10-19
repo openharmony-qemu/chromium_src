@@ -351,7 +351,10 @@ std::unique_ptr<ImageDecoder> ImageDecoder::CreateByMimeType(
 #if BUILDFLAG(ENABLE_AV1_DECODER)
   } else if (mime_type == "image/avif") {
     decoder = std::make_unique<CrabbyAVIFImageDecoder>(
-        alpha_option, high_bit_depth_decoding_option, color_behavior, aux_image,
+        alpha_option, high_bit_depth_decoding_option, color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+        aux_image,
+#endif
         max_decoded_bytes, animation_option);
 #endif
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)

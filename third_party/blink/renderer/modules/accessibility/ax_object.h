@@ -1646,6 +1646,15 @@ class MODULES_EXPORT AXObject : public GarbageCollected<AXObject> {
                                     ui::AXMode accessibility_mode,
                                     bool is_snapshot) const;
   void SerializeComputedDetailsRelation(ui::AXNodeData* node_data) const;
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  // ArkWeb: serialize kValue for non-atomic text fields (contenteditable),
+  // bypassing the empty-string skip in TruncateAndAddStringAttribute.
+  void SerializeArkWebValueAttribute(ui::AXNodeData* node_data) const;
+  // ArkWeb: replace selected text (or insert at cursor) for OHOS
+  // accessibility ACTION_SET_TEXT. Uses Editor::ReplaceSelectionWithText
+  // to preserve cursor position, especially for contenteditable.
+  bool OnArkWebReplaceSelectedTextAction(const String& text);
+#endif  // BUILDFLAG(ARKWEB_ACCESSIBILITY)
 
   // Serialization implemented in specific subclasses.
   virtual void SerializeMarkerAttributes(ui::AXNodeData* node_data) const;

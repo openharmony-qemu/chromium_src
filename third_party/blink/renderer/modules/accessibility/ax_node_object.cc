@@ -207,6 +207,9 @@
 #include "third_party/blink/renderer/core/frame/web_local_frame_impl.h"
 #include "third_party/blink/renderer/core/page/chrome_client_impl.h"
 #endif
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/accessibility/ax_node_object_for_include.cc"
+#endif  // BUILDFLAG(ARKWEB_ACCESSIBILITY)
 namespace blink {
 namespace {
 
@@ -4821,7 +4824,14 @@ String AXNodeObject::SlowGetValueForControlIncludingContentEditable(
     AXObjectSet& visited) const {
   if (IsNonAtomicTextField()) {
     Element* element = GetElement();
-    return element ? element->GetInnerTextWithoutUpdate() : String();
+    if (!element) {
+      return String();
+    }
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+    return GetContentEditableValueWithoutPlaceholderBR(*element);
+#else
+    return element->GetInnerTextWithoutUpdate();
+#endif
   }
   return GetValueForControl(visited);
 }

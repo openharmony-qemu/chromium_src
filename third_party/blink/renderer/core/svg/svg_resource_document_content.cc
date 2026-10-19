@@ -300,6 +300,9 @@ SVGResourceDocumentContent* SVGResourceDocumentContent::Fetch(
 
   Page* page = document.GetPage();
   auto& cache = page->GetSVGDocumentResourceTracker();
+  if (cache.IsDisposed()) {
+    return nullptr;
+  }
   const SVGDocumentResourceTracker::CacheKey key =
       SVGDocumentResourceTracker::MakeCacheKey(params);
 

@@ -137,7 +137,7 @@ class GIN_EXPORT ObjectTemplateBuilder {
   ObjectTemplateBuilder& SetLazyDataPropertyImpl(
       const std::string_view& name,
       v8::AccessorNameGetterCallback callback,
-      v8::Local<v8::Value> data);
+      v8::Local<v8::Data> data);
 
   static v8::Intercepted NamedPropertyGetterImpl(
       WrappablePointerTag tag,

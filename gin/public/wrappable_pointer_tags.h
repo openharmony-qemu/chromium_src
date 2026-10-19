@@ -25,7 +25,6 @@ enum WrappablePointerTag : uint16_t {
   kAPIBindingBridge,                 // extensions::APIBindingBridge
   kAPIBindingJSUtil,                 // extensions::APIBindingJSUtil
   kAutomationPosition,               // ui::AutomationPosition
-  kCallbackHolderBase,               // gin::internal::CallbackHolderBase
   kChromePluginPlaceholder,          // ChromePluginPlaceholder
   kChromeSetting,                    // extensions::ChromeSetting
   kContentSetting,                   // extensions::ContentSetting
@@ -84,6 +83,24 @@ static_assert(kLastPointerTag <
                   static_cast<uint16_t>(v8::CppHeapPointerTag::kZappedEntryTag),
               "The defined type tags exceed the range of allowed tags. Adjust "
               "the start value of this enum such that all values fit.");
+
+// Pointer tags for non-gin::Wrappable classes. They must not overlap with
+// the gin::WrappablePointerTag range (kFirstPointerTag..kLastPointerTag)
+// above.
+enum NonWrappablePointerTag : uint16_t {
+  kFirstNonWrappablePointerTag = kLastPointerTag + 1,
+  // keep-sorted start case=no
+  kCallbackHolderBase =
+      kFirstNonWrappablePointerTag,  // gin::internal::CallbackHolderBase
+  // keep-sorted end
+  kLastNonWrappablePointerTag,
+};
+
+static_assert(static_cast<uint16_t>(kLastNonWrappablePointerTag) <
+                  static_cast<uint16_t>(v8::CppHeapPointerTag::kZappedEntryTag),
+              "The defined NonWrappablePointerTags exceed the range of allowed "
+              "tags. Adjust the start value of this enum such that all values "
+              "fit.");
 
 }  // namespace gin
 

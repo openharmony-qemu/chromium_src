@@ -20,7 +20,10 @@
 #include "gpu/command_buffer/service/ohos/scoped_native_buffer_fence_sync.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(ARKWEB_MEDIA)
+// GetTextureBase() below is a general stream-texture capability consumed by
+// the native-image compositing paths, not only the HLS system player, so it
+// is gated on ARKWEB_MEDIA rather than ARKWEB_MEDIA_HLS.
 #include "gpu/command_buffer/service/texture_base.h"
 #endif
 
@@ -63,7 +66,7 @@ class GPU_GLES2_EXPORT StreamTextureSharedImageInterface
 
   virtual bool HasTextureOwner() const = 0;
 
-#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(ARKWEB_MEDIA)
   virtual TextureBase* GetTextureBase() const { return nullptr; }
 #endif
 

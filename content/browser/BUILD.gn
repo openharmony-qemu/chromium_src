@@ -3859,6 +3859,12 @@ source_set("browser") {
     sources += arkweb_content_browser_media_ohos_audio_sources
   }
 
+  if (arkweb_media_hls) {
+    import(
+        "//arkweb/chromium_ext/content/browser/media/ohos/arkweb_content_browser_media_ohos_ext.gni")
+    sources += arkweb_content_browser_media_hls_sources
+  }
+
   if (use_aura || is_apple) {
     sources += [
       "compositor/image_transport_factory.cc",

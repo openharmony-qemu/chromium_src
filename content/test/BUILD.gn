@@ -3757,9 +3757,14 @@ test("content_unittests") {
 
   if (arkweb_test) {
     sources += arbweb_content_media_test_sources
+    if (arkweb_media_hls) {
+      sources += [
+        "//arkweb/chromium_ext/content/browser/media/ohos/ohos_media_player_renderer_unittest.cc",
+      ]
+    }
     sources += [
       "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_output_stream_unittest.cc",
-      "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_input_stream_unittest.cc"    
+      "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_input_stream_unittest.cc"
     ]
     include_dirs = [
       "//arkweb/ohos_adapter_ndk/interfaces",

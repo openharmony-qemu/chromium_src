@@ -244,7 +244,7 @@ void ClipboardHostImpl::ReadAvailableTypes(
     ui::ClipboardBuffer clipboard_buffer,
     ReadAvailableTypesCallback callback) {
   if (render_frame_host().IsInactiveAndDisallowActivation(
-          DisallowActivationReasonId::kClipboard)) {
+          DisallowActivationReasonId::kClipboard) || !IsRendererPasteAllowed(clipboard_buffer, render_frame_host())) {
     std::move(callback).Run({});
     return;
   }
@@ -255,7 +255,7 @@ void ClipboardHostImpl::IsFormatAvailable(blink::mojom::ClipboardFormat format,
                                           ui::ClipboardBuffer clipboard_buffer,
                                           IsFormatAvailableCallback callback) {
   if (render_frame_host().IsInactiveAndDisallowActivation(
-          DisallowActivationReasonId::kClipboard)) {
+          DisallowActivationReasonId::kClipboard) || !IsRendererPasteAllowed(clipboard_buffer, render_frame_host())) {
     std::move(callback).Run(false);
     return;
   }

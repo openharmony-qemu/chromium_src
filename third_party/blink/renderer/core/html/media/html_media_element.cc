@@ -4230,7 +4230,7 @@ void HTMLMediaElement::UpdatePlayState(
       media_player->IsFrameHidden() && IsHTMLVideoElement()) {
     if (should_be_playing && media_player->HasVideo()) {
       should_be_playing = false;
-      pause();
+      PauseInternal(WebMediaPlayer::PauseReason::kPageHidden);
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
       LOG_FEEDBACK(INFO) << "UpdatePlayState document is hidden, video do not "
                             "be allow to play";

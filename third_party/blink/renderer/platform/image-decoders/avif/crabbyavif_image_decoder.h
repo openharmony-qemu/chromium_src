@@ -28,7 +28,9 @@ class PLATFORM_EXPORT CrabbyAVIFImageDecoder final : public ImageDecoder {
   CrabbyAVIFImageDecoder(AlphaOption,
                          HighBitDepthDecodingOption,
                          ColorBehavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                          cc::AuxImage,
+#endif
                          wtf_size_t max_decoded_bytes,
                          AnimationOption);
   CrabbyAVIFImageDecoder(const CrabbyAVIFImageDecoder&) = delete;

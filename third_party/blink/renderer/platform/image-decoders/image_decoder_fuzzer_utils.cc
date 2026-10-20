@@ -93,7 +93,9 @@ std::unique_ptr<ImageDecoder> CreateImageDecoder(DecoderType decoder_type,
     case DecoderType::kCrabbyAvifDecoder: {
       return std::make_unique<CrabbyAVIFImageDecoder>(
           GetAlphaOption(fdp), GetHbdOption(fdp), GetColorBehavior(fdp),
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
           GetAuxImageType(fdp),
+#endif
           /*max_decoded_bytes=*/fdp.ConsumeIntegral<uint32_t>(),
           GetAnimationOption(fdp));
     }

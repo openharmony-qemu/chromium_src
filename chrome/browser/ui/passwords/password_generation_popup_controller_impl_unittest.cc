@@ -20,6 +20,10 @@
 #include "components/password_manager/core/browser/password_generation_frame_helper.h"
 #include "components/password_manager/core/browser/stub_password_manager_client.h"
 #include "components/password_manager/core/browser/stub_password_manager_driver.h"
+#include "content/public/browser/global_routing_id.h"
+#include "content/public/browser/render_frame_host.h"
+#include "content/public/browser/render_widget_host.h"
+#include "content/public/browser/render_widget_host_view.h"
 #include "content/public/browser/web_contents.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -227,6 +231,81 @@ TEST_F(PasswordGenerationPopupControllerImplTest, DestroyInPasswordAccepted) {
         controller->Hide(autofill::SuggestionHidingReason::kViewDestroyed);
       });
   controller->PasswordAccepted();
+}
+
+// Tests that accepting the password doesn't crash if the driver is gone, e.g.
+// because the frame was deleted since the popup was shown.
+TEST_F(PasswordGenerationPopupControllerImplTest,
+       PasswordAcceptedWithoutDriverDoesNotCrash) {
+  std::unique_ptr<MockPasswordManagerDriver> driver = CreateDriver();
+  base::WeakPtr<PasswordGenerationPopupController> controller =
+      PasswordGenerationPopupControllerImpl::GetOrCreate(
+          /*previous=*/nullptr, ui_data().bounds, ui_data(),
+          driver->AsWeakPtr(), /*observer=*/nullptr, web_contents(),
+          main_rfh());
+  driver.reset();
+
+  controller->PasswordAccepted();
+  EXPECT_FALSE(controller);
+}
+
+TEST_F(PasswordGenerationPopupControllerImplTest,
+       RemovesRegisteredKeyPressHandlerWithoutDriver) {
+  auto driver = CreateDriver();
+  auto weak_driver = driver->AsWeakPtr();
+  const auto frame_id = main_rfh()->GetGlobalId();
+  ASSERT_TRUE(main_rfh()->GetView());
+  auto* widget = main_rfh()->GetView()->GetRenderWidgetHost();
+  ASSERT_TRUE(widget);
+  auto controller = PasswordGenerationPopupControllerImpl::GetOrCreate(
+      /*previous=*/nullptr, ui_data().bounds, ui_data(), weak_driver,
+      /*observer=*/nullptr, web_contents(), main_rfh());
+  controller->SetViewForTesting(popup_view());
+
+  // SetViewForTesting makes Show skip registration. Exercise the same
+  // registration method that Show calls, using the frame's real test view.
+  auto handler = controller->RegisterKeyPressHandlerForTesting();
+  ASSERT_FALSE(handler.is_null());
+
+  driver.reset();
+  EXPECT_FALSE(weak_driver);
+  ASSERT_TRUE(content::RenderFrameHost::FromID(frame_id));
+  EXPECT_CALL(*popup_view(), Hide());
+  controller->FrameWasScrolled();
+  EXPECT_FALSE(controller);
+
+  // Add CHECKs that the same callback is not already registered. This would
+  // fail if Hide had skipped removal after the driver weak pointer expired.
+  widget->AddKeyPressEventCallback(handler);
+  widget->RemoveKeyPressEventCallback(handler);
+}
+
+TEST_F(PasswordGenerationPopupControllerImplTest,
+       ClosesAfterRegisteredKeyPressHandlersFrameIsDeleted) {
+  auto driver = CreateDriver();
+  auto weak_driver = driver->AsWeakPtr();
+  ASSERT_NE(web_contents(),
+            content::WebContents::FromRenderFrameHost(main_rfh()));
+  const auto frame_id = main_rfh()->GetGlobalId();
+  ASSERT_TRUE(main_rfh()->GetView());
+  auto controller = PasswordGenerationPopupControllerImpl::GetOrCreate(
+      /*previous=*/nullptr, ui_data().bounds, ui_data(), weak_driver,
+      /*observer=*/nullptr, web_contents(), main_rfh());
+  controller->SetViewForTesting(popup_view());
+  auto handler = controller->RegisterKeyPressHandlerForTesting();
+  ASSERT_FALSE(handler.is_null());
+
+  // The fixture's observed WebContents is separate from the harness contents
+  // owning main_rfh(), so deleting the latter leaves the controller alive.
+  driver.reset();
+  DeleteContents();
+  ASSERT_EQ(nullptr, content::RenderFrameHost::FromID(frame_id));
+  EXPECT_FALSE(weak_driver);
+  ASSERT_TRUE(controller);
+
+  EXPECT_CALL(*popup_view(), Hide());
+  controller->FrameWasScrolled();
+  EXPECT_FALSE(controller);
 }
 
 TEST_F(PasswordGenerationPopupControllerImplTest, GetElementTextDirection) {

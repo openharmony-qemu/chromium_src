@@ -15,11 +15,15 @@
 #include "base/base64.h"
 #include "base/containers/span.h"
 #include "base/feature_list.h"
+#include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/i18n/rtl.h"
+#include "base/location.h"
 #include "base/memory/weak_ptr.h"
+#include "base/run_loop.h"
 #include "base/strings/string_util.h"
 #include "base/task/cancelable_task_tracker.h"
+#include "base/task/sequenced_task_runner.h"
 #include "base/test/gmock_callback_support.h"
 #include "base/test/gmock_move_support.h"
 #include "base/test/metrics/histogram_tester.h"
@@ -471,11 +475,85 @@ TEST_F(PasswordAutofillManagerTest, NoFillingOnNavigation) {
   InitializePasswordAutofillManager(&client, &autofill_client);
 
   EXPECT_CALL(*client.mock_driver(), FillSuggestion).Times(0);
-  password_autofill_manager_->DidNavigateMainFrame();
+  password_autofill_manager_->DidNavigateFrame();
   password_autofill_manager_->DidAcceptSuggestion(
       autofill::test::CreateAutofillSuggestion(
           autofill::SuggestionType::kPasswordEntry, test_username_),
       SuggestionPosition{.row = 0});
+}
+
+// Tests that a navigation hides the suggestions shown by the manager.
+TEST_F(PasswordAutofillManagerTest, NavigationHidesOwnSuggestions) {
+  TestPasswordManagerClient client;
+  NiceMock<MockAutofillClient> autofill_client;
+  InitializePasswordAutofillManager(&client, &autofill_client);
+  AutofillClient::PopupOpenArgs open_args;
+  EXPECT_CALL(autofill_client, ShowAutofillSuggestions)
+      .WillOnce([&](const AutofillClient::PopupOpenArgs& args,
+                    base::WeakPtr<autofill::AutofillSuggestionDelegate> delegate) {
+        open_args = args;
+        auto session_id =
+            autofill_client.TestAutofillClient::ShowAutofillSuggestions(
+                args, delegate);
+        autofill_client.set_suggestion_ui_session_id(session_id);
+        return session_id;
+      });
+  password_autofill_manager_->ShowSuggestions(kTriggeringField);
+
+  EXPECT_CALL(autofill_client,
+              HideAutofillSuggestions(
+                  autofill::SuggestionHidingReason::kStaleData));
+  password_autofill_manager_->DidNavigateFrame();
+}
+
+// Tests that a navigation doesn't hide suggestions that weren't shown by the
+// manager, e.g. suggestions shown for another frame.
+TEST_F(PasswordAutofillManagerTest, NavigationDoesNotHideOtherSuggestions) {
+  TestPasswordManagerClient client;
+  NiceMock<MockAutofillClient> autofill_client;
+  InitializePasswordAutofillManager(&client, &autofill_client);
+  AutofillClient::PopupOpenArgs open_args;
+  EXPECT_CALL(autofill_client, ShowAutofillSuggestions)
+      .WillOnce([&](const AutofillClient::PopupOpenArgs& args,
+                    base::WeakPtr<autofill::AutofillSuggestionDelegate> delegate) {
+        open_args = args;
+        auto session_id =
+            autofill_client.TestAutofillClient::ShowAutofillSuggestions(
+                args, delegate);
+        autofill_client.set_suggestion_ui_session_id(session_id);
+        return session_id;
+      });
+  password_autofill_manager_->ShowSuggestions(kTriggeringField);
+  // Simulate that another delegate replaced the suggestions.
+  autofill_client.set_suggestion_ui_session_id(
+      autofill_client.TestAutofillClient::ShowAutofillSuggestions(
+          open_args, /*delegate=*/nullptr));
+
+  EXPECT_CALL(autofill_client, HideAutofillSuggestions).Times(0);
+  password_autofill_manager_->DidNavigateFrame();
+}
+
+// Tests that the fill data that was posted for the previous document (see
+// `ContentPasswordManagerDriver::PropagateFillDataOnParsingCompletion()`) is
+// dropped on navigation.
+TEST_F(PasswordAutofillManagerTest, NavigationDropsPendingFillData) {
+  TestPasswordManagerClient client;
+  InitializePasswordAutofillManager(&client, /*autofill_client=*/nullptr);
+
+  base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
+      FROM_HERE,
+      base::BindOnce(&PasswordAutofillManager::OnAddPasswordFillData,
+                     password_autofill_manager_->GetWeakPtr(), fill_data()));
+  password_autofill_manager_->DidNavigateFrame();
+  // Tasks run in posting order, so the task above is processed before the run
+  // loop quits.
+  base::RunLoop run_loop;
+  base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
+      FROM_HERE, run_loop.QuitClosure());
+  run_loop.Run();
+
+  EXPECT_FALSE(
+      password_autofill_manager_->PreviewSuggestionForTest(test_username_));
 }
 
 TEST_F(PasswordAutofillManagerTest, PreviewSuggestion) {
@@ -492,7 +570,7 @@ TEST_F(PasswordAutofillManagerTest, PreviewSuggestion) {
   EXPECT_FALSE(
       password_autofill_manager_->PreviewSuggestionForTest(kInvalidUsername));
 
-  password_autofill_manager_->DidNavigateMainFrame();
+  password_autofill_manager_->DidNavigateFrame();
   EXPECT_FALSE(
       password_autofill_manager_->PreviewSuggestionForTest(test_username_));
 }
@@ -2103,7 +2181,7 @@ TEST_F(PasswordAutofillManagerTest, ManualFallback_FlowResetOnNavigation) {
       autofill::AutofillSuggestionTriggerSource::kManualFallbackPasswords;
   password_autofill_manager_->ShowSuggestions(field);
   EXPECT_TRUE(password_autofill_manager_->manual_fallback_flow());
-  password_autofill_manager_->DidNavigateMainFrame();
+  password_autofill_manager_->DidNavigateFrame();
 
   EXPECT_FALSE(password_autofill_manager_->manual_fallback_flow());
 }
@@ -2185,7 +2263,7 @@ TEST_F(PasswordAutofillManagerTest,
                                     /*autofill_client=*/nullptr);
 
   base::HistogramTester histograms;
-  password_autofill_manager_->DidNavigateMainFrame();
+  password_autofill_manager_->DidNavigateFrame();
 
   EXPECT_THAT(histograms.GetTotalCountsForPrefix("Autofill.Funnel."),
               ::testing::IsEmpty());

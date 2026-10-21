@@ -55,6 +55,11 @@ void LogSiteIsolationMetricsForSubmittedForm(
       render_frame_host->GetSiteInstance()->RequiresDedicatedProcess());
 }
 
+int GenerateDriverId() {
+  static unsigned next_free_id = 0;
+  return next_free_id++;
+}
+
 }  // namespace
 
 ContentPasswordManagerDriver::ContentPasswordManagerDriver(
@@ -68,8 +73,7 @@ ContentPasswordManagerDriver::ContentPasswordManagerDriver(
           autofill::ContentAutofillClient::FromWebContents(
               content::WebContents::FromRenderFrameHost(render_frame_host)),
           client) {
-  static unsigned next_free_id = 0;
-  id_ = next_free_id++;
+  id_ = GenerateDriverId();
 
   render_frame_host_->GetRemoteAssociatedInterfaces()->GetInterface(
       &password_autofill_agent_);
@@ -118,6 +122,20 @@ void ContentPasswordManagerDriver::DidNavigate() {
   if (!IsRenderFrameHostSupported()) {
     password_manager_receiver_.reset();
   }
+}
+
+void ContentPasswordManagerDriver::ResetForNewDocument() {
+  // Objects created for the previous document (most importantly
+  // `PasswordFormManager`s in the `PasswordManager`'s form cache) identify
+  // this driver by its weak pointers and its ID. Invalidate both, so they
+  // treat this driver as a different one, as if a new RenderFrameHost, and
+  // hence a new driver, had been created for the new document. Otherwise, e.g.
+  // a form manager with credentials fetched for the previous document's origin
+  // could be matched with a form of the new document (see crbug.com/561039723).
+  weak_factory_.InvalidateWeakPtrs();
+  id_ = GenerateDriverId();
+  password_generation_helper_.DidNavigateFrame();
+  password_autofill_manager_.DidNavigateFrame();
 }
 
 bool ContentPasswordManagerDriver::HasValidURL(bool may_kill_renderer) {

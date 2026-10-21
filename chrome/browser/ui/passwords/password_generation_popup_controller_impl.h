@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "base/functional/callback.h"
 #include "base/i18n/rtl.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
@@ -124,6 +125,10 @@ class PasswordGenerationPopupControllerImpl
 #if defined(UNIT_TEST)
   PasswordGenerationPopupView* view() const { return view_; }
   void SetViewForTesting(PasswordGenerationPopupView* view) { view_ = view; }
+  base::RepeatingCallback<bool(const input::NativeWebKeyboardEvent&)>
+  RegisterKeyPressHandlerForTesting() {
+    return RegisterKeyPressHandler();
+  }
   void SelectAcceptButtonForTesting() {
     SelectElement(PasswordGenerationPopupElement::kAcceptButton);
   }
@@ -172,6 +177,9 @@ class PasswordGenerationPopupControllerImpl
   const std::u16string& HelpText() const override;
 
   void HideImpl();
+
+  base::RepeatingCallback<bool(const input::NativeWebKeyboardEvent&)>
+  RegisterKeyPressHandler();
 
   bool HandleKeyPressEvent(const input::NativeWebKeyboardEvent& event);
 

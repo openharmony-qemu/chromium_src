@@ -602,6 +602,18 @@ Response EmulationHandler::ClearIdleOverride() {
   return Response::Success();
 }
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+Response EmulationHandler::SetScriptExecutionDisabled(bool value) {
+  if (auto* wc = GetWebContents()) {
+    auto* wci = static_cast<WebContentsImpl*>(wc);
+    if (wci) {
+      wci->SetCdpScriptExecutionDisabled(value);
+    }
+  }
+  return Response::FallThrough();
+}
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
+
 Response EmulationHandler::SetGeolocationOverride(
     std::optional<double> latitude,
     std::optional<double> longitude,

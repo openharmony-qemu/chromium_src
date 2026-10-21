@@ -62,7 +62,8 @@
                   "setVisibleSize",
                   "setUserAgentOverride",
                   "setFocusEmulationEnabled",
-                  "setEmulatedMedia"
+                  "setEmulatedMedia",
+                  "setScriptExecutionDisabled"
                 ],
                 "async": [
                   "getOverriddenSensorInformation",

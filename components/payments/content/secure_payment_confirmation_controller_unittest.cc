@@ -75,6 +75,7 @@ class SecurePaymentConfirmationControllerTest
   }
   void OnPayCalled() override {}
   void OnAbortCalled() override {}
+  void OnInternalError() override {}
 
  private:
   content::BrowserTaskEnvironment task_environment_;

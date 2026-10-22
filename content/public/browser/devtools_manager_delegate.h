@@ -11,6 +11,7 @@
 
 #include "base/containers/span.h"
 #include "base/memory/scoped_refptr.h"
+#include "base/memory/weak_ptr.h"
 #include "content/common/content_export.h"
 #include "content/public/browser/devtools_agent_host.h"
 #include "url/gurl.h"
@@ -103,7 +104,8 @@ class CONTENT_EXPORT DevToolsManagerDelegate {
   enum TargetType { kFrame, kTab };
 
   // Returns all targets embedder would like to report as debuggable remotely.
-  virtual DevToolsAgentHost::List RemoteDebuggingTargets(TargetType target_type);
+  virtual DevToolsAgentHost::List RemoteDebuggingTargets(
+      TargetType target_type);
 
   // Creates new inspectable target given the |url|.
   // |new_window| is currently only used on Android - Desktop platforms handle
@@ -127,11 +129,18 @@ class CONTENT_EXPORT DevToolsManagerDelegate {
                                     CreateNewTargetCallback callback) {}
 #endif
 
-  // Get all live browser contexts created by CreateBrowserContext() method.
-  virtual std::vector<BrowserContext*> GetBrowserContexts();
+  // Returns the list of browser contexts exposed to browser automation. This
+  // MUST include contexts previously created via CreateBrowserContext(), but
+  // embedder may choose to omit some contexts that were not created via
+  // DevTools. In particular, default contexts are not exposed by some
+  // embedders at the moment, but this may eventually be revisited.
+  virtual std::vector<base::WeakPtr<BrowserContext>> GetBrowserContexts();
 
   // Get default browser context. May return null if not supported.
   virtual BrowserContext* GetDefaultBrowserContext();
+
+  // Get browser context by its unique id. May return null if not found.
+  virtual BrowserContext* GetBrowserContext(const std::string& context_id);
 
   // Create new browser context. May return null if not supported or not
   // possible. Delegate must take ownership of the created browser context, and

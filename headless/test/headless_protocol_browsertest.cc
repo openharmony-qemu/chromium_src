@@ -656,6 +656,8 @@ HEADLESS_PROTOCOL_TEST(WindowOpenOnSecondaryScreen,
 HEADLESS_PROTOCOL_TEST(ScreenRotationSecondaryScreen,
                        "sanity/screen-rotation-secondary-screen.js")
 
+HEADLESS_PROTOCOL_TEST(ContextDisposal, "sanity/context-disposal.js")
+
 HEADLESS_PROTOCOL_TEST(MoveWindowBetweenScreens,
                        "shared/move-window-between-screens.js")
 
@@ -742,5 +744,7 @@ HEADLESS_PROTOCOL_TEST(WindowWithNewContext,
 
 HEADLESS_PROTOCOL_TEST(SetZoomedWindowBounds,
                        "shared/set-zoomed-window-bounds.js")
+
+HEADLESS_PROTOCOL_TEST(GetBrowserContexts, "shared/get-browser-contexts.js")
 
 }  // namespace headless

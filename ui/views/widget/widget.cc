@@ -1068,7 +1068,12 @@ void Widget::Hide() {
   }
   auto weak_this = GetWeakPtr();
   native_widget_->Hide();
-  CHECK(weak_this);
+  // Visibility change observers may destroy this widget during Hide(), e.g.
+  // when hiding a window re-entrantly hides and destroys this widget. See
+  // crbug.com/564588980.
+  if (!weak_this) {
+    return;
+  }
   internal::AnyWidgetObserverSingleton::GetInstance()->OnAnyWidgetHidden(this);
 }
 

@@ -73,6 +73,10 @@ class PasswordGenerationFrameHelper {
   virtual void AddManualGenerationEnabledField(
       autofill::FieldRendererId field_renderer_id);
 
+  // Called when a cross-document navigation commits in the frame of the
+  // driver. Resets the state that belongs to the previous document.
+  void DidNavigateFrame();
+
   // Returns a randomly generated password that should (but is not guaranteed
   // to) match the requirements of the site.
   // `last_committed_url` refers to the main frame URL and may impact the

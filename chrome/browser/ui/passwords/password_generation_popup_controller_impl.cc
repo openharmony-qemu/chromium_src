@@ -39,6 +39,7 @@
 #include "components/signin/public/base/consent_level.h"
 #include "components/signin/public/identity_manager/identity_manager.h"
 #include "components/strings/grit/components_strings.h"
+#include "content/public/browser/global_routing_id.h"
 #include "content/public/browser/navigation_handle.h"
 #include "content/public/browser/render_widget_host.h"
 #include "content/public/browser/render_widget_host_view.h"
@@ -56,27 +57,28 @@ using autofill::password_generation::PasswordGenerationType;
 class PasswordGenerationPopupControllerImpl::KeyPressRegistrator {
  public:
   explicit KeyPressRegistrator(content::RenderFrameHost* frame)
-      : frame_(frame) {}
+      : frame_id_(frame ? frame->GetGlobalId()
+                        : content::GlobalRenderFrameHostId()) {}
   KeyPressRegistrator(const KeyPressRegistrator& rhs) = delete;
   KeyPressRegistrator& operator=(const KeyPressRegistrator& rhs) = delete;
 
   ~KeyPressRegistrator() = default;
 
-  void RegisterKeyPressHandler(
+  content::RenderWidgetHost::KeyPressEventCallback RegisterKeyPressHandler(
       content::RenderWidgetHost::KeyPressEventCallback handler) {
     DCHECK(callback_.is_null());
-    content::RenderWidgetHostView* view = frame_->GetView();
+    content::RenderWidgetHostView* view = GetView();
     if (!view) {
-      return;
+      return {};
     }
     view->GetRenderWidgetHost()->AddKeyPressEventCallback(handler);
     callback_ = std::move(handler);
+    return callback_;
   }
 
   void RemoveKeyPressHandler() {
     if (!callback_.is_null()) {
-      content::RenderWidgetHostView* view = frame_->GetView();
-      if (view) {
+      if (content::RenderWidgetHostView* view = GetView()) {
         view->GetRenderWidgetHost()->RemoveKeyPressEventCallback(callback_);
       }
       callback_.Reset();
@@ -84,7 +86,13 @@ class PasswordGenerationPopupControllerImpl::KeyPressRegistrator {
   }
 
  private:
-  const raw_ptr<content::RenderFrameHost, DanglingUntriaged> frame_;
+  content::RenderWidgetHostView* GetView() {
+    content::RenderFrameHost* frame =
+        content::RenderFrameHost::FromID(frame_id_);
+    return frame ? frame->GetView() : nullptr;
+  }
+
+  const content::GlobalRenderFrameHostId frame_id_;
   content::RenderWidgetHost::KeyPressEventCallback callback_;
 };
 
@@ -227,7 +235,11 @@ void PasswordGenerationPopupControllerImpl::PasswordAccepted() {
   // |this| can be destroyed here because GeneratedPasswordAccepted pops up
   // another UI and generates some event to close the dropdown.
   if (weak_this) {
-    driver_->FocusNextFieldAfterPasswords();
+    // `driver_` can also be null if it was invalidated since the popup was
+    // shown, e.g. because the frame was deleted.
+    if (driver_) {
+      driver_->FocusNextFieldAfterPasswords();
+    }
     weak_this->HideImpl();
   }
 }
@@ -252,6 +264,16 @@ void PasswordGenerationPopupControllerImpl::GeneratePasswordValue(
   }
 }
 
+base::RepeatingCallback<bool(const input::NativeWebKeyboardEvent&)>
+PasswordGenerationPopupControllerImpl::RegisterKeyPressHandler() {
+  return key_press_handler_manager_->RegisterKeyPressHandler(base::BindRepeating(
+      [](base::WeakPtr<PasswordGenerationPopupControllerImpl> weak_this,
+         const input::NativeWebKeyboardEvent& event) {
+        return weak_this && weak_this->HandleKeyPressEvent(event);
+      },
+      GetWeakPtr()));
+}
+
 void PasswordGenerationPopupControllerImpl::Show(GenerationUIState state) {
   CHECK(!current_generated_password_.empty());
   state_ = state;
@@ -264,12 +286,7 @@ void PasswordGenerationPopupControllerImpl::Show(GenerationUIState state) {
       HideImpl();
       return;
     }
-    key_press_handler_manager_->RegisterKeyPressHandler(base::BindRepeating(
-        [](base::WeakPtr<PasswordGenerationPopupControllerImpl> weak_this,
-           const input::NativeWebKeyboardEvent& event) {
-          return weak_this && weak_this->HandleKeyPressEvent(event);
-        },
-        GetWeakPtr()));
+    RegisterKeyPressHandler();
     if (!view_->Show()) {
       // The instance is deleted after this point.
       return;
@@ -388,9 +405,10 @@ PasswordGenerationPopupControllerImpl::GetElementTextDirection() const {
 }
 
 void PasswordGenerationPopupControllerImpl::HideImpl() {
-  // Detach if the frame is still alive.
+  // Detach if the frame is still alive. `KeyPressRegistrator` checks this
+  // itself, so this doesn't depend on `driver_`.
+  key_press_handler_manager_->RemoveKeyPressHandler();
   if (driver_) {
-    key_press_handler_manager_->RemoveKeyPressHandler();
     // The preview might have not been cleared (e.g. popup closed with ESC).
     driver_->ClearPreviewedForm();
   }

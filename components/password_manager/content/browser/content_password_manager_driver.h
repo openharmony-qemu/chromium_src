@@ -71,6 +71,13 @@ class ContentPasswordManagerDriver
           pending_receiver);
   void DidNavigate();
 
+  // Called when a navigation commits a new document in the frame (i.e. not for
+  // BFCache restores or prerendered page activations). Such a navigation may
+  // reuse the RenderFrameHost, and hence this driver, of the previous document
+  // (e.g. the first navigation away from the initial empty document). Discards
+  // all state that belongs to the previous document.
+  void ResetForNewDocument();
+
   // PasswordManagerDriver implementation.
   int GetId() const override;
   gfx::RectF TransformToRootCoordinates(

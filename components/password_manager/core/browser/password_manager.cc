@@ -11,6 +11,7 @@
 #include <memory>
 #include <utility>
 
+#include "base/check_deref.h"
 #include "base/containers/contains.h"
 #include "base/containers/flat_map.h"
 #include "base/feature_list.h"
@@ -1158,10 +1159,12 @@ PasswordFormManager* PasswordManager::CreateFormManager(
       std::make_unique<PasswordSaveManagerImpl>(client_),
       /*metrics_recorder=*/nullptr);
   // Process model and server predictions in case they've already arrived.
-  if (auto model_form_predictions = classifier_model_predictions_.find(
-          std::make_pair(driver, form.renderer_id()));
-      model_form_predictions != classifier_model_predictions_.end()) {
-    manager->ProcessModelPredictions(model_form_predictions->second);
+  if (driver) {
+    if (auto model_form_predictions = classifier_model_predictions_.find(
+            std::make_pair(driver->GetId(), form.renderer_id()));
+        model_form_predictions != classifier_model_predictions_.end()) {
+      manager->ProcessModelPredictions(model_form_predictions->second);
+    }
   }
   manager->ProcessServerPredictions(server_predictions_);
 
@@ -1824,10 +1827,10 @@ void PasswordManager::ProcessClassificationModelPredictions(
   RecordMetricsForModelPredictions(field_predictions,
                                    client_->GetUkmSourceId());
 
-  // A combination of driver and form renderer id allow to identify fields
+  // A combination of driver id and form renderer id allow to identify fields
   // uniquely, so only the renderer ids need to be kept (not global ids).
   auto& predictions_for_form = classifier_model_predictions_[std::make_pair(
-      driver, form.renderer_id())] =
+      CHECK_DEREF(driver).GetId(), form.renderer_id())] =
       KeyPredictionsByRendererIds(field_predictions);
 
   if (auto logger = GetLoggerIfAvailable(client_)) {

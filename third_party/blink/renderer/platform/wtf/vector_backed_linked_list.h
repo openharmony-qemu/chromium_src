@@ -198,7 +198,9 @@ class VectorBackedLinkedList {
   using const_reverse_iterator =
       VectorBackedLinkedListConstReverseIterator<VectorBackedLinkedList>;
 
-  VectorBackedLinkedList();
+  // The anchor node is allocated lazily on the first call to insert() so that
+  // a default-constructed list does not own an out-of-line buffer.
+  VectorBackedLinkedList() = default;
   ~VectorBackedLinkedList() = default;
 
   void swap(VectorBackedLinkedList&);
@@ -263,6 +265,9 @@ class VectorBackedLinkedList {
 
   // Removes all elements in a linked list.
   void clear() {
+    if (nodes_.empty()) {
+      return;
+    }
     // Keep anchor so that we can insert elements after this operation.
     nodes_.ShrinkCapacity(1);
     nodes_[kAnchorIndex].prev_index_ = kAnchorIndex;
@@ -290,8 +295,12 @@ class VectorBackedLinkedList {
 
   bool IsFreeListEmpty() const { return free_head_index_ == kAnchorIndex; }
 
-  wtf_size_t UsedFirstIndex() const { return nodes_[kAnchorIndex].next_index_; }
-  wtf_size_t UsedLastIndex() const { return nodes_[kAnchorIndex].prev_index_; }
+  wtf_size_t UsedFirstIndex() const {
+    return nodes_.empty() ? kAnchorIndex : nodes_[kAnchorIndex].next_index_;
+  }
+  wtf_size_t UsedLastIndex() const {
+    return nodes_.empty() ? kAnchorIndex : nodes_[kAnchorIndex].prev_index_;
+  }
 
   const_iterator MakeConstIterator(wtf_size_t index) const {
     return const_iterator(index, this);
@@ -643,13 +652,6 @@ class VectorBackedLinkedListConstReverseIterator
 };
 
 template <typename T, typename Allocator>
-VectorBackedLinkedList<T, Allocator>::VectorBackedLinkedList() {
-  // First inserts anchor, which serves as the beginning and the end of
-  // the used list.
-  nodes_.push_back(Node(kAnchorIndex, kAnchorIndex));
-}
-
-template <typename T, typename Allocator>
 inline void VectorBackedLinkedList<T, Allocator>::swap(
     VectorBackedLinkedList& other) {
   nodes_.swap(other.nodes_);
@@ -686,6 +688,11 @@ template <typename IncomingValueType>
 typename VectorBackedLinkedList<T, Allocator>::iterator
 VectorBackedLinkedList<T, Allocator>::insert(const_iterator position,
                                              IncomingValueType&& value) {
+  if (nodes_.empty()) {
+    // Lazily insert the anchor, which serves as the beginning and the end of
+    // the used list.
+    nodes_.push_back(Node(kAnchorIndex, kAnchorIndex));
+  }
   wtf_size_t position_index = position.GetIndex();
   wtf_size_t prev_index = nodes_[position_index].prev_index_;
 

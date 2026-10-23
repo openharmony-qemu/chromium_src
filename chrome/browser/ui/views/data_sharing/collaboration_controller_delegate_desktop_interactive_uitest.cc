@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <memory>
+
+#include "base/test/bind.h"
 #include "base/test/metrics/histogram_tester.h"
 #include "base/test/mock_callback.h"
 #include "chrome/browser/signin/chrome_signin_client_test_util.h"
@@ -48,6 +51,7 @@
 #include "ui/gfx/image/image_unittest_util.h"
 #include "ui/views/interaction/interactive_views_test.h"
 #include "ui/views/test/dialog_test.h"
+#include "ui/views/widget/any_widget_observer.h"
 #include "ui/views/widget/widget.h"
 #include "ui/views/window/dialog_client_view.h"
 
@@ -386,6 +390,64 @@ IN_PROC_BROWSER_TEST_F(CollaborationControllerDelegateDesktopInteractiveUITest,
   // Closing the browser should not crash and should invoke the exit callback.
   EXPECT_CALL(exit_callback, Run).Times(1);
   browser2->window()->Close();
+}
+
+IN_PROC_BROWSER_TEST_F(CollaborationControllerDelegateDesktopInteractiveUITest,
+                       DelegateDestroyedWhileShowingErrorDialog) {
+  // The delegate can be destroyed while its dialog is midway through being
+  // shown, e.g. when the flow is exited during the modal sheet presentation
+  // on Mac. Showing the error dialog must tolerate the delegate going away
+  // before chrome::ShowBrowserModal() returns.
+  auto delegate =
+      std::make_unique<TestCollaborationControllerDelegateDesktop>(browser());
+
+  views::Widget* dialog_widget = nullptr;
+  views::AnyWidgetObserver observer(views::test::AnyWidgetTestPasskey{});
+  observer.set_shown_callback(
+      base::BindLambdaForTesting([&](views::Widget* widget) {
+        dialog_widget = widget;
+        delegate.reset();
+      }));
+
+  base::MockCallback<
+      collaboration::CollaborationControllerDelegate::ResultCallback>
+      callback;
+  delegate->ShowError(collaboration::CollaborationControllerDelegate::ErrorInfo(
+                          collaboration::CollaborationControllerDelegate::
+                              ErrorInfo::Type::kUnknown),
+                      callback.Get());
+
+  EXPECT_FALSE(delegate);
+  ASSERT_NE(nullptr, dialog_widget);
+  dialog_widget->CloseNow();
+}
+
+IN_PROC_BROWSER_TEST_F(CollaborationControllerDelegateDesktopInteractiveUITest,
+                       DelegateDestroyedWhileShowingPromptDialog) {
+  // Same as DelegateDestroyedWhileShowingErrorDialog, but for the sign-in or
+  // sync prompt dialog.
+  collaboration::ServiceStatus status;
+  auto delegate =
+      std::make_unique<TestCollaborationControllerDelegateDesktop>(browser());
+  EXPECT_CALL(*delegate, GetServiceStatus()).WillOnce(testing::Return(status));
+
+  views::Widget* dialog_widget = nullptr;
+  views::AnyWidgetObserver observer(views::test::AnyWidgetTestPasskey{});
+  observer.set_shown_callback(
+      base::BindLambdaForTesting([&](views::Widget* widget) {
+        dialog_widget = widget;
+        delegate.reset();
+      }));
+
+  base::MockCallback<
+      collaboration::CollaborationControllerDelegate::ResultCallback>
+      callback;
+  delegate->ShowAuthenticationUi(collaboration::FlowType::kJoin,
+                                 callback.Get());
+
+  EXPECT_FALSE(delegate);
+  ASSERT_NE(nullptr, dialog_widget);
+  dialog_widget->CloseNow();
 }
 
 IN_PROC_BROWSER_TEST_F(CollaborationControllerDelegateDesktopInteractiveUITest,

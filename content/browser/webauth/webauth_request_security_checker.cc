@@ -114,12 +114,7 @@ WebAuthRequestSecurityChecker::RemoteValidation::Create(
     return nullptr;
   }
 
-  constexpr char well_known_url_template[] =
-#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
-      "https://***";
-#else
-      "https://domain.com/.well-known/webauthn";
-#endif
+  constexpr char well_known_url_template[] = "https://domain.com/.well-known/webauthn";
   GURL well_known_url(well_known_url_template);
   CHECK(well_known_url.is_valid());
 

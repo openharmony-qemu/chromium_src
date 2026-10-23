@@ -350,4 +350,78 @@ TEST_F(RendererWebMediaPlayerDelegateVisibilityTest,
       blink::mojom::FrameVisibility::kNotRendered);
 }
 
+TEST_F(RendererWebMediaPlayerDelegateTest, DestroyingDelegateOnPageHidden) {
+  const int delegate_id_1 = delegate_manager_->AddObserver(&observer_1_);
+  const int delegate_id_2 = delegate_manager_->AddObserver(&observer_2_);
+
+  int call_count = 0;
+  auto destroy_delegate = [&]() {
+    ++call_count;
+    delegate_manager_->RemoveObserver(delegate_id_1);
+    delegate_manager_->RemoveObserver(delegate_id_2);
+    delegate_manager_.reset();
+  };
+
+#if BUILDFLAG(ARKWEB_TEST)
+  EXPECT_CALL(observer_1_, OnPageHidden(testing::_))
+      .Times(testing::AtMost(1))
+      .WillRepeatedly(destroy_delegate);
+  EXPECT_CALL(observer_2_, OnPageHidden(testing::_))
+      .Times(testing::AtMost(1))
+      .WillRepeatedly(destroy_delegate);
+#else
+  EXPECT_CALL(observer_1_, OnPageHidden())
+      .Times(testing::AtMost(1))
+      .WillRepeatedly(destroy_delegate);
+  EXPECT_CALL(observer_2_, OnPageHidden())
+      .Times(testing::AtMost(1))
+      .WillRepeatedly(destroy_delegate);
+#endif
+  delegate_manager_->OnPageVisibilityChanged(
+      blink::mojom::PageVisibilityState::kHidden
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+      ,
+      /*storing_in_bfcache=*/false
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+  );
+  EXPECT_EQ(1, call_count);
+}
+
+TEST_F(RendererWebMediaPlayerDelegateTest, DestroyingDelegateOnPageShown) {
+  const int delegate_id_1 = delegate_manager_->AddObserver(&observer_1_);
+  const int delegate_id_2 = delegate_manager_->AddObserver(&observer_2_);
+
+  int call_count = 0;
+  auto destroy_delegate = [&]() {
+    ++call_count;
+    delegate_manager_->RemoveObserver(delegate_id_1);
+    delegate_manager_->RemoveObserver(delegate_id_2);
+    delegate_manager_.reset();
+  };
+
+#if BUILDFLAG(ARKWEB_TEST)
+  EXPECT_CALL(observer_1_, OnPageShown(testing::_))
+      .Times(testing::AtMost(1))
+      .WillRepeatedly(destroy_delegate);
+  EXPECT_CALL(observer_2_, OnPageShown(testing::_))
+      .Times(testing::AtMost(1))
+      .WillRepeatedly(destroy_delegate);
+#else
+  EXPECT_CALL(observer_1_, OnPageShown())
+      .Times(testing::AtMost(1))
+      .WillRepeatedly(destroy_delegate);
+  EXPECT_CALL(observer_2_, OnPageShown())
+      .Times(testing::AtMost(1))
+      .WillRepeatedly(destroy_delegate);
+#endif
+  delegate_manager_->OnPageVisibilityChanged(
+      blink::mojom::PageVisibilityState::kVisible
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+      ,
+      /*storing_in_bfcache=*/false
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+  );
+  EXPECT_EQ(1, call_count);
+}
+
 }  // namespace media

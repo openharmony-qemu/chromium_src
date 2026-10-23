@@ -6,6 +6,8 @@
 
 #include <stdint.h>
 
+#include <vector>
+
 #include "base/functional/bind.h"
 #include "base/logging.h"
 #include "base/metrics/user_metrics_action.h"
@@ -231,25 +233,42 @@ void RendererWebMediaPlayerDelegate::OnPageVisibilityChanged(
 
   if (is_shown) {
     RecordAction(base::UserMetricsAction("Media.Shown"));
-
-    for (base::IDMap<Observer*>::iterator it(&id_map_); !it.IsAtEnd();
-         it.Advance()) {
-#if !BUILDFLAG(ARKWEB_BFCACHE)
-      it.GetCurrentValue()->OnPageShown();
-#else
-      it.GetCurrentValue()->OnPageShown(storing_in_bfcache);
-#endif // #endif // BUILDFLAG(ARKWEB_BFCACHE)
-    }
   } else {
     RecordAction(base::UserMetricsAction("Media.Hidden"));
+  }
 
-    for (base::IDMap<Observer*>::iterator it(&id_map_); !it.IsAtEnd();
-         it.Advance()) {
-#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-      it.GetCurrentValue()->OnPageHidden();
+  // Create a list of players before making any possibly reentrant calls to
+  // OnPageShown() or OnPageHidden().
+  std::vector<int> player_ids;
+  player_ids.reserve(id_map_.size());
+  for (base::IDMap<Observer*>::iterator it(&id_map_); !it.IsAtEnd();
+       it.Advance()) {
+    player_ids.push_back(it.GetCurrentKey());
+  }
+
+  auto weak_this = weak_ptr_factory_.GetWeakPtr();
+  for (int player_id : player_ids) {
+    Observer* player = id_map_.Lookup(player_id);
+    if (!player) {
+      continue;
+    }
+
+    if (is_shown) {
+#if !BUILDFLAG(ARKWEB_BFCACHE)
+      player->OnPageShown();
 #else
-      it.GetCurrentValue()->OnPageHidden(storing_in_bfcache);
+      player->OnPageShown(storing_in_bfcache);
+#endif // #endif // BUILDFLAG(ARKWEB_BFCACHE)
+    } else {
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+      player->OnPageHidden();
+#else
+      player->OnPageHidden(storing_in_bfcache);
 #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+    }
+
+    if (!weak_this) {
+      return;
     }
   }
 

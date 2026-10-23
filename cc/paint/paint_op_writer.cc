@@ -287,7 +287,7 @@ void PaintOpWriter::WriteSizeAt(void* memory, size_t size) {
 }
 
 void PaintOpWriter::Write(const SkPath& path, UsePaintCache use_paint_cache) {
-  auto id = path.getGenerationID();
+  PaintCacheId id = path.getGenerationID();
   if (!options_.for_identifiability_study) {
     Write(id);
   }

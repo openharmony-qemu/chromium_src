@@ -676,7 +676,7 @@ struct DeletePaintCachePathsINTERNALImmediate {
   static const uint8_t cmd_flags = CMD_FLAG_SET_TRACE_LEVEL(3);
 
   static uint32_t ComputeDataSize(GLsizei _n) {
-    return static_cast<uint32_t>(sizeof(GLuint) * _n);  // NOLINT
+    return static_cast<uint32_t>(sizeof(GLuint64) * _n);  // NOLINT
   }
 
   static uint32_t ComputeSize(GLsizei _n) {
@@ -688,13 +688,13 @@ struct DeletePaintCachePathsINTERNALImmediate {
     header.SetCmdByTotalSize<ValueType>(ComputeSize(_n));
   }
 
-  void Init(GLsizei _n, const GLuint* _ids) {
+  void Init(GLsizei _n, const GLuint64* _ids) {
     SetHeader(_n);
     n = _n;
     memcpy(ImmediateDataAddress(this), _ids, ComputeDataSize(_n));
   }
 
-  void* Set(void* cmd, GLsizei _n, const GLuint* _ids) {
+  void* Set(void* cmd, GLsizei _n, const GLuint64* _ids) {
     static_cast<ValueType*>(cmd)->Init(_n, _ids);
     const uint32_t size = ComputeSize(_n);
     return NextImmediateCmdAddressTotalSize<ValueType>(cmd, size);
@@ -764,7 +764,7 @@ struct DeletePaintCacheEffectsINTERNALImmediate {
   static const uint8_t cmd_flags = CMD_FLAG_SET_TRACE_LEVEL(3);
 
   static uint32_t ComputeDataSize(GLsizei _n) {
-    return static_cast<uint32_t>(sizeof(GLuint) * _n);  // NOLINT
+    return static_cast<uint32_t>(sizeof(GLuint64) * _n);  // NOLINT
   }
 
   static uint32_t ComputeSize(GLsizei _n) {
@@ -776,13 +776,13 @@ struct DeletePaintCacheEffectsINTERNALImmediate {
     header.SetCmdByTotalSize<ValueType>(ComputeSize(_n));
   }
 
-  void Init(GLsizei _n, const GLuint* _ids) {
+  void Init(GLsizei _n, const GLuint64* _ids) {
     SetHeader(_n);
     n = _n;
     memcpy(ImmediateDataAddress(this), _ids, ComputeDataSize(_n));
   }
 
-  void* Set(void* cmd, GLsizei _n, const GLuint* _ids) {
+  void* Set(void* cmd, GLsizei _n, const GLuint64* _ids) {
     static_cast<ValueType*>(cmd)->Init(_n, _ids);
     const uint32_t size = ComputeSize(_n);
     return NextImmediateCmdAddressTotalSize<ValueType>(cmd, size);

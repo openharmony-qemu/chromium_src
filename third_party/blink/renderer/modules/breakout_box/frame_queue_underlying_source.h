@@ -144,6 +144,7 @@ class FrameQueueUnderlyingSource : public UnderlyingSourceBase {
   // transferred stream.
   CrossThreadPersistent<FrameQueueUnderlyingSource<NativeFrameType>>
       transferred_source_ GUARDED_BY(lock_);
+  bool transferred_source_cleared_ GUARDED_BY(lock_) = false;
   int num_pending_pulls_ GUARDED_BY(lock_) = 0;
   // When nonempty, |device_id_| is used to monitor all frames queued by this
   // source or exposed to JS via the stream connected to this source.

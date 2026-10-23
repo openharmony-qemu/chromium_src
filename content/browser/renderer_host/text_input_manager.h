@@ -13,6 +13,7 @@
 #include "arkweb/build/features/features.h"
 #include "base/i18n/rtl.h"
 #include "base/memory/raw_ptr.h"
+#include "base/memory/weak_ptr.h"
 #include "base/observer_list.h"
 #include "content/common/content_export.h"
 #include "third_party/blink/public/mojom/page/widget.mojom-forward.h"
@@ -336,6 +337,8 @@ class CONTENT_EXPORT TextInputManager {
 #endif  // BUILDFLAG(IS_WIN)
 
   base::ObserverList<Observer>::Unchecked observer_list_;
+
+  base::WeakPtrFactory<TextInputManager> weak_ptr_factory_{this};
 };
 }
 #if BUILDFLAG(ARKWEB_MENU)

@@ -707,6 +707,8 @@ void PipelineImpl::RendererWrapper::CreateRendererInternal(
   // TODO(xhwang): During Resume(), the |default_renderer_| might already match
   // the |renderer_type|, in which case we shouldn't need to create a new one.
   if (!default_renderer_ || renderer_type) {
+    default_renderer_.reset();
+    
     // Create the Renderer asynchronously on the main task runner. Use
     // base::BindPostTaskToCurrentDefault to call OnRendererCreated() on the
     // media task runner.
@@ -1241,6 +1243,8 @@ void PipelineImpl::RendererWrapper::InitializeRenderer(
 
 void PipelineImpl::RendererWrapper::DestroyRenderer() {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
+
+  default_renderer_.reset();
 
   // Destroy the renderer outside the lock scope to avoid holding the lock
   // while renderer is being destroyed (in case Renderer destructor is costly).

@@ -442,6 +442,8 @@ TEST_F(PipelineImplTest, StartThenStopImmediately) {
   base::RunLoop().RunUntilIdle();
 
   pipeline_->Stop();
+  base::RunLoop().RunUntilIdle();
+  EXPECT_FALSE(renderer_);
 }
 
 TEST_F(PipelineImplTest, StartSuspendedAndResumeAudioOnly) {

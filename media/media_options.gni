@@ -153,7 +153,7 @@ declare_args() {
   # If overriding this to false, possibly via its component values,
   # `enable_libaom` should likely also be overriddent to false.
   #enable_av1_decoder = enable_dav1d_decoder TODO:IS_OHOS
-  enable_av1_decoder = false
+  enable_av1_decoder = true
 
   # Enable HEVC/H265 demuxing. Actual decoding must be provided by the
   # platform.

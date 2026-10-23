@@ -605,6 +605,10 @@ void WebPagePopupImpl::Update() {
     popup_owner_client_rect_ = dom_rect;
 
   popup_client_->Update(forced_update);
+  if (!widget_base_) {
+    // Something inside Update() closed this popup.
+    return;
+  }
   if (forced_update)
     SetWindowRect(WindowRectInScreen());
 }
@@ -989,6 +993,10 @@ KURL WebPagePopupImpl::GetURLForDebugTrace() {
 void WebPagePopupImpl::WidgetHostDisconnected() {
   Close();
   // Careful, this is now destroyed.
+}
+
+void WebPagePopupImpl::WidgetHostDisconnectedForTesting() {
+  WidgetHostDisconnected();
 }
 
 void WebPagePopupImpl::Close() {

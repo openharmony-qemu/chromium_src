@@ -292,6 +292,32 @@ bool MaybeIsLocalUNCPath(const base::FilePath& path) {
 // the struct below.
 constexpr const int kNoBasePathKey = -1;
 
+#if BUILDFLAG(IS_MAC)
+// Returns a file path with the "/System/Volumes/Data" firmlink prefix stripped,
+// mapping paths on the macOS Data volume back to the root "/" namespace.
+//
+// On macOS 10.15+, storage is split into a read-only System volume mounted at
+// "/" and a read-write Data volume mounted at "/System/Volumes/Data". APFS
+// firmlinks map system directories (e.g., "/Users", "/Applications",
+// "/Library") between the two volumes without modifying standard POSIX
+// `realpath` representations. Stripping this prefix allows blocklist rules
+// defined against root-relative paths to match targets accessed through the
+// Data volume firmlink path.
+base::FilePath MaybeStripMacDataVolumePrefix(const base::FilePath& path) {
+  static constexpr base::FilePath::CharType kDataVolumePrefix[] =
+      FILE_PATH_LITERAL("/System/Volumes/Data");
+  base::FilePath data_volume_prefix(kDataVolumePrefix);
+  if (path == data_volume_prefix) {
+    return base::FilePath(FILE_PATH_LITERAL("/"));
+  }
+  base::FilePath stripped_path(FILE_PATH_LITERAL("/"));
+  if (data_volume_prefix.AppendRelativePath(path, &stripped_path)) {
+    return stripped_path;
+  }
+  return path;
+}
+#endif
+
 // A wrapper around `base::NormalizeFilePath` that returns its result instead of
 // using an out parameter.
 base::FilePath NormalizeFilePath(const base::FilePath& path) {
@@ -314,6 +340,20 @@ base::FilePath NormalizeFilePath(const base::FilePath& path) {
     return absolute_path;
   }
   CHECK_EQ(path.empty(), normalized_path.empty());
+  return normalized_path;
+}
+
+// Normalizes `path` for sensitive directory blocklist checking. Resolves
+// symbolic links and canonicalizes the path when `should_normalize_file_path`
+// is true. On macOS, additionally strips the "/System/Volumes/Data" firmlink
+// prefix so paths on the Data volume map onto the root "/" blocklist namespace.
+base::FilePath NormalizeFilePathForBlocklist(const base::FilePath& path,
+                                             bool should_normalize_file_path) {
+  base::FilePath normalized_path =
+      should_normalize_file_path ? NormalizeFilePath(path) : path;
+#if BUILDFLAG(IS_MAC)
+  normalized_path = MaybeStripMacDataVolumePrefix(normalized_path);
+#endif
   return normalized_path;
 }
 
@@ -369,6 +409,10 @@ GenerateBlockPaths(bool should_normalize_file_path) {
 #endif
 #if BUILDFLAG(IS_MAC)
           // Similar Mac specific blocks.
+          // Block access to /System/Volumes (internal system and container
+          // volumes).
+          {kNoBasePathKey, FILE_PATH_LITERAL("/System/Volumes"),
+           BlockType::kBlockAllChildren},
           {base::DIR_APP_DATA, nullptr, BlockType::kBlockAllChildren},
           // Block access to the current bundle directory.
           {chrome::DIR_OUTER_BUNDLE, nullptr, BlockType::kBlockAllChildren},
@@ -468,7 +512,7 @@ GenerateBlockPaths(bool should_normalize_file_path) {
       path = base::FilePath(blocked_path.path);
     }
     block_path_rules->block_path_rules_.emplace_back(
-        should_normalize_file_path ? NormalizeFilePath(path) : path,
+        NormalizeFilePathForBlocklist(path, should_normalize_file_path),
         blocked_path.type);
   }
 
@@ -493,12 +537,12 @@ bool ShouldBlockAccessToPath(
   DCHECK(!path.empty());
   DCHECK(path.IsAbsolute());
 
-  if (should_normalize_file_path) {
-    path = NormalizeFilePath(path);
-    profile_path = NormalizeFilePath(profile_path);
-    for (auto& rule : extra_rules) {
-      rule.path = NormalizeFilePath(rule.path);
-    }
+  path = NormalizeFilePathForBlocklist(path, should_normalize_file_path);
+  profile_path =
+      NormalizeFilePathForBlocklist(profile_path, should_normalize_file_path);
+  for (auto& rule : extra_rules) {
+    rule.path =
+        NormalizeFilePathForBlocklist(rule.path, should_normalize_file_path);
   }
 
 #if BUILDFLAG(IS_WIN)

@@ -99,4 +99,16 @@ TEST_F(RTCEncodedAudioUnderlyingSourceTest,
   source->Close();
 }
 
+TEST_F(RTCEncodedAudioUnderlyingSourceTest,
+       TransferResetsDisconnectCallbackBeforeContextDestroyed) {
+  EXPECT_CALL(disconnect_callback_, Run()).Times(0);
+  V8TestingScope v8_scope;
+  ScriptState* script_state = v8_scope.GetScriptState();
+  auto* source = CreateSource(script_state);
+  ReadableStream::CreateWithCountQueueingStrategy(script_state, source, 0);
+
+  source->OnSourceTransferStarted();
+  task_environment_.RunUntilIdle();
+}
+
 }  // namespace blink

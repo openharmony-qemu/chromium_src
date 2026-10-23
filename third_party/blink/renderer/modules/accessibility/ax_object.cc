@@ -151,6 +151,12 @@
 #include "ui/events/keycodes/dom/keycode_converter.h"
 #include "ui/gfx/geometry/transform.h"
 
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+#include "third_party/blink/renderer/core/editing/editor.h"
+#include "third_party/blink/renderer/core/events/input_event.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/accessibility/ax_object_for_include.cc"
+#endif  // BUILDFLAG(ARKWEB_ACCESSIBILITY)
+
 namespace blink {
 
 using mojom::blink::FormControlType;
@@ -2312,13 +2318,7 @@ void AXObject::SerializeUnignoredAttributes(ui::AXNodeData* node_data,
     // improve the performance of the cross-process communication with the
     // browser process, and since it can be easily computed in that process.
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-    // ArkWeb: For non-atomic text fields (contenteditable), serialize kValue
-    // from DOM inner text. The browser-side computation from child nodes can be
-    // stale when child updates arrive in a separate AXTreeUpdate (e.g. ctrl+v
-    // paste after ctrl+x cut), causing OnDataChanged to miss the value change.
-    TruncateAndAddStringAttribute(node_data,
-                                  ax::mojom::blink::StringAttribute::kValue,
-                                  SlowGetValueForControlIncludingContentEditable());
+    SerializeArkWebValueAttribute(node_data);
 #else
     TruncateAndAddStringAttribute(node_data,
                                   ax::mojom::blink::StringAttribute::kValue,
@@ -7425,7 +7425,11 @@ bool AXObject::PerformAction(const ui::AXActionData& action_data) {
     case ax::mojom::blink::Action::kInternalInvalidateTree:
     case ax::mojom::blink::Action::kLoadInlineTextBoxes:
     case ax::mojom::blink::Action::kNone:
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
     case ax::mojom::blink::Action::kReplaceSelectedText:
+      return OnArkWebReplaceSelectedTextAction(
+          String::FromUTF8(action_data.value));
+#endif
     case ax::mojom::blink::Action::kSetSelection:
     case ax::mojom::blink::Action::kShowTooltip:
     case ax::mojom::blink::Action::kSignalEndOfTest:

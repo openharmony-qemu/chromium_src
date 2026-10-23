@@ -215,6 +215,15 @@ class MODULES_EXPORT AXNodeObject : public AXObject {
   String SlowGetValueForControlIncludingContentEditable() const override;
   String SlowGetValueForControlIncludingContentEditable(
       AXObjectSet& visited) const override;
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  // ArkWeb: collect contenteditable value, skipping placeholder <br> to
+  // avoid phantom \n in the serialized kValue.
+  String GetContentEditableValueWithoutPlaceholderBR(Element& element) const;
+  void CollectTextWithPlaceholderNewlines(const Node& node,
+                                          StringBuilder& builder,
+                                          bool& truncated,
+                                          int depth) const;
+#endif  // BUILDFLAG(ARKWEB_ACCESSIBILITY)
   String TextFromDescendants(AXObjectSet& visited,
                              const AXObject* aria_label_or_description_root,
                              bool recursive) const override;

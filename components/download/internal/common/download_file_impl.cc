@@ -37,7 +37,11 @@
 #endif  // BUILDFLAG(IS_ANDROID)
 
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+#include "base/command_line.h"
+#include "base/debug/crash_logging.h"
+#include "base/debug/dump_without_crashing.h"
 #include "components/download/public/common/download_utils.h"
+#include "content/public/common/content_switches.h"
 #endif // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
 
 namespace download {
@@ -289,7 +293,39 @@ void DownloadFileImpl::AddInputStream(std::unique_ptr<InputStream> stream,
   auto [it, inserted] =
       source_streams_.insert({offset, std::make_unique<SourceStream>(
                                           offset, offset, std::move(stream))});
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  if (!inserted) {
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kEnableNwebEx)) {
+      SCOPED_CRASH_KEY_NUMBER("AddInputStream", "offset_insert_failed", offset);
+      SCOPED_CRASH_KEY_NUMBER("AddInputStream", "stream_count", static_cast<int>(source_streams_.size()));
+      SCOPED_CRASH_KEY_NUMBER("AddInputStream", "existing_bytes_read",it->second->bytes_read());
+      SCOPED_CRASH_KEY_NUMBER("AddInputStream", "num_active_streams", num_active_streams_);
+      SCOPED_CRASH_KEY_NUMBER("AddInputStream", "total_received", TotalBytesReceived());
+      SCOPED_CRASH_KEY_NUMBER("AddInputStream", "potential_length", potential_file_length_);
+      SCOPED_CRASH_KEY_BOOL("AddInputStream", "existing_finished", it->second->is_finished());
+      SCOPED_CRASH_KEY_NUMBER("AddInputStream", "existing_bytes_written", it->second->bytes_written());
+      SCOPED_CRASH_KEY_NUMBER("AddInputStream", "existing_length", it->second->length());
+      SCOPED_CRASH_KEY_NUMBER("AddInputStream", "download_id", download_id_);
+      LOG(INFO) << "AddInputStream offset_insert_failed: offset=" << offset
+                << ", stream_count=" << source_streams_.size()
+                << ", existing_bytes_read=" << it->second->bytes_read()
+                << ", num_active_streams=" << num_active_streams_
+                << ", total_received=" << TotalBytesReceived()
+                << ", potential_length=" << potential_file_length_
+                << ", existing_finished=" << it->second->is_finished()
+                << ", existing_bytes_written=" << it->second->bytes_written()
+                << ", existing_length=" << it->second->length()
+                << ", download_id=" << download_id_;
+      base::debug::DumpWithoutCrashing();
+      CancelRequest(offset);
+      return;
+    }
+    CHECK(inserted);
+  }
+#else
   CHECK(inserted);
+#endif  // BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
   OnSourceStreamAdded(it->second.get());
 }
 

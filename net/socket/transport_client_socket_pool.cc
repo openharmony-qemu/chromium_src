@@ -443,20 +443,33 @@ int TransportClientSocketPool::RequestSocketInternal(
       request.respect_limits() == RespectLimits::ENABLED) {
     // NOTE(mmenke):  Wonder if we really need different code for each case
     // here.  Only reason for them now seems to be preconnects.
-    if (idle_socket_count_ > 0) {
-      // There's an idle socket in this pool. Either that's because there's
-      // still one in this group, but we got here due to preconnecting
-      // bypassing idle sockets, or because there's an idle socket in another
-      // group.
-      bool closed = CloseOneIdleSocketExceptInGroup(group);
-      if (preconnecting && !closed)
-        return ERR_PRECONNECT_MAX_SOCKET_LIMIT;
-    } else {
+    if (idle_socket_count_ == 0) {
       // We could check if we really have a stalled group here, but it
       // requires a scan of all groups, so just flip a flag here, and do the
       // check later.
       request.net_log().AddEvent(
           NetLogEventType::SOCKET_POOL_STALLED_MAX_SOCKETS);
+      return preconnecting ? ERR_PRECONNECT_MAX_SOCKET_LIMIT : ERR_IO_PENDING;
+    }
+
+    // There's an idle socket in this pool. Either that's because there's
+    // still one in this group, but we got here due to preconnecting
+    // bypassing idle sockets, or because there's an idle socket in another
+    // group. Close idle sockets until we have capacity (or there are none
+    // left outside the current group).
+    while (idle_socket_count_ > 0) {
+      if (!CloseOneIdleSocketExceptInGroup(group)) {
+        break;
+      }
+      // We want to know if a new allocation could succeed, if not we must
+      // release more idle sockets and try again.
+      UpdateStateBeforeAllocation();
+      if (State() == SocketPoolState::kUncapped) {
+        break;
+      }
+    }
+    // If the pool is still capped by now, there's no free capacity to allocate.
+    if (State() == SocketPoolState::kCapped) {
       return preconnecting ? ERR_PRECONNECT_MAX_SOCKET_LIMIT : ERR_IO_PENDING;
     }
   }
@@ -549,6 +562,7 @@ bool TransportClientSocketPool::AssignIdleSocketToRequest(
       it->socket->NetLog().AddEventWithStringParams(
           NetLogEventType::SOCKET_POOL_CLOSING_SOCKET, "reason",
           net_log_reason_utf8);
+      QueueDestroySocket(std::move(it->socket));
       DecrementIdleCount();
       it = idle_sockets->erase(it);
       continue;
@@ -682,6 +696,7 @@ void TransportClientSocketPool::CancelRequest(const GroupId& group_id,
 void TransportClientSocketPool::CloseIdleSockets(
     const char* net_log_reason_utf8) {
   CleanupIdleSockets(true, net_log_reason_utf8);
+  DestroyQueuedSockets();
   DCHECK_EQ(0u, idle_socket_count_);
 }
 
@@ -975,12 +990,6 @@ void TransportClientSocketPool::CleanupIdleSockets(
   }
 }
 
-bool TransportClientSocketPool::CloseOneIdleSocket() {
-  if (idle_socket_count_ == 0)
-    return false;
-  return CloseOneIdleSocketExceptInGroup(nullptr);
-}
-
 bool TransportClientSocketPool::CloseOneIdleConnectionInHigherLayeredPool() {
   // This pool doesn't have any idle sockets. It's possible that a pool at a
   // higher layer is holding one of this sockets active, but it's actually idle.
@@ -1029,8 +1038,10 @@ void TransportClientSocketPool::CleanupIdleSocketsInGroup(
       idle_socket_it->socket->NetLog().AddEventWithStringParams(
           NetLogEventType::SOCKET_POOL_CLOSING_SOCKET, "reason",
           reason_for_closing_socket);
+      QueueDestroySocket(std::move(idle_socket_it->socket));
       idle_socket_it = group->mutable_idle_sockets()->erase(idle_socket_it);
       DecrementIdleCount();
+      UpdateStateAfterRelease();
     } else {
       DCHECK(!reason_for_closing_socket);
       ++idle_socket_it;
@@ -1150,7 +1161,7 @@ void TransportClientSocketPool::ReleaseSocket(
         not_reusable_reason);
     if (group->IsEmpty())
       RemoveGroup(i);
-    socket.reset();
+    QueueDestroySocket(std::move(socket));
   }
 
   CheckForStalledSocketGroups();
@@ -1167,7 +1178,7 @@ void TransportClientSocketPool::CheckForStalledSocketGroups() {
 
     if (ReachedMaxSocketsLimit()) {
       if (idle_socket_count_ > 0) {
-        CloseOneIdleSocket();
+        CloseOneIdleSocketExceptInGroup(nullptr);
       } else {
         // We can't activate more sockets since we're already at our global
         // limit.
@@ -1398,11 +1409,13 @@ bool TransportClientSocketPool::CloseOneIdleSocketExceptInGroup(
     std::list<IdleSocket>* idle_sockets = group->mutable_idle_sockets();
 
     if (!idle_sockets->empty()) {
+      QueueDestroySocket(std::move(idle_sockets->front().socket));
       idle_sockets->pop_front();
       DecrementIdleCount();
       if (group->IsEmpty())
         RemoveGroup(i);
-
+      // As a socket was released, the state should be updated to reflect this.
+      UpdateStateAfterRelease();
       return true;
     }
   }
@@ -1436,6 +1449,7 @@ void TransportClientSocketPool::OnConnectJobComplete(Group* group,
                               bound_request->request->socket_tag());
       bound_request->request->net_log().EndEventWithNetErrorCode(
           NetLogEventType::SOCKET_POOL, bound_request->pending_error);
+      UpdateStateAfterRelease();
       OnAvailableSocketSlot(group->group_id(), group);
       CheckForStalledSocketGroups();
       return;
@@ -1445,6 +1459,7 @@ void TransportClientSocketPool::OnConnectJobComplete(Group* group,
     // the group, and kick off another request. The socket will be discarded.
     if (bound_request->generation != group->generation()) {
       group->InsertUnboundRequest(std::move(bound_request->request));
+      UpdateStateAfterRelease();
       OnAvailableSocketSlot(group->group_id(), group);
       CheckForStalledSocketGroups();
       return;
@@ -1461,6 +1476,9 @@ void TransportClientSocketPool::OnConnectJobComplete(Group* group,
       if (result == OK)
         AddIdleSocket(job->PassSocket(), group);
       RemoveConnectJob(job, group);
+      if (result != OK) {
+        UpdateStateAfterRelease();
+      }
       OnAvailableSocketSlot(group->group_id(), group);
       CheckForStalledSocketGroups();
       return;
@@ -1500,6 +1518,7 @@ void TransportClientSocketPool::OnConnectJobComplete(Group* group,
     RemoveConnectJob(job, group);
   // If no socket was handed out, there's a new socket slot available.
   if (!request->handle()->socket()) {
+    UpdateStateAfterRelease();
     OnAvailableSocketSlot(group->group_id(), group);
     CheckForStalledSocketGroups();
   }
@@ -1607,6 +1626,27 @@ TransportClientSocketPool::RefreshGroup(GroupMap::iterator it,
     return RemoveGroup(it);
   }
   return ++it;
+}
+
+void TransportClientSocketPool::QueueDestroySocket(
+    std::unique_ptr<StreamSocket> socket) {
+  if (GetProxyChain().is_direct()) {
+    return;
+  }
+  if (sockets_queued_for_destruction_.empty()) {
+    base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
+        FROM_HERE,
+        base::BindOnce(&TransportClientSocketPool::DestroyQueuedSockets,
+                       weak_factory_.GetWeakPtr()));
+  }
+  sockets_queued_for_destruction_.emplace_back(std::move(socket));
+}
+
+void TransportClientSocketPool::DestroyQueuedSockets() {
+  // Move into a local vector before destroying elements in case a socket's
+  // destructor reentrantly calls QueueDestroySocket().
+  std::vector<std::unique_ptr<StreamSocket>> sockets =
+      std::move(sockets_queued_for_destruction_);
 }
 
 TransportClientSocketPool::Group::Group(

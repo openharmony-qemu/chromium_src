@@ -437,6 +437,11 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
     return AdditionalCapacity();
   }
 
+  void SetSocketSoftCapOverrideForTest(
+      std::optional<size_t> socket_soft_cap_override_for_test) {
+    socket_soft_cap_override_for_test_ = socket_soft_cap_override_for_test;
+  }
+
  protected:
   ClientSocketPool(size_t socket_soft_cap,
                    SocketPoolAdditionalCapacity additional_capacity,
@@ -459,7 +464,11 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
       SocketTag socket_tag,
       ConnectJob::Delegate* delegate);
 
-  size_t SocketSoftCap() const { return socket_soft_cap_; }
+  size_t SocketSoftCap() const {
+    return socket_soft_cap_override_for_test_
+               ? *socket_soft_cap_override_for_test_
+               : socket_soft_cap_;
+  }
 
   // This should return the sockets the pool considers to be in-use (reserved)
   // of the overall pool. This won't contain 'stalled' sockets as those have yet
@@ -473,8 +482,17 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
 
   SocketPoolState State() const { return state_; }
 
+  // This should be called exactly once before each attempted socket allocation
+  // via `RequestSocket` or `RequestSockets` (including before each retry after
+  // dropping idle sockets). Under invoking this function can impact security;
+  // over invoking this function can impact performance.
   void UpdateStateBeforeAllocation();
 
+  // This should be called once after each successful socket released (and not
+  // reused) via `RequestSocket`, `RequestSockets`, `CancelRequest`,
+  // `ReleaseSocket`, `OnConnectJobComplete`, `CloseIdleSockets`, or
+  // `CloseIdleSocketsInGroup`. Under invoking this function can impact
+  // performance; over invoking this function can impact security.
   void UpdateStateAfterRelease();
 
   const ProxyChain& GetProxyChain() const { return proxy_chain_; }
@@ -490,6 +508,9 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
   const size_t socket_soft_cap_;
   const SocketPoolAdditionalCapacity additional_capacity_;
   SocketPoolState state_ = SocketPoolState::kUncapped;
+
+  // If set, this overrides `socket_soft_cap_` for future calculations.
+  std::optional<size_t> socket_soft_cap_override_for_test_ = std::nullopt;
 
   const ProxyChain proxy_chain_;
   const bool is_for_websockets_;

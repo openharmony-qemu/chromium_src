@@ -548,6 +548,9 @@ class ColorPicker extends HTMLElement {
               'manual-color-change',
               {bubbles: true, detail: {color: this.colorWhenOpened_}}));
         }
+        // #if ARKWEB_INPUT_EVENTS
+        event.preventDefault();
+        // #endif
         break;
       case 'Tab':
         event.preventDefault();

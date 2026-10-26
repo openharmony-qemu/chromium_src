@@ -52,7 +52,9 @@ class CloseWatcher final : public EventTarget, public ExecutionContextClient {
     bool AnyEnabledWatchers();
     void MaybeCloseReceiver();
     void BindNewPipe();
-
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    Member<KeyboardEvent> esc_key_event_;
+#endif // ARKWEB_INPUT_EVENTS
    private:
     // mojom::blink::CloseListener override:
     void Signal() final;

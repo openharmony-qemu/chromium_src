@@ -71,6 +71,9 @@ class DateTimeLocalPicker extends HTMLElement {
           window.pagePopupController.setValue(
               this.hadValidValueWhenOpened_ ? this.initialSelectedValue_ : '');
         }
+        // #if ARKWEB_INPUT_EVENTS
+        event.preventDefault();
+        // #endif
         break;
       case 'ArrowUp':
       case 'ArrowDown':

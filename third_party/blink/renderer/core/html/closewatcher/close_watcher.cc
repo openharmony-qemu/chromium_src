@@ -158,7 +158,13 @@ bool CloseWatcher::WatcherStack::CancelEventCanBeCancelable() const {
 void CloseWatcher::WatcherStack::EscapeKeyHandler(KeyboardEvent* event) {
   if (AnyEnabledWatchers() && !event->DefaultHandled() && event->isTrusted() &&
       event->keyCode() == VKEY_ESCAPE) {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    esc_key_event_ = event;
     Signal();
+    esc_key_event_ = nullptr;
+#else
+    Signal();
+#endif // ARKWEB_INPUT_EVENTS
   }
 }
 
@@ -182,6 +188,9 @@ void CloseWatcher::WatcherStack::Trace(Visitor* visitor) const {
   visitor->Trace(watcher_groups_);
   visitor->Trace(receiver_);
   visitor->Trace(window_);
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  visitor->Trace(esc_key_event_);
+#endif // ARKWEB_INPUT_EVENTS
 }
 
 // static
@@ -257,6 +266,11 @@ bool CloseWatcher::RequestClose(AllowCancel allow_cancel) {
   {
     base::AutoReset<bool> scoped_committing(&dispatching_cancel_, true);
     DispatchEvent(cancel_event);
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    if (stack.esc_key_event_) {
+      stack.esc_key_event_->SetDefaultHandled();
+    }
+#endif // ARKWEB_INPUT_EVENTS
   }
 
   if (cancel_event.defaultPrevented()) {

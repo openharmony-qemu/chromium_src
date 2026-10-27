@@ -116,6 +116,9 @@ bool ImageFrameGenerator::DecodeAndScale(
     wtf_size_t index,
     const SkPixmap& pixmap,
     cc::PaintImage::GeneratorClientId client_id) {
+#if BUILDFLAG(IS_ARKWEB)
+  scoped_refptr<ImageFrameGenerator> self_keepalive(this);
+#endif
   if (decode_failed_.load()) {
     return false;
   }

@@ -72,17 +72,23 @@ used to filter file path.
                 <filteritem type="filepath" name="BUILD.gn" desc="OHOS自研文件，默认不加license" />
                 <filteritem type="filepath" name="build-profile.json5" desc="OHOS自研文件，默认不加license" />
                 <filteritem type="filepath" name="entry/build-profile.json5" desc="OHOS自研文件，默认不加license" />
+                <filteritem type="filepath" name="feature/build-profile.json5" desc="OHOS自研文件，默认不加license" />
                 <filteritem type="filepath" name="hvigor/hvigor-config.json5" desc="OHOS自研文件，默认不加license" />
                 <filteritem type="filepath" name="hvigorfile.js" desc="OHOS自研文件，默认不加license" />
                 <filteritem type="filepath" name="entry/hvigorfile.js" desc="OHOS自研文件，默认不加license" />
+                <filteritem type="filepath" name="feature/hvigorfile.js" desc="OHOS自研文件，默认不加license" />
                 <filteritem type="filepath" name="hvigor/hvigor-wrapper.js" desc="OHOS自研文件，默认不加license" />
                 <filteritem type="filepath" name="hvigorw" desc="OHOS自研文件，默认不加license" />
                 <filteritem type="filepath" name="entry/oh-package.json5" desc="OHOS自研文件，默认不加license" />
+                <filteritem type="filepath" name="feature/oh-package.json5" desc="OHOS自研文件，默认不加license" />
                 <filteritem type="filepath" name="hvigorw.bat" desc="OHOS自研文件，默认不加license" />
                 <filteritem type="filepath" name="entry/src/main/module.json5" desc="OHOS自研文件，默认不加license" />
+                <filteritem type="filepath" name="feature/src/main/module.json5" desc="OHOS自研文件，默认不加license" />
                 <filteritem type="filepath" name="oh-package.json5" desc="OHOS自研文件，默认不加license" />
                 <filteritem type="filepath" name="entry/src/main/ets/MainAbility/MainAbility.ts" desc="OHOS自研文件，默认不加license" />
+                <filteritem type="filepath" name="feature/src/main/ets/FeatureAbility/FeatureAbility.ts" desc="OHOS自研文件，默认不加license" />
                 <filteritem type="filepath" name="entry/src/main/ets/pages/Index.ets" desc="OHOS自研文件，默认不加license" />
+                <filteritem type="filepath" name="feature/src/main/ets/pages/Index.ets" desc="OHOS自研文件，默认不加license" />
                 <filteritem type="filepath" name="AppScope/app.json5" desc="OHOS自研文件，默认不加license" />
             </filefilter>
 
@@ -97,17 +103,23 @@ used to filter file path.
                 <filteritem type="filepath" name="BUILD.gn" desc="OHOS自研文件，默认不加版权信息" />
                 <filteritem type="filepath" name="build-profile.json5" desc="OHOS自研文件，默认不加版权信息" />
                 <filteritem type="filepath" name="entry/build-profile.json5" desc="OHOS自研文件，默认不加版权信息" />
+                <filteritem type="filepath" name="feature/build-profile.json5" desc="OHOS自研文件，默认不加版权信息" />
                 <filteritem type="filepath" name="hvigor/hvigor-config.json5" desc="OHOS自研文件，默认不加版权信息" />
                 <filteritem type="filepath" name="hvigorfile.js" desc="OHOS自研文件，默认不加版权信息" />
                 <filteritem type="filepath" name="entry/hvigorfile.js" desc="OHOS自研文件，默认不加版权信息" />
+                <filteritem type="filepath" name="feature/hvigorfile.js" desc="OHOS自研文件，默认不加版权信息" />
                 <filteritem type="filepath" name="hvigor/hvigor-wrapper.js" desc="OHOS自研文件，默认不加版权信息" />
                 <filteritem type="filepath" name="hvigorw" desc="OHOS自研文件，默认不加版权信息" />
                 <filteritem type="filepath" name="entry/oh-package.json5" desc="OHOS自研文件，默认不加版权信息" />
+                <filteritem type="filepath" name="feature/oh-package.json5" desc="OHOS自研文件，默认不加版权信息" />
                 <filteritem type="filepath" name="hvigorw.bat" desc="OHOS自研文件，默认不加版权信息" />
                 <filteritem type="filepath" name="entry/src/main/module.json5" desc="OHOS自研文件，默认不加版权信息" />
+                <filteritem type="filepath" name="feature/src/main/module.json5" desc="OHOS自研文件，默认不加版权信息" />
                 <filteritem type="filepath" name="oh-package.json5" desc="OHOS自研文件，默认不加版权信息" />
                 <filteritem type="filepath" name="entry/src/main/ets/MainAbility/MainAbility.ts" desc="OHOS自研文件，默认不加版权信息" />
+                <filteritem type="filepath" name="feature/src/main/ets/FeatureAbility/FeatureAbility.ts" desc="OHOS自研文件，默认不加license" />
                 <filteritem type="filepath" name="entry/src/main/ets/pages/Index.ets" desc="OHOS自研文件，默认不加版权信息" />
+                <filteritem type="filepath" name="feature/src/main/ets/pages/Index.ets" desc="OHOS自研文件，默认不加版权信息" />
                 <filteritem type="filepath" name="AppScope/app.json5" desc="OHOS自研文件，默认不加版权信息" />
             </filefilter>
         </filefilterlist>

@@ -187,7 +187,7 @@ void OverlayProcessorOhos::CheckOverlaySupportImpl(
 
     auto displayWidth = display_rect.width();
     auto displayHeight = display_rect.height();
-    if (IsSizeOutOfBounds(displayWidth, displayHeight)) {
+    if (displayWidth < kMinSize || displayHeight < kMinSize) {
       TRACE_EVENT2("viz", "CheckOverlaySupportImpl reject",
           "displayWidth", displayWidth, "displayHeight", displayHeight);
       LOG(DEBUG) << "Overlay rejected due to size limits. " <<

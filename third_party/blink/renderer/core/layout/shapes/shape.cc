@@ -259,7 +259,7 @@ static bool ExtractImageData(Image* image,
                                ArrayBufferContents::kZeroInitialize);
     if (result.DataLength() != dst_size_bytes)
       return false;
-    result.Transfer(contents);
+    contents = std::move(result);
   }
 
   // Set |surface| to draw directly to |contents|.

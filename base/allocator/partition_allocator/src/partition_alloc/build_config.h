@@ -112,6 +112,16 @@
 #define PA_IS_ASMJS
 #endif
 
+// ArkWeb extension flag. IS_ARKWEB_EXT_TRUE is injected by the ArkWeb build
+// (see arkweb/build/features/ in the chromium_arkweb repo) and is present on
+// the compile command line for ArkWeb builds with the ohos_nweb_ex extension
+// (musl_64 / x86_64). It is orthogonal to the OS macros: it is defined
+// alongside OSOHOS, so the #elif chain above would match the OSOHOS branch
+// first and never reach this flag — hence a separate #if.
+#if defined(IS_ARKWEB_EXT_TRUE)
+#define PA_IS_ARKWEB_EXT
+#endif
+
 // NOTE: Adding a new port? Please follow
 // https://chromium.googlesource.com/chromium/src/+/main/docs/new_port_policy.md
 
@@ -445,6 +455,13 @@
 #define PA_BUILDFLAG_INTERNAL_IS_OHOS() (0)
 #endif
 #undef PA_IS_OHOS
+
+#if defined(PA_IS_ARKWEB_EXT)
+#define PA_BUILDFLAG_INTERNAL_IS_ARKWEB_EXT() (1)
+#else
+#define PA_BUILDFLAG_INTERNAL_IS_ARKWEB_EXT() (0)
+#endif
+#undef PA_IS_ARKWEB_EXT
 
 #if defined(PA_IS_LINUX)
 #define PA_BUILDFLAG_INTERNAL_IS_LINUX() (1)

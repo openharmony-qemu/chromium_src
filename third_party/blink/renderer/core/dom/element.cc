@@ -4255,6 +4255,14 @@ void Element::DidChangeIsCanvasOrInCanvasSubtree() {
     layout_object->SetNeedsPaintPropertyUpdate();
     if (layout_object->HasLayer()) {
       To<LayoutBoxModelObject>(layout_object)->Layer()->SetNeedsRepaint();
+      // Typically compositor filter operations are not rebuilt unless the
+      // style filter value changes, regardless of paint invalidation.
+      // Aggressively rebuild compositor filter operations whenever content
+      // moves into a canvas, to ensure privacy-preserving filters are
+      // re-evaluated.
+      To<LayoutBoxModelObject>(layout_object)
+          ->Layer()
+          ->SetFilterOnEffectNodeDirty();
     }
     ObjectPaintInvalidator(*layout_object)
         .InvalidateDisplayItemClient(*layout_object,

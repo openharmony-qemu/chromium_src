@@ -1819,3 +1819,7 @@ bool AudioContext::CanPlayWhileHidden() const {
 }
 
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/webaudio/audio_context_for_include.cc"
+#endif

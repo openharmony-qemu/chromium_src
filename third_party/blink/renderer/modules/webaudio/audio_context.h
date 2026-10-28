@@ -7,6 +7,7 @@
 
 #include <atomic>
 
+#include "arkweb/build/features/features.h"
 #include "base/gtest_prod_util.h"
 #include "base/sequence_checker.h"
 #include "base/time/time.h"
@@ -164,7 +165,11 @@ class MODULES_EXPORT AudioContext final
 
   // media::mojom::MediaPlayer  implementation.
   void RequestPlay() override {}
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  void RequestPause(bool triggered_by_user) override;
+#else
   void RequestPause(bool triggered_by_user) override {}
+#endif
   void RequestSeekForward(base::TimeDelta seek_time) override {}
   void RequestSeekBackward(base::TimeDelta seek_time) override {}
   void RequestSeekTo(base::TimeDelta seek_time) override {}

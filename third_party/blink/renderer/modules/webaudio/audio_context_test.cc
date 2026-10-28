@@ -7,6 +7,10 @@
 #include <array>
 #include <memory>
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 #include "base/synchronization/waitable_event.h"
 #include "base/time/time.h"
 #include "media/base/audio_timestamp_helper.h"
@@ -391,6 +395,33 @@ class AudioContextTest : public PageTestBase {
   std::unique_ptr<MockMediaDevicesDispatcherHost>
       mock_media_devices_dispatcher_host_;
 };
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+TEST_F(AudioContextTest, MediaSessionPauseSuspendsDestinationAndAllowsResume) {
+  ScriptState* script_state = ToScriptStateForMainWorld(&GetFrame());
+  ScriptState::Scope scope(script_state);
+  AudioContext* context = AudioContext::Create(
+      GetFrame().DomWindow(), AudioContextOptions::Create(), ASSERT_NO_EXCEPTION);
+  ExpectContextRunning(context);
+
+  context->RequestPause(/*triggered_by_user=*/true);
+  if (!base::ohos::IsPcDevice()) {
+    // Preserve the original no-op RequestPause behavior on non-PC devices.
+    ExpectContextRunning(context);
+    return;
+  }
+  ExpectContextSuspended(context);
+  // Repeated STOP/pause notifications must not restart the destination.
+  context->RequestPause(/*triggered_by_user=*/true);
+  ExpectContextSuspended(context);
+
+  // Resume still uses the existing WebAudio/autoplay path.
+  context->resumeContext(script_state, ASSERT_NO_EXCEPTION);
+  EXPECT_TRUE(context->GetRealtimeAudioDestinationNode()
+                  ->GetOwnHandler()
+                  .get_platform_destination_is_playing_for_testing());
+}
+#endif
 
 TEST_F(AudioContextTest, AudioContextOptions_WebAudioLatencyHint) {
   AudioContextOptions* interactive_options = AudioContextOptions::Create();

@@ -131,12 +131,16 @@ class FileSystemEntryURLLoader : public network::mojom::URLLoader {
       net_error = net::ERR_INVALID_URL;
     }
 
-    // If the requested URL is not committable in the current process, block the
-    // request.  This prevents one origin from fetching filesystem: resources
-    // belonging to another origin, see https://crbug.com/964245.
+    // If the current process is not allowed to access data for the storage
+    // key's origin, block the request. This prevents one origin from fetching
+    // filesystem: resources belonging to another origin (see
+    // https://crbug.com/964245), and prevents processes such as PDF renderer
+    // processes (which may commit an origin but must not access its storage
+    // data) from reading filesystem: resources.
     if (params_.render_process_host_id != ChildProcessHost::kInvalidUniqueID &&
-        !ChildProcessSecurityPolicyImpl::GetInstance()->CanCommitURL(
-            params_.render_process_host_id, request.url)) {
+        (!RenderProcessHost::FromID(params_.render_process_host_id) ||
+         !ChildProcessSecurityPolicyImpl::GetInstance()->CanAccessDataForOrigin(
+             params_.render_process_host_id, params_.storage_key.origin()))) {
       DVLOG(1) << "Denied unauthorized request for "
                << request.url.possibly_invalid_spec();
       net_error = net::ERR_INVALID_URL;

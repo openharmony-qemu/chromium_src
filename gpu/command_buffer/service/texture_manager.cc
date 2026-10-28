@@ -2691,7 +2691,12 @@ void TextureManager::ValidateAndDoTexImage(
       DoTexSubImageRowByRowWorkaround(texture_state, state, sub_args,
                                       unpack_params);
 
-      SetLevelCleared(texture_ref, args.target, args.level, true);
+      // https://crbug.com/517337579: Only mark the level as cleared if the
+      // workaround succeeded, to prevent leaking uninitialized VRAM if
+      // sub-image uploads failed.
+      if (ERRORSTATE_PEEK_GL_ERROR(error_state, function_name) == GL_NO_ERROR) {
+        SetLevelCleared(texture_ref, args.target, args.level, true);
+      }
       return;
     }
   }
@@ -2725,7 +2730,12 @@ void TextureManager::ValidateAndDoTexImage(
               : DoTexSubImageArguments::CommandType::kTexSubImage2D};
       DoTexSubImageWithAlignmentWorkaround(texture_state, state, sub_args);
 
-      SetLevelCleared(texture_ref, args.target, args.level, true);
+      // https://crbug.com/517337579: Only mark the level as cleared if the
+      // workaround succeeded, to prevent leaking uninitialized VRAM if
+      // sub-image uploads failed.
+      if (ERRORSTATE_PEEK_GL_ERROR(error_state, function_name) == GL_NO_ERROR) {
+        SetLevelCleared(texture_ref, args.target, args.level, true);
+      }
       return;
     }
   }

@@ -15,6 +15,7 @@
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 #include "third_party/blink/renderer/platform/heap/member.h"
 #include "third_party/blink/renderer/platform/weborigin/kurl.h"
+#include "third_party/blink/renderer/platform/weborigin/security_origin.h"
 
 namespace blink {
 
@@ -45,6 +46,7 @@ struct CORE_EXPORT NavigateEventDispatchParams
   Member<Element> source_element;
   scoped_refptr<SerializedScriptValue> state_object;
   Member<HistoryItem> destination_item;
+  scoped_refptr<const SecurityOrigin> initiator_origin;
   bool is_browser_initiated = false;
   bool has_ua_visual_transition = false;
   bool is_synchronously_committed_same_document = true;

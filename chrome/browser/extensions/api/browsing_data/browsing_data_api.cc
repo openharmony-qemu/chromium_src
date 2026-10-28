@@ -111,6 +111,7 @@ bool IsRemovalPermitted(uint64_t removal_mask, PrefService* prefs) {
 
 }  // namespace
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 bool BrowsingDataSettingsFunction::isDataTypeSelected(
     BrowsingDataType data_type,
     ClearBrowsingDataTab tab) {
@@ -228,6 +229,7 @@ void BrowsingDataSettingsFunction::SetDetails(base::Value::Dict* selected_dict,
   selected_dict->Set(data_type, is_selected && is_permitted);
   permitted_dict->Set(data_type, is_permitted);
 }
+#endif
 
 BrowsingDataRemoverFunction::BrowsingDataRemoverFunction() = default;
 

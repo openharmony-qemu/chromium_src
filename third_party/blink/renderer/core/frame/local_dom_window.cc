@@ -212,7 +212,8 @@ int RequestAnimationFrame(Document* document,
 
   auto* frame_callback = MakeGarbageCollected<V8FrameCallback>(callback);
   frame_callback->SetUseLegacyTimeBase(legacy);
-  return document->RequestAnimationFrame(frame_callback);
+  return document->RequestAnimationFrame(frame_callback,
+                                         FrameCallbackType::kWebExposed);
 }
 
 // TODO(https://crbug.com/41406914): Ad-hoc method until we hook up with scroll
@@ -2111,7 +2112,7 @@ int LocalDOMWindow::webkitRequestAnimationFrame(
 }
 
 void LocalDOMWindow::cancelAnimationFrame(int id) {
-  document()->CancelAnimationFrame(id);
+  document()->CancelAnimationFrame(id, FrameCallbackType::kWebExposed);
 }
 
 bool LocalDOMWindow::originAgentCluster() const {

@@ -224,6 +224,12 @@ RenderPassBuilder& RenderPassBuilder::SetDamageRect(
   return *this;
 }
 
+CompositorFrameBuilder& CompositorFrameBuilder::AddOffsetTagValue(
+    const OffsetTagValue& value) {
+  frame_->metadata.offset_tag_values.push_back(value);
+  return *this;
+}
+
 RenderPassBuilder& RenderPassBuilder::SetCacheRenderPass(bool val) {
   pass_->cache_render_pass = val;
   return *this;

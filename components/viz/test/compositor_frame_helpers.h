@@ -296,6 +296,7 @@ class CompositorFrameBuilder {
       const gfx::DelegatedInkMetadata& metadata);
   CompositorFrameBuilder& AddOffsetTagDefinition(
       const OffsetTagDefinition& definition);
+  CompositorFrameBuilder& AddOffsetTagValue(const OffsetTagValue& value);
 
   CompositorFrameBuilder& SetValidTreesInVizTimestamps(base::TimeTicks now);
 

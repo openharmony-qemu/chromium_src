@@ -86,6 +86,9 @@ struct URLLoaderCompletionStatus {
   [EnableIf = arkweb_ex_fallback_proxy]
   bool needs_reload_with_fallback_proxy = false;
 
+  [EnableIf = arkweb_scheme_handler]
+  int32 custom_error_code = 0;
+
   // Navigation info collection fields
   [EnableIf = arkweb_ext_navigation]
   NavigationInfo? navigation_info;

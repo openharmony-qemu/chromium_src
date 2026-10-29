@@ -751,6 +751,10 @@ mojom("url_loader_base") {
     enabled_features += [ "arkweb_ext_navigation" ]
   }
 
+  if (arkweb_scheme_handler) {
+    enabled_features += [ "arkweb_scheme_handler" ]
+  }
+
   # Shared by cpp_typemaps and blink_cpp_typemaps.
   shared_typemaps = [
     {
@@ -1850,6 +1854,10 @@ mojom("mojom") {
 
   if (arkweb_resource_interception) {
     enabled_features += [ "arkweb_resource_interception" ]
+  }
+
+  if (arkweb_scheme_handler) {
+    enabled_features += [ "arkweb_scheme_handler" ]
   }
 
   if (arkweb_ext_network_connection) {

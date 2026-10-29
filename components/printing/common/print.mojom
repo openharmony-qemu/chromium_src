@@ -21,12 +21,11 @@ struct PreviewIds {
 };
 
 // Parameters required to do print preview.
-[Stable, EnableIf=enable_print_preview]
+[EnableIf=enable_print_preview]
 struct RequestPrintPreviewParams {
   [EnableIf=is_chromeos]
   bool is_from_arc = false;
 
-  bool is_modifiable = false;
   bool webnode_only = false;
   bool has_selection = false;
   bool selection_only = false;
@@ -406,11 +405,9 @@ interface PrintManagerHost {
   [EnableIf=enable_print_preview]
   SetupScriptedPrintPreview() => ();
 
-  // Tells the browser to show the print preview, when the document is
-  // sufficiently loaded such that the renderer can determine whether it is
-  // modifiable or not.
+  // Tells the browser to show the print preview when the document is loaded.
   [EnableIf=enable_print_preview]
-  ShowScriptedPrintPreview(bool is_modifiable);
+  ShowScriptedPrintPreview();
 
   // Asks the browser to do print preview.
   [EnableIf=enable_print_preview]

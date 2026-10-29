@@ -61,7 +61,7 @@ class HeadlessPrintManager
   void GetPrintPreviewParams(GetPrintPreviewParamsCallback callback) override;
   void SetupScriptedPrintPreview(
       SetupScriptedPrintPreviewCallback callback) override;
-  void ShowScriptedPrintPreview(bool source_is_modifiable) override;
+  void ShowScriptedPrintPreview() override;
   void RequestPrintPreview(
       printing::mojom::RequestPrintPreviewParamsPtr params) override;
   void CheckForCancel(const base::UnguessableToken& preview_ui_id,

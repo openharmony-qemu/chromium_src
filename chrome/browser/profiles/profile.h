@@ -23,6 +23,10 @@
 #include "base/android/scoped_java_ref.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "base/functional/callback_forward.h"
+#endif
+
 class ChromeZoomLevelPrefs;
 class ExtensionSpecialStoragePolicy;
 class GURL;
@@ -507,6 +511,13 @@ class Profile : public content::BrowserContext {
   void NotifyOffTheRecordProfileCreated(Profile* off_the_record);
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  // Callback that returns true when there is at least one active incognito
+  // NWeb instance. Used by HasOTRProfile() to distinguish between "OTR profile
+  // exists" (always true at engine startup) and "incognito window is active"
+  // (the intended semantic of HasPrimaryOTRProfile).
+  using HasIncognitoNWebCallback = base::RepeatingCallback<bool()>;
+  static void SetHasIncognitoNWebCallback(HasIncognitoNWebCallback callback);
+
   bool HasOTRProfile();
   Profile* GetOTRProfile();
 #endif

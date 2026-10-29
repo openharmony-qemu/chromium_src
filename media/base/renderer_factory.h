@@ -62,6 +62,9 @@ class MEDIA_EXPORT RendererFactory {
 #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 #if BUILDFLAG(ARKWEB_MEDIA_HLS)
+  using MediaTaintChangedCB =
+      base::RepeatingCallback<void(bool tainted)>;
+
   virtual std::unique_ptr<Renderer> CreateOHOSMediaPlayerRenderer(
       const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,
       const scoped_refptr<base::TaskRunner>& worker_task_runner,
@@ -70,7 +73,8 @@ class MEDIA_EXPORT RendererFactory {
       media::RequestOverlayInfoCB request_overlay_info_cb,
       const gfx::ColorSpace& target_color_space,
       int player_id,
-      const media::MediaPlayerUrlParams& params);
+      const media::MediaPlayerUrlParams& params,
+      MediaTaintChangedCB on_media_taint_changed);
 #endif // ARKWEB_MEDIA_HLS
 };
 

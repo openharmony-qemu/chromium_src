@@ -934,6 +934,19 @@ void WebMediaPlayerImpl::DoLoad(LoadType load_type,
 
 #if BUILDFLAG(ARKWEB_MEDIA_HLS)
   media_player_url_params_.SetAllowCredentials(cors_mode != kCorsModeAnonymous);
+  // Map blink CorsMode to media::MediaCorsMode for HLS proxy CORS analysis.
+  media::MediaCorsMode media_cors_mode = media::MediaCorsMode::kUnspecified;
+  if (cors_mode == kCorsModeAnonymous) {
+    media_cors_mode = media::MediaCorsMode::kAnonymous;
+  } else if (cors_mode == kCorsModeUseCredentials) {
+    media_cors_mode = media::MediaCorsMode::kUseCredentials;
+  }
+  media_player_url_params_.SetCorsMode(media_cors_mode);
+  // Fail-closed reset: every new Load starts tainted until browser pushes
+  // a clean verdict via the HLS proxy download path.
+  LOG(INFO) << "[HLS WEBGL] DoLoad: HLS taint fail-closed reset";
+  demuxer_manager_->SetHlsBrowserWouldTaintOrigin(true);
+
 #endif
 
   bool needReturn = webMediaPlayerImplUtils_->DoLoadExt(cors_mode, is_cache_disabled);
@@ -1379,6 +1392,19 @@ void WebMediaPlayerImpl::SelectedVideoTrackChanged(
 
 gfx::Size WebMediaPlayerImpl::NaturalSize() const {
   DCHECK(main_task_runner_->BelongsToCurrentThread());
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+  // The HLS player path uses a fake-demuxer placeholder size internally;
+  // expose the real size only after OnVideoNaturalSizeChange(). A real size
+  // implies delivered bytes, which proxy download releases only after the
+  // CORS verdict settled, so non-zero videoWidth implies
+  // WouldTaintOrigin() is current. The custom-player path shares the fake
+  // demuxer but is unverified; widen to "!= kNoMediaPlayer" once confirmed.
+  if (!has_video_natural_size_ &&
+      media_player_url_params_.GetMediaPlayerUrlType() ==
+          media::MediaPlayerUrlType::kHlsMediaPlayer) {
+    return gfx::Size();
+  }
+#endif
 
   return pipeline_metadata_.natural_size;
 }

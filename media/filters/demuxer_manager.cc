@@ -192,6 +192,13 @@ void DemuxerManager::OnPipelineError(PipelineStatus error) {
       error == DEMUXER_ERROR_DETECTED_HLS) {
     hls_fallback_ = true;
 
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+    // Reset to fail-closed default when entering HLS fallback. The browser-side
+    // proxy will report clean via SetHlsBrowserWouldTaintOrigin(false) if CORS
+    // analysis of the HLS proxy responses passes.
+    hls_browser_would_taint_origin_.store(true, std::memory_order_relaxed);
+#endif  // ARKWEB_MEDIA_HLS
+
     // If we've gotten a request to start HLS fallback and logging, we can
     // assert that data source has been set.
     CHECK(data_source_);
@@ -452,13 +459,29 @@ void DemuxerManager::DurationChanged() {
 
 bool DemuxerManager::WouldTaintOrigin() const {
   if (hls_fallback_) {
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+    // Use the browser-side CORS analysis result from the HLS proxy download.
+    // Fail-closed: defaults to true until browser reports clean.
+    bool tainted = hls_browser_would_taint_origin_.load(std::memory_order_relaxed);
+    LOG(DEBUG) << "[HLS WEBGL] DemuxerManager::WouldTaintOrigin tainted="
+              << tainted;
+    return tainted;
+#else
     // TODO(crbug.com/410588476): return data_source_info_->WouldTaintOrigin();
     // For now, we should continue to assume that tainting is always true with
     // HLS content.
     return true;
+#endif  // BUILDFLAG(ARKWEB_MEDIA_HLS)
   }
   return data_source_info_ && data_source_info_->WouldTaintOrigin();
 }
+
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+void DemuxerManager::SetHlsBrowserWouldTaintOrigin(bool tainted) {
+  LOG(DEBUG) << "[HLS WEBGL] DemuxerManager::SetHlsBrowserWouldTaintOrigin tainted=" << tainted;
+  hls_browser_would_taint_origin_.store(tainted, std::memory_order_relaxed);
+}
+#endif  // ARKWEB_MEDIA_HLS
 
 bool DemuxerManager::HasDataSource() const {
   return data_source_ != nullptr;

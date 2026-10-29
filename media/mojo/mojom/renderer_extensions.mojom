@@ -36,6 +36,9 @@ interface MediaPlayerRendererClientExtension {
   OnVideoSizeChange(gfx.mojom.Size size);
   OnDurationChange(mojo_base.mojom.TimeDelta duration);
   OnFrameUpdate(OhosSurfaceBufferHandle ohosSurfaceBufferHandle);
+  // Browser-side aggregated CORS taint verdict for HLS proxy data.
+  // true = page origin is not readable (canvas/WebGL treats as cross-origin).
+  OnMediaTaintChanged(bool tainted);
 };
 
 [EnableIf=arkweb_custom_video_player]

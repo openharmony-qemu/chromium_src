@@ -92,6 +92,10 @@ viz_component("host") {
   if (arkweb_oop_gpu_process) {
     deps += [ "//arkweb/build/features" ]
   }
+
+  if (arkweb_blank_screen_monitor) {
+    deps += [ "//arkweb/chromium_ext/components/blank_screen:frame_analysis" ]
+  }
   if (is_ohos) {
     deps += [ "//components/discardable_memory/service", "//components/viz/service" ]
   }

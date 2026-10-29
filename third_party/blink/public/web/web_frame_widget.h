@@ -146,6 +146,10 @@ class WebFrameWidget : public WebWidget {
 #endif
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  virtual void SetArkWebFrameSinkId(const viz::FrameSinkId& frame_sink_id) {}
+#endif
+
   // Returns the local root of this WebFrameWidget.
   virtual WebLocalFrame* LocalRoot() const = 0;
 

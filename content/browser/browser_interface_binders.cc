@@ -274,6 +274,10 @@
 #include "arkweb/chromium_ext/v8/dfx/oom_mojom/v8_oom_reporter_browser_impl.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+#include "arkweb/chromium_ext/content/browser/blank_screen_monitor_host_impl.h"
+#endif
+
 namespace blink {
 class StorageKey;
 }  // namespace blink
@@ -1005,6 +1009,16 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
   map->Add<blink::mojom::NonAssociatedLocalFrameHost>(
       base::BindRepeating(&RenderFrameHostImpl::BindNonAssociatedLocalFrameHost,
                           base::Unretained(host)));
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  map->Add<blank_screen::mojom::BlankScreenMonitorHost>(
+      base::BindRepeating(
+          [](mojo::PendingReceiver<blank_screen::mojom::BlankScreenMonitorHost>
+                 receiver) {
+            BlankScreenMonitorHostImpl::ProcessPendingReceiver(
+                std::move(receiver));
+          }));
+#endif
 
   map->Add<blink::mojom::AIManager>(base::BindRepeating(
       [](ContentBrowserClient* browser_client, RenderFrameHostImpl* host,

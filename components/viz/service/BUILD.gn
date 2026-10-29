@@ -372,6 +372,10 @@ viz_component("service") {
     deps += [ "//arkweb/build/features" ]
   }
 
+  if (arkweb_blank_screen_monitor) {
+    deps += [ "//arkweb/chromium_ext/components/blank_screen:frame_analysis" ]
+  }
+
   if (arkweb_slide_ltpo) {
     import("//arkweb/chromium_ext/base/arkweb_base_ext.gni")
     sources += arkweb_base_ohos_ltpo_sources

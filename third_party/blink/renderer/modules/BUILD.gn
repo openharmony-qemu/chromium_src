@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/cast.gni")
 import("//build/config/python.gni")
 import("//media/media_options.gni")
@@ -10,7 +11,6 @@ import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/blink/renderer/bindings/bindings.gni")
 import("//third_party/blink/renderer/build/scripts/scripts.gni")
 import("//third_party/blink/renderer/modules/modules.gni")
-import("//arkweb/build/features/features.gni")
 
 if (is_arkweb) {
   import("//arkweb/chromium_ext/chromium_ext.gni")
@@ -447,6 +447,7 @@ source_set("unit_tests") {
     "credentialmanagement/digital_identity_credential_test.cc",
     "credentialmanagement/password_credential_test.cc",
     "credentialmanagement/public_key_credential_unittest.cc",
+    "credentialmanagement/public_key_credential_utils_unittest.cc",
     "csspaint/document_paint_definition_test.cc",
     "csspaint/nativepaint/background_color_paint_definition_test.cc",
     "csspaint/nativepaint/clip_path_paint_definition_test.cc",
@@ -796,10 +797,10 @@ fuzzer_test("web_app_manifest_fuzzer") {
 
   deps = [
     ":modules",
-    "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
     "//cef:libcef_static",
     "//ohos_nweb:cef_nweb",
     "//ohos_nweb:nweb_sources",
+    "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
   ]
 }
 

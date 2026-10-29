@@ -646,6 +646,11 @@ void ReadAnythingUntrustedPageHandler::UninstallVoice(
 }
 
 void ReadAnythingUntrustedPageHandler::OnCopy() {
+  if (!HasTransientUserActivation()) {
+    VLOG(1) << "OnCopy failed with no transient user activation";
+    return;
+  }
+
   if (main_observer_ && main_observer_->web_contents()) {
     main_observer_->web_contents()->Copy();
   }
@@ -742,6 +747,11 @@ void ReadAnythingUntrustedPageHandler::OnReadAloudAudioStateChange(
 void ReadAnythingUntrustedPageHandler::OnLinkClicked(
     const ui::AXTreeID& target_tree_id,
     ui::AXNodeID target_node_id) {
+  if (!HasTransientUserActivation()) {
+    VLOG(1) << "OnLinkClicked failed with no transient user activation";
+    return;
+  }
+
   if (!ui::IsValidAXNodeIDFromRenderer(target_node_id)) {
     VLOG(1) << "Received link click request with invalid target_node_id "
             << target_node_id;
@@ -838,6 +848,11 @@ void ReadAnythingUntrustedPageHandler::OnSelectionChange(
     int anchor_offset,
     ui::AXNodeID focus_node_id,
     int focus_offset) {
+  if (!HasTransientUserActivation()) {
+    VLOG(1) << "OnSelectionChange failed with no transient user activation";
+    return;
+  }
+
   if (!ui::IsValidAXNodeIDFromRenderer(anchor_node_id)) {
     VLOG(1) << "Received selection request with invalid anchor_node_id "
             << anchor_node_id;
@@ -865,6 +880,11 @@ void ReadAnythingUntrustedPageHandler::OnSelectionChange(
 }
 
 void ReadAnythingUntrustedPageHandler::OnCollapseSelection() {
+  if (!HasTransientUserActivation()) {
+    VLOG(1) << "OnCollapseSelection failed with no transient user activation";
+    return;
+  }
+
   if (main_observer_ && main_observer_->web_contents()) {
     main_observer_->web_contents()->CollapseSelection();
   }
@@ -1150,3 +1170,8 @@ void ReadAnythingUntrustedPageHandler::OnLockStateChanged(bool locked) {
   }
 }
 #endif
+
+bool ReadAnythingUntrustedPageHandler::HasTransientUserActivation() const {
+  return web_ui_ && web_ui_->GetRenderFrameHost() &&
+         web_ui_->GetRenderFrameHost()->HasTransientUserActivation();
+}

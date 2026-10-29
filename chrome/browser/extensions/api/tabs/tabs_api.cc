@@ -1983,7 +1983,7 @@ ExtensionFunction::ResponseAction TabsSetZoomFunction::Run() {
     return RespondNow(Error(std::move(error)));
   }
 
-  GURL url(web_contents->GetVisibleURL());
+  const GURL& url = web_contents->GetLastCommittedURL();
   if (extension()->permissions_data()->IsRestrictedUrl(url, &error)) {
     return RespondNow(Error(std::move(error)));
   }
@@ -2045,7 +2045,7 @@ ExtensionFunction::ResponseAction TabsSetZoomSettingsFunction::Run() {
     return RespondNow(Error(std::move(error)));
   }
 
-  GURL url(web_contents->GetVisibleURL());
+  const GURL& url = web_contents->GetLastCommittedURL();
   if (extension()->permissions_data()->IsRestrictedUrl(url, &error)) {
     return RespondNow(Error(std::move(error)));
   }

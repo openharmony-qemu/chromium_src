@@ -105,6 +105,10 @@ group("api_implementations") {
         "//chrome/browser/extensions/api/terminal",
       ]
     }
+
+    if (is_arkweb_ext) {
+      public_deps += [ "//arkweb/chromium_ext/chrome/browser/extensions/api/hwext_actor" ]
+    }
   }  # if (enable_extensions)
 }
 
@@ -114,6 +118,9 @@ group("api_implementations") {
 function_registration("api_registration") {
   sources = chrome_extensions_api_schema_sources +
             chrome_extensions_api_uncompiled_sources
+  if (is_arkweb && is_arkweb_ext) {
+    sources += arkweb_extensions_api_schema_sources
+  }
   impl_dir = "//chrome/browser/extensions/api"
   configs = [ "//build/config:precompiled_headers" ]
   bundle_name = "Chrome"

@@ -5,6 +5,10 @@
 import("//extensions/buildflags/buildflags.gni")
 import("//tools/json_schema_compiler/json_features.gni")
 
+if (is_arkweb && is_arkweb_ext) {
+  import("//arkweb/build/features/features.gni")
+}
+
 assert(enable_extensions_core)
 
 source_set("extensions") {
@@ -91,6 +95,14 @@ source_set("extensions") {
     "//ui/message_center/public/cpp",
     "//url",
   ]
+
+  if (is_arkweb && is_arkweb_ext) {
+    deps += [
+      "//arkweb/build/features",
+      "//arkweb/ohos_nweb_ex/build/features",
+      "//arkweb/chromium_ext/chrome/common/extensions/api:generated_arkweb_api_json_strings",
+    ]
+  }
 
   # TODO(https://crbug.com/356905053): These sources do not currently build
   # cleanly on the experimental desktop-android configuration. Gradually include

@@ -74,6 +74,17 @@
 #include "chrome/browser/extensions/api/printing/printing_api_handler.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "build/buildflag.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_EXT_ACTOR)
+#include "chrome/browser/extensions/api/hwext_actor/hwext_actor_event_router_factory.h"
+#include "chrome/browser/extensions/api/hwext_actor/hwext_actor_owner_registry_factory.h"
+#include "chrome/browser/extensions/api/hwext_actor/hwext_actor_worker_observer_factory.h"
+#endif  // ARKWEB_EXT && ARKWEB_EXT_ACTOR
+
 namespace chrome_extensions {
 
 void EnsureApiBrowserContextKeyedServiceFactoriesBuilt() {
@@ -145,6 +156,11 @@ void EnsureApiBrowserContextKeyedServiceFactoriesBuilt() {
 #if BUILDFLAG(IS_CHROMEOS)
   extensions::WMDesksPrivateEventsAPI::GetFactoryInstance();
 #endif
+#if BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_EXT_ACTOR)
+  extensions::HwextActorEventRouterFactory::GetInstance();
+  extensions::HwextActorOwnerRegistryFactory::GetInstance();
+  extensions::HwextActorWorkerObserverFactory::GetInstance();
+#endif  // ARKWEB_EXT && ARKWEB_EXT_ACTOR
 #endif  // BUILDFLAG(ENABLE_EXTENSIONS)
 }
 

@@ -4,6 +4,9 @@
 
 import("//chrome/common/features.gni")
 import("//pdf/features.gni")
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+}
 
 assert(enable_extensions_core)
 
@@ -164,6 +167,13 @@ if (enable_extensions) {
 }
 
 chrome_extensions_api_schema_sources = get_path_info(schema_sources_, "abspath")
+
+if (is_arkweb && is_arkweb_ext) {
+  arkweb_extensions_api_schema_sources =
+      get_path_info(
+          [ "//arkweb/chromium_ext/chrome/common/extensions/api/hwext_actor.idl" ],
+          "abspath")
+}
 
 chrome_extensions_types_only_schema_sources =
     get_path_info(types_only_schema_sources_, "abspath")

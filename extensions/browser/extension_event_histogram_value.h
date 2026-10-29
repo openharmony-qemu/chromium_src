@@ -5,6 +5,14 @@
 #ifndef EXTENSIONS_BROWSER_EXTENSION_EVENT_HISTOGRAM_VALUE_H_
 #define EXTENSIONS_BROWSER_EXTENSION_EVENT_HISTOGRAM_VALUE_H_
 
+#if defined(IS_ARKWEB_TRUE)
+#include "build/build_config.h"
+#endif  // IS_ARKWEB_TRUE
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace extensions {
 namespace events {
 
@@ -594,6 +602,15 @@ enum HistogramValue {
   SIDE_PANEL_ON_CLOSED = 570,
   ACCESSIBILITY_PRIVATE_ON_KEY_DOWN = 571,
   ACCESSIBILITY_PRIVATE_ON_KEY_UP = 572,
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#if BUILDFLAG(ARKWEB_EXT_ACTOR)
+  HWEXT_ACTOR_ONTASKREMOVED = 573,
+  HWEXT_ACTOR_ONTASKSTATECHANGED = 574,
+  HWEXT_ACTOR_ONTASKSRESTORED = 575,
+#endif  // ARKWEB_EXT_ACTOR
+#endif  // IS_ARKWEB_EXT
+
   // Last entry: Add new entries above, then run:
   // tools/metrics/histograms/update_extension_histograms.py
   ENUM_BOUNDARY

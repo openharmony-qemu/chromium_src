@@ -687,6 +687,18 @@ void ActorTask::DidTabEnterActorControl(tabs::TabHandle handle) {
   RecomputeHasVisibleTab();
 }
 
+#if BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_EXT_ACTOR)
+void ActorTask::CancelOngoingActions() {
+  if (IsCompleted()) {
+    return;
+  }
+  if (execution_engine_) {
+    execution_engine_->CancelOngoingActions(
+        mojom::ActionResultCode::kInvokeCanceled);
+  }
+}
+#endif  // ARKWEB_EXT && ARKWEB_EXT_ACTOR
+
 void ActorTask::DidContentsEnterActorControl(
     ActorTask::ActorControlledTabState* state,
     content::WebContents* contents) {

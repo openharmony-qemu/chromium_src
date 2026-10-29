@@ -1071,6 +1071,7 @@ source_set("unit_tests") {
     "//extensions:test_support",
     "//extensions/browser/api:extensions_api_client",
     "//extensions/browser/api/content_settings",
+    "//extensions/browser/api/messaging",
     "//extensions/browser/api/storage:settings_namespace",
     "//extensions/browser/api/system_display:display_info_provider",
     "//extensions/browser/api/virtual_keyboard_private:virtual_keyboard_delegate",
@@ -1095,6 +1096,8 @@ source_set("unit_tests") {
   #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
     sources += [
+      "//arkweb/chromium_ext/extensions/browser/api/messaging/browser_message_port_unittest.cc",
+      "//arkweb/chromium_ext/extensions/browser/custom_handler_unittest.cc",
       "//arkweb/chromium_ext/extensions/browser/extension_icon_aggregator_unittest.cc",
       "//arkweb/chromium_ext/extensions/browser/extension_prefs_for_include_unittest.cc",
       "//arkweb/chromium_ext/extensions/browser/extension_registry_info_manager_unittest.cc",

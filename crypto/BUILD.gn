@@ -266,7 +266,15 @@ test("crypto_unittests") {
     import("//arkweb/chromium_ext/chromium_ext.gni")
     sources += arkweb_components_os_crpty_sync_test_source
     sources += arkweb_components_os_crpty_include_test_source
-    deps += ["//components/os_crypt/sync"]
+    deps += [
+      "//arkweb/ohos_adapter_ndk:adapter_ndk",
+      "//components/os_crypt/sync",
+    ]
+    include_dirs = [
+      "//arkweb/glue",
+      "//arkweb/ohos_adapter_ndk/interfaces",
+      "//third_party/ohos_ndk/includes/ohos_adapter",
+    ]
   }
 
   configs += [ "//build/config/compiler:wexit_time_destructors" ]

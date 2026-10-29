@@ -3138,6 +3138,7 @@ test("content_unittests") {
 
   if (arkweb_test) {
     sources += arkweb_content_browser_unittests_sources
+    configs += [ "//cef/libcef/features:config" ]
   }
 
   fuzztests = [

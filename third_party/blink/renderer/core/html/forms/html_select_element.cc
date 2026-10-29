@@ -838,8 +838,10 @@ void HTMLSelectElement::SetSuggestedOption(HTMLOptionElement* option) {
   select_type_->DidSetSuggestedOption(option);
 }
 
-void HTMLSelectElement::DidChangeIsCanvasOrInCanvasSubtree() {
-  HTMLFormControlElementWithState::DidChangeIsCanvasOrInCanvasSubtree();
+void HTMLSelectElement::DidChangeIsCanvasOrInCanvasSubtree(
+    CanvasSubtreePropagation propagation_behavior) {
+  HTMLFormControlElementWithState::DidChangeIsCanvasOrInCanvasSubtree(
+      propagation_behavior);
   if (RuntimeEnabledFeatures::CanvasDrawElementEnabled() &&
       IsInCanvasSubtree()) {
     // Hide suggested values when under canvas, to prevent leaking this

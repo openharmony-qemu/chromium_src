@@ -634,8 +634,9 @@ void HTMLTextAreaElement::SetSuggestedValue(const String& value) {
       StyleChangeReasonForTracing::Create(style_change_reason::kControlValue));
 }
 
-void HTMLTextAreaElement::DidChangeIsCanvasOrInCanvasSubtree() {
-  TextControlElement::DidChangeIsCanvasOrInCanvasSubtree();
+void HTMLTextAreaElement::DidChangeIsCanvasOrInCanvasSubtree(
+    CanvasSubtreePropagation propagation_behavior) {
+  TextControlElement::DidChangeIsCanvasOrInCanvasSubtree(propagation_behavior);
   if (RuntimeEnabledFeatures::CanvasDrawElementEnabled() &&
       IsInCanvasSubtree()) {
     // Hide suggested values when under canvas, to prevent leaking this

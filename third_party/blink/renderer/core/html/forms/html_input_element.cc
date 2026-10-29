@@ -1277,8 +1277,9 @@ void HTMLInputElement::SetSuggestedValue(const String& value) {
   input_type_view_->UpdateView();
 }
 
-void HTMLInputElement::DidChangeIsCanvasOrInCanvasSubtree() {
-  TextControlElement::DidChangeIsCanvasOrInCanvasSubtree();
+void HTMLInputElement::DidChangeIsCanvasOrInCanvasSubtree(
+    CanvasSubtreePropagation propagation_behavior) {
+  TextControlElement::DidChangeIsCanvasOrInCanvasSubtree(propagation_behavior);
   if (RuntimeEnabledFeatures::CanvasDrawElementEnabled() &&
       IsInCanvasSubtree()) {
     // Hide suggested values when under canvas, to prevent leaking this

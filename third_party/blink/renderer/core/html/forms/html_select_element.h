@@ -444,7 +444,7 @@ class CORE_EXPORT HTMLSelectElement final
   // Helper to update the select descendants' mutation observer.
   void UpdateMutationObserver();
 
-  void DidChangeIsCanvasOrInCanvasSubtree() final;
+  void DidChangeIsCanvasOrInCanvasSubtree(CanvasSubtreePropagation) final;
 
   // list_items_ contains HTMLOptionElement, HTMLOptGroupElement, and
   // HTMLHRElement objects.

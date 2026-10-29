@@ -1049,12 +1049,24 @@ class CORE_EXPORT Element : public ContainerNode, public Animatable {
     SetElementFlag(ElementFlags::kStyleAffectedByEmpty);
   }
 
-  void SetIsCanvasOrInCanvasSubtree(bool);
+  enum class CanvasSubtreePropagation { kOnlyIfChanged, kAlways };
+
+  // Recursively sets the IsCanvasOrInCanvasSubtree bit for the element and its
+  // subtree. If propagation_behavior is kOnlyIfChanged, the recursion stops
+  // when it reaches a Node where `value` is the same as the Node's current
+  // state. If the behavior is kAlways, the recursion forcibly continues all the
+  // way down the tree regardless of the previous value.
+  void SetIsCanvasOrInCanvasSubtree(
+      bool value,
+      CanvasSubtreePropagation propagation_behavior =
+          CanvasSubtreePropagation::kOnlyIfChanged);
   bool IsCanvasOrInCanvasSubtree() const {
     return HasElementFlag(ElementFlags::kIsCanvasOrInCanvasSubtree);
   }
-  // Called when `IsCanvasOrInCanvasSubtree()` has changed.
-  virtual void DidChangeIsCanvasOrInCanvasSubtree();
+  // Called when `IsCanvasOrInCanvasSubtree()` changes, or when content should
+  // be invalidated *as if* `IsCanvasOrInCanvasSubtree()` changed (e.g., when
+  // showing or hiding a popover).
+  virtual void DidChangeIsCanvasOrInCanvasSubtree(CanvasSubtreePropagation);
   // Like `IsCanvasOrInCanvasSubtree()`, but excludes the outermost <canvas>.
   bool IsInCanvasSubtree() const;
 

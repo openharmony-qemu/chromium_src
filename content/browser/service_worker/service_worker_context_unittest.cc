@@ -13,6 +13,7 @@
 #include "base/functional/bind.h"
 #include "base/run_loop.h"
 #include "base/scoped_observation.h"
+#include "base/test/bind.h"
 #include "base/time/time.h"
 #include "content/browser/service_worker/embedded_worker_test_helper.h"
 #include "content/browser/service_worker/fake_embedded_worker_instance_client.h"
@@ -693,6 +694,58 @@ TEST_F(ServiceWorkerContextTest, Register) {
                      blink::ServiceWorkerStatusCode::kOk,
                      false /* expect_waiting */, true /* expect_active */));
   base::RunLoop().RunUntilIdle();
+}
+
+// Verification test for the case where a Service Worker registration request is
+// processed after the requesting frame has already been detached or destroyed.
+// This test ensures that the ancestor frame type (e.g., kFencedFrame) passed
+// from the client is preserved, instead of falling back to kNormalFrame due to
+// a failed frame lookup.
+TEST_F(ServiceWorkerContextTest, Register_AncestorFrameTypeWithDetachedFrame) {
+  GURL scope("https://www.example.com/");
+  const blink::StorageKey key =
+      blink::StorageKey::CreateFirstParty(url::Origin::Create(scope));
+  GURL script_url("https://www.example.com/service_worker.js");
+  blink::mojom::ServiceWorkerRegistrationOptions options;
+  options.scope = scope;
+
+  base::RunLoop run_loop;
+  bool called = false;
+  int64_t registration_id = blink::mojom::kInvalidServiceWorkerRegistrationId;
+
+  // Request Service Worker registration.
+  // Note: We pass a fake, non-existent `GlobalRenderFrameHostId`
+  // (child_id=1234, frame_routing_id=5678) as `requesting_frame_id`. Because
+  // this ID does not exist in the test's process or routing registry, any
+  // browser-side lookup using `RenderFrameHostImpl::FromID()` will return
+  // nullptr. This simulates the case where the frame was destroyed or detached
+  // before the Register IPC arrived at the browser process. We explicitly pass
+  // the ancestor frame type as `kFencedFrame`.
+  context()->RegisterServiceWorker(
+      script_url, key, options, blink::mojom::FetchClientSettingsObject::New(),
+      base::BindLambdaForTesting(
+          [&](blink::ServiceWorkerStatusCode result_status,
+              const std::string& /*status_message*/,
+              int64_t result_registration_id) {
+            EXPECT_EQ(blink::ServiceWorkerStatusCode::kOk, result_status);
+            called = true;
+            registration_id = result_registration_id;
+            run_loop.Quit();
+          }),
+      /*requesting_frame_id=*/
+      GlobalRenderFrameHostId(/*child_id=*/1234, /*frame_routing_id=*/5678),
+      PolicyContainerPolicies(), blink::mojom::AncestorFrameType::kFencedFrame);
+  run_loop.Run();
+
+  // Verify the registration succeeded and that the stored ancestor
+  // frame type matches the passed `kFencedFrame` value, rather than having
+  // defaulted to `kNormalFrame` due to the failed frame lookup.
+  EXPECT_TRUE(called);
+  scoped_refptr<ServiceWorkerRegistration> registration =
+      context()->GetLiveRegistration(registration_id);
+  ASSERT_TRUE(registration);
+  EXPECT_EQ(blink::mojom::AncestorFrameType::kFencedFrame,
+            registration->ancestor_frame_type());
 }
 
 // Test registration when the service worker rejects the install event. The

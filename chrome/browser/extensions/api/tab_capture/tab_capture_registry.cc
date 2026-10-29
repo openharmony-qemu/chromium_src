@@ -21,6 +21,7 @@
 #include "extensions/browser/event_router.h"
 #include "extensions/common/extension.h"
 #include "extensions/common/extension_id.h"
+#include "extensions/common/extensions_client.h"
 #include "url/origin.h"
 
 using content::BrowserThread;
@@ -216,6 +217,11 @@ bool TabCaptureRegistry::VerifyRequest(int render_process_id,
   LiveRequest* const request = FindRequest(render_process_id, render_frame_id);
   if (!request) {
     return false;  // Unknown RenderFrameHost ID, or frame has gone away.
+  }
+
+  if (!ExtensionsClient::Get()->IsCapturableURL(
+          request->web_contents()->GetLastCommittedURL(), nullptr)) {
+    return false;
   }
 
   if (request->is_verified() ||

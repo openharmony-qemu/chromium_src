@@ -116,6 +116,8 @@ source_set("extensions") {
     public += [ "api/file_system_provider_capabilities/file_system_provider_capabilities_handler.h" ]
 
     sources += [ "api/file_system_provider_capabilities/file_system_provider_capabilities_handler.cc" ]
+
+    deps += [ "//ash/webui/os_feedback_ui:url_constants" ]
   }
 }
 

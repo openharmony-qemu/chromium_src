@@ -57,8 +57,9 @@ PasskeyUpgradeRequestController::PasskeyUpgradeRequestController(
     RenderFrameHost* rfh,
     EnclaveRequestCallback enclave_request_callback)
     : frame_host_id_(rfh->GetGlobalId()),
+      profile_(Profile::FromBrowserContext(rfh->GetBrowserContext())),
       enclave_manager_(
-          EnclaveManagerFactory::GetAsEnclaveManagerForProfile(profile())),
+          EnclaveManagerFactory::GetAsEnclaveManagerForProfile(profile_)),
       enclave_request_callback_(enclave_request_callback) {
   if (enclave_manager_->is_loaded()) {
     OnEnclaveLoaded();
@@ -132,7 +133,13 @@ void PasskeyUpgradeRequestController::ContinuePendingUpgradeRequest() {
     return;
   }
 
-  GURL url = render_frame_host().GetLastCommittedOrigin().GetURL();
+  content::RenderFrameHost* rfh = MaybeGetRenderFrameHost();
+  if (!rfh) {
+    FinishRequest(PasskeyUpgradeResult::kPasswordStoreError);
+    return;
+  }
+
+  GURL url = rfh->GetLastCommittedOrigin().GetURL();
   password_manager::PasswordFormDigest form_digest(
       password_manager::PasswordForm::Scheme::kHtml,
       password_manager::GetSignonRealm(url), url);
@@ -209,11 +216,14 @@ void PasskeyUpgradeRequestController::OnPasskeyCreated(
   FinishRequest(PasskeyUpgradeResult::kSuccess);
 
   // Show the confirmation bubble.
-  PasswordsClientUIDelegate* manage_passwords_ui_controller =
-      PasswordsClientUIDelegateFromWebContents(
-          content::WebContents::FromRenderFrameHost(&render_frame_host()));
-  if (manage_passwords_ui_controller) {
-    manage_passwords_ui_controller->OnPasskeyUpgrade(rp_id_);
+  content::RenderFrameHost* rfh = MaybeGetRenderFrameHost();
+  if (rfh) {
+    PasswordsClientUIDelegate* manage_passwords_ui_controller =
+        PasswordsClientUIDelegateFromWebContents(
+            content::WebContents::FromRenderFrameHost(rfh));
+    if (manage_passwords_ui_controller) {
+      manage_passwords_ui_controller->OnPasskeyUpgrade(rp_id_);
+    }
   }
 }
 
@@ -221,15 +231,9 @@ EnclaveUserVerificationMethod PasskeyUpgradeRequestController::GetUvMethod() {
   return EnclaveUserVerificationMethod::kNoUserVerificationAndNoUserPresence;
 }
 
-content::RenderFrameHost& PasskeyUpgradeRequestController::render_frame_host()
-    const {
-  auto* rfh = content::RenderFrameHost::FromID(frame_host_id_);
-  CHECK(rfh);
-  return *rfh;
-}
-
-Profile* PasskeyUpgradeRequestController::profile() const {
-  return Profile::FromBrowserContext(render_frame_host().GetBrowserContext());
+content::RenderFrameHost*
+PasskeyUpgradeRequestController::MaybeGetRenderFrameHost() const {
+  return content::RenderFrameHost::FromID(frame_host_id_);
 }
 
 void PasskeyUpgradeRequestController::OnEnclaveLoaded() {

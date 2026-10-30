@@ -620,6 +620,11 @@ input::-internal-input-suggested {
 
 input::-internal-input-suggested,
 textarea::-internal-input-suggested {
+    pointer-events: none !important;
+}
+
+input::-internal-input-suggested,
+textarea::-internal-input-suggested {
     font: -webkit-small-control !important;
     /* font: -webkit-small-control resolves to Arial on every platform. Ideally
        we'd keep Arial, but a concrete family is matched against author

@@ -58,7 +58,7 @@ class BLINK_PLATFORM_EXPORT WebSurfaceLayerBridge {
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   virtual scoped_refptr<cc::SurfaceLayer> CreateSurfaceLayer(cc::SurfaceLayer::RectChangeCallback callback,
     cc::SurfaceLayer::RectVisibilityChangeCallback visibilitycallback,
-    cc::SurfaceLayer::LayerRemovedVisibilityCallback layerRemovedCallback) {}
+    cc::SurfaceLayer::LayerRemovedVisibilityCallback layerRemovedCallback) { return nullptr; }
   virtual void SetStretchContentToFillBounds(bool stretch_content_to_fill_bounds) {}
 #endif
 };

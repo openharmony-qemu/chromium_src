@@ -460,6 +460,7 @@ class CONTENT_EXPORT RenderFrameImpl
   int32_t ExecuteInputModifyCommand(const std::string& content) override;
   int32_t ExecuteInputInsertCommand(const std::string& content, int32_t index) override;
   int32_t ExecuteAutoFillCommand(const std::string& xpath,
+                                 int32_t node_id,
                                  const std::string& content,
                                  int32_t index, int32_t mode) override;
   int32_t ExecuteClickCommand(const std::string& xpath) override;

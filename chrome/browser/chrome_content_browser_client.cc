@@ -6536,11 +6536,26 @@ void ChromeContentBrowserClient::
     auto* rph = content::RenderProcessHost::FromID(render_process_id);
     content::BrowserContext* browser_context = rph->GetBrowserContext();
     DCHECK(browser_context);
+
+    bool allow_file_access = false;
+    if (web_contents) {
+      CefRefPtr<CefBrowserHostBase> browser_host =
+          CefBrowserHostBase::GetBrowserForContents(web_contents);
+      if (browser_host) {
+        auto* arkweb_host = browser_host->AsArkWebBrowserHostExtImpl().get();
+        if (arkweb_host) {
+          allow_file_access = arkweb_host->GetFileAccess();
+        }
+      }
+    }
+    LOG(DEBUG) << "RegisterNonNetworkSubresourceURLLoaderFactories, allow_file_access = " << allow_file_access;
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-    factories->emplace(url::kFileScheme,
-                       content::CreateFileURLLoaderFactory(
-                           browser_context->GetPath(),
-                           browser_context->GetSharedCorsOriginAccessList()));
+    if (allow_file_access) {
+      factories->emplace(url::kFileScheme,
+                         content::CreateFileURLLoaderFactory(
+                             browser_context->GetPath(),
+                             browser_context->GetSharedCorsOriginAccessList()));
+    }
 #endif
 
 #if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)

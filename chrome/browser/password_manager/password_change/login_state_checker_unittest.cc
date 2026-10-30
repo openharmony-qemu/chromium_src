@@ -18,7 +18,10 @@
 #include "chrome/test/base/chrome_render_view_host_test_harness.h"
 #include "components/optimization_guide/core/optimization_guide_proto_util.h"
 #include "components/password_manager/core/browser/features/password_features.h"
+#include "content/public/test/navigation_simulator.h"
+#include "content/public/test/test_renderer_host.h"
 #include "content/public/test/web_contents_tester.h"
+#include "net/base/net_errors.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace {
@@ -466,4 +469,73 @@ TEST_F(LoginStateCheckerTest, RetryLoginCheck) {
       QualityStatus::
           PasswordChangeQuality_StepQuality_SubmissionStatus_ACTION_SUCCESS,
       /* expected_retry_count=*/1);
+}
+
+TEST_F(LoginStateCheckerTest, SubframeNavigationIgnored) {
+  base::test::TestFuture<LoginCheckResult> future;
+  EXPECT_CALL(*optimization_service(), ExecuteModel).Times(0);
+
+  NavigateAndCommit(GURL("https://example.com"));
+
+  std::unique_ptr<LoginStateChecker> checker =
+      CreateChecker(future.GetRepeatingCallback());
+  ASSERT_TRUE(checker->capturer());
+
+  content::RenderFrameHost* child_rfh =
+      content::RenderFrameHostTester::For(main_rfh())
+          ->AppendChild("child_frame");
+  content::NavigationSimulator::NavigateAndCommitFromDocument(
+      GURL("https://example.com/subframe"), child_rfh);
+
+  // Capturer is not reset because subframe navigation is ignored.
+  EXPECT_TRUE(checker->capturer());
+}
+
+TEST_F(LoginStateCheckerTest, UncommittedNavigationIgnored) {
+  base::test::TestFuture<LoginCheckResult> future;
+  EXPECT_CALL(*optimization_service(), ExecuteModel).Times(0);
+
+  NavigateAndCommit(GURL("https://example.com"));
+
+  std::unique_ptr<LoginStateChecker> checker =
+      CreateChecker(future.GetRepeatingCallback());
+  ASSERT_TRUE(checker->capturer());
+
+  auto simulator = content::NavigationSimulator::CreateBrowserInitiated(
+      GURL("https://example.com/failed"), web_contents());
+  simulator->Fail(net::ERR_ABORTED);
+
+  // Capturer is not reset because uncommitted navigation is ignored.
+  EXPECT_TRUE(checker->capturer());
+}
+
+TEST_F(LoginStateCheckerTest,
+       PrimaryMainFrameCommittedNavigationTriggersRecheck) {
+  base::test::TestFuture<LoginCheckResult> future;
+  {
+    InSequence s;
+    EXPECT_CALL(*optimization_service(), ExecuteModel)
+        .WillOnce(WithArg<3>(&PostResponse<ResponseType::kFailure>));
+    EXPECT_CALL(*optimization_service(), ExecuteModel)
+        .WillOnce(WithArg<3>(&PostResponse<ResponseType::kSuccess>));
+  }
+
+  NavigateAndCommit(GURL("https://example.com"));
+
+  std::unique_ptr<LoginStateChecker> checker =
+      CreateChecker(future.GetRepeatingCallback());
+  ASSERT_TRUE(checker->capturer());
+
+  checker->capturer()->ReplyWithContent(
+      optimization_guide::AIPageContentResult());
+  EXPECT_EQ(future.Take(), LoginCheckResult::kLoggedOut);
+
+  // Primary main frame committed navigation.
+  content::NavigationSimulator::NavigateAndCommitFromBrowser(
+      web_contents(), GURL("https://example.com/next"));
+
+  ASSERT_TRUE(checker->capturer());
+  checker->capturer()->ReplyWithContent(
+      optimization_guide::AIPageContentResult());
+  EXPECT_EQ(future.Take(), LoginCheckResult::kLoggedIn);
 }

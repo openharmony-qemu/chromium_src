@@ -274,6 +274,9 @@ class TimePicker extends HTMLElement {
           window.pagePopupController.setValue(
               this.hadValidValueWhenOpened ? this.selectedValue : '');
         }
+        // #if ARKWEB_INPUT_EVENTS
+        event.preventDefault();
+        // #endif
         break;
       case 'ArrowUp':
       case 'ArrowDown':

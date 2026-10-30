@@ -151,6 +151,9 @@ class MonthPicker extends HTMLElement {
                   this.initialSelectedMonth.toString() :
                   '');
         }
+        // #if ARKWEB_INPUT_EVENTS
+        event.preventDefault();
+        // #endif
         break;
       case 'ArrowUp':
       case 'ArrowDown':

@@ -4966,6 +4966,9 @@ class CalendarPicker extends dateRangeManagerMixin(View) {
                     '');
           }
         }
+        // #if ARKWEB_INPUT_EVENTS
+        event.preventDefault();
+        // #endif
         break;
       case 'ArrowUp':
       case 'ArrowDown':

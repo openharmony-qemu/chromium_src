@@ -1320,8 +1320,8 @@ crabbyavif::avifImage* CrabbyAVIFImageDecoder::GetDecoderImage() const {
     }
     return decoder_->image->gainMap->image;
   }
-  return decoder_->image;
 #endif // ARKWEB_HEIF_SUPPORT
+  return decoder_->image;
 }
 
 CrabbyAVIFImageDecoder::AvifIOData::AvifIOData() = default;

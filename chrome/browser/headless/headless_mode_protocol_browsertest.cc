@@ -510,4 +510,8 @@ HEADLESS_MODE_PROTOCOL_TEST(AddRemoveScreen, "shared/add-remove-screen.js")
 #endif
 HEADLESS_MODE_PROTOCOL_TEST(MAYBE_SetZoomedWindowBounds,
                             "shared/set-zoomed-window-bounds.js")
+
+HEADLESS_MODE_PROTOCOL_TEST(GetBrowserContexts,
+                            "shared/get-browser-contexts.js")
+
 }  // namespace headless

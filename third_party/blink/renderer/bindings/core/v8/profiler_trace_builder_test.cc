@@ -20,7 +20,7 @@ TEST(ProfilerTraceBuilderTest, AddVMStateMarker) {
   auto* script_state = scope.GetScriptState();
 
   ProfilerTraceBuilder* builder = MakeGarbageCollected<ProfilerTraceBuilder>(
-      script_state, nullptr, base::TimeTicks::Now());
+      script_state, base::TimeTicks::Now());
 
   base::TimeTicks sample_ticks = base::TimeTicks::Now();
   builder->AddSample(nullptr, sample_ticks, v8::StateTag::GC,
@@ -39,7 +39,7 @@ TEST(ProfilerTraceBuilderTest, AddEmbedderStateMarker) {
   auto* script_state = scope.GetScriptState();
 
   ProfilerTraceBuilder* builder = MakeGarbageCollected<ProfilerTraceBuilder>(
-      script_state, nullptr, base::TimeTicks::Now());
+      script_state, base::TimeTicks::Now());
 
   base::TimeTicks sample_ticks = base::TimeTicks::Now();
   builder->AddSample(nullptr, sample_ticks, v8::StateTag::IDLE,

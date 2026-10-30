@@ -104,11 +104,11 @@ BASE_DECLARE_FEATURE(kDisableFillingOnPageLoadForLeakedCredentials);
 // Enables the Mojo JavaScript API for the password manager, replacing the
 // legacy passwordsPrivate extension API.
 BASE_DECLARE_FEATURE(kEnablePasswordManagerMojoApi);
+#endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
 
 // Performs additional security checks wrt. the triggering frame before adding
 // the "Select password" entry to the context menu.
 BASE_DECLARE_FEATURE(kPasswordManualFallbackSecurityChecks);
-#endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
 
 // Cross domain credential data is not previewed by the manual fallback
 // suggestion popup.

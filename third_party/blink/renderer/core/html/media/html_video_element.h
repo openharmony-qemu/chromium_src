@@ -158,6 +158,12 @@ class CORE_EXPORT HTMLVideoElement final : public HTMLMediaElement,
 #endif
   
   // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+  static constexpr uint16_t kVideoPreloadTimeDefault = 4;   // preloadTime default 4s
+  static constexpr uint16_t kVideoMinCacheTimeDefault = 2;  // minCacheTime default 2s
+  static constexpr uint16_t kVideoMaxCacheTimeDefault = 6;  // maxCacheTime default 6s
+  static constexpr uint16_t kVideoMoovSizeDefault = 512;    // moovSize default 512kB
+  static constexpr uint16_t kVideoBitrateDefault = 2000;    // bitRate default 2000kb/s
+
   uint16_t hbsPreloadTime();
   uint16_t hbsMaxCacheTime();
   uint16_t hbsMinCacheTime();

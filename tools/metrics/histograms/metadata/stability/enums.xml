@@ -531,6 +531,13 @@ Called by update_bad_message_reasons.py.-->
   <int value="372" label="RFH_BLOB_URL_STORE_ASSOCIATED_PDF_PROCESS_BLOCKED"/>
   <int value="373" label="RFH_BLOB_URL_STORE_RECEIVER_PDF_PROCESS_BLOCKED"/>
   <int value="374" label="MSDH_REQUEST_ALL_SCREENS_WITH_INVALID_STREAM_TYPE"/>
+  <int value="380" label="RFH_COMMIT_NAVIGATION_INVALID_TRANSITION_TYPE"/>
+  <int value="381" label="RFH_COMMIT_NAVIGATION_NON_WEBBY_TRANSITION"/>
+  <int value="382"
+      label="RFH_COMMIT_NAVIGATION_TRANSITION_FRAME_TYPE_MISMATCH"/>
+  <int value="383" label="RFH_COMMIT_NAVIGATION_DISALLOWED_QUALIFIER"/>
+  <int value="384"
+      label="RFH_COMMIT_NAVIGATION_BROWSER_INITIATED_TRANSITION_MISMATCH"/>
 </enum>
 
 <enum name="BadMessageReasonExtensions">

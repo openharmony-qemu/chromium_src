@@ -87,16 +87,150 @@
         return false;
     }
 
-    function isVisible(el) {
-        const rect = el.getBoundingClientRect();
-        if (rect.width === 0 && rect.height === 0) {
+    const hideClassesSet = { 'popup-hide': true, 'popup-anime-hide': true };
+
+    function hasClassInSet(el, set) {
+        if (!el.classList) {
             return false;
         }
-        const style = window.getComputedStyle(el);
-        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+        for (let i = 0; i < el.classList.length; i++) {
+            if (set[el.classList[i]]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // rectTooSmall: width/height <= 0 covers zero and negative; both < 0.5 covers tiny-but-nonzero rects
+    function rectTooSmall(rect) {
+        return rect.width <= 0 || rect.height <= 0 || (rect.width < 0.5 && rect.height < 0.5);
+    }
+
+    function hasIntersectionRect(rectA, rectB) {
+        if (rectA.width <= 0 || rectA.height <= 0) {
             return false;
+        }
+        const x1 = Math.max(rectA.left, rectB.left);
+        const y1 = Math.max(rectA.top, rectB.top);
+        const x2 = Math.min(rectA.right, rectB.right);
+        const y2 = Math.min(rectA.bottom, rectB.bottom);
+        const iw = x2 - x1;
+        const ih = y2 - y1;
+        if (iw <= 0 || ih <= 0) {
+            return false;
+        }
+        return (iw * ih) / (rectA.width * rectA.height) >= 0.9;
+    }
+
+    function hasIntersectionXOnlyRect(rectA, rectB) {
+        if (rectA.width <= 0) {
+            return false;
+        }
+        const left = Math.max(rectA.left, rectB.left);
+        const right = Math.min(rectA.right, rectB.right);
+        if (left >= right) {
+            return false;
+        }
+        return (right - left) / rectA.width >= 0.9;
+    }
+
+    // isClippingAncestor: true if the ancestor's style could clip el's visible rect.
+    // Transformed ancestors are skipped (transform establishes a new containing block, not a clip).
+    function isClippingAncestor(style) {
+        const transform = style.transform;
+        if (transform && transform !== 'none') {
+            return false;
+        }
+        const hasOverflowClip = style.overflow !== 'visible' || style.overflowX !== 'visible' || style.overflowY !== 'visible';
+        const hasFilter = style.filter !== 'none';
+        const hasClipPath = style.clipPath !== 'none' && style.clipPath !== '';
+        const hasContainLayout = /layout|strict/.test(style.contain);
+        const hasMask = style.mask !== 'none' || style.webkitMaskImage !== 'none';
+        return hasOverflowClip || hasFilter || hasClipPath || hasContainLayout || hasMask;
+    }
+
+    // walkAncestorsForVisibility: single ancestor walk — one getComputedStyle + one getBoundingClientRect per node.
+    // Returns null if any ancestor makes el invisible; otherwise returns { hasHideClass, hasBannerRole, clippingAncestors }.
+    function walkAncestorsForVisibility(el) {
+        let node = el;
+        let hasHideClass = false;
+        let hasBannerRole = false;
+        const clippingAncestors = [];
+        while (node && node.nodeType === 1) {
+            if (!hasHideClass && hasClassInSet(node, hideClassesSet)) {
+                hasHideClass = true;
+            }
+            if (!hasBannerRole) {
+                const role = node.getAttribute && node.getAttribute('role');
+                if (role === 'banner' || node.tagName === 'HEADER') {
+                    hasBannerRole = true;
+                }
+            }
+            const style = window.getComputedStyle(node);
+            if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0) {
+                return null;
+            }
+            const rect = node.getBoundingClientRect();
+            if (rectTooSmall(rect)) {
+                // Align with dom_tree_extractor: if the node has children, its rect may be
+                // zero in one dimension (e.g. flex/transition container with height=0) while
+                // children are still visible. Only skip if it has no children.
+                if (!node.children.length) {
+                    return null;
+                }
+            }
+            // Skip el itself for clipping check; only ancestors clip el's visible area.
+            if (node !== el && isClippingAncestor(style)) {
+                clippingAncestors.push(rect);
+            }
+            node = node.parentElement;
+        }
+        return { hasHideClass: hasHideClass, hasBannerRole: hasBannerRole, clippingAncestors: clippingAncestors };
+    }
+
+    // isOversizedShadowRoot: true when el has a shadow root covering most of the viewport.
+    function isOversizedShadowRoot(el, elRect) {
+        const hasShadow = !!el.shadowRoot || (typeof el.hasArkWebShadowRoot === 'function' && el.hasArkWebShadowRoot());
+        return hasShadow && elRect.width > window.innerWidth * 0.8 && elRect.height > window.innerHeight * 0.8;
+    }
+
+    // passesClippingCheck: verifies el's rect remains visible through every clipping ancestor.
+    // Uses area-based intersection when hasBannerRole is true (banner may legitimately span full width),
+    // x-axis-only intersection otherwise.
+    function passesClippingCheck(elRect, clippingAncestors, hasBannerRole) {
+        for (let i = 0; i < clippingAncestors.length; i++) {
+            const ancestorRect = clippingAncestors[i];
+            const intersects = hasBannerRole
+                ? hasIntersectionRect(elRect, ancestorRect)
+                : hasIntersectionXOnlyRect(elRect, ancestorRect);
+            if (!intersects) {
+                return false;
+            }
         }
         return true;
+    }
+
+    // isVisible: returns true if el is visible to the user. Composes ancestor walk, shadow check,
+    // and clipping intersection check. Split into helpers to keep cyclomatic complexity under 20.
+    function isVisible(el) {
+        if (!el) {
+            return false;
+        }
+        const ancestorInfo = walkAncestorsForVisibility(el);
+        if (!ancestorInfo) {
+            return false;
+        }
+        if (ancestorInfo.hasHideClass) {
+            return false;
+        }
+        const elRect = el.getBoundingClientRect();
+        if (isOversizedShadowRoot(el, elRect)) {
+            return false;
+        }
+        if (el.tagName === 'UL') {
+            return true;
+        }
+        return passesClippingCheck(elRect, ancestorInfo.clippingAncestors, ancestorInfo.hasBannerRole);
     }
 
     function isFocusable(el, nodeType, includeUnfocusable) {

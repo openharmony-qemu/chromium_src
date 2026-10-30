@@ -242,7 +242,9 @@ bool CrashReportExceptionHandler::WriteMinidumpToDatabase(
   AddUserExtensionStreams(user_stream_data_sources_, snapshot, &minidump);
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
+  auto gwp_asan_detection = crashpad::GetGwpAsanDetection();
   AddUserExtensionStreams(extendedUserStream, snapshot, &minidump);
+  crashpad::SetGwpAsanDetection(gwp_asan_detection);
 #endif
 
   if (!minidump.WriteEverything(new_report->Writer())) {

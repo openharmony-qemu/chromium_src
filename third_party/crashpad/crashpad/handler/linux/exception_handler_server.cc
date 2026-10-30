@@ -38,6 +38,7 @@
 #include "util/linux/socket.h"
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "handler/user_stream_data_source.h"
 #include "third_party/crashpad/crashpad/util/linux/crashpad_dfx.h"
 #endif
 
@@ -572,8 +573,20 @@ bool ExceptionHandlerServer::HandleCrashDumpRequest(
     error_reason += ": out of memory";
   }
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  std::string gwp_asan_field;
+  switch (crashpad::GetGwpAsanDetection()) {
+    case crashpad::GwpAsanDetection::kDetected:
+      gwp_asan_field = "detected";
+      break;
+    case crashpad::GwpAsanDetection::kMissingMetadata:
+      gwp_asan_field = "missing_metadata";
+      break;
+    default:
+      gwp_asan_field = "none";
+      break;
+  }
   CrashpadDfx::ProcessCrashReport(
-      process_type, g_happen_time, g_bundle_name, error_reason);
+      process_type, g_happen_time, g_bundle_name, error_reason, gwp_asan_field);
 #endif
 #endif
   return SendMessageToClient(

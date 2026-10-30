@@ -1,6 +1,8 @@
 // Copyright 2016 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+#include <optional>
+
 #include "base/command_line.h"
 #include "base/containers/contains.h"
 #include "base/memory/raw_ptr.h"
@@ -8,6 +10,7 @@
 #include "base/strings/stringprintf.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/test/scoped_feature_list.h"
+#include "base/test/test_future.h"
 #include "chrome/browser/password_manager/chrome_password_manager_client.h"
 #include "chrome/browser/password_manager/password_manager_test_base.h"
 #include "chrome/browser/password_manager/passwords_navigation_observer.h"
@@ -21,6 +24,8 @@
 #include "components/password_manager/core/browser/password_bubble_experiment.h"
 #include "components/password_manager/core/browser/password_form.h"
 #include "components/password_manager/core/browser/password_store/test_password_store.h"
+#include "components/password_manager/core/common/password_manager_pref_names.h"
+#include "components/prefs/pref_service.h"
 #include "content/public/browser/back_forward_cache.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
@@ -31,6 +36,7 @@
 #include "content/public/test/browser_test.h"
 #include "content/public/test/browser_test_utils.h"
 #include "content/public/test/prerender_test_util.h"
+#include "mojo/public/cpp/bindings/remote.h"
 #include "net/dns/mock_host_resolver.h"
 
 namespace {
@@ -1211,6 +1217,77 @@ IN_PROC_BROWSER_TEST_F(CredentialManagerAvatarTest,
                               content::EXECUTE_SCRIPT_NO_RESOLVE_PROMISES));
   BubbleObserver(WebContents()).WaitForAccountChooser();
   EXPECT_EQ(avatar_request_counter(), 2u);
+}
+
+// Regression test for crbug.com/562242421: A disconnected CredentialManager
+// pipe with an active account chooser must not leave a stale callback in
+// ManagePasswordsUIController that deletes a subsequent auto-signin request
+// during ProcessForms().
+IN_PROC_BROWSER_TEST_F(CredentialManagerBrowserTest,
+                       AutoSigninAfterDisconnectWithPendingChooserDoesNotUAF) {
+  scoped_refptr<password_manager::TestPasswordStore> password_store =
+      static_cast<password_manager::TestPasswordStore*>(
+          ProfilePasswordStoreFactory::GetForProfile(
+              browser()->profile(), ServiceAccessType::IMPLICIT_ACCESS)
+              .get());
+
+  NavigateToFile("/password/simple_password.html");
+  GURL url = WebContents()->GetLastCommittedURL();
+
+  password_manager::PasswordForm form;
+  form.signon_realm = url::Origin::Create(url).GetURL().spec();
+  form.url = url::Origin::Create(url).GetURL();
+  form.username_value = u"user1";
+  form.password_value = u"abcdef";
+  form.skip_zero_click = false;
+  password_store->AddLogin(form);
+  WaitForPasswordStore();
+
+  browser()->GetProfile()->GetPrefs()->SetBoolean(
+      password_manager::prefs::kWasAutoSignInFirstRunExperienceShown, true);
+
+  ChromePasswordManagerClient* client =
+      ChromePasswordManagerClient::FromWebContents(WebContents());
+  ASSERT_TRUE(client);
+
+  // 1. Bind first CredentialManager pipe and call Get(kRequired) to open the
+  // account chooser.
+  mojo::Remote<blink::mojom::CredentialManager> remote1;
+  client->GetContentCredentialManager()->BindRequest(
+      WebContents()->GetPrimaryMainFrame(),
+      remote1.BindNewPipeAndPassReceiver());
+  remote1->Get(password_manager::CredentialMediationRequirement::kRequired,
+               /*include_passwords=*/true,
+               /*federations=*/{}, base::DoNothing());
+
+  BubbleObserver(WebContents()).WaitForAccountChooser();
+  EXPECT_TRUE(IsShowingAccountChooser());
+
+  // 2. Disconnect the Mojo pipe while the account chooser is showing.
+  remote1.reset();
+  base::RunLoop().RunUntilIdle();
+
+  // 3. Bind a new CredentialManager pipe and call Get(kOptional), triggering
+  // auto sign-in and NotifyUserAutoSignin(), which destroys the old chooser.
+  mojo::Remote<blink::mojom::CredentialManager> remote2;
+  client->GetContentCredentialManager()->BindRequest(
+      WebContents()->GetPrimaryMainFrame(),
+      remote2.BindNewPipeAndPassReceiver());
+
+  base::test::TestFuture<password_manager::CredentialManagerError,
+                         std::optional<password_manager::CredentialInfo>>
+      future;
+  remote2->Get(password_manager::CredentialMediationRequirement::kOptional,
+               /*include_passwords=*/true,
+               /*federations=*/{},
+               future.GetCallback<
+                   password_manager::CredentialManagerError,
+                   const std::optional<password_manager::CredentialInfo>&>());
+
+  ASSERT_TRUE(future.Wait());
+  EXPECT_EQ(password_manager::CredentialManagerError::SUCCESS, future.Get<0>());
+  ASSERT_TRUE(future.Get<1>().has_value());
+  EXPECT_EQ(u"user1", future.Get<1>()->id);
 }
 
 }  // namespace

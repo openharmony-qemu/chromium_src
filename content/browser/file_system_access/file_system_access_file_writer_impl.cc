@@ -180,8 +180,14 @@ void FileSystemAccessFileWriterImpl::WriteImpl(
     mojo::ScopedDataPipeConsumerHandle stream,
     WriteCallback callback) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  DCHECK_EQ(GetEffectiveWritePermissionStatus(),
-            blink::mojom::PermissionStatus::GRANTED);
+  if (GetEffectiveWritePermissionStatus() !=
+      blink::mojom::PermissionStatus::GRANTED) {
+    std::move(callback).Run(
+        file_system_access_error::FromStatus(
+            FileSystemAccessStatus::kPermissionDenied),
+        /*bytes_written=*/0);
+    return;
+  }
 
   if (is_close_pending()) {
     std::move(callback).Run(
@@ -192,6 +198,7 @@ void FileSystemAccessFileWriterImpl::WriteImpl(
     return;
   }
 
+  ++pending_operations_;
   manager()->DoFileSystemOperation(
       FROM_HERE, &FileSystemOperationRunner::WriteStream,
       base::BindRepeating(&FileSystemAccessFileWriterImpl::DidWrite,
@@ -209,17 +216,23 @@ void FileSystemAccessFileWriterImpl::DidWrite(WriteState* state,
   DCHECK(state);
   state->bytes_written += bytes;
   if (complete) {
+    --pending_operations_;
     std::move(state->callback)
         .Run(file_system_access_error::FromFileError(result),
              state->bytes_written);
+    MaybeStartClose();
   }
 }
 
 void FileSystemAccessFileWriterImpl::TruncateImpl(uint64_t length,
                                                   TruncateCallback callback) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  DCHECK_EQ(GetEffectiveWritePermissionStatus(),
-            blink::mojom::PermissionStatus::GRANTED);
+  if (GetEffectiveWritePermissionStatus() !=
+      blink::mojom::PermissionStatus::GRANTED) {
+    std::move(callback).Run(file_system_access_error::FromStatus(
+        FileSystemAccessStatus::kPermissionDenied));
+    return;
+  }
 
   if (is_close_pending()) {
     std::move(callback).Run(file_system_access_error::FromStatus(
@@ -228,21 +241,30 @@ void FileSystemAccessFileWriterImpl::TruncateImpl(uint64_t length,
     return;
   }
 
+  ++pending_operations_;
   manager()->DoFileSystemOperation(
       FROM_HERE, &FileSystemOperationRunner::Truncate,
-      base::BindOnce(
-          [](TruncateCallback callback, base::File::Error result) {
-            std::move(callback).Run(
-                file_system_access_error::FromFileError(result));
-          },
-          std::move(callback)),
+      base::BindOnce(&FileSystemAccessFileWriterImpl::DidTruncate,
+                     weak_factory_.GetWeakPtr(), std::move(callback)),
       swap_url(), length);
+}
+
+void FileSystemAccessFileWriterImpl::DidTruncate(TruncateCallback callback,
+                                                 base::File::Error result) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  --pending_operations_;
+  std::move(callback).Run(file_system_access_error::FromFileError(result));
+  MaybeStartClose();
 }
 
 void FileSystemAccessFileWriterImpl::CloseImpl(CloseCallback callback) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  DCHECK_EQ(GetEffectiveWritePermissionStatus(),
-            blink::mojom::PermissionStatus::GRANTED);
+  if (GetEffectiveWritePermissionStatus() !=
+      blink::mojom::PermissionStatus::GRANTED) {
+    std::move(callback).Run(file_system_access_error::FromStatus(
+        FileSystemAccessStatus::kPermissionDenied));
+    return;
+  }
   if (is_close_pending()) {
     std::move(callback).Run(file_system_access_error::FromStatus(
         FileSystemAccessStatus::kInvalidState,
@@ -251,6 +273,16 @@ void FileSystemAccessFileWriterImpl::CloseImpl(CloseCallback callback) {
   }
 
   close_callback_ = std::move(callback);
+  MaybeStartClose();
+}
+
+void FileSystemAccessFileWriterImpl::MaybeStartClose() {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  if (!is_close_pending() || did_start_close_ || pending_operations_ > 0) {
+    return;
+  }
+
+  did_start_close_ = true;
 
   auto file_system_access_safe_move_helper =
       std::make_unique<FileSystemAccessSafeMoveHelper>(

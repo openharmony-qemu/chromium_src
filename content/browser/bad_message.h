@@ -378,6 +378,8 @@ enum BadMessageReason {
   RFH_DID_COMMIT_NAVIGATION_WHILE_BFCACHED = 354,
   RFH_AUTHENTICATOR_PDF_PROCESS_BLOCKED = 355,
   RFHI_INVALID_CLIENT_SIDE_REDIRECT_URL = 357,
+  PMM_UNSUBSCRIBE_IN_FENCED_FRAME = 367,
+  PMM_GET_SUBSCRIPTION_IN_FENCED_FRAME = 368,
 
   // Please add new elements here. The naming convention is abbreviated class
   // name (e.g. RenderFrameHost becomes RFH) plus a unique description of the

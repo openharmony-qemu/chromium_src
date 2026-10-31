@@ -630,9 +630,16 @@ CompositorFrameReporter::CompositorFrameReporter(
       layer_tree_host_id_(layer_tree_host_id),
       global_trackers_(trackers) {
   DCHECK(global_trackers_.frame_sorter);
+#if BUILDFLAG(IS_ARKWEB)
+  if (global_trackers_.frame_sorter &&
+      global_trackers_.frame_sorter->first_contentful_paint_received()) {
+    global_trackers_.frame_sorter->AddNewFrame(args);
+  }
+#else
   if (global_trackers_.frame_sorter->first_contentful_paint_received()) {
     global_trackers_.frame_sorter->AddNewFrame(args);
   }
+#endif
   if (scrolling_thread_ == FrameInfo::SmoothEffectDrivingThread::kCompositor) {
     DCHECK(smooth_thread_ == SmoothThread::kSmoothCompositor ||
            smooth_thread_ == SmoothThread::kSmoothBoth);

@@ -878,6 +878,11 @@ v8::MaybeLocal<v8::Value> V8ScriptRunner::CallFunction(
     return v8::MaybeLocal<v8::Value>();
   }
 
+#if BUILDFLAG(ARKWEB_ENABLE_COMPILE_TRACE)
+  if (function.IsEmpty()) {
+    return v8::MaybeLocal<v8::Value>();
+  }
+#endif
   DCHECK(!window || !window->GetFrame() ||
          BindingSecurity::ShouldAllowAccessTo(
              ToLocalDOMWindow(function->GetCreationContextChecked()), window));

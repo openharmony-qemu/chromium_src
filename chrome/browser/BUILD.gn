@@ -1608,6 +1608,10 @@ static_library("browser") {
     sources += arkweb_browser_process_impl_sources
   }
 
+  if (arkweb_copy_link_to_text) {
+    sources += arkweb_chrome_browser_renderer_context_menu_sources
+  }
+
   configs += [
     "//build/config/compiler:wexit_time_destructors",
     "//build/config:precompiled_headers",

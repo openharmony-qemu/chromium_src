@@ -1,0 +1,7 @@
+.agents/
+.ruff_chache/
+/.vs/
+# Visual Studio Code
+.vscode/
+
+*.pyc

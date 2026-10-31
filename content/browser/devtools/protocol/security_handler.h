@@ -57,6 +57,10 @@ class SecurityHandler : public DevToolsDomainHandler,
 
   bool IsIgnoreCertificateErrorsSet() const;
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  void CloseIdleConnectionsForArkWeb();
+#endif
+
  private:
   using CertErrorCallbackMap = base::flat_map<int, CertErrorCallback>;
 

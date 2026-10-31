@@ -71,6 +71,11 @@ std::unique_ptr<KeyedService> DesktopProfileSessionDurationsServiceFactory::
   syncer::SyncService* sync_service =
       SyncServiceFactory::GetForProfile(profile);
   DesktopSessionDurationTracker* tracker = DesktopSessionDurationTracker::Get();
+#if BUILDFLAG(IS_ARKWEB)
+  if (!tracker) {
+    return nullptr;
+  }
+#endif
   signin::IdentityManager* identity_manager =
       IdentityManagerFactory::GetForProfile(profile);
   return std::make_unique<DesktopProfileSessionDurationsService>(

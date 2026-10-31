@@ -942,7 +942,7 @@ void SharedContextState::SubmitIfNecessary(
     gpu::AddVulkanCleanupTaskForSkiaFlush(vk_context_provider(), &flush_info);
 
     auto result = gr_context()->flush(flush_info);
-    DCHECK_EQ(result, GrSemaphoresSubmitted::kYes);
+    DCHECK_EQ(result.fSubmitted, GrSemaphoresSubmitted::kYes);
   }
 
   bool sync_cpu = gpu::ShouldVulkanSyncCpuForSkiaSubmit(vk_context_provider());

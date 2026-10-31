@@ -4991,6 +4991,10 @@ bool BrowserView::ShouldDescendIntoChildForEventHandling(
 #endif
 
   if (draggable_region.has_value()) {
+    gfx::Point point_in_browser_view_coords(location);
+    views::View::ConvertPointToTarget(GetWidget()->GetRootView(), this,
+                                      &point_in_browser_view_coords);
+
     // Draggable regions are defined relative to the web contents.
     gfx::Point point_in_contents_web_view_coords(location);
     views::View::ConvertPointToTarget(GetWidget()->GetRootView(),
@@ -5001,7 +5005,7 @@ bool BrowserView::ShouldDescendIntoChildForEventHandling(
     // owned widgets, for example alerts, permission prompts or find bar.
     return !draggable_region->contains(point_in_contents_web_view_coords.x(),
                                        point_in_contents_web_view_coords.y()) ||
-           WidgetOwnedByAnchorContainsPoint(point_in_contents_web_view_coords);
+           WidgetOwnedByAnchorContainsPoint(point_in_browser_view_coords);
   }
 
   return true;

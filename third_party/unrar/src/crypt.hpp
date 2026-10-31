@@ -18,6 +18,14 @@ enum CRYPT_METHOD {
 
 #define CRYPT5_KDF_LG2_COUNT     15 // LOG2 of PDKDF2 iteration count.
 #define CRYPT5_KDF_LG2_COUNT_MAX 24 // LOG2 of maximum accepted iteration count.
+
+#if defined(CHROMIUM_UNRAR)
+// Maximum number of distinct keys to derive per CryptData instance. Archives
+// using more salts than this will have remaining encrypted data treated as
+// undecryptable, while still allowing header metadata to be enumerated.
+#define CRYPT_KDF_CACHE_MISS_MAX 16
+#endif
+
 #define CRYPT_VERSION             0 // Supported encryption version.
 
 
@@ -79,7 +87,7 @@ class CryptData
     void EncryptBlock20(byte *Buf);
     void DecryptBlock20(byte *Buf);
 
-    void SetKey30(bool Encrypt,SecPassword *Password,const wchar *PwdW,const byte *Salt);
+    bool SetKey30(bool Encrypt,SecPassword *Password,const wchar *PwdW,const byte *Salt);
     bool SetKey50(bool Encrypt,SecPassword *Password,const wchar *PwdW,const byte *Salt,const byte *InitV,uint Lg2Cnt,byte *HashKey,byte *PswCheck);
 
     KDF3CacheItem KDF3Cache[4];
@@ -87,6 +95,10 @@ class CryptData
     
     KDF5CacheItem KDF5Cache[4];
     uint KDF5CachePos;
+
+#if defined(CHROMIUM_UNRAR)
+    uint KDFCacheMisses;
+#endif
 
     CRYPT_METHOD Method;
 

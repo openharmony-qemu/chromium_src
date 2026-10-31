@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
+#include "base/command_line.h"
 #include "base/logging.h"
 #include "base/native_library.h"
 #include "base/task/bind_post_task.h"
@@ -30,6 +31,7 @@
 #include "components/viz/common/gpu/vulkan_context_provider.h"
 #include "components/viz/service/display_embedder/output_presenter_ohos.h"
 #include "components/viz/service/display_embedder/skia_output_surface_dependency.h"
+#include "content/public/common/content_switches.h"
 #include "gpu/command_buffer/service/external_semaphore.h"
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
@@ -39,10 +41,13 @@
 
 namespace viz {
 namespace {
-constexpr int kVec3Size = 3;
 constexpr int kPoint2Size = 2;
 constexpr int kNumberOfBuffers = 4;
 constexpr int kColorChannelSize = 4;
+constexpr int kColorRed = 0;
+constexpr int kColorGreen = 1;
+constexpr int kColorBlue = 2;
+constexpr int kColorAlpha = 3;
 OHOS::NWeb::OhosAdapterHelper& GetAdapterHelper() {
   return OHOS::NWeb::OhosAdapterHelper::GetInstance();
 }
@@ -90,23 +95,26 @@ class OutputPresenterOHOS::SurfaceControl {
         transaction_adapter_(transaction_adapter) {
     TRACE_EVENT1("viz", "Create SurfaceControl", "name", name_.c_str());
     if (!parent || !parent->surface_) {
-      LOG(ERROR) << "[Delegate] Creating SurfaceControl, parent is null";
+      LOG(ERROR) << "DelegateTag Creating SurfaceControl, parent is null";
     }
   }
 
   explicit SurfaceControl(OHNativeWindow* window,
                           SurfaceControlAdapter& surface_adapter,
-                          TransactionAdapter& transaction_adapter)
+                          TransactionAdapter& transaction_adapter,
+                          OH_SurfaceTransaction* transaction,
+                          bool in_process)
       : name_("delegate_container"),
         surface_control_adapter_(surface_adapter),
         transaction_adapter_(transaction_adapter) {
     if (!window) {
-      LOG(ERROR) << "Creating SurfaceControl, window is null";
+      LOG(ERROR) << "DelegateTag Creating SurfaceControl, window is null";
     }
     surface_ = reinterpret_cast<OH_SurfaceControl*>(surface_control_adapter_
-        .CreateSurfaceControlFromNativeWindow(window, name_.c_str()));
+      .CreateContainerSurfaceControl(transaction, window, name_.c_str(), in_process));
+    is_root_ = true;
     if (!surface_) {
-      LOG(ERROR) << "[Delegate] Creating failed, surface_ is null";
+      LOG(ERROR) << "DelegateTag Creating failed, surface_ is null";
     }
   }
 
@@ -120,7 +128,7 @@ class OutputPresenterOHOS::SurfaceControl {
 
   void ClearBufferQueueCache(OH_SurfaceTransaction* transaction, bool is_clean_all) {
     if (surface_ == nullptr) {
-      LOG(ERROR) << "[Delegate] ClearBufferQueueCache, surface_ is nullptr";
+      LOG(ERROR) << "DelegateTag ClearBufferQueueCache, surface_ is nullptr";
       return;
     }
 
@@ -128,7 +136,10 @@ class OutputPresenterOHOS::SurfaceControl {
   }
 
   void Destroy(OH_SurfaceTransaction* transaction) {
-    DCHECK(!destroyed_);
+    if (destroyed_) {
+      LOG(ERROR) << "DelegateTag surface is already destroyed";
+      return;
+    }
     destroyed_ = true;
     transaction_adapter_.Reparent(transaction, surface_, nullptr);
     transaction_adapter_.SetVisibility(transaction, surface_,
@@ -139,46 +150,38 @@ class OutputPresenterOHOS::SurfaceControl {
     DCHECK(parent_);
     OH_SurfaceControl* surface = surface_;
     surface_ = nullptr;
+    destroyed_ = true;
     return surface;
   }
 
   void SetSurface(SurfaceControl* surface) {
     DCHECK(!surface_);
     if (!surface) {
-      LOG(ERROR) << "Set surface failed, surface_ is null";
+      LOG(ERROR) << "DelegateTag Set surface failed, surface_ is null";
       return;
     }
     surface_ = surface->ReleaseSurface();
     DCHECK(surface->dirty_bits_.none());
 
-    if (name_ != surface->name_) dirty_bits_.set(kName);
-    if (z_order_ != surface->z_order_) dirty_bits_.set(kZOrder);
-    if (bounds_ != surface->bounds_) dirty_bits_.set(kBounds);
-    if (frame_gravity_ != surface->frame_gravity_)
-      dirty_bits_.set(kFrameGravity);
-    if (translate_ != surface->translate_) dirty_bits_.set(kTranslate);
-    if (pivot_ != surface->pivot_) dirty_bits_.set(kPivot);
-    if (border_color_ != surface->border_color_) dirty_bits_.set(kBorderColor);
-    if (border_width_ != surface->border_width_) dirty_bits_.set(kBorderWidth);
-    if (border_style_ != surface->border_style_) dirty_bits_.set(kBorderStyle);
-    if (background_color_ != surface->background_color_)
-      dirty_bits_.set(kBackgroundColor);
-    if (foreground_color_ != surface->foreground_color_)
-      dirty_bits_.set(kForegroundColor);
-    if (alpha_ != surface->alpha_) dirty_bits_.set(kAlpha);
-    if (buffer_transform_ != surface->buffer_transform_)
-      dirty_bits_.set(kBufferTransform);
-    if (src_rect_ != surface->src_rect_) dirty_bits_.set(kSrcRect);
-    if (display_rect_ != surface->display_rect_) dirty_bits_.set(kDisplayRect);
+    auto check_and_set = [this](const auto& lhs, const auto& rhs, auto bit) {
+      if (lhs != rhs) {
+        dirty_bits_.set(bit);
+      }
+    };
+
+    check_and_set(z_order_, surface->z_order_, kZOrder);
+    check_and_set(bounds_, surface->bounds_, kBounds);
+    check_and_set(pivot_, surface->pivot_, kPivot);
+    check_and_set(background_color_, surface->background_color_, kBackgroundColor);
+    check_and_set(alpha_, surface->alpha_, kAlpha);
+    check_and_set(buffer_transform_, surface->buffer_transform_, kBufferTransform);
+    check_and_set(src_rect_, surface->src_rect_, kSrcRect);
+    check_and_set(display_rect_, surface->display_rect_, kDisplayRect);
   }
 
   void SetZOrder(int32_t z_order) {
     UpdateProperty(z_order_, z_order, kZOrder);
   }
-
-  void SetName(std::string name) { UpdateProperty(name_, name, kName); }
-
-  void SetVisible(bool visible) { UpdateProperty(visible_, visible, kVisible); }
 
   void SetGeometry(const gfx::RectF& src_rect,
                    const gfx::RectF& display_rect,
@@ -192,38 +195,11 @@ class OutputPresenterOHOS::SurfaceControl {
     UpdateProperty(bounds_, bounds, kBounds);
   }
 
-  void SetFrameGravity(int32_t gravity) {
-    UpdateProperty(frame_gravity_, gravity, kFrameGravity);
-  }
-
-  void SetTranslate(float x, float y, float z) {
-    if (translate_[0] != x || translate_[1] != y || translate_[2] != z) {
-      translate_ = {x, y, z};
-      dirty_bits_.set(kTranslate);
-    }
-  }
-
   void SetPivot(float x, float y) {
     if (pivot_[0] != x || pivot_[1] != y) {
       pivot_ = {x, y};
       dirty_bits_.set(kPivot);
     }
-  }
-
-  void SetBorderWidth(int32_t width) {
-    UpdateProperty(border_width_, width, kBorderWidth);
-  }
-
-  void SetBorderColor(const std::array<float, kColorChannelSize>& color) {
-    UpdateProperty(border_color_, color, kBorderColor);
-  }
-
-  void SetBorderStyle(int32_t style) {
-    UpdateProperty(border_style_, style, kBorderStyle);
-  }
-
-  void SetForegroundColor(const std::array<float, kColorChannelSize>& color) {
-    UpdateProperty(foreground_color_, color, kForegroundColor);
   }
 
   void SetBackgroundColor(const std::array<float, kColorChannelSize>& color) {
@@ -243,6 +219,12 @@ class OutputPresenterOHOS::SurfaceControl {
     DCHECK(buffer);
     DCHECK(release_callback);
     DCHECK(!release_callback_);
+    if (!release_callback) {
+      LOG(ERROR) << "DelegateTag SetBuffer release_callback is nullptr";
+    }
+    if (release_callback_) {
+      LOG(ERROR) << "DelegateTag SetBuffer Unexpected release_callback_ presence";
+    }
     DCHECK_NE(buffer_, buffer);
     buffer_ = buffer;
     fence_fd_ = std::move(fence_fd);
@@ -253,74 +235,37 @@ class OutputPresenterOHOS::SurfaceControl {
 
   void SetMailbox(const gpu::Mailbox& mailbox) { mailbox_ = mailbox; }
 
-  void Sync(OH_SurfaceTransaction* transaction) {
+  void Sync(OH_SurfaceTransaction* transaction, bool in_process) {
     DCHECK(!destroyed_);
-    if (!surface_) {
-      surface_ = reinterpret_cast<OH_SurfaceControl*>(
-          surface_control_adapter_.Create(name_.c_str()));
+    if (!surface_ && !is_root_) {
+      surface_ = reinterpret_cast<OH_SurfaceControl*>(surface_control_adapter_
+        .CreateChildSurfaceControl(transaction, name_.c_str(), in_process));
+      if (surface_ == nullptr) {
+        LOG(ERROR) << "DelegateTag create surface_ failed";
+      }
       transaction_adapter_.SetHardwareEnableHint(transaction, surface_, true);
       transaction_adapter_.Reparent(transaction, surface_, parent_);
       transaction_adapter_.SetVisibility(
           transaction, surface_, OH_SURFACE_TRANSACTION_VISIBILITY_SHOW);
       transaction_adapter_.SetZOrder(transaction, surface_, z_order_);
-      dirty_bits_.reset(kName);
       dirty_bits_.reset(kZOrder);
-    }
-    if (dirty_bits_.test(kName)) {
-      transaction_adapter_.SetName(transaction, surface_, name_.c_str());
-    }
-    if (dirty_bits_.test(kVisible)) {
-      transaction_adapter_.SetVisibility(
-          transaction, surface_,
-          visible_ ? OH_SURFACE_TRANSACTION_VISIBILITY_SHOW
-                   : OH_SURFACE_TRANSACTION_VISIBILITY_HIDE);
     }
     if (dirty_bits_.test(kZOrder)) {
       transaction_adapter_.SetZOrder(transaction, surface_, z_order_);
     }
     if (dirty_bits_.test(kBounds)) {
-      transaction_adapter_.SetBounds(transaction, surface_,bounds_.x(),
+      transaction_adapter_.SetBounds(transaction, surface_, bounds_.x(),
           bounds_.y(), bounds_.width(), bounds_.height());
-    }
-    if (dirty_bits_.test(kFrameGravity)) {
-      transaction_adapter_.SetFrameGravity(
-          transaction, surface_, frame_gravity_);
-    }
-    if (dirty_bits_.test(kTranslate)) {
-      transaction_adapter_.SetTranslate(
-          transaction, surface_, translate_[0], translate_[1], translate_[2]);
     }
     if (dirty_bits_.test(kPivot)) {
       transaction_adapter_.SetPivot(
           transaction, surface_, pivot_[0], pivot_[1]);
     }
-    if (dirty_bits_.test(kBorderWidth)) {
-      transaction_adapter_.SetBorderWidth(
-          transaction, surface_,
-          border_width_, border_width_, border_width_, border_width_);
-    }
-    if (dirty_bits_.test(kBorderColor)) {
-      transaction_adapter_.SetBorderColor(
-          transaction, surface_,
-          border_color_[0], border_color_[1],
-          border_color_[2], border_color_[3]);
-    }
-    if (dirty_bits_.test(kBorderStyle)) {
-      transaction_adapter_.SetBorderStyle(
-          transaction, surface_,
-          border_style_, border_style_, border_style_, border_style_);
-    }
-    if (dirty_bits_.test(kForegroundColor)) {
-      transaction_adapter_.SetForegroundColor(
-          transaction, surface_,
-          foreground_color_[0], foreground_color_[1],
-          foreground_color_[2], foreground_color_[3]);
-    }
     if (dirty_bits_.test(kBackgroundColor)) {
       transaction_adapter_.SetBackgroundColor(
           transaction, surface_,
-          background_color_[0], background_color_[1],
-          background_color_[2], background_color_[3]);
+          background_color_[kColorRed], background_color_[kColorGreen],
+          background_color_[kColorBlue], background_color_[kColorAlpha]);
     }
     if (dirty_bits_.test(kAlpha)) {
       transaction_adapter_.SetBufferAlpha(transaction, surface_, alpha_);
@@ -366,12 +311,12 @@ class OutputPresenterOHOS::SurfaceControl {
     dirty_bits_.reset();
   }
 
-  const gfx::RectF bounds() const { return bounds_; }
+  const gfx::RectF& bounds() const { return bounds_; }
   OH_NativeBuffer* buffer() const { return buffer_; }
   bool has_surface() const { return surface_ != nullptr; }
   OH_SurfaceControl* surface() const { return surface_; }
   const gpu::Mailbox& mailbox() const { return mailbox_; }
-  std::string name() const { return name_; }
+  const std::string& name() const { return name_; }
   int32_t z_order() const { return z_order_; }
 
  private:
@@ -389,20 +334,14 @@ class OutputPresenterOHOS::SurfaceControl {
   bool destroyed_ = false;
   std::string name_;
   int32_t z_order_ = -1;
-  bool visible_ = true;
   gfx::RectF bounds_;
   gfx::RectF src_rect_;
   gfx::RectF display_rect_;
-  int32_t frame_gravity_ = 9;
-  std::array<float, kVec3Size> translate_ = {0.0, 0.0, 0.0};
   std::array<float, kPoint2Size> pivot_ = {0.5, 0.5};
-  std::array<float, kColorChannelSize> border_color_ = {0.0f, 0.0f, 0.0f, 0.0f};
-  int32_t border_width_ = 0;
-  int32_t border_style_ = 0;
-  std::array<float, kColorChannelSize> foreground_color_ = {0.0f, 0.0f, 0.0f, 0.0f};
   std::array<float, kColorChannelSize> background_color_ = {0.0f, 0.0f, 0.0f, 0.0f};
   float alpha_ = 1.0f;
   int32_t buffer_transform_ = OH_TRANSFORM_ROTATE_NONE;
+  bool is_root_ = false;
 
   OH_NativeBuffer* buffer_ = nullptr;
   base::ScopedFD fence_fd_;
@@ -413,12 +352,12 @@ class OutputPresenterOHOS::SurfaceControl {
   TransactionAdapter& transaction_adapter_;
 };
 
-// static
 std::unique_ptr<OutputPresenterOHOS> OutputPresenterOHOS::Create(
     SkiaOutputSurfaceDependency* deps) {
   TRACE_EVENT0("viz", "OutputPresenterOHOS::Create");
+  LOG(INFO) << "DelegateTag OutputPresenterOHOS Create";
   if (!deps) {
-    LOG(ERROR) << "deps is null";
+    LOG(ERROR) << "DelegateTag deps is null";
     return nullptr;
   }
 
@@ -435,9 +374,15 @@ OutputPresenterOHOS::OutputPresenterOHOS(SkiaOutputSurfaceDependency* deps)
   void* window = tracker->GetNativeWindow(dependency_->GetSurfaceHandle());
   transaction_ = reinterpret_cast<OH_SurfaceTransaction*>(transaction_adapter_.
       CreateSurfaceTransaction(reinterpret_cast<OHNativeWindow*>(window)));
+
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kSingleProcess) ||
+      base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kInProcessGPU)) {
+    in_process_ = true;
+  }
+
   root_surface_ = std::make_unique<SurfaceControl>(
       reinterpret_cast<OHNativeWindow*>(window),
-      surface_control_adapter_, transaction_adapter_);
+      surface_control_adapter_, transaction_adapter_, transaction_, in_process_);
 
   auto callback = base::BindRepeating(&OutputPresenterOHOS::OnComplete,
                                       weak_factory_.GetWeakPtr());
@@ -457,18 +402,26 @@ OutputPresenterOHOS::OutputPresenterOHOS(SkiaOutputSurfaceDependency* deps)
 }
 
 OutputPresenterOHOS::~OutputPresenterOHOS() {
-  transaction_adapter_.SetOnComplete(transaction_, nullptr, nullptr);
-  transaction_adapter_.DeleteTransaction(transaction_);
-}
-
-void OutputPresenterOHOS::DiscardCompositingResources(bool is_clean_all) {
-  for (const auto& surface : previous_frame_) {
+  TRACE_EVENT0("viz", "~OutputPresenterOHOS");
+  LOG(INFO) << "DelegateTag ~OutputPresenterOHOS";
+  for (auto& surface : previous_frame_) {
     if (surface) {
-      TRACE_EVENT2("viz", "OutputPresenterOHOS::DiscardCompositingResources",
-          "name", surface->name().c_str(), "is_clean_all", is_clean_all);
-      surface->ClearBufferQueueCache(transaction_, is_clean_all);
+      surface->Destroy(transaction_);
+      surface.reset();
     }
   }
+  for (auto& surface : pending_frame_) {
+    if (surface) {
+      surface->Destroy(transaction_);
+      surface.reset();
+    }
+  }
+  if (root_surface_) {
+    root_surface_->Destroy(transaction_);
+  }
+  transaction_adapter_.Commit(transaction_);
+  transaction_adapter_.SetOnComplete(transaction_, nullptr, nullptr);
+  transaction_adapter_.DeleteTransaction(transaction_);
 }
 
 void OutputPresenterOHOS::InitializeCapabilities(
@@ -498,7 +451,7 @@ bool OutputPresenterOHOS::Reshape(const ReshapeParams& params) {
     auto rect = gfx::RectF(GetRotatedSize(size_, transform_));
     root_surface_->SetBounds(rect);
   }
-  DiscardCompositingResources(false);
+  DiscardCompositingResources(false, false);
   return true;
 }
 
@@ -508,17 +461,16 @@ void OutputPresenterOHOS::Present(SwapCompletionCallback completion_callback,
   TRACE_EVENT0("viz", "OutputPresenterOHOS::Present");
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
 
-  root_surface_->Sync(transaction_);
+  root_surface_->Sync(transaction_, in_process_);
 
   // Sort pending frame by z order
   std::sort(pending_frame_.begin(), pending_frame_.end(),
-            [](const std::unique_ptr<SurfaceControl>& a,
-               const std::unique_ptr<SurfaceControl>& b) {
+            [](const auto& a, const auto& b) {
               return a->z_order() < b->z_order();
             });
 
-  int32_t first_surface_z =
-      pending_frame_.size() > 0 ? pending_frame_[0]->z_order() : 0;
+  int32_t first_surface_z = (!pending_frame_.empty() && pending_frame_.front())
+                            ? pending_frame_.front()->z_order() : 0;
 
   // Remove reused item.
   std::erase(previous_frame_, nullptr);
@@ -541,30 +493,32 @@ void OutputPresenterOHOS::Present(SwapCompletionCallback completion_callback,
       int32_t z_order = surface->z_order() - first_surface_z;
       surface->SetZOrder(z_order);
     }
-    surface->Sync(transaction_);
+    surface->Sync(transaction_, in_process_);
   }
 
   // Clear all unused surface from previous frame.
   for (auto& surface : previous_frame_) {
-    surface->Destroy(transaction_);
-    surface.reset();
+    if (surface) {
+      surface->Destroy(transaction_);
+      surface.reset();
+    }
   }
   previous_frame_.clear();
 
-  CompletionData* previous_completion_data =
-      completion_datas_.empty() ? nullptr : &completion_datas_.back();
-
+  bool has_previous = !completion_datas_.empty();
   completion_datas_.emplace_back(std::move(completion_callback),
                                  root_overlay_access_);
-  if (previous_completion_data &&
-      previous_completion_data->access == root_overlay_access_) {
-    // If root plane buffer is not changed, reset previous frame access to
-    // nullptr, so TriggerOnCompleteCallbacks() can trigger the previouse
-    // completion callback without waiting for OnOverlayReleased() being called.
-    previous_completion_data->access = nullptr;
+  if (has_previous) {
+    auto& prev_data = completion_datas_[completion_datas_.size() - 2];
+    if (prev_data.access && root_overlay_access_ && prev_data.access.get() == root_overlay_access_.get()) {
+      // If root plane buffer is not changed, reset previous frame access to
+      // nullptr, so TriggerOnCompleteCallbacks() can trigger the previous
+      // completion callback without waiting for OnOverlayReleased() being called.
+      prev_data.access.reset();
+    }
   }
 
-  root_overlay_access_ = nullptr;
+  root_overlay_access_.reset();
   presentation_callbacks_.emplace_back(std::move(presentation_callback));
 
   transaction_adapter_.Commit(transaction_);
@@ -600,22 +554,28 @@ gfx::SizeF OutputPresenterOHOS::MaybeCorrectBufferSize(
 void OutputPresenterOHOS::ScheduleOverlayPlane(
     const OutputPresenter::OverlayPlaneCandidate& overlay_plane,
     ScopedOverlayAccess* access) {
-  TRACE_EVENT0("viz", "OutputPresenterOHOS::ScheduleOverlayPlane");
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
-
-  DCHECK_EQ(overlay_plane.is_solid_color, access == nullptr)
-      << "access and is_solid_color don't match";
 
   const bool is_root = overlay_plane.is_root_render_pass;
   const gfx::RectF& display_rect = overlay_plane.display_rect;
   gfx::RectF bounds = display_rect;
   gfx::RectF src_rect = display_rect;
   std::string surface_name = "delegate_child";
+  if (!is_root &&
+      overlay_plane.priority_hint == gfx::OverlayPriorityHint::kVideo) {
+    surface_name = "delegate_child_video";
+  }
+  TRACE_EVENT1("viz", "OutputPresenterOHOS::ScheduleOverlayPlane",
+    "name", surface_name.c_str());
 
   if (is_root) {
     DCHECK(!root_overlay_access_);
-    root_overlay_access_ = access;
-  } else if (!overlay_plane.is_solid_color) {
+    if (access) {
+      root_overlay_access_ = access->GetWeakPtr();
+    } else {
+      LOG(ERROR) << "DelegateTag access is nullptr";
+    }
+  } else {
 #if BUILDFLAG(ARKWEB_AI_HDR)
     gfx::SizeF buffer_size =
         MaybeCorrectBufferSize(overlay_plane, access,
@@ -640,32 +600,23 @@ void OutputPresenterOHOS::ScheduleOverlayPlane(
     bounds = gfx::RectF(display_rect.origin(), src_rect.size());
   }
 
-  if (!is_root &&
-      overlay_plane.priority_hint == gfx::OverlayPriorityHint::kVideo) {
-    surface_name = "delegate_child_video";
-  }
-
-  TRACE_EVENT1("viz", "OutputPresenterOHOS::ScheduleOverlayPlane",
-      "name", surface_name.c_str());
   OH_NativeBuffer* const buffer =
       access ? access->GetOHNativeBuffer() : nullptr;
   SurfaceControl* surface = nullptr;
 
   if (buffer) {
-    DCHECK(!overlay_plane.is_solid_color);
-
     // Find surface with same buffer in previous frame first.
     auto it = std::find_if(previous_frame_.begin(), previous_frame_.end(),
         [surface_name, buffer](const auto& surface) {
           return surface && surface->name() == surface_name &&
-              surface->buffer() == buffer;
+                 surface->buffer() == buffer;
         });
     if (it == previous_frame_.end()) {
       // Find surface with same display rect in previous frame.
       it = std::find_if(previous_frame_.begin(), previous_frame_.end(),
           [surface_name, bounds](const auto& surface) {
             return surface && surface->name() == surface_name &&
-                surface->bounds() == bounds;
+                   surface->bounds() == bounds;
           });
     }
 
@@ -700,7 +651,7 @@ void OutputPresenterOHOS::ScheduleOverlayPlane(
                          std::move(callback));
       surface->SetMailbox(mailbox);
       DCHECK(in_used_buffers_.find(buffer) == in_used_buffers_.end());
-      in_used_buffers_[buffer] = std::make_pair(access, is_root);
+      in_used_buffers_[buffer] = std::make_pair(access->GetWeakPtr(), is_root);
 
       switch (access->representation()->surface_origin()) {
         case kTopLeft_GrSurfaceOrigin:
@@ -710,56 +661,33 @@ void OutputPresenterOHOS::ScheduleOverlayPlane(
           surface->SetBufferTransform(OH_TRANSFORM_FLIP_V);
           break;
       }
-    } else {
+    } else if (surface && surface->mailbox() != mailbox) {
       // For some video buffers, the buffers could be same, but shared image
       // backings are different. In that case, we need to update the access and
       // mailbox.
-      if (surface && surface->mailbox() != mailbox) {
-        auto& item = in_used_buffers_[buffer];
-        item.first->InUseByWindowServerDec();
-        item.first = access;
-        access->InUseByWindowServerInc();
-        surface->SetMailbox(mailbox);
+      access->InUseByWindowServerInc();
+
+      auto iter = in_used_buffers_.find(buffer);
+      if (iter != in_used_buffers_.end()) {
+        auto& item = iter->second;
+        auto old_access = item.first;
+        item.first = access->GetWeakPtr();
+        if (old_access) {
+          old_access->InUseByWindowServerDec();
+        }
+      } else {
+        in_used_buffers_[buffer] = std::make_pair(access->GetWeakPtr(), is_root);
       }
+      surface->SetMailbox(mailbox);
     }
-  } else {
-    DCHECK(overlay_plane.is_solid_color);
-    // Find a surface with the same bounds.
-    auto it = std::find_if(previous_frame_.begin(), previous_frame_.end(),
-        [surface_name, bounds](const auto& surface) {
-          return surface && !surface->buffer() &&
-              surface->name() == surface_name && surface->bounds() == bounds;
-        });
-
-    // If cannot find a surface with the same bounds, try to find a surface for
-    // any solid color plane.
-    if (it == previous_frame_.end()) {
-      it = std::find_if(previous_frame_.begin(), previous_frame_.end(),
-          [surface_name](const auto& surface) {
-            return surface && surface->name() == surface_name &&
-                surface->buffer() == nullptr;
-          });
-    }
-
-    if (it != previous_frame_.end()) {
-      pending_frame_.push_back(std::move(*it));
-    } else {
-      DCHECK(root_surface_);
-      pending_frame_.emplace_back(std::make_unique<SurfaceControl>(
-          root_surface_.get(), surface_name,
-          surface_control_adapter_, transaction_adapter_));
-    }
-
-    surface = pending_frame_.back().get();
   }
 
   if (surface == nullptr) {
-    LOG(ERROR) << "surface is nullptr, set info failed";
+    LOG(ERROR) << "DelegateTag surface is nullptr, is_root: " << is_root;
     return;
   }
 
   // Make sure surface is visible.
-  surface->SetVisible(true);
   surface->SetBounds(bounds);
   surface->SetZOrder(overlay_plane.plane_z_order);
   surface->SetAlpha(overlay_plane.opacity);
@@ -785,7 +713,7 @@ void OutputPresenterOHOS::OnComplete(uint64_t timestamp) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   DCHECK(!completion_datas_.empty());
   DCHECK(!presentation_callbacks_.empty());
-
+  TRACE_EVENT0("viz", "OutputPresenterOHOS::OnComplete");
   for (auto& data : completion_datas_) {
     if (!data.completed) {
       data.completed = true;
@@ -796,70 +724,110 @@ void OutputPresenterOHOS::OnComplete(uint64_t timestamp) {
 }
 
 void OutputPresenterOHOS::TriggerOnCompleteCallbacks() {
-  gfx::SwapCompletionResult swap_result(gfx::SwapResult::SWAP_ACK);
-  gfx::PresentationFeedback feedback(base::TimeTicks::Now(), base::TimeDelta(),
-                                     /*flags=*/0);
-  // Trigger completed callbacks.
-  for (auto& data : completion_datas_) {
-    // Delay trigger complete callbacks, until data.access is set to nullptr.
-    // TODO(penghuang): remove the logic when RS supports transaction complete
-    // callback natively.
+  while (!completion_datas_.empty()) {
+    auto& data = completion_datas_.front();
     if (data.access || !data.completed) {
       break;
     }
+    TRACE_EVENT1("viz", "OutputPresenterOHOS::TriggerOnCompleteCallbacks",
+      "completion callback size", completion_datas_.size());
     auto completion_callback = std::move(data.callback);
     completion_datas_.pop_front();
-    task_runner_->PostTask(
-        FROM_HERE,
-        base::BindOnce(std::move(completion_callback), std::move(swap_result)));
 
-    auto presentation_callback = std::move(presentation_callbacks_.front());
-    presentation_callbacks_.pop_front();
-
+    gfx::SwapCompletionResult swap_result(gfx::SwapResult::SWAP_ACK);
     task_runner_->PostTask(
-        FROM_HERE,
-        base::BindOnce(std::move(presentation_callback), std::move(feedback)));
+        FROM_HERE, base::BindOnce(std::move(completion_callback), std::move(swap_result)));
+
+    if (!presentation_callbacks_.empty()) {
+      auto presentation_callback = std::move(presentation_callbacks_.front());
+      presentation_callbacks_.pop_front();
+
+      gfx::PresentationFeedback feedback(base::TimeTicks::Now(), base::TimeDelta(),
+                                         /* flags= */0);
+      task_runner_->PostTask(
+          FROM_HERE, base::BindOnce(std::move(presentation_callback), std::move(feedback)));
+    } else {
+      LOG(ERROR) << "DelegateTag presentation_callbacks_ is empty";
+    }
   }
 }
 
 void OutputPresenterOHOS::OnOverlayReleased(OH_NativeBuffer* buffer,
                                             base::ScopedFD release_fence_fd) {
+  TRACE_EVENT0("viz", "OutputPresenterOHOS::OnOverlayReleased");
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   auto it = in_used_buffers_.find(buffer);
   if (it == in_used_buffers_.end()) {
-    LOG(ERROR) << "Cannot find in used buffer";
+    LOG(WARNING) << "DelegateTag Cannot find in used buffer";
     return;
   }
   auto [access, is_root] = it->second;
   in_used_buffers_.erase(it);
-  // Below code will crash for root overlay.
-  // TODO(penghuang): figure out how to handle it properly
-  // Probably it causes the artifacts on screen.
-  if (release_fence_fd.is_valid()) {
-    gfx::GpuFenceHandle fence_handle;
-    fence_handle.Adopt(std::move(release_fence_fd));
-    if (access) {
+  if (access.get()) {
+    if (release_fence_fd.is_valid()) {
+      gfx::GpuFenceHandle fence_handle;
+      fence_handle.Adopt(std::move(release_fence_fd));
       access->SetReleaseFence(std::move(fence_handle));
-    } else {
-      LOG(ERROR) << "access is nullptr";
     }
-  }
-
-  // Decrease in use count, when count is 0, viz will return the buffer to
-  // render, so the buffer can be reused or released.
-  if (access) {
+    // Decrease in use count, when count is 0, viz will return the buffer to
+    // render, so the buffer can be reused or released.
     access->InUseByWindowServerDec();
+  } else {
+    LOG(ERROR) << "DelegateTag access has expired before overlay released, is_root: " << is_root;
   }
 
   if (is_root) {
+    bool found = false;
     for (auto& data : completion_datas_) {
-      if (data.access == access) {
-        data.access = nullptr;
-        TriggerOnCompleteCallbacks();
+      if (data.access && access && data.access.get() == access.get()) {
+        data.access.reset();
+        found = true;
         break;
       }
+    }
+    if (found) {
+      TriggerOnCompleteCallbacks();
     }
   }
 }
 
+void OutputPresenterOHOS::DiscardCompositingResources(bool is_clean_all, bool is_clean_video_surface) {
+  LOG(INFO) << "DelegateTag call ClearBufferQueueCache id: " << dependency_->GetSurfaceHandle();
+  for (const auto& surface : previous_frame_) {
+    if (surface && (surface->name() == "delegate_child" || is_clean_video_surface)) {
+      surface->ClearBufferQueueCache(transaction_, is_clean_all);
+    }
+  }
+
+  for (auto it = in_used_buffers_.begin(); it != in_used_buffers_.end();) {
+    if (it->second.second) {
+      it = in_used_buffers_.erase(it);
+    } else {
+      ++it;
+    }
+  }
+
+  while (!completion_datas_.empty()) {
+    auto& data = completion_datas_.front();
+    auto completion_callback = std::move(data.callback);
+    completion_datas_.pop_front();
+
+    gfx::SwapCompletionResult swap_result(gfx::SwapResult::SWAP_ACK);
+    task_runner_->PostTask(
+        FROM_HERE,
+        base::BindOnce(std::move(completion_callback), std::move(swap_result)));
+
+    if (!presentation_callbacks_.empty()) {
+      auto presentation_callback = std::move(presentation_callbacks_.front());
+      presentation_callbacks_.pop_front();
+
+      gfx::PresentationFeedback feedback(base::TimeTicks::Now(), base::TimeDelta(),
+                                         /* flags= */0);
+      task_runner_->PostTask(
+          FROM_HERE, base::BindOnce(std::move(presentation_callback), std::move(feedback)));
+    } else {
+      LOG(ERROR) << "DelegateTag presentation_callbacks_ is empty";
+    }
+  }
+}
 }  // namespace viz

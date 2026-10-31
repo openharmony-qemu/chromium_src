@@ -2725,7 +2725,7 @@ void SkiaOutputSurfaceImplOnGpu::DiscardBackbuffer() {
   MakeCurrent(/*need_framebuffer=*/true);
 #if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
   if (is_delegated_enabled_) {
-    output_device_->DiscardCompositingResources(false);
+    output_device_->DiscardCompositingResources(false, true);
   } else {
     output_device_->DiscardBackbuffer();
   }
@@ -2746,7 +2746,7 @@ void SkiaOutputSurfaceImplOnGpu::SetIfNeedCleanBuffers(bool need_clean_buffers)
 #if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
 void SkiaOutputSurfaceImplOnGpu::DiscardCompositingResources() {
   if (output_device_) {
-    output_device_->DiscardCompositingResources(true);
+    output_device_->DiscardCompositingResources(true, true);
   }
 }
 #endif

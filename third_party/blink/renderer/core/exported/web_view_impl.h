@@ -455,6 +455,10 @@ class CORE_EXPORT WebViewImpl final : public WebView,
   void UpdatePageDefinedViewportConstraints(const ViewportDescription&);
 #if BUILDFLAG(ARKWEB_FLING)
   void UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity);
+  // Sets the TS-side fling speed limit. When speed_limit > 0, it overrides
+  // the viewport max-fling-speed. When speed_limit <= 0 or NaN, clears the
+  // TS override and restores viewport control.
+  void SetFlingSpeedLimit(float speed_limit);
 #endif
 
   WebPagePopupImpl* OpenPagePopup(PagePopupClient*);
@@ -996,6 +1000,19 @@ class CORE_EXPORT WebViewImpl final : public WebView,
 
 #if BUILDFLAG(ARKWEB_FLING)
   gfx::Vector2dF limit_fling_velocity_ =
+      gfx::Vector2dF(std::numeric_limits<float>::max(),
+                     std::numeric_limits<float>::max());
+  // TS-side fling speed limit override (set via SetFlingSpeedLimit).
+  // Takes precedence over viewport_fling_velocity_limit_ when
+  // has_ts_fling_velocity_limit_ is true.
+  gfx::Vector2dF ts_fling_velocity_limit_ =
+      gfx::Vector2dF(std::numeric_limits<float>::max(),
+                     std::numeric_limits<float>::max());
+  // True when the TS side has set a valid (>0) fling speed limit.
+  bool has_ts_fling_velocity_limit_ = false;
+  // Viewport max-fling-speed-x/y from the page; used when no TS override
+  // is active, and restored when the TS override is cleared.
+  gfx::Vector2dF viewport_fling_velocity_limit_ =
       gfx::Vector2dF(std::numeric_limits<float>::max(),
                      std::numeric_limits<float>::max());
 #endif

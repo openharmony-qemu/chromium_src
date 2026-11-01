@@ -323,6 +323,8 @@ class CONTENT_EXPORT WebContentsImpl
 #if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
   void OnScreensChange(bool is_multi_screen_changed, int screen_count);
   void DiscardCompositingResources();
+  bool IsWebContentsFocused() const;
+  bool IsSingleScreen() const;
 #else
   void OnScreensChange(bool is_multi_screen_changed);
 #endif

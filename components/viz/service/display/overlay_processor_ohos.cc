@@ -31,16 +31,11 @@
 
 namespace viz {
 namespace {
-constexpr float kMinScale = 0.5;
-constexpr float kMaxScale = 30;
-constexpr int32_t kMinDisplayWidth = 480;
-constexpr int32_t kMaxDisplayWidth = 4096;
-constexpr int32_t kMinDisplayHeight = 360;
-constexpr int32_t kMaxDisplayHeight = 4096;
-constexpr int32_t kMinSrcWidth = 480;
-constexpr int32_t kMaxSrcWidth = 4096;
-constexpr int32_t kMinSrcHeight = 360;
-constexpr int32_t kMaxSrcHeight = 4096;
+constexpr float kMinScale = 0.5f;
+constexpr float kMaxScale = 60.0f;
+constexpr int32_t kMinSize = 16;
+constexpr int32_t kMaxWidth = 2560;
+constexpr int32_t kMaxHeight = 4096;
 
 gfx::RectF ClipFromOrigin(gfx::RectF input) {
   if (input.x() < 0.f) {
@@ -48,14 +43,13 @@ gfx::RectF ClipFromOrigin(gfx::RectF input) {
     input.set_x(0.f);
   }
 
-  if (input.y() < 0) {
+  if (input.y() < 0.f) {
     input.set_height(input.height() + input.y());
     input.set_y(0.f);
   }
 
   return input;
 }
-
 }  // namespace
 
 OverlayProcessorOhos::OverlayProcessorOhos() {
@@ -65,8 +59,6 @@ OverlayProcessorOhos::OverlayProcessorOhos() {
   // Therefore, our damage tracking for overlays is incorrect and we must ignore
   // the thresholding of prioritization.
 
-  // TODO(crbug.com/40236858): We should take issue into account when trying to
-  // find a replacement for number-of-scanouts.
   prioritization_config_.changing_threshold = false;
   prioritization_config_.damage_rate_threshold = false;
 
@@ -130,14 +122,14 @@ void OverlayProcessorOhos::CheckOverlaySupportImpl(
       TRACE_EVENT0("viz", "CheckOverlaySupportImpl reject due to lost focus");
       LOG(DEBUG) << "Overlay rejected due to candidates unfocus";
       candidate.overlay_handled = false;
-      return;
+      continue;
     }
 
     if (!is_single_screen_) {
       TRACE_EVENT0("viz", "CheckOverlaySupportImpl reject due to multi screen");
       LOG(DEBUG) << "Overlay rejected due to multi screen";
       candidate.overlay_handled = false;
-      return;
+      continue;
     }
     // Aggregator adds `display_transform_` to all quads, which is then added to
     // `candidate.transform` here. `display_transform_` only applies to content
@@ -153,7 +145,7 @@ void OverlayProcessorOhos::CheckOverlaySupportImpl(
       TRACE_EVENT0("viz", "CheckOverlaySupportImpl due to transform invalid");
       LOG(DEBUG) << "Overlay rejected due to transform invalid";
       candidate.overlay_handled = false;
-      return;
+      continue;
     }
     candidate.transform = candidate_overlay_transform;
 
@@ -168,7 +160,7 @@ void OverlayProcessorOhos::CheckOverlaySupportImpl(
       TRACE_EVENT0("viz", "CheckOverlaySupportImpl display_rect.IsEmpty");
       LOG(DEBUG) << "Overlay rejected due to display_rect empty";
       candidate.overlay_handled = false;
-      return;
+      continue;
     }
 
     // The display rect above includes the |display_transform_| while the rects
@@ -196,27 +188,25 @@ void OverlayProcessorOhos::CheckOverlaySupportImpl(
 
     auto displayWidth = display_rect.width();
     auto displayHeight = display_rect.height();
-    if (displayWidth < kMinDisplayWidth || displayWidth > kMaxDisplayWidth ||
-      displayHeight < kMinDisplayHeight || displayHeight > kMaxDisplayHeight) {
+    if (displayWidth < kMinSize || displayHeight < kMinSize) {
       TRACE_EVENT2("viz", "CheckOverlaySupportImpl reject",
           "displayWidth", displayWidth, "displayHeight", displayHeight);
       LOG(DEBUG) << "Overlay rejected due to size limits. " <<
         "Display: " << displayWidth << "x" << displayHeight;
       candidate.overlay_handled = false;
-      return;
+      continue;
     }
     auto src_rect = gfx::ScaleRect(candidate.uv_rect,
                                    candidate.resource_size_in_pixels);
     auto srcWidth = src_rect.width();
     auto srcHeight = src_rect.height();
-    if (srcWidth < kMinSrcWidth || srcWidth > kMaxSrcWidth ||
-      srcHeight < kMinSrcHeight || srcHeight > kMaxSrcHeight) {
+    if (IsSizeOutOfBounds(srcWidth, srcHeight)) {
       TRACE_EVENT2("viz", "CheckOverlaySupportImpl reject",
                    "srcWidth", srcWidth, "srcHeight", srcHeight);
       LOG(DEBUG) << "Overlay rejected due to size limits. "
                  << "Src: " << srcWidth << " x " << srcHeight;
       candidate.overlay_handled = false;
-      return;
+      continue;
     }
 
     auto x_scale = displayWidth / srcWidth;
@@ -226,7 +216,7 @@ void OverlayProcessorOhos::CheckOverlaySupportImpl(
       TRACE_EVENT2("viz", "CheckOverlaySupportImpl reject",
                    "x_scale", x_scale, "y_scale", y_scale);
       candidate.overlay_handled = false;
-      return;
+      continue;
     }
 
     candidate.overlay_handled = true;
@@ -300,8 +290,8 @@ void OverlayProcessorOhos::InsertPrimaryPlane(
     OverlayCandidateList& candidates) {
   AdjustPrimaryPlaneForDisplayTransform(primary_plane);
 
-  const auto insert_positon = candidates.begin();
-  candidates.insert(insert_positon, std::move(primary_plane));
+  const auto insert_position = candidates.begin();
+  candidates.insert(insert_position, std::move(primary_plane));
 }
 
 bool OverlayProcessorOhos::IsOverlaySupported() const {
@@ -331,6 +321,11 @@ void OverlayProcessorOhos::UpdateFocusAndScreenStatus(bool is_focused,
                                                      bool is_single_screen) {
   is_focused_ = is_focused;
   is_single_screen_ = is_single_screen;
+}
+
+bool OverlayProcessorOhos::IsSizeOutOfBounds(int32_t width, int32_t height) const {
+  return width > kMaxWidth || width < kMinSize ||
+         height > kMaxHeight || height < kMinSize;
 }
 #endif
 

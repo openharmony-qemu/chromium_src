@@ -44,6 +44,7 @@ class VIZ_SERVICE_EXPORT OverlayProcessorOhos
   bool SupportsFlipRotateTransform() const override;
   void UpdateFocusAndScreenStatus(bool is_focused,
                                   bool is_single_screen) override;
+  bool IsSizeOutOfBounds(int32_t width, int32_t height) const;
 
  private:
 #if BUILDFLAG(ARKWEB_AI_HDR)

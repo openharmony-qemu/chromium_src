@@ -70,7 +70,7 @@ class VIZ_SERVICE_EXPORT SkiaOutputDeviceBufferQueue : public SkiaOutputDevice {
   }
 
 #if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
-  void DiscardCompositingResources(bool is_clean_all) override;
+  void DiscardCompositingResources(bool is_clean_all, bool is_clean_video_surface) override;
 #endif
 
  private:

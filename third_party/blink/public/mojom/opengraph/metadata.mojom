@@ -20,4 +20,7 @@ struct OpenGraphMetadata {
   // the URL included in the image itemprop meta tag if that was present and no
   // og:image is present.
   url.mojom.Url? image;
+  // The content of the og:type meta tag, if present.
+  [EnableIf=arkweb_bigdata_metrics]
+  string? og_type;
 };

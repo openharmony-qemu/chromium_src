@@ -196,6 +196,12 @@ void ParseOpenGraphProperty(const HTMLMetaElement& element,
   // as <meta property="og:image" content="$url".
   if (element.Itemprop() == "image" && !metadata->image)
     metadata->image = document.CompleteURL(element.Content());
+
+#if BUILDFLAG(ARKWEB_BIGDATA_METRICS)
+  if (element.Property() == "og:type" && !metadata->og_type) {
+    metadata->og_type = element.Content();
+  }
+#endif
 }
 
 // Convert the error to a string so it can be sent back to the test.

@@ -11,6 +11,9 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
+#include "content/browser/renderer_host/frame_tree.h"
+#include "content/browser/renderer_host/frame_tree_node.h"
+#include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/browser/renderer_host/render_widget_host_impl.h"
 #include "content/browser/renderer_host/render_widget_host_view_base.h"
 #include "ui/gfx/geometry/rect.h"
@@ -251,17 +254,17 @@ void TextInputManager::UpdateTextInputState(
   base::WeakPtr<RenderWidgetHostViewBase> weak_view = view->GetWeakPtr();
 
   // If |view| is different from |active_view| and its |TextInputState.type| is
-  // not NONE, |active_view_| should change to |view|.
+  // not NONE, |active_view_| should change to |view| only if |view| has focus.
   if (text_input_state.type != ui::TEXT_INPUT_TYPE_NONE &&
-      active_view_ != view) {
+      active_view_ != view && IsViewFocused(view)) {
     if (active_view_) {
       // Ideally, we should always receive an IPC from |active_view_|'s
       // RenderWidget to reset its |TextInputState.type| to NONE, before any
       // other RenderWidget updates its TextInputState. But there is no
-      // guarantee in the order of IPCs from different RenderWidgets and another
-      // RenderWidget's IPC might arrive sooner and we reach here. To make the
-      // IME behavior identical to the non-OOPIF case, we have to manually reset
-      // the state for |active_view_|.
+      // guarantee in the order of IPCs from different RenderWidgets and
+      // another RenderWidget's IPC might arrive sooner and we reach here. To
+      // make the IME behavior identical to the non-OOPIF case, we have to
+      // manually reset the state for |active_view_|.
       text_input_state_map_[active_view_]->type = ui::TEXT_INPUT_TYPE_NONE;
       RenderWidgetHostViewBase* active_view = active_view_;
       active_view_ = nullptr;
@@ -273,12 +276,24 @@ void TextInputManager::UpdateTextInputState(
       }
     }
     active_view_ = view;
+    // When |active_view_| transitions to |view|, observers must be notified
+    // even if the TextInputState fields are unchanged (e.g. the state was
+    // cached while |view| was unfocused and is now re-reported after focus).
+    // Without this, Aura skips OnTextInputTypeChanged and the IME stays
+    // blurred, dropping digit/symbol commits. See b:497072295.
+    changed = true;
   }
 
-  // If the state for |active_view_| is none, then we no longer have an
-  // |active_view_|.
-  if (active_view_ == view && text_input_state.type == ui::TEXT_INPUT_TYPE_NONE)
+  // If the state for |active_view_| is none, or if |active_view_| is no longer
+  // focused, then we no longer have an |active_view_|.
+  if (active_view_ == view &&
+      (text_input_state.type == ui::TEXT_INPUT_TYPE_NONE ||
+       !IsViewFocused(view))) {
     active_view_ = nullptr;
+    // Clearing |active_view_| is an observable state change; notify observers
+    // so IME/keyboard state is updated consistently. See b:497072295.
+    changed = true;
+  }
 
   NotifyObserversAboutInputStateUpdate(view, changed);
 
@@ -477,6 +492,28 @@ void TextInputManager::Unregister(RenderWidgetHostViewBase* view) {
 
 bool TextInputManager::IsRegistered(RenderWidgetHostViewBase* view) const {
   return text_input_state_map_.count(view) == 1;
+}
+
+bool TextInputManager::IsViewFocused(RenderWidgetHostViewBase* view) const {
+  if (!view || !view->host()) {
+    return false;
+  }
+  // ArkWeb 144 does not carry RenderWidgetHostImpl::GetPopupCreatorFrameId
+  // (added upstream alongside this fix). Popup widgets therefore bypass the
+  // focus check and preserve prior behavior; the frame-hijack vulnerability
+  // is still closed for kFrame widgets, which is the scope of b:497072295.
+  if (view->GetWidgetType() == WidgetType::kPopup) {
+    return true;
+  }
+  RenderWidgetHostViewBase* root_view = view->GetRootView();
+  if (!root_view) {
+    return false;
+  }
+  RenderWidgetHostImpl* focused_widget = root_view->GetFocusedWidget();
+  if (!focused_widget) {
+    return false;
+  }
+  return view->GetRenderWidgetHost() == focused_widget;
 }
 
 void TextInputManager::AddObserver(Observer* observer) {

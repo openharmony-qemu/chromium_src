@@ -3310,7 +3310,14 @@ void RenderWidgetHostViewAura::OnUpdateTextInputStateCalled(
     return true;
   };
 
-  if (did_update_state) {
+  const bool is_active_view =
+      text_input_manager->GetActiveWidget() &&
+      text_input_manager->GetActiveWidget()->GetView() == updated_view;
+
+  const ui::TextInputType current_type = GetTextInputType();
+  if (did_update_state &&
+      (is_active_view || current_type != last_text_input_type_)) {
+    last_text_input_type_ = current_type;
     GetInputMethod()->OnTextInputTypeChanged(this);
     if (!check_alive()) {
       return;
@@ -3321,7 +3328,7 @@ void RenderWidgetHostViewAura::OnUpdateTextInputStateCalled(
       text_input_manager_->GetTextInputState();
 
 #if BUILDFLAG(IS_CHROMEOS)
-  if (state && state->type != ui::TEXT_INPUT_TYPE_NONE) {
+  if (is_active_view && state && state->type != ui::TEXT_INPUT_TYPE_NONE) {
     if (state->last_vk_visibility_request ==
         ui::mojom::VirtualKeyboardVisibilityRequest::SHOW) {
       GetInputMethod()->SetVirtualKeyboardVisibilityIfEnabled(true);
@@ -3339,7 +3346,7 @@ void RenderWidgetHostViewAura::OnUpdateTextInputStateCalled(
 #endif
 
   // Show the virtual keyboard if needed.
-  if (state && state->type != ui::TEXT_INPUT_TYPE_NONE &&
+  if (is_active_view && state && state->type != ui::TEXT_INPUT_TYPE_NONE &&
       state->mode != ui::TEXT_INPUT_MODE_NONE) {
 #if !BUILDFLAG(IS_WIN)
     if (state->show_ime_if_needed &&
@@ -3373,7 +3380,7 @@ void RenderWidgetHostViewAura::OnUpdateTextInputStateCalled(
   }
 
   // Ensure that selection bounds changes are sent to the IME.
-  if (state && state->type != ui::TEXT_INPUT_TYPE_NONE) {
+  if (state && state->type != ui::TEXT_INPUT_TYPE_NONE && is_active_view) {
     text_input_manager->NotifySelectionBoundsChanged(updated_view);
     if (!check_alive()) {
       return;
@@ -3387,7 +3394,7 @@ void RenderWidgetHostViewAura::OnUpdateTextInputStateCalled(
     // Monitor the composition information if there is a focused editable node.
     render_widget_host->RequestCompositionUpdates(
         false /* immediate_request */,
-        state &&
+        is_active_view && state &&
             (state->type != ui::TEXT_INPUT_TYPE_NONE) /* monitor_updates */);
   }
 }

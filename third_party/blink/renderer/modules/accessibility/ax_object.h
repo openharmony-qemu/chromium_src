@@ -1656,6 +1656,12 @@ class MODULES_EXPORT AXObject : public GarbageCollected<AXObject> {
   bool OnArkWebReplaceSelectedTextAction(const String& text);
 #endif  // BUILDFLAG(ARKWEB_ACCESSIBILITY)
 
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  // ArkWeb: serialize CSS properties to html_attributes for OHOS
+  // accessibility. Decoupled into for_include file.
+  void SerializeArkWebCSSAttributes(ui::AXNodeData* node_data) const;
+#endif  // BUILDFLAG(ARKWEB_ACCESSIBILITY)
+
   // Serialization implemented in specific subclasses.
   virtual void SerializeMarkerAttributes(ui::AXNodeData* node_data) const;
 

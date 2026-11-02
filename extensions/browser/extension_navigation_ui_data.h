@@ -9,6 +9,7 @@
 #include <optional>
 
 #include "content/public/browser/child_process_id.h"
+#include "content/public/browser/frame_tree_node_id.h"
 #include "content/public/browser/global_routing_id.h"
 #include "extensions/browser/extension_api_frame_id_map.h"
 
@@ -66,6 +67,10 @@ class ExtensionNavigationUIData {
     return parent_routing_id_;
   }
 
+  content::FrameTreeNodeId frame_tree_node_id() const {
+    return frame_tree_node_id_;
+  }
+
  private:
   ExtensionNavigationUIData(
       content::WebContents* web_contents,
@@ -78,7 +83,8 @@ class ExtensionNavigationUIData {
       const ExtensionApiFrameIdMap::DocumentId& parent_document_id,
       api::extension_types::FrameType frame_type,
       api::extension_types::DocumentLifecycle document_lifecycle,
-      std::optional<WebViewData> web_view_data);
+      std::optional<WebViewData> web_view_data,
+      content::FrameTreeNodeId frame_tree_node_id);
 
   ExtensionApiFrameIdMap::FrameData frame_data_;
   std::optional<WebViewData> web_view_data_;
@@ -86,6 +92,8 @@ class ExtensionNavigationUIData {
   // ID for the parent RenderFrameHost of this navigation. Will only have a
   // valid value for sub-frame navigations.
   content::GlobalRenderFrameHostId parent_routing_id_;
+
+  content::FrameTreeNodeId frame_tree_node_id_;
 };
 
 }  // namespace extensions

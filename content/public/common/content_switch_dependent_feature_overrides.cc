@@ -23,6 +23,10 @@
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif  // BUILDFLAG(IS_ARKWEB_EXT)
 
+#if BUILDFLAG(ARKWEB_EXT_STANDARD_COMPLIANT_NON_SPECIAL_SCHEME_URL_PARSING)
+#include "url/url_features.h"
+#endif
+
 namespace content {
 
 std::vector<base::FeatureList::FeatureOverrideInfo>
@@ -177,6 +181,15 @@ GetSwitchDependentFeatureOverrides(const base::CommandLine& command_line) {
           switches::kEnableNwebExHttpDnsFallback)) {
     overrides.emplace_back(std::make_pair(
         std::cref(network::features::kEnableNwebExHttpDnsFallback),
+        base::FeatureList::OVERRIDE_ENABLE_FEATURE));
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_STANDARD_COMPLIANT_NON_SPECIAL_SCHEME_URL_PARSING)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExStandardCompliantNonSpecialSchemeUrlParsing)) {
+    overrides.emplace_back(std::make_pair(
+        std::cref(url::kStandardCompliantNonSpecialSchemeURLParsing),
         base::FeatureList::OVERRIDE_ENABLE_FEATURE));
   }
 #endif

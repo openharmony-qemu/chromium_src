@@ -45,7 +45,7 @@
 #include "third_party/blink/renderer/platform/graphics/graphics_context.h"
 #include "third_party/blink/renderer/platform/graphics/paint/drawing_recorder.h"
 
-#if BUILDFLAG(ARKWEB_MENU)
+#if BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(ARKWEB_CARET_COLOR)
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/caret_display_item_client_utils.h"
 #include "third_party/blink/renderer/core/exported/web_view_impl.h"
 #endif
@@ -55,23 +55,23 @@
 
 namespace blink {
 
-#if BUILDFLAG(ARKWEB_MENU)
+#if BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(ARKWEB_CARET_COLOR)
 CaretDisplayItemClient::CaretDisplayItemClient() {
   caret_display_item_client_utils_ =
       MakeGarbageCollected<CaretDisplayItemClientUtils>(this);
 }
 #else
 CaretDisplayItemClient::CaretDisplayItemClient() = default;
-#endif  // BUILDFLAG(ARKWEB_MENU)
+#endif  // BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(ARKWEB_CARET_COLOR)
 CaretDisplayItemClient::~CaretDisplayItemClient() = default;
 void CaretDisplayItemClient::Trace(Visitor* visitor) const {
   visitor->Trace(layout_block_);
   visitor->Trace(previous_layout_block_);
   visitor->Trace(box_fragment_);
   DisplayItemClient::Trace(visitor);
-#if BUILDFLAG(ARKWEB_MENU)
+#if BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(ARKWEB_CARET_COLOR)
   visitor->Trace(caret_display_item_client_utils_);
-#endif  // BUILDFLAG(ARKWEB_MENU)
+#endif  // BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(ARKWEB_CARET_COLOR)
 }
 
 namespace {
@@ -246,6 +246,12 @@ void CaretDisplayItemClient::UpdateStyleAndLayoutIfNeeded(
     new_color = caret_position.AnchorNode()->GetLayoutObject()->ResolveColor(
         GetCSSPropertyCaretColor());
   }
+#if BUILDFLAG(ARKWEB_CARET_COLOR)
+  if (caret_display_item_client_utils_) {
+    new_color = caret_display_item_client_utils_->ResolveCaretColor(
+        new_color, new_layout_block);
+  }
+#endif  // BUILDFLAG(ARKWEB_CARET_COLOR)
   if (new_color != color_) {
     needs_paint_invalidation_ = true;
     color_ = new_color;
@@ -415,6 +421,6 @@ String CaretDisplayItemClient::DebugName() const {
 
 }  // namespace blink
 
-#if BUILDFLAG(ARKWEB_MENU)
+#if BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(ARKWEB_CARET_COLOR)
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/caret_display_item_client_utils.cc"
-#endif // BUILDFLAG(ARKWEB_MENU)
+#endif  // BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(ARKWEB_CARET_COLOR)

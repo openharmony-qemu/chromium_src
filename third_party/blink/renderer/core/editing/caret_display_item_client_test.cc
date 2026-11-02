@@ -18,6 +18,10 @@
 #include "third_party/blink/renderer/core/layout/inline/inline_cursor.h"
 #include "third_party/blink/renderer/core/layout/layout_view.h"
 #include "third_party/blink/renderer/core/page/focus_controller.h"
+#if BUILDFLAG(ARKWEB_CARET_COLOR)
+#include "third_party/blink/renderer/core/frame/settings.h"
+#include "third_party/blink/renderer/core/page/page.h"
+#endif  // BUILDFLAG(ARKWEB_CARET_COLOR)
 #include "third_party/blink/renderer/core/paint/paint_and_raster_invalidation_test.h"
 #include "third_party/blink/renderer/core/paint/paint_layer.h"
 #include "third_party/blink/renderer/platform/testing/find_cc_layer.h"
@@ -78,6 +82,10 @@ class CaretDisplayItemClientTest : public PaintAndRasterInvalidationTest {
     return GetCaretDisplayItemClient().box_fragment_.Get();
   }
 
+#if BUILDFLAG(ARKWEB_CARET_COLOR)
+  Color CaretColor() { return GetCaretDisplayItemClient().color_; }
+#endif  // BUILDFLAG(ARKWEB_CARET_COLOR)
+
   bool ShouldPaintCursorCaret(const LayoutBlock& block) {
     return Selection().ShouldPaintCaret(block);
   }
@@ -123,6 +131,27 @@ class CaretDisplayItemClientTest : public PaintAndRasterInvalidationTest {
 };
 
 INSTANTIATE_PAINT_TEST_SUITE_P(CaretDisplayItemClientTest);
+
+#if BUILDFLAG(ARKWEB_CARET_COLOR)
+TEST_P(CaretDisplayItemClientTest, ApiColorOverridesCssAndResetRestoresCss) {
+  GetDocument().body()->setContentEditable("true", ASSERT_NO_EXCEPTION);
+  GetDocument().body()->setAttribute(
+      html_names::kStyleAttr, AtomicString("caret-color: blue"));
+  GetDocument().GetPage()->GetFocusController().SetActive(true);
+  GetDocument().GetPage()->GetFocusController().SetFocused(true);
+  AppendTextNode("caret");
+  GetDocument().body()->Focus();
+
+  GetDocument().GetPage()->GetSettings().SetCaretColor(0xFFFF0000);
+  UpdateAllLifecyclePhasesForCaretTest();
+  Selection().UpdateStyleAndLayoutIfNeeded();
+  EXPECT_EQ(Color::FromSkColor(SK_ColorRED), CaretColor());
+
+  GetDocument().GetPage()->GetSettings().SetCaretColor(0);
+  Selection().UpdateStyleAndLayoutIfNeeded();
+  EXPECT_EQ(Color::FromSkColor(SK_ColorBLUE), CaretColor());
+}
+#endif  // BUILDFLAG(ARKWEB_CARET_COLOR)
 
 TEST_P(CaretDisplayItemClientTest, CaretPaintInvalidation) {
   GetDocument().body()->setContentEditable("true", ASSERT_NO_EXCEPTION);

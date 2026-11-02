@@ -4,6 +4,8 @@
 
 #include "third_party/blink/renderer/modules/manifest/manifest_parser.h"
 
+#include <unicode/uchar.h>
+
 #include <cstddef>
 #include <memory>
 #include <optional>
@@ -17,6 +19,7 @@
 #include "base/feature_list.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/notreached.h"
+#include "base/strings/string_util.h"
 #include "net/base/mime_util.h"
 #include "net/base/registry_controlled_domains/registry_controlled_domain.h"
 #include "services/device/public/mojom/screen_orientation_lock_types.mojom-blink.h"
@@ -46,6 +49,7 @@
 #include "third_party/blink/renderer/platform/weborigin/kurl.h"
 #include "third_party/blink/renderer/platform/weborigin/security_origin.h"
 #include "third_party/blink/renderer/platform/wtf/hash_map.h"
+#include "third_party/blink/renderer/platform/wtf/text/code_point_iterator.h"
 #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
 #include "third_party/blink/renderer/platform/wtf/text/string_impl.h"
 #include "third_party/blink/renderer/platform/wtf/text/string_utf8_adaptor.h"
@@ -84,7 +88,12 @@ bool IsValidMimeType(const String& mime_type) {
   if (mime_type.StartsWith('.')) {
     return true;
   }
-  return net::ParseMimeTypeWithoutParameter(mime_type.Utf8(), nullptr, nullptr);
+  std::string top_level_mime_type;
+  std::string subtype;
+  return net::ParseMimeTypeWithoutParameter(mime_type.Utf8(),
+                                            &top_level_mime_type, &subtype) &&
+         ((top_level_mime_type == "*" && subtype == "*") ||
+          net::IsValidTopLevelMimeType(top_level_mime_type));
 }
 
 bool VerifyFiles(const Vector<mojom::blink::ManifestFileFilterPtr>& files) {
@@ -282,6 +291,17 @@ String ResolveRelativePathnamePattern(const KURL& base_url, String pathname) {
   return pathname;
 }
 
+std::optional<mojom::blink::ManifestMigrationBehavior>
+MigrationBehaviorFromString(const std::string& behavior) {
+  if (EqualIgnoringASCIICase(String(behavior), "suggest")) {
+    return mojom::blink::ManifestMigrationBehavior::kSuggest;
+  }
+  if (EqualIgnoringASCIICase(String(behavior), "force")) {
+    return mojom::blink::ManifestMigrationBehavior::kForce;
+  }
+  return std::nullopt;
+}
+
 }  // anonymous namespace
 
 ManifestParser::ManifestParser(const String& data,
@@ -441,6 +461,10 @@ bool ManifestParser::Parse() {
   if (manifest_->prefer_related_applications) {
     UseCounter::Count(execution_context_,
                       WebFeature::kWebAppManifestPrefer_Related_Applications);
+  }
+  if (base::FeatureList::IsEnabled(blink::features::kWebAppMigrationApi)) {
+    manifest_->migrate_from = ParseMigrateFrom(root_object.get());
+    manifest_->migrate_to = ParseMigrateTo(root_object.get());
   }
 
   std::optional<RGBA32> theme_color = ParseThemeColor(root_object.get());
@@ -1690,10 +1714,24 @@ bool ManifestParser::ParseFileHandlerAcceptExtension(const JSONValue* extension,
     return false;
   }
 
-  if (!output->StartsWith(".")) {
+  if (!output->StartsWith(".") || output->length() <= 1) {
     AddErrorInfo(
-        "property 'accept' file extension ignored, must start with a '.'.");
+        "property 'accept' file extension ignored, must start with a '.' and "
+        "contain at least one extension character.");
     return false;
+  }
+
+  // TODO(crbug.com/530303003): This check for control and format characters is
+  // duplicated across manifest parsing, IPC validation, and PWA display.
+  // Consider consolidating it into a shared helper in
+  // //base/strings/string_util.h.
+  for (UChar32 c : *output) {
+    if (base::IsUnicodeControl(c) || u_charType(c) == U_FORMAT_CHAR) {
+      AddErrorInfo(
+          "property 'accept' file extension ignored, contains invalid "
+          "control or format characters.");
+      return false;
+    }
   }
 
   return true;
@@ -2076,6 +2114,132 @@ ManifestParser::ParseRelatedApplications(const JSONObject* object) {
 
 bool ManifestParser::ParsePreferRelatedApplications(const JSONObject* object) {
   return ParseBoolean(object, "prefer_related_applications", false);
+}
+
+Vector<mojom::blink::ManifestMigrateFromPtr> ManifestParser::ParseMigrateFrom(
+    const JSONObject* object) {
+  Vector<mojom::blink::ManifestMigrateFromPtr> migrate_from_list;
+
+  JSONValue* value = object->Get("migrate_from");
+  if (!value) {
+    return migrate_from_list;
+  }
+
+  JSONArray* migrate_from_array = object->GetArray("migrate_from");
+  if (!migrate_from_array) {
+    AddErrorInfo(
+        "property 'migrate_from' ignored,"
+        " type array expected.");
+    return migrate_from_list;
+  }
+
+  for (const JSONValue& entry : *migrate_from_array) {
+    // migrate_from can be a string (the manifest ID) or an object.
+    if (entry.GetType() == JSONValue::kTypeString) {
+      String manifest_id_str;
+      entry.AsString(&manifest_id_str);
+      KURL manifest_id = KURL(manifest_url_, manifest_id_str);
+      if (!manifest_id.IsValid()) {
+        AddErrorInfo("migrate_from entry ignored, string is not a valid URL.");
+        continue;
+      }
+      auto migrate_from_entry = mojom::blink::ManifestMigrateFrom::New();
+      migrate_from_entry->id = manifest_id;
+      migrate_from_list.push_back(std::move(migrate_from_entry));
+      continue;
+    }
+
+    const JSONObject* entry_object = JSONObject::Cast(&entry);
+    if (!entry_object) {
+      AddErrorInfo(
+          "migrate_from entry ignored, type string or object expected.");
+      continue;
+    }
+
+    // Use kNoRestrictions when parsing migration related URLs, as these
+    // generally are expected to be cross-origin (and thus out of scope) URLs.
+    auto migrate_from_entry = mojom::blink::ManifestMigrateFrom::New();
+    KURL id = ParseURL(entry_object, "id", manifest_url_,
+                       ParseURLRestrictions::kNoRestrictions,
+                       /*ignore_empty_string=*/true);
+    if (!id.IsValid()) {
+      AddErrorInfo(
+          "migrate_from entry ignored, 'id' is missing or not a valid URL.");
+      continue;
+    }
+    migrate_from_entry->id = id;
+
+    // install_url is optional, but if present must be a valid URL and same
+    // origin as id.
+    KURL install_url = ParseURL(entry_object, "install_url", manifest_url_,
+                                ParseURLRestrictions::kNoRestrictions);
+    if (install_url.IsValid()) {
+      if (!SecurityOrigin::AreSameOrigin(id, install_url)) {
+        AddErrorInfo(
+            "migrate_from entry ignored, 'install_url' must be same origin as "
+            "'id'.");
+        continue;
+      }
+      migrate_from_entry->install_url = install_url;
+    }
+
+    using ManifestMigrationBehavior = mojom::blink::ManifestMigrationBehavior;
+    migrate_from_entry->behavior =
+        ParseFirstValidEnum<std::optional<ManifestMigrationBehavior>>(
+            entry_object, "behavior", &MigrationBehaviorFromString,
+            /*invalid_value=*/std::nullopt)
+            .value_or(ManifestMigrationBehavior::kSuggest);
+
+    migrate_from_list.push_back(std::move(migrate_from_entry));
+  }
+
+  return migrate_from_list;
+}
+
+mojom::blink::ManifestMigrateToPtr ManifestParser::ParseMigrateTo(
+    const JSONObject* object) {
+  JSONValue* value = object->Get("migrate_to");
+  if (!value) {
+    return nullptr;
+  }
+
+  const JSONObject* migrate_to_object = object->GetJSONObject("migrate_to");
+  if (!migrate_to_object) {
+    AddErrorInfo("property 'migrate_to' ignored, type object expected.");
+    return nullptr;
+  }
+
+  // Use kNoRestrictions when parsing migration related URLs, as these
+  // generally are expected to be cross-origin (and thus out of scope) URLs.
+  KURL id = ParseURL(migrate_to_object, "id", manifest_url_,
+                     ParseURLRestrictions::kNoRestrictions,
+                     /*ignore_empty_string=*/true);
+  if (!id.IsValid()) {
+    AddErrorInfo(
+        "property 'migrate_to' ignored, 'id' is missing or not a valid URL.");
+    return nullptr;
+  }
+
+  KURL install_url = ParseURL(migrate_to_object, "install_url", manifest_url_,
+                              ParseURLRestrictions::kNoRestrictions);
+  if (!install_url.IsValid()) {
+    AddErrorInfo(
+        "property 'migrate_to' ignored, 'install_url' is missing or invalid.");
+    return nullptr;
+  }
+
+  if (!SecurityOrigin::AreSameOrigin(id, install_url)) {
+    AddErrorInfo(
+        "property 'migrate_to' ignored, 'install_url' must be same origin as "
+        "'id'.");
+    return nullptr;
+  }
+
+  auto migrate_to = mojom::blink::ManifestMigrateTo::New();
+  migrate_to->id = id;
+  migrate_to->install_url = install_url;
+
+  return migrate_to;
 }
 
 std::optional<RGBA32> ManifestParser::ParseThemeColor(

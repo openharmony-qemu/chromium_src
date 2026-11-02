@@ -12,6 +12,7 @@
 #include "content/public/common/content_features.h"
 #include "content/public/common/content_switches.h"
 #include "content/public/common/web_identity.h"
+#include "net/cert/cert_status_flags.h"
 #include "net/http/http_response_headers.h"
 #include "services/network/public/cpp/resource_request.h"
 #include "services/network/public/mojom/url_response_head.mojom.h"
@@ -145,6 +146,28 @@ TEST_F(IdentityUrlLoaderThrottleTest, HeaderHasToken) {
       "HTTP/1.1 200 OK\nSignin:  val ; type=idp; foo=bar");
   EXPECT_TRUE(IdentityUrlLoaderThrottle::HeaderHasToken(*headers, "Signin",
                                                         "type=idp"));
+}
+
+TEST_F(IdentityUrlLoaderThrottleTest, CertError) {
+  std::unique_ptr<blink::URLLoaderThrottle> throttle =
+      MaybeCreateIdentityUrlLoaderThrottle(CreateCallback());
+  ASSERT_NE(nullptr, throttle);
+
+  network::ResourceRequest request;
+  request.url = GURL("https://accounts.idp.example/");
+  bool defer = false;
+
+  throttle->WillStartRequest(&request, &defer);
+  EXPECT_FALSE(defer);
+
+  network::mojom::URLResponseHead response_head;
+  response_head.cert_status = net::CERT_STATUS_DATE_INVALID;
+  response_head.headers = net::HttpResponseHeaders::TryToCreate(
+      "HTTP/1.1 200 OK\nSet-Login: logged-in\n");
+  throttle->WillProcessResponse(request.url, &response_head, &defer);
+  EXPECT_FALSE(defer);
+
+  EXPECT_EQ(0, cb_num_calls_);
 }
 
 }  // namespace content

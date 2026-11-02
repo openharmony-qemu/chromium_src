@@ -1,0 +1,16 @@
+Name: GNU perf
+Short Name: gperf
+URL: https://ftp.gnu.org/gnu/gperf
+Version: 3.2
+Revision: DEPS
+Update Mechanism: Manual
+License: GPL-3.0
+License File: COPYING
+Shipped: no
+Security Critical: no
+
+Description:
+GNU 'gperf' generates perfect hash functions.
+
+Local Modifications:
+Added README.chromium metadata file.

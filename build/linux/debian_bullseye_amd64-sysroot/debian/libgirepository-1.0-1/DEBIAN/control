@@ -1,0 +1,23 @@
+Package: libgirepository-1.0-1
+Source: gobject-introspection (1.66.1-1)
+Version: 1.66.1-1+b1
+Architecture: amd64
+Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
+Installed-Size: 259
+Depends: libglib2.0-0 (>= 2.62.4-2~), libc6 (>= 2.29), libffi7 (>= 3.3~20180313)
+Breaks: libcjs0 (<< 4.4.0-2~), libgjs0g (<< 1.58.1-2~), libglib-object-introspection-perl (<< 0.048-2~), python-gi (<< 3.34.0-4~), python3-gi (<< 3.34.0-4~), ruby-gobject-introspection (<< 3.4.1-2~)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://wiki.gnome.org/GObjectIntrospection
+Description: Library for handling GObject introspection data (runtime library)
+ GObject Introspection is a project for providing machine readable
+ introspection data of the API of C libraries. This introspection
+ data can be used in several different use cases, for example
+ automatic code generation for bindings, API verification and documentation
+ generation.
+ .
+ GObject Introspection contains tools to generate and handle the
+ introspection data.
+ .
+ This package contains a C library for handling the introspection data.

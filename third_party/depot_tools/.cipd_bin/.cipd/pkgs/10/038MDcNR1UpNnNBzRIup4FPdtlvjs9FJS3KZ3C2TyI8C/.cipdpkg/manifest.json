@@ -1,0 +1,18 @@
+{
+  "format_version": "1.1",
+  "package_name": "infra/tools/crowbar/linux-amd64",
+  "version_file": ".versions/crowbar.cipd_version",
+  "files": [
+    {
+      "name": "crowbar",
+      "size": 44271326,
+      "executable": true,
+      "hash": "O4L1ZigAUHrf8viN8kutbTyPpHOJxhuhgaTjMIPUt2EC"
+    },
+    {
+      "name": ".versions/crowbar.cipd_version",
+      "size": 120,
+      "hash": "bICO6XeSSanHUvUhGxCqlmbkxpSIWEs1b9ZQ1MGbjLwC"
+    }
+  ]
+}

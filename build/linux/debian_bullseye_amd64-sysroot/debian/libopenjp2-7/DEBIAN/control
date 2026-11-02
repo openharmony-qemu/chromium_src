@@ -1,0 +1,19 @@
+Package: libopenjp2-7
+Source: openjpeg2
+Version: 2.4.0-3
+Architecture: amd64
+Maintainer: Debian PhotoTools Maintainers <pkg-phototools-devel@lists.alioth.debian.org>
+Installed-Size: 447
+Depends: libc6 (>= 2.29)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://www.openjpeg.org
+Description: JPEG 2000 image compression/decompression library
+ OpenJPEG is a library for handling the JPEG 2000 image compression format.
+ JPEG 2000 is a wavelet-based image compression standard and permits progressive
+ transmission by pixel and resolution accuracy for progressive downloads of an
+ encoded image. It supports lossless and lossy compression, supports higher
+ compression than JPEG 1991, and has resilience to errors in the image.
+ .
+ This package contains the runtime files for openjpeg 2.x

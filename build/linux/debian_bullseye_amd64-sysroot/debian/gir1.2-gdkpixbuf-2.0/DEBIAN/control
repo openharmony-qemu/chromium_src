@@ -1,0 +1,21 @@
+Package: gir1.2-gdkpixbuf-2.0
+Source: gdk-pixbuf
+Version: 2.42.2+dfsg-1+deb11u2
+Architecture: amd64
+Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
+Installed-Size: 45
+Depends: gir1.2-glib-2.0 (>= 0.9.3), libgdk-pixbuf-2.0-0 (>= 2.39.2)
+Breaks: libgtk3-perl (<< 0.034-2~)
+Provides: gir1.2-gdkpixdata-2.0 (= 2.42.2+dfsg-1+deb11u2)
+Section: introspection
+Priority: optional
+Multi-Arch: same
+Homepage: https://www.gtk.org/
+Description: GDK Pixbuf library - GObject-Introspection
+ The GDK Pixbuf library provides:
+  - Image loading and saving facilities.
+  - Fast scaling and compositing of pixbufs.
+  - Simple animation loading (ie. animated GIFs)
+ .
+ It can be used by packages using the GIRepository format to generate
+ dynamic bindings.

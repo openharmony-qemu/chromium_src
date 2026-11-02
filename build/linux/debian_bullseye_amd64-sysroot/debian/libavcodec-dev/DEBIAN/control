@@ -1,0 +1,26 @@
+Package: libavcodec-dev
+Source: ffmpeg
+Version: 7:4.3.7-0+deb11u1
+Architecture: amd64
+Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
+Installed-Size: 21135
+Depends: libavcodec58 (= 7:4.3.7-0+deb11u1), libavutil-dev (= 7:4.3.7-0+deb11u1), libswresample-dev (= 7:4.3.7-0+deb11u1)
+Section: libdevel
+Priority: optional
+Multi-Arch: same
+Homepage: https://ffmpeg.org/
+Description: FFmpeg library with de/encoders for audio/video codecs - development files
+ FFmpeg is the leading multimedia framework, able to decode, encode, transcode,
+ mux, demux, stream, filter and play pretty much anything that humans and
+ machines have created. It supports the most obscure ancient formats up to the
+ cutting edge.
+ .
+ This library provides a generic encoding/decoding framework and
+ contains multiple decoders and encoders for audio, video and subtitle streams,
+ and several bitstream filters.
+ .
+ The shared architecture provides various services ranging from bit stream I/O
+ to DSP optimizations, and makes it suitable for implementing robust and fast
+ codecs as well as for experimentation.
+ .
+ This package contains the development files.

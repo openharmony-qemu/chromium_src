@@ -1,0 +1,19 @@
+Package: qt5-qmake-bin
+Source: qtbase-opensource-src
+Version: 5.15.2+dfsg-9+deb11u1
+Architecture: amd64
+Maintainer: Debian Qt/KDE Maintainers <debian-qt-kde@lists.debian.org>
+Installed-Size: 3035
+Depends: libc6 (>= 2.29), libgcc-s1 (>= 3.0), libstdc++6 (>= 4.9)
+Breaks: qt5-qmake (<< 5.9.1+dfsg-12~)
+Replaces: qt5-qmake (<< 5.9.1+dfsg-12~)
+Section: devel
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://www.qt.io/developers/
+Description: Qt 5 qmake Makefile generator tool — binary file
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This package contains the binary file for qmake buildsystem. Do not
+ install this package directly, use qt5-qmake instead.

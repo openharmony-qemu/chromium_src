@@ -1,0 +1,15 @@
+Package: libchromaprint1
+Source: chromaprint
+Version: 1.5.0-2
+Architecture: amd64
+Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
+Installed-Size: 106
+Depends: libavcodec58 (>= 7:4.0), libavutil56 (>= 7:4.0), libc6 (>= 2.29), libgcc-s1 (>= 3.4), libstdc++6 (>= 5.2)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://acoustid.org/chromaprint
+Description: audio fingerprint library
+ Chromaprint is a library for calculating audio fingerprints
+ which are used by the Acoustid service. Its main purpose is to provide an
+ accurate identifier for record tracks

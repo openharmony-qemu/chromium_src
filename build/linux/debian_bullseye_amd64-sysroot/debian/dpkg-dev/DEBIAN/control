@@ -1,0 +1,20 @@
+Package: dpkg-dev
+Source: dpkg
+Version: 1.20.13
+Architecture: all
+Maintainer: Dpkg Developers <debian-dpkg@lists.debian.org>
+Installed-Size: 2617
+Depends: perl:any, libdpkg-perl (= 1.20.13), tar (>= 1.28-1), bzip2, xz-utils, patch (>= 2.7), make, binutils
+Recommends: build-essential, gcc | c-compiler, fakeroot, gnupg, gpgv, libalgorithm-merge-perl
+Suggests: debian-keyring
+Breaks: debhelper (<< 10.10.1~)
+Section: utils
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://wiki.debian.org/Teams/Dpkg
+Description: Debian package development tools
+ This package provides the development tools (including dpkg-source)
+ required to unpack, build and upload Debian source packages.
+ .
+ Most Debian source packages will require additional tools to build;
+ for example, most packages need make and the C compiler gcc.

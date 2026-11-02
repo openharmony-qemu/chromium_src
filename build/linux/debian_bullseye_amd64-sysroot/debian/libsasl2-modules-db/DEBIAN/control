@@ -1,0 +1,16 @@
+Package: libsasl2-modules-db
+Source: cyrus-sasl2
+Version: 2.1.27+dfsg-2.1+deb11u1
+Architecture: amd64
+Maintainer: Debian Cyrus Team <team+cyrus@tracker.debian.org>
+Installed-Size: 101
+Depends: libc6 (>= 2.14), libdb5.3
+Section: libs
+Priority: standard
+Multi-Arch: same
+Homepage: https://www.cyrusimap.org/sasl/
+Description: Cyrus SASL - pluggable authentication modules (DB)
+ This is the Cyrus SASL API implementation, version 2.1. See package
+ libsasl2-2 and RFC 2222 for more information.
+ .
+ This package provides the DB plugin, which supports Berkeley DB lookups.

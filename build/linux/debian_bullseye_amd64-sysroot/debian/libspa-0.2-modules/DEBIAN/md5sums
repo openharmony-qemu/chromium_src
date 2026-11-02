@@ -1,0 +1,17 @@
+a631fb55fcb96d9c13ed439cc838259a  usr/lib/x86_64-linux-gnu/spa-0.2/aec/libspa-aec-null.so
+3aa0e82b6bc35eb2f7da4aa3e6249c64  usr/lib/x86_64-linux-gnu/spa-0.2/aec/libspa-aec-webrtc.so
+51c46482778debc8d6df2d717bef320d  usr/lib/x86_64-linux-gnu/spa-0.2/alsa/libspa-alsa.so
+01136e9acc1a834712d27e0d44edeab7  usr/lib/x86_64-linux-gnu/spa-0.2/audioconvert/libspa-audioconvert.so
+12aca3a6a4d600004487b7958081afa9  usr/lib/x86_64-linux-gnu/spa-0.2/audiomixer/libspa-audiomixer.so
+2d8f78fa139c3e0dd5076936e2bdeed6  usr/lib/x86_64-linux-gnu/spa-0.2/audiotestsrc/libspa-audiotestsrc.so
+d9ddb5c33043ab15aaced5f277361274  usr/lib/x86_64-linux-gnu/spa-0.2/avb/libspa-avb.so
+af7503830e1e1837b152bac7b44ee273  usr/lib/x86_64-linux-gnu/spa-0.2/control/libspa-control.so
+8fd82575c21ae157c6af696edf7b748b  usr/lib/x86_64-linux-gnu/spa-0.2/support/libspa-dbus.so
+90e489e612201cdd6d48581870a4bf17  usr/lib/x86_64-linux-gnu/spa-0.2/support/libspa-journal.so
+cffbc2dfeae858112fa2883d74be8c24  usr/lib/x86_64-linux-gnu/spa-0.2/support/libspa-support.so
+bb2ca4035fead15a4f19ea9153b9e2a3  usr/lib/x86_64-linux-gnu/spa-0.2/test/libspa-test.so
+6907b9a922935bbc0bc7e1ac48ac250b  usr/lib/x86_64-linux-gnu/spa-0.2/v4l2/libspa-v4l2.so
+60ee8770a2b6aae70e552a51a9418e0a  usr/lib/x86_64-linux-gnu/spa-0.2/videoconvert/libspa-videoconvert.so
+0bf4f7dca6c6e45fe94c2bbd2185dd50  usr/lib/x86_64-linux-gnu/spa-0.2/videotestsrc/libspa-videotestsrc.so
+110db41fe9a4bab45c2ac9f43e088f29  usr/share/doc/libspa-0.2-modules/changelog.Debian.gz
+664b40d25bdb0d6e4f58fde3af0e58e3  usr/share/doc/libspa-0.2-modules/copyright

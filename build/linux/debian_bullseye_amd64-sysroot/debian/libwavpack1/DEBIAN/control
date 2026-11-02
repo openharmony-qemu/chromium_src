@@ -1,0 +1,20 @@
+Package: libwavpack1
+Source: wavpack
+Version: 5.4.0-1
+Architecture: amd64
+Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
+Installed-Size: 201
+Depends: libc6 (>= 2.14)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: http://www.wavpack.com
+Description: audio codec (lossy and lossless) - library
+ WavPack is a completely open audio compression format providing lossless,
+ high-quality lossy, and a unique hybrid compression mode. Although the
+ technology is loosely based on previous versions of WavPack, the new version
+ 4 format has been designed from the ground up to offer unparalleled
+ performance and functionality.
+ .
+ This package contains the shared libraries necessary to run programs
+ using libwavpack.

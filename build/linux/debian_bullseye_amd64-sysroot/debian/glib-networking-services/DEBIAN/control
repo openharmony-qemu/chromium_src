@@ -1,0 +1,15 @@
+Package: glib-networking-services
+Source: glib-networking
+Version: 2.66.0-2
+Architecture: amd64
+Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
+Installed-Size: 47
+Depends: libc6 (>= 2.4), libglib2.0-0 (>= 2.63.0), libproxy1v5 (>= 0.4.15), glib-networking-common (>= 2.66.0-2)
+Recommends: glib-networking
+Section: libs
+Priority: optional
+Multi-Arch: foreign
+Description: network-related giomodules for GLib - D-Bus services
+ This package contains D-Bus services that are used by the GIO network
+ extensions in glib-networking, for actions that need to be done in a
+ separate process.

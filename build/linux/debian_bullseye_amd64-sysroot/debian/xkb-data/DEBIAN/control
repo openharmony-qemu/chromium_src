@@ -1,0 +1,20 @@
+Package: xkb-data
+Source: xkeyboard-config
+Version: 2.29-2
+Architecture: all
+Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
+Installed-Size: 5872
+Breaks: libx11-6 (<< 2:1.4.3), x11-xkb-utils (<< 7.7+5)
+Section: x11
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://www.freedesktop.org/Software/XKeyboardConfig
+Description: X Keyboard Extension (XKB) configuration data
+ This package contains configuration data used by the X Keyboard
+ Extension (XKB), which allows selection of keyboard layouts when
+ using a graphical interface.
+ .
+ Every X11 vendor provides its own XKB data files, so keyboard layout
+ designers have to send their layouts to several places.  The
+ xkeyboard-config project has been launched at FreeDesktop in order
+ to provide a central repository that could be used by all vendors.

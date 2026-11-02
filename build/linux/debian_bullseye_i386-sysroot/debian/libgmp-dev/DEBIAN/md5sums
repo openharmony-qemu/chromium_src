@@ -1,0 +1,12 @@
+ea3d21de4bcf7c696799c5c55dd3655b  usr/include/gmpxx.h
+e3b74729d1d581b599491ea9810935a8  usr/include/i386-linux-gnu/gmp.h
+1e06fd2c0c29170affb5f9a2ca74b379  usr/lib/i386-linux-gnu/libgmp.a
+130da81e4ffe1b71d9e4afdef6619d17  usr/lib/i386-linux-gnu/libgmpxx.a
+7f926a42b1bf458a2999dd7dd0e680fb  usr/lib/i386-linux-gnu/pkgconfig/gmp.pc
+5c6c87d7808c282caad45a68803cf43a  usr/lib/i386-linux-gnu/pkgconfig/gmpxx.pc
+210b01072581180bd29487178b55348e  usr/share/doc/libgmp-dev/AUTHORS
+7e6b76c6d0f35538af8c39e98f98ea3e  usr/share/doc/libgmp-dev/NEWS.gz
+d421d0e5f524ef00d56b2278124ab3e9  usr/share/doc/libgmp-dev/README
+6bbdf2529833c91c23d24fb90e2731d3  usr/share/doc/libgmp-dev/changelog.Debian.gz
+03b728a270d58c61a72bdd6cc4da398d  usr/share/doc/libgmp-dev/changelog.gz
+a2e7dae6af89d823171690778148652b  usr/share/doc/libgmp-dev/copyright

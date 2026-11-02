@@ -1,0 +1,17 @@
+Package: libpython3.9-minimal
+Source: python3.9
+Version: 3.9.2-1
+Architecture: amd64
+Maintainer: Matthias Klose <doko@debian.org>
+Installed-Size: 4955
+Depends: libc6 (>= 2.4), libssl1.1 (>= 1.1.1)
+Recommends: libpython3.9-stdlib
+Conflicts: binfmt-support (<< 1.1.2)
+Breaks: libpython3.9-stdlib (<< 3.9.0~rc1)
+Replaces: libpython3.9-stdlib (<< 3.9.0~rc1)
+Section: python
+Priority: optional
+Multi-Arch: same
+Description: Minimal subset of the Python language (version 3.9)
+ This package contains some essential modules. It is normally not
+ used on it's own, but as a dependency of python3.9-minimal.

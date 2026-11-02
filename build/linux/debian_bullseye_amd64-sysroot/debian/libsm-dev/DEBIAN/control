@@ -1,0 +1,22 @@
+Package: libsm-dev
+Source: libsm
+Version: 2:1.2.3-1
+Architecture: amd64
+Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
+Installed-Size: 106
+Depends: libsm6 (= 2:1.2.3-1), x11proto-core-dev, libice-dev (>= 1:1.0.0-1)
+Suggests: libsm-doc
+Section: libdevel
+Priority: optional
+Multi-Arch: same
+Homepage: https://www.x.org
+Description: X11 Session Management library (development headers)
+ This package provides the main interface to the X11 Session Management
+ library, which allows for applications to both manage sessions, and make use
+ of session managers to save and restore their state for later use.
+ .
+ This package contains the development headers for the library found in libsm6.
+ Non-developers likely have little use for this package.
+ .
+ This module can be found at
+ git://anongit.freedesktop.org/git/xorg/lib/libSM

@@ -1,0 +1,13 @@
+Package: libgdk-pixbuf2.0-common
+Source: gdk-pixbuf
+Version: 2.42.2+dfsg-1+deb11u2
+Architecture: all
+Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
+Installed-Size: 2571
+Section: libs
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://www.gtk.org/
+Description: GDK Pixbuf library - data files
+ This package contains the common files and translations for the GDK
+ Pixbuf library.

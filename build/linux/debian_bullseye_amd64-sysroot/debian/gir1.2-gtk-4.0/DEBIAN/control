@@ -1,0 +1,21 @@
+Package: gir1.2-gtk-4.0
+Source: gtk4
+Version: 4.8.3+ds-2+deb12u1
+Architecture: amd64
+Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
+Installed-Size: 814
+Depends: gir1.2-freedesktop (>= 1.39.0), gir1.2-gdkpixbuf-2.0 (>= 2.30.0), gir1.2-glib-2.0 (>= 1.39.0), gir1.2-graphene-1.0 (>= 1.10.4~), gir1.2-pango-1.0 (>= 1.50.0), libgtk-4-1 (>= 4.8.0), libgtk-4-common
+Breaks: python-gi (<< 3.18), python3-gi (<< 3.18)
+Provides: gir1.2-gdk-4.0 (= 4.8.3+ds-2+deb12u1), gir1.2-gdkwayland-4.0 (= 4.8.3+ds-2+deb12u1), gir1.2-gdkx11-4.0 (= 4.8.3+ds-2+deb12u1), gir1.2-gsk-4.0 (= 4.8.3+ds-2+deb12u1)
+Section: introspection
+Priority: optional
+Multi-Arch: same
+Homepage: https://www.gtk.org/
+Description: GTK graphical user interface library -- gir bindings
+ GTK is a multi-platform toolkit for creating graphical user
+ interfaces. Offering a complete set of widgets, GTK is suitable
+ for projects ranging from small one-off tools to complete application
+ suites.
+ .
+ This package can be used by other packages using the GIRepository format to
+ generate dynamic bindings.

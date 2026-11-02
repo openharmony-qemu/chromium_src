@@ -1,0 +1,21 @@
+Package: libinput-bin
+Source: libinput
+Version: 1.16.4-3
+Architecture: amd64
+Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
+Installed-Size: 120
+Depends: libc6 (>= 2.7), libevdev2 (>= 0.9.1), libudev1 (>= 183), libwacom2 (>= 1.1)
+Section: libs
+Priority: optional
+Multi-Arch: foreign
+Homepage: http://www.freedesktop.org/wiki/Software/libinput/
+Description: input device management and event handling library - udev quirks
+ libinput is a library that handles input devices for display servers and
+ other applications that need to directly deal with input devices.
+ .
+ It provides device detection, device handling, input device event
+ processing and abstraction to minimize the amount of custom input
+ code the user of libinput needs to provide the common set of
+ functionality that users expect.
+ .
+ This package includes the udev quirks database and helpers.

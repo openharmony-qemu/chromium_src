@@ -1,0 +1,20 @@
+Package: libzmq5
+Source: zeromq3
+Version: 4.3.4-1+deb11u1
+Architecture: amd64
+Maintainer: Laszlo Boszormenyi (GCS) <gcs@debian.org>
+Installed-Size: 808
+Depends: libbsd0 (>= 0.0), libc6 (>= 2.30), libgcc-s1 (>= 3.0), libgssapi-krb5-2 (>= 1.17), libnorm1 (>= 1.5r6), libpgm-5.3-0 (>= 5.1.116~dfsg), libsodium23 (>= 1.0.3), libstdc++6 (>= 5.2)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://www.zeromq.org/
+Description: lightweight messaging kernel (shared library)
+ ØMQ is a library which extends the standard socket interfaces with features
+ traditionally provided by specialised messaging middleware products.
+ .
+ ØMQ sockets provide an abstraction of asynchronous message queues, multiple
+ messaging patterns, message filtering (subscriptions), seamless access to
+ multiple transport protocols and more.
+ .
+ This package contains the libzmq shared library.

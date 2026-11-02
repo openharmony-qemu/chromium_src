@@ -1,0 +1,20 @@
+Package: libpam-systemd
+Source: systemd
+Version: 252.29-1~deb12u1~bpo11+1
+Architecture: amd64
+Maintainer: Debian systemd Maintainers <pkg-systemd-maintainers@lists.alioth.debian.org>
+Installed-Size: 536
+Depends: libc6 (>= 2.30), libpam0g (>= 0.99.7.1), systemd (= 252.29-1~deb12u1~bpo11+1), libpam-runtime, default-dbus-system-bus | dbus-system-bus, systemd-sysv
+Recommends: dbus-user-session
+Provides: default-logind (= 252.29-1~deb12u1~bpo11+1), logind (= 252.29-1~deb12u1~bpo11+1)
+Section: admin
+Priority: standard
+Multi-Arch: same
+Homepage: https://www.freedesktop.org/wiki/Software/systemd
+Description: system and service manager - PAM module
+ This package contains the PAM module which registers user sessions in
+ the systemd control group hierarchy for logind.
+ .
+ If in doubt, do install this package.
+ .
+ Packages that depend on logind functionality need to depend on libpam-systemd.

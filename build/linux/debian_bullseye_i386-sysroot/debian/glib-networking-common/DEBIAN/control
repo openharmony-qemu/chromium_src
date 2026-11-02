@@ -1,0 +1,13 @@
+Package: glib-networking-common
+Source: glib-networking
+Version: 2.66.0-2
+Architecture: all
+Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
+Installed-Size: 509
+Recommends: glib-networking
+Section: libs
+Priority: optional
+Multi-Arch: foreign
+Description: network-related giomodules for GLib - data files
+ This package contains data files and translations for the GIO network
+ extensions in glib-networking.

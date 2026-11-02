@@ -1,0 +1,18 @@
+Package: libx11-data
+Source: libx11
+Version: 2:1.7.2-1+deb11u2
+Architecture: all
+Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
+Installed-Size: 1665
+Breaks: libx11-6 (<< 2:1.4.1)
+Section: x11
+Priority: optional
+Multi-Arch: foreign
+Description: X11 client-side library
+ This package provides the locale data files for libx11.
+ .
+ More information about X.Org can be found at:
+ <URL:https://www.X.org>
+ .
+ This module can be found at
+ https://gitlab.freedesktop.org/xorg/lib/libX11

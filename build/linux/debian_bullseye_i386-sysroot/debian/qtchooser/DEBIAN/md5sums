@@ -1,0 +1,8 @@
+40cda23fc72b44d19e32f9f5ea5ee8b9  usr/bin/qtchooser
+bdcdc2b86ff1bee2a78b7ee54d453a9f  usr/share/doc/qtchooser/README.Debian
+0ec39b2273a2d18f06da8b4d7f197b7f  usr/share/doc/qtchooser/changelog.Debian.gz
+cd8b5bb8b68e39e2c0bab454d84427d2  usr/share/doc/qtchooser/copyright
+fa9922bfd7bc536f4d25c81fd412b2bb  usr/share/lintian/overrides/qtchooser
+76b4d480208745199688985caf72d716  usr/share/man/man1/qtchooser.1.gz
+69d67949dd497d5c45de3ab384a07bf7  usr/share/qtchooser/qt4-i386-linux-gnu.conf
+47d0ec8303c815a8ff24122a93e54e91  usr/share/qtchooser/qt5-i386-linux-gnu.conf

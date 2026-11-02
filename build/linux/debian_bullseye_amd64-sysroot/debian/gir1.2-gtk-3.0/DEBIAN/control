@@ -1,0 +1,21 @@
+Package: gir1.2-gtk-3.0
+Source: gtk+3.0
+Version: 3.24.24-4+deb11u4
+Architecture: amd64
+Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
+Installed-Size: 1012
+Depends: gir1.2-atk-1.0 (>= 2.35.1), gir1.2-freedesktop (>= 1.39.0), gir1.2-gdkpixbuf-2.0 (>= 2.40.0) | libgdk-pixbuf2.0-dev (>= 2.40.0), gir1.2-glib-2.0 (>= 1.39.0), gir1.2-pango-1.0 (>= 1.41.0), libgtk-3-0 (>= 3.24.24), libgtk-3-common
+Breaks: python-gi (<< 3.18), python3-gi (<< 3.18)
+Provides: gir1.2-gdk-3.0 (= 3.24.24-4+deb11u4), gir1.2-gdkx11-3.0 (= 3.24.24-4+deb11u4)
+Section: introspection
+Priority: optional
+Multi-Arch: same
+Homepage: https://www.gtk.org/
+Description: GTK graphical user interface library -- gir bindings
+ GTK is a multi-platform toolkit for creating graphical user
+ interfaces. Offering a complete set of widgets, GTK is suitable
+ for projects ranging from small one-off tools to complete application
+ suites.
+ .
+ This package can be used by other packages using the GIRepository format to
+ generate dynamic bindings.

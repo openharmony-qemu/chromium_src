@@ -1,0 +1,18 @@
+Package: libmpfr6
+Source: mpfr4
+Version: 4.1.0-3
+Architecture: amd64
+Maintainer: Debian GCC Maintainers <debian-gcc@lists.debian.org>
+Installed-Size: 3411
+Depends: libc6 (>= 2.14), libgmp10
+Breaks: libcgal13 (<< 4.11-2+b1), libflint-2.5.2 (<< 2.5.2-17+b2), libgiac0 (<< 1.2.3.57+dfsg1-2+b4), libgmp3 (<< 4.1.4-3), libmpc3 (<< 1.1.0-1~), libnormaliz3 (<< 3.5.1+ds-4), sagemath (<< 8.1-2+b2)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://www.mpfr.org/
+Description: multiple precision floating-point computation
+ MPFR provides a library for multiple-precision floating-point computation
+ with correct rounding.  The computation is both efficient and has a
+ well-defined semantics. It copies the good ideas from the
+ ANSI/IEEE-754 standard for double-precision floating-point arithmetic
+ (53-bit mantissa).

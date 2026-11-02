@@ -1,0 +1,18 @@
+{
+  "format_version": "1.1",
+  "package_name": "infra/tools/luci/luci/linux-amd64",
+  "version_file": ".versions/luci.cipd_version",
+  "files": [
+    {
+      "name": "luci",
+      "size": 22032117,
+      "executable": true,
+      "hash": "d2YpDU-OxBqVabyuiOyHymc-1m4geUsaUFE8xPT2W58C"
+    },
+    {
+      "name": ".versions/luci.cipd_version",
+      "size": 122,
+      "hash": "3VfR-xgL3dmQ0_ux7rftAWHZK0OyDy8dyCVs7_EytAkC"
+    }
+  ]
+}

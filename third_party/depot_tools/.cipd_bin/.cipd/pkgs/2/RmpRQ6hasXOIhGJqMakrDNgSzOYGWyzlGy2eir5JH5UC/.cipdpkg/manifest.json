@@ -1,0 +1,18 @@
+{
+  "format_version": "1.1",
+  "package_name": "infra/tools/luci/lucicfg/linux-amd64",
+  "version_file": ".versions/lucicfg.cipd_version",
+  "files": [
+    {
+      "name": "lucicfg",
+      "size": 35778274,
+      "executable": true,
+      "hash": "v0ay_gRDMu-qRaLNlUqPjwyeBHkz83kb6e5VTf8aBC8C"
+    },
+    {
+      "name": ".versions/lucicfg.cipd_version",
+      "size": 125,
+      "hash": "CEd8Cwui7hDtqqJq7ekiYwDFsjcpDh2OJOf0Z212Hp4C"
+    }
+  ]
+}

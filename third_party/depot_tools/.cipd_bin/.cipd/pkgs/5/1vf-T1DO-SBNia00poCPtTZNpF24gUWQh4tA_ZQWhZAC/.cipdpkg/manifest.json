@@ -1,0 +1,18 @@
+{
+  "format_version": "1.1",
+  "package_name": "infra/tools/prpc/linux-amd64",
+  "version_file": ".versions/prpc.cipd_version",
+  "files": [
+    {
+      "name": "prpc",
+      "size": 20613837,
+      "executable": true,
+      "hash": "T0giUSD97w-C7x5OemBL-8z8tYBFXXaJeeaIa_XyFUEC"
+    },
+    {
+      "name": ".versions/prpc.cipd_version",
+      "size": 117,
+      "hash": "ysE1XdYe47moQOida2QSNlCTW5iEVvmnHB0-qZjRCfEC"
+    }
+  ]
+}

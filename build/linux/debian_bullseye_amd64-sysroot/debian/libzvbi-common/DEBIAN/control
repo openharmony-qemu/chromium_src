@@ -1,0 +1,50 @@
+Package: libzvbi-common
+Source: zvbi
+Version: 0.2.35-18
+Architecture: all
+Maintainer: Debian QA Group <packages@qa.debian.org>
+Installed-Size: 169
+Replaces: libzvbi-0.1 (<= 0.2.1-3)
+Section: devel
+Priority: optional
+Multi-Arch: foreign
+Homepage: http://zapping.sf.net/ZVBI
+Description: Vertical Blanking Interval decoder (VBI) - common files
+ The vertical blanking interval (VBI) is an interval in a television signal
+ that temporarily suspends transmission of the signal for the electron gun
+ to move back up to the first line of the television screen to trace the
+ next screen field.
+ .
+ The vertical blanking interval can be used to carry data, since anything
+ sent during the VBI would naturally not be displayed; various test signals,
+ closed captioning, and other digital data can be sent during this time
+ period. These include information like closed-caption data, Teletext
+ (primarily in Europe), and now Intercast and the ATVEC Internet television
+ encodings.
+ .
+ The Zapping VBI library, in short ZVBI, provides functions to capture and
+ decode VBI data. It is written in plain ANSI C with few dependencies on
+ other tools and libraries, licensed under GPL. Some features:
+   * Captures raw VBI samples from V4L, V4L2 and FreeBSD BKTR devices, sliced
+     VBI data from Linux DVB devices;
+   * Implements a VBI Proxy to share one VBI device between multiple
+     applications;
+   * Has a robust and versatile bit slicer which handles a wide range of data
+     services;
+   * Functions to capture multiple data services at once, such as Closed
+     Caption (both NTSC and PAL), Teletext, VPS, WSS, XDS;
+   * Level 3.5 Teletext decoder with support for all Teletext character sets,
+     graphics, 4096 colors, with built-in page cache including search
+     functions;
+   * Closed Caption decoder which supports roll-up, pop-up and paint-on style
+     caption, color, expanded character set, text attributes and free text
+     placement;
+   * Renders Teletext and Caption pages, can export to HTML, PNG and other
+     formats.
+   * Can determine network names;
+   * Can find Teletext subtitle and program pages;
+   * Functions to extract data transmissions in Teletext streams (currently
+     Page Format Clear and Independent Data Line Format A);
+   * Can multiplex and demultiplex DVB VBI PES and TS streams.
+ .
+ This package contains internationalization files.

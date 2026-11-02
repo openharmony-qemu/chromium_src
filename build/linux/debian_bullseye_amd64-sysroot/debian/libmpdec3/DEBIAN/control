@@ -1,0 +1,15 @@
+Package: libmpdec3
+Source: mpdecimal
+Version: 2.5.1-1
+Architecture: amd64
+Maintainer: Matthias Klose <doko@debian.org>
+Installed-Size: 278
+Depends: libc6 (>= 2.14), libgcc-s1 (>= 3.0), libstdc++6 (>= 5.2)
+Breaks: libpython3.8-stdlib (<< 2.8.5-2)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://www.bytereef.org/mpdecimal/index.html
+Description: library for decimal floating point arithmetic (runtime library)
+ mpdecimal is a package for correctly-rounded arbitrary precision decimal
+ floating point arithmetic.

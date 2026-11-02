@@ -1,0 +1,16 @@
+Package: libx264-160
+Source: x264
+Version: 2:0.160.3011+gitcde9a93-2.1
+Architecture: amd64
+Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
+Installed-Size: 1852
+Depends: libc6 (>= 2.29)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: http://www.videolan.org/developers/x264.html
+Description: x264 video coding library
+ libx264 is an advanced encoding library for creating H.264 (MPEG-4 AVC)
+ video streams.
+ .
+ This package contains the libx264 shared library.

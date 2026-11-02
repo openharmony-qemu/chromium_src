@@ -1,0 +1,23 @@
+Package: libavformat-dev
+Source: ffmpeg
+Version: 7:4.3.7-0+deb11u1
+Architecture: amd64
+Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
+Installed-Size: 5342
+Depends: libavcodec-dev (= 7:4.3.7-0+deb11u1), libavformat58 (= 7:4.3.7-0+deb11u1), libavutil-dev (= 7:4.3.7-0+deb11u1), libswresample-dev (= 7:4.3.7-0+deb11u1)
+Section: libdevel
+Priority: optional
+Multi-Arch: same
+Homepage: https://ffmpeg.org/
+Description: FFmpeg library with (de)muxers for multimedia containers - development files
+ FFmpeg is the leading multimedia framework, able to decode, encode, transcode,
+ mux, demux, stream, filter and play pretty much anything that humans and
+ machines have created. It supports the most obscure ancient formats up to the
+ cutting edge.
+ .
+ This library provides a generic framework for multiplexing and demultiplexing
+ (muxing and demuxing) audio, video and subtitle streams. It encompasses
+ multiple muxers and demuxers for multimedia container formats. It also
+ supports several input and output protocols to access a media resource.
+ .
+ This package contains the development files.

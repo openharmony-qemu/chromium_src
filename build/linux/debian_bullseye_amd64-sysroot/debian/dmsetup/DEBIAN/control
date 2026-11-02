@@ -1,0 +1,19 @@
+Package: dmsetup
+Source: lvm2 (2.03.11-2.1)
+Version: 2:1.02.175-2.1
+Architecture: amd64
+Maintainer: Debian LVM Team <team+lvm@tracker.debian.org>
+Installed-Size: 255
+Depends: libc6 (>= 2.14), libdevmapper1.02.1 (>= 2:1.02.138)
+Section: admin
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://sourceware.org/lvm2/
+Description: Linux Kernel Device Mapper userspace library
+ The Linux Kernel Device Mapper is the LVM (Linux Logical Volume Management)
+ Team's implementation of a minimalistic kernel-space driver that handles
+ volume management, while keeping knowledge of the underlying device layout
+ in user-space.  This makes it useful for not only LVM, but software raid,
+ and other drivers that create "virtual" block devices.
+ .
+ This package contains a utility for modifying device mappings.

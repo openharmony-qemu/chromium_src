@@ -1,0 +1,7 @@
+a809c78045b6973eac2dde8b11b6b79b  usr/include/i386-linux-gnu/libswresample/swresample.h
+4814d39a043a3b6bb6f33ed4aab4909f  usr/include/i386-linux-gnu/libswresample/version.h
+9f80ee68605495f1f05cb88d7b6f6f6c  usr/lib/i386-linux-gnu/libswresample.a
+e7a0a55d97ec0a1a5681d2cd0cb11a37  usr/lib/i386-linux-gnu/pkgconfig/libswresample.pc
+fc8b576a37fd99080492af0dc600f743  usr/share/doc/libswresample-dev/changelog.Debian.gz
+a25f71d27284c9b5e8cf1ce0dcdc0e84  usr/share/doc/libswresample-dev/changelog.gz
+e187f66b2765eae992e9c748bfea0a09  usr/share/doc/libswresample-dev/copyright

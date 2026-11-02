@@ -1,0 +1,11 @@
+Package: hicolor-icon-theme
+Version: 0.17-2
+Architecture: all
+Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
+Installed-Size: 441
+Section: misc
+Priority: optional
+Multi-Arch: foreign
+Description: default fallback theme for FreeDesktop.org icon themes
+ This is the default fallback theme used by implementations of the
+ Freedesktop.org Icon Theme specification.

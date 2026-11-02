@@ -1,0 +1,6 @@
+#!/b/s/w/ir/cache/pkgbuild/cpython311-80420rcs7klsbhgtrq3qpofs8s/contents/bin/python3.11
+import sys
+from wheel._commands import main
+if __name__ == '__main__':
+    sys.argv[0] = sys.argv[0].removesuffix('.exe')
+    sys.exit(main())

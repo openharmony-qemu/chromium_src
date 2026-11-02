@@ -1,0 +1,8 @@
+rust-std-x86_64-unknown-linux-gnu
+rustc
+rustc-dev
+cargo
+rust-analyzer-preview
+rustfmt-preview
+clippy-preview
+rust-src

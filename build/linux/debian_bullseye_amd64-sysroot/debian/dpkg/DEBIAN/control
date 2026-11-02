@@ -1,0 +1,19 @@
+Package: dpkg
+Version: 1.20.13
+Architecture: amd64
+Essential: yes
+Maintainer: Dpkg Developers <debian-dpkg@lists.debian.org>
+Installed-Size: 6982
+Pre-Depends: libbz2-1.0, libc6 (>= 2.15), liblzma5 (>= 5.2.2), libselinux1 (>= 3.1~), zlib1g (>= 1:1.1.4)
+Depends: tar (>= 1.28-1)
+Suggests: apt, debsig-verify
+Breaks: libapt-pkg5.0 (<< 1.7~b), lsb-base (<< 10.2019031300)
+Section: admin
+Priority: required
+Multi-Arch: foreign
+Homepage: https://wiki.debian.org/Teams/Dpkg
+Description: Debian package management system
+ This package provides the low-level infrastructure for handling the
+ installation and removal of Debian software packages.
+ .
+ For Debian package development tools, install dpkg-dev.

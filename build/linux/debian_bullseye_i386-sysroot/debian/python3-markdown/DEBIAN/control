@@ -1,0 +1,26 @@
+Package: python3-markdown
+Source: python-markdown
+Version: 3.3.4-1
+Architecture: all
+Maintainer: Debian Python Team <team+python@tracker.debian.org>
+Installed-Size: 330
+Depends: python3-pkg-resources, python3:any
+Recommends: python3-pygments, python3-yaml
+Suggests: python-markdown-doc
+Breaks: python-markdown (<< 3.1.1-4), python3-mdx-math (<< 0.7-2~)
+Replaces: python-markdown (<< 3.1.1-4)
+Section: python
+Priority: optional
+Homepage: https://github.com/Python-Markdown/markdown
+Description: text-to-HTML conversion library/tool (Python 3 version)
+ Markdown is a text-to-HTML conversion tool for web writers. Markdown
+ allows you to write using an easy-to-read, easy-to-write plain text
+ format, then convert it to structurally valid XHTML (or HTML).
+ .
+ This is a Python implementation of John Gruber's Markdown. The current
+ version of python-markdown implements all Markdown syntax features and
+ fully passes Markdown Test Suite 1.0. It also supports footnotes and
+ attributes.
+ .
+ This package contains all the files needed to use Markdown with Python
+ 3.x.

@@ -1,0 +1,19 @@
+Package: dconf-gsettings-backend
+Source: dconf
+Version: 0.38.0-2
+Architecture: amd64
+Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
+Installed-Size: 82
+Depends: dconf-service (<< 0.38.0-2.1~), dconf-service (>= 0.38.0-2), libdconf1 (= 0.38.0-2), libc6 (>= 2.14), libglib2.0-0 (>= 2.55.2)
+Provides: gsettings-backend
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://wiki.gnome.org/Projects/dconf
+Description: simple configuration storage system - GSettings back-end
+ DConf is a low-level key/value database designed for storing desktop
+ environment settings.
+ .
+ This package contains a back-end for GSettings. It is needed by
+ applications accessing settings through GSettings to set custom values
+ and listen for changes.

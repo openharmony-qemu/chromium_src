@@ -1,0 +1,13 @@
+Package: valgrind-if-available
+Version: 3.18.1-1-1
+Architecture: i386
+Maintainer: Adam Borowski <kilobyte@angband.pl>
+Installed-Size: 8
+Depends: valgrind
+Section: devel
+Priority: optional
+Description: dependency package to pull in Valgrind if it's available
+ This metapackage installs Valgrind on architectures where it is available.
+ As the list of archs where Valgrind works changes quite often, explicitly
+ listing it as a [Build-]Depend is cumbersome and prone to being outdated.
+ Instead, you may use this metapackage.

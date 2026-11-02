@@ -1,0 +1,35 @@
+Package: dbus-user-session
+Source: dbus
+Version: 1.14.10-1~deb12u1
+Architecture: amd64
+Maintainer: Utopia Maintenance Team <pkg-utopia-maintainers@lists.alioth.debian.org>
+Installed-Size: 111
+Depends: dbus-daemon (= 1.14.10-1~deb12u1) | dbus-broker, dbus-session-bus-common (>= 1.14.10-1~deb12u1), libpam-systemd, systemd
+Recommends: systemd-sysv
+Provides: dbus-session-bus, default-dbus-session-bus
+Section: admin
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://dbus.freedesktop.org/
+Description: simple interprocess messaging system (systemd --user integration)
+ D-Bus is a message bus, used for sending messages between applications.
+ Conceptually, it fits somewhere in between raw sockets and CORBA in
+ terms of complexity.
+ .
+ On systemd systems, this package opts in to the session model in which
+ a user's session starts the first time they log in, and does not end
+ until all their login sessions have ended. This model merges all
+ parallel non-graphical login sessions (text mode, ssh, cron, etc.), and up
+ to one graphical session, into a single "user-session" or "super-session"
+ within which all background D-Bus services are shared.
+ .
+ Multiple graphical sessions per user are not currently supported in this
+ mode; as a result, it is particularly suitable for gdm, which responds to
+ requests to open a parallel graphical session by switching to the existing
+ graphical session and unlocking it.
+ .
+ To retain dbus' traditional session semantics, in which login sessions
+ are artificially isolated from each other, remove this package and install
+ dbus-x11 instead.
+ .
+ See the dbus package description for more information about D-Bus in general.

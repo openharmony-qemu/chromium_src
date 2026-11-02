@@ -1,0 +1,20 @@
+Package: libp11-kit-dev
+Source: p11-kit
+Version: 0.23.22-1
+Architecture: amd64
+Maintainer: Debian GnuTLS Maintainers <pkg-gnutls-maint@lists.alioth.debian.org>
+Installed-Size: 715
+Depends: libp11-kit0 (= 0.23.22-1)
+Section: libdevel
+Priority: optional
+Multi-Arch: same
+Homepage: https://p11-glue.github.io/p11-glue/p11-kit.html
+Description: library for loading and coordinating access to PKCS#11 modules - development
+ The p11-kit library provides a way to load and enumerate Public-Key
+ Cryptography Standard #11 modules, along with a standard configuration
+ setup for installing PKCS#11 modules so that they're discoverable. It
+ also solves problems with coordinating the use of PKCS#11 by different
+ components or libraries living in the same process.
+ .
+ This package contains the documentation and development headers required
+ to build applications using the p11-kit library.

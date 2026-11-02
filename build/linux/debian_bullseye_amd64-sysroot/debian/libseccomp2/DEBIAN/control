@@ -1,0 +1,15 @@
+Package: libseccomp2
+Source: libseccomp
+Version: 2.5.1-1+deb11u1
+Architecture: amd64
+Maintainer: Kees Cook <kees@debian.org>
+Installed-Size: 158
+Depends: libc6 (>= 2.4)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://github.com/seccomp/libseccomp
+Description: high level interface to Linux seccomp filter
+ This library provides a high level interface to constructing, analyzing
+ and installing seccomp filters via a BPF passed to the Linux Kernel's
+ prctl() syscall.

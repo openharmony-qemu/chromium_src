@@ -1,0 +1,16 @@
+Package: libudfread0
+Source: libudfread
+Version: 1.1.1-1
+Architecture: amd64
+Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
+Installed-Size: 56
+Depends: libc6 (>= 2.14)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://www.videolan.org/developers/libudfread.html
+Description: UDF reader library
+ This library allows reading UDF filesystems, like raw devices and image files.
+ .
+ The library is created and maintained by VideoLAN Project and is used by
+ projects like VLC and Kodi.

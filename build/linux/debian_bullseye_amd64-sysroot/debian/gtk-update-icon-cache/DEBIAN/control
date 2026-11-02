@@ -1,0 +1,20 @@
+Package: gtk-update-icon-cache
+Source: gtk+3.0
+Version: 3.24.24-4+deb11u4
+Architecture: amd64
+Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
+Installed-Size: 153
+Depends: libc6 (>= 2.4), libgdk-pixbuf-2.0-0 (>= 2.40.0), libglib2.0-0 (>= 2.57.2)
+Breaks: libgtk-3-bin (<< 3.20.6-1), libgtk2.0-bin (<< 2.24.30-2)
+Replaces: libgtk-3-bin (<< 3.20.6-1), libgtk2.0-bin (<< 2.24.30-2)
+Section: misc
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://www.gtk.org/
+Description: icon theme caching utility
+ gtk-update-icon-cache creates mmap()able cache files for icon themes.
+ .
+ GTK can use the cache files created by gtk-update-icon-cache to avoid a lot
+ of system call and disk seek overhead when the application starts. Since the
+ format of the cache files allows them to be mmap()ed shared between multiple
+ applications, the overall memory consumption is reduced as well.

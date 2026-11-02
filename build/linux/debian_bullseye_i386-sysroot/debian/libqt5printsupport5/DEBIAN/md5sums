@@ -1,0 +1,6 @@
+6a1ba779fce109413ad613f3b232614d  usr/lib/i386-linux-gnu/libQt5PrintSupport.so.5.15.2
+303c14112db02c186167d11db687d88e  usr/lib/i386-linux-gnu/qt5/plugins/printsupport/libcupsprintersupport.so
+8ab3f726873fd9463e0a0ee09125f88d  usr/share/doc/libqt5printsupport5/changelog.Debian.gz
+d6f8b4b98631fc3c4a97b5d53645a287  usr/share/doc/libqt5printsupport5/changelog.gz
+fcff62d59a8729d2c26e846856ada5e3  usr/share/doc/libqt5printsupport5/copyright
+98d94a5c74b112f53bbfda6fe737bc46  usr/share/lintian/overrides/libqt5printsupport5

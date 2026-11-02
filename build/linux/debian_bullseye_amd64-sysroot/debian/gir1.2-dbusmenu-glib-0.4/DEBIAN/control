@@ -1,0 +1,18 @@
+Package: gir1.2-dbusmenu-glib-0.4
+Source: libdbusmenu
+Version: 18.10.20180917~bzr492+repack1-2
+Architecture: amd64
+Maintainer: The Ayatana Packagers <pkg-ayatana-devel@lists.alioth.debian.org>
+Installed-Size: 48
+Depends: libdbusmenu-glib4 (= 18.10.20180917~bzr492+repack1-2), gir1.2-glib-2.0 (>= 0.9.3)
+Section: introspection
+Priority: optional
+Multi-Arch: same
+Homepage: https://launchpad.net/dbusmenu
+Description: typelib file for libdbusmenu-glib4
+ libdbusmenu passes a menu structure across DBus so that a program can
+ create a menu simply without worrying about how it is displayed on the
+ other side of the bus.
+ .
+ This package can be used by other packages using the GIRepository format to
+ generate dynamic bindings for libdbusmenu-glib4.

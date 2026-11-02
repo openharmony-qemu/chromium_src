@@ -1,0 +1,16 @@
+Package: gir1.2-harfbuzz-0.0
+Source: harfbuzz
+Version: 2.7.4-1
+Architecture: amd64
+Maintainer: أحمد المحمودي (Ahmed El-Mahmoudy) <aelmahmoudy@users.sourceforge.net>
+Installed-Size: 1228
+Depends: gir1.2-glib-2.0 (>= 1.31.0-2), libharfbuzz0b (>= 2.7.4)
+Section: introspection
+Priority: optional
+Multi-Arch: same
+Homepage: https://www.freedesktop.org/wiki/Software/HarfBuzz
+Description: OpenType text shaping engine (GObject introspection data)
+ HarfBuzz is an implementation of the OpenType Layout engine (aka layout
+ engine) and the script-specific logic (aka shaping engine).
+ .
+ This package contains introspection data for the GObject bindings library.

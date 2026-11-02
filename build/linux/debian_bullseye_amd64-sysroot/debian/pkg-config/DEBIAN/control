@@ -1,0 +1,20 @@
+Package: pkg-config
+Version: 0.29.2-1
+Architecture: amd64
+Maintainer: Tollef Fog Heen <tfheen@debian.org>
+Installed-Size: 204
+Depends: libc6 (>= 2.14), libglib2.0-0 (>= 2.16.0), libdpkg-perl
+Suggests: dpkg-dev
+Conflicts: pkg-config-bin
+Replaces: pkg-config-bin
+Section: devel
+Priority: optional
+Multi-Arch: foreign
+Homepage: http://pkg-config.freedesktop.org
+Description: manage compile and link flags for libraries
+ pkg-config is a system for managing library compile and link flags that
+ works with automake and autoconf.
+ .
+ Increasingly libraries ship with ".pc" files that allow querying of the
+ compiler and linker flags needed to use them through the pkg-config(1)
+ program.

@@ -1,0 +1,26 @@
+Package: fontconfig
+Version: 2.13.1-4.2
+Architecture: amd64
+Maintainer: Debian freedesktop.org maintainers <pkg-freedesktop-maintainers@lists.alioth.debian.org>
+Installed-Size: 583
+Depends: libc6 (>= 2.4), libfontconfig1 (>= 2.13.0), libfreetype6 (>= 2.8.1), fontconfig-config
+Section: fonts
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://www.freedesktop.org/wiki/Software/fontconfig/
+Description: generic font configuration library - support binaries
+ Fontconfig is a font configuration and customization library, which
+ does not depend on the X Window System. It is designed to locate
+ fonts within the system and select them according to requirements
+ specified by applications.
+ .
+ Fontconfig is not a rasterization library, nor does it impose a
+ particular rasterization library on the application. The X-specific
+ library 'Xft' uses fontconfig along with freetype to specify and
+ rasterize fonts.
+ .
+ This package contains a program to maintain the fontconfig cache
+ (fc-cache), a sample program to list installed fonts (fc-list), a program
+ to test the matching rules (fc-match) and a program to dump the binary
+ cache files in string form (fc-cat). It no longer makes fonts managed by defoma
+ available to fontconfig applications.

@@ -1,0 +1,18 @@
+Package: libcodec2-0.9
+Source: codec2
+Version: 0.9.2-4
+Architecture: amd64
+Maintainer: A. Maitland Bottoms <bottoms@debian.org>
+Installed-Size: 14215
+Depends: libc6 (>= 2.29)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: http://rowetel.com/codec2.html
+Description: Codec2 runtime library
+ Next-Generation Digital Voice for Two-Way Radio
+ .
+ Codec2 is an audio codec especially designed for compressing voice at
+ very low bit-rates for applications such as digital voice radio.
+ .
+ This package contains the codec2 runtime library.

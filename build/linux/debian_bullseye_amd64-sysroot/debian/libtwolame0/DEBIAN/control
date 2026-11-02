@@ -1,0 +1,24 @@
+Package: libtwolame0
+Source: twolame
+Version: 0.4.0-2
+Architecture: amd64
+Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
+Installed-Size: 147
+Depends: libc6 (>= 2.29)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: http://www.twolame.org
+Description: MPEG Audio Layer 2 encoding library
+ TwoLAME is an optimized MPEG Audio Layer 2 encoder. It is based on tooLAME by
+ Mike Cheng, which in turn is based upon the ISO dist10 code and portions of
+ LAME.
+ .
+ TwoLAME does NOT support MPEG Audio Layer 3 (MP3) encoding due to patent
+ issues surrounding MP3.
+ .
+ However, as most MPEG Audio players are able to play layer 2 (MP2) files,
+ TwoLAME makes a very good drop-in replacement for LAME and other layer 3
+ encoders.
+ .
+ This package contains the shared library.

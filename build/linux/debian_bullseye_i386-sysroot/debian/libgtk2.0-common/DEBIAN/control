@@ -1,0 +1,18 @@
+Package: libgtk2.0-common
+Source: gtk+2.0
+Version: 2.24.33-2+deb11u1
+Architecture: all
+Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
+Installed-Size: 19922
+Recommends: libgtk2.0-0
+Section: misc
+Priority: optional
+Multi-Arch: foreign
+Homepage: http://www.gtk.org/
+Description: common files for the GTK graphical user interface library
+ GTK is a multi-platform toolkit for creating graphical user
+ interfaces. Offering a complete set of widgets, GTK is suitable
+ for projects ranging from small one-off tools to complete application
+ suites.
+ .
+ This package contains the common files which the libraries need.

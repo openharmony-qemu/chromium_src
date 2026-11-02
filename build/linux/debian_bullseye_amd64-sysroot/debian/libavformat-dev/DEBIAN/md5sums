@@ -1,0 +1,8 @@
+99ad68f6cba470b5079556a339d57bb5  usr/include/x86_64-linux-gnu/libavformat/avformat.h
+af2fc23ee1da6ed306db9e02b6e3c99b  usr/include/x86_64-linux-gnu/libavformat/avio.h
+04177b3719e6c6c1c9e34a72fb384be3  usr/include/x86_64-linux-gnu/libavformat/version.h
+3fa04f0e0728c6624bad6e1b17a9fdc9  usr/lib/x86_64-linux-gnu/libavformat.a
+2df9dd85cbcd4835de33bbb643868071  usr/lib/x86_64-linux-gnu/pkgconfig/libavformat.pc
+fc8b576a37fd99080492af0dc600f743  usr/share/doc/libavformat-dev/changelog.Debian.gz
+a25f71d27284c9b5e8cf1ce0dcdc0e84  usr/share/doc/libavformat-dev/changelog.gz
+e187f66b2765eae992e9c748bfea0a09  usr/share/doc/libavformat-dev/copyright

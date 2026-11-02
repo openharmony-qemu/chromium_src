@@ -1,0 +1,14 @@
+Package: gir1.2-gudev-1.0
+Source: libgudev
+Version: 234-1
+Architecture: amd64
+Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
+Installed-Size: 26
+Depends: gir1.2-glib-2.0 (>= 1.31.1), libgudev-1.0-0 (>= 234)
+Section: introspection
+Priority: optional
+Multi-Arch: same
+Homepage: https://wiki.gnome.org/Projects/libgudev
+Description: libgudev-1.0 introspection data
+ This package contains the GObject-introspection data of libgudev-1.0 in
+ binary typelib format.

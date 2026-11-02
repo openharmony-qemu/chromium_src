@@ -1,0 +1,5 @@
+e8eee49ff68aa0342ed30cc6a028f606  usr/lib/x86_64-linux-gnu/libswresample.so.3.7.100
+fc8b576a37fd99080492af0dc600f743  usr/share/doc/libswresample3/changelog.Debian.gz
+a25f71d27284c9b5e8cf1ce0dcdc0e84  usr/share/doc/libswresample3/changelog.gz
+e187f66b2765eae992e9c748bfea0a09  usr/share/doc/libswresample3/copyright
+b14eb5bc276c35fbfd2ca01deaa44469  usr/share/lintian/overrides/libswresample3

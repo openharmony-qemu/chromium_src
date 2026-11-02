@@ -1,0 +1,15 @@
+Package: libapparmor1
+Source: apparmor
+Version: 2.13.6-10
+Architecture: amd64
+Maintainer: Debian AppArmor Team <pkg-apparmor-team@lists.alioth.debian.org>
+Installed-Size: 162
+Depends: libc6 (>= 2.17)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://apparmor.net/
+Description: changehat AppArmor library
+ libapparmor1 provides a shared library one can compile programs
+ against in order to use various AppArmor functionality,
+ such as transitioning to a different AppArmor profile or hat.

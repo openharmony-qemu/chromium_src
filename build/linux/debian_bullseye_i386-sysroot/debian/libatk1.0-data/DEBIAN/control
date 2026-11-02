@@ -1,0 +1,17 @@
+Package: libatk1.0-data
+Source: atk1.0
+Version: 2.38.0-1~bpo11+1
+Architecture: all
+Maintainer: Debian Accessibility Team <pkg-a11y-devel@alioth-lists.debian.net>
+Installed-Size: 1240
+Section: misc
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://wiki.gnome.org/Accessibility
+Description: Common files for the ATK accessibility toolkit
+ ATK is a toolkit providing accessibility interfaces for applications or
+ other toolkits. By implementing these interfaces, those other toolkits or
+ applications can be used with tools such as screen readers, magnifiers, and
+ other alternative input devices.
+ .
+ This contains the common files which the runtime libraries need.

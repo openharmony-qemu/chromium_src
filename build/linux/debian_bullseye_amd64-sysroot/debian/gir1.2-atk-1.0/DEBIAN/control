@@ -1,0 +1,19 @@
+Package: gir1.2-atk-1.0
+Source: atk1.0
+Version: 2.38.0-1~bpo11+1
+Architecture: amd64
+Maintainer: Debian Accessibility Team <pkg-a11y-devel@alioth-lists.debian.net>
+Installed-Size: 92
+Depends: gir1.2-glib-2.0, libatk1.0-0 (>= 2.35.1)
+Section: introspection
+Priority: optional
+Multi-Arch: same
+Homepage: https://wiki.gnome.org/Accessibility
+Description: ATK accessibility toolkit (GObject introspection)
+ ATK is a toolkit providing accessibility interfaces for applications or
+ other toolkits. By implementing these interfaces, those other toolkits or
+ applications can be used with tools such as screen readers, magnifiers, and
+ other alternative input devices.
+ .
+ This package can be used by other packages using the GIRepository format to
+ generate dynamic bindings

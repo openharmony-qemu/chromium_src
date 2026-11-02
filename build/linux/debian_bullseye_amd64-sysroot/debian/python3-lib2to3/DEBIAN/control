@@ -1,0 +1,19 @@
+Package: python3-lib2to3
+Source: python3-stdlib-extensions
+Version: 3.9.2-1
+Architecture: all
+Maintainer: Matthias Klose <doko@debian.org>
+Installed-Size: 366
+Depends: python3:any (>= 3.9.1-0~), python3:any (<< 3.10)
+Breaks: libpython3.6-stdlib (<< 3.6.4~rc1-2), libpython3.7-stdlib (<< 3.7.0~a3-3), python3.6-2to3 (<< 3.6.4-2), python3.7-2to3 (<< 3.7.0~a3-3)
+Replaces: libpython3.6-stdlib (<< 3.6.4~rc1-2), libpython3.7-stdlib (<< 3.7.0~a3-3), python3.6-2to3 (<< 3.6.4-2), python3.7-2to3 (<< 3.7.0~a3-3)
+Provides: python3.9-lib2to3
+Section: python
+Priority: optional
+Multi-Arch: foreign
+Description: Interactive high-level object-oriented language (lib2to3)
+ Python is a high-level, interactive, object-oriented language. It
+ includes an extensive class library with lots of goodies for
+ network programming, system administration, sounds and graphics.
+ .
+ This package contains the lib2to3 library.

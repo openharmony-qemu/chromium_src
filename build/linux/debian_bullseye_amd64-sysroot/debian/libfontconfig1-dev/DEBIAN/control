@@ -1,0 +1,19 @@
+Package: libfontconfig1-dev
+Source: fontconfig
+Version: 2.13.1-4.2
+Architecture: amd64
+Maintainer: Debian freedesktop.org maintainers <pkg-freedesktop-maintainers@lists.alioth.debian.org>
+Installed-Size: 238
+Depends: libfontconfig-dev (= 2.13.1-4.2)
+Section: oldlibs
+Priority: optional
+Multi-Arch: same
+Homepage: https://www.freedesktop.org/wiki/Software/fontconfig/
+Description: generic font configuration library - dummy package
+ Fontconfig is a font configuration and customization library, which
+ does not depend on the X Window System. It is designed to locate
+ fonts within the system and select them according to requirements
+ specified by applications.
+ .
+ This is a transitional package for libfontconfig-dev. It can be safely
+ uninstalled.

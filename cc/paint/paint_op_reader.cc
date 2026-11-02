@@ -632,7 +632,8 @@ void PaintOpReader::Read(sk_sp<sktext::gpu::Slug>* slug) {
     return;
   }
 
-  *slug = sktext::gpu::Slug::Deserialize(const_cast<const uint8_t*>(memory_),
+  uint8_t* scratch = CopyScratchSpace(data_bytes);
+  *slug = sktext::gpu::Slug::Deserialize(scratch, 
                                          data_bytes, options_.strike_client);
   DidRead(data_bytes);
 

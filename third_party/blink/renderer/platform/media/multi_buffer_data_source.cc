@@ -724,7 +724,8 @@ void MultiBufferDataSource::UpdateBufferSizes() {
     return;
 
 #if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
-  if (url_data_ && url_data_->IsCreateSegmentationProvider()) {
+  if (url_data_ && !is_client_audio_element_ &&
+      url_data_->IsCreateSegmentationProvider()) {
     return VLOUpdateBufferSizes();
   }
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION

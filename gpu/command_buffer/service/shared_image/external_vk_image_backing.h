@@ -20,6 +20,7 @@
 #include "gpu/command_buffer/service/shared_image/shared_image_backing.h"
 #include "gpu/command_buffer/service/shared_image/texture_holder_vk.h"
 #include "gpu/command_buffer/service/shared_memory_region_wrapper.h"
+#include "gpu/gpu_gles2_export.h"
 #include "gpu/ipc/common/surface_handle.h"
 #include "gpu/vulkan/vulkan_device_queue.h"
 #include "third_party/skia/include/private/chromium/GrPromiseImageTexture.h"
@@ -31,8 +32,15 @@ class GLTextureHolder;
 class VulkanCommandPool;
 class VulkanImage;
 
-class ExternalVkImageBacking final : public ClearTrackingSharedImageBacking {
+class GPU_GLES2_EXPORT ExternalVkImageBacking final
+    : public ClearTrackingSharedImageBacking {
  public:
+  // Returns true when this backing type must keep an independent GL texture in
+  // sync with the VkImage instead of aliasing a single allocation into both
+  // APIs via GL_EXT_memory_object.
+  static bool UseSeparateGLTexture(SharedContextState* context_state,
+                                   viz::SharedImageFormat format);
+
   static std::unique_ptr<ExternalVkImageBacking> Create(
       scoped_refptr<SharedContextState> context_state,
       bool enable_webgpu_on_vk_via_gl_interop,
@@ -122,6 +130,9 @@ class ExternalVkImageBacking final : public ClearTrackingSharedImageBacking {
   bool use_separate_gl_texture() const { return use_separate_gl_texture_; }
   bool enable_webgpu_on_vk_via_gl_interop() const {
     return enable_webgpu_on_vk_via_gl_interop_;
+  }
+  bool HasLatestContentInVkImage() const {
+    return (latest_content_ & kInVkImage) != 0;
   }
 
   bool need_synchronization() const {
@@ -234,8 +245,8 @@ class ExternalVkImageBacking final : public ClearTrackingSharedImageBacking {
   // mapping VkImage.
   std::pair<std::vector<MapPlaneData>, size_t> GetMapPlaneData() const;
 
-  void CopyPixelsFromGLTextureToVkImage();
-  void CopyPixelsFromVkImageToGLTexture();
+  [[nodiscard]] bool CopyPixelsFromGLTextureToVkImage();
+  [[nodiscard]] bool CopyPixelsFromVkImageToGLTexture();
 
   void CopyPixelsFromGLTextureToVkImageUsingStagingBuffer();
   void CopyPixelsFromVKImageToGLTextureUsingStagingBuffer();

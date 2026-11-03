@@ -329,6 +329,59 @@ class FileSystemAccessFileHandleImplTestBase : public testing::Test {
   base::test::ScopedFeatureList scoped_feature_list;
 };
 
+// Verifies that `AsBlob()` is blocked in a third-party context and returns
+// `kSecurityError` with a null blob.
+TEST_F(FileSystemAccessFileHandleImplTestBase,
+       AsBlob_ThirdPartyContext_Blocked) {
+  const blink::StorageKey kThirdPartyStorageKey = blink::StorageKey::Create(
+      url::Origin::Create(GURL("https://example.com/")),
+      net::SchemefulSite(GURL("https://other.com/")),
+      blink::mojom::AncestorChainBit::kCrossSite);
+
+  auto handle = std::make_unique<FileSystemAccessFileHandleImpl>(
+      manager_.get(),
+      FileSystemAccessManagerImpl::BindingContext(
+          kThirdPartyStorageKey, test_src_url_,
+          web_contents_->GetPrimaryMainFrame()->GetGlobalId()),
+      test_file_url_, "test",
+      FileSystemAccessManagerImpl::SharedHandleState(deny_grant_, deny_grant_));
+
+  base::test::TestFuture<blink::mojom::FileSystemAccessErrorPtr,
+                         const base::File::Info&,
+                         blink::mojom::SerializedBlobPtr>
+      future;
+  handle->AsBlob(future.GetCallback());
+  EXPECT_EQ(future.Get<0>()->status, FileSystemAccessStatus::kSecurityError);
+  EXPECT_TRUE(future.Get<2>().is_null());
+}
+
+// Verifies that `AsBlob()` is allowed in a third-party context if the handle
+// originated from a drag-and-drop operation.
+TEST_F(FileSystemAccessFileHandleImplTestBase,
+       AsBlob_ThirdPartyContext_DragAndDrop_Allowed) {
+  const blink::StorageKey kThirdPartyStorageKey = blink::StorageKey::Create(
+      url::Origin::Create(GURL("https://example.com/")),
+      net::SchemefulSite(GURL("https://other.com/")),
+      blink::mojom::AncestorChainBit::kCrossSite);
+
+  auto handle = std::make_unique<FileSystemAccessFileHandleImpl>(
+      manager_.get(),
+      FileSystemAccessManagerImpl::BindingContext(
+          kThirdPartyStorageKey, test_src_url_,
+          web_contents_->GetPrimaryMainFrame()->GetGlobalId()),
+      test_file_url_, "test",
+      FileSystemAccessManagerImpl::SharedHandleState(allow_grant_,
+                                                     deny_grant_));
+
+  base::test::TestFuture<blink::mojom::FileSystemAccessErrorPtr,
+                         const base::File::Info&,
+                         blink::mojom::SerializedBlobPtr>
+      future;
+  handle->AsBlob(future.GetCallback());
+  EXPECT_EQ(future.Get<0>()->status, FileSystemAccessStatus::kOk);
+  EXPECT_FALSE(future.Get<2>().is_null());
+}
+
 class FileSystemAccessAccessHandleTest
     : public FileSystemAccessFileHandleImplTestBase {
  public:

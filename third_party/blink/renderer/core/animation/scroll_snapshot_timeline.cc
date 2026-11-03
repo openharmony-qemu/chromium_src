@@ -10,10 +10,21 @@
 #include "third_party/blink/renderer/core/animation/scroll_timeline_util.h"
 #include "third_party/blink/renderer/core/css/cssom/css_unit_values.h"
 #include "third_party/blink/renderer/core/dom/node.h"
+#include "third_party/blink/renderer/core/html/forms/html_form_control_element.h"
+#include "third_party/blink/renderer/core/html/forms/text_control_element.h"
 #include "third_party/blink/renderer/core/layout/forms/layout_fieldset.h"
 #include "third_party/blink/renderer/core/layout/layout_box.h"
 
 namespace blink {
+
+namespace {
+
+const HTMLFormControlElement* GetAncestorFormControlElement(Node* node) {
+  // Unwrap pseudo-elements and UA shadow trees to find the owning control.
+  return DynamicTo<HTMLFormControlElement>(DynamicTo<Element>(node));
+}
+
+}  // namespace
 
 ScrollSnapshotTimeline::ScrollSnapshotTimeline(Document* document)
     : AnimationTimeline(document), ScrollSnapshotClient(document->GetFrame()) {}
@@ -153,6 +164,11 @@ bool ScrollSnapshotTimeline::ShouldScheduleNextService() {
   }
 
   auto state = ComputeTimelineState();
+  // The state above tracks the preview, so comparing it against the retained
+  // snapshot would request a frame on every vsync.
+  if (BlockSnapshotUpdate(state.resolved_source)) {
+    return false;
+  }
   PhaseAndTime current_phase_and_time{state.phase, state.current_time};
   return current_phase_and_time != last_current_phase_and_time_;
 }
@@ -190,6 +206,10 @@ void ScrollSnapshotTimeline::UpdateSnapshotForServiceAnimations() {
 
 bool ScrollSnapshotTimeline::UpdateSnapshotInternal(bool service_animations) {
   TimelineState new_state = ComputeTimelineState();
+  if (BlockSnapshotUpdate(new_state.resolved_source)) {
+    // Retain the previous snapshot so the timeline stays paused.
+    return false;
+  }
   bool snapshot_changed = timeline_state_snapshotted_ != new_state;
   bool layout_changed =
       !timeline_state_snapshotted_.HasConsistentLayout(new_state);
@@ -211,6 +231,18 @@ bool ScrollSnapshotTimeline::UpdateSnapshotInternal(bool service_animations) {
   }
 
   return snapshot_changed;
+}
+
+bool ScrollSnapshotTimeline::BlockSnapshotUpdate(Node* resolved_source) const {
+  const auto* control = GetAncestorFormControlElement(resolved_source);
+  if (!control) {
+    return false;
+  }
+  // Password autofill sets a suggested value while marked kAutofilled, so a
+  // preview is not always flagged as previewed.
+  const auto* text_control = DynamicTo<TextControlElement>(control);
+  return control->IsPreviewed() ||
+         (text_control && !text_control->SuggestedValue().empty());
 }
 
 cc::AnimationTimeline* ScrollSnapshotTimeline::EnsureCompositorTimeline() {

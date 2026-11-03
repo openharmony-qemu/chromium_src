@@ -374,6 +374,34 @@ void WebRequestProxyingURLLoaderFactory::InProgressRequest::FollowRedirect(
     const net::HttpRequestHeaders& modified_headers,
     const net::HttpRequestHeaders& modified_cors_exempt_headers,
     const std::optional<GURL>& new_url) {
+  // Only follow a redirect this class actually forwarded to the client. A
+  // compromised renderer could send an unexpected "FollowRedirect()", which
+  // would otherwise swap `request_.url` for the new URL.
+  // See crbug.com/497494634.
+  //
+  // NOTE: RejectFollowRedirect() deletes `this`, so every call site below must
+  // return immediately without touching any member state.
+  if (!deferred_redirect_url_) {
+    RejectFollowRedirect("Unexpected FollowRedirect");
+    return;
+  }
+
+  // `new_url` lets throttles adjust the redirect destination, but per the
+  // network::mojom::URLLoader contract it must be same-origin, same-scheme and
+  // credential-free. Kept in sync with CorsURLLoader::FollowRedirect().
+  if (new_url && (!new_url->is_valid() ||
+                  new_url->scheme() != deferred_redirect_url_->scheme() ||
+                  !url::IsSameOriginWith(*new_url, *deferred_redirect_url_))) {
+    RejectFollowRedirect("Unexpected new_url in FollowRedirect");
+    return;
+  }
+  if (new_url && (new_url->has_username() || new_url->has_password())) {
+    RejectFollowRedirect("new_url with credentials in FollowRedirect");
+    return;
+  }
+
+  deferred_redirect_url_.reset();
+
   if (new_url) {
     request_.url = new_url.value();
   }
@@ -435,6 +463,8 @@ void WebRequestProxyingURLLoaderFactory::InProgressRequest::OnReceiveResponse(
                           TRACE_ID_LOCAL(request_id_)),
       TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT);
 
+  // A response can only arrive once any forwarded redirect has been followed.
+  CHECK(!deferred_redirect_url_);
   current_body_ = std::move(body);
   current_cached_metadata_ = std::move(cached_metadata);
   if (current_request_uses_header_client_) {
@@ -544,6 +574,8 @@ void WebRequestProxyingURLLoaderFactory::InProgressRequest::OnComplete(
     return;
   }
 
+  // As in OnReceiveResponse(); success implies the redirect was followed.
+  CHECK(!deferred_redirect_url_);
   state_ = kCompleted;
   target_client_->OnComplete(status);
   WebRequestEventRouter::Get(factory_->browser_context_)
@@ -1316,6 +1348,7 @@ void WebRequestProxyingURLLoaderFactory::InProgressRequest::
   WebRequestEventRouter::Get(factory_->browser_context_)
       ->OnBeforeRedirect(factory_->browser_context_, &info_.value(),
                          redirect_info.new_url);
+  deferred_redirect_url_ = redirect_info.new_url;
   target_client_->OnReceiveRedirect(redirect_info, current_response_.Clone());
   request_.UpdateOnRedirect(redirect_info);
 
@@ -1410,6 +1443,22 @@ void WebRequestProxyingURLLoaderFactory::InProgressRequest::OnRequestError(
 
   // Deletes |this|.
   factory_->RemoveRequest(network_service_request_id_, request_id_);
+}
+
+void WebRequestProxyingURLLoaderFactory::InProgressRequest::
+    RejectFollowRedirect(std::string_view reason, net::Error error_code) {
+  // This proxy is also used for navigations, service worker script loads and
+  // browser-initiated prefetches, whose client lives in the browser process.
+  // Reporting a bad message there would take down the browser for what is a
+  // browser-side bug, so only fail the request. This matches similar behavior
+  // in CorsURLLoader.
+  if (factory_->render_process_id_ != -1) {
+    proxied_loader_receiver_.ReportBadMessage(reason);
+  }
+
+  // Deletes `this`.
+  OnRequestError(CreateURLLoaderCompletionStatus(error_code),
+                 State::kRejectedByUnexpectedFollowRedirect);
 }
 
 void WebRequestProxyingURLLoaderFactory::InProgressRequest::OnNetworkError(

@@ -15,6 +15,7 @@
 #include "base/logging.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/strings/string_util.h"
+#include "base/task/sequenced_task_runner.h"
 #include "components/payments/content/content_payment_request_delegate.h"
 #include "components/payments/content/has_enrolled_instrument_query_factory.h"
 #include "components/payments/content/payment_app.h"
@@ -877,6 +878,16 @@ void PaymentRequest::OnPayerInfoSelected(mojom::PayerDetailPtr payer_info) {
 }
 
 void PaymentRequest::OnInternalError(const std::string& error_message) {
+  // To avoid tearing down the PaymentRequest class while it or its delegate
+  // may still be on the call stack (e.g., during ShowDialog() or if showing
+  // the dialog triggers a synchronous browser window resize), post the error
+  // handling and self-deletion asynchronously.
+  base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
+      FROM_HERE, base::BindOnce(&PaymentRequest::OnInternalErrorImpl,
+                                weak_ptr_factory_.GetWeakPtr(), error_message));
+}
+
+void PaymentRequest::OnInternalErrorImpl(const std::string& error_message) {
   // If |client_| is not bound, then the object is already being destroyed as
   // a result of a renderer event.
   if (!client_.is_bound()) {

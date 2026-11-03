@@ -530,14 +530,18 @@ MeteringMode ParseFaceFraming(bool blink_mode) {
 }
 
 MeteringMode ParseMeteringMode(const String& blink_mode) {
-  if (blink_mode == "manual")
+  if (blink_mode == "manual") {
     return MeteringMode::MANUAL;
-  if (blink_mode == "single-shot")
+  }
+  if (blink_mode == "single-shot") {
     return MeteringMode::SINGLE_SHOT;
-  if (blink_mode == "continuous")
+  }
+  if (blink_mode == "continuous") {
     return MeteringMode::CONTINUOUS;
-  if (blink_mode == "none")
+  }
+  if (blink_mode == "none") {
     return MeteringMode::NONE;
+  }
   NOTREACHED();
 }
 
@@ -1674,7 +1678,7 @@ ScriptPromise<ImageBitmap> ImageCapture::grabFrame(ScriptState* script_state) {
 
   // Create |m_frameGrabber| the first time.
   if (!frame_grabber_) {
-    frame_grabber_ = std::make_unique<ImageCaptureFrameGrabber>();
+    frame_grabber_ = base::MakeRefCounted<ImageCaptureFrameGrabber>();
   }
 
   if (!frame_grabber_) {
@@ -2147,8 +2151,9 @@ ImageCapture::ImageCapture(ExecutionContext* context,
 
   // This object may be constructed over an ExecutionContext that has already
   // been detached. In this case the ImageCapture service will not be available.
-  if (!DomWindow())
+  if (!DomWindow()) {
     return;
+  }
 
   DomWindow()->GetBrowserInterfaceBroker().GetInterface(
       service_.BindNewPipeAndPassReceiver(
@@ -2647,8 +2652,9 @@ void ImageCapture::OnMojoGetPhotoState(
   for (const auto& mode : photo_state->fill_light_mode) {
     fill_light_mode.push_back(ToV8FillLightMode(mode));
   }
-  if (!fill_light_mode.empty())
+  if (!fill_light_mode.empty()) {
     photo_capabilities_->setFillLightMode(fill_light_mode);
+  }
 
   // Update the local track photo_state cache.
   UpdateMediaTrackSettingsAndCapabilities(base::DoNothing(),
@@ -2718,8 +2724,10 @@ void ImageCapture::UpdateMediaTrackSettingsAndCapabilities(
   Vector<String> supported_white_balance_modes;
   supported_white_balance_modes.ReserveInitialCapacity(
       photo_state->supported_white_balance_modes.size());
-  for (const auto& supported_mode : photo_state->supported_white_balance_modes)
+  for (const auto& supported_mode :
+       photo_state->supported_white_balance_modes) {
     supported_white_balance_modes.push_back(ToString(supported_mode));
+  }
   if (!supported_white_balance_modes.empty()) {
     capabilities_->setWhiteBalanceMode(
         std::move(supported_white_balance_modes));
@@ -2730,8 +2738,9 @@ void ImageCapture::UpdateMediaTrackSettingsAndCapabilities(
   Vector<String> supported_exposure_modes;
   supported_exposure_modes.ReserveInitialCapacity(
       photo_state->supported_exposure_modes.size());
-  for (const auto& supported_mode : photo_state->supported_exposure_modes)
+  for (const auto& supported_mode : photo_state->supported_exposure_modes) {
     supported_exposure_modes.push_back(ToString(supported_mode));
+  }
   if (!supported_exposure_modes.empty()) {
     capabilities_->setExposureMode(std::move(supported_exposure_modes));
     settings_->setExposureMode(ToString(photo_state->current_exposure_mode));
@@ -2740,8 +2749,9 @@ void ImageCapture::UpdateMediaTrackSettingsAndCapabilities(
   Vector<String> supported_focus_modes;
   supported_focus_modes.ReserveInitialCapacity(
       photo_state->supported_focus_modes.size());
-  for (const auto& supported_mode : photo_state->supported_focus_modes)
+  for (const auto& supported_mode : photo_state->supported_focus_modes) {
     supported_focus_modes.push_back(ToString(supported_mode));
+  }
   if (!supported_focus_modes.empty()) {
     capabilities_->setFocusMode(std::move(supported_focus_modes));
     settings_->setFocusMode(ToString(photo_state->current_focus_mode));
@@ -2821,10 +2831,12 @@ void ImageCapture::UpdateMediaTrackSettingsAndCapabilities(
     }
   }
 
-  if (photo_state->supports_torch)
+  if (photo_state->supports_torch) {
     capabilities_->setTorch(photo_state->supports_torch);
-  if (photo_state->supports_torch)
+  }
+  if (photo_state->supports_torch) {
     settings_->setTorch(photo_state->torch);
+  }
 
   if (!photo_state->supported_background_blur_modes.empty()) {
     Vector<bool> supported_background_blur_modes;

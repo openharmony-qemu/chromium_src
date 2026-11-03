@@ -613,12 +613,16 @@ TEST(ExtensionWebRequestHelpersTest, TestMergeOnBeforeRequestResponses) {
   GURL effective_new_url;
   std::optional<ExtensionId> extension_id;
 
+  WebRequestInfoInitParams info_params;
+  info_params.url = GURL(kExampleUrl);
+  WebRequestInfo request_info(std::move(info_params));
+
   // No redirect
   {
     EventResponseDelta d0("extid0", base::Time::FromInternalValue(0));
     deltas.push_back(std::move(d0));
   }
-  MergeOnBeforeRequestResponses(GURL(kExampleUrl), deltas, &effective_new_url,
+  MergeOnBeforeRequestResponses(request_info, deltas, &effective_new_url,
                                 &extension_id, &ignored_actions);
   EXPECT_TRUE(effective_new_url.is_empty());
   EXPECT_FALSE(extension_id.has_value());
@@ -631,7 +635,7 @@ TEST(ExtensionWebRequestHelpersTest, TestMergeOnBeforeRequestResponses) {
     deltas.push_back(std::move(d1));
   }
   deltas.sort(&InDecreasingExtensionInstallationTimeOrder);
-  MergeOnBeforeRequestResponses(GURL(kExampleUrl), deltas, &effective_new_url,
+  MergeOnBeforeRequestResponses(request_info, deltas, &effective_new_url,
                                 &extension_id, &ignored_actions);
   EXPECT_EQ(new_url_1, effective_new_url);
   EXPECT_EQ("extid1", extension_id.value());
@@ -663,7 +667,7 @@ TEST(ExtensionWebRequestHelpersTest, TestMergeOnBeforeRequestResponses) {
   }
   deltas.sort(&InDecreasingExtensionInstallationTimeOrder);
   ignored_actions.clear();
-  MergeOnBeforeRequestResponses(GURL(kExampleUrl), deltas, &effective_new_url,
+  MergeOnBeforeRequestResponses(request_info, deltas, &effective_new_url,
                                 &extension_id, &ignored_actions);
   EXPECT_EQ(new_url_3, effective_new_url);
   EXPECT_EQ("extid3", extension_id.value());
@@ -681,7 +685,7 @@ TEST(ExtensionWebRequestHelpersTest, TestMergeOnBeforeRequestResponses) {
   }
   deltas.sort(&InDecreasingExtensionInstallationTimeOrder);
   ignored_actions.clear();
-  MergeOnBeforeRequestResponses(GURL(kExampleUrl), deltas, &effective_new_url,
+  MergeOnBeforeRequestResponses(request_info, deltas, &effective_new_url,
                                 &extension_id, &ignored_actions);
   EXPECT_EQ(new_url_3, effective_new_url);
   EXPECT_EQ("extid3", extension_id.value());
@@ -700,6 +704,10 @@ TEST(ExtensionWebRequestHelpersTest, TestMergeOnBeforeRequestResponses2) {
   GURL effective_new_url;
   std::optional<ExtensionId> extension_id;
 
+  WebRequestInfoInitParams info_params;
+  info_params.url = GURL(kExampleUrl);
+  WebRequestInfo request_info(std::move(info_params));
+
   // Single redirect.
   GURL new_url_0("http://foo.com");
   {
@@ -707,7 +715,7 @@ TEST(ExtensionWebRequestHelpersTest, TestMergeOnBeforeRequestResponses2) {
     d0.new_url = GURL(new_url_0);
     deltas.push_back(std::move(d0));
   }
-  MergeOnBeforeRequestResponses(GURL(kExampleUrl), deltas, &effective_new_url,
+  MergeOnBeforeRequestResponses(request_info, deltas, &effective_new_url,
                                 &extension_id, &ignored_actions);
   EXPECT_EQ(new_url_0, effective_new_url);
   EXPECT_EQ("extid0", extension_id.value());
@@ -722,7 +730,7 @@ TEST(ExtensionWebRequestHelpersTest, TestMergeOnBeforeRequestResponses2) {
   }
   deltas.sort(&InDecreasingExtensionInstallationTimeOrder);
   ignored_actions.clear();
-  MergeOnBeforeRequestResponses(GURL(kExampleUrl), deltas, &effective_new_url,
+  MergeOnBeforeRequestResponses(request_info, deltas, &effective_new_url,
                                 &extension_id, &ignored_actions);
   EXPECT_EQ(new_url_1, effective_new_url);
   EXPECT_EQ("extid1", extension_id.value());
@@ -739,7 +747,7 @@ TEST(ExtensionWebRequestHelpersTest, TestMergeOnBeforeRequestResponses2) {
   deltas.sort(&InDecreasingExtensionInstallationTimeOrder);
   ignored_actions.clear();
 
-  MergeOnBeforeRequestResponses(GURL(kExampleUrl), deltas, &effective_new_url,
+  MergeOnBeforeRequestResponses(request_info, deltas, &effective_new_url,
                                 &extension_id, &ignored_actions);
   EXPECT_EQ(new_url_2, effective_new_url);
   EXPECT_EQ("extid2", extension_id.value());
@@ -755,7 +763,7 @@ TEST(ExtensionWebRequestHelpersTest, TestMergeOnBeforeRequestResponses2) {
   }
   deltas.sort(&InDecreasingExtensionInstallationTimeOrder);
   ignored_actions.clear();
-  MergeOnBeforeRequestResponses(GURL(kExampleUrl), deltas, &effective_new_url,
+  MergeOnBeforeRequestResponses(request_info, deltas, &effective_new_url,
                                 &extension_id, &ignored_actions);
   EXPECT_EQ(new_url_1, effective_new_url);
   EXPECT_EQ("extid2", extension_id.value());
@@ -772,6 +780,10 @@ TEST(ExtensionWebRequestHelpersTest, TestMergeOnBeforeRequestResponses3) {
   GURL effective_new_url;
   std::optional<ExtensionId> extension_id;
 
+  WebRequestInfoInitParams info_params;
+  info_params.url = GURL(kExampleUrl);
+  WebRequestInfo request_info(std::move(info_params));
+
   // Single redirect.
   GURL new_url_0("http://foo.com");
   {
@@ -779,7 +791,7 @@ TEST(ExtensionWebRequestHelpersTest, TestMergeOnBeforeRequestResponses3) {
     d0.new_url = GURL(new_url_0);
     deltas.push_back(std::move(d0));
   }
-  MergeOnBeforeRequestResponses(GURL(kExampleUrl), deltas, &effective_new_url,
+  MergeOnBeforeRequestResponses(request_info, deltas, &effective_new_url,
                                 &extension_id, &ignored_actions);
   EXPECT_EQ(new_url_0, effective_new_url);
   EXPECT_EQ("extid0", extension_id.value());
@@ -794,14 +806,14 @@ TEST(ExtensionWebRequestHelpersTest, TestMergeOnBeforeRequestResponses3) {
   }
   deltas.sort(&InDecreasingExtensionInstallationTimeOrder);
   ignored_actions.clear();
-  MergeOnBeforeRequestResponses(GURL(kExampleUrl), deltas, &effective_new_url,
+  MergeOnBeforeRequestResponses(request_info, deltas, &effective_new_url,
                                 &extension_id, &ignored_actions);
   EXPECT_EQ(new_url_1, effective_new_url);
   EXPECT_EQ("extid1", extension_id.value());
   EXPECT_TRUE(ignored_actions.empty());
 }
 
-// This tests that WebSocket requests can not be redirected.
+// This tests that WebSocket and WebTransport requests can not be redirected.
 TEST(ExtensionWebRequestHelpersTest, TestMergeOnBeforeRequestResponses4) {
   EventResponseDeltas deltas;
   helpers::IgnoredActions ignored_actions;
@@ -814,9 +826,21 @@ TEST(ExtensionWebRequestHelpersTest, TestMergeOnBeforeRequestResponses4) {
     delta.new_url = GURL("http://foo.com");
     deltas.push_back(std::move(delta));
   }
-  MergeOnBeforeRequestResponses(GURL("ws://example.com"), deltas,
-                                &effective_new_url, &extension_id,
-                                &ignored_actions);
+
+  WebRequestInfoInitParams ws_params;
+  ws_params.url = GURL("ws://example.com");
+  WebRequestInfo ws_info(std::move(ws_params));
+  MergeOnBeforeRequestResponses(ws_info, deltas, &effective_new_url,
+                                &extension_id, &ignored_actions);
+  EXPECT_EQ(GURL(), effective_new_url);
+  EXPECT_FALSE(extension_id.has_value());
+
+  WebRequestInfoInitParams wt_params;
+  wt_params.url = GURL("https://example.com");
+  wt_params.web_request_type = WebRequestResourceType::WEB_TRANSPORT;
+  WebRequestInfo wt_info(std::move(wt_params));
+  MergeOnBeforeRequestResponses(wt_info, deltas, &effective_new_url,
+                                &extension_id, &ignored_actions);
   EXPECT_EQ(GURL(), effective_new_url);
   EXPECT_FALSE(extension_id.has_value());
 }

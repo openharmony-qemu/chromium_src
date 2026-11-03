@@ -40,6 +40,7 @@ class ChromeExtensionsClient : public ExtensionsClient {
       const Extension* extension,
       const APIPermissionSet& api_permissions) const override;
   bool IsScriptableURL(const GURL& url, std::string* error) const override;
+  bool IsCapturableURL(const GURL& url, std::string* error) const override;
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   void SetWebstoreBaseURL(const GURL& url) override;
   void SetNewWebstoreBaseURL(const GURL& url) override;

@@ -89,6 +89,8 @@ class ExtensionTabUtil {
 #endif  // !BUILDFLAG(IS_ANDROID)
   static constexpr char kCannotNavigateToChromeUntrusted[] =
       "Cannot navigate to a chrome-untrusted:// page.";
+  static constexpr char kCannotNavigateToInternalPage[] =
+      "Cannot navigate to internal page.";
   static constexpr char kFileUrlsNotAllowedInExtensionNavigations[] =
       "Cannot navigate to a file URL without local file access.";
 

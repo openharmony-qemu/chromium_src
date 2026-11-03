@@ -117,6 +117,10 @@ class ExtensionsClient {
   // Returns false if content scripts are forbidden from running on `url`.
   virtual bool IsScriptableURL(const GURL& url, std::string* error) const = 0;
 
+  // Returns false if extensions are forbidden from capturing the given `url`
+  // (e.g. via tabs.captureVisibleTab or pageCapture.saveAsMHTML).
+  virtual bool IsCapturableURL(const GURL& url, std::string* error) const;
+
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   virtual void SetWebstoreBaseURL(const GURL& url) {}
   virtual void SetNewWebstoreBaseURL(const GURL& url) {}

@@ -1106,6 +1106,13 @@ WebRequestInternalEventHandledFunction::Run() {
                 web_view_instance_id, std::move(response));
         return RespondNow(Error(keys::kInvalidRedirectUrl, new_url_str));
       }
+      if (response->new_url.SchemeIsFile() &&
+          !util::AllowFileAccess(extension_id_safe(), browser_context())) {
+        response->new_url = GURL();
+        OnError(event_name, sub_event_name, request_id, render_process_id,
+                web_view_instance_id, std::move(response));
+        return RespondNow(Error(keys::kFileUrlRedirectDisallowed));
+      }
     }
 
     const bool has_request_headers = request_headers_value != nullptr;

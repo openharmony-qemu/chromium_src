@@ -47,6 +47,7 @@
 #include "extensions/browser/extension_navigation_registry.h"
 #include "extensions/browser/extension_prefs.h"
 #include "extensions/browser/extension_registry.h"
+#include "extensions/browser/extension_util.h"
 #include "extensions/browser/extensions_browser_client.h"
 #include "extensions/browser/process_map.h"
 #include "extensions/browser/rules_registry_ids.h"
@@ -2777,6 +2778,13 @@ void WebRequestEventRouter::DecrementBlockCount(
   CHECK_GE(num_handlers_blocking, 0);
 
   if (response) {
+    // Extensions may not redirect to a file:// URL without explicit local file
+    // access.
+    if (response->new_url.SchemeIsFile() &&
+        !util::AllowFileAccess(extension_id, browser_context)) {
+      response->new_url = GURL();
+    }
+
     helpers::EventResponseDelta delta = CalculateDelta(
         browser_context, blocked_request, response.get(), extra_info_spec);
 

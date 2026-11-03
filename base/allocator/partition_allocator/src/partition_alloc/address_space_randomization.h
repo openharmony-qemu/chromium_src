@@ -144,7 +144,7 @@ AslrMask(uintptr_t bits) {
       ASLROffset() {
         return AslrAddress(0x1000000000ULL);
       }
-      #elif PA_BUILDFLAG(IS_OHOS)
+      #elif PA_BUILDFLAG(IS_ARKWEB_EXT)
  
       // OHOS ARM64 has 39-bit VA (512GiB), divided into 8 segments of 64GiB.
       // Constrain ASLR to segment 7 so that PA's combined 24GiB allocation

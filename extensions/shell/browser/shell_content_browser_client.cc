@@ -297,13 +297,19 @@ void ShellContentBrowserClient::RegisterNonNetworkSubresourceURLLoaderFactories(
     NonNetworkURLLoaderFactoryMap* factories) {
   DCHECK(factories);
 
-  factories->emplace(extensions::kExtensionScheme,
-                     extensions::CreateExtensionURLLoaderFactory(
-                         render_process_id, render_frame_id));
+  // TODO(crbug.com/379869738) Remove FromUnsafeValue.
+  factories->emplace(
+      extensions::kExtensionScheme,
+      extensions::CreateExtensionURLLoaderFactory(
+          content::ChildProcessId::FromUnsafeValue(render_process_id),
+          render_frame_id));
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  factories->emplace(extensions::kArkwebExtensionScheme,
-                     extensions::CreateExtensionURLLoaderFactory(
-                         render_process_id, render_frame_id));
+  // TODO(crbug.com/379869738) Remove FromUnsafeValue.
+  factories->emplace(
+      extensions::kArkwebExtensionScheme,
+      extensions::CreateExtensionURLLoaderFactory(
+          content::ChildProcessId::FromUnsafeValue(render_process_id),
+          render_frame_id));
 #endif
 }
 

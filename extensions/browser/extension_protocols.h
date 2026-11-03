@@ -6,6 +6,7 @@
 #define EXTENSIONS_BROWSER_EXTENSION_PROTOCOLS_H_
 
 #include "base/functional/callback.h"
+#include "content/public/browser/child_process_id.h"
 #include "services/network/public/mojom/url_loader_factory.mojom.h"
 
 namespace base {
@@ -61,7 +62,8 @@ CreateExtensionServiceWorkerScriptURLLoaderFactory(
 // starting a service worker. In that case, render_frame_id will be
 // IPC::mojom::kRoutingIdNone.
 mojo::PendingRemote<network::mojom::URLLoaderFactory>
-CreateExtensionURLLoaderFactory(int render_process_id, int render_frame_id);
+CreateExtensionURLLoaderFactory(content::ChildProcessId render_process_id,
+                                int render_frame_id);
 
 void EnsureExtensionURLLoaderFactoryShutdownNotifierFactoryBuilt();
 

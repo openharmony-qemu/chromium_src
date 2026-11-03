@@ -49,6 +49,7 @@
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/child_process_host.h"
+#include "content/public/browser/child_process_id.h"
 #include "content/public/browser/file_url_loader.h"
 #include "content/public/browser/navigation_ui_data.h"
 #include "content/public/browser/render_frame_host.h"
@@ -192,14 +193,17 @@ bool ExtensionCanLoadInIncognito(bool is_main_frame,
 bool AllowExtensionResourceLoad(const network::ResourceRequest& request,
                                 network::mojom::RequestDestination destination,
                                 ui::PageTransition page_transition,
-                                int child_id,
+                                content::ChildProcessId child_id,
                                 bool is_incognito,
                                 const Extension* extension,
                                 bool extension_enabled_in_incognito,
                                 const ExtensionSet& extensions,
                                 const ProcessMap& process_map,
                                 const GURL& upstream_url) {
+  // A null child_id indicates the request is initiated from the browser process
+  // (e.g., during main-frame navigations).
   const bool is_main_frame =
+      child_id.is_null() &&
       destination == network::mojom::RequestDestination::kDocument;
   if (is_incognito &&
       !ExtensionCanLoadInIncognito(is_main_frame, extension,
@@ -220,7 +224,8 @@ bool AllowExtensionResourceLoad(const network::ResourceRequest& request,
   // process to request each other's resources. We can't do a more precise
   // check, since the renderer can lie about which extension has made the
   // request.
-  if (process_map.Contains(request.url.GetHost(), child_id)) {
+  // TODO(crbug.com/379869738) Remove FromUnsafeValue.
+  if (process_map.Contains(request.url.GetHost(), child_id.GetUnsafeValue())) {
     return true;
   }
 
@@ -230,7 +235,7 @@ bool AllowExtensionResourceLoad(const network::ResourceRequest& request,
   // extension URLs in browser process. Service Worker and the imported scripts
   // can be loaded with extension URLs in browser process when PlzServiceWorker
   // is enabled or during update check.
-  if (child_id == content::ChildProcessHost::kInvalidUniqueID &&
+  if (child_id.is_null() &&
       (blink::IsRequestDestinationFrame(destination) ||
        destination == network::mojom::RequestDestination::kWorker ||
        destination == network::mojom::RequestDestination::kSharedWorker ||
@@ -532,7 +537,7 @@ class ExtensionURLLoader : public network::mojom::URLLoader {
       mojo::PendingRemote<network::mojom::URLLoaderClient> client,
       const network::ResourceRequest& request,
       bool is_web_view_request,
-      int render_process_id,
+      content::ChildProcessId render_process_id,
       content::BrowserContext* browser_context) {
     DCHECK(browser_context);
     // A raw `new` is okay because `ExtensionURLLoader` is "self-owned". It
@@ -570,7 +575,7 @@ class ExtensionURLLoader : public network::mojom::URLLoader {
       mojo::PendingRemote<network::mojom::URLLoaderClient> client,
       const network::ResourceRequest& request,
       bool is_web_view_request,
-      int render_process_id,
+      content::ChildProcessId render_process_id,
       content::BrowserContext* browser_context)
       : request_(request),
         browser_context_(browser_context),
@@ -885,7 +890,7 @@ class ExtensionURLLoader : public network::mojom::URLLoader {
   // We store the ID and get RenderProcessHost each time it's needed. This is to
   // avoid holding on to stale pointers if we get requests past the lifetime of
   // the objects.
-  const int render_process_id_;
+  const content::ChildProcessId render_process_id_;
 
   // Tracker for favicon callback.
   std::unique_ptr<base::CancelableTaskTracker> tracker_;
@@ -905,7 +910,7 @@ class ExtensionURLLoaderFactory : public network::SelfDeletingURLLoaderFactory {
   static mojo::PendingRemote<network::mojom::URLLoaderFactory> Create(
       content::BrowserContext* browser_context,
       bool is_web_view_request,
-      int render_process_id) {
+      content::ChildProcessId render_process_id) {
     DCHECK(browser_context);
 
     mojo::PendingRemote<network::mojom::URLLoaderFactory> pending_remote;
@@ -943,7 +948,7 @@ class ExtensionURLLoaderFactory : public network::SelfDeletingURLLoaderFactory {
   ExtensionURLLoaderFactory(
       content::BrowserContext* browser_context,
       bool is_web_view_request,
-      int render_process_id,
+      content::ChildProcessId render_process_id,
       mojo::PendingReceiver<network::mojom::URLLoaderFactory> factory_receiver)
       : network::SelfDeletingURLLoaderFactory(std::move(factory_receiver)),
         browser_context_(browser_context),
@@ -1027,7 +1032,7 @@ class ExtensionURLLoaderFactory : public network::SelfDeletingURLLoaderFactory {
   // We store the ID and get RenderProcessHost each time it's needed. This is to
   // avoid holding on to stale pointers if we get requests past the lifetime of
   // the objects.
-  const int render_process_id_;
+  const content::ChildProcessId render_process_id_;
 
   base::CallbackListSubscription browser_context_shutdown_subscription_;
 };
@@ -1042,31 +1047,29 @@ mojo::PendingRemote<network::mojom::URLLoaderFactory>
 CreateExtensionNavigationURLLoaderFactory(
     content::BrowserContext* browser_context,
     bool is_web_view_request) {
-  return ExtensionURLLoaderFactory::Create(
-      browser_context, is_web_view_request,
-      content::ChildProcessHost::kInvalidUniqueID);
+  return ExtensionURLLoaderFactory::Create(browser_context, is_web_view_request,
+                                           content::ChildProcessId());
 }
 
 mojo::PendingRemote<network::mojom::URLLoaderFactory>
 CreateExtensionWorkerMainResourceURLLoaderFactory(
     content::BrowserContext* browser_context) {
-  return ExtensionURLLoaderFactory::Create(
-      browser_context,
-      /*is_web_view_request=*/false,
-      content::ChildProcessHost::kInvalidUniqueID);
+  return ExtensionURLLoaderFactory::Create(browser_context,
+                                           /*is_web_view_request=*/false,
+                                           content::ChildProcessId());
 }
 
 mojo::PendingRemote<network::mojom::URLLoaderFactory>
 CreateExtensionServiceWorkerScriptURLLoaderFactory(
     content::BrowserContext* browser_context) {
-  return ExtensionURLLoaderFactory::Create(
-      browser_context,
-      /*is_web_view_request=*/false,
-      content::ChildProcessHost::kInvalidUniqueID);
+  return ExtensionURLLoaderFactory::Create(browser_context,
+                                           /*is_web_view_request=*/false,
+                                           content::ChildProcessId());
 }
 
 mojo::PendingRemote<network::mojom::URLLoaderFactory>
-CreateExtensionURLLoaderFactory(int render_process_id, int render_frame_id) {
+CreateExtensionURLLoaderFactory(content::ChildProcessId render_process_id,
+                                int render_frame_id) {
   content::RenderProcessHost* process_host =
       content::RenderProcessHost::FromID(render_process_id);
   content::BrowserContext* browser_context = process_host->GetBrowserContext();
@@ -1074,7 +1077,8 @@ CreateExtensionURLLoaderFactory(int render_process_id, int render_frame_id) {
 
 #if BUILDFLAG(ENABLE_GUEST_VIEW)
   content::RenderFrameHost* render_frame_host =
-      content::RenderFrameHost::FromID(render_process_id, render_frame_id);
+      content::RenderFrameHost::FromID(render_process_id.GetUnsafeValue(),
+                                       render_frame_id);
   is_web_view_request =
       WebViewGuest::FromRenderFrameHost(render_frame_host) != nullptr;
 #endif

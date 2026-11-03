@@ -8,6 +8,7 @@
 
 #include "base/types/optional_util.h"
 #include "components/guest_view/buildflags/buildflags.h"
+#include "content/public/browser/child_process_id.h"
 #include "extensions/browser/extension_navigation_ui_data.h"
 #include "extensions/browser/extensions_browser_client.h"
 #include "extensions/browser/process_map.h"
@@ -37,7 +38,7 @@ bool AllowCrossRendererResourceLoad(
     const network::ResourceRequest& request,
     network::mojom::RequestDestination destination,
     ui::PageTransition page_transition,
-    int child_id,
+    content::ChildProcessId child_id,
     bool is_incognito,
     const Extension* extension,
     const ExtensionSet& extensions,
@@ -47,10 +48,7 @@ bool AllowCrossRendererResourceLoad(
   const GURL& url = request.url;
   std::string_view resource_path = url.path();
 
-  // This logic is performed for main frame requests in
-  // ExtensionNavigationThrottle::WillStartRequest.
-  if (child_id != -1 ||
-      destination != network::mojom::RequestDestination::kDocument) {
+  if (child_id) {
     // Extensions with webview: allow loading certain resources by guest
     // renderers with privileged partition IDs as specified in owner's extension
     // the manifest file.
@@ -61,11 +59,13 @@ bool AllowCrossRendererResourceLoad(
 #if BUILDFLAG(ENABLE_GUEST_VIEW)
     int owner_process_id;
     std::string owner_extension_id;
+    // TODO(crbug.com/379869738) Remove FromUnsafeValue.
     WebViewRendererState::GetInstance()->GetOwnerInfo(
-        child_id, &owner_process_id, &owner_extension_id);
+        child_id.GetUnsafeValue(), &owner_process_id, &owner_extension_id);
     owner_extension = extensions.GetByID(owner_extension_id);
+    // TODO(crbug.com/379869738) Remove FromUnsafeValue.
     is_guest = WebViewRendererState::GetInstance()->GetPartitionID(
-        child_id, &partition_id);
+        child_id.GetUnsafeValue(), &partition_id);
 #endif
 
     if (AllowCrossRendererResourceLoadHelper(
@@ -99,17 +99,15 @@ bool AllowCrossRendererResourceLoad(
 
   DCHECK_EQ(extension->url(), url.GetWithEmptyPath());
 
-  // Navigating the main frame to an extension URL is allowed, even if not
-  // explicitly listed as web_accessible_resource.
-  if (destination == network::mojom::RequestDestination::kDocument) {
-    *allowed = true;
-    return true;
-  }
+  // Main frame navigations to extension URLs are handled directly in the
+  // browser process by ExtensionNavigationThrottle and the navigation
+  // URLLoaderFactory. They never legitimately arrive through a renderer's
+  // subresource factory and must not bypass web_accessible_resources checks.
 
   // When navigating in subframe, verify that the extension the resource is
   // loaded from matches the process loading it.
   if (network::IsRequestDestinationEmbeddedFrame(destination) &&
-      process_map.Contains(extension->id(), child_id)) {
+      process_map.Contains(extension->id(), child_id.GetUnsafeValue())) {
     *allowed = true;
     return true;
   }

@@ -22,6 +22,8 @@ enum LoopbackServerEntity_Type : int;
 
 namespace syncer {
 
+class PersistentBookmarkEntity;
+
 // The representation of a Sync entity for the loopback server.
 class LoopbackServerEntity {
  public:
@@ -62,6 +64,8 @@ class LoopbackServerEntity {
   virtual bool IsDeleted() const;
   virtual bool IsFolder() const;
   virtual bool IsPermanent() const;
+  virtual PersistentBookmarkEntity* AsBookmarkEntity();
+  virtual const PersistentBookmarkEntity* AsBookmarkEntity() const;
 
   virtual void SerializeAsLoopbackServerEntity(
       sync_pb::LoopbackServerEntity* entity) const;

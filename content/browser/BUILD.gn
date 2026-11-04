@@ -2739,6 +2739,10 @@ source_set("browser") {
     sources += arkweb_content_browser_display_cutout_sources
   }
 
+  if (is_arkweb && arkweb_devtools) {
+    sources += arkweb_content_browser_devtools_protocol_sources
+  }
+
   if (arkweb_precompile) {
     sources += arkweb_content_browser_code_cache_sources
   }

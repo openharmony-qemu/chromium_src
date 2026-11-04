@@ -174,6 +174,12 @@ Response SecurityHandler::SetIgnoreCertificateErrors(bool ignore) {
     cert_error_override_mode_ = CertErrorOverrideMode::kIgnoreAll;
   } else {
     cert_error_override_mode_ = CertErrorOverrideMode::kDisabled;
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+    // Close idle TLS connections that were established while ignore=true was
+    // in effect. Without this, pooled sockets reuse their cached SSLConfig
+    // and bypass certificate validation until they time out.
+    CloseIdleConnectionsForArkWeb();
+#endif
   }
   return Response::Success();
 }

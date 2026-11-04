@@ -33,7 +33,11 @@ namespace content::protocol {
 
 namespace {
 static constexpr char kAlreadyHasInternalAuthenticator[] =
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+    "ArkWeb only supports one internal authenticator per environment";
+#else
     "Chrome only supports one internal authenticator per environment";
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
 static constexpr char kAuthenticatorNotFound[] =
     "Could not find a Virtual Authenticator matching the ID";
 static constexpr char kCableNotSupportedOnU2f[] =

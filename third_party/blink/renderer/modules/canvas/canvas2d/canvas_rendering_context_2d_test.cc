@@ -34,6 +34,7 @@
 #include "cc/paint/paint_flags.h"
 #include "cc/paint/paint_image.h"
 #include "cc/paint/paint_op.h"
+#include "cc/paint/paint_shader.h"
 #include "cc/test/paint_op_matchers.h"
 #include "components/viz/common/resources/release_callback.h"
 #include "components/viz/common/resources/shared_image_format_utils.h"
@@ -94,6 +95,7 @@
 #include "third_party/blink/renderer/core/typed_arrays/dom_typed_array.h"
 #include "third_party/blink/renderer/modules/canvas/canvas2d/base_rendering_context_2d.h"
 #include "third_party/blink/renderer/modules/canvas/canvas2d/canvas_gradient.h"
+#include "third_party/blink/renderer/modules/canvas/canvas2d/canvas_pattern.h"
 #include "third_party/blink/renderer/modules/canvas/canvas2d/canvas_style_test_utils.h"
 #include "third_party/blink/renderer/modules/webcodecs/video_frame.h"
 #include "third_party/blink/renderer/platform/bindings/exception_state.h"
@@ -105,8 +107,10 @@
 #include "third_party/blink/renderer/platform/graphics/graphics_types_3d.h"
 #include "third_party/blink/renderer/platform/graphics/image.h"
 #include "third_party/blink/renderer/platform/graphics/image_orientation.h"
+#include "third_party/blink/renderer/platform/graphics/image_orientation_enum.h"
 #include "third_party/blink/renderer/platform/graphics/memory_managed_paint_recorder.h"
 #include "third_party/blink/renderer/platform/graphics/opacity_mode.h"
+#include "third_party/blink/renderer/platform/graphics/pattern.h"
 #include "third_party/blink/renderer/platform/graphics/skia/skia_utils.h"
 #include "third_party/blink/renderer/platform/graphics/test/gpu_memory_buffer_test_platform.h"
 #include "third_party/blink/renderer/platform/graphics/test/gpu_test_utils.h"
@@ -138,7 +142,9 @@
 #include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkM44.h"
+#include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkPixmap.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
@@ -209,14 +215,25 @@ class AcceleratedCompositingTestPlatform
 
 class FakeImageSource : public CanvasImageSource {
  public:
-  FakeImageSource(gfx::Size, BitmapOpacity);
+  struct Options {
+    gfx::Size size;
+    BitmapOpacity opacity = kOpaqueBitmap;
+    ImageOrientation orientation = ImageOrientationEnum::kDefault;
+    bool would_taint_origin = false;
+  };
+
+  explicit FakeImageSource(Options options);
 
   scoped_refptr<Image> GetSourceImageForCanvas(SourceImageStatus*,
                                                const gfx::SizeF&) override;
 
-  bool WouldTaintOrigin() const override { return false; }
-  gfx::SizeF ElementSize(const gfx::SizeF&,
-                         const RespectImageOrientationEnum) const override {
+  bool WouldTaintOrigin() const override { return would_taint_origin_; }
+  gfx::SizeF ElementSize(
+      const gfx::SizeF&,
+      const RespectImageOrientationEnum respect_orientation) const override {
+    if (image_) {
+      return gfx::SizeF(image_->Size(respect_orientation));
+    }
     return gfx::SizeF(size_);
   }
   bool IsOpaque() const override { return is_opaque_; }
@@ -228,15 +245,19 @@ class FakeImageSource : public CanvasImageSource {
   gfx::Size size_;
   scoped_refptr<Image> image_;
   bool is_opaque_;
+  bool would_taint_origin_ = false;
 };
 
-FakeImageSource::FakeImageSource(gfx::Size size, BitmapOpacity opacity)
-    : size_(size), is_opaque_(opacity == kOpaqueBitmap) {
+FakeImageSource::FakeImageSource(Options options)
+    : size_(options.size),
+      is_opaque_(options.opacity == kOpaqueBitmap),
+      would_taint_origin_(options.would_taint_origin) {
   sk_sp<SkSurface> surface(SkSurfaces::Raster(
       SkImageInfo::MakeN32Premul(size_.width(), size_.height())));
-  surface->getCanvas()->clear(opacity == kOpaqueBitmap ? SK_ColorWHITE
-                                                       : SK_ColorTRANSPARENT);
-  image_ = UnacceleratedStaticBitmapImage::Create(surface->makeImageSnapshot());
+  surface->getCanvas()->clear(
+      options.opacity == kOpaqueBitmap ? SK_ColorWHITE : SK_ColorTRANSPARENT);
+  image_ = UnacceleratedStaticBitmapImage::Create(surface->makeImageSnapshot(),
+                                                  options.orientation);
 }
 
 scoped_refptr<Image> FakeImageSource::GetSourceImageForCanvas(
@@ -472,8 +493,9 @@ CanvasRenderingContext2DTestBase::CanvasRenderingContext2DTestBase()
     : scoped_memory_cache_(MakeGarbageCollected<MemoryCache>(
           blink::scheduler::GetSingleThreadTaskRunnerForTesting())),
       wrap_gradients_(MakeGarbageCollected<WrapGradients>()),
-      opaque_bitmap_(gfx::Size(10, 10), kOpaqueBitmap),
-      alpha_bitmap_(gfx::Size(10, 10), kTransparentBitmap) {}
+      opaque_bitmap_({.size = gfx::Size(10, 10), .opacity = kOpaqueBitmap}),
+      alpha_bitmap_(
+          {.size = gfx::Size(10, 10), .opacity = kTransparentBitmap}) {}
 
 void CanvasRenderingContext2DTestBase::CreateContext(
     OpacityMode opacity_mode,
@@ -1629,8 +1651,8 @@ TEST_P(CanvasRenderingContext2DTest, AutoFlushPinnedImages) {
     size_t expected_op_count = initial_op_count;
     for (size_t pinned_bytes = 0; pinned_bytes <= kMaxPinnedImageKB * 1024;
          pinned_bytes += kBytesPerImage) {
-      FakeImageSource unique_image(gfx::Size(kImageSize, kImageSize),
-                                   kOpaqueBitmap);
+      FakeImageSource unique_image({.size = gfx::Size(kImageSize, kImageSize),
+                                    .opacity = kOpaqueBitmap});
       NonThrowableExceptionState exception_state;
       Context2D()->drawImage(&unique_image, 0, 0, 1, 1, 0, 0, 1, 1,
                              exception_state);
@@ -1653,8 +1675,8 @@ TEST_P(CanvasRenderingContext2DTest, OverdrawResetsPinnedImageBytes) {
   constexpr unsigned int kImageSize = 10;
   constexpr unsigned int kBytesPerImage = 400;
 
-  FakeImageSource unique_image(gfx::Size(kImageSize, kImageSize),
-                               kOpaqueBitmap);
+  FakeImageSource unique_image(
+      {.size = gfx::Size(kImageSize, kImageSize), .opacity = kOpaqueBitmap});
   NonThrowableExceptionState exception_state;
   Context2D()->drawImage(&unique_image, 0, 0, 10, 10, 0, 0, 10, 10,
                          exception_state);
@@ -1680,7 +1702,8 @@ TEST_P(CanvasRenderingContext2DTest, AutoFlushSameImage) {
   constexpr unsigned int kImageSize = 10;
   constexpr unsigned int kBytesPerImage = 400;
 
-  FakeImageSource image(gfx::Size(kImageSize, kImageSize), kOpaqueBitmap);
+  FakeImageSource image(
+      {.size = gfx::Size(kImageSize, kImageSize), .opacity = kOpaqueBitmap});
 
   for (size_t pinned_bytes = 0; pinned_bytes <= 2 * kMaxPinnedImageKB * 1024;
        pinned_bytes += kBytesPerImage) {
@@ -3572,6 +3595,87 @@ TEST_P(CanvasRenderingContext2DTest, DrawFocusWithContextLost) {
   // DrawFocusIfNeeded() triggers a context loss internally, due to the invalid
   // canvas size.  The test passes if we don't crash.
   Context2D()->drawFocusIfNeeded(button);
+}
+
+MATCHER_P2(PatternSizeIs, width, height, "") {
+  cc::PaintFlags flags;
+  arg.GetPattern()->ApplyToFlags(flags, SkMatrix::I());
+  const cc::PaintShader* shader = flags.getShader();
+  return shader && shader->shader_type() == cc::PaintShader::Type::kImage &&
+         shader->paint_image().GetSkImageInfo().dimensions().equals(width,
+                                                                    height);
+}
+
+TEST_P(CanvasRenderingContext2DTest,
+       CreatePatternRespectsOrientationOfSameOriginImagesByDefault) {
+  CreateContext(kNonOpaque);
+  NonThrowableExceptionState exception_state;
+
+  FakeImageSource same_origin_source({
+      .size = gfx::Size(10, 20),
+      .orientation = ImageOrientationEnum::kOriginRightTop,
+      .would_taint_origin = false,
+  });
+
+  EXPECT_THAT(Context2D()->createPattern(&same_origin_source, "repeat",
+                                         exception_state),
+              Pointee(PatternSizeIs(20, 10)));
+}
+
+TEST_P(CanvasRenderingContext2DTest,
+       CreatePatternRespectsOrientationOfCrossOriginImagesByDefault) {
+  CreateContext(kNonOpaque);
+  NonThrowableExceptionState exception_state;
+
+  FakeImageSource cross_origin_source({
+      .size = gfx::Size(10, 20),
+      .orientation = ImageOrientationEnum::kOriginRightTop,
+      .would_taint_origin = true,
+  });
+
+  EXPECT_THAT(Context2D()->createPattern(&cross_origin_source, "repeat",
+                                         exception_state),
+              Pointee(PatternSizeIs(20, 10)));
+}
+
+TEST_P(CanvasRenderingContext2DTest,
+       CreatePatternCanIgnoreOrientationOfSameOriginImages) {
+  CreateContext(kNonOpaque);
+  NonThrowableExceptionState exception_state;
+
+  CanvasElement().setAttribute(html_names::kStyleAttr,
+                               AtomicString("image-orientation: none;"));
+  UpdateAllLifecyclePhasesForTest();
+
+  FakeImageSource same_origin_source({
+      .size = gfx::Size(10, 20),
+      .orientation = ImageOrientationEnum::kOriginRightTop,
+      .would_taint_origin = false,
+  });
+
+  EXPECT_THAT(Context2D()->createPattern(&same_origin_source, "repeat",
+                                         exception_state),
+              Pointee(PatternSizeIs(10, 20)));
+}
+
+TEST_P(CanvasRenderingContext2DTest,
+       CreatePatternCannotIgnoreOrientationOfCrossOriginImages) {
+  CreateContext(kNonOpaque);
+  NonThrowableExceptionState exception_state;
+
+  CanvasElement().setAttribute(html_names::kStyleAttr,
+                               AtomicString("image-orientation: none;"));
+  UpdateAllLifecyclePhasesForTest();
+
+  FakeImageSource cross_origin_source({
+      .size = gfx::Size(10, 20),
+      .orientation = ImageOrientationEnum::kOriginRightTop,
+      .would_taint_origin = true,
+  });
+
+  EXPECT_THAT(Context2D()->createPattern(&cross_origin_source, "repeat",
+                                         exception_state),
+              Pointee(PatternSizeIs(20, 10)));
 }
 
 #if BUILDFLAG(IS_WIN)

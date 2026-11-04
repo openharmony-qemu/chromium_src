@@ -25,7 +25,8 @@
 
 #include "third_party/blink/renderer/modules/canvas/canvas2d/canvas_pattern.h"
 
-#include "base/compiler_specific.h"
+#include <utility>
+
 #include "base/memory/scoped_refptr.h"
 #include "third_party/blink/renderer/core/geometry/dom_matrix_read_only.h"
 #include "third_party/blink/renderer/platform/bindings/exception_code.h"
@@ -33,6 +34,7 @@
 #include "third_party/blink/renderer/platform/bindings/script_wrappable.h"
 #include "third_party/blink/renderer/platform/graphics/canvas_high_entropy_op_type.h"
 #include "third_party/blink/renderer/platform/graphics/image.h"
+#include "third_party/blink/renderer/platform/graphics/image_orientation.h"
 #include "third_party/blink/renderer/platform/graphics/pattern.h"
 #include "third_party/blink/renderer/platform/heap/visitor.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
@@ -68,8 +70,11 @@ CanvasPattern::CanvasPattern(
     scoped_refptr<Image> image,
     Pattern::RepeatMode repeat,
     bool origin_clean,
-    HighEntropyCanvasOpType high_entropy_canvas_op_types)
-    : pattern_(Pattern::CreateImagePattern(image, repeat)),
+    HighEntropyCanvasOpType high_entropy_canvas_op_types,
+    RespectImageOrientationEnum respect_orientation)
+    : pattern_(Pattern::CreateImagePattern(std::move(image),
+                                           repeat,
+                                           respect_orientation)),
       origin_clean_(origin_clean),
       high_entropy_canvas_op_types_(high_entropy_canvas_op_types) {
 }

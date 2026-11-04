@@ -4,19 +4,35 @@
 
 #include "third_party/blink/renderer/platform/graphics/image_pattern.h"
 
+#include "base/check.h"
 #include "third_party/blink/renderer/platform/graphics/image.h"
 #include "third_party/blink/renderer/platform/graphics/paint/paint_shader.h"
 #include "third_party/skia/include/core/SkImage.h"
 
 namespace blink {
 
-scoped_refptr<ImagePattern> ImagePattern::Create(scoped_refptr<Image> image,
-                                                 RepeatMode repeat_mode) {
-  return base::AdoptRef(new ImagePattern(std::move(image), repeat_mode));
+scoped_refptr<ImagePattern> ImagePattern::Create(
+    scoped_refptr<Image> image,
+    RepeatMode repeat_mode,
+    RespectImageOrientationEnum respect_orientation) {
+  return base::AdoptRef(
+      new ImagePattern(std::move(image), repeat_mode, respect_orientation));
 }
 
-ImagePattern::ImagePattern(scoped_refptr<Image> image, RepeatMode repeat_mode)
-    : Pattern(repeat_mode), tile_image_(image->PaintImageForCurrentFrame()) {}
+ImagePattern::ImagePattern(scoped_refptr<Image> image,
+                           RepeatMode repeat_mode,
+                           RespectImageOrientationEnum respect_orientation)
+    : Pattern(repeat_mode) {
+  CHECK(image);
+  PaintImage paint_image = image->PaintImageForCurrentFrame();
+  if (paint_image && respect_orientation == kRespectImageOrientation &&
+      !image->HasDefaultOrientation()) {
+    tile_image_ =
+        Image::ResizeAndOrientImage(paint_image, image->Orientation());
+  } else {
+    tile_image_ = std::move(paint_image);
+  }
+}
 
 sk_sp<PaintShader> ImagePattern::CreateShader(
     const SkMatrix& local_matrix) const {

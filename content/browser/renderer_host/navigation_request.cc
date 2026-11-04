@@ -2921,14 +2921,23 @@ void NavigationRequest::BeginNavigationImpl() {
   base::WeakPtr<NavigationRequest> this_ptr(weak_factory_.GetWeakPtr());
   bool should_override_url_loading = false;
 
-  if (!GetContentClient()->browser()->ShouldOverrideUrlLoading(
-          frame_tree_node_->frame_tree_node_id(),
-          commit_params_->is_browser_initiated, commit_params_->original_url,
-          commit_params_->original_method, common_params_->has_user_gesture,
-          false, frame_tree_node_->IsOutermostMainFrame(),
-          frame_tree_node_->frame_tree().is_prerendering(),
-          ui::PageTransitionFromInt(common_params_->transition),
-          &should_override_url_loading)) {
+  const bool success = GetContentClient()->browser()->ShouldOverrideUrlLoading(
+      frame_tree_node_->frame_tree_node_id(),
+      commit_params_->is_browser_initiated, commit_params_->original_url,
+      commit_params_->original_method, common_params_->has_user_gesture,
+      false, frame_tree_node_->IsOutermostMainFrame(),
+      frame_tree_node_->frame_tree().is_prerendering(),
+      ui::PageTransitionFromInt(common_params_->transition),
+      &should_override_url_loading);
+
+  // The content client might cause `this` to be deleted while
+  // `ShouldOverrideUrlLoading` is called.
+  // See https://crbug.com/770157.
+  if (!this_ptr) {
+    return;
+  }
+
+  if (!success) {
     if (reserved_prerender_host_info_.has_value()) {
       // Prerender activation must not fail but some reports imply it can
       // actually be failing: crbug.com/408969974. This dump is useful for
@@ -2945,12 +2954,6 @@ void NavigationRequest::BeginNavigationImpl() {
     // this point on to make any JNI calls.
     return;
   }
-
-  // The content/ embedder might cause |this| to be deleted while
-  // |ShouldOverrideUrlLoading| is called.
-  // See https://crbug.com/770157.
-  if (!this_ptr)
-    return;
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
   nav_request_utils_->BeginNavigationImpl(should_override_url_loading);

@@ -1732,6 +1732,9 @@ bool NavigationControllerImpl::RendererDidNavigate(
 
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
   NavigationEntry* last_entry = GetLastCommittedEntry();
+  if (entry_replaced_by_post_commit_error_) {
+    last_entry = entry_replaced_by_post_commit_error_.get();
+  }
   std::vector<GURL> previous_redirect_chain;
   base::flat_map<GURL, ohos_safe_browsing::OhosSbBlockingPageInfo> previous_blocking_page_info_cache;
   bool previous_is_js_redirect = false;

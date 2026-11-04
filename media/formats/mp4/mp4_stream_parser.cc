@@ -536,8 +536,7 @@ bool MP4StreamParser::ParseMoov(BoxReader* reader) {
         }
 
         codec = AudioCodec::kIAMF;
-        profile = entry.iacb.profile == 0 ? AudioCodecProfile::kIAMF_SIMPLE
-                                          : AudioCodecProfile::kIAMF_BASE;
+        profile = entry.iacb.profile;
         // The correct values for the channel layout and sample rate can
         // be parsed from the descriptor bitstream prepended to each sample.
         // They are set to the following values here to create a valid

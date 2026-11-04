@@ -332,8 +332,10 @@ bool RenderWidgetHostViewInput::TransformPointToTargetCoordSpace(
   // TODO(crbug.com/41460959): Optimize so that |point_in_pixels| doesn't need
   // to be in the coordinate space of the root surface in HitTestQuery.
   gfx::Transform transform_root_to_original;
-  query->GetTransformToTarget(original_view->GetFrameSinkId(),
-                              &transform_root_to_original);
+  if (!query->GetTransformToTarget(original_view->GetFrameSinkId(),
+                                   &transform_root_to_original)) {
+    return false;
+  }
   const std::optional<gfx::PointF> point_in_pixels =
       transform_root_to_original.InverseMapPoint(
           gfx::ConvertPointToPixels(point, device_scale_factor));

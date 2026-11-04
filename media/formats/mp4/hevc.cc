@@ -49,6 +49,7 @@ HEVCDecoderConfigurationRecord::HEVCDecoderConfigurationRecord()
       temporalIdNested(0),
       lengthSizeMinusOne(0),
       numOfArrays(0),
+      chroma_sampling(VideoChromaSampling::kUnknown),
       alpha_mode(VideoDecoderConfig::AlphaMode::kIsOpaque) {}
 
 HEVCDecoderConfigurationRecord::HEVCDecoderConfigurationRecord(

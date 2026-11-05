@@ -20,6 +20,7 @@
 #include "base/test/metrics/histogram_tester.h"
 #include "base/test/scoped_feature_list.h"
 #include "base/test/simple_test_tick_clock.h"
+#include "base/test/test_future.h"
 #include "base/time/time.h"
 #include "base/uuid.h"
 #include "content/browser/renderer_host/frame_tree_node.h"
@@ -37,6 +38,7 @@
 #include "content/public/test/test_browser_context.h"
 #include "content/public/test/test_service.mojom.h"
 #include "content/public/test/test_utils.h"
+#include "mojo/public/cpp/test_support/test_utils.h"
 #include "net/base/test_completion_callback.h"
 #include "services/metrics/public/cpp/ukm_recorder.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -44,6 +46,7 @@
 #include "third_party/blink/public/common/service_worker/service_worker_router_rule.h"
 #include "third_party/blink/public/common/storage_key/storage_key.h"
 #include "third_party/blink/public/mojom/service_worker/service_worker.mojom.h"
+#include "third_party/blink/public/mojom/service_worker/service_worker_ancestor_frame_type.mojom.h"
 #include "third_party/blink/public/mojom/service_worker/service_worker_event_status.mojom.h"
 #include "third_party/blink/public/mojom/service_worker/service_worker_installed_scripts_manager.mojom.h"
 #include "third_party/blink/public/mojom/service_worker/service_worker_registration.mojom.h"
@@ -96,6 +99,10 @@ class ServiceWorkerVersionTest
  protected:
   using FetchHandlerExistence = blink::mojom::FetchHandlerExistence;
 
+  virtual blink::mojom::AncestorFrameType GetAncestorFrameType() const {
+    return blink::mojom::AncestorFrameType::kNormalFrame;
+  }
+
   struct CachedMetadataUpdateListener : public ServiceWorkerVersion::Observer {
     CachedMetadataUpdateListener() = default;
     ~CachedMetadataUpdateListener() override = default;
@@ -117,7 +124,8 @@ class ServiceWorkerVersionTest
     blink::mojom::ServiceWorkerRegistrationOptions options;
     options.scope = scope_;
     registration_ = CreateNewServiceWorkerRegistration(
-        helper_->context()->registry(), options, GetTestStorageKey(scope_));
+        helper_->context()->registry(), options, GetTestStorageKey(scope_),
+        GetAncestorFrameType());
     version_ = CreateNewServiceWorkerVersion(
         helper_->context()->registry(), registration_.get(),
         GURL("https://www.example.com/test/service_worker.js"),
@@ -2185,6 +2193,93 @@ TEST_P(ServiceWorkerVersionTest, NoUsbEventHandler) {
       helper_.get(), /*has_usb_event_handlers*/ false);
   StartServiceWorker(version_.get());
   EXPECT_FALSE(version_->has_usb_event_handlers());
+}
+
+class ServiceWorkerVersionFencedFrameTest : public ServiceWorkerVersionTest {
+ protected:
+  blink::mojom::AncestorFrameType GetAncestorFrameType() const override {
+    return blink::mojom::AncestorFrameType::kFencedFrame;
+  }
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    All,
+    ServiceWorkerVersionFencedFrameTest,
+    testing::ValuesIn({StorageKeyTestCase::kFirstParty,
+                       StorageKeyTestCase::kThirdParty}),
+    [](const testing::TestParamInfo<StorageKeyTestCase>& info) {
+      switch (info.param) {
+        case (StorageKeyTestCase::kFirstParty):
+          return "FirstPartyStorageKey";
+        case (StorageKeyTestCase::kThirdParty):
+          return "ThirdPartyStorageKey";
+      }
+    });
+
+// Verifies that FocusClient() rejects calls for a service worker registered
+// in a fenced frame and reports a bad message.
+TEST_P(ServiceWorkerVersionFencedFrameTest, FocusClient_Rejected) {
+  auto* service_worker =
+      helper_->AddNewPendingServiceWorker<FakeServiceWorker>(helper_.get());
+  ASSERT_EQ(blink::ServiceWorkerStatusCode::kOk,
+            StartServiceWorker(version_.get()));
+  service_worker->RunUntilInitializeGlobalScope();
+  version_->SetStatus(ServiceWorkerVersion::ACTIVATED);
+
+  mojo::test::BadMessageObserver bad_message_observer;
+
+  base::test::TestFuture<blink::mojom::FocusResultPtr> future;
+  service_worker->host()->FocusClient("some-uuid", future.GetCallback());
+
+  EXPECT_EQ("Received WindowClient#focus() request from a fenced frame.",
+            bad_message_observer.WaitForBadMessage());
+}
+
+// Verifies that OpenNewTab() rejects calls for a service worker registered
+// in a fenced frame and reports a bad message.
+TEST_P(ServiceWorkerVersionFencedFrameTest, OpenNewTab_Rejected) {
+  auto* service_worker =
+      helper_->AddNewPendingServiceWorker<FakeServiceWorker>(helper_.get());
+  ASSERT_EQ(blink::ServiceWorkerStatusCode::kOk,
+            StartServiceWorker(version_.get()));
+  service_worker->RunUntilInitializeGlobalScope();
+  version_->SetStatus(ServiceWorkerVersion::ACTIVATED);
+
+  mojo::test::BadMessageObserver bad_message_observer;
+
+  GURL url = scope_.Resolve("new_tab.html");
+  base::test::TestFuture<bool, blink::mojom::ServiceWorkerClientInfoPtr,
+                         const std::optional<std::string>&>
+      future;
+
+  service_worker->host()->OpenNewTab(url, future.GetCallback());
+
+  EXPECT_EQ("Received Clients#openWindow() request from a fenced frame.",
+            bad_message_observer.WaitForBadMessage());
+}
+
+// Verifies that OpenPaymentHandlerWindow() rejects calls for a service worker
+// registered in a fenced frame and reports a bad message.
+TEST_P(ServiceWorkerVersionFencedFrameTest, OpenPaymentHandlerWindow_Rejected) {
+  auto* service_worker =
+      helper_->AddNewPendingServiceWorker<FakeServiceWorker>(helper_.get());
+  ASSERT_EQ(blink::ServiceWorkerStatusCode::kOk,
+            StartServiceWorker(version_.get()));
+  service_worker->RunUntilInitializeGlobalScope();
+  version_->SetStatus(ServiceWorkerVersion::ACTIVATED);
+
+  mojo::test::BadMessageObserver bad_message_observer;
+
+  GURL url = scope_.Resolve("payment_handler.html");
+  base::test::TestFuture<bool, blink::mojom::ServiceWorkerClientInfoPtr,
+                         const std::optional<std::string>&>
+      future;
+
+  service_worker->host()->OpenPaymentHandlerWindow(url, future.GetCallback());
+
+  EXPECT_EQ(
+      "Received PaymentRequestEvent#openWindow() request from a fenced frame.",
+      bad_message_observer.WaitForBadMessage());
 }
 
 }  // namespace service_worker_version_unittest

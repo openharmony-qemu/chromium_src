@@ -3149,7 +3149,9 @@ target(_test_target_type, "net_unittests") {
       "//arkweb/chromium_ext/net/socket/arkweb_transport_connect_job_ext_unittest.cc",
       "//arkweb/chromium_ext/net/socket/client_socket_pool_manager_impl_for_include_unittest.cc",
       "//arkweb/chromium_ext/net/socket/transport_client_socket_pool_for_include_unittest.cc",
-      "//arkweb/chromium_ext/net/url_request/url_request_http_job_for_include_unittest.cc"
+      "//arkweb/chromium_ext/net/url_request/url_request_http_job_for_include_unittest.cc",
+      "//arkweb/chromium_ext/net/url_request/url_request_context_ext_unittest.cc",
+      "//arkweb/chromium_ext/net/http/http_util_for_include_unittest.cc"
     ]
   }
   if (arkweb_prp_preload) {
@@ -3235,6 +3237,8 @@ target(_test_target_type, "net_unittests") {
       "//net/tools/transport_security_state_generator/cert_util.cc",
     ]
     sources += arkweb_net_dns_unittest_sources
+    sources += arkweb_net_proxy_resolution_unittest_sources
+    sources += arkweb_net_http_unittest_sources
     defines += [ "NET_UNITTESTS_OHOS_ENABLE" ]
   }
   if (defined(arkweb_ext_http_dns_fallback) && arkweb_ext_http_dns_fallback || is_ohos) {

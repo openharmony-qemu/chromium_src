@@ -8,11 +8,16 @@
 #include <memory>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/logging.h"
 #include "components/gwp_asan/crash_handler/crash.pb.h"
 #include "components/gwp_asan/crash_handler/crash_analyzer.h"
 #include "third_party/crashpad/crashpad/minidump/minidump_user_extension_stream_data_source.h"
 #include "third_party/crashpad/crashpad/snapshot/process_snapshot.h"
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "third_party/crashpad/crashpad/handler/user_stream_data_source.h"
+#endif
 
 namespace gwp_asan {
 namespace internal {
@@ -92,6 +97,15 @@ HandleException(const crashpad::ProcessSnapshot& snapshot) {
   // The missing_metadata field is always set for all exceptions.
   if (!proto.has_missing_metadata())
     return nullptr;
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  if (proto.missing_metadata()) {
+    crashpad::SetGwpAsanDetection(
+        crashpad::GwpAsanDetection::kMissingMetadata);
+  } else {
+    crashpad::SetGwpAsanDetection(crashpad::GwpAsanDetection::kDetected);
+  }
+#endif
 
   if (proto.missing_metadata()) {
     LOG(ERROR) << "Detected GWP-ASan crash with missing metadata.";

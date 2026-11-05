@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//components/gwp_asan/buildflags/buildflags.gni")
 import("//third_party/protobuf/proto_library.gni")
 
@@ -25,6 +26,9 @@ static_library("crash_handler") {
     "//third_party/crashpad/crashpad/util",
     "//third_party/protobuf:protobuf_lite",
   ]
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
 }
 
 proto_library("crash_proto") {

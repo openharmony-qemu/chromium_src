@@ -4,6 +4,8 @@
 
 #include "chrome/browser/enterprise/data_protection/data_protection_clipboard_utils.h"
 
+#include "chrome/browser/enterprise/data_protection/data_protection_utils.h"
+
 #include <variant>
 
 #include "base/strings/utf_string_conversions.h"
@@ -16,8 +18,12 @@
 #include "components/enterprise/data_controls/core/browser/test_utils.h"
 #include "content/public/browser/clipboard_types.h"
 #include "content/public/browser/content_browser_client.h"
+#include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/test/browser_task_environment.h"
+#include "content/public/test/navigation_simulator.h"
+#include "content/public/test/test_renderer_host.h"
+#include "content/public/test/web_contents_tester.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/base/clipboard/clipboard_metadata.h"
@@ -27,6 +33,8 @@
 #include "ui/gfx/codec/png_codec.h"
 #include "ui/gfx/image/image_unittest_util.h"
 #include "ui/gfx/skia_util.h"
+#include "url/origin.h"
+#include "url/url_constants.h"
 
 namespace enterprise_data_protection {
 
@@ -749,5 +757,140 @@ TEST_F(DataProtectionPasteIfAllowedByPolicyTest,
             "image");
 }
 #endif  // BUILDFLAG(IS_ANDROID)
+
+class DataProtectionClipboardInitialEmptyDocumentPopupTest
+    : public DataProtectionClipboardTest {
+ public:
+  void SetUp() override {
+    DataProtectionClipboardTest::SetUp();
+#if BUILDFLAG(IS_ANDROID)
+    EnableDataControls();
+#endif
+    opener_web_contents_ =
+        content::WebContentsTester::CreateTestWebContents(profile_, nullptr);
+    content::WebContentsTester::For(opener_web_contents_.get())
+        ->NavigateAndCommit(GURL("https://source.com/page.html"));
+
+    popup_web_contents_ = content::WebContentsTester::CreateTestWebContents(
+        profile_, opener_web_contents_->GetSiteInstance());
+    auto simulator = content::NavigationSimulator::CreateRendererInitiated(
+        GURL(url::kAboutBlankURL), popup_web_contents_->GetPrimaryMainFrame());
+    simulator->SetInitiatorFrame(opener_web_contents_->GetPrimaryMainFrame());
+    simulator->Commit();
+
+    ASSERT_TRUE(popup_web_contents_->GetLastCommittedURL().IsAboutBlank());
+    ASSERT_EQ(
+        popup_web_contents_->GetPrimaryMainFrame()->GetLastCommittedOrigin(),
+        url::Origin::Create(GURL("https://source.com")));
+  }
+
+  content::ClipboardEndpoint EndpointForFrame(content::RenderFrameHost* rfh) {
+    return content::ClipboardEndpoint(
+        ui::DataTransferEndpoint(GetUrlFromRenderFrameHost(rfh)),
+        base::BindLambdaForTesting(
+            [this]() -> content::BrowserContext* { return profile_; }),
+        *rfh);
+  }
+
+  void SetBlockCopyingFromSourceURLRule() {
+    data_controls::SetDataControls(profile_->GetPrefs(), {R"({
+        "sources": {
+          "urls": ["source.com"]
+        },
+        "restrictions": [
+          {"class": "CLIPBOARD", "level": "BLOCK"}
+        ]
+    })"});
+  }
+
+  void SetBlockCopyingFromWildcardURLRule() {
+    data_controls::SetDataControls(profile_->GetPrefs(), {R"({
+        "sources": {
+          "urls": ["*"]
+        },
+        "restrictions": [
+          {"class": "CLIPBOARD", "level": "BLOCK"}
+        ]
+    })"});
+  }
+
+ protected:
+  content::RenderViewHostTestEnabler test_render_host_factories_;
+  std::unique_ptr<content::WebContents> opener_web_contents_;
+  std::unique_ptr<content::WebContents> popup_web_contents_;
+};
+
+TEST_F(DataProtectionClipboardInitialEmptyDocumentPopupTest,
+       CopyBlockedBySourceURLRule) {
+  SetBlockCopyingFromSourceURLRule();
+  auto endpoint = EndpointForFrame(popup_web_contents_->GetPrimaryMainFrame());
+  ASSERT_TRUE(endpoint.data_transfer_endpoint());
+  ASSERT_TRUE(endpoint.data_transfer_endpoint()->GetURL());
+  EXPECT_EQ(*endpoint.data_transfer_endpoint()->GetURL(),
+            GURL("https://source.com/"));
+
+  base::test::TestFuture<const ui::ClipboardFormatType&,
+                         const content::ClipboardPasteData&,
+                         std::optional<std::u16string>>
+      future;
+  IsClipboardCopyAllowedByPolicy(endpoint, CopyMetadata(),
+                                 MakeClipboardPasteData("confidential", "", {}),
+                                 future.GetCallback());
+  EXPECT_TRUE(future.Get<1>().empty());
+  EXPECT_FALSE(DragAndDropForTextIsAllowed(popup_web_contents_.get()));
+  EXPECT_FALSE(CanPopulateFindBarFromSelection(popup_web_contents_.get()));
+}
+
+TEST_F(DataProtectionClipboardInitialEmptyDocumentPopupTest,
+       CopyBlockedByWildcardURLRuleOnUncommittedTabWithoutOpener) {
+  SetBlockCopyingFromWildcardURLRule();
+  auto uncommitted_web_contents =
+      content::WebContentsTester::CreateTestWebContents(profile_, nullptr);
+  ASSERT_TRUE(uncommitted_web_contents->GetLastCommittedURL().is_empty());
+  ASSERT_TRUE(uncommitted_web_contents->GetPrimaryMainFrame()
+                  ->GetLastCommittedOrigin()
+                  .opaque());
+  auto endpoint =
+      EndpointForFrame(uncommitted_web_contents->GetPrimaryMainFrame());
+  ASSERT_TRUE(endpoint.data_transfer_endpoint());
+  EXPECT_EQ(*endpoint.data_transfer_endpoint()->GetURL(),
+            GURL(url::kAboutBlankURL));
+  base::test::TestFuture<const ui::ClipboardFormatType&,
+                         const content::ClipboardPasteData&,
+                         std::optional<std::u16string>>
+      future;
+  IsClipboardCopyAllowedByPolicy(endpoint, CopyMetadata(),
+                                 MakeClipboardPasteData("confidential", "", {}),
+                                 future.GetCallback());
+  EXPECT_TRUE(future.Get<1>().empty());
+  EXPECT_FALSE(DragAndDropForTextIsAllowed(uncommitted_web_contents.get()));
+}
+
+TEST_F(DataProtectionClipboardInitialEmptyDocumentPopupTest,
+       MissingDataTransferEndpointFallsBackToFrameIdentity) {
+  SetBlockCopyingFromSourceURLRule();
+  content::ClipboardEndpoint endpoint(
+      std::nullopt,
+      base::BindLambdaForTesting([this]() -> content::BrowserContext* {
+        return profile_;
+      }),
+      *popup_web_contents_->GetPrimaryMainFrame());
+  base::test::TestFuture<const ui::ClipboardFormatType&,
+                         const content::ClipboardPasteData&,
+                         std::optional<std::u16string>>
+      future;
+  IsClipboardCopyAllowedByPolicy(endpoint, CopyMetadata(),
+                                MakeClipboardPasteData("confidential", "", {}),
+                                future.GetCallback());
+  EXPECT_TRUE(future.Get<1>().empty());
+}
+
+TEST_F(DataProtectionClipboardInitialEmptyDocumentPopupTest,
+       ValidDocumentRetainsFullURLAndNullFrameHasNoURL) {
+  EXPECT_EQ(
+      GetUrlFromRenderFrameHost(opener_web_contents_->GetPrimaryMainFrame()),
+      GURL("https://source.com/page.html"));
+  EXPECT_FALSE(GetUrlFromRenderFrameHost(nullptr).is_valid());
+}
 
 }  // namespace enterprise_data_protection

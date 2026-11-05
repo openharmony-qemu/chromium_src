@@ -15,6 +15,7 @@
 #include "chrome/browser/enterprise/data_controls/chrome_clipboard_context.h"
 #include "chrome/browser/enterprise/data_controls/chrome_rules_service.h"
 #include "chrome/browser/enterprise/data_controls/data_controls_dialog_factory.h"
+#include "chrome/browser/enterprise/data_protection/data_protection_utils.h"
 #include "chrome/browser/enterprise/data_protection/paste_allowed_request.h"
 #include "chrome/browser/profiles/profile.h"
 #include "components/enterprise/common/files_scan_data.h"
@@ -66,6 +67,9 @@ GURL GetUrlFromEndpoint(const content::ClipboardEndpoint& endpoint) {
   if (!endpoint.data_transfer_endpoint() ||
       !endpoint.data_transfer_endpoint()->IsUrlType() ||
       !endpoint.data_transfer_endpoint()->GetURL()) {
+    if (endpoint.render_frame_host()) {
+      return GetUrlFromRenderFrameHost(endpoint.render_frame_host());
+    }
     return GURL();
   }
   return *endpoint.data_transfer_endpoint()->GetURL();
@@ -706,7 +710,7 @@ bool HandleWriteTextToClipboard(content::WebContents* web_contents,
   }
 
   ui::DataTransferEndpoint dte(
-      rfh->GetMainFrame()->GetLastCommittedURL(),
+      GetUrlFromRenderFrameHost(rfh),
       {.off_the_record = rfh->GetBrowserContext()->IsOffTheRecord()});
 
   content::ClipboardEndpoint clipboard_endpoint =
@@ -746,7 +750,7 @@ bool DragAndDropForTextIsAllowed(content::WebContents* web_contents) {
     return true;
   }
 
-  auto url = rfh->GetMainFrame()->GetLastCommittedURL();
+  auto url = GetUrlFromRenderFrameHost(rfh);
   if (!url.is_valid()) {
     return true;
   }

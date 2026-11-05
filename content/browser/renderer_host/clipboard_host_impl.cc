@@ -89,6 +89,29 @@ std::u16string ExtractText(ui::ClipboardBuffer clipboard_buffer,
   return result;
 }
 
+std::unique_ptr<ui::DataTransferEndpoint> CreateDataEndpointForFrame(
+    RenderFrameHost& rfh) {
+  auto* render_frame_host_main_frame = rfh.GetMainFrame();
+  auto source_url = render_frame_host_main_frame->GetLastCommittedURL();
+  if (auto maybe_url = GetContentClient()
+                           ->browser()
+                           ->MaybeOverrideSourceURLForClipboardAccess(
+                               render_frame_host_main_frame, source_url)) {
+    source_url = *maybe_url;
+  }
+
+  if (!source_url.is_valid()) {
+    return nullptr;
+  }
+
+  return std::make_unique<ui::DataTransferEndpoint>(
+      source_url,
+      ui::DataTransferEndpointOptions{
+          .notify_if_restricted = rfh.HasTransientUserActivation(),
+          .off_the_record = rfh.GetBrowserContext()->IsOffTheRecord(),
+      });
+}
+
 }  // namespace
 
 ClipboardEndpoint GetSourceClipboardEndpoint(
@@ -123,6 +146,12 @@ ClipboardEndpoint GetSourceClipboardEndpoint(
               .off_the_record = rfh->GetBrowserContext()->IsOffTheRecord()});
     } else {
       source_dte = std::move(clipboard_source_dte);
+    }
+  }
+
+  if (!source_dte) {
+    if (auto endpoint = CreateDataEndpointForFrame(*rfh)) {
+      source_dte = *endpoint;
     }
   }
 
@@ -887,27 +916,7 @@ void ClipboardHostImpl::OnCopyAllowedResult(
 
 std::unique_ptr<ui::DataTransferEndpoint>
 ClipboardHostImpl::CreateDataEndpoint() {
-  auto* render_frame_host_main_frame = render_frame_host().GetMainFrame();
-  auto source_url = render_frame_host_main_frame->GetLastCommittedURL();
-  if (!source_url.is_valid()) {
-    return nullptr;
-  }
-
-  if (auto maybe_url = GetContentClient()
-                           ->browser()
-                           ->MaybeOverrideSourceURLForClipboardAccess(
-                               render_frame_host_main_frame, source_url)) {
-    source_url = *maybe_url;
-  }
-
-  return std::make_unique<ui::DataTransferEndpoint>(
-      source_url,
-      ui::DataTransferEndpointOptions{
-          .notify_if_restricted =
-              render_frame_host().HasTransientUserActivation(),
-          .off_the_record =
-              render_frame_host().GetBrowserContext()->IsOffTheRecord(),
-      });
+  return CreateDataEndpointForFrame(render_frame_host());
 }
 
 ClipboardEndpoint ClipboardHostImpl::CreateClipboardEndpoint() {

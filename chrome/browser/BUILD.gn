@@ -476,6 +476,8 @@ static_library("browser") {
     "enterprise/connectors/referrer_cache_utils.h",
     "enterprise/core/dependency_factory_impl.cc",
     "enterprise/core/dependency_factory_impl.h",
+    "enterprise/data_protection/data_protection_utils.cc",
+    "enterprise/data_protection/data_protection_utils.h",
     "enterprise/data_protection/view_source_navigation_throttle.cc",
     "enterprise/data_protection/view_source_navigation_throttle.h",
     "enterprise/encryption/cache_encryption_provider_impl.cc",

@@ -125,6 +125,50 @@ class ClipboardHostImplTest : public RenderViewHostTestHarness {
   mojo::Remote<blink::mojom::ClipboardHost> remote_;
 };
 
+class ClipboardSourceOverrideBrowserClient : public ContentBrowserClient {
+ public:
+  std::optional<GURL> MaybeOverrideSourceURLForClipboardAccess(
+      RenderFrameHost* rfh,
+      const GURL& original_url) override {
+    return GURL("https://source.com/");
+  }
+
+  void IsClipboardCopyAllowedByPolicy(
+      const ClipboardEndpoint& source,
+      const ui::ClipboardMetadata& metadata,
+      const ClipboardPasteData& data,
+      IsClipboardCopyAllowedCallback callback) override {
+    if (source.data_transfer_endpoint() &&
+        source.data_transfer_endpoint()->GetURL()) {
+      copy_source_url_ = *source.data_transfer_endpoint()->GetURL();
+    }
+    std::move(callback).Run(metadata.format_type, data, std::nullopt);
+  }
+
+  const std::optional<GURL>& copy_source_url() const {
+    return copy_source_url_;
+  }
+
+ private:
+  std::optional<GURL> copy_source_url_;
+};
+
+TEST_F(ClipboardHostImplTest, UncommittedFrameCanOverrideClipboardSourceURL) {
+  ClipboardSourceOverrideBrowserClient browser_client;
+  ScopedContentBrowserClientSetting browser_client_setting(&browser_client);
+  mojo_clipboard().reset();
+  SetContents(CreateTestWebContents());
+  ASSERT_FALSE(web_contents()->GetLastCommittedURL().is_valid());
+  ClipboardHostImpl::Create(web_contents()->GetPrimaryMainFrame(),
+                            mojo_clipboard().BindNewPipeAndPassReceiver());
+  mojo_clipboard()->WriteText(u"protected text");
+  mojo_clipboard()->CommitWrite();
+  base::RunLoop().RunUntilIdle();
+
+  ASSERT_TRUE(browser_client.copy_source_url());
+  EXPECT_EQ(*browser_client.copy_source_url(), GURL("https://source.com/"));
+}
+
 TEST_F(ClipboardHostImplTest, SimpleImage_ReadPng) {
   SkBitmap bitmap = gfx::test::CreateBitmap(3, 2);
   mojo_clipboard()->WriteImage(bitmap);

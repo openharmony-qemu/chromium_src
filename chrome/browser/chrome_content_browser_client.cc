@@ -708,6 +708,8 @@
 #include "chrome/browser/enterprise/data_protection/paste_allowed_request.h"
 #endif  // BUILDFLAG(ENTERPRISE_DATA_CONTROLS) && !BUILDFLAG(IS_ANDROID)
 
+#include "chrome/browser/enterprise/data_protection/data_protection_utils.h"
+
 #if BUILDFLAG(ENTERPRISE_DATA_CONTROLS)
 #include "chrome/browser/enterprise/data_protection/data_protection_clipboard_utils.h"
 #endif  // BUILDFLAG(ENTERPRISE_DATA_CONTROLS)
@@ -7923,13 +7925,14 @@ ChromeContentBrowserClient::MaybeOverrideSourceURLForClipboardAccess(
   DCHECK(render_frame_host);
 #if BUILDFLAG(ENABLE_PRINT_PREVIEW)
   if (printing::PrintPreviewDialogController::IsPrintPreviewURL(original_url)) {
-    return printing::PrintPreviewDialogController::GetInstance()
-        ->GetInitiator(WebContents::FromRenderFrameHost(render_frame_host))
-        ->GetPrimaryMainFrame()
-        ->GetLastCommittedURL();
+    return enterprise_data_protection::GetUrlFromRenderFrameHost(
+        printing::PrintPreviewDialogController::GetInstance()
+            ->GetInitiator(WebContents::FromRenderFrameHost(render_frame_host))
+            ->GetPrimaryMainFrame());
   }
 #endif  // BUILDFLAG(ENABLE_PRINT_PREVIEW)
-  return std::nullopt;
+  return enterprise_data_protection::GetUrlFromRenderFrameHost(
+      render_frame_host);
 }
 
 bool ChromeContentBrowserClient::IsClipboardPasteAllowed(

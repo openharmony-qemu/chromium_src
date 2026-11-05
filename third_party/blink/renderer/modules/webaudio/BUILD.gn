@@ -4,7 +4,14 @@
 
 import("//third_party/blink/renderer/modules/modules.gni")
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 blink_modules_sources("webaudio") {
+  if (is_arkweb) {
+    inputs = arkweb_blink_webaudio_include_files
+  }
   sources = [
     "analyser_handler.cc",
     "analyser_handler.h",

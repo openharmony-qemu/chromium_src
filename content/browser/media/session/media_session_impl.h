@@ -400,6 +400,8 @@ class CONTENT_EXPORT MediaSessionImpl : public MediaSession,
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   bool HasOnlyOneShotPlayersPublic() const;
   bool HasOneShotPlayersWhenSetMetadataPublic() const;
+  // Also pause ambient WebAudio players after a platform output STOP.
+  void SuspendWebAudioPlayers();
 #endif
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
   void PutWebMediaAVSessionEnabled(bool enable);

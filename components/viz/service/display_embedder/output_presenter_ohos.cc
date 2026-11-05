@@ -525,31 +525,28 @@ void OutputPresenterOHOS::Present(SwapCompletionCallback completion_callback,
   std::swap(previous_frame_, pending_frame_);
 }
 
-#if BUILDFLAG(ARKWEB_AI_HDR)
-gfx::SizeF OutputPresenterOHOS::MaybeCorrectBufferSize(
-    const OutputPresenter::OverlayPlaneCandidate& overlay_plane,
-    ScopedOverlayAccess* access,
-    const gfx::SizeF& buffer_size) {
-  if (!overlay_plane.is_ai_hdr_active || !access) {
-    return buffer_size;
+void OutputPresenterOHOS::MaybeCorrectBufferSize(OH_NativeBuffer* const buffer,
+    gfx::Size& buffer_size) {
+  if (!buffer) {
+    return;
   }
-  OH_NativeBuffer* nb = access->GetOHNativeBuffer();
-  if (!nb) {
-    return buffer_size;
+
+  OH_NativeBuffer_Config config = {};
+  OH_NativeBuffer_GetConfig(buffer, &config);
+  if (config.width <= 0 || config.height <= 0) {
+    return;
   }
-  OH_NativeBuffer_Config config;
-  OH_NativeBuffer_GetConfig(nb, &config);
-  if (config.width > 0 && config.height > 0 &&
-      (config.width != overlay_plane.resource_size_in_pixels.width() ||
-       config.height != overlay_plane.resource_size_in_pixels.height())) {
-    TRACE_EVENT2("viz", "OutputPresenterOHOS buffer_size corrected",
-                 "stale_size", buffer_size.ToString(),
-                 "actual_size", gfx::SizeF(config.width, config.height).ToString());
-    return gfx::SizeF(config.width, config.height);
+
+  const gfx::Size actual_size(config.width, config.height);
+  if (actual_size == buffer_size) {
+    return;
   }
-  return buffer_size;
+
+  TRACE_EVENT2("viz", "OutputPresenterOHOS buffer_size corrected",
+               "stale_size", buffer_size.ToString(),
+               "actual_size", actual_size.ToString());
+  buffer_size = actual_size;
 }
-#endif
 
 void OutputPresenterOHOS::ScheduleOverlayPlane(
     const OutputPresenter::OverlayPlaneCandidate& overlay_plane,
@@ -563,25 +560,26 @@ void OutputPresenterOHOS::ScheduleOverlayPlane(
   const gfx::RectF& display_rect = overlay_plane.display_rect;
   gfx::RectF bounds = display_rect;
   gfx::RectF src_rect = display_rect;
+  gfx::Rect damage_rect;
   std::string surface_name = "delegate_child";
-  if (!is_root &&
-      overlay_plane.priority_hint == gfx::OverlayPriorityHint::kVideo) {
-    surface_name = "delegate_child_video";
-  }
-  TRACE_EVENT1("viz", "OutputPresenterOHOS::ScheduleOverlayPlane",
-    "name", surface_name.c_str());
+  TRACE_EVENT1("viz", "ScheduleOverlayPlane", "name", surface_name.c_str());
 
+  OH_NativeBuffer* const buffer = access ? access->GetOHNativeBuffer() : nullptr;
   if (is_root) {
     DCHECK(!root_overlay_access_);
-    root_overlay_access_ = access->GetWeakPtr();
+    if (access) {
+      root_overlay_access_ = access->GetWeakPtr();
+    }
+
+    damage_rect = overlay_plane.damage_rect.IsEmpty()
+        ? gfx::Rect(overlay_plane.resource_size_in_pixels)
+        : ToEnclosingRect(overlay_plane.damage_rect);
   } else {
-#if BUILDFLAG(ARKWEB_AI_HDR)
-    gfx::SizeF buffer_size =
-        MaybeCorrectBufferSize(overlay_plane, access,
-                               gfx::SizeF(overlay_plane.resource_size_in_pixels));
-#else
-    const gfx::SizeF buffer_size(overlay_plane.resource_size_in_pixels);
-#endif
+    if (overlay_plane.priority_hint == gfx::OverlayPriorityHint::kVideo) {
+      surface_name = "delegate_child_video";
+    }
+    gfx::Size buffer_size(overlay_plane.resource_size_in_pixels);
+    MaybeCorrectBufferSize(buffer, buffer_size);
     src_rect = gfx::ScaleRect(overlay_plane.uv_rect, buffer_size);
     if (src_rect.width() == 0) {
       src_rect.set_width(1);
@@ -597,12 +595,14 @@ void OutputPresenterOHOS::ScheduleOverlayPlane(
     }
     src_rect.Intersect(gfx::RectF(buffer_size));
     bounds = gfx::RectF(display_rect.origin(), src_rect.size());
+
+    // SetDamageRegion expects buffer pixel space. For non-root (video)
+    // overlays the buffer is in the same orientation as display_rect, so a
+    // full-buffer damage rect is always correct
+    damage_rect = gfx::Rect(buffer_size);
   }
 
-  OH_NativeBuffer* const buffer =
-      access ? access->GetOHNativeBuffer() : nullptr;
   SurfaceControl* surface = nullptr;
-
   if (buffer) {
     // Find surface with same buffer in previous frame first.
     auto it = std::find_if(previous_frame_.begin(), previous_frame_.end(),
@@ -643,9 +643,6 @@ void OutputPresenterOHOS::ScheduleOverlayPlane(
       // the buffer is considered being released when OnComplete is called.
       access->InUseByWindowServerInc();
 
-      auto damage_rect = overlay_plane.damage_rect.IsEmpty()
-          ? gfx::Rect(overlay_plane.resource_size_in_pixels)
-          : ToEnclosingRect(overlay_plane.damage_rect);
       surface->SetBuffer(buffer, std::move(fence_fd), damage_rect,
                          std::move(callback));
       surface->SetMailbox(mailbox);

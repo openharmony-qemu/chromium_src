@@ -56,6 +56,7 @@
 #include "build/branding_buildflags.h"
 #include "build/build_config.h"
 #include "build/config/chromebox_for_meetings/buildflags.h"  // PLATFORM_CFM
+#include "cef/libcef/features/features.h"
 #include "chrome/browser/accessibility/caption_settings_dialog.h"
 #include "chrome/browser/accessibility/page_colors_controller.h"
 #include "chrome/browser/actor/actor_commit_deferring_condition.h"
@@ -1585,6 +1586,8 @@ ChromeContentBrowserClient::GetPopupNavigationDelegateFactoryForTesting() {
 }
 
 ChromeContentBrowserClient::ChromeContentBrowserClient() {
+  keepalive_timer_.reset(new base::OneShotTimer());
+
 #if BUILDFLAG(ENABLE_PLUGINS)
   extra_parts_.push_back(
       std::make_unique<ChromeContentBrowserClientPluginsPart>());
@@ -1623,6 +1626,11 @@ ChromeContentBrowserClient::~ChromeContentBrowserClient() {
   while (!extra_parts_.empty()) {
     extra_parts_.pop_back();
   }
+}
+
+void ChromeContentBrowserClient::CleanupOnUIThread() {
+  DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+  keepalive_timer_.reset();
 }
 
 // static
@@ -5194,9 +5202,11 @@ void ChromeContentBrowserClient::BrowserURLHandlerCreated(
                           &search::HandleNewTabURLReverseRewrite);
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if !BUILDFLAG(ENABLE_CEF)
   // chrome: & friends.
   handler->AddHandlerPair(&ChromeContentBrowserClient::HandleWebUI,
                           &ChromeContentBrowserClient::HandleWebUIReverse);
+#endif
 }
 
 base::FilePath ChromeContentBrowserClient::GetDefaultDownloadDirectory() {
@@ -7176,7 +7186,7 @@ void ChromeContentBrowserClient::OnNetworkServiceCreated(
                                                        local_state);
 }
 
-void ChromeContentBrowserClient::ConfigureNetworkContextParams(
+bool ChromeContentBrowserClient::ConfigureNetworkContextParams(
     content::BrowserContext* context,
     bool in_memory,
     const base::FilePath& relative_partition_path,
@@ -7194,6 +7204,8 @@ void ChromeContentBrowserClient::ConfigureNetworkContextParams(
     network_context_params->user_agent = GetUserAgent();
     network_context_params->accept_language = GetApplicationLocale();
   }
+
+  return true;
 }
 
 std::vector<base::FilePath>
@@ -8589,7 +8601,9 @@ void ChromeContentBrowserClient::OnKeepaliveRequestFinished() {
   --num_keepalive_requests_;
   if (num_keepalive_requests_ == 0) {
     DVLOG(1) << "Stopping the keepalive timer";
-    keepalive_timer_.Stop();
+    if (keepalive_timer_) {
+      keepalive_timer_->Stop();
+    }
     // This deletes the keep alive handle attached to the timer function and
     // unblock the shutdown sequence.
   }
@@ -8811,7 +8825,7 @@ void ChromeContentBrowserClient::OnKeepaliveTimerFired(
   const auto now = base::TimeTicks::Now();
   const auto then = keepalive_deadline_;
   if (now < then) {
-    keepalive_timer_.Start(
+    keepalive_timer_->Start(
         FROM_HERE, then - now,
         base::BindOnce(&ChromeContentBrowserClient::OnKeepaliveTimerFired,
                        weak_factory_.GetWeakPtr(),

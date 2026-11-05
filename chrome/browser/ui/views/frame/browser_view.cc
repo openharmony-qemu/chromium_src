@@ -55,6 +55,7 @@
 #include "chrome/browser/feature_engagement/tracker_factory.h"
 #include "chrome/browser/glic/public/features.h"
 #include "chrome/browser/headless/headless_mode_util.h"
+#include "chrome/browser/picture_in_picture/picture_in_picture_window_manager.h"
 #include "chrome/browser/platform_util.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/profiles/profile_attributes_entry.h"
@@ -417,6 +418,10 @@
 
 // To avoid conflicts with the macro from the Windows SDK...
 #undef LoadAccelerators
+#endif
+
+#if BUILDFLAG(ENABLE_CEF)
+#include "cef/libcef/browser/chrome/browser_util.h"
 #endif
 
 using base::UserMetricsAction;
@@ -890,11 +895,21 @@ class BrowserView::PipExclusionObserverImpl
 ///////////////////////////////////////////////////////////////////////////////
 // BrowserView, public:
 
+BrowserView::BrowserView() : BrowserView(nullptr) {}
+
 BrowserView::BrowserView(BrowserWindowInterface* browser)
     : views::ClientView(nullptr, nullptr),
       exclusive_access_context_(
-          std::make_unique<ExclusiveAccessContextImpl>(*this)),
-      browser_(browser) {
+          std::make_unique<ExclusiveAccessContextImpl>(*this)) {
+  if (browser) {
+    InitBrowser(browser);
+  }
+}
+
+void BrowserView::InitBrowser(BrowserWindowInterface* browser) {
+  DCHECK(!browser_);
+  browser_ = browser;
+
   if (auto* manager = InitialWebUIWindowMetricsManager::From(browser_.get())) {
     manager->OnBrowserWindowCreated();
   }
@@ -921,7 +936,8 @@ BrowserView::BrowserView(BrowserWindowInterface* browser)
     SetCanMinimize(false);
     SetCanMaximize(false);
     SetCanFullscreen(false);
-    SetCanResize(true);
+    SetCanResize(
+        BrowserInitState::From(&*browser_)->create_params().can_resize);
   } else {
     SetCanResize(
         BrowserInitState::From(&*browser_)->create_params().can_resize);
@@ -945,8 +961,16 @@ BrowserView::BrowserView(BrowserWindowInterface* browser)
   top_container_ = AddChildView(std::make_unique<TopContainerView>(this));
   top_container_insertion_index_ = GetIndexOf(top_container_.get());
 
-  toolbar_ = top_container_->AddChildView(
-      std::make_unique<ToolbarView>(browser_.get(), this));
+  toolbar_ = OverrideCreateToolbar();
+  if (!toolbar_) {
+    toolbar_ = new ToolbarView(browser_.get(), this, std::nullopt);
+  } else {
+    cef::BrowserForBWI(browser_.get())->set_toolbar_overridden(true);
+    // Update state that depends on the above flag.
+    chrome::BrowserCommandController::From(browser_.get())
+        ->FullscreenStateChanged();
+  }
+  top_container_->AddChildView(base::WrapUnique(toolbar_.get()));
 
   top_container_separator_ = top_container_->AddChildView(
       ContentsSeparator::CreateContentsSeparator());
@@ -1108,6 +1132,10 @@ BrowserView::BrowserView(BrowserWindowInterface* browser)
 }
 
 BrowserView::~BrowserView() {
+  // If the Toolbar is not overloaded it will be destroyed via
+  // RemoveAllChildViews().
+  WillDestroyToolbar();
+
   // Remove the layout manager to avoid dangling. This needs to be earlier than
   // other cleanups that destroy views referenced in the layout manager.
   SetLayoutManager(nullptr);
@@ -1122,7 +1150,9 @@ BrowserView::~BrowserView() {
 
   // All the tabs should have been destroyed already. If we were closed by the
   // OS with some tabs than the BrowserNativeWidget should have destroyed them.
-  DCHECK_EQ(0, browser_->GetTabStripModel()->count());
+  if (browser_) {
+    DCHECK_EQ(0, browser_->GetTabStripModel()->count());
+  }
 
   // Stop the animation timer explicitly here to avoid running it in a nested
   // message loop, which may run by Browser destructor.
@@ -1221,7 +1251,7 @@ void BrowserView::SetDisableRevealerDelayForTesting(bool disable) {
   g_disable_revealer_delay_for_testing = disable;
 }
 
-gfx::Rect BrowserView::GetFindBarBoundingBox() const {
+gfx::Rect BrowserView::GetFindBarBoundingBoxImpl() const {
   gfx::Rect contents_bounds = multi_contents_view_->ConvertRectToWidget(
       multi_contents_view_->GetLocalBounds());
 
@@ -1241,6 +1271,16 @@ gfx::Rect BrowserView::GetFindBarBoundingBox() const {
 
   contents_bounds.Inset(gfx::Insets::TLBR(0, 0, 0, gfx::scrollbar_size()));
   return multi_contents_view_->GetMirroredRect(contents_bounds);
+}
+
+gfx::Rect BrowserView::GetFindBarBoundingBox() const {
+  auto bounds = GetFindBarBoundingBoxImpl();
+#if BUILDFLAG(ENABLE_CEF)
+  if (browser() && browser()->cef_delegate()) {
+    browser()->cef_delegate()->UpdateFindBarBoundingBox(&bounds);
+  }
+#endif
+  return bounds;
 }
 
 ClientFrameElementInfo BrowserView::GetFrameElementInfo() const {
@@ -1965,6 +2005,27 @@ gfx::Point BrowserView::GetThemeOffsetFromBrowserView() const {
   return gfx::Point(
       -browser_view_origin.x(),
       ThemeProperties::kFrameHeightAboveTabs - browser_view_origin.y());
+}
+
+void BrowserView::WillDestroyToolbar() {
+  // Reset autofill bubble handler to make sure it does not out-live toolbar,
+  // since it is responsible for showing autofill related bubbles from toolbar's
+  // child views and it is an observer for avatar toolbar button if any.
+  autofill_bubble_handler_.reset();
+
+  if (GetBrowserViewLayout()) {
+    GetBrowserViewLayout()->reset_toolbar();
+  }
+
+  if (toolbar_ && toolbar_->parent()) {
+    // Remove now instead of waiting for RemoveAllChildViews(), as there is
+    // otherwise no guarantee that the Toolbar will be removed before the
+    // BrowserView is removed (and destroyed).
+    toolbar_->parent()->RemoveChildView(toolbar_);
+    toolbar_.ClearAndDelete();
+  } else {
+    toolbar_ = nullptr;
+  }
 }
 
 bool BrowserView::IsLoadingAnimationRunning() const {
@@ -3171,6 +3232,9 @@ ShowTranslateBubbleResult BrowserView::ShowTranslateBubble(
 
 DownloadBubbleUIController* BrowserView::GetDownloadBubbleUIController() {
 #if !BUILDFLAG(IS_CHROMEOS)
+  if (!browser_) {
+    return nullptr;
+  }
   if (auto* download_controller =
           DownloadToolbarUIController::From(browser_.get())) {
     return download_controller->bubble_controller();
@@ -4092,7 +4156,10 @@ bool BrowserView::GetSavedWindowPlacement(
 }
 
 views::View* BrowserView::GetContentsView() {
-  return multi_contents_view_->GetActiveContentsView();
+  if (multi_contents_view_) {
+    return multi_contents_view_->GetActiveContentsView();
+  }
+  return nullptr;
 }
 
 views::ClientView* BrowserView::CreateClientView(views::Widget* widget) {
@@ -4279,9 +4346,22 @@ void BrowserView::DeleteBrowserWindow() {
   // before the frame is destroyed to mitigate UAF risk.
   browser_widget_->SaveWindowPlacementIfNeeded();
 
-  browser_widget_.reset();
-  // BrowserWidget owns BrowserView in its views::View hierarchy and `this` will
-  // not be valid after this returns.
+  const bool views_hosted =
+#if BUILDFLAG(ENABLE_CEF)
+      browser() && browser()->cef_delegate() &&
+      browser()->cef_delegate()->IsViewsHosted();
+#else
+      false;
+#endif
+
+  if (views_hosted) {
+    // The BrowserWidget is owned by CefWindowWidgetDelegate.
+    browser_widget_.release();
+  } else {
+    browser_widget_.reset();
+    // BrowserWidget owns BrowserView in its views::View hierarchy and `this`
+    // will not be valid after this returns.
+  }
 }
 
 void BrowserView::SetForceShowBookmarkBarFlag(
@@ -4539,12 +4619,39 @@ void BrowserView::GetAccessiblePanes(std::vector<views::View*>* panes) {
 bool BrowserView::ShouldDescendIntoChildForEventHandling(
     gfx::NativeView child,
     const gfx::Point& location) {
+#if BUILDFLAG(ENABLE_CEF)
+  const bool frameless_pip =
+      GetIsPictureInPictureType() &&
+      !WindowFeatureController::From(browser_.get())
+           ->SupportsWindowFeature(
+               WindowFeatureController::WindowFeature::kFeatureTitleBar);
+  if (frameless_pip) {
+    int result = GetFrameView()->NonClientHitTest(location);
+    if (result == HTTOP || result == HTTOPLEFT || result == HTTOPRIGHT) {
+      // Allow resize from the top of a frameless window.
+      return false;
+    }
+  }
+#endif
+
+  std::optional<SkRegion> draggable_region;
+
   // Window for PWAs with window-controls-overlay display override should claim
   // mouse events that fall within the draggable region.
   web_app::AppBrowserController* controller =
       web_app::AppBrowserController::From(browser());
-  if (AreDraggableRegionsEnabled() && controller &&
-      controller->draggable_region().has_value()) {
+  if (AreDraggableRegionsEnabled() && controller) {
+    draggable_region = controller->draggable_region();
+  }
+
+#if BUILDFLAG(ENABLE_CEF)
+  // Match logic in PictureInPictureBrowserFrameView::NonClientHitTest.
+  if (!draggable_region.has_value() && frameless_pip) {
+    draggable_region = browser_->cef_delegate()->GetDraggableRegion();
+  }
+#endif
+
+  if (draggable_region.has_value()) {
     gfx::Point point_in_browser_view_coords(location);
     views::View::ConvertPointToTarget(GetWidget()->GetRootView(), this,
                                       &point_in_browser_view_coords);
@@ -4557,9 +4664,8 @@ bool BrowserView::ShouldDescendIntoChildForEventHandling(
 
     // Draggable regions should be ignored for clicks into any browser view's
     // owned widgets, for example alerts, permission prompts or find bar.
-    return !controller->draggable_region()->contains(
-               point_in_contents_web_view_coords.x(),
-               point_in_contents_web_view_coords.y()) ||
+    return !draggable_region->contains(point_in_contents_web_view_coords.x(),
+                                       point_in_contents_web_view_coords.y()) ||
            WidgetOwnedByAnchorContainsPoint(point_in_browser_view_coords);
   }
 
@@ -4895,7 +5001,9 @@ void BrowserView::Layout(PassKey) {
   LayoutSuperclass<views::View>(this);
 
   // TODO(jamescook): Why was this in the middle of layout code?
-  toolbar_->location_bar()->UpdateFocusBehavior(IsToolbarVisible());
+  toolbar_->location_bar()->UpdateFocusBehavior(
+      IsToolbarVisible() ||
+      cef::BrowserForBWI(browser_.get())->toolbar_overridden());
   GetFrameView()->UpdateMinimumSize();
 
   if (omnibox::IsWebUIOmniboxInBrowserViewEnabled()) {
@@ -5180,6 +5288,16 @@ void BrowserView::AddedToWidget() {
       kBrowserDialogAnchorElementId, *this);
   fallback_popup_anchor_ = std::make_unique<views::ViewSubregionAnchor>(
       kFallbackPopupAnchorElementId, *this);
+
+  if (browser_->GetWindow()) {
+    // Initialize the browser features that rely on the browser window now that
+    // it is initialized. This will instead be called from the Browser
+    // constructor for default Chrome UI windows.
+    // TODO(cef): Remove BrowserForBWI cast once InitPostWindowConstruction
+    // takes BrowserWindowInterface* (upstream change pending).
+    browser_->GetFeatures().InitPostWindowConstruction(
+        cef::BrowserForBWI(browser_.get()));
+  }
 
   initialized_ = true;
 }
@@ -6082,6 +6200,13 @@ void BrowserView::FrameColorsChanged() {
     web_app_window_title_->SetBackgroundColor(frame_color);
     web_app_window_title_->SetEnabledColor(caption_color);
   }
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+  if (PictureInPictureWindowManager::IsTransparentDocumentPictureInPicture(
+          GetDocumentPictureInPictureOptions())) {
+    GetWidget()->SetBackgroundColor(SK_ColorTRANSPARENT);
+    return;
+  }
+#endif
   GetWidget()->SetBackgroundColor(kColorToolbar);
 }
 

@@ -4,6 +4,7 @@
 
 #include "chrome/browser/ui/views/frame/picture_in_picture_browser_frame_view_linux.h"
 
+#include "chrome/browser/picture_in_picture/picture_in_picture_window_manager.h"
 #include "chrome/browser/themes/theme_service.h"
 #include "chrome/browser/themes/theme_service_factory.h"
 #include "chrome/browser/ui/color/chrome_color_id.h"
@@ -130,6 +131,17 @@ gfx::Rect PictureInPictureBrowserFrameViewLinux::GetHitRegion() const {
 // views::View implementations:
 
 void PictureInPictureBrowserFrameViewLinux::OnPaint(gfx::Canvas* canvas) {
+  if (IsTransparent()) {
+    // Paint only the top bar, if visible, and leave the rest transparent.
+    if (top_bar_container_view()->GetVisible()) {
+      canvas->FillRect(
+          gfx::Rect(0, 0, width(), GetTopAreaHeight()),
+          GetColorProvider()->GetColor(kColorPipWindowTopBarBackground));
+    }
+    BrowserFrameView::OnPaint(canvas);
+    return;
+  }
+
   // Draw the PiP window frame borders and shadows, including the top bar
   // background.
   if (window_frame_provider_) {
@@ -160,6 +172,9 @@ void PictureInPictureBrowserFrameViewLinux::OnPaint(gfx::Canvas* canvas) {
 }
 
 bool PictureInPictureBrowserFrameViewLinux::ShouldDrawFrameShadow() const {
+  if (IsTransparent()) {
+    return false;
+  }
   return static_cast<BrowserNativeWidgetAuraLinux*>(
              browser_widget()->browser_native_widget())
       ->ShouldDrawRestoredFrameShadow();
@@ -168,11 +183,23 @@ bool PictureInPictureBrowserFrameViewLinux::ShouldDrawFrameShadow() const {
 ///////////////////////////////////////////////////////////////////////////////
 // PictureInPictureBrowserFrameView: implementations:
 
+bool PictureInPictureBrowserFrameViewLinux::IsTransparent() const {
+  return PictureInPictureWindowManager::IsTransparentDocumentPictureInPicture(
+      GetBrowserView()->GetDocumentPictureInPictureOptions());
+}
+
 gfx::Insets PictureInPictureBrowserFrameViewLinux::ResizeBorderInsets() const {
+  if (IsTransparent()) {
+    // No frame is drawn, so resize from inside the content like Mac/Windows.
+    return PictureInPictureBrowserFrameView::ResizeBorderInsets();
+  }
   return FrameBorderInsets();
 }
 
 gfx::Insets PictureInPictureBrowserFrameViewLinux::FrameBorderInsets() const {
+  if (IsTransparent()) {
+    return gfx::Insets();
+  }
   if (window_frame_provider_) {
     const auto insets = window_frame_provider_->GetFrameThicknessDip();
     const bool tiled = browser_widget()->tiled();

@@ -49,6 +49,9 @@ class PictureInPictureBrowserFrameViewLinux
   // Returns whether a client-side shadow should be drawn for the window.
   bool ShouldDrawFrameShadow() const;
 
+  // True for transparent document PiP, which draws no frame or shadow.
+  bool IsTransparent() const;
+
  protected:
   // PictureInPictureBrowserFrameView:
   gfx::Insets ResizeBorderInsets() const override;

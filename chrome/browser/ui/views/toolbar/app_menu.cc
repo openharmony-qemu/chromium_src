@@ -1109,6 +1109,7 @@ void AppMenu::RunMenu(views::MenuButtonController* host,
                           host->button()->GetAnchorBoundsInScreen(),
                           views::MenuAnchorPosition::kTopRight, source_type,
                           /*native_view_for_gestures=*/gfx::NativeView(),
+                          /*parent_widget=*/gfx::kNullAcceleratedWidget,
                           /*corners=*/std::nullopt,
                           "Chrome.AppMenu.MenuHostInitToNextFramePresented");
 }
@@ -1123,6 +1124,7 @@ void AppMenu::RunMenu(views::Widget* parent,
   menu_runner_->RunMenuAt(parent, nullptr, anchor_screen_bounds,
                           views::MenuAnchorPosition::kTopRight, source_type,
                           /*native_view_for_gestures=*/gfx::NativeView(),
+                          /*parent_widget=*/gfx::kNullAcceleratedWidget,
                           /*corners=*/std::nullopt,
                           "Chrome.AppMenu.MenuHostInitToNextFramePresented");
 }

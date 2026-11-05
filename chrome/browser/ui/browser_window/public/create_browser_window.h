@@ -13,9 +13,14 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/raw_ref.h"
 #include "build/build_config.h"
+#include "cef/libcef/features/features.h"
 #include "chrome/browser/ui/browser_window/public/browser_window_interface.h"
 #include "ui/base/mojom/window_show_state.mojom.h"
 #include "ui/gfx/geometry/rect.h"
+
+#if BUILDFLAG(ENABLE_CEF)
+#include "cef/libcef/browser/chrome/browser_delegate.h"
+#endif
 
 #if !BUILDFLAG(IS_ANDROID)
 #include "components/tab_groups/tab_group_id.h"
@@ -169,6 +174,15 @@ struct BrowserWindowCreateParams {
   std::optional<bool> vertical_tab_strip_collapsed;
   // Specifies the width for the uncollapsed Vertical Tab Strip.
   std::optional<int> vertical_tab_strip_uncollapsed_width;
+
+#if BUILDFLAG(ENABLE_CEF)
+  // Opaque CEF-specific configuration. Will be propagated to new Browsers.
+  scoped_refptr<cef::BrowserDelegate::CreateParams> cef_params;
+
+  // Specify the Browser that is opening this popup.
+  // Currently only used with TYPE_PICTURE_IN_PICTURE and TYPE_DEVTOOLS.
+  raw_ptr<BrowserWindowInterface, DanglingUntriaged> opener = nullptr;
+#endif
 
   // Specifies the focused tab group ID, if the window should be created in a
   // focused state.

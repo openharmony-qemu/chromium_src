@@ -21,6 +21,7 @@
 #include "chrome/browser/browsing_data/browsing_data_important_sites_util.h"
 #include "chrome/browser/global_keyboard_shortcuts_mac.h"
 #include "chrome/browser/media/router/media_router_feature.h"
+#include "chrome/browser/picture_in_picture/picture_in_picture_window_manager.h"
 #include "chrome/browser/ui/actions/chrome_action_id.h"
 #include "chrome/browser/ui/actions/chrome_action_properties.h"
 #include "chrome/browser/ui/browser_actions.h"
@@ -47,6 +48,7 @@
 #include "chrome/browser/ui/views/frame/glass_frame_service.h"
 #include "chrome/browser/ui/views/web_apps/frame_toolbar/web_app_frame_toolbar_utils.h"
 #include "chrome/browser/ui/web_applications/app_browser_controller.h"
+#include "chrome/browser/ui/window_feature_controller/window_feature_controller.h"
 #include "chrome/common/pref_names.h"
 #include "chrome/grit/generated_resources.h"
 #include "components/bookmarks/common/bookmark_pref_names.h"
@@ -410,8 +412,15 @@ void BrowserNativeWidgetMac::OnWidgetDestroyed(views::Widget* widget) {
 void BrowserNativeWidgetMac::ValidateUserInterfaceItem(
     int32_t tag,
     remote_cocoa::mojom::ValidateUserInterfaceItemResult* result) {
-  BrowserWindowInterface* const browser =
-      browser_view_ ? browser_view_->browser() : nullptr;
+  return ValidateUserInterfaceItem(
+      browser_view_ ? browser_view_->browser() : nullptr, tag, result);
+}
+
+// static
+void BrowserNativeWidgetMac::ValidateUserInterfaceItem(
+    BrowserWindowInterface* browser,
+    int32_t tag,
+    remote_cocoa::mojom::ValidateUserInterfaceItemResult* result) {
   if (!browser || !chrome::SupportsCommand(browser, tag)) {
     result->enable = false;
     return;
@@ -622,9 +631,16 @@ bool BrowserNativeWidgetMac::WillExecuteCommand(
   if (!browser_view_) {
     return false;
   }
+  return WillExecuteCommand(browser_view_->browser(), command,
+                            window_open_disposition, is_before_first_responder);
+}
 
-  BrowserWindowInterface* const browser = browser_view_->browser();
-
+// static
+bool BrowserNativeWidgetMac::WillExecuteCommand(
+    BrowserWindowInterface* browser,
+    int32_t command,
+    WindowOpenDisposition window_open_disposition,
+    bool is_before_first_responder) {
   if (is_before_first_responder) {
     // The specification for this private extensions API is incredibly vague.
     // For now, we avoid triggering chrome commands prior to giving the
@@ -656,12 +672,23 @@ bool BrowserNativeWidgetMac::ExecuteCommand(
     int32_t command,
     WindowOpenDisposition window_open_disposition,
     bool is_before_first_responder) {
-  if (!WillExecuteCommand(command, window_open_disposition,
+  if (!browser_view_) {
+    return false;
+  }
+  return ExecuteCommand(browser_view_->browser(), command,
+                        window_open_disposition, is_before_first_responder);
+}
+
+// static
+bool BrowserNativeWidgetMac::ExecuteCommand(
+    BrowserWindowInterface* browser,
+    int32_t command,
+    WindowOpenDisposition window_open_disposition,
+    bool is_before_first_responder) {
+  if (!WillExecuteCommand(browser, command, window_open_disposition,
                           is_before_first_responder)) {
     return false;
   }
-
-  BrowserWindowInterface* browser = browser_view_->browser();
 
   if (command == IDC_TOGGLE_VERTICAL_TABS) {
     if (auto* controller =
@@ -708,10 +735,13 @@ bool BrowserNativeWidgetMac::ExecuteCommand(
       return true;
     }
   } else if (command == IDC_CLEAR_BROWSING_DATA) {
-    views::ElementTrackerViews::GetInstance()->NotifyCustomEvent(
-        browsing_data_important_sites_util::
-            kOpenClearBrowsingDataDialogViaAcceleratorEventId,
-        browser_view_);
+    BrowserView* browser_view = BrowserView::GetBrowserViewForBrowser(browser);
+    if (browser_view) {
+      views::ElementTrackerViews::GetInstance()->NotifyCustomEvent(
+          browsing_data_important_sites_util::
+              kOpenClearBrowsingDataDialogViaAcceleratorEventId,
+          browser_view);
+    }
   }
 
   chrome::ExecuteCommandWithDisposition(browser, command,
@@ -734,6 +764,18 @@ void BrowserNativeWidgetMac::PopulateCreateWindowParams(
     params->style_mask = NSWindowStyleMaskFullSizeContentView |
                          NSWindowStyleMaskTitled | NSWindowStyleMaskResizable;
     params->window_title_hidden = true;
+    if (PictureInPictureWindowManager::IsTransparentDocumentPictureInPicture(
+            browser_view_->GetDocumentPictureInPictureOptions()) &&
+        !WindowFeatureController::From(browser_view_->browser())
+             ->SupportsWindowFeature(
+                 WindowFeatureController::WindowFeature::kFeatureTitleBar)) {
+      // AppKit's titled frame draws a one-pixel highlight even with a zero
+      // titlebar height. Transparent, frameless PiP needs a borderless native
+      // frame as well as the hidden Views frame. Retain native resizing.
+      params->window_class = remote_cocoa::mojom::WindowClass::kDefault;
+      params->style_mask =
+          NSWindowStyleMaskBorderless | NSWindowStyleMaskResizable;
+    }
   } else if (browser_view_->GetIsNormalType() ||
              browser_view_->GetIsWebAppType()) {
     params->window_class = remote_cocoa::mojom::WindowClass::kBrowser;

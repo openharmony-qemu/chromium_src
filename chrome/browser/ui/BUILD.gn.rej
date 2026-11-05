@@ -1,0 +1,18 @@
+--- chrome/browser/ui/BUILD.gn
++++ chrome/browser/ui/BUILD.gn
+@@ -1608,6 +1613,7 @@ static_library("ui") {
+     ":ui_features",
+     ":url_identity",
+     "//base",
++    "//cef/libcef/features:buildflags",
+     "//chrome/app:chrome_dll_resources",
+     "//chrome/app/resources:platform_locale_settings",
+     "//chrome/app/theme:chrome_unscaled_resources",
+@@ -4660,6 +4673,7 @@ static_library("ui") {
+     deps += [
+       "//chrome/browser/printing",
+       "//chrome/browser/printing:impl",
++      "//components/printing/common:mojo_interfaces",
+     ]
+     allow_circular_includes_from += [ "//chrome/browser/printing:impl" ]
+   }

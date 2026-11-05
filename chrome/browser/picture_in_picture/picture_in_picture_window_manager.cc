@@ -140,12 +140,22 @@ PictureInPictureWindowManager* PictureInPictureWindowManager::GetInstance() {
   return base::Singleton<PictureInPictureWindowManager>::get();
 }
 
+bool PictureInPictureWindowManager::IsTransparentDocumentPictureInPicture(
+    const std::optional<blink::mojom::PictureInPictureWindowOptions>& options) {
+#if !BUILDFLAG(IS_CHROMEOS)
+  return options && options->transparent;
+#else
+  return false;
+#endif
+}
+
 void PictureInPictureWindowManager::EnterPictureInPictureWithController(
     content::PictureInPictureWindowController* pip_window_controller) {
   // If there was already a controller, close the existing window before
   // creating the next one.
-  if (pip_window_controller_)
+  if (pip_window_controller_) {
     CloseWindowInternal();
+  }
 
   pip_window_controller_ = pip_window_controller;
 
@@ -459,7 +469,8 @@ gfx::Rect PictureInPictureWindowManager::CalculateOuterWindowBounds(
     // Ignore the result if we're asked to do so.  Note that we still have to
     // ask the cache, so that it's set up to accept position updates later for
     // this request.
-    if (cached_window_bounds && !pip_options.prefer_initial_window_placement) {
+    if (cached_window_bounds && !pip_options.prefer_initial_window_placement &&
+        !pip_options.initial_position.has_value()) {
       // Cache hit!  Just return it as the window bounds.
       return *cached_window_bounds;
     }
@@ -513,6 +524,11 @@ gfx::Rect PictureInPictureWindowManager::CalculateOuterWindowBounds(
   }
 #endif
   // Position the window.
+  if (pip_options.initial_position.has_value()) {
+    window_bounds.set_origin(pip_options.initial_position.value());
+    return window_bounds;
+  }
+
   int window_diff_width = work_area.right() - window_bounds.width();
   int window_diff_height = work_area.bottom() - window_bounds.height();
 

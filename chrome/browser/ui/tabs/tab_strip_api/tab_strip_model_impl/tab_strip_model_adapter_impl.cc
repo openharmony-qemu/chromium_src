@@ -16,6 +16,8 @@
 #include "components/tab_groups/tab_group_visual_data.h"
 #include "components/tabs/public/split_tab_collection.h"
 #include "components/tabs/public/tab_collection.h"
+#include "ui/color/color_provider_manager.h"
+#include "ui/native_theme/native_theme.h"
 #include "components/tabs/public/tab_group.h"
 #include "components/tabs/public/tab_group_tab_collection.h"
 #include "components/tabs/public/tab_interface.h"
@@ -71,7 +73,11 @@ types::TabStates TabStripModelAdapterImpl::GetTabStates(
 const ui::ColorProvider& TabStripModelAdapterImpl::GetColorProvider() const {
   content::WebContents* active_contents =
       tab_strip_model_->GetActiveWebContents();
-  CHECK(active_contents);
+  if (!active_contents) {
+    return *ui::ColorProviderManager::Get().GetColorProviderFor(
+        ui::NativeTheme::GetInstanceForNativeUi()->GetColorProviderKey(
+            /*custom_theme=*/nullptr));
+  }
   return active_contents->GetColorProvider();
 }
 

@@ -363,6 +363,10 @@ component("platform") {
       if (use_gio) {
         configs += [ "//build/linux:gio_config" ]
       }
+
+      if (is_clang) {
+        cflags = [ "-Wno-deprecated-volatile" ]
+      }
     }
   }
 }

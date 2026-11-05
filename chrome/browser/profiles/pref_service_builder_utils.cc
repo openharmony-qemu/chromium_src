@@ -16,6 +16,7 @@
 #include "base/task/sequenced_task_runner.h"
 #include "base/threading/scoped_blocking_call.h"
 #include "build/chromeos_buildflags.h"
+#include "cef/libcef/features/features.h"
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/policy/chrome_browser_policy_connector.h"
 #include "chrome/browser/prefs/browser_prefs.h"
@@ -38,6 +39,10 @@
 #include "content/public/browser/network_service_instance.h"
 #include "services/preferences/public/mojom/tracked_preference_validation_delegate.mojom.h"
 #include "ui/base/l10n/l10n_util.h"
+
+#if BUILDFLAG(ENABLE_CEF)
+#include "cef/libcef/browser/prefs/browser_prefs.h"
+#endif
 
 namespace {
 
@@ -77,6 +82,9 @@ void RegisterProfilePrefs(bool is_signin_profile,
       pref_registry);
   BrowserContextDependencyManager::GetInstance()
       ->RegisterProfilePrefsForServices(pref_registry);
+#if BUILDFLAG(ENABLE_CEF)
+  browser_prefs::RegisterProfilePrefs(pref_registry);
+#endif
 }
 
 std::unique_ptr<sync_preferences::PrefServiceSyncable> CreateProfilePrefService(

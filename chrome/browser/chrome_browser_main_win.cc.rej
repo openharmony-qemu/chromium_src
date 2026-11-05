@@ -1,0 +1,10 @@
+--- chrome/browser/chrome_browser_main_win.cc
++++ chrome/browser/chrome_browser_main_win.cc
+@@ -373,6 +374,7 @@ void UpdatePwaLaunchersForProfile(const base::FilePath& profile_dir) {
+ }
+ 
+ void MigratePinnedTaskBarShortcutsIfNeeded() {
++#if !BUILDFLAG(ENABLE_CEF)
+   // Update this number when users should go through a taskbar shortcut
+   // migration again. The last reason to do this was crrev.com/798174. @
+   // 86.0.4231.0.

@@ -1,0 +1,14 @@
+--- chrome/browser/metrics/chrome_browser_main_extra_parts_metrics.cc
++++ chrome/browser/metrics/chrome_browser_main_extra_parts_metrics.cc
+@@ -943,9 +944,11 @@ void RecordStartupMetrics() {
+   key_credential_manager_support::ReportKeyCredentialManagerSupport();
+ #endif  // BUILDFLAG(IS_WIN)
+ 
++#if !BUILDFLAG(ENABLE_CEF)
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
+   crypto::MaybeMeasureTpmOperations(unexportable_keys::GetDefaultConfig());
+ #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
++#endif  // !BUILDFLAG(ENABLE_CEF)
+ 
+   // Record whether Chrome is the default browser or not.
+   // Disabled on Linux due to hanging browser tests, see crbug.com/40770414.

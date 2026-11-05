@@ -1514,6 +1514,13 @@ void MenuItemView::PaintMinorIconAndText(gfx::Canvas* canvas, SkColor color) {
 }
 
 SkColor MenuItemView::GetTextColor(bool minor, bool paint_as_selected) const {
+  SkColor text_color;
+  const MenuDelegate *delegate = GetDelegate();
+  if (delegate && delegate->GetTextColor(GetCommand(), minor, paint_as_selected,
+                                         &text_color)) {
+    return text_color;
+  }
+
   // Use a custom color if provided by the controller. If the item is selected,
   // use the default color.
   if (!paint_as_selected && foreground_color_id_.has_value()) {

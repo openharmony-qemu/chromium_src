@@ -20,12 +20,14 @@
 #include "base/task/single_thread_task_runner.h"
 #include "base/task/thread_pool.h"
 #include "base/win/scoped_gdi_object.h"
+#include "cef/libcef/features/features.h"
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/profiles/avatar_menu.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/profiles/profile_attributes_storage.h"
 #include "chrome/browser/profiles/profile_avatar_icon_util.h"
 #include "chrome/browser/profiles/profile_manager.h"
+#include "chrome/browser/ui/views/frame/browser_view.h"
 #include "skia/ext/font_utils.h"
 #include "skia/ext/image_operations.h"
 #include "skia/ext/legacy_display_globals.h"
@@ -41,6 +43,10 @@
 #include "ui/gfx/image/image.h"
 #include "ui/gfx/win/icon_util.h"
 #include "ui/views/win/hwnd_util.h"
+
+#if BUILDFLAG(ENABLE_CEF)
+#include "cef/libcef/browser/chrome/browser_delegate.h"
+#endif
 
 namespace taskbar {
 
@@ -202,6 +208,24 @@ void UpdateTaskbarDecoration(Profile* profile, gfx::NativeWindow window) {
     taskbar::DrawTaskbarDecoration(window, nullptr);
     return;
   }
+
+#if BUILDFLAG(ENABLE_CEF)
+  if (auto browser_view = BrowserView::GetBrowserViewForNativeWindow(window)) {
+    if (auto browser = browser_view->browser()) {
+      if (browser->cef_delegate() &&
+          (browser->cef_delegate()->IsViewsHosted() ||
+           ((browser->GetType() ==
+                 BrowserWindowInterface::Type::TYPE_PICTURE_IN_PICTURE ||
+             browser->GetType() ==
+                 BrowserWindowInterface::Type::TYPE_DEVTOOLS) &&
+            browser->cef_delegate()->HasViewsHostedOpener()))) {
+        // Don't add taskbar decoration.
+        taskbar::DrawTaskbarDecoration(window, nullptr);
+        return;
+      }
+    }
+  }
+#endif  // BUILDFLAG(ENABLE_CEF)
 
   // We need to draw the taskbar decoration. Even though we have an icon on the
   // window's relaunch details, we draw over it because the user may have

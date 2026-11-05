@@ -29,10 +29,14 @@ bool IsBookmarkBarLocation(BookmarkLaunchLocation location) {
 auto GetMetricProfile(const Profile* profile) {
   DCHECK(profile);
   DCHECK(profile->IsRegularProfile() ||
-         profile->IsPrimaryOTRProfileWithRegularParent());
+         profile->IsPrimaryOTRProfileWithRegularParent() ||
+         (profile->IsOffTheRecord() &&
+          profile->GetOTRProfileID().IsUniqueForCEF()));
   if (profile->IsRegularProfile()) {
     return profile_metrics::BrowserProfileType::kRegular;
-  } else if (profile->IsIncognitoProfile()) {
+  } else if (profile->IsIncognitoProfile() ||
+             (profile->IsOffTheRecord() &&
+              profile->GetOTRProfileID().IsUniqueForCEF())) {
     return profile_metrics::BrowserProfileType::kIncognito;
   }
   return profile_metrics::BrowserProfileType::kEnterpriseIsolated;

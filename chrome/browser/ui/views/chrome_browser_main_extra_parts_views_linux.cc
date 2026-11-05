@@ -69,7 +69,10 @@ void ChromeBrowserMainExtraPartsViewsLinux::ToolkitInitialized() {
 #endif
 
 #if BUILDFLAG(USE_DBUS)
-  portal_settings_ = std::make_unique<ui::PortalSettingsLinux>();
+  if (!ui::NativeTheme::IsForcedDarkMode() &&
+      !ui::NativeTheme::IsForcedLightMode()) {
+    portal_settings_ = std::make_unique<ui::PortalSettingsLinux>();
+  }
 #endif
 }
 

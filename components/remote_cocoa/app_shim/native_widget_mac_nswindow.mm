@@ -777,6 +777,12 @@ struct NSEdgeAndCornerThicknesses {
     // window, swallow the event to prevent the web contents from processing it
     // (and potentially triggering new dialogs).
     if (is_blocked_by_modal && child_modal_window) {
+      // Let AppKit handle native resize edges, even when they overlap the
+      // blocked web contents view.
+      if ([self _resizeDirectionForMouseLocation:event.locationInWindow] != -1) {
+        [super sendEvent:event];
+        return;
+      }
       if (![child_modal_window isKeyWindow]) {
         [child_modal_window makeKeyWindow];
       }

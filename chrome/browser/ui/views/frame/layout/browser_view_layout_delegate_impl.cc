@@ -35,19 +35,23 @@
 #include "chrome/browser/ui/window_feature_controller/window_feature_controller.h"
 #endif
 
+#if BUILDFLAG(ENABLE_CEF)
+#include "cef/libcef/browser/chrome/browser_delegate.h"
+#endif
+
 BrowserViewLayoutDelegateImpl::BrowserViewLayoutDelegateImpl(
     BrowserView& browser_view)
     : browser_view_(browser_view) {
-    PrefService* prefs = browser_view_->GetProfile()->GetPrefs();
-    tab_search_pinned_to_tab_strip_ =
-        prefs->GetBoolean(prefs::kTabSearchPinnedToTabstrip);
+  PrefService* prefs = browser_view_->GetProfile()->GetPrefs();
+  tab_search_pinned_to_tab_strip_ =
+      prefs->GetBoolean(prefs::kTabSearchPinnedToTabstrip);
 
-    pref_registrar_.Init(prefs);
-    pref_registrar_.Add(
-        prefs::kTabSearchPinnedToTabstrip,
-        base::BindRepeating(
-            &BrowserViewLayoutDelegateImpl::OnTabSearchPinnedStateChanged,
-            base::Unretained(this)));
+  pref_registrar_.Init(prefs);
+  pref_registrar_.Add(
+      prefs::kTabSearchPinnedToTabstrip,
+      base::BindRepeating(
+          &BrowserViewLayoutDelegateImpl::OnTabSearchPinnedStateChanged,
+          base::Unretained(this)));
 }
 BrowserViewLayoutDelegateImpl::~BrowserViewLayoutDelegateImpl() = default;
 
@@ -142,6 +146,15 @@ BrowserViewLayoutDelegateImpl::GetBrowserWindowState() const {
 views::LayoutAlignment BrowserViewLayoutDelegateImpl::GetWindowTitleAlignment()
     const {
   return GetFrameView()->GetWindowTitleAlignment();
+}
+
+void BrowserViewLayoutDelegateImpl::UpdateDialogTopInsetInBrowserView(
+    int* dialog_top_y) const {
+#if BUILDFLAG(ENABLE_CEF)
+  if (auto cef_delegate = browser_view_->browser()->cef_delegate()) {
+    cef_delegate->UpdateDialogTopInset(dialog_top_y);
+  }
+#endif
 }
 
 bool BrowserViewLayoutDelegateImpl::IsToolbarVisible() const {

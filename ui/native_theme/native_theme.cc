@@ -70,7 +70,10 @@ PreferredColorSchemeOverride() {
       base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kForceDarkMode)
           ? std::make_optional(NativeTheme::PreferredColorScheme::kDark)
-          : std::nullopt;
+          : (base::CommandLine::ForCurrentProcess()->HasSwitch(
+                 "force-light-mode")
+                 ? std::make_optional(NativeTheme::PreferredColorScheme::kLight)
+                 : std::nullopt);
   return value;
 }
 
@@ -316,6 +319,8 @@ void NativeTheme::NotifyOnNativeThemeUpdated() {
 
   NotifyOnNativeThemeUpdatedImpl();
 
+  color_provider_manager.AfterNativeThemeUpdated();
+
   RecordNumColorProvidersInitializedDuringOnNativeThemeUpdated(
       color_provider_manager.num_providers_initialized() -
       initial_providers_initialized);
@@ -404,6 +409,19 @@ void NativeTheme::SetPreferredColorSchemeOverride(
 std::optional<NativeTheme::PreferredColorScheme>
 NativeTheme::GetPreferredColorSchemeOverride() {
   return PreferredColorSchemeOverride();
+}
+
+bool NativeTheme::IsForcedDarkMode() {
+  static bool kIsForcedDarkMode =
+      base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kForceDarkMode);
+  return kIsForcedDarkMode;
+}
+
+bool NativeTheme::IsForcedLightMode() {
+  static bool kIsForcedLightMode =
+      base::CommandLine::ForCurrentProcess()->HasSwitch("force-light-mode");
+  return kIsForcedLightMode;
 }
 
 bool NativeTheme::IsForcedHighContrast() {

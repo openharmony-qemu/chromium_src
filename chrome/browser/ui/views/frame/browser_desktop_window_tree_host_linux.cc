@@ -9,6 +9,7 @@
 
 #include "base/no_destructor.h"
 #include "build/build_config.h"
+#include "chrome/browser/picture_in_picture/picture_in_picture_window_manager.h"
 #include "chrome/browser/ui/browser_init_state.h"
 #include "chrome/browser/ui/tabs/tab_strip_model.h"
 #include "chrome/browser/ui/views/frame/browser_frame_view_linux.h"
@@ -181,7 +182,10 @@ void BrowserDesktopWindowTreeHostLinux::UpdateFrameHints() {
   if (ui::OzonePlatform::GetInstance()->IsWindowCompositingSupported()) {
     // Set the opaque region.
     std::vector<gfx::Rect> opaque_region;
-    if (IsShowingFrame(native_widget_->UseCustomFrame(), window_state)) {
+    if (PictureInPictureWindowManager::IsTransparentDocumentPictureInPicture(
+            browser_view_->GetDocumentPictureInPictureOptions())) {
+      // Leave the opaque region empty so the compositor blends page alpha.
+    } else if (IsShowingFrame(native_widget_->UseCustomFrame(), window_state)) {
       opaque_region =
           views::GetRestoredOpaqueRegion(view->GetRestoredClipRegion(), scale,
                                          view->GetTranslucentTopAreaHeight());

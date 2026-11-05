@@ -705,7 +705,8 @@ void MenuController::Run(Widget* parent,
                          ui::mojom::MenuSourceType source_type,
                          MenuType menu_type,
                          bool is_nested_drag,
-                         gfx::NativeView native_view_for_gestures) {
+                         gfx::NativeView native_view_for_gestures,
+                         gfx::AcceleratedWidget parent_widget) {
   // Track stack depth to defer controller destruction during initial menu
   // display.
   ScopedDeletionGuard guard(AsWeakPtr());
@@ -777,6 +778,7 @@ void MenuController::Run(Widget* parent,
     SetShowing(true);
 
     native_view_for_gestures_ = native_view_for_gestures;
+    parent_widget_ = parent_widget;
 
     // Only create a MenuPreTargetHandler for non-nested menus. Nested menus
     // will use the existing one.
@@ -2779,6 +2781,7 @@ void MenuController::OpenMenuImpl(MenuItemView* item, bool show) {
     params.do_capture = do_capture;
     params.native_view_for_gestures = native_view_for_gestures_;
     params.owned_window_anchor = anchor;
+    params.parent_widget = parent_widget_;
     if (item->GetParentMenuItem()) {
       params.context = item->GetWidget();
       // (crbug.com/1414232) The item to be open is a submenu. Make sure
@@ -3541,7 +3544,12 @@ void MenuController::OpenSubmenuChangeSelectionIfCan() {
       item = button_submenu;
     }
   }
-  if (!item->HasSubmenu() || !item->GetEnabled()) {
+  if (!item->HasSubmenu() || !item->GetEnabled() ||
+      !item->GetParentMenuItem()) {
+    MenuItemView* submenu_item =
+        item->GetParentMenuItem() ? item->GetParentMenuItem() : item;
+    submenu_item->GetDelegate()->OnUnhandledOpenSubmenu(submenu_item,
+                                                        base::i18n::IsRTL());
     return;
   }
 
@@ -3572,6 +3580,7 @@ void MenuController::CloseSubmenu() {
   MenuItemView* item = state_.item;
   DCHECK(item);
   if (!item->GetParentMenuItem()) {
+    item->GetDelegate()->OnUnhandledCloseSubmenu(item, base::i18n::IsRTL());
     return;
   }
   MenuItemView* item_to_select = nullptr;

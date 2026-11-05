@@ -45,6 +45,15 @@ std::optional<GlobalManager>& GetGlobalManager() {
 
 }  // namespace
 
+void ColorProviderManager::AddObserver(ColorProviderManagerObserver* observer) {
+  observers_.AddObserver(observer);
+}
+
+void ColorProviderManager::RemoveObserver(
+    ColorProviderManagerObserver* observer) {
+  observers_.RemoveObserver(observer);
+}
+
 ColorProviderManager::ColorProviderManager() {
   ResetColorProviderInitializerList();
 }
@@ -86,6 +95,16 @@ void ColorProviderManager::ResetColorProviderInitializerList() {
 void ColorProviderManager::ResetColorProviderCache() {
   if (!color_providers_.empty()) {
     color_providers_.clear();
+
+    for (ColorProviderManagerObserver& observer : observers_) {
+      observer.OnColorProviderCacheReset();
+    }
+  }
+}
+
+void ColorProviderManager::AfterNativeThemeUpdated() {
+  for (ColorProviderManagerObserver& observer : observers_) {
+    observer.OnAfterNativeThemeUpdated();
   }
 }
 

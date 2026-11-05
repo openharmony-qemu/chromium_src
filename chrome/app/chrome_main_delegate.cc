@@ -40,6 +40,7 @@
 #include "base/time/time.h"
 #include "base/timer/timer.h"
 #include "build/build_config.h"
+#include "cef/libcef/features/features.h"
 #include "chrome/common/buildflags.h"
 #include "chrome/common/channel_info.h"
 #include "chrome/common/chrome_constants.h"
@@ -651,6 +652,7 @@ struct MainFunction {
 };
 
 #if !defined(BUILDING_CHROME_RENDERER)
+#if !BUILDFLAG(ENABLE_CEF)
 // Initializes the user data dir. Must be called before InitializeLocalState().
 void InitializeUserDataDir(base::CommandLine* command_line) {
 #if BUILDFLAG(IS_WIN)
@@ -796,6 +798,7 @@ void RecordMainStartupMetrics(const StartupTimestamps& timestamps) {
 
   startup_metric_utils::GetCommon().RecordChromeMainEntryTime(now);
 }
+#endif  // !BUILDFLAG(ENABLE_CEF)
 
 #if BUILDFLAG(IS_WIN) && !defined(BUILDING_CHROME_RENDERER)
 constexpr wchar_t kOnResourceExhaustedMessage[] =
@@ -872,6 +875,10 @@ ChromeMainDelegate::~ChromeMainDelegate() {
 ChromeMainDelegate::~ChromeMainDelegate() = default;
 #endif  // !BUILDFLAG(IS_ANDROID)
 
+void ChromeMainDelegate::CleanupOnUIThread() {
+  memory_system_.reset();
+}
+
 std::optional<int> ChromeMainDelegate::PostEarlyInitialization(
     InvokedIn invoked_in) {
   DUMP_WILL_BE_CHECK(base::ThreadPoolInstance::Get());
@@ -898,7 +905,7 @@ std::optional<int> ChromeMainDelegate::PostEarlyInitialization(
     // future session's metrics.
     DeferBrowserMetrics(user_data_dir);
 
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) && !BUILDFLAG(ENABLE_CEF)
     // In the case the process is not the singleton process, the uninstall tasks
     // need to be executed here. A window will be displayed asking to close all
     // running instances.
@@ -982,8 +989,9 @@ std::optional<int> ChromeMainDelegate::PostEarlyInitialization(
   CommonEarlyInitialization();
 
   // Initializes the resource bundle and determines the locale.
-  std::string actual_locale = LoadLocalState(
-      chrome_feature_list_creator, invoked_in_browser->is_running_test);
+  std::string actual_locale =
+      LoadLocalState(chrome_feature_list_creator, GetResourceBundleDelegate(),
+                     invoked_in_browser->is_running_test);
   chrome_feature_list_creator->SetApplicationLocale(actual_locale);
 
 #if BUILDFLAG(CHROME_FOR_TESTING)
@@ -1006,6 +1014,8 @@ std::optional<int> ChromeMainDelegate::PostEarlyInitialization(
       new net::NetworkChangeNotifierFactoryAndroid());
 #endif
 
+#if !BUILDFLAG(ENABLE_CEF)
+  // Avoid CEF crash with multi-threaded-message-loop.
   bool record = true;
 #if BUILDFLAG(IS_ANDROID)
   record =
@@ -1014,6 +1024,7 @@ std::optional<int> ChromeMainDelegate::PostEarlyInitialization(
   if (record) {
     chrome_content_browser_client_->startup_data()->RecordCoreSystemProfile();
   }
+#endif  // !BUILDFLAG(ENABLE_CEF)
 
 #if BUILDFLAG(IS_ANDROID)
   UmaSessionStats::OnStartup();
@@ -1084,8 +1095,8 @@ void ChromeMainDelegate::CreateThreadPool(std::string_view name) {
       std::make_unique<ChromeThreadProfilerClient>());
 
 // `ChromeMainDelegateAndroid::PreSandboxStartup` creates the profiler a little
-// later.
-#if !BUILDFLAG(IS_ANDROID)
+// later. Same with CEF.
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ENABLE_CEF)
   // Start the sampling profiler as early as possible - namely, once the thread
   // pool has been created.
   sampling_profiler_ = std::make_unique<MainThreadStackSamplingProfiler>();
@@ -1577,20 +1588,25 @@ void ChromeMainDelegate::PreSandboxStartup() {
   InitMacCrashReporter(command_line, process_type);
   SetUpInstallerPreferences(command_line);
 #endif
+#endif  // !BUILDFLAG(ENABLE_CEF)
 
 #if !defined(BUILDING_CHROME_RENDERER)
+#if !BUILDFLAG(ENABLE_CEF)
   // Initialize the user data dir for any process type that needs it.
   if (chrome::ProcessNeedsProfileDir(process_type)) {
     InitializeUserDataDir(base::CommandLine::ForCurrentProcess());
   }
+#endif  // !BUILDFLAG(ENABLE_CEF)
 
   // Register component_updater PathProvider after DIR_USER_DATA overridden by
   // command line flags. Maybe move the chrome PathProvider down here also?
   component_updater::RegisterPathProvider(chrome::DIR_COMPONENTS,
                                           chrome::DIR_USER_DATA);
 #else   // !defined(BUILDING_CHROME_RENDERER)
+#if !BUILDFLAG(ENABLE_CEF)
   // Renderers on Windows never require a profile directory.
   CHECK(!chrome::ProcessNeedsProfileDir(process_type));
+#endif  // !BUILDFLAG(ENABLE_CEF)
 #endif  // !defined(BUILDING_CHROME_RENDERER)
 
 #if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_WIN)
@@ -1688,7 +1704,8 @@ void ChromeMainDelegate::PreSandboxStartup() {
 #else
     const std::string loaded_locale =
         ui::ResourceBundle::InitSharedInstanceWithLocale(
-            locale, nullptr, ui::ResourceBundle::LOAD_COMMON_RESOURCES);
+            locale, GetResourceBundleDelegate(),
+            ui::ResourceBundle::LOAD_COMMON_RESOURCES);
 
     base::FilePath resources_pack_path;
     base::PathService::Get(chrome::FILE_RESOURCES_PACK, &resources_pack_path);
@@ -1698,6 +1715,7 @@ void ChromeMainDelegate::PreSandboxStartup() {
     CHECK(!loaded_locale.empty()) << "Locale could not be found for " << locale;
   }
 
+#if !BUILDFLAG(ENABLE_CEF)
 #if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_MAC)
   // Zygote needs to call InitCrashReporter() in RunZygote().
   if (process_type != switches::kZygoteProcess &&
@@ -1734,6 +1752,7 @@ void ChromeMainDelegate::PreSandboxStartup() {
   // After all the platform Breakpads have been initialized, store the command
   // line for crash reporting.
   crash_keys::SetCrashKeysFromCommandLine(command_line);
+#endif  // !BUILDFLAG(ENABLE_CEF)
 
 #if BUILDFLAG(ENABLE_PDF) && !defined(BUILDING_CHROME_RENDERER)
   MaybePatchGdiGetFontData();
@@ -1866,6 +1885,7 @@ void ChromeMainDelegate::ZygoteForked() {
   }
 #endif  // !defined(BUILDING_CHROME_RENDERER)
 
+#if !BUILDFLAG(ENABLE_CEF)
   // Needs to be called after we have chrome::DIR_USER_DATA.  BrowserMain sets
   // this up for the browser process in a different manner.
   const base::CommandLine* command_line =
@@ -1878,6 +1898,7 @@ void ChromeMainDelegate::ZygoteForked() {
 
   // Reset the command line for the newly spawned process.
   crash_keys::SetCrashKeysFromCommandLine(*command_line);
+#endif  // !BUILDFLAG(ENABLE_CEF)
 }
 
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
@@ -2004,6 +2025,7 @@ void ChromeMainDelegate::InitializeMemorySystem() {
                              : memory_system::DispatcherParameters::
                                    AllocationTraceRecorderInclusion::kIgnore;
 
+  memory_system_ = std::make_unique<memory_system::MemorySystem>();
   memory_system::Initializer()
       .SetGwpAsanParameters(gwp_asan_boost_sampling, process_type)
       .SetProfilingClientParameters(chrome::GetChannel(),
@@ -2011,7 +2033,7 @@ void ChromeMainDelegate::InitializeMemorySystem() {
       .SetDispatcherParameters(memory_system::DispatcherParameters::
                                    PoissonAllocationSamplerInclusion::kEnforce,
                                allocation_recorder_inclusion, process_type)
-      .Initialize(memory_system_);
+      .Initialize(*memory_system_);
 }
 
 bool ChromeMainDelegate::IsInitFeatureListEarly() {

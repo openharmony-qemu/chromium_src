@@ -196,6 +196,7 @@ void ActionAppMenu::RunMenu(views::MenuButtonController* host, int run_types) {
                           views::MenuAnchorPosition::kTopRight,
                           ui::mojom::MenuSourceType::kNone,
                           /*native_view_for_gestures=*/gfx::NativeView(),
+                          /*parent_widget=*/gfx::kNullAcceleratedWidget,
                           /*corners=*/std::nullopt,
                           "Chrome.AppMenu.MenuHostInitToNextFramePresented");
 }

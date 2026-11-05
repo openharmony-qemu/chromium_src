@@ -84,6 +84,10 @@ void RandBytes(span<uint8_t> output) {
 
 namespace internal {
 
+void RandBytesAvoidAllocation(span<uint8_t> output) {
+  RandBytesInternal(output, /*avoid_allocation=*/true);
+}
+
 double RandDoubleAvoidAllocation() {
   uint64_t number;
   RandBytesInternal(byte_span_from_ref(number),

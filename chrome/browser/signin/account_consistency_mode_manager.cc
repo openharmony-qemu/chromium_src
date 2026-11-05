@@ -12,6 +12,7 @@
 #include "base/metrics/histogram_macros.h"
 #include "base/strings/string_util.h"
 #include "build/build_config.h"
+#include "cef/libcef/features/features.h"
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/profiles/profile_attributes_storage.h"
@@ -146,7 +147,8 @@ AccountConsistencyModeManager::~AccountConsistencyModeManager() = default;
 // static
 void AccountConsistencyModeManager::RegisterProfilePrefs(
     user_prefs::PrefRegistrySyncable* registry) {
-  registry->RegisterBooleanPref(prefs::kSigninAllowedOnNextStartup, true);
+  registry->RegisterBooleanPref(prefs::kSigninAllowedOnNextStartup,
+                                !BUILDFLAG(ENABLE_CEF));
 }
 
 // static

@@ -69,6 +69,9 @@ class VIEWS_EXPORT DesktopWindowTreeHostLinux
   // Sets hints for the WM/compositor that reflect the extents of the
   // client-drawn shadow.
   virtual void UpdateFrameHints();
+  void OnWidgetInitDone() override;
+
+  void set_screen_bounds(const gfx::Rect& bounds) { screen_bounds_ = bounds; }
 
  protected:
   // Overridden from DesktopWindowTreeHost:
@@ -81,6 +84,8 @@ class VIEWS_EXPORT DesktopWindowTreeHostLinux
       const gfx::Vector2d& drag_offset,
       Widget::MoveLoopSource source,
       Widget::MoveLoopEscapeBehavior escape_behavior) override;
+  gfx::Rect GetWindowBoundsInScreen() const override;
+  gfx::Point GetLocationOnScreenInPixels() const override;
 
   // PlatformWindowDelegate:
   gfx::Insets CalculateInsetsInDIP(
@@ -147,6 +152,9 @@ class VIEWS_EXPORT DesktopWindowTreeHostLinux
 
   base::ScopedObservation<ui::NativeTheme, ui::NativeThemeObserver>
       theme_observation_{this};
+
+  // Override the screen bounds when the host is a child window.
+  gfx::Rect screen_bounds_;
 
   // The display and the native X window hosting the root window.
   base::WeakPtrFactory<DesktopWindowTreeHostLinux> weak_factory_{this};

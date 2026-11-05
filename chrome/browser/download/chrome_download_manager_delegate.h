@@ -21,6 +21,7 @@
 #include "base/task/sequenced_task_runner.h"
 #include "base/unguessable_token.h"
 #include "build/build_config.h"
+#include "cef/libcef/features/features.h"
 #include "chrome/browser/download/download_completion_blocker.h"
 #include "chrome/browser/download/download_target_determiner_delegate.h"
 #include "components/download/public/common/download_danger_type.h"
@@ -73,6 +74,12 @@ enum class Error;
 namespace safe_browsing {
 class DownloadProtectionService;
 enum class DownloadCheckResult;
+}
+#endif
+
+#if BUILDFLAG(ENABLE_CEF)
+namespace cef {
+class DownloadManagerDelegate;
 }
 #endif
 
@@ -457,6 +464,10 @@ class ChromeDownloadManagerDelegate
 
   // Whether a file picker dialog is showing.
   bool is_file_picker_showing_ = false;
+
+#if BUILDFLAG(ENABLE_CEF)
+  std::unique_ptr<cef::DownloadManagerDelegate> cef_delegate_;
+#endif
 
   base::WeakPtrFactory<ChromeDownloadManagerDelegate> weak_ptr_factory_{this};
 };

@@ -1,0 +1,18 @@
+--- ui/views/controls/menu/menu_item_view.cc
++++ ui/views/controls/menu/menu_item_view.cc
+@@ -1361,6 +1361,15 @@ void MenuItemView::PaintBackground(gfx::Canvas* canvas,
+     SkRRect rounded_rect;
+     rounded_rect.setRectRadii(gfx::RectFToSkRect(highlight_bounds), radii);
+     canvas->sk_canvas()->drawRRect(rounded_rect, flags);
++    return;
++  }
++
++  MenuDelegate *delegate = GetDelegate();
++  SkColor override_color;
++  if (delegate && delegate->GetBackgroundColor(GetCommand(),
++                                               paint_as_selected,
++                                               &override_color)) {
++    canvas->DrawColor(override_color);
+   } else if (paint_as_selected) {
+     gfx::Rect item_bounds = GetLocalBounds();
+     if (menu_item_background_.has_value()) {

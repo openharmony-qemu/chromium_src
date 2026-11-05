@@ -691,6 +691,9 @@ LayerTreeHostImpl::~LayerTreeHostImpl() {
   // CFRC needs to unregister the frame trackers from the frame_sorter
   // observer set before being cleaned up.
   compositor_frame_reporting_controller_->ClearFrameSequenceTrackerCollection();
+#if BUILDFLAG(IS_ARKWEB)
+  compositor_frame_reporting_controller_->SetFrameSorter(nullptr);
+#endif
 }
 
 InputHandler& LayerTreeHostImpl::GetInputHandler() {

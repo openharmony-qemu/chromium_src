@@ -80,6 +80,7 @@ class DevToolsUIBindings : public DevToolsEmbedderMessageDispatcher::Delegate,
                            public DevToolsFileHelper::Delegate {
   friend class DevToolsUIBindingsDispatchHttpRequestTest;
   friend class DevToolsUIBindingsLoadNetworkResourceTest;
+  friend class DevToolsUIBindingsNavigationTest;
 
  public:
   class Delegate {
@@ -155,6 +156,14 @@ class DevToolsUIBindings : public DevToolsEmbedderMessageDispatcher::Delegate,
 
   void SetHttpServiceRegistryForTesting(
       std::unique_ptr<DevToolsHttpServiceRegistry> service_registry);
+
+  bool has_frontend_host_for_testing() const {
+    return frontend_host_ != nullptr;
+  }
+  void ReadyToCommitNavigationForTesting(
+      content::NavigationHandle* navigation_handle) {
+    ReadyToCommitNavigation(navigation_handle);
+  }
 
   static base::Value::Dict GetSyncInformationForProfile(Profile* profile);
 

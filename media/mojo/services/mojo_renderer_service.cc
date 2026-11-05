@@ -79,16 +79,6 @@ void MojoRendererService::Initialize(
       std::move(*streams),
       base::BindOnce(&MojoRendererService::OnAllStreamsReady, weak_this_,
                      std::move(callback)));
-#if BUILDFLAG(ARKWEB_MEDIA_HLS)
-  renderer_->Initialize(
-      media_resource_.get(), this,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-      media::RequestSurfaceCB(),
-      media::VideoDecoderChangedCB(),
-#endif // ARKWEB_VIDEO_ASSISTANT
-      base::BindOnce(&MojoRendererService::OnRendererInitializeDone, weak_this_,
-                     std::move(callback)));
-#endif
 }
 
 void MojoRendererService::Flush(FlushCallback callback) {
@@ -252,13 +242,6 @@ void MojoRendererService::OnRendererInitializeDone(
     PipelineStatus status) {
   DVLOG(1) << __func__;
   DCHECK_EQ(state_, STATE_INITIALIZING);
-
-#if BUILDFLAG(ARKWEB_MEDIA_HLS)
-  if (callback.is_null()) {
-    LOG(INFO) << "callback is null";
-    return;
-  }
-#endif
 
   if (status != PIPELINE_OK) {
     state_ = STATE_ERROR;

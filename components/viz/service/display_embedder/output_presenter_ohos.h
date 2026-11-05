@@ -102,14 +102,10 @@ class VIZ_SERVICE_EXPORT OutputPresenterOHOS : public OutputPresenter {
  private:
   class SurfaceControl;
 
-#if BUILDFLAG(ARKWEB_AI_HDR)
   // Corrects buffer_size from actual OH_NativeBuffer dimensions when VPE output
   // resolution differs from the decoder's declared resolution.
-  static gfx::SizeF MaybeCorrectBufferSize(
-      const OutputPresenter::OverlayPlaneCandidate& overlay_plane,
-      ScopedOverlayAccess* access,
-      const gfx::SizeF& buffer_size);
-#endif
+  static void MaybeCorrectBufferSize(OH_NativeBuffer* const buffer,
+                                     gfx::Size& buffer_size);
 
   void OnComplete(uint64_t timestamp);
   void OnOverlayReleased(OH_NativeBuffer* buffer,

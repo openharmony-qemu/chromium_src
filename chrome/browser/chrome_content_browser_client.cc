@@ -8574,12 +8574,12 @@ void ChromeContentBrowserClient::OnKeepaliveRequestStarted(
   const auto now = base::TimeTicks::Now();
   const auto timeout = GetKeepaliveTimerTimeout(context);
   keepalive_deadline_ = std::max(keepalive_deadline_, now + timeout);
-  if (keepalive_deadline_ > now && !keepalive_timer_.IsRunning()) {
+  if (keepalive_deadline_ > now && !keepalive_timer_->IsRunning()) {
     if (!KeepAliveRegistry::GetInstance()->IsShuttingDown() &&
         !browser_shutdown::HasShutdownStarted()) {
       DVLOG(1) << "Starting a keepalive timer(" << timeout.InSecondsF()
                << " seconds)";
-      keepalive_timer_.Start(
+      keepalive_timer_->Start(
           FROM_HERE, keepalive_deadline_ - now,
           base::BindOnce(
               &ChromeContentBrowserClient::OnKeepaliveTimerFired,

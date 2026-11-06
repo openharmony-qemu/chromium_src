@@ -582,9 +582,11 @@ namespace {namespace} {{
 
   if target_platform == 'win':
     f.write(
+      '#if !BUILDFLAG(ENABLE_CEF)\n'
       '// The windows registry path where Chrome policy '
       'configuration resides.\n'
       'extern const wchar_t kRegistryChromePolicyKey[];\n'
+      '#endif\n'
     )
 
   f.write('''#if BUILDFLAG(IS_CHROMEOS)
@@ -1396,6 +1398,7 @@ namespace {namespace} {{
 
   if target_platform == 'win':
     f.write(
+      '#if !BUILDFLAG(ENABLE_CEF)\n'
       '#if BUILDFLAG(GOOGLE_CHROME_BRANDING)\n'
       'const wchar_t kRegistryChromePolicyKey[] = '
       'L"' + CHROME_POLICY_KEY + '";\n'
@@ -1405,6 +1408,7 @@ namespace {namespace} {{
       '#else\n'
       'const wchar_t kRegistryChromePolicyKey[] = '
       'L"' + CHROMIUM_POLICY_KEY + '";\n'
+      '#endif\n'
       '#endif\n\n'
     )
 

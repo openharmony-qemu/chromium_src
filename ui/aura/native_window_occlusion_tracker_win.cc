@@ -116,6 +116,12 @@ void NativeWindowOcclusionTrackerWin::Enable(Window* window) {
   HWND widget_hwnd = window->GetHost()->GetAcceleratedWidget();
   HWND root_window_hwnd = ::GetAncestor(widget_hwnd, GA_ROOT);
 
+  // Delay tracking initially minimized windows until the first restore.
+  // DesktopWindowTreeHostWin enables tracking at that point (CEF issue #3638).
+  if (::IsIconic(root_window_hwnd)) {
+    return;
+  }
+
   // Remember the mapping from this window back to the real root hwnd.
   hwnd_widget_to_app_root_map_[window] = root_window_hwnd;
 

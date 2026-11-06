@@ -375,6 +375,7 @@ void UpdatePwaLaunchersForProfile(const base::FilePath& profile_dir) {
 }
 
 void MigratePinnedTaskBarShortcutsIfNeeded() {
+#if !BUILDFLAG(ENABLE_CEF)
   PrefService* local_state = g_browser_process->local_state();
   if (!local_state) {
     return;
@@ -422,6 +423,7 @@ void MigratePinnedTaskBarShortcutsIfNeeded() {
         },
         base::Unretained(local_state)));
   }
+#endif  // !BUILDFLAG(ENABLE_CEF)
 }
 
 void MaybeBlockDynamicCodeForBrowserProcess() {
@@ -496,7 +498,6 @@ void ReportParentProcessName() {
       base::UmaHistogramSparse("Windows.ParentProcessNameHash", hash);
     }
   }
-#endif  // !BUILDFLAG(ENABLE_CEF)
 }
 
 void MaybeUpdateIsolationStateFromFieldTrial() {

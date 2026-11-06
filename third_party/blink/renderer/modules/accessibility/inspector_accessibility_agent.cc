@@ -7,6 +7,7 @@
 #include <memory>
 #include <ranges>
 
+#include "cef/libcef/features/features.h"
 #include "third_party/blink/renderer/core/accessibility/ax_object_cache.h"
 #include "third_party/blink/renderer/core/dom/dom_node_ids.h"
 #include "third_party/blink/renderer/core/dom/element.h"

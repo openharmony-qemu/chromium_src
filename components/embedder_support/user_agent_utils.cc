@@ -25,6 +25,7 @@
 #include "base/system/sys_info.h"
 #include "build/branding_buildflags.h"
 #include "build/build_config.h"
+#include "cef/libcef/features/features.h"
 #include "components/embedder_support/switches.h"
 #include "components/version_info/version_info.h"
 #include "net/http/http_util.h"

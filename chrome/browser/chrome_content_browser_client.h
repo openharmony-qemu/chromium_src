@@ -1022,7 +1022,7 @@ class ChromeContentBrowserClient : public content::ContentBrowserClient {
   static base::TimeDelta GetKeepaliveTimerTimeout(
       content::BrowserContext* context);
   bool IsKeepaliveTimerRunningForTesting() const {
-    return keepalive_timer_.IsRunning();
+    return keepalive_timer_ && keepalive_timer_->IsRunning();
   }
 #endif  // !BUILDFLAG(IS_ANDROID)
 

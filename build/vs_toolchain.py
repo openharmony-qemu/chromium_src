@@ -145,8 +145,14 @@ def SetEnvironmentAndGetRuntimeDllDirs():
         runtime_path = os.path.pathsep.join(vs_runtime_dll_dirs)
         os.environ['PATH'] = runtime_path + os.path.pathsep + os.environ['PATH']
     elif sys.platform == 'win32' and not depot_tools_win_toolchain:
+        has_override_path = 'GYP_MSVS_OVERRIDE_PATH' in os.environ
         if 'GYP_MSVS_OVERRIDE_PATH' not in os.environ:
             os.environ['GYP_MSVS_OVERRIDE_PATH'] = DetectVisualStudioPath()
+
+        if has_override_path:
+            # Don't attempt to copy DLLs when using a custom toolchain.
+            # The DLLs should already be discoverable via the PATH env variable.
+            return None
 
         # When using an installed toolchain these files aren't needed in the output
         # directory in order to run binaries locally, but they are needed in order

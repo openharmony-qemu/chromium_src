@@ -5,6 +5,14 @@
 #ifndef EXTENSIONS_BROWSER_EXTENSION_FUNCTION_HISTOGRAM_VALUE_H_
 #define EXTENSIONS_BROWSER_EXTENSION_FUNCTION_HISTOGRAM_VALUE_H_
 
+#if defined(IS_ARKWEB_TRUE)
+#include "build/build_config.h"
+#endif  // IS_ARKWEB_TRUE
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif  // IS_ARKWEB_EXT
+
 namespace extensions::functions {
 
 // Short version:
@@ -2015,6 +2023,19 @@ enum HistogramValue {
   AUTOFILLPRIVATE_SETWALLETABLEPASSDETECTIONOPTINSTATUS = 1952,
   METRICSPRIVATE_RECORDEXTENSIONUSAGEUKM = 1953,
   DEVELOPERPRIVATE_OPENURL = 1954,
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#if BUILDFLAG(ARKWEB_EXT_ACTOR)
+  HWEXT_ACTOR_CREATETASK = 1955,
+  HWEXT_ACTOR_STOPTASK = 1956,
+  HWEXT_ACTOR_PAUSETASK = 1957,
+  HWEXT_ACTOR_RESUMETASK = 1958,
+  HWEXT_ACTOR_GETTASKSTATE = 1959,
+  HWEXT_ACTOR_GETTASKS = 1960,
+  HWEXT_ACTOR_CANCELACTIONS = 1961,
+#endif  // ARKWEB_EXT_ACTOR
+#endif  // IS_ARKWEB_EXT
+
   // Last entry: Add new entries above, then run:
   // tools/metrics/histograms/update_extension_histograms.py
   ENUM_BOUNDARY

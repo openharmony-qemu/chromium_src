@@ -16,6 +16,16 @@
 #include "extensions/common/features/json_feature_provider_source.h"
 #include "extensions/common/permissions/permissions_info.h"
 
+#if defined(IS_ARKWEB_TRUE)
+#include "build/build_config.h"
+#endif  // IS_ARKWEB_TRUE
+
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/build/features/features.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "arkweb/chromium_ext/chrome/common/extensions/api/generated_schemas.h"
+#endif
+
 namespace extensions {
 
 ChromeExtensionsAPIProvider::ChromeExtensionsAPIProvider() = default;
@@ -47,12 +57,27 @@ void ChromeExtensionsAPIProvider::AddAPIJSONSources(
 
 bool ChromeExtensionsAPIProvider::IsAPISchemaGenerated(
     const std::string& name) {
+#if BUILDFLAG(ARKWEB_EXT_ACTOR)
+  if (api::ChromeGeneratedSchemas::IsGenerated(name)) {
+    return true;
+  }
+  return api::ArkWebGeneratedSchemas::IsGenerated(name);
+#else
   return api::ChromeGeneratedSchemas::IsGenerated(name);
+#endif
 }
 
 std::string_view ChromeExtensionsAPIProvider::GetAPISchema(
     const std::string& name) {
+#if BUILDFLAG(ARKWEB_EXT_ACTOR)
+  std::string_view schema = api::ChromeGeneratedSchemas::Get(name);
+  if (!schema.empty()) {
+    return schema;
+  }
+  return api::ArkWebGeneratedSchemas::Get(name);
+#else
   return api::ChromeGeneratedSchemas::Get(name);
+#endif
 }
 
 void ChromeExtensionsAPIProvider::RegisterPermissions(

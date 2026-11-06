@@ -14,6 +14,15 @@
 #include "extensions/common/permissions/permissions_info.h"
 #include "extensions/common/permissions/settings_override_permission.h"
 
+#if defined(IS_ARKWEB_TRUE)
+#include "build/build_config.h"
+#endif  // IS_ARKWEB_TRUE
+
+
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 using extensions::mojom::APIPermissionID;
 
 namespace extensions {
@@ -44,6 +53,9 @@ constexpr APIPermissionInfo::InitInfo permissions_to_register[] = {
     {APIPermissionID::kExperimental, "experimental",
      APIPermissionInfo::kFlagCannotBeOptional},
     {APIPermissionID::kExperimentalActor, "experimentalActor"},
+#if BUILDFLAG(ARKWEB_EXT_ACTOR)
+    {APIPermissionID::kHwextActor, "hwext.actor"},
+#endif
     {APIPermissionID::kExperimentalAiData, "experimentalAiData"},
     {APIPermissionID::kGcm, "gcm",
      APIPermissionInfo::kFlagDoesNotRequireManagedSessionFullLoginWarning},

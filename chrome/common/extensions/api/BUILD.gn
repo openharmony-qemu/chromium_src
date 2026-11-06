@@ -9,6 +9,10 @@ import("//extensions/buildflags/buildflags.gni")
 import("//tools/json_schema_compiler/json_features.gni")
 import("//tools/json_schema_compiler/json_schema_api.gni")
 
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+}
+
 assert(enable_extensions_core)
 
 ################################################################################
@@ -19,6 +23,13 @@ group("api") {
     ":generated_api_json_strings",
     ":generated_api_types",
   ]
+
+  if (is_arkweb && is_arkweb_ext) {
+    public_deps += [
+      "//arkweb/chromium_ext/chrome/common/extensions/api:generated_arkweb_api_types",
+      "//arkweb/chromium_ext/chrome/common/extensions/api:generated_arkweb_api_json_strings",
+    ]
+  }
 }
 
 group("extensions_features") {
@@ -90,6 +101,11 @@ json_features("api_features") {
   sources = [ "_api_features.json" ]
   inputs = [ "_api_features.override.json" ]
   visibility = [ ":extensions_features" ]
+  if (is_arkweb && is_arkweb_ext) {
+    sources += [
+      "//arkweb/chromium_ext/chrome/common/extensions/api/arkweb_actor_api_features.json",
+    ]
+  }
 }
 
 json_features("permission_features") {
@@ -98,6 +114,11 @@ json_features("permission_features") {
   sources = [ "_permission_features.json" ]
   inputs = [ "_permission_features.override.json" ]
   visibility = [ ":extensions_features" ]
+  if (is_arkweb && is_arkweb_ext) {
+    sources += [
+      "//arkweb/chromium_ext/chrome/common/extensions/api/arkweb_actor_permission_features.json",
+    ]
+  }
 }
 
 json_features("manifest_features") {

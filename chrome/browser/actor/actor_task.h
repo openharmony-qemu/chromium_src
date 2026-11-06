@@ -29,6 +29,11 @@
 #include "third_party/abseil-cpp/absl/container/flat_hash_map.h"
 #include "third_party/abseil-cpp/absl/container/flat_hash_set.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "build/buildflag.h"
+#endif
+
 class Profile;
 namespace actor {
 
@@ -164,6 +169,14 @@ class ActorTask {
   static bool IsCompletedState(State state);
 
   ExecutionEngine* GetExecutionEngine() const;
+
+#if BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_EXT_ACTOR)
+  // Cancels any in-progress action batch without changing the task state.
+  // Used by the hwext.actor.cancelActions extension API to let the caller
+  // abort the current batch while keeping the task alive. If no action is
+  // in progress this is a no-op.
+  void CancelOngoingActions();
+#endif  // ARKWEB_EXT && ARKWEB_EXT_ACTOR
 
   // Add/remove the given TabHandle to the set of tabs this task is operating
   // over and notify the UI if this is a new tab for the task. Added tabs will

@@ -132,6 +132,10 @@ mojom("mojom") {
     enabled_features += [ "is_arkweb_ext" ]
   }
 
+  if (is_arkweb_ext) {
+    enabled_features += [ "arkweb_ext_actor" ]
+  }
+
   if (enable_guest_view) {
     sources += [ "mojom/guest_view.mojom" ]
   }

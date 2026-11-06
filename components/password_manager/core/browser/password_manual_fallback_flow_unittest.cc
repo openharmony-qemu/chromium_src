@@ -280,7 +280,7 @@ class PasswordManualFallbackFlowTest : public Test {
     // Simulating showing them in tests is mandatory, otherwise a `CHECK` error
     // would occur while logging metrics.
     flow().OnSuggestionsShown(base::span_from_ref(suggestion));
-    flow().DidAcceptSuggestion(suggestion, metadata);
+    flow().DidAcceptSuggestion(suggestion, metadata, {}, {});
   }
 
   // The test fixture relies on the fact that `TestPasswordStore` performs all
@@ -606,12 +606,14 @@ TEST_F(PasswordManualFallbackFlowTest, SelectUsernameFieldByFieldSuggestion) {
 
   EXPECT_CALL(driver(),
               PreviewField(field_id, std::u16string(u"username@example.com")));
-  flow().DidSelectSuggestion(autofill::test::CreateAutofillSuggestion(
-      SuggestionType::kPasswordFieldByFieldFilling, u"username@example.com",
-      Suggestion::PasswordSuggestionDetails(
-          u"username@example.com", u"password", "https://cross-domain.com/",
-          u"same-domain.com",
-          /*is_cross_domain=*/false)));
+  flow().DidSelectSuggestion(
+      autofill::test::CreateAutofillSuggestion(
+          SuggestionType::kPasswordFieldByFieldFilling, u"username@example.com",
+          Suggestion::PasswordSuggestionDetails(
+              u"username@example.com", u"password", "https://cross-domain.com/",
+              u"same-domain.com",
+              /*is_cross_domain=*/false)),
+      {}, {});
 }
 
 // Test that username field-by-field suggestion is filled into the correct field
@@ -667,7 +669,7 @@ TEST_F(PasswordManualFallbackFlowTest,
   // `suggestion.is_acceptable` is `true` if the popup is triggered on a
   // password form.
   suggestion.acceptability = Suggestion::Acceptability::kAcceptable;
-  flow().DidSelectSuggestion(suggestion);
+  flow().DidSelectSuggestion(suggestion, {}, {});
 }
 
 // Test that password manual fallback suggestion is not previewed if the
@@ -699,7 +701,7 @@ TEST_F(PasswordManualFallbackFlowTest,
                                             /*is_cross_domain=*/true));
   suggestion.labels = {{Suggestion::Text(u"username")}};
   suggestion.acceptability = Suggestion::Acceptability::kAcceptable;
-  flow().DidSelectSuggestion(suggestion);
+  flow().DidSelectSuggestion(suggestion, {}, {});
 }
 
 // Test that password manual fallback suggestion is not previewed if the
@@ -731,7 +733,7 @@ TEST_F(PasswordManualFallbackFlowTest,
                                             /*is_cross_domain=*/true));
   suggestion.labels = {{Suggestion::Text(u"username")}};
   suggestion.acceptability = Suggestion::Acceptability::kAcceptable;
-  flow().DidSelectSuggestion(suggestion);
+  flow().DidSelectSuggestion(suggestion, {}, {});
 }
 
 // Test that only password field is previewed if the credential doesn't have
@@ -763,7 +765,7 @@ TEST_F(PasswordManualFallbackFlowTest,
   // `suggestion.is_acceptable` is `true` if the popup is triggered on a
   // password form.
   suggestion.acceptability = Suggestion::Acceptability::kAcceptable;
-  flow().DidSelectSuggestion(suggestion);
+  flow().DidSelectSuggestion(suggestion, {}, {});
 }
 
 // Test that password manual fallback suggestion is not previewed if the popup
@@ -784,7 +786,7 @@ TEST_F(PasswordManualFallbackFlowTest,
   // `suggestion.is_acceptable` is `false` if the popup is triggered on a
   // different type of form or a standalone field.
   suggestion.acceptability = Suggestion::Acceptability::kUnacceptable;
-  flow().DidSelectSuggestion(suggestion);
+  flow().DidSelectSuggestion(suggestion, {}, {});
 }
 
 // Test that both username and password are filled if the suggestion is accepted
@@ -1004,8 +1006,9 @@ TEST_F(PasswordManualFallbackFlowTest,
 
   EXPECT_CALL(driver(), PreviewField).Times(0);
   flow().DidSelectSuggestion(autofill::test::CreateAutofillSuggestion(
-      SuggestionType::kFillPassword, u"Fill password",
-      CreateTestPasswordDetails()));
+                                 SuggestionType::kFillPassword,
+                                 u"Fill password", CreateTestPasswordDetails()),
+                             {}, {});
 }
 
 // Tests that the password value is filled if the authentication is not
@@ -1280,8 +1283,10 @@ TEST_F(PasswordManualFallbackFlowTest, SelectManagePasswordsEntry) {
   EXPECT_CALL(password_manager_client(), NavigateToManagePasswordsPage)
       .Times(0);
   base::HistogramTester histograms;
-  flow().DidSelectSuggestion(autofill::test::CreateAutofillSuggestion(
-      SuggestionType::kAllSavedPasswordsEntry, u"Manage passwords"));
+  flow().DidSelectSuggestion(
+      autofill::test::CreateAutofillSuggestion(
+          SuggestionType::kAllSavedPasswordsEntry, u"Manage passwords"),
+      {}, {});
   histograms.ExpectUniqueSample(
       "PasswordManager.PasswordDropdownItemSelected",
       metrics_util::PasswordDropdownSelectedOption::kShowAll, 0);

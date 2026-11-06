@@ -596,7 +596,8 @@ TEST_F(AutofillMetricsTest, CreditCardCheckoutFlowUserActions) {
         test::CreateAutofillSuggestion(SuggestionType::kCreditCardEntry,
                                        u"Test",
                                        Suggestion::Guid(kTestLocalCardId)),
-        AutofillSuggestionDelegate::SuggestionMetadata{.row = 0});
+        AutofillSuggestionDelegate::SuggestionMetadata{.row = 0}, form,
+        form.fields().front());
 
     EXPECT_EQ(1,
               user_action_tester.GetActionCount("Autofill_SelectedSuggestion"));
@@ -624,7 +625,8 @@ TEST_F(AutofillMetricsTest, CreditCardCheckoutFlowUserActions) {
 
     external_delegate().DidAcceptSuggestion(
         Suggestion(SuggestionType::kUndoOrClear),
-        AutofillSuggestionDelegate::SuggestionMetadata{.row = 0});
+        AutofillSuggestionDelegate::SuggestionMetadata{.row = 0}, form,
+        form.fields().front());
 
     EXPECT_EQ(
         1, user_action_tester.GetActionCount("Autofill_UndoPaymentsAutofill"));
@@ -654,7 +656,8 @@ TEST_F(AutofillMetricsTest, CreditCardCheckoutFlowUserActions) {
         test::CreateAutofillSuggestion(SuggestionType::kCreditCardEntry,
                                        u"Test",
                                        Suggestion::Guid(kTestLocalCardId)),
-        AutofillSuggestionDelegate::SuggestionMetadata{.row = 0});
+        AutofillSuggestionDelegate::SuggestionMetadata{.row = 0}, form,
+        form.fields().front());
 
     EXPECT_EQ(1,
               user_action_tester.GetActionCount("Autofill_SelectedSuggestion"));
@@ -787,7 +790,8 @@ TEST_F(AutofillMetricsTest, ProfileCheckoutFlowUserActions) {
         test::CreateAutofillSuggestion(SuggestionType::kCreditCardEntry,
                                        u"Test",
                                        Suggestion::Guid(kTestProfileId)),
-        AutofillSuggestionDelegate::SuggestionMetadata{.row = 0});
+        AutofillSuggestionDelegate::SuggestionMetadata{.row = 0}, form,
+        form.fields().front());
 
     EXPECT_EQ(1,
               user_action_tester.GetActionCount("Autofill_SelectedSuggestion"));

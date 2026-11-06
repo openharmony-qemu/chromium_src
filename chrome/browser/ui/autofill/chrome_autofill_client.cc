@@ -1297,13 +1297,16 @@ void ChromeAutofillClient::ShowAutofillSuggestionsImpl(
   const gfx::RectF element_bounds_in_screen_space =
       open_args.element_bounds + client_area.OffsetFromOrigin();
 
+  PopupControllerCommon controller_common(
+      element_bounds_in_screen_space, open_args.text_direction,
+      web_contents()->GetNativeView(), open_args.anchor_type);
+  controller_common.form = open_args.form;
+  controller_common.field = open_args.field;
+
   // Deletes or reuses the old `suggestion_controller_`.
   suggestion_controller_ = AutofillSuggestionController::GetOrCreate(
       suggestion_controller_, delegate, web_contents(),
-      PopupControllerCommon(
-          element_bounds_in_screen_space, open_args.text_direction,
-          web_contents()->GetNativeView(), open_args.anchor_type),
-      open_args.form_control_ax_id);
+      std::move(controller_common), open_args.form_control_ax_id);
 
   suggestion_controller_->Show(
       session_id, open_args.suggestions, open_args.trigger_source,

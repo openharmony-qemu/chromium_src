@@ -22,6 +22,8 @@
 #include "components/autofill/core/browser/data_model/autofill_ai/entity_type.h"
 #include "components/autofill/core/browser/ui/popup_open_enums.h"
 #include "components/autofill/core/common/aliases.h"
+#include "components/autofill/core/common/form_data.h"
+#include "components/autofill/core/common/form_field_data.h"
 #include "components/autofill/core/common/unique_ids.h"
 #include "components/profile_metrics/browser_profile_type.h"
 #include "components/security_state/core/security_state.h"
@@ -232,6 +234,9 @@ class AutofillClient {
         AutofillSuggestionTriggerSource::kUnspecified;
     int32_t form_control_ax_id = 0;
     PopupAnchorType anchor_type = PopupAnchorType::kField;
+    // The browser form and field that produced these suggestions.
+    FormData form;
+    FormFieldData field;
   };
 
   // Describes the position of the Autofill popup on the screen.

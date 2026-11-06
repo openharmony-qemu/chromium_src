@@ -202,7 +202,9 @@ void PasswordManualFallbackFlow::OnSuggestionsShown(
 void PasswordManualFallbackFlow::OnSuggestionsHidden() {}
 
 void PasswordManualFallbackFlow::DidSelectSuggestion(
-    const Suggestion& suggestion) {
+    const Suggestion& suggestion,
+    const autofill::FormData&,
+    const autofill::FormFieldData&) {
   CHECK(SupportsSuggestionType(suggestion.type));
   if (!suggestion.IsAcceptable()) {
     return;
@@ -258,7 +260,9 @@ void PasswordManualFallbackFlow::DidSelectSuggestion(
 
 void PasswordManualFallbackFlow::DidAcceptSuggestion(
     const Suggestion& suggestion,
-    const SuggestionMetadata& metadata) {
+    const SuggestionMetadata& metadata,
+    const autofill::FormData&,
+    const autofill::FormFieldData&) {
   CHECK(SupportsSuggestionType(suggestion.type));
   if (!suggestion.IsAcceptable()) {
     return;

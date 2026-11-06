@@ -257,7 +257,9 @@ void PasswordAutofillManager::OnSuggestionsHidden() {
 }
 
 void PasswordAutofillManager::DidSelectSuggestion(
-    const Suggestion& suggestion) {
+    const Suggestion& suggestion,
+    const autofill::FormData&,
+    const autofill::FormFieldData&) {
   ClearPreviewedForm();
   if (suggestion.type == autofill::SuggestionType::kAllSavedPasswordsEntry ||
       suggestion.type == autofill::SuggestionType::kGeneratePasswordEntry ||
@@ -285,7 +287,9 @@ void PasswordAutofillManager::DidSelectSuggestion(
 
 void PasswordAutofillManager::DidAcceptSuggestion(
     const Suggestion& suggestion,
-    const SuggestionMetadata& metadata) {
+    const SuggestionMetadata& metadata,
+    const autofill::FormData&,
+    const autofill::FormFieldData&) {
   using metrics_util::PasswordDropdownSelectedOption;
   switch (suggestion.type) {
     case autofill::SuggestionType::kGeneratePasswordEntry:
@@ -568,14 +572,14 @@ void PasswordAutofillManager::ShowSuggestions(
 
 void PasswordAutofillManager::SelectSuggestion(const Suggestion& suggestion) {
   CHECK(IsSuggestionHandledInPasswordManager(suggestion.type));
-  DidSelectSuggestion(suggestion);
+  DidSelectSuggestion(suggestion, {}, {});
 }
 
 void PasswordAutofillManager::AcceptSuggestion(
     const Suggestion& suggestion,
     const SuggestionMetadata& metadata) {
   CHECK(IsSuggestionHandledInPasswordManager(suggestion.type));
-  DidAcceptSuggestion(suggestion, metadata);
+  DidAcceptSuggestion(suggestion, metadata, {}, {});
 }
 
 bool PasswordAutofillManager::ShouldWaitForPasskeys(

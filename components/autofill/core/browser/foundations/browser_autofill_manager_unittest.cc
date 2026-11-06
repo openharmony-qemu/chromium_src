@@ -1752,7 +1752,7 @@ TEST_F(BrowserAutofillManagerTest,
       form, form.fields()[0],
       AutofillSuggestionTriggerSource::kFormControlElementClicked);
   external_delegate()->DidAcceptSuggestion(
-      Suggestion(SuggestionType::kAddressEntry), {});
+      Suggestion(SuggestionType::kAddressEntry), {}, form, form.fields()[0]);
   EXPECT_FALSE(test_api(autofill_manager())
                    .GetProfileSuggestions(form, form.fields()[0])
                    .empty());
@@ -2027,7 +2027,7 @@ TEST_F(BrowserAutofillManagerTest,
 
   OnAskForValuesToFill(form, form.fields()[0]);
 
-  external_delegate()->DidSelectSuggestion(suggestion);
+  external_delegate()->DidSelectSuggestion(suggestion, form, form.fields()[0]);
 }
 
 TEST_F(BrowserAutofillManagerTest,
@@ -2051,7 +2051,8 @@ TEST_F(BrowserAutofillManagerTest,
 
   OnAskForValuesToFill(form, form.fields()[0]);
 
-  external_delegate()->DidAcceptSuggestion(suggestion, {});
+  external_delegate()->DidAcceptSuggestion(suggestion, {}, form,
+                                           form.fields()[0]);
 }
 #endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
 
@@ -2516,7 +2517,8 @@ TEST_F(BrowserAutofillManagerTestValuables,
   base::HistogramTester histogram_tester;
 
   external_delegate()->DidAcceptSuggestion(
-      external_delegate()->suggestions().front(), {});
+      external_delegate()->suggestions().front(), {}, form_data,
+      form_data.fields()[0]);
 
   histogram_tester.ExpectUniqueSample(
       "Autofill.LoyaltyCard.EmailOrLoyaltyCardAcceptance",
@@ -2548,7 +2550,7 @@ TEST_F(
   external_delegate()->DidAcceptSuggestion(
       Suggestion("1234", "Deutsche Bahn", Suggestion::Icon::kNoIcon,
                  SuggestionType::kLoyaltyCardEntry),
-      {});
+      {}, form_data, form_data.fields()[0]);
 
   histogram_tester.ExpectUniqueSample(
       "Autofill.LoyaltyCard.EmailOrLoyaltyCardAcceptance",
@@ -9449,7 +9451,7 @@ TEST_F(BrowserAutofillManagerPlusAddressTest,
   // Select an option to trigger Autofill. This should trigger a call to hide
   // the popup since we've selected an option.
   external_delegate()->DidAcceptSuggestion(
-      external_delegate()->suggestions().front(), {});
+      external_delegate()->suggestions().front(), {}, form, form.fields()[2]);
   EXPECT_EQ(user_action_tester.GetActionCount(
                 "PlusAddresses.FillAddressSuggestionAccepted"),
             1);
@@ -9521,7 +9523,7 @@ TEST_F(BrowserAutofillManagerPlusAddressTest,
   // Select an option to trigger Autofill. This should trigger a call to hide
   // the popup since we've selected an option.
   external_delegate()->DidAcceptSuggestion(
-      external_delegate()->suggestions().front(), {});
+      external_delegate()->suggestions().front(), {}, form, form.fields()[0]);
 }
 
 // Test that the BAM queries the password delegate as soon as it's present.

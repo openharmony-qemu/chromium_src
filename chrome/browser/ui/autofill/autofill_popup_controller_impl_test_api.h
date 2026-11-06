@@ -19,6 +19,11 @@ class AutofillPopupControllerImplTestApi {
       AutofillPopupControllerImpl* controller)
       : controller_(*controller) {}
 
+  void SetSuggestionTarget(const FormData& form, const FormFieldData& field) {
+    controller_->controller_common_.form = form;
+    controller_->controller_common_.field = field;
+  }
+
   void SetView(base::WeakPtr<AutofillPopupView> view) {
     controller_->view_ = std::move(view);
     controller_->barrier_for_accepting_ =

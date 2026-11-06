@@ -74,9 +74,13 @@ class PasswordManualFallbackFlow : public autofill::AutofillSuggestionDelegate,
   void OnSuggestionsShown(
       base::span<const autofill::Suggestion> suggestions) override;
   void OnSuggestionsHidden() override;
-  void DidSelectSuggestion(const autofill::Suggestion& suggestion) override;
+  void DidSelectSuggestion(const autofill::Suggestion& suggestion,
+                           const autofill::FormData& form,
+                           const autofill::FormFieldData& field) override;
   void DidAcceptSuggestion(const autofill::Suggestion& suggestion,
-                           const SuggestionMetadata& metadata) override;
+                           const SuggestionMetadata& metadata,
+                           const autofill::FormData& form,
+                           const autofill::FormFieldData& field) override;
   void DidPerformButtonActionForSuggestion(
       const autofill::Suggestion&,
       const autofill::SuggestionButtonAction&) override;

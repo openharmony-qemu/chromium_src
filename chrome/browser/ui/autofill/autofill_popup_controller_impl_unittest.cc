@@ -65,6 +65,46 @@ EqualsSuggestionMetadata(
 using AutofillPopupControllerImplTest = AutofillSuggestionControllerTestBase<
     TestAutofillPopupControllerAutofillClient<>>;
 
+TEST_F(AutofillPopupControllerImplTest,
+       SubPopupKeepsDisplayedTargetAfterNewQuery) {
+  const FormData displayed_form =
+      test::GetFormData({.fields = {{.role = NAME_FIRST}}});
+  const FormFieldData displayed_field = displayed_form.fields().front();
+  ShowSuggestions(manager(), {SuggestionType::kAddressEntry});
+  auto& root = client().suggestion_controller(manager());
+  test_api(root).SetSuggestionTarget(displayed_form, displayed_field);
+  const FormData later_form =
+      test::GetFormData({.fields = {{.role = NAME_FIRST}}});
+  manager().external_delegate().OnQuery(
+      later_form, later_form.fields().front(), gfx::Rect(),
+      AutofillSuggestionTriggerSource::kFormControlElementClicked, false);
+  ASSERT_NE(displayed_field.global_id(),
+            later_form.fields().front().global_id());
+  auto sub = root.OpenSubPopup({0, 0, 10, 10},
+                               {Suggestion(SuggestionType::kAddressEntry)},
+                               AutoselectFirstSuggestion(false));
+  ASSERT_TRUE(sub);
+  auto& sub_impl = static_cast<AutofillPopupControllerImpl&>(*sub);
+  test_api(sub_impl).SetView(client().sub_popup_view()->GetWeakPtr());
+  EXPECT_CALL(
+      manager().external_delegate(),
+      DidSelectSuggestion(
+          _,
+          ::testing::Property(&FormData::global_id, displayed_form.global_id()),
+          ::testing::Property(&FormFieldData::global_id,
+                              displayed_field.global_id())));
+  sub_impl.SelectSuggestion(0);
+  EXPECT_CALL(
+      manager().external_delegate(),
+      DidAcceptSuggestion(
+          _, _,
+          ::testing::Property(&FormData::global_id, displayed_form.global_id()),
+          ::testing::Property(&FormFieldData::global_id,
+                              displayed_field.global_id())));
+  task_environment()->FastForwardBy(base::Milliseconds(1000));
+  sub->AcceptSuggestion(0, AutofillMetrics::SuggestionAcceptedMethod::kMouse);
+}
+
 TEST_F(AutofillPopupControllerImplTest, AcceptSuggestionRespectsTimeout) {
   // Calls before the threshold are ignored.
   MockFunction<void()> check;
@@ -369,9 +409,10 @@ TEST_F(AutofillPopupControllerImplTest, PopupForwardsSuggestionPosition) {
   test_api(static_cast<AutofillPopupControllerImpl&>(*sub_controller))
       .SetView(client().sub_popup_view()->GetWeakPtr());
 
-  EXPECT_CALL(manager().external_delegate(),
-              DidAcceptSuggestion(_, EqualsSuggestionMetadata(
-                                         {.row = 0, .sub_popup_level = 1})));
+  EXPECT_CALL(
+      manager().external_delegate(),
+      DidAcceptSuggestion(
+          _, EqualsSuggestionMetadata({.row = 0, .sub_popup_level = 1}), _, _));
 
   task_environment()->FastForwardBy(base::Milliseconds(1000));
   sub_controller->AcceptSuggestion(
@@ -720,9 +761,10 @@ TEST_F(AutofillPopupControllerImplTest,
   ShowSuggestions(manager(),
                   {Suggestion(u"main_text", SuggestionType::kAddressEntry)});
 
-  EXPECT_CALL(manager().external_delegate(),
-              DidAcceptSuggestion(
-                  _, EqualsSuggestionMetadata({.from_search_result = true})));
+  EXPECT_CALL(
+      manager().external_delegate(),
+      DidAcceptSuggestion(
+          _, EqualsSuggestionMetadata({.from_search_result = true}), _, _));
 
   controller.SetFilter(AutofillPopupController::SuggestionFilter(u"main_text"));
   controller.AcceptSuggestion(

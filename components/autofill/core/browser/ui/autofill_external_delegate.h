@@ -6,6 +6,7 @@
 #define COMPONENTS_AUTOFILL_CORE_BROWSER_UI_AUTOFILL_EXTERNAL_DELEGATE_H_
 
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -70,9 +71,13 @@ class AutofillExternalDelegate : public AutofillSuggestionDelegate {
   GetDriver() override;
   void OnSuggestionsShown(base::span<const Suggestion> suggestions) override;
   void OnSuggestionsHidden() override;
-  void DidSelectSuggestion(const Suggestion& suggestion) override;
+  void DidSelectSuggestion(const Suggestion& suggestion,
+                           const FormData& form,
+                           const FormFieldData& field) override;
   void DidAcceptSuggestion(const Suggestion& suggestion,
-                           const SuggestionMetadata& metadata) override;
+                           const SuggestionMetadata& metadata,
+                           const FormData& form,
+                           const FormFieldData& field) override;
   void DidPerformButtonActionForSuggestion(
       const Suggestion& suggestion,
       const SuggestionButtonAction& button_action) override;
@@ -133,6 +138,12 @@ class AutofillExternalDelegate : public AutofillSuggestionDelegate {
   }
 
  private:
+  // Resolves the immutable UI target against the current data for the same
+  // objects. Uncached single-field suggestions retain their raw snapshots.
+  std::pair<FormData, FormFieldData> ResolveSuggestionTarget(
+      const FormData& form,
+      const FormFieldData& field) const;
+
   // Returns the `AutofillProfile` that an address suggestion contains as
   // payload or `std::nullopt` if the profile cannot be found. Assumes that
   // `suggestion` has an `AutofillProfilePayload`.
@@ -174,11 +185,15 @@ class AutofillExternalDelegate : public AutofillSuggestionDelegate {
 
   // Private handler for DidAcceptSuggestions for address related suggestions.
   void DidAcceptAddressSuggestion(const Suggestion& suggestion,
-                                  const SuggestionMetadata& metadata);
+                                  const SuggestionMetadata& metadata,
+                                  const FormData& form,
+                                  const FormFieldData& field);
 
   // Private handler for DidAcceptSuggestions for payments related suggestions.
   void DidAcceptPaymentsSuggestion(const Suggestion& suggestion,
-                                   const SuggestionMetadata& metadata);
+                                   const SuggestionMetadata& metadata,
+                                   const FormData& form,
+                                   const FormFieldData& field);
 
   // Returns the last Autofill triggering field. Derived from the `form` and
   // `field` parameters of `OnQuery(). Returns nullptr if called before
@@ -193,12 +208,16 @@ class AutofillExternalDelegate : public AutofillSuggestionDelegate {
                     const Suggestion::Payload& payload,
                     std::optional<SuggestionMetadata> metadata,
                     bool is_preview,
-                    AutofillTriggerSource trigger_source);
+                    AutofillTriggerSource trigger_source,
+                    const FormData& form,
+                    const FormFieldData& field);
 
   // Previews the value from `profile` specified in the `suggestion`.
   void PreviewAddressFieldByFieldFillingSuggestion(
       const AutofillProfile& profile,
-      const Suggestion& suggestion);
+      const Suggestion& suggestion,
+      const FormData& form,
+      const FormFieldData& field);
 
   // Fills the value from `profile` specified in the `suggestion`. Emits
   // necessary metrics based on the
@@ -206,7 +225,9 @@ class AutofillExternalDelegate : public AutofillSuggestionDelegate {
   void FillAddressFieldByFieldFillingSuggestion(
       const AutofillProfile& profile,
       const Suggestion& suggestion,
-      const SuggestionMetadata& metadata);
+      const SuggestionMetadata& metadata,
+      const FormData& form,
+      const FormFieldData& field);
 
   // Handle applying any Autofill option listings to the Autofill popup.
   // This function should only get called when there is at least one

@@ -35,7 +35,8 @@ std::unique_ptr<Renderer> RendererFactory::CreateOHOSMediaPlayerRenderer(
       media::RequestOverlayInfoCB request_overlay_info_cb,
       const gfx::ColorSpace& target_color_space,
       int player_id,
-      const media::MediaPlayerUrlParams& params){
+      const media::MediaPlayerUrlParams& params,
+      MediaTaintChangedCB on_media_taint_changed) {
   return CreateRenderer(media_task_runner, worker_task_runner,
           audio_renderer_sink, video_renderer_sink,
           request_overlay_info_cb, target_color_space);

@@ -5,6 +5,7 @@
 #ifndef MEDIA_FILTERS_DEMUXER_MANAGER_H_
 #define MEDIA_FILTERS_DEMUXER_MANAGER_H_
 
+#include <atomic>
 #include <optional>
 #include <vector>
 
@@ -156,6 +157,9 @@ class MEDIA_EXPORT DemuxerManager {
 
   bool WouldTaintOrigin() const;
   bool HasDataSource() const;
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+  void SetHlsBrowserWouldTaintOrigin(bool tainted);
+#endif  // ARKWEB_MEDIA_HLS
   bool HasDemuxer() const;
   bool HasDemuxerOverride() const;
   std::optional<GURL> GetDataSourceUrlAfterRedirects() const;
@@ -241,6 +245,12 @@ class MEDIA_EXPORT DemuxerManager {
   std::unique_ptr<Demuxer> demuxer_override_;
 
   bool hls_fallback_ = false;
+
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+  // Fail-closed default; browser-side proxy may report clean (false) via
+  // SetHlsBrowserWouldTaintOrigin() after CORS analysis of HLS proxy responses.
+  std::atomic<bool> hls_browser_would_taint_origin_{true};
+#endif  // ARKWEB_MEDIA_HLS
 
   // Are we allowed to switch demuxer mid-stream when fallback error codes
   // are encountered

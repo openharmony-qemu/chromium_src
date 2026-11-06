@@ -117,6 +117,10 @@ class EmulationHandler : public DevToolsDomainHandler,
 
   Response SetFocusEmulationEnabled(bool) override;
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  Response SetScriptExecutionDisabled(bool value) override;
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
+
   Response SetEmulatedMedia(
       std::optional<std::string> media,
       std::unique_ptr<protocol::Array<protocol::Emulation::MediaFeature>>

@@ -364,10 +364,13 @@ bool GtkUi::Initialize() {
   };
 
   GtkSettings* settings = gtk_settings_get_default();
+  // CEF relies on DarkModeManagerLinux rather than these GTK theme signals.
+#if !BUILDFLAG(ENABLE_CEF)
   connect(settings, "notify::gtk-theme-name", &GtkUi::OnThemeChanged);
   connect(settings, "notify::gtk-icon-theme-name", &GtkUi::OnThemeChanged);
   connect(settings, "notify::gtk-application-prefer-dark-theme",
           &GtkUi::OnThemeChanged);
+#endif
   connect(settings, "notify::gtk-cursor-theme-name",
           &GtkUi::OnCursorThemeNameChanged);
   connect(settings, "notify::gtk-cursor-theme-size",

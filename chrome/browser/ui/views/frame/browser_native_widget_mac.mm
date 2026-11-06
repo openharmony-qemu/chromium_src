@@ -1044,6 +1044,18 @@ void BrowserNativeWidgetMac::UpdateGlassEligibility(bool is_glass_eligible) {
     return;
   }
 
+  if (PictureInPictureWindowManager::IsTransparentDocumentPictureInPicture(
+          browser_view_->GetDocumentPictureInPictureOptions())) {
+    GetNSWindowHost()->SetLayerAndCompositorOpaque(false);
+    [ns_window setOpaque:NO];
+    // Match NativeWidgetNSWindowBridge's workaround for AppKit's continuous
+    // surface invalidation with a completely clear native background.
+    [ns_window setBackgroundColor:[[NSColor windowBackgroundColor]
+                                      colorWithAlphaComponent:0.001]];
+    [ns_window setHasShadow:NO];
+    return;
+  }
+
   CHECK_NE(last_is_glass_eligible_, is_glass_eligible);
 
   last_is_glass_eligible_ = is_glass_eligible;

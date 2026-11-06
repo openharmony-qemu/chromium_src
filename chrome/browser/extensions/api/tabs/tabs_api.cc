@@ -16,6 +16,7 @@
 #include "base/types/expected_macros.h"
 #include "base/types/optional_util.h"
 #include "base/unguessable_token.h"
+#include "cef/libcef/features/features.h"
 #include "chrome/browser/devtools/devtools_window.h"
 #include "chrome/browser/extensions/api/tabs/tabs_constants.h"
 #include "chrome/browser/extensions/api/tabs/tabs_util.h"
@@ -1388,31 +1389,34 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
   }
 
   // GetTabById may return a null window for prerender tabs.
+#if !BUILDFLAG(ENABLE_CEF)
   if (!window || !ExtensionTabUtil::BrowserSupportsTabs(
                      window->GetBrowserWindowInterface())) {
     return RespondNow(Error(ExtensionTabUtil::kNoCurrentWindowError));
   }
+#endif
+
+  TabListInterface* tab_list = nullptr;
+  ::tabs::TabInterface* target_tab = nullptr;
+  if (window && ExtensionTabUtil::BrowserSupportsTabs(
+                    window->GetBrowserWindowInterface())) {
+    tab_list = TabListInterface::From(window->GetBrowserWindowInterface());
+    CHECK(tab_list);
+    if (!UpdateActiveTab(*params, *window->profile(),
+                         *window->GetBrowserWindowInterface(), *tab_list,
+                         tab_index, error)) {
+      return RespondNow(Error(std::move(error)));
+    }
+    target_tab = tab_list->GetTab(tab_index);
+    CHECK(target_tab);
+    if (!UpdateHighlightedTab(*params, *window->profile(), *tab_list,
+                              *target_tab, error)) {
+      return RespondNow(Error(std::move(error)));
+    }
+  }
 
   // Cache the original web contents.
   content::WebContents* original_contents = contents;
-
-  // Update the active (aka selected) tab.
-  TabListInterface* tab_list =
-      TabListInterface::From(window->GetBrowserWindowInterface());
-  CHECK(tab_list);
-  if (!UpdateActiveTab(*params, *window->profile(),
-                       *window->GetBrowserWindowInterface(), *tab_list,
-                       tab_index, error)) {
-    return RespondNow(Error(std::move(error)));
-  }
-
-  // Update the highlighted tab.
-  ::tabs::TabInterface* target_tab = tab_list->GetTab(tab_index);
-  CHECK(target_tab);
-  if (!UpdateHighlightedTab(*params, *window->profile(), *tab_list, *target_tab,
-                            error)) {
-    return RespondNow(Error(std::move(error)));
-  }
 
   if (params->update_properties.muted &&
       !SetTabAudioMuted(contents, *params->update_properties.muted,

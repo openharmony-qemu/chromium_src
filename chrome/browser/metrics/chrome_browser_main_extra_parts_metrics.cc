@@ -1174,7 +1174,7 @@ void ChromeBrowserMainExtraPartsMetrics::PostBrowserStart() {
   }
 #endif  // BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
+#if (BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)) && !BUILDFLAG(ENABLE_CEF)
   // Deliberately delayed and sampled to avoid contending with early crypto and
   // DBSC operations right after startup. The measurement runs slow TPM
   // operations, which must not block shutdown.

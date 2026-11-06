@@ -1584,6 +1584,7 @@ void ChromeMainDelegate::PreSandboxStartup() {
   ChromeCrashReporterClient::Create();
 #endif
 
+#if !BUILDFLAG(ENABLE_CEF)
 #if BUILDFLAG(IS_MAC)
   InitMacCrashReporter(command_line, process_type);
   SetUpInstallerPreferences(command_line);

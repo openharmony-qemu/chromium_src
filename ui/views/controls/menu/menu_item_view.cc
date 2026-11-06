@@ -1347,6 +1347,8 @@ void MenuItemView::PaintBackground(gfx::Canvas* canvas,
     canvas->sk_canvas()->drawRRect(background_rrect, flags);
   }
   const auto& config = MenuConfig::instance();
+  MenuDelegate* delegate = GetDelegate();
+  SkColor override_color;
   if (type_ == Type::kHighlighted || is_alerted_ ||
       (paint_as_selected && selected_color_id_.has_value())) {
     SkColor color = gfx::kPlaceholderColor;
@@ -1417,6 +1419,10 @@ void MenuItemView::PaintBackground(gfx::Canvas* canvas,
       rounded_rect.setRectRadii(gfx::RectFToSkRect(highlight_bounds), radii);
       canvas->sk_canvas()->drawRRect(rounded_rect, flags);
     }
+  } else if (delegate &&
+             delegate->GetBackgroundColor(GetCommand(), paint_as_selected,
+                                          &override_color)) {
+    canvas->DrawColor(override_color);
   } else if (paint_as_selected) {
     gfx::Rect item_bounds = GetLocalBounds();
     if (menu_item_background_.has_value()) {

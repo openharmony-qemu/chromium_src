@@ -15,6 +15,7 @@
 #include "chrome/browser/enterprise/data_controls/chrome_rules_service.h"
 #include "chrome/browser/enterprise/data_protection/data_protection_features.h"
 #include "chrome/browser/enterprise/data_protection/data_protection_url_lookup_service.h"
+#include "chrome/browser/enterprise/data_protection/data_protection_utils.h"
 #include "chrome/browser/interstitials/enterprise_util.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/safe_browsing/chrome_enterprise_url_lookup_service_factory.h"
@@ -268,7 +269,9 @@ void DataProtectionNavigationObserver::ApplyDataProtectionSettings(
   // If this is a skipped URL, force the view to clear any data protections if
   // present.  This is needed to handle for example navigating from a
   // protected page to the NTP.
-  if (SkipUrl(web_contents->GetLastCommittedURL())) {
+  const GURL original_url =
+      GetUrlFromRenderFrameHost(web_contents->GetPrimaryMainFrame());
+  if (SkipUrl(original_url)) {
     std::move(callback).Run(UrlSettings::None());
     return;
   }
@@ -277,8 +280,7 @@ void DataProtectionNavigationObserver::ApplyDataProtectionSettings(
 
   DataProtectionPageUserData::UpdateDataControlsScreenshotState(
       GetPageFromWebContents(web_contents), identifier,
-      IsScreenshotAllowedByDataControls(profile,
-                                        web_contents->GetLastCommittedURL()));
+      IsScreenshotAllowedByDataControls(profile, original_url));
 
   auto* lookup_service =
       g_lookup_service
@@ -306,8 +308,8 @@ void DataProtectionNavigationObserver::ApplyDataProtectionSettings(
         },
         std::move(identifier), std::move(callback), web_contents->GetWeakPtr());
 
-    DoLookup(lookup_service, web_contents->GetLastCommittedURL(),
-             GetIdentifier(profile), std::move(lookup_callback), web_contents);
+    DoLookup(lookup_service, original_url, GetIdentifier(profile),
+             std::move(lookup_callback), web_contents);
   } else {
     ud = GetUserData(web_contents);
     DCHECK(ud);

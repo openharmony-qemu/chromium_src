@@ -223,6 +223,10 @@ const gfx::Size& WebView::AutoResizeMaxSize() const {
   return max_size_;
 }
 
+void WebView::SetResizeBackgroundColor(SkColor resize_background_color) {
+  holder_->SetBackgroundColorWhenClipped(resize_background_color);
+}
+
 void WebView::TakeCrashedOverlayViewImpl(
     std::unique_ptr<View> crashed_overlay_view,
     ReturnCrashOverlayToOwnerCallback return_to_owner) {

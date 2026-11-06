@@ -240,6 +240,10 @@ def _CheckIfVersionInstalled(version):
 
 def GetVisualStudioVersion():
     """Return best available version of Visual Studio."""
+    # Return the explicitly requested version, if any.
+    if 'GYP_MSVS_VERSION' in os.environ:
+        return os.environ['GYP_MSVS_VERSION']
+
     supported_versions = list(MSVS_VERSIONS.keys())
 
     # VS installed in depot_tools for Googlers

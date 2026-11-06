@@ -28,6 +28,10 @@
 #include "ui/accessibility/ax_mode.h"
 #include "ui/accessibility/ax_node_data.h"
 
+#if BUILDFLAG(ENABLE_CEF)
+#include "cef/libcef/renderer/accessibility/viewport_collapse.h"
+#endif
+
 namespace blink {
 
 namespace {
@@ -129,6 +133,10 @@ std::unique_ptr<protocol::Array<AXNode>> WalkAXNodesToDepth(
 
   return nodes;
 }
+
+#if BUILDFLAG(ENABLE_CEF)
+#include "cef/libcef/renderer/accessibility/walk_ax_nodes_with_collapse.inc"
+#endif
 
 }  // namespace
 
@@ -243,7 +251,14 @@ protocol::Response InspectorAccessibilityAgent::getFullAXTree(
   cache.UpdateAXForAllDocuments();
   ScopedFreezeAXCache freeze(cache);
 
-  *nodes = WalkAXNodesToDepth(cache, depth.value_or(-1));
+#if BUILDFLAG(ENABLE_CEF)
+  if (cef::IsViewportCollapseEnabled(cache.GetDocument())) {
+    *nodes = WalkAXNodesToDepthWithCollapse(cache, depth.value_or(-1));
+  } else
+#endif
+  {
+    *nodes = WalkAXNodesToDepth(cache, depth.value_or(-1));
+  }
 
   return protocol::Response::Success();
 }
@@ -507,6 +522,15 @@ void InspectorAccessibilityAgent::AXReadyCallback(Document& document) {
 }
 
 void InspectorAccessibilityAgent::ProcessPendingDirtyNodes(Document& document) {
+#if BUILDFLAG(ENABLE_CEF)
+  // Suppress nodesUpdated events when viewport collapse is active.
+  // These events send uncollapsed data, creating an inconsistent tree.
+  // AI agents call getFullAXTree() directly without enable(), so they
+  // never receive these events anyway.
+  if (cef::IsViewportCollapseEnabled(document))
+    return;
+#endif
+
   auto now = base::Time::Now();
 
   if (!last_sync_times_.Contains(&document))

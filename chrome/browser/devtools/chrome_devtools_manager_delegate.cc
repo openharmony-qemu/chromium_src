@@ -80,6 +80,10 @@
 static_assert(!BUILDFLAG(IS_ANDROID),
               "This file should not be included in Android build");
 
+#if BUILDFLAG(ENABLE_CEF)
+#include "cef/libcef/browser/chrome/extensions/chrome_extension_util.h"
+#endif
+
 using content::DevToolsAgentHost;
 
 const char ChromeDevToolsManagerDelegate::kTypeApp[] = "app";
@@ -328,6 +332,12 @@ std::string ChromeDevToolsManagerDelegate::GetTargetType(
   if (views::WebView::IsWebViewContents(web_contents)) {
     return DevToolsAgentHost::kTypePage;
   }
+
+#if BUILDFLAG(ENABLE_CEF)
+  if (cef::IsAlloyContents(web_contents, /*primary_only=*/true)) {
+    return DevToolsAgentHost::kTypePage;
+  }
+#endif
 
   return DevToolsAgentHost::kTypeOther;
 }

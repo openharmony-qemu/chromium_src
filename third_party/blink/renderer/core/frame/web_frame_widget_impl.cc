@@ -6135,6 +6135,7 @@ void WebFrameWidgetImpl::OnWindowShowStateChanged(
       break;
     case WindowShowState::kInactive:
     case WindowShowState::kFullscreen:
+    case WindowShowState::kHidden:
     case WindowShowState::kEnd:
       break;
   }

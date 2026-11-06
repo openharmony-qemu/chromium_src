@@ -385,9 +385,9 @@ class COMPONENT_EXPORT(NATIVE_THEME) NativeTheme {
 
   // A process-wide preferred color scheme that takes precedence over the
   // `OsSettingsProvider` value, e.g. for an application-level light/dark
-  // setting. Initially kDark if `switches::kForceDarkMode` is present and unset
-  // otherwise. Changing it notifies observers of every instance that observes
-  // OS setting changes.
+  // setting. Initially kDark if `switches::kForceDarkMode` is present, kLight
+  // if `force-light-mode` is present, and unset otherwise. Changing it notifies
+  // observers of every instance that observes OS setting changes.
   static void SetPreferredColorSchemeOverride(
       std::optional<PreferredColorScheme> color_scheme);
   static std::optional<PreferredColorScheme> GetPreferredColorSchemeOverride();
@@ -547,6 +547,12 @@ class COMPONENT_EXPORT(NATIVE_THEME) NativeTheme {
 
   size_t system_color_version() const { return system_color_version_; }
   void IncrementSystemColorVersion() { ++system_color_version_; }
+
+  // Whether light mode is forced via command-line flag.
+  static bool IsForcedLightMode();
+
+  // Whether dark mode is forced via command-line flag.
+  static bool IsForcedDarkMode();
 
  protected:
   explicit NativeTheme(SystemTheme system_theme = SystemTheme::kDefault);

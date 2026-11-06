@@ -29,6 +29,10 @@
 #include "ui/base/window_open_disposition.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ENABLE_CEF)
+#include "cef/libcef/browser/chrome/browser_delegate.h"
+#endif
+
 namespace chrome {
 
 GURL GetNewTabURL(const BrowserWindowInterface* browser) {
@@ -50,7 +54,12 @@ content::WebContents* AddAndReturnTabAt(
     bool pinned,
     std::optional<NavigateParams::WindowAction> window_action) {
   const GURL resolved_url = url.is_empty() ? GetNewTabURL(browser) : url;
-  NavigateParams params(browser, resolved_url, ui::PAGE_TRANSITION_TYPED);
+  // For CEF use a PageTransition that matches
+  // CefFrameHostImpl::kPageTransitionExplicit.
+  NavigateParams params(
+      browser, resolved_url,
+      static_cast<ui::PageTransition>(ui::PAGE_TRANSITION_TYPED |
+                                      ui::PAGE_TRANSITION_FROM_ADDRESS_BAR));
   params.disposition = foreground ? WindowOpenDisposition::NEW_FOREGROUND_TAB
                                   : WindowOpenDisposition::NEW_BACKGROUND_TAB;
   if (window_action) {
@@ -108,6 +117,17 @@ content::WebContents* AddWebContents(
   DCHECK(disposition != WindowOpenDisposition::SAVE_TO_DISK);
   // Can't create a new contents for the current tab - invalid case.
   DCHECK(disposition != WindowOpenDisposition::CURRENT_TAB);
+
+#if BUILDFLAG(ENABLE_CEF)
+  if (browser && new_contents) {
+    if (auto* cef_delegate = browser->cef_delegate()) {
+      new_contents = cef_delegate->AddWebContents(std::move(new_contents));
+      if (!new_contents) {
+        return nullptr;
+      }
+    }
+  }
+#endif
 
   NavigateParams params(browser, std::move(new_contents));
   params.source_contents = source_contents;

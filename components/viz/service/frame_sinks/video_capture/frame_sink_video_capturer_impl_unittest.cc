@@ -580,6 +580,12 @@ class FakeCapturableFrameSink : public CapturableFrameSink {
     PropagateMojoTasks(task_runner_);
   }
 
+  void DropCopyOutputResult(int offset) {
+    // Destroying the request sends an empty result, just like a failed copy.
+    results_[offset].Reset();
+    PropagateMojoTasks(task_runner_);
+  }
+
   void set_task_runner(scoped_refptr<base::TestMockTimeTaskRunner> runner) {
     task_runner_ = std::move(runner);
   }
@@ -1567,6 +1573,66 @@ TEST_P(FrameSinkVideoCapturerTest, EventuallySendsARefreshFrame) {
   ASSERT_EQ(num_frames + 1, consumer.num_frames_received());
   EXPECT_FALSE(IsRefreshRetryTimerRunning());
 
+  StopCapture();
+}
+
+// A failed readback must not leave the oracle waiting for a capture that will
+// never complete. The retry must work without new damage or a refresh demand.
+TEST_P(FrameSinkVideoCapturerTest, RefreshRecoversAfterFailedCopy) {
+  EXPECT_CALL(frame_sink_manager_, FindCapturableFrameSink(kVideoCaptureTarget))
+      .WillRepeatedly(Return(&frame_sink_));
+  capturer_->ChangeTarget(kVideoCaptureTarget,
+                          /*sub_capture_target_version=*/0);
+  NiceMock<MockConsumer> consumer;
+  StartCapture(&consumer);
+  ASSERT_EQ(1, frame_sink_.num_copy_results());
+  frame_sink_.DropCopyOutputResult(0);
+  EXPECT_EQ(0, consumer.num_frames_received());
+  ASSERT_TRUE(IsRefreshRetryTimerRunning());
+
+  AdvanceClockForRefreshTimer();
+  ASSERT_EQ(2, frame_sink_.num_copy_results());
+  frame_sink_.SendCopyOutputResult(1);
+  ASSERT_EQ(1, consumer.num_frames_received());
+  EXPECT_FALSE(IsRefreshRetryTimerRunning());
+  consumer.SendDoneNotification(0);
+  StopCapture();
+}
+
+// A successful copy can still be dropped if its capture target changed while
+// the copy was in flight. That drop must also complete the oracle's capture.
+TEST_P(FrameSinkVideoCapturerTest, RefreshRecoversAfterCaptureVersionChange) {
+  EXPECT_CALL(frame_sink_manager_, FindCapturableFrameSink(kVideoCaptureTarget))
+      .WillRepeatedly(Return(&frame_sink_));
+  capturer_->ChangeTarget(kVideoCaptureTarget,
+                          /*sub_capture_target_version=*/0);
+  NiceMock<MockConsumer> consumer;
+  StartCapture(&consumer);
+  ASSERT_EQ(1, frame_sink_.num_copy_results());
+  capturer_->ChangeTarget(kVideoCaptureTarget,
+                          /*sub_capture_target_version=*/1);
+  frame_sink_.SendCopyOutputResult(0);
+  EXPECT_EQ(0, consumer.num_frames_received());
+  ASSERT_TRUE(IsRefreshRetryTimerRunning());
+
+  AdvanceClockForRefreshTimer();
+  // The cached copy has the obsolete capture version and must not be reused.
+  ASSERT_EQ(2, frame_sink_.num_copy_results());
+  frame_sink_.SendCopyOutputResult(1);
+  ASSERT_EQ(1, consumer.num_frames_received());
+  EXPECT_EQ(media::CaptureVersion(kSourceId, 1),
+            consumer.TakeFrame(0)->metadata().capture_version);
+  EXPECT_FALSE(IsRefreshRetryTimerRunning());
+  consumer.SendDoneNotification(0);
+
+  // The replacement should become the cached frame for subsequent refreshes.
+  capturer_->RequestRefreshFrame();
+  AdvanceClockForRefreshTimer();
+  EXPECT_EQ(2, frame_sink_.num_copy_results());
+  ASSERT_EQ(2, consumer.num_frames_received());
+  EXPECT_EQ(media::CaptureVersion(kSourceId, 1),
+            consumer.TakeFrame(1)->metadata().capture_version);
+  consumer.SendDoneNotification(1);
   StopCapture();
 }
 

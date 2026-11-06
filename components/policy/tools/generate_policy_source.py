@@ -558,6 +558,7 @@ def _WritePolicyConstantHeader(
 #include <cstdint>
 #include <string>
 
+#include "cef/libcef/features/features.h"
 #include "components/policy/core/common/policy_details.h"
 #include "components/policy/core/common/policy_map.h"
 

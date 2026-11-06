@@ -1,0 +1,11 @@
+--- chrome/browser/ui/browser_tabstrip.cc
++++ chrome/browser/ui/browser_tabstrip.cc
+@@ -152,8 +172,6 @@ void CloseWebContents(BrowserWindowInterface* browser,
+                       bool add_to_history) {
+   int index = browser->GetTabStripModel()->GetIndexOfWebContents(contents);
+   if (index == TabStripModel::kNoTab) {
+-    DUMP_WILL_BE_NOTREACHED()
+-        << "CloseWebContents called for tab not in our strip";
+     return;
+   }
+ 

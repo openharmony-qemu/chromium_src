@@ -194,6 +194,13 @@ void ExtractUnderlines(NSAttributedString* string,
 
 // RenderWidgetHostViewCocoa ---------------------------------------------------
 
+@interface NSWindow (CefCustomMethods)
+- (int)acceptsFirstMouse;
+@end
+
+constexpr int kStateEnabled = 1;
+constexpr int kStateDisabled = 2;
+
 // Private methods:
 @interface RenderWidgetHostViewCocoa ()
 

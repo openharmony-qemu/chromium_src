@@ -527,6 +527,10 @@ GaiaCookieManagerService::GetCachedListAccounts() {
 }
 
 void GaiaCookieManagerService::TriggerListAccounts() {
+  if (!signin_client_->GetPrefs()->GetBoolean(prefs::kSigninAllowed)) {
+    return;
+  }
+
   // Callers suspect that a check to Gaia needs to be done, don't rely on the
   // in progress request, conditions might have changed while the request is
   // in-flight.

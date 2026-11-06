@@ -50,6 +50,10 @@
 #include <sys/utsname.h>
 #endif
 
+#if BUILDFLAG(ENABLE_CEF)
+constexpr char kUserAgentProductAndVersion[] = "user-agent-product";
+#endif
+
 namespace embedder_support {
 
 namespace {
@@ -464,6 +468,13 @@ std::string GetUserAgentInternal() {
 }  // namespace
 
 std::string GetProductAndVersion() {
+#if BUILDFLAG(ENABLE_CEF)
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line->HasSwitch(kUserAgentProductAndVersion)) {
+    return command_line->GetSwitchValueASCII(kUserAgentProductAndVersion);
+  }
+#endif
+
   return base::FeatureList::IsEnabled(
              blink::features::kReduceUserAgentMinorVersion)
              ? version_info::GetProductNameAndVersionForReducedUserAgent()

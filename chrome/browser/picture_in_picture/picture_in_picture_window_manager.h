@@ -66,6 +66,12 @@ class PictureInPictureWindowManager {
   // Returns the singleton instance.
   static PictureInPictureWindowManager* GetInstance();
 
+  // Whether creation options enable the experimental macOS/Windows alpha surface.
+  // This capability does not change when the page changes its CSS background.
+  static bool IsTransparentDocumentPictureInPicture(
+      const std::optional<blink::mojom::PictureInPictureWindowOptions>&
+          options);
+
   PictureInPictureWindowManager(const PictureInPictureWindowManager&) = delete;
   PictureInPictureWindowManager& operator=(
       const PictureInPictureWindowManager&) = delete;

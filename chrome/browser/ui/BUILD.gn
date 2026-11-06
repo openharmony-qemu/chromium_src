@@ -8,6 +8,7 @@ import("//build/config/compiler/compiler.gni")
 import("//build/config/features.gni")
 import("//build/config/ozone.gni")
 import("//build/config/ui.gni")
+import("//cef/libcef/features/features.gni")
 import("//chrome/browser/buildflags.gni")
 import("//chrome/common/features.gni")
 import("//components/captive_portal/core/features.gni")
@@ -1282,6 +1283,10 @@ source_set("managed_ui") {
 source_set("crypto_module_password_dialog") {
   public = [ "crypto_module_password_dialog.h" ]
 
+  if (enable_cef) {
+    configs += [ "//cef/libcef/features:config" ]
+  }
+
   public_deps = [
     "//base",
     "//ui/gfx",
@@ -1721,6 +1726,13 @@ source_set("layout_constants") {
     "//ui/base",
     "//ui/base:features",
   ]
+
+  if (enable_cef) {
+    deps += [
+      "//cef:cef_resources",
+      "//cef/libcef/features:deps",
+    ]
+  }
 
   if (!is_android) {
     deps += [ "//chrome/browser/ui/tabs:features" ]

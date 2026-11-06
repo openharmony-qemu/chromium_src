@@ -3333,6 +3333,10 @@ void Textfield::OnEnabledChanged() {
   if (GetInputMethod()) {
     GetInputMethod()->OnTextInputTypeChanged(this);
   }
+  if (GetWidget()) {
+    SetColor(GetTextColor());
+    UpdateBackgroundColor();
+  }
   UpdateDefaultBorder();
 
   if (GetWidget()) {

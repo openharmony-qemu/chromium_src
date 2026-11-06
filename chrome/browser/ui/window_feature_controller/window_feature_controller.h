@@ -34,6 +34,7 @@ class WindowFeatureController {
   };
 
   WindowFeatureController(
+      BrowserWindowInterface* browser,
       BrowserWindowFullscreenController* fullscreen_controller,
       web_app::AppBrowserController* app_controller,
       BrowserWindowInterface::Type browser_type,
@@ -85,6 +86,7 @@ class WindowFeatureController {
                                  bool check_can_support) const;
   bool IsFullscreen() const;
 
+  const raw_ptr<BrowserWindowInterface> browser_;
   const raw_ref<BrowserWindowFullscreenController> fullscreen_controller_;
 
   // Can be null.

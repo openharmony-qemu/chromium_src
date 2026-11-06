@@ -113,7 +113,9 @@ class ToolbarView : public views::AccessiblePaneView,
 
   DECLARE_CLASS_ELEMENT_IDENTIFIER_VALUE(kToolbarElementId);
 
-  ToolbarView(BrowserWindowInterface* browser, BrowserView* browser_view);
+  ToolbarView(BrowserWindowInterface* browser,
+              BrowserView* browser_view,
+              std::optional<DisplayMode> display_mode);
   ToolbarView(const ToolbarView&) = delete;
   ToolbarView& operator=(const ToolbarView&) = delete;
   ~ToolbarView() override;

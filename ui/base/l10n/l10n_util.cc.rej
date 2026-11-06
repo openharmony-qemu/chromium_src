@@ -1,0 +1,69 @@
+--- ui/base/l10n/l10n_util.cc
++++ ui/base/l10n/l10n_util.cc
+@@ -131,7 +131,6 @@ std::u16string GetDisplayNameForLocaleInternal(
+ #endif  // BUILDFLAG(IS_IOS)
+ }
+ 
+-#if !BUILDFLAG(IS_APPLE)
+ // Use --lang and the app pref on Windows.  On Linux, only look at the LC_*/LANG
+ // environment variables.
+ std::vector<LanguageTag> GetCandidates() {
+@@ -165,16 +164,10 @@ std::vector<LanguageTag> GetCandidates() {
+   return candidates;
+ }
+ 
+-#endif  // !BUILDFLAG(IS_APPLE)
+-
+ // Preferred locales are enabled everywhere but Linux systems with GLib. This
+ // function parses `preferred_locale` into a `LanguageTag` if they are enabled.
+ std::optional<LanguageTag> GetPreferredTag(std::string_view preferred_locale) {
+-#if BUILDFLAG(IS_APPLE)
+-  std::string_view locale_override = l10n_util::GetLocaleOverride();
+-  return GetLanguageTagFromString(locale_override.empty() ? preferred_locale
+-                                                          : locale_override);
+-#elif defined(USE_GLIB) && !BUILDFLAG(IS_CHROMEOS)
++#if defined(USE_GLIB) && !BUILDFLAG(IS_CHROMEOS)
+   return std::nullopt;
+ #else
+   return GetLanguageTagFromString(preferred_locale);
+@@ -210,23 +203,7 @@ std::optional<std::string> CheckAndResolveLocale(std::string_view locale,
+       });
+ }
+ 
+-#if BUILDFLAG(IS_APPLE)
+-std::string GetApplicationLocaleInternalMac(std::string_view pref_locale) {
+-  std::optional<LanguageTag> preferred_locale_tag =
+-      GetPreferredTag(pref_locale);
+-
+-  // The above should handle all of the cases Chrome normally hits, but for some
+-  // unit tests, fallback is needed too.
+-  if (!preferred_locale_tag) {
+-    return "en-US";
+-  }
+-
+-  return std::string(preferred_locale_tag->tag_string());
+-}
+-#endif
+-
+-#if !BUILDFLAG(IS_APPLE)
+-std::string GetApplicationLocaleInternalNonMac(std::string_view pref_locale) {
++std::string GetApplicationLocaleInternal(std::string_view pref_locale) {
+   // The `preferred_tag` is separated from the other candidates.
+   std::optional<LanguageTag> preferred_tag = GetPreferredTag(pref_locale);
+   // If `preferred_tag`, it attempts to get a match for it, even if it is not
+@@ -259,15 +236,6 @@ std::string GetApplicationLocaleInternalNonMac(std::string_view pref_locale) {
+   // Fallback to "en-US"
+   return IsResourceBundleLocale(GetKnownLanguageTag("en-US")) ? "en-US" : "";
+ }
+-#endif  // !BUILDFLAG(IS_APPLE)
+-
+-std::string GetApplicationLocaleInternal(std::string_view pref_locale) {
+-#if BUILDFLAG(IS_APPLE)
+-  return GetApplicationLocaleInternalMac(pref_locale);
+-#else
+-  return GetApplicationLocaleInternalNonMac(pref_locale);
+-#endif
+-}
+ 
+ std::string GetApplicationLocale(std::string_view pref_locale,
+                                  bool set_icu_locale) {

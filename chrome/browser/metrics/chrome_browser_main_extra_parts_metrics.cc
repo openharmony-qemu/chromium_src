@@ -36,6 +36,7 @@
 #include "base/version.h"
 #include "build/build_config.h"
 #include "build/config/compiler/compiler_buildflags.h"
+#include "cef/libcef/features/features.h"
 #include "chrome/browser/about_flags.h"
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/buildflags.h"

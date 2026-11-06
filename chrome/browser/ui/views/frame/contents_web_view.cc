@@ -6,7 +6,9 @@
 
 #include "base/debug/dump_without_crashing.h"
 #include "build/build_config.h"
+#include "chrome/browser/picture_in_picture/picture_in_picture_window_manager.h"
 #include "chrome/browser/ui/color/chrome_color_id.h"
+#include "chrome/browser/ui/views/frame/browser_view.h"
 #include "chrome/browser/ui/views/frame/safe_invoke/safe_invoke.h"
 #include "chrome/browser/ui/views/frame/web_contents_close_handler.h"
 #include "chrome/browser/ui/views/status_bubble_views.h"
@@ -162,6 +164,14 @@ void ContentsWebView::SetWebContents(content::WebContents* web_contents) {
 
   UpdateIsBlockedByModal();
 
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+  if (GetWidget() &&
+      PictureInPictureWindowManager::IsTransparentDocumentPictureInPicture(
+          web_contents->GetPictureInPictureOptions())) {
+    UpdateBackgroundColor();
+  }
+#endif
+
   if (!status_bubble_) {
     status_bubble_ = std::make_unique<StatusBubbleViews>(this);
     status_bubble_->Reposition();
@@ -201,6 +211,19 @@ void ContentsWebView::DidGetUserInteraction(const blink::WebInputEvent& event) {
 #endif
 
 void ContentsWebView::UpdateBackgroundColor() {
+#if !BUILDFLAG(IS_CHROMEOS)
+  auto* browser_view = GetWidget() ? BrowserView::GetBrowserViewForNativeWindow(
+                                         GetWidget()->GetNativeWindow())
+                                   : nullptr;
+  if (browser_view &&
+      PictureInPictureWindowManager::IsTransparentDocumentPictureInPicture(
+          browser_view->GetDocumentPictureInPictureOptions())) {
+    background_visible_ = false;
+    if (web_contents()) {
+      web_contents()->SetPageBaseBackgroundColor(SK_ColorTRANSPARENT);
+    }
+  }
+#endif
   const SkColor color = GetColorProvider()->GetColor(
       is_letterboxing() ? kColorWebContentsBackgroundLetterboxing
                         : kColorWebContentsBackground);

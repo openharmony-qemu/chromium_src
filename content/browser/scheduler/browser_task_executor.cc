@@ -230,11 +230,10 @@ void BrowserTaskExecutor::ResetForTesting() {
 
 // static
 void BrowserTaskExecutor::Shutdown() {
-  if (!g_browser_task_executor) {
+  if (!g_browser_task_executor || !Get()->browser_ui_thread_scheduler_) {
     return;
   }
 
-  CHECK(Get()->browser_ui_thread_scheduler_, base::NotFatalUntil::M160);
   // We don't delete |g_browser_task_executor| because other threads may
   // PostTask or call BrowserTaskExecutor::GetTaskRunner while we're tearing
   // things down. We don't want to add locks so we just leak instead of dealing

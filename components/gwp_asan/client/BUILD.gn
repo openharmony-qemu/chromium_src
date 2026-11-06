@@ -95,6 +95,7 @@ component("client") {
     ":export",
     "//base",
     "//base/allocator:buildflags",
+    "//cef/libcef/features:buildflags",
     "//components/crash/core/common:crash_key",
     "//components/gwp_asan/common",
     "//components/gwp_asan/common:crash_keys",

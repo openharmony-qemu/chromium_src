@@ -9,6 +9,7 @@
 
 #include "base/files/file_path.h"
 #include "build/build_config.h"
+#include "cef/libcef/features/features.h"
 
 namespace chrome {
 
@@ -36,7 +37,11 @@ extern const char kMacHelperSuffixAlerts[];
 
 #if BUILDFLAG(IS_WIN)
 inline constexpr base::FilePath::CharType kBrowserResourcesDll[] =
+#if BUILDFLAG(ENABLE_CEF)
+    FILE_PATH_LITERAL("libcef.dll");
+#else
     FILE_PATH_LITERAL("chrome.dll");
+#endif
 inline constexpr base::FilePath::CharType kElfDll[] =
     FILE_PATH_LITERAL("chrome_elf.dll");
 inline constexpr base::FilePath::CharType kRendererDll[] =

@@ -393,6 +393,10 @@ class REMOTE_COCOA_APP_SHIM_EXPORT NativeWidgetNSWindowBridge
  private:
   friend class views::test::BridgedNativeWidgetTestApi;
 
+  // Restore child-modal activation after AppKit finishes resizing the parent,
+  // provided focus still belongs to this window and application.
+  void RestoreChildModalFocusAfterResize();
+
   // Attach child windows, if the window is visible (see comment inline).
   void OrderChildren();
 

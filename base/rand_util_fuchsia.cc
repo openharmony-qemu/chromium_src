@@ -49,6 +49,10 @@ void RandBytes(span<uint8_t> output) {
 
 namespace internal {
 
+void RandBytesAvoidAllocation(span<uint8_t> output) {
+  zx_cprng_draw(output.data(), output.size());
+}
+
 double RandDoubleAvoidAllocation() {
   uint64_t number;
   zx_cprng_draw(&number, sizeof(number));

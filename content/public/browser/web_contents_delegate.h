@@ -115,10 +115,12 @@ class FileSelectListener;
 class InitiatorNavigationState;
 class JavaScriptDialogManager;
 class RenderFrameHost;
+class RenderViewHostDelegateView;
 class RenderWidgetHost;
 class SessionStorageNamespaceHandle;
 class SiteInstance;
 class WebContents;
+class WebContentsView;
 struct ContextMenuParams;
 struct DropData;
 struct GlobalRenderFrameHostId;
@@ -422,6 +424,14 @@ class CONTENT_EXPORT WebContentsDelegate {
       const blink::mojom::WindowFeatures& window_features,
       const StoragePartitionConfig& partition_config,
       SessionStorageNamespaceHandle* session_storage_namespace);
+
+  virtual void GetCustomWebContentsView(
+      WebContents* web_contents,
+      const GURL& target_url,
+      int opener_render_process_id,
+      int opener_render_frame_id,
+      raw_ptr<content::WebContentsView>* view,
+      raw_ptr<content::RenderViewHostDelegateView>* delegate_view) {}
 
   // Notifies the delegate about the creation of a new WebContents. This
   // typically happens when popups are created.

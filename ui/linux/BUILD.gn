@@ -4,6 +4,7 @@
 
 import("//build/config/features.gni")
 import("//build/config/linux/gtk/gtk.gni")
+import("//printing/buildflags/buildflags.gni")
 import("//ui/qt/qt.gni")
 
 assert(is_linux)
@@ -36,6 +37,11 @@ component("linux_ui") {
     "//ui/display/types",
     "//ui/gfx/geometry",
   ]
+
+  if (enable_printing) {
+    deps += [ "//printing/mojom" ]
+  }
+
   public_deps = [ "//printing/buildflags" ]
 }
 

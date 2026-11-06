@@ -24,6 +24,7 @@
 #include "base/timer/elapsed_timer.h"
 #include "base/types/expected.h"
 #include "build/build_config.h"
+#include "cef/libcef/features/features.h"
 #include "chrome/browser/tab_contents/web_contents_collection.h"
 #include "chrome/browser/ui/bookmarks/bookmark_bar.h"
 #include "chrome/browser/ui/bookmarks/bookmark_bar_controller.h"
@@ -76,6 +77,10 @@ enum class ProtocolHandlerSecurityLevel;
 namespace content {
 class NavigationHandle;
 }  // namespace content
+
+#if BUILDFLAG(ENABLE_CEF)
+#include "cef/libcef/browser/chrome/browser_delegate.h"
+#endif
 
 namespace web_app {
 class AppBrowserController;
@@ -158,6 +163,7 @@ class Browser : public TabStripModelObserver,
       DidBecomeInactiveCallback callback) override;
   Type GetType() const override;
   std::vector<tabs::TabInterface*> GetAllTabInterfaces() override;
+  bool IsNormalBrowser() const override;
   bool IsTabModalPopup() const override;
   void SetIsTabModalPopup(
       bool is_tab_modal_popup,
@@ -167,6 +173,22 @@ class Browser : public TabStripModelObserver,
   const ui::BaseWindow* GetWindow() const override;
   DesktopBrowserWindowCapabilities* capabilities() override;
   const DesktopBrowserWindowCapabilities* capabilities() const override;
+
+  // Return true if CEF will expose the toolbar to the client. This value is
+  // used to selectively enable toolbar behaviors such as command processing
+  // and omnibox focus without also including the toolbar in BrowserView layout
+  // calculations.
+  void set_toolbar_overridden(bool val) { toolbar_overridden_ = val; }
+  bool toolbar_overridden() const { return toolbar_overridden_; }
+
+  // Used when the BrowserWindow will outlive this Browser.
+  void ReleaseBrowserWindow() { window_.release(); }
+
+#if BUILDFLAG(ENABLE_CEF)
+  cef::BrowserDelegate* cef_delegate() const override {
+    return cef_browser_delegate_.get();
+  }
+#endif
 
  private:
   friend BrowserWindowInterface* CreateBrowserWindow(
@@ -264,6 +286,10 @@ class Browser : public TabStripModelObserver,
   // This Browser's window.
   std::unique_ptr<BrowserWindow, BrowserWindowDeleter> window_;
 
+#if BUILDFLAG(ENABLE_CEF)
+  std::unique_ptr<cef::BrowserDelegate> cef_browser_delegate_;
+#endif
+
   std::unique_ptr<TabStripModelDelegate> const tab_strip_model_delegate_;
   std::unique_ptr<TabStripModel> const tab_strip_model_;
 
@@ -275,6 +301,8 @@ class Browser : public TabStripModelObserver,
   std::unique_ptr<ScopedKeepAlive> keep_alive_;
 
   WebContentsCollection web_contents_collection_{this};
+
+  bool toolbar_overridden_ = false;
 
   // If true, the browser window was created as a tab modal pop-up.
   bool is_tab_modal_popup_ = false;

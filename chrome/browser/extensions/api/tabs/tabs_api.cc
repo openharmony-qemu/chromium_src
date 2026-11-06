@@ -1422,6 +1422,10 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
   }
 
   if (params->update_properties.opener_tab_id) {
+    if (!target_tab) {
+      return RespondNow(Error(ExtensionTabUtil::kNoCurrentWindowError));
+    }
+
     int opener_id = *params->update_properties.opener_tab_id;
     content::WebContents* opener_contents = nullptr;
     if (opener_id == tab_id) {
@@ -1436,8 +1440,13 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
 
     ::tabs::TabInterface* opener_tab =
         ::tabs::TabInterface::GetFromContents(opener_contents);
-    CHECK(opener_tab);
-    if (!SetOpenerOfTab(*window->profile(), *target_tab, *opener_tab, error)) {
+    if (!opener_tab) {
+      return RespondNow(
+          Error("Tab opener must be in the same window as the updated tab."));
+    }
+
+    auto* profile = Profile::FromBrowserContext(browser_context());
+    if (!SetOpenerOfTab(*profile, *target_tab, *opener_tab, error)) {
       return RespondNow(Error(std::move(error)));
     }
   }
@@ -1445,14 +1454,19 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
   // TODO(https://crbug.com/505306735): Support on desktop android.
 #if !BUILDFLAG(IS_ANDROID)
   if (params->update_properties.auto_discardable) {
-    bool state = *params->update_properties.auto_discardable;
-    resource_coordinator::TabLifecycleUnitExternal::FromWebContents(
-        original_contents)
-        ->SetAutoDiscardable(state);
+    auto* lifecycle_unit =
+        resource_coordinator::TabLifecycleUnitExternal::FromWebContents(
+            original_contents);
+    if (!lifecycle_unit) {
+      return RespondNow(Error(ExtensionTabUtil::kNoCurrentWindowError));
+    }
+
+    lifecycle_unit->SetAutoDiscardable(
+        *params->update_properties.auto_discardable);
   }
 #endif
 
-  if (params->update_properties.pinned) {
+  if (target_tab && params->update_properties.pinned) {
     bool pinned = *params->update_properties.pinned;
 
     if (target_tab->IsPinned() != pinned) {
@@ -1482,7 +1496,8 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
   // Navigate the tab to a new location if the url is different.
   if (params->update_properties.url) {
     std::string updated_url = *params->update_properties.url;
-    if (window->profile()->IsIncognitoProfile() &&
+    auto* profile = Profile::FromBrowserContext(browser_context());
+    if (profile->IsIncognitoProfile() &&
         !IsURLAllowedInIncognito(GURL(updated_url))) {
       return RespondNow(Error(ErrorUtils::FormatErrorMessage(
           tabs_constants::kURLsNotAllowedInIncognitoError, updated_url)));

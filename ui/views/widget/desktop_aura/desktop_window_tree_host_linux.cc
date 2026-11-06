@@ -31,6 +31,7 @@
 #include "ui/linux/linux_ui.h"
 #include "ui/linux/window_frame_provider.h"
 #include "ui/native_theme/native_theme.h"
+#include "ui/ozone/platform_selection.h"
 #include "ui/platform_window/extensions/wayland_extension.h"
 #include "ui/platform_window/extensions/x11_extension.h"
 #include "ui/platform_window/platform_window.h"
@@ -373,6 +374,20 @@ Widget::MoveLoopResult DesktopWindowTreeHostLinux::RunMoveLoop(
   return result;
 }
 
+gfx::Rect DesktopWindowTreeHostLinux::GetWindowBoundsInScreen() const {
+  if (!screen_bounds_.IsEmpty()) {
+    return screen_bounds_;
+  }
+  return DesktopWindowTreeHostPlatform::GetWindowBoundsInScreen();
+}
+
+gfx::Point DesktopWindowTreeHostLinux::GetLocationOnScreenInPixels() const {
+  if (!screen_bounds_.IsEmpty()) {
+    return screen_bounds_.origin();
+  }
+  return DesktopWindowTreeHostPlatform::GetLocationOnScreenInPixels();
+}
+
 void DesktopWindowTreeHostLinux::DispatchEvent(ui::Event* event) {
   // In Windows, the native events sent to chrome are separated into client
   // and non-client versions of events, which we record on our LocatedEvent
@@ -428,6 +443,12 @@ void DesktopWindowTreeHostLinux::DispatchEvent(ui::Event* event) {
   if (!event->handled()) {
     WindowTreeHostPlatform::DispatchEvent(event);
   }
+}
+
+void DesktopWindowTreeHostLinux::OnWidgetInitDone() {
+  DesktopWindowTreeHostPlatform::OnWidgetInitDone();
+  // The FrameView didn't exist yet during the initial OnBoundsChanged() calls.
+  UpdateFrameRegions();
 }
 
 void DesktopWindowTreeHostLinux::OnClosed() {
@@ -513,6 +534,15 @@ void DesktopWindowTreeHostLinux::AddAdditionalInitProperties(
 
   properties->wayland_app_id = params.wayland_app_id;
   properties->startup_id = params.startup_id;
+
+  // See CEF issue #3937.
+  if (std::string(ui::GetOzonePlatformName()) == "wayland") {
+    if (!properties->parent_widget) {
+      properties->parent_widget = params.parent_widget;
+    }
+  } else {
+    properties->parent_widget = params.parent_widget;
+  }
 
   DCHECK(!properties->x11_extension_delegate);
   properties->x11_extension_delegate = this;

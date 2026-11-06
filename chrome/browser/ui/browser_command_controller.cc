@@ -204,6 +204,10 @@
 #include "chrome/browser/ui/signin/signin_view_controller.h"
 #endif  // BUILDFLAG(ENABLE_DICE_SUPPORT)
 
+#if BUILDFLAG(ENABLE_CEF)
+#include "cef/libcef/browser/chrome/browser_util.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS));
 
 using Extension = extensions::Extension;
@@ -566,6 +570,12 @@ void BrowserCommandController::ContentRestrictionsChanged() {
 
 void BrowserCommandController::FullscreenStateChanged() {
   UpdateCommandsForFullscreenMode();
+
+#if BUILDFLAG(ENABLE_CEF)
+  if (browser_->cef_delegate()) {
+    browser_->cef_delegate()->WindowFullscreenStateChanged();
+  }
+#endif
 }
 
 #if BUILDFLAG(IS_CHROMEOS)
@@ -653,6 +663,7 @@ bool BrowserCommandController::ExecuteCommandWithDispositionAndContext(
     std::optional<actions::ActionInvocationContext> context,
     base::TimeTicks time_stamp) {
   if (!SupportsCommand(id) || !IsCommandEnabled(id)) {
+    LOG(WARNING) << "Invalid/disabled command " << id;
     return false;
   }
 
@@ -678,6 +689,13 @@ void BrowserCommandController::HandleCommandWithDisposition(
     WindowOpenDisposition disposition,
     base::TimeTicks time_stamp) {
   DCHECK(IsCommandEnabled(id)) << "Invalid/disabled command " << id;
+
+#if BUILDFLAG(ENABLE_CEF)
+  if (browser_->cef_delegate() &&
+      browser_->cef_delegate()->HandleCommand(id, disposition)) {
+    return;
+  }
+#endif
 
   // The order of commands in this switch statement must match the function
   // declaration order in browser.h!
@@ -1773,12 +1791,14 @@ void BrowserCommandController::OnProfileAiSubscriptionTierUpdated(
 
 bool BrowserCommandController::IsShowingMainUI() {
   return WindowFeatureController::From(browser_)->SupportsWindowFeature(
-      WindowFeatureController::WindowFeature::kFeatureTabStrip);
+             WindowFeatureController::WindowFeature::kFeatureTabStrip) ||
+         cef::BrowserForBWI(browser_)->toolbar_overridden();
 }
 
 bool BrowserCommandController::IsShowingLocationBar() {
   return WindowFeatureController::From(browser_)->SupportsWindowFeature(
-      WindowFeatureController::WindowFeature::kFeatureLocationBar);
+             WindowFeatureController::WindowFeature::kFeatureLocationBar) ||
+         cef::BrowserForBWI(browser_)->toolbar_overridden();
 }
 
 void BrowserCommandController::InitCommandState() {

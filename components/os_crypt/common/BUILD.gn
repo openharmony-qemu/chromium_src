@@ -17,11 +17,16 @@ group("crypto_lib") {
 }
 
 if (is_apple) {
+  config("runtime_configurable_key_storage") {
+    defines = [ "ALLOW_RUNTIME_CONFIGURABLE_KEY_STORAGE" ]
+  }
+
   source_set("keychain_password_mac") {
     sources = [
       "keychain_password_mac.h",
       "keychain_password_mac.mm",
     ]
+    public_configs = [ ":runtime_configurable_key_storage" ]
     deps = [
       "//base",
       "//build:branding_buildflags",

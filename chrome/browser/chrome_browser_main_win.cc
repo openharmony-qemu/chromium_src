@@ -54,6 +54,7 @@
 #include "base/win/wrapped_window_proc.h"
 #include "build/branding_buildflags.h"
 #include "build/build_config.h"
+#include "cef/libcef/features/features.h"
 #include "chrome/browser/about_flags.h"
 #include "chrome/browser/active_use_util.h"
 #include "chrome/browser/browser_features.h"
@@ -495,6 +496,7 @@ void ReportParentProcessName() {
       base::UmaHistogramSparse("Windows.ParentProcessNameHash", hash);
     }
   }
+#endif  // !BUILDFLAG(ENABLE_CEF)
 }
 
 void MaybeUpdateIsolationStateFromFieldTrial() {
@@ -708,6 +710,7 @@ int ChromeBrowserMainPartsWin::PreCreateThreads() {
 }
 
 int ChromeBrowserMainPartsWin::PostCreateThreads() {
+#if !BUILDFLAG(ENABLE_CEF)
   const base::CommandLine& command_line =
       *base::CommandLine::ForCurrentProcess();
 
@@ -722,6 +725,7 @@ int ChromeBrowserMainPartsWin::PostCreateThreads() {
   if (upgrade_util::DoUpgradeTasks(command_line)) {
     return CHROME_RESULT_CODE_NORMAL_EXIT_UPGRADE_RELAUNCHED;
   }
+#endif  // !BUILDFLAG(ENABLE_CEF)
 
   performance_manager::InitializeDllPrereadPolicy();
 
@@ -1088,4 +1092,3 @@ void ChromeBrowserMainPartsWin::SetupModuleDatabase(
   *module_watcher = ModuleWatcher::Create(base::BindRepeating(
       &ChromeBrowserMainPartsWin::OnModuleEvent, base::Unretained(this)));
 }
-

@@ -388,6 +388,10 @@ class CORE_EXPORT DocumentLoader : public GarbageCollected<DocumentLoader>,
     return last_navigation_had_trusted_initiator_;
   }
 
+  bool TextFragmentTokenHadTrustedInitiator() const {
+    return text_fragment_token_had_trusted_initiator_;
+  }
+
   // Called when the URL needs to be updated due to a document.open() call.
   void DidOpenDocumentInputStream(const KURL& url);
 
@@ -776,6 +780,10 @@ class CORE_EXPORT DocumentLoader : public GarbageCollected<DocumentLoader>,
   // to invoke. This token may be instead consumed to pass this permission
   // through a redirect.
   bool has_text_fragment_token_ = false;
+
+  // If true, the navigation that produced the text fragment token was initiated
+  // from the same-origin as the document or was browser-initiated.
+  bool text_fragment_token_had_trusted_initiator_ = false;
 
   // See WebNavigationParams for definition.
   const bool was_discarded_ = false;

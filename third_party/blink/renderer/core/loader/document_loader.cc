@@ -420,6 +420,7 @@ struct SameSizeAsDocumentLoader
   bool is_browser_initiated;
   bool is_prerendering;
   bool has_text_fragment_token;
+  bool text_fragment_token_had_trusted_initiator;
   bool was_discarded;
   bool loading_main_document_from_mhtml_archive;
   bool loading_srcdoc;
@@ -658,6 +659,10 @@ DocumentLoader::DocumentLoader(
   // consume its token.
   has_text_fragment_token_ = TextFragmentAnchor::GenerateNewToken(*this) ||
                              params_->has_text_fragment_token;
+  if (params_->has_text_fragment_token) {
+    text_fragment_token_had_trusted_initiator_ =
+        params_->text_fragment_token_had_trusted_initiator;
+  }
 
   document_policy_ = CreateDocumentPolicy();
 
@@ -776,6 +781,8 @@ DocumentLoader::CreateWebNavigationParamsToCloneDocument() {
   params->should_have_sticky_user_activation =
       frame_->HasStickyUserActivation() && !frame_->IsMainFrame();
   params->has_text_fragment_token = has_text_fragment_token_;
+  params->text_fragment_token_had_trusted_initiator =
+      text_fragment_token_had_trusted_initiator_;
   // Origin trials must still work on the cloned document.
   params->initiator_origin_trial_features =
       CopyInitiatorOriginTrials(initiator_origin_trial_features_);
@@ -1124,6 +1131,10 @@ void DocumentLoader::UpdateForSameDocumentNavigation(
     has_text_fragment_token_ =
         TextFragmentAnchor::GenerateNewTokenForSameDocument(
             *this, type, same_document_navigation_type);
+    if (has_text_fragment_token_) {
+      text_fragment_token_had_trusted_initiator_ =
+          last_navigation_had_trusted_initiator_;
+    }
   }
 
   SetHistoryItemStateForCommit(history_item_.Get(), type,
@@ -3147,6 +3158,10 @@ void DocumentLoader::CommitNavigation() {
   // API).
   last_navigation_had_trusted_initiator_ =
       !requestor_origin_ || is_same_origin_initiator;
+  if (has_text_fragment_token_) {
+    text_fragment_token_had_trusted_initiator_ =
+        last_navigation_had_trusted_initiator_;
+  }
 
   // The PaintHolding feature defers compositor commits until content has been
   // painted or 500ms have passed, whichever comes first. We require that this

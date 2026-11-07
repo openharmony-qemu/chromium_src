@@ -455,9 +455,13 @@ void WidgetBaseInputHandler::HandleInputEvent(
       // through to the web app would cause compatibility problems since
       // DPAD_CENTER is also used as a "confirm" button).
       prevent_default = true;
+      processed = WebInputEventResult::kHandledSuppressed;
     }
   }
 #endif
+  if (check_was_destroyed()) {
+    return;
+  }
 
   if (WebInputEvent::IsGestureEventType(input_event.GetType())) {
     const WebGestureEvent& gesture_event =
@@ -483,15 +487,7 @@ void WidgetBaseInputHandler::HandleInputEvent(
         processed = widget_->client()->HandleInputEvent(coalesced_event);
     }
 
-    // The associated WidgetBase (and this WidgetBaseInputHandler) could
-    // have been destroyed. If it was return early before accessing any more of
-    // this class.
-    if (!weak_self) {
-      if (callback) {
-        std::move(callback).Run(GetAckResult(processed), swap_latency_info,
-                                std::move(handling_state.event_overscroll()),
-                                std::move(handling_state.touch_action()));
-      }
+    if (check_was_destroyed()) {
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
       LOG(INFO) << "Input handler destroyed when:"
                 << InputEventOhos::GetWebEventName(input_event);
@@ -552,6 +548,10 @@ void WidgetBaseInputHandler::HandleInputEvent(
     }
   }
 
+  if (check_was_destroyed()) {
+    return;
+  }
+
   if (callback) {
     std::move(callback).Run(GetAckResult(processed), swap_latency_info,
                             std::move(handling_state.event_overscroll()),
@@ -560,11 +560,11 @@ void WidgetBaseInputHandler::HandleInputEvent(
     DCHECK(!handling_state.event_overscroll())
         << "Unexpected overscroll for un-acked event";
   }
-  // The callback above may have resulted in this WidgetBaseInputHandler being
-  // destroyed (e.g. via closing the page). Bail out if that happens.
-  if (check_was_destroyed()) {
+
+  if (!weak_self) {
     return;
   }
+
   // Show the virtual keyboard if enabled and a user gesture triggers a focus
   // change.
   if ((processed != WebInputEventResult::kNotHandled &&

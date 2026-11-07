@@ -33,6 +33,9 @@ COMPONENT_EXPORT(URL) BASE_DECLARE_FEATURE(kUseIDNAContextJRules);
 // Returns true if kStandardCompliantNonSpecialSchemeURLParsing feature is
 // enabled. See url::kStandardCompliantNonSpecialSchemeURLParsing for details.
 COMPONENT_EXPORT(URL) bool IsUsingStandardCompliantNonSpecialSchemeURLParsing();
+
+COMPONENT_EXPORT(URL)
+BASE_DECLARE_FEATURE(kStandardCompliantNonSpecialSchemeURLParsing);
 #endif
 
 }  // namespace url

@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<!DOCTYPE translationbundle>
+<translationbundle lang="th">
+<translation id="IDS_OHOS_BLOCK_PAGE_TITLE">หมายเหตุ</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_INFO_TITLE">เว็บไซต์ถูกปิดกั้น</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE">ระวังการฉ้อโกง</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_TITLE">มีเนื้อหาที่อาจเป็นอันตราย</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE">การเข้าถึงถูกจำกัด</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_ILLEGAL_INFO_BODY">ไม่สามารถเข้าถึงไซต์นี้ได้เนื่องจากมีเนื้อหาที่ผิดกฎหมายหรือต้องห้าม</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_BODY">ไซต์นี้อาจพยายามหลอกลวงคุณ โปรดรักษาข้อมูลส่วนบุคคลของคุณ</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY">ไซต์นี้ไม่ปลอดภัย โปรดรักษาข้อมูลส่วนบุคคลของคุณ</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED">ย้อนกลับ</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_PROCEED">ดำเนินการต่อ</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">โหมดเยาวชนเปิดอยู่ ไม่สามารถเข้าถึงไซต์นี้ได้</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">การตั้งค่า</translation>
+</translationbundle>

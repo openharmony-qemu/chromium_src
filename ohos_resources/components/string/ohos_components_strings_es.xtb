@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<!DOCTYPE translationbundle>
+<translationbundle lang="es">
+<translation id="IDS_OHOS_BLOCK_PAGE_TITLE">Nota</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_INFO_TITLE">Sitio web bloqueado</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE">Cuidado con el fraude</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_TITLE">Contenido nocivo a continuación</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE">Acceso restringido</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_ILLEGAL_INFO_BODY">No se puede acceder al sitio porque incluye contenido ilegal o prohibido.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_BODY">Este sitio puede intentar estafarte. Protege tu información personal.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY">Este sitio no es seguro. Protege tu información personal.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED">Volver</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_PROCEED">Continuar</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">Modo Adolescentes activado. No se puede acceder a este sitio.</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">Ajustes</translation>
+</translationbundle>

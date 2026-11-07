@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<!DOCTYPE translationbundle>
+<translationbundle lang="lo">
+<translation id="IDS_OHOS_BLOCK_PAGE_TITLE">ໝາຍ​ເຫດ</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_INFO_TITLE">ບ​ລັອກ​ເວັບ​ໄຊ​ແລ້ວ</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE">ລະວັງການສໍ້ໂກງ</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_TITLE">ເນື້ອຫາອັນຕະລາຍຢູ່ຂ້າງໜ້າ</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE">ການເຂົ້າເຖິງຖືກຈຳກັດ</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_ILLEGAL_INFO_BODY">ເວັບໄຊທ໌ນີ້ບໍ່ສາມາດເຂົ້າເຖິງໄດ້ ເນື່ອງຈາກມັນມີເນື້ອຫາທີ່ຜິດກົດໝາຍ ຫຼື ຖືກຫ້າມ.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_BODY">ເວັບໄຊທ໌ນີ້ອາດຈະພະຍາຍາມຫຼອກລວງທ່ານ. ກະລຸນາປົກປ້ອງຂໍ້ມູນສ່ວນຕົວຂອງທ່ານ.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY">ເວັບໄຊທ໌ນີ້ບໍ່ປອດໄພ. ກະລຸນາປົກປ້ອງຂໍ້ມູນສ່ວນຕົວຂອງທ່ານ.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED">ກັບ​ຄືນ</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_PROCEED">ສືບຕໍ່</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">ໂໝດຊາວໜຸ່ມເປີດຢູ່. ເວັບໄຊທ໌ນີ້ບໍ່ສາມາດເຂົ້າເຖິງໄດ້.</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">ການຕັ້ງຄ່າ</translation>
+</translationbundle>

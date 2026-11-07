@@ -107,7 +107,9 @@ void RenderWidgetHostViewChildFrame::
       manager->RemoveObserver(this);
 #if BUILDFLAG(IS_ANDROID)
       auto* observer = root_view->GetTouchSelectionControllerInputObserver();
-      host()->RemoveInputEventObserver(observer);
+      if (observer) {
+        host()->RemoveInputEventObserver(observer);
+      }
 #endif
     }
   } else {
@@ -174,7 +176,9 @@ void RenderWidgetHostViewChildFrame::SetFrameConnector(
 
 #if BUILDFLAG(IS_ANDROID)
       auto* observer = root_view->GetTouchSelectionControllerInputObserver();
-      host()->AddInputEventObserver(observer);
+      if (observer) {
+        host()->AddInputEventObserver(observer);
+      }
 #endif
     }
   }

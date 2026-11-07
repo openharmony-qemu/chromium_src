@@ -9,7 +9,7 @@
   const validColorValues = ["aqua", "peachpuff", "blanchedalmond", "rgb(255, 0, 0)", "#0f5ffe", "color-mix(in srgb, plum, #f00)"];
   const validPercentageExpressions = ["10%", "50%", "calc(10% + 10%)", "calc(10% - 10%)", "calc(10px + 10% - 10%)", "calc(10px + 10px)", "calc(10px + 0%)", "calc(10px + 10%)", "calc(1em + 10%)"];
   const invalidPercentageExpressions = ["calc(", "%", "calc(10 + 20)%", "calc(10 + 30%"];
-  const arbSubs = ["var(--x)", "attr(data-foo type(<length>))", "attr(invalid, 3px)", "var(--invalid, 3px)", "var(--cycle1)"];
+  const arbSubs = ["var(--x)", "attr(data-foo type(<length>))", "attr(invalid, 3px)", "var(--invalid, 3px)", "var(--cycle1)", "env(0)", "attr(0)"];
 
   var {page, session, dp} = await testRunner.startURL('resources/css-resolve-values.html', 'Test css.resolveValue method');
 

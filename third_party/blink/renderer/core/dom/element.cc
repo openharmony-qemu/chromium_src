@@ -4204,15 +4204,15 @@ void VerifySubtreeIsInCanvas(const Element& element, bool value) {
 }
 #endif
 
-void Element::SetIsCanvasOrInCanvasSubtree(bool value) {
+void Element::SetIsCanvasOrInCanvasSubtree(
+    bool value,
+    CanvasSubtreePropagation propagation_behavior) {
   if (IsA<HTMLCanvasElement>(*this)) {
     value = true;
   }
 
-  if (value != IsCanvasOrInCanvasSubtree()) {
-    SetElementFlag(ElementFlags::kIsCanvasOrInCanvasSubtree, value);
-    DidChangeIsCanvasOrInCanvasSubtree();
-  } else {
+  if (propagation_behavior == CanvasSubtreePropagation::kOnlyIfChanged &&
+      value == IsCanvasOrInCanvasSubtree()) {
 #if DCHECK_IS_ON()
     if (!GetDocument().IsSlotAssignmentRecalcForbidden()) {
       VerifySubtreeIsInCanvas(*this, value);
@@ -4221,15 +4221,19 @@ void Element::SetIsCanvasOrInCanvasSubtree(bool value) {
     return;
   }
 
+  SetElementFlag(ElementFlags::kIsCanvasOrInCanvasSubtree, value);
+  // Note that this call leads to HTMLFrameOwnerElement updating iframes.
+  DidChangeIsCanvasOrInCanvasSubtree(propagation_behavior);
+
   if (ShadowRoot* shadow_root = GetShadowRoot()) {
     for (Element& child : ElementTraversal::ChildrenOf(*shadow_root)) {
-      child.SetIsCanvasOrInCanvasSubtree(value);
+      child.SetIsCanvasOrInCanvasSubtree(value, propagation_behavior);
     }
   }
   if (auto* slot = ToHTMLSlotElementIfSupportsAssignmentOrNull(*this)) {
     for (Node* node : slot->AssignedNodesNoRecalc()) {
       if (auto* child = DynamicTo<Element>(node)) {
-        child->SetIsCanvasOrInCanvasSubtree(value);
+        child->SetIsCanvasOrInCanvasSubtree(value, propagation_behavior);
       }
     }
     // Fallback content
@@ -4238,21 +4242,22 @@ void Element::SetIsCanvasOrInCanvasSubtree(bool value) {
         continue;
       }
       child.SetIsCanvasOrInCanvasSubtree(
-          value && slot->AssignedNodesNoRecalc().empty());
+          value && slot->AssignedNodesNoRecalc().empty(), propagation_behavior);
     }
   } else {
     for (Element& child : ElementTraversal::ChildrenOf(*this)) {
       if (!child.IsPseudoElement() && child.AssignedSlotWithoutRecalc()) {
         continue;
       }
-      child.SetIsCanvasOrInCanvasSubtree(value);
+      child.SetIsCanvasOrInCanvasSubtree(value, propagation_behavior);
     }
   }
 }
 
-void Element::DidChangeIsCanvasOrInCanvasSubtree() {
+void Element::DidChangeIsCanvasOrInCanvasSubtree(CanvasSubtreePropagation) {
   if (auto* layout_object = GetLayoutObject()) {
     layout_object->SetNeedsPaintPropertyUpdate();
+    layout_object->SetSubtreeShouldDoFullPaintInvalidation();
     if (layout_object->HasLayer()) {
       To<LayoutBoxModelObject>(layout_object)->Layer()->SetNeedsRepaint();
       // Typically compositor filter operations are not rebuilt unless the
@@ -10771,6 +10776,15 @@ void Element::SetIsInTopLayer(bool in_top_layer) {
       SetForceReattachLayoutTree();
     }
   }
+
+  // A popover inside a canvas subtree does not render with privacy
+  // protections when in the top layer. So treat transitioning between top
+  // layer states as equivalent to moving in or out of the canvas subtree.
+  // Moving into or out of the top layer does not by itself imply a change in
+  // IsCanvasOrInCanvasSubtree state, so kAlways is used to force
+  // invalidation.
+  SetIsCanvasOrInCanvasSubtree(IsCanvasOrInCanvasSubtree(),
+                               CanvasSubtreePropagation::kAlways);
 }
 
 ScriptPromise<IDLUndefined> Element::requestPointerLock(

@@ -70,6 +70,31 @@ class CrossThreadStyleValueTest : public testing::Test {
     waitable_event->Signal();
   }
 
+  void CheckUnparsedValueToString(base::WaitableEvent* waitable_event) {
+    DCHECK(!IsMainThread());
+
+    EXPECT_EQ(CrossThreadUnparsedValue("").ToCSSStyleValue()->toString(), "");
+    EXPECT_EQ(
+        CrossThreadUnparsedValue("Unparsed").ToCSSStyleValue()->toString(),
+        "Unparsed");
+    EXPECT_EQ(CrossThreadUnparsedValue("if(supports(selector(div)): 10px)")
+                  .ToCSSStyleValue()
+                  ->toString(),
+              "if(supports(selector(div)): 10px)");
+    EXPECT_EQ(CrossThreadUnparsedValue("if(supports(selector(x >)): 1px)")
+                  .ToCSSStyleValue()
+                  ->toString(),
+              "if(supports(selector(x >)): 1px)");
+    EXPECT_EQ(
+        CrossThreadUnparsedValue("if(supports(list-style-type: disc): 10px)")
+            .ToCSSStyleValue()
+            ->toString(),
+        "if(supports(list-style-type: disc): 10px)");
+    EXPECT_EQ(CrossThreadUnparsedValue("var()").ToCSSStyleValue()->toString(),
+              "var()");
+    waitable_event->Signal();
+  }
+
   void CheckUnitValue(base::WaitableEvent* waitable_event,
                       std::unique_ptr<CrossThreadUnitValue> value) {
     DCHECK(!IsMainThread());
@@ -139,6 +164,20 @@ TEST_F(CrossThreadStyleValueTest, PassUnparsedValueCrossThread) {
                           CrossThreadUnretained(this),
                           CrossThreadUnretained(&waitable_event),
                           std::move(value)));
+  waitable_event.Wait();
+
+  ShutDownThread();
+}
+
+TEST_F(CrossThreadStyleValueTest, UnparsedValueToStringCrossThread) {
+  thread_ = blink::NonMainThread::CreateThread(
+      ThreadCreationParams(ThreadType::kTestThread).SetSupportsGC(true));
+  base::WaitableEvent waitable_event;
+  PostCrossThreadTask(
+      *thread_->GetTaskRunner(), FROM_HERE,
+      CrossThreadBindOnce(
+          &CrossThreadStyleValueTest::CheckUnparsedValueToString,
+          CrossThreadUnretained(this), CrossThreadUnretained(&waitable_event)));
   waitable_event.Wait();
 
   ShutDownThread();

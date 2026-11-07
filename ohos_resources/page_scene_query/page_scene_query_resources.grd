@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<grit current_release="1" latest_public_release="0">
+  <outputs>
+    <output filename="grit/page_scene_query_resources.h" type="rc_header">
+      <emit emit_type='prepend'></emit>
+    </output>
+    <output filename="page_scene_query_resources.pak" type="data_package" />
+  </outputs>
+  <release seq="1">
+    <includes>
+      <include name="IDR_PAGE_SCENE_QUERY_JS"
+               file="dist/page_scene_query.js"
+               type="BINDATA"
+               preprocess="false"
+               compress="false"/>
+    </includes>
+  </release>
+</grit>

@@ -1,0 +1,25 @@
+{
+  "module": {
+    "name": "feature",
+    "type": "feature",
+    "description": "$string:feature_desc",
+    "mainElement": "FeatureAbility",
+    "deviceTypes": [
+      "default",
+      "tablet",
+      "wearable",
+      "tv"
+    ],
+    "compressNativeLibs": true,
+    "deliveryWithInstall": true,
+    "installationFree": false,
+    "libIsolation": true,
+    "pages": "$profile:main_pages",
+    "metadata":[
+      {
+        "name": "license_file_path",
+        "value": "/system/etc/noticeFile/ArkWebCore_144_OpenSource.html"
+      }
+    ]
+  }
+}

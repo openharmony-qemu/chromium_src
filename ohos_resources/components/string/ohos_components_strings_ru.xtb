@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<!DOCTYPE translationbundle>
+<translationbundle lang="ru">
+<translation id="IDS_OHOS_BLOCK_PAGE_TITLE">Внимание</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_INFO_TITLE">Веб-сайт заблокирован</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE">Остерегайтесь мошенников!</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_TITLE">Возможен вредоносный контент</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE">Доступ запрещен</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_ILLEGAL_INFO_BODY">Сбой доступа к этому сайту. Он содержит противоправный или запрещенный контент.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_BODY">Возможно, это мошеннический сайт. Защитите ваши персональные данные.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY">Этот сайт представляет угрозу безопасности. Защитите ваши персональные данные.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED">Назад</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_PROCEED">Продолжить</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">Включен режим Подросток. Веб-сайт недоступен.</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">Настройки</translation>
+</translationbundle>

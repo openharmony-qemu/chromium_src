@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<grit current_release="1" latest_public_release="0">
+  <outputs>
+    <output filename="grit/data_detector_resources.h" type="rc_header">
+      <emit emit_type='prepend'></emit>
+    </output>
+    <output filename="data_detector_resources.pak" type="data_package" />
+  </outputs>
+  <release seq="1">
+    <includes>
+      <include name="IDR_DATA_DETECTOR_JS" file="js/arkweb_entity_replacer.js" type="BINDATA" preprocess="false" compress="false"/>
+    </includes>
+  </release>
+</grit>

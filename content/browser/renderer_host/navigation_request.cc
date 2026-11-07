@@ -9591,10 +9591,10 @@ void NavigationRequest::SetRequestHeader(std::string_view header_name,
 }
 
 void NavigationRequest::SetLCPPNavigationHint(
-    const blink::mojom::LCPCriticalPathPredictorNavigationTimeHint& hint) {
+    blink::mojom::LCPCriticalPathPredictorNavigationTimeHintPtr hint) {
   DCHECK(WILL_START_REQUEST == state_ || WILL_REDIRECT_REQUEST == state_)
       << state_;
-  commit_params_->lcpp_hint = hint.Clone();
+  commit_params_->lcpp_hint = std::move(hint);
 }
 
 const blink::mojom::LCPCriticalPathPredictorNavigationTimeHintPtr&

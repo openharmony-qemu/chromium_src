@@ -187,6 +187,9 @@ class WTF_EXPORT StringView {
 
   void Clear();
 
+  // Returns a code unit at the specified index.
+  // This operator performs an out-of-bounds access if the specified
+  // index is out of range.
   UChar operator[](unsigned i) const {
     CHECK(i < length());
     // SAFETY: checked that i < length() on previous line.

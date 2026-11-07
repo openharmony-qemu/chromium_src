@@ -291,6 +291,7 @@ enum APIPermissionID {
 
   [EnableIf=arkweb_ext_actor]
   kHwextActor = 264,
+  kHwextAgent = 265,
 
   // Add new entries at the end of the enum and be sure to update the
   // "ExtensionPermission3" enum in

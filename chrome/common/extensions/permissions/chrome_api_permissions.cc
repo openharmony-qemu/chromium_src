@@ -56,6 +56,7 @@ constexpr APIPermissionInfo::InitInfo permissions_to_register[] = {
 #if BUILDFLAG(ARKWEB_EXT_ACTOR)
     {APIPermissionID::kHwextActor, "hwext.actor"},
 #endif
+    {APIPermissionID::kHwextAgent, "hwext.agent"},
     {APIPermissionID::kExperimentalAiData, "experimentalAiData"},
     {APIPermissionID::kGcm, "gcm",
      APIPermissionInfo::kFlagDoesNotRequireManagedSessionFullLoginWarning},

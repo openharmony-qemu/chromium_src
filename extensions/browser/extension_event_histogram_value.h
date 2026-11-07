@@ -610,6 +610,7 @@ enum HistogramValue {
   HWEXT_ACTOR_ONTASKSRESTORED = 575,
 #endif  // ARKWEB_EXT_ACTOR
 #endif  // IS_ARKWEB_EXT
+  HWEXT_AGENT_ON_TRIGGERED = 576,
 
   // Last entry: Add new entries above, then run:
   // tools/metrics/histograms/update_extension_histograms.py

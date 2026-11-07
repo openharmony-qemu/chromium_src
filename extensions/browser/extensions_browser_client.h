@@ -18,6 +18,7 @@
 #include "build/chromeos_buildflags.h"
 #include "components/safe_browsing/core/browser/db/v4_protocol_config.h"
 #include "content/public/browser/bluetooth_chooser.h"
+#include "content/public/browser/child_process_id.h"
 #include "content/public/browser/frame_tree_node_id.h"
 #include "extensions/browser/extension_event_histogram_value.h"
 #include "extensions/browser/extension_prefs_observer.h"
@@ -264,7 +265,7 @@ class ExtensionsBrowserClient {
       const network::ResourceRequest& request,
       network::mojom::RequestDestination destination,
       ui::PageTransition page_transition,
-      int child_id,
+      content::ChildProcessId child_id,
       bool is_incognito,
       const Extension* extension,
       const ExtensionSet& extensions,

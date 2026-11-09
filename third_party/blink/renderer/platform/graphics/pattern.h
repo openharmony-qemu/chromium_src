@@ -31,6 +31,7 @@
 
 #include "base/memory/scoped_refptr.h"
 #include "third_party/blink/renderer/platform/graphics/image.h"
+#include "third_party/blink/renderer/platform/graphics/image_orientation.h"
 #include "third_party/blink/renderer/platform/graphics/paint/paint_record.h"
 #include "third_party/blink/renderer/platform/graphics/paint/paint_shader.h"
 #include "third_party/blink/renderer/platform/platform_export.h"
@@ -50,8 +51,10 @@ class PLATFORM_EXPORT Pattern : public RefCounted<Pattern> {
     kRepeatModeXY = kRepeatModeX | kRepeatModeY
   };
 
-  static scoped_refptr<Pattern> CreateImagePattern(scoped_refptr<Image>,
-                                                   RepeatMode = kRepeatModeXY);
+  static scoped_refptr<Pattern> CreateImagePattern(
+      scoped_refptr<Image>,
+      RepeatMode repeat_mode,
+      RespectImageOrientationEnum respect_orientation);
   static scoped_refptr<Pattern> CreatePaintRecordPattern(
       PaintRecord,
       const gfx::RectF& record_bounds,

@@ -30,6 +30,7 @@
 #include "third_party/blink/renderer/modules/modules_export.h"
 #include "third_party/blink/renderer/platform/bindings/script_wrappable.h"
 #include "third_party/blink/renderer/platform/graphics/canvas_high_entropy_op_type.h"
+#include "third_party/blink/renderer/platform/graphics/image_orientation.h"
 #include "third_party/blink/renderer/platform/graphics/pattern.h"
 #include "third_party/blink/renderer/platform/heap/forward.h"  // IWYU pragma: keep (blink::Visitor)
 #include "third_party/blink/renderer/platform/transforms/affine_transform.h"
@@ -53,7 +54,8 @@ class MODULES_EXPORT CanvasPattern final : public ScriptWrappable {
   CanvasPattern(scoped_refptr<Image>,
                 Pattern::RepeatMode,
                 bool origin_clean,
-                HighEntropyCanvasOpType high_entropy_canvas_op_types);
+                HighEntropyCanvasOpType high_entropy_canvas_op_types,
+                RespectImageOrientationEnum respect_orientation);
 
   Pattern* GetPattern() const { return pattern_.get(); }
   const AffineTransform& GetTransform() const { return pattern_transform_; }

@@ -2425,6 +2425,9 @@ CanvasPattern* Canvas2DRecorderContext::createPattern(
     return nullptr;
   }
 
+  RespectImageOrientationEnum respect_orientation =
+      RespectImageOrientationInternal(image_source);
+
   SourceImageStatus status = kInvalidSourceImageStatus;
 
   gfx::SizeF default_object_size(Width(), Height());
@@ -2440,8 +2443,7 @@ CanvasPattern* Canvas2DRecorderContext::createPattern(
           String::Format("The canvas %s is 0.",
                          image_source
                                  ->ElementSize(default_object_size,
-                                               RespectImageOrientationInternal(
-                                                   image_source))
+                                               respect_orientation)
                                  .width()
                              ? "height"
                              : "width"));
@@ -2485,7 +2487,7 @@ CanvasPattern* Canvas2DRecorderContext::createPattern(
 
   auto* pattern = MakeGarbageCollected<CanvasPattern>(
       std::move(image_for_rendering), repeat_mode, origin_clean,
-      source_high_entropy_canvas_op_types);
+      source_high_entropy_canvas_op_types, respect_orientation);
   return pattern;
 }
 

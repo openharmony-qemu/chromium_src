@@ -162,8 +162,6 @@ void SVGAElement::DefaultEventHandler(Event& event) {
             link_relations_, GetDocument());
       }
 
-      request.SetHasUserGesture(LocalFrame::HasTransientUserActivation(frame));
-
       // Respect the download attribute only if we can read the content, and the
       // event is not an alt-click or similar.
       if (RuntimeEnabledFeatures::SvgAnchorElementDownloadAttributeEnabled() &&

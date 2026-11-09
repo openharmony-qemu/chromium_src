@@ -404,6 +404,11 @@
     // "desktop_android" is not supported.
     "platforms": ["chromeos", "linux", "mac", "win"]
   },
+  "hwext.agent": {
+    "extension_types": ["extension"],
+    "channel": "stable",
+    "platforms": ["ohos"]
+  },
   "experimentalAiData": {
     "extension_types": ["extension"],
     "channel": "stable",

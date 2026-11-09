@@ -166,6 +166,10 @@ if (enable_extensions) {
   }
 }
 
+if (is_arkweb) {
+  schema_sources_ += [ "hwext_agent.idl" ]
+}
+
 chrome_extensions_api_schema_sources = get_path_info(schema_sources_, "abspath")
 
 if (is_arkweb && is_arkweb_ext) {

@@ -599,6 +599,7 @@ void HTMLFormElement::ScheduleFormSubmission(
 #endif
 }
 
+// https://html.spec.whatwg.org/multipage/#constructing-the-form-data-set
 FormData* HTMLFormElement::ConstructEntryList(
     HTMLFormControlElement* submit_button,
     const TextEncoding& encoding) {
@@ -609,7 +610,10 @@ FormData* HTMLFormElement::ConstructEntryList(
   base::AutoReset<bool> entry_list_scope(&is_constructing_entry_list_, true);
   if (submit_button)
     submit_button->SetActivatedSubmit(true);
-  for (ListedElement* control : ListedElements()) {
+  // Copy the element list because |AppendToFormData()| can update DOM
+  // structure.
+  ListedElement::List elements(ListedElements());
+  for (ListedElement* control : elements) {
     DCHECK(control);
     HTMLElement& element = control->ToHTMLElement();
     if (!element.IsDisabledFormControl())

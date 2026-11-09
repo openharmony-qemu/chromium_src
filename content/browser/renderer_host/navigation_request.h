@@ -529,6 +529,8 @@ class CONTENT_EXPORT NavigationRequest
   std::optional<url::Origin> GetOriginToCommit() override;
   bool NeedsUrlLoader() override;
   bool IsInitialWebUISyncNavigation() override;
+  void SetBypassRedirectChecksForNextRedirect(bool bypass) override;
+  bool ConsumeBypassRedirectChecksForNextRedirect() override;
   // End of NavigationHandle implementation.
 
   // mojom::NavigationRendererCancellationListener implementation:
@@ -3317,6 +3319,10 @@ class CONTENT_EXPORT NavigationRequest
   // Whether a Cookie header added to this request should not be overwritten by
   // the network service.
   bool allow_cookies_from_browser_ = false;
+
+  // Whether the next redirect should bypass redirect checks (authorized by a
+  // proxying URLLoaderFactory).
+  bool bypass_redirect_checks_for_next_redirect_ = false;
 
   // If the browser has asked the renderer to commit the navigation in a
   // speculative RenderFrameHost, but the renderer has not yet responded, a

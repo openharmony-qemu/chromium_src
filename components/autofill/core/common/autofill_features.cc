@@ -961,6 +961,12 @@ BASE_FEATURE(kAutofillUseINAddressModel, base::FEATURE_DISABLED_BY_DEFAULT);
 BASE_FEATURE(kAutofillUseNegativePatternForAllAttributes,
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+// Kill switch: If enabled, use the form and field snapshots passed to
+// AutofillExternalDelegate::Did{Select,Accept}Suggestion() instead of
+// `query_form_` and `query_field_`.
+BASE_FEATURE(kAutofillUsePassedFormAndFieldIds,
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
 // Replaces the secondary signature with the structural signature for Uploads.
 // For Queries still only the secondary (alternative) signature is used.
 // TODO(crbug.com/431737839): Clean up when roll out finishes successfully.

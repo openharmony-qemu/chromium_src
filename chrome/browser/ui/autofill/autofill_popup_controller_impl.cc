@@ -415,7 +415,9 @@ void AutofillPopupControllerImpl::AcceptSuggestion(
                                  AutofillSuggestionDelegate::SuggestionMetadata{
                                      .row = index,
                                      .sub_popup_level = GetPopupLevel(),
-                                     .from_search_result = !!filter_});
+                                     .from_search_result = !!filter_},
+                                 controller_common_.form,
+                                 controller_common_.field);
 }
 
 gfx::NativeView AutofillPopupControllerImpl::container_view() const {
@@ -770,7 +772,9 @@ void AutofillPopupControllerImpl::SelectSuggestion(int index) {
   }
 
   any_suggestion_selected_ = true;
-  delegate_->DidSelectSuggestion(GetSuggestionAt(index));
+  delegate_->DidSelectSuggestion(GetSuggestionAt(index),
+                                 controller_common_.form,
+                                 controller_common_.field);
 }
 
 void AutofillPopupControllerImpl::UnselectSuggestion() {

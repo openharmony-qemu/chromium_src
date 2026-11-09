@@ -13,6 +13,8 @@
 #include "components/autofill/core/browser/suggestions/suggestion.h"
 #include "components/autofill/core/browser/ui/suggestion_button_action.h"
 #include "components/autofill/core/common/aliases.h"
+#include "components/autofill/core/common/form_data.h"
+#include "components/autofill/core/common/form_field_data.h"
 
 namespace password_manager {
 class PasswordManagerDriver;
@@ -55,11 +57,15 @@ class AutofillSuggestionDelegate {
 
   // Called when the autofill `suggestion` has been temporarily selected (e.g.,
   // hovered).
-  virtual void DidSelectSuggestion(const Suggestion& suggestion) = 0;
+  virtual void DidSelectSuggestion(const Suggestion& suggestion,
+                                   const FormData& form,
+                                   const FormFieldData& field) = 0;
 
   // Informs the delegate that a `suggestion` has been chosen.
   virtual void DidAcceptSuggestion(const Suggestion& suggestion,
-                                   const SuggestionMetadata& metadata) = 0;
+                                   const SuggestionMetadata& metadata,
+                                   const FormData& form,
+                                   const FormFieldData& field) = 0;
 
   // Informs the delegate that the user chose to perform the `button_action`
   // associated with `suggestion`. Actions are currently implemented only on

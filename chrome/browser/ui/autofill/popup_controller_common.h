@@ -7,6 +7,8 @@
 
 #include "base/i18n/rtl.h"
 #include "components/autofill/core/browser/ui/popup_open_enums.h"
+#include "components/autofill/core/common/form_data.h"
+#include "components/autofill/core/common/form_field_data.h"
 #include "ui/gfx/geometry/rect_f.h"
 #include "ui/gfx/native_ui_types.h"
 
@@ -39,6 +41,10 @@ struct PopupControllerCommon {
 
   // The type of the element to anchor the popup on.
   PopupAnchorType anchor_type;
+
+  // Immutable target of the suggestions, copied when creating a sub-popup.
+  FormData form;
+  FormFieldData field;
 };
 
 }  // namespace autofill

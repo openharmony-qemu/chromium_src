@@ -2412,8 +2412,7 @@ DOMWindow* LocalDOMWindow::open(v8::Isolate* isolate,
   frame_request.GetResourceRequest().SetReferrerPolicy(
       referrer.referrer_policy);
 
-  bool has_user_gesture = LocalFrame::HasTransientUserActivation(GetFrame());
-  frame_request.GetResourceRequest().SetHasUserGesture(has_user_gesture);
+  bool has_user_gesture = frame_request.GetResourceRequest().HasUserGesture();
 
   if (window_features.attribution_srcs.has_value()) {
     // An impression must be attached prior to the

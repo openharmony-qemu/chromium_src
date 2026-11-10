@@ -268,6 +268,10 @@ class MockNetworkTransaction final : public HttpTransaction {
 
   RequestPriority priority() const { return priority_; }
 
+  const ConnectedCallback& connected_callback() const {
+    return connected_callback_;
+  }
+
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   ConnectionAttempts GetExtraConnectionAttempts() const override { return {}; }
 #endif

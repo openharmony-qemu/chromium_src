@@ -42,6 +42,7 @@
 #include "ui/base/ime/mojom/text_input_state.mojom.h"
 #include "ui/display/display_util.h"
 #include "ui/gfx/geometry/dip_util.h"
+#include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/size_conversions.h"
 #include "ui/gfx/geometry/size_f.h"
 #include "ui/touch_selection/touch_selection_controller.h"
@@ -544,17 +545,41 @@ void RenderWidgetHostViewChildFrame::UpdateTooltipUnderCursor(
 void RenderWidgetHostViewChildFrame::UpdateTooltipFromKeyboard(
     const std::u16string& tooltip_text,
     const gfx::Rect& bounds) {
-  if (!frame_connector_)
+  if (!frame_connector_) {
     return;
+  }
 
   auto* root_view = frame_connector_->GetRootRenderWidgetHostView();
-  if (!root_view)
+  if (!root_view) {
     return;
+  }
 
+  if (tooltip_text.empty()) {
+    ClearKeyboardTriggeredTooltip();
+    return;
+  }
+
+  gfx::Rect visible_bounds = bounds;
+  visible_bounds.Intersect(gfx::Rect(GetViewBounds().size()));
+  visible_bounds.Intersect(gfx::ScaleToEnclosingRect(
+      frame_connector_->intersection_state().viewport_intersection,
+      1.0f / GetDeviceScaleFactor()));
+  if (visible_bounds.IsEmpty()) {
+    ClearKeyboardTriggeredTooltip();
+    return;
+  }
+
+  gfx::Rect adjusted_bounds = visible_bounds;
   // TODO(bebeaudr): Keyboard-triggered tooltips are not positioned correctly
   // when set for an element in an OOPIF. See https://crbug.com/1210269.
-  gfx::Rect adjusted_bounds(TransformPointToRootCoordSpace(bounds.origin()),
-                            bounds.size());
+  gfx::Transform transform_to_main_frame;
+  if (!GetTransformToViewCoordSpace(root_view, &transform_to_main_frame)) {
+    // No reliable transform (e.g. hit-test data not available yet); don't risk
+    // anchoring the tooltip at an arbitrary location.
+    ClearKeyboardTriggeredTooltip();
+    return;
+  }
+  adjusted_bounds = transform_to_main_frame.MapRect(adjusted_bounds);
   root_view->UpdateTooltipFromKeyboard(tooltip_text, adjusted_bounds);
 }
 

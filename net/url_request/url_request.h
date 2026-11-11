@@ -70,6 +70,24 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+#include "arkweb/chromium_ext/net/base/page_res_request_info.h"
+#include "net/http/http_transaction.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/net/base/fallback_proxy_constants.h"
+#include "net/base/proxy_delegate.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/net/base/request_attempt.h"
+#endif
+
 namespace net {
 
 class CookieOptions;
@@ -778,6 +796,10 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
   // Returns context()->network_delegate().
   NetworkDelegate* network_delegate() const;
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  ProxyDelegate* proxy_delegate() const;
+#endif
+
   const NetLogWithSource& net_log() const { return net_log_; }
 
   // Returns the expected content size if available
@@ -955,7 +977,59 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
     return storage_access_status_;
   }
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  void set_update_res_request_info_callback(HttpTransaction::UpdateResRequestInfoCallback callback) {
+    update_res_request_info_callback_ = callback;
+  }
+  HttpTransaction::UpdateResRequestInfoCallback update_res_request_info_callback() {
+    return update_res_request_info_callback_;
+  }
+
+  void set_allow_preload_record(bool allow) { allow_preload_record_ = allow; }
+  bool allow_preload_record() const { return allow_preload_record_; }
+
+  void set_main_url(const GURL& url) { main_url_ = url; }
+  const GURL& main_url() const { return main_url_; }
+
+  void set_preload_info(const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& preload_info) {
+    preload_info_ = preload_info;
+  }
+  std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info() const { return preload_info_; }
+
+  bool CanReadFromURLRequestJob() { return job_.get() != nullptr; }
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  int32_t usage_scenario_ = 99;
+  void set_usage_scenario(int32_t usage_scenario) {
+    usage_scenario_ = usage_scenario;
+  }
+  int32_t usage_scenario() { return usage_scenario_; }
+#endif
+
   static bool DefaultCanUseCookies();
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void set_fallback_proxy_error_code(int error_code) {
+    fallback_proxy_error_code_ = error_code;
+  }
+  int fallback_proxy_error_code() const { return fallback_proxy_error_code_; }
+
+  void set_used_fallback_proxy(bool value) { used_fallback_proxy_ = value; }
+  bool used_fallback_proxy() { return used_fallback_proxy_; }
+
+  void set_needs_reload_with_fallback_proxy(bool value) {
+    needs_reload_with_fallback_proxy_ = value;
+  }
+  bool needs_reload_with_fallback_proxy() {
+    return needs_reload_with_fallback_proxy_;
+  }
+
+  void SetRetryWithFallbackProxy(bool value) {
+    retry_with_fallback_proxy_ = value;
+  }
+  bool IsRetryingWithFallbackProxy() { return retry_with_fallback_proxy_; }
+#endif
 
   // Calculates the StorageAccessStatus for this request, according to the
   // NetworkDelegate. Also records metrics. When calling this method during a
@@ -1007,6 +1081,19 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
 
   // Returns true if the request failed or was canceled.
   bool failed() const;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  void set_used_http_dns(bool value) { used_http_dns_ = value; }
+  bool used_http_dns() { return used_http_dns_; }
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  int GetOriginalNetErrorCode() const;
+  ConnectionAttempts GetExtraConnectionAttempts() const;
+  std::vector<net::RequestAttempt> GetRequestAttempts() const;
+  int GetStatus() const { return status(); }
+  const std::string& request_uuid() const { return request_uuid_; }
+#endif
 
  protected:
   // Allow the URLRequestJob class to control the is_pending() flag.
@@ -1111,6 +1198,10 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
   // NetworkAnonymizationKey.
   net::IsolationInfo CreateIsolationInfoFromNetworkAnonymizationKey(
       const NetworkAnonymizationKey& network_anonymization_key);
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void HandleFallbackProxyResult();
+#endif
 
   // Contextual information used for this request. Cannot be NULL. This contains
   // most of the dependencies which are shared between requests (disk cache,

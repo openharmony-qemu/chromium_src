@@ -1,0 +1,42 @@
+diff a/net/url_request/url_request.h b/net/url_request/url_request.h	(rejected hunks)
+@@ -1260,17 +1351,40 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
+   bool send_client_certs_ = true;
+ 
+   // Idempotency of the request.
+   Idempotency idempotency_ = DEFAULT_IDEMPOTENCY;
+ 
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++  int fallback_proxy_error_code_ = 0;
++  bool used_fallback_proxy_ = false;
++  // 通知navigation_request需要使用代理重试
++  bool needs_reload_with_fallback_proxy_ = false;
++  // navigation_request通知本次需要使用代理加载
++  bool retry_with_fallback_proxy_ = false;
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  bool used_http_dns_{false};
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  std::string request_uuid_;
++#endif
++
+   SharedDictionaryGetter shared_dictionary_getter_;
+ 
+   // The storage access status for this request.
+   StorageAccessStatusCache storage_access_status_;
+ 
+   base::RepeatingCallback<void(const device_bound_sessions::SessionAccess&)>
+       device_bound_session_access_callback_;
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  HttpTransaction::UpdateResRequestInfoCallback update_res_request_info_callback_;
++  bool allow_preload_record_ = false;
++  GURL main_url_;
++  std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info_;
++#endif
+ 
+   // Whether the request is allowed to register new device-bound sessions
+   bool allows_device_bound_session_registration_ = false;
+   // How existing device-bound sessions interacted with this request
+   device_bound_sessions::SessionUsage device_bound_session_usage_ =

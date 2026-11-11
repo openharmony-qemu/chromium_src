@@ -1,0 +1,29 @@
+diff a/net/websockets/websocket_end_to_end_test.cc b/net/websockets/websocket_end_to_end_test.cc	(rejected hunks)
+@@ -90,10 +90,14 @@
+ #include "testing/gtest/include/gtest/gtest.h"
+ #include "url/gurl.h"
+ #include "url/origin.h"
+ #include "url/url_constants.h"
+ 
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++#include "arkweb/chromium_ext/net/base/fallback_proxy_constants.h"
++#endif
++
+ namespace net {
+ class HttpResponseHeaders;
+ class ProxyServer;
+ class SSLInfo;
+ struct WebSocketHandshakeRequestInfo;
+@@ -398,10 +402,12 @@ class TestProxyDelegateWithProxyInfo : public ProxyDelegate {
+       const std::vector<std::string>& dns_aliases,
+       const net::NetworkAnonymizationKey& network_anonymization_key) override {
+     return false;
+   }
+ 
++#include "arkweb/chromium_ext/net/websockets/test_proxy_delegate_with_proxy_info_for_include.cc"
++
+  private:
+   ResolvedProxyInfo resolved_proxy_info_;
+ };
+ 
+ class WebSocketEndToEndTest : public TestWithTaskEnvironment {

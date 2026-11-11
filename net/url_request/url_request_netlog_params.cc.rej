@@ -1,0 +1,15 @@
+diff a/net/url_request/url_request_netlog_params.cc b/net/url_request/url_request_netlog_params.cc	(rejected hunks)
+@@ -33,10 +33,13 @@ base::Value::Dict NetLogURLRequestStartParams(
+     const std::string& method,
+     int load_flags,
+     const IsolationInfo& isolation_info,
+     const SiteForCookies& site_for_cookies,
+     const std::optional<url::Origin>& initiator,
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++    const bool retry_with_fallback_proxy,
++#endif
+     int64_t upload_id,
+     NetLogCaptureMode capture_mode) {
+   base::Value::Dict dict;
+   dict.Set("url", SanitizeUrlForNetLog(url, capture_mode));
+   dict.Set("method", method);

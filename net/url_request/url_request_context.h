@@ -58,6 +58,7 @@ class TransportSecurityState;
 class URLRequest;
 class URLRequestJobFactory;
 class URLRequestContextBuilder;
+class URLRequestContextExt;
 
 #if BUILDFLAG(ENABLE_REPORTING)
 class NetworkErrorLoggingService;
@@ -74,14 +75,19 @@ class SessionStore;
 // instances. May only be created by URLRequestContextBuilder.
 // Owns most of its member variables, except a few that may be shared
 // with other contexts.
-class NET_EXPORT URLRequestContext final {
+class NET_EXPORT URLRequestContext {
  public:
+  friend class URLRequestContextExt;
   // URLRequestContext must be created by URLRequestContextBuilder.
   explicit URLRequestContext(base::PassKey<URLRequestContextBuilder> pass_key);
   URLRequestContext(const URLRequestContext&) = delete;
   URLRequestContext& operator=(const URLRequestContext&) = delete;
 
-  ~URLRequestContext();
+  virtual ~URLRequestContext();
+
+  virtual URLRequestContextExt* AsURLRequestContextExt() {
+    return nullptr;
+  }
 
   // May return nullptr if this context doesn't have an associated network
   // session.
@@ -270,7 +276,17 @@ class NET_EXPORT URLRequestContext final {
     job_factory_ = job_factory;
   }
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  base::WeakPtr<URLRequestContext> GetWeakPtr() {
+    return weak_factory_.GetWeakPtr();
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif  // ARKWEB_TEST
   friend class URLRequestContextBuilder;
 
   HttpNetworkSession* http_network_session() const {
@@ -421,6 +437,10 @@ class NET_EXPORT URLRequestContext final {
   handles::NetworkHandle bound_network_;
 
   THREAD_CHECKER(thread_checker_);
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  base::WeakPtrFactory<URLRequestContext> weak_factory_{this};
+#endif
 };
 
 }  // namespace net

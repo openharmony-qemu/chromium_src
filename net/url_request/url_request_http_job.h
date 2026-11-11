@@ -80,6 +80,17 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
     kMaxValue = kDirectFallback,
   };
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  void GenerateRequestAttempt(int result);
+  int GetOriginalNetErrorCode() const override;
+  ConnectionAttempts GetExtraConnectionAttempts() const override;
+  std::vector<net::RequestAttempt> GetRequestAttempts() const override;
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_PROXY_AUTH_RETRY)
+  void NotifyNetworkServiceAuthRequired(std::unique_ptr<AuthChallengeInfo> auth_info) override;
+#endif
+
  protected:
   URLRequestHttpJob(URLRequest* request,
                     const HttpUserAgentSettings* http_user_agent_settings);
@@ -120,6 +131,14 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
 
     kMaxValue = kSecureSetNonsecureRequest  // Keep as the last value.
   };
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  enum class RetryState {
+    INIT,
+    DOH_FALLBACK,
+    MAX,
+  };
+#endif
 
   typedef base::RefCountedData<bool> SharedBoolean;
 
@@ -212,6 +231,27 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   IPEndPoint GetResponseRemoteEndpoint() const override;
   void NotifyURLRequestDestroyed() override;
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  bool CanRetryWithSecureDnsOnly(int net_error);
+  void RetryWithSecureDnsOnly();
+  void ReportSecureFallbackDnsRetryResult(int net_error);
+  void MaybeRetryWithSecureDnsOnly(int result);
+#endif
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool SupportedHostAndNotUsedSystemProxy(ProxyDelegate* proxy_delegate,
+                                          ProxyUnusedReason* unused_reason);
+  // If it returns true, the execution of the current function
+  // URLRequestHttpJob::OnStartCompleted will be terminated
+  // and will be re-executed later.
+  bool MaybeRetryWithFallbackProxy(int& result);
+  bool CanRetryWithFallbackProxy(int result, ProxyUnusedReason* unused_reason);
+  void RetryWithFallbackProxy();
+  SBThreatURLPolicy GetSafeBrowsingThreatUrlPolicy(int result,
+                                                   int* malicious_type,
+                                                   int* hw_code);
+  void RetryWithDirect();
+#endif
+
   void RecordTimer();
   void ResetTimer();
 
@@ -259,6 +299,23 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   // Returns true if we should log how many partitioned cookies are included
   // in a request.
   bool ShouldRecordPartitionedCookieUsage() const;
+
+  // Applies the relevant Sec-Fetch-Storage-Access header if needed.
+  void MaybeSetSecFetchStorageAccessHeader();
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD) && BUILDFLAG(IS_OHOS)
+  void InitPreloadInfoAndSetToTransaction();
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  void ContinueDespiteLastErrorInternal(
+      scoped_refptr<X509Certificate> client_cert,
+      scoped_refptr<SSLPrivateKey> client_private_key);
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_PROXY_AUTH_RETRY)
+  void RestartTransactionAfterProxyAuth();
+#endif
 
   RequestPriority priority_ = DEFAULT_PRIORITY;
 
@@ -343,6 +400,15 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
 
   // The content encoding types that need to be handled in the client side.
   std::vector<net::SourceStreamType> client_side_content_decoding_types_;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  // Track request attempts for navigation info reporting.
+  std::vector<net::RequestAttempt> request_attempts_;
+  std::string current_request_trace_id_;
+  bool should_set_original_code_{false};
+  int original_error_code_{0};
+  AttemptType current_attempt_type_{AttemptType::kNormal};
+#endif
 
   base::WeakPtrFactory<URLRequestHttpJob> weak_factory_{this};
 };

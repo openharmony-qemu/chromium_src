@@ -61,6 +61,11 @@ base::DictValue NetLogURLRequestStartParams(
            initiator.has_value() ? initiator->Serialize() : "not an origin");
   if (upload_id > -1)
     dict.Set("upload_id", base::NumberToString(upload_id));
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (retry_with_fallback_proxy) {
+    dict.Set("retry_with_fallback_proxy", retry_with_fallback_proxy);
+  }
+#endif
   return dict;
 }
 

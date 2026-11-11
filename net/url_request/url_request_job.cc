@@ -424,6 +424,9 @@ void URLRequestJob::NotifyPlatformLocalNetworkAccessPermissionRequired() {
 void URLRequestJob::NotifySSLCertificateError(int net_error,
                                               const SSLInfo& ssl_info,
                                               bool fatal) {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  ssl_error_ = true;
+#endif
   request_->NotifySSLCertificateError(net_error, ssl_info, fatal);
 }
 
@@ -458,7 +461,19 @@ void URLRequestJob::NotifyHeadersComplete() {
     // Need to check for a NULL auth_info because the server may have failed
     // to send a challenge with the 401 response.
     if (auth_info) {
+#if BUILDFLAG(ARKWEB_NETWORK_PROXY_AUTH_RETRY)
+      if (auth_info->is_proxy &&
+          !is_network_proxy_auth_retried_ &&
+          base::FeatureList::IsEnabled(kEnableNetworkProxyAuthRetryFeature)) {
+        // The server returns a 407 response to notify the network management system to perform authentication.
+        NotifyNetworkServiceAuthRequired(std::move(auth_info));
+        is_network_proxy_auth_retried_ = true;
+      } else {
+        request_->NotifyAuthRequired(std::move(auth_info));
+      }
+#else
       request_->NotifyAuthRequired(std::move(auth_info));
+#endif
       // Wait for SetAuth or CancelAuth to be called.
       return;
     }

@@ -52,4 +52,5 @@ executable("transport_security_state_generator") {
     "//base",
     "//third_party/boringssl",
   ]
+  ldflags = [ "-lgcc_s" ]
 }

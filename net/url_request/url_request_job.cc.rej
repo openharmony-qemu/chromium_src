@@ -1,0 +1,39 @@
+diff a/net/url_request/url_request_job.cc b/net/url_request/url_request_job.cc	(rejected hunks)
+@@ -43,10 +43,16 @@
+ 
+ namespace net {
+ 
+ namespace {
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_PROXY_AUTH_RETRY)
++BASE_FEATURE(kEnableNetworkProxyAuthRetryFeature,
++             "EnableNetworkProxyAuthRetryFeature",
++             base::FEATURE_ENABLED_BY_DEFAULT);
++#endif
++
+ // Callback for TYPE_URL_REQUEST_FILTERS_SET net-internals event.
+ base::Value::Dict SourceStreamSetParams(SourceStream* source_stream) {
+   base::Value::Dict event_params;
+   event_params.Set("filters", source_stream->Description());
+   return event_params;
+@@ -430,10 +439,20 @@ bool URLRequestJob::CanSetCookie(
+     CookieInclusionStatus* inclusion_status) const {
+   return request_->CanSetCookie(cookie, options, first_party_set_metadata,
+                                 inclusion_status);
+ }
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_PROXY_AUTH_RETRY)
++void URLRequestJob::NotifyNetworkServiceAuthRequired(std::unique_ptr<AuthChallengeInfo> auth_info) {
++  NotifyAuthRequiredForRequest(std::move(auth_info));
++}
++
++void URLRequestJob::NotifyAuthRequiredForRequest(std::unique_ptr<AuthChallengeInfo> auth_info) {
++  request_->NotifyAuthRequired(std::move(auth_info));
++}
++#endif
++
+ void URLRequestJob::NotifyHeadersComplete() {
+   if (has_handled_response_)
+     return;
+ 
+   // Initialize to the current time, and let the subclass optionally override

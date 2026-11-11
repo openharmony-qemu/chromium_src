@@ -43,6 +43,10 @@ struct NetworkTrafficAnnotationTag;
 class ProxyChain;
 struct SSLConfig;
 class StreamSocket;
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || \
+    BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+class ArkWebClientSocketPoolExt;
+#endif
 
 // ClientSocketPools are layered. This defines an interface for lower level
 // socket pools to communicate with higher layer pools.
@@ -211,17 +215,36 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
       return allowed_bad_certs_;
     }
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  void SetFromPreload(bool from_preload) {
+    from_preload_ = from_preload;
+  }
+
+  bool IsFromPreload() const {
+    return from_preload_;
+  }
+#endif
+
    private:
     friend class base::RefCounted<SocketParams>;
     ~SocketParams();
 
     std::vector<SSLConfig::CertAndStatus> allowed_bad_certs_;
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+    bool from_preload_ = false;
+#endif
   };
 
   ClientSocketPool(const ClientSocketPool&) = delete;
   ClientSocketPool& operator=(const ClientSocketPool&) = delete;
 
   ~ClientSocketPool() override;
+
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || \
+    BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  std::unique_ptr<ArkWebClientSocketPoolExt> utils;
+#endif
 
   // Requests a connected socket with a specified GroupId.
   //
@@ -469,5 +492,10 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
 };
 
 }  // namespace net
+
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || \
+    BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#include "arkweb/chromium_ext/net/socket/arkweb_client_socket_pool_ext.h"
+#endif
 
 #endif  // NET_SOCKET_CLIENT_SOCKET_POOL_H_

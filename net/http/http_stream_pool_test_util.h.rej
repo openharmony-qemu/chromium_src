@@ -1,0 +1,17 @@
+diff a/net/http/http_stream_pool_test_util.h b/net/http/http_stream_pool_test_util.h	(rejected hunks)
+@@ -111,10 +111,15 @@ class FakeServiceEndpointRequest : public HostResolver::ServiceEndpointRequest {
+   ResolveErrorInfo GetResolveErrorInfo() override;
+   const HostCache::EntryStaleness* GetStaleInfo() const override;
+   bool IsStaleWhileRefresing() const override;
+   void ChangeRequestPriority(RequestPriority priority) override;
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  ResolveInfo GetResolveInfo() const override { return {}; }
++  bool SecureDnsFallbackResolved() const override { return false; }
++#endif
++
+  private:
+   friend class FakeServiceEndpointResolver;
+ 
+   raw_ptr<Delegate> delegate_;
+ 

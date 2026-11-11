@@ -1,0 +1,19 @@
+diff a/net/socket/client_socket_pool_manager_impl.cc b/net/socket/client_socket_pool_manager_impl.cc	(rejected hunks)
+@@ -91,10 +94,17 @@ ClientSocketPool* ClientSocketPoolManagerImpl::GetSocketPool(
+         sockets_per_proxy_chain, sockets_per_group, additional_capacity,
+         unused_idle_socket_timeout(pool_type_), proxy_chain,
+         pool_type_ == HttpNetworkSession::WEBSOCKET_SOCKET_POOL,
+         &common_connect_job_params_, cleanup_on_ip_address_change_);
+   }
++#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
++  new_pool->utils->SetConnectTimeout(timeout_override_);
++#endif
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  new_pool->utils->SetConnectJobWithSecureDnsOnlyTimeout(
++      connect_job_with_secure_dns_timeout_);
++#endif
+ 
+   std::pair<SocketPoolMap::iterator, bool> ret =
+       socket_pools_.emplace(proxy_chain, std::move(new_pool));
+   return ret.first->second.get();
+ }

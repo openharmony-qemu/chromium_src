@@ -73,6 +73,9 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "url/scheme_host_port.h"
 #include "url/url_constants.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 using net::test::IsError;
 using net::test::IsOk;
@@ -394,6 +397,10 @@ class TestConnectJob : public ConnectJob {
     }
     return nullptr;
   }
+
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  void SetConnectTimeout(int timeout_override) override {}
+#endif
 
  private:
   // From ConnectJob:

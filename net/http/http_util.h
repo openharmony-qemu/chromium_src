@@ -310,6 +310,16 @@ class NET_EXPORT HttpUtil {
       const HttpResponseHeaders& headers,
       const std::string& field_name);
 
+#if BUILDFLAG(ARKWEB_DFX_LOGGING)
+  static bool IsValidHeaderValue(std::string_view value, char* invalid_char);
+  static void EnsureValidHeaderValue(
+      std::string_view value,
+      std::string_view operation_name,
+      std::optional<std::string_view> key = std::nullopt);
+  static void EnsureValidHeaderKey(std::string_view key,
+                                   std::string_view operation_name);
+#endif
+
   // Used to iterate over the name/value pairs of HTTP headers.  To iterate
   // over the values in a multi-value header, use ValuesIterator.
   // See AssembleRawHeaders for joining line continuations (this iterator

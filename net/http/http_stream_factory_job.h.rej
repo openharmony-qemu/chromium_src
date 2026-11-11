@@ -1,0 +1,24 @@
+diff a/net/http/http_stream_factory_job.h b/net/http/http_stream_factory_job.h	(rejected hunks)
+@@ -488,13 +506,22 @@ class HttpStreamFactory::Job
+ 
+   ResolveErrorInfo resolve_error_info_;
+ 
+   std::unique_ptr<SpdySessionPool::SpdySessionRequest> spdy_session_request_;
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  bool from_preload_ = false;
++#endif
++
+   // Keeps track of the connection management config.
+   std::optional<ConnectionManagementConfig> management_config_;
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  ResolveInfo resolve_info_;
++  bool secure_dns_fallback_resolved_ = false;
++#endif
++
+   base::WeakPtrFactory<Job> ptr_factory_{this};
+ };
+ 
+ // Factory for creating Jobs.
+ class HttpStreamFactory::JobFactory {

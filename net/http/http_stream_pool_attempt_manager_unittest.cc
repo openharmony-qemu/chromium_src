@@ -335,7 +335,12 @@ class StreamRequester : public HttpStreamRequest::Delegate {
 
   // HttpStreamRequest::Delegate methods:
   void OnStreamReady(const ProxyInfo& used_proxy_info,
-                     std::unique_ptr<HttpStream> stream) override {
+                     std::unique_ptr<HttpStream> stream
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                     ,
+                     ResolveInfo resolve_info
+#endif
+                     ) override {
     used_proxy_info_ = used_proxy_info;
     stream_ = std::move(stream);
     SetResult(OK);
@@ -356,14 +361,31 @@ class StreamRequester : public HttpStreamRequest::Delegate {
   void OnStreamFailed(int status,
                       const NetErrorDetails& net_error_details,
                       const ProxyInfo& used_proxy_info,
-                      ResolveErrorInfo resolve_error_info) override {
+                      ResolveErrorInfo resolve_error_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                      ,
+                      ResolveInfo resolve_info,
+                      bool secure_dns_fallback_resolved
+#endif
+                      ) override {
     net_error_details_ = net_error_details;
     used_proxy_info_ = used_proxy_info;
     resolve_error_info_ = resolve_error_info;
     SetResult(status);
   }
 
-  void OnCertificateError(int status, const SSLInfo& ssl_info) override {
+  void OnCertificateError(int status,
+                          const SSLInfo& ssl_info
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+                          ,
+                          bool used_fallback_proxy
+#endif
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                          ,
+                          ResolveInfo resolve_info,
+                          bool secure_dns_fallback_resolved
+#endif
+                          ) override {
     cert_error_ssl_info_ = ssl_info;
     SetResult(status);
   }

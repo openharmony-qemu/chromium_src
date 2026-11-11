@@ -1,0 +1,53 @@
+diff a/net/shared_dictionary/shared_dictionary_network_transaction.cc b/net/shared_dictionary/shared_dictionary_network_transaction.cc	(rejected hunks)
+@@ -38,10 +38,12 @@
+ #include "net/shared_dictionary/shared_dictionary_constants.h"
+ #include "net/shared_dictionary/shared_dictionary_header_checker_source_stream.h"
+ #include "net/shared_dictionary/shared_dictionary_isolation_key.h"
+ #include "net/ssl/ssl_private_key.h"
+ 
++#include "arkweb/chromium_ext/net/shared_dictionary/shared_dictionary_network_transaction_for_include.cc"
++
+ namespace net {
+ 
+ namespace {
+ 
+ // Convert the interface from HttpTransaction to SourceStream.
+@@ -278,10 +280,20 @@ void SharedDictionaryNetworkTransaction::OnReadSharedDictionary(
+       std::move(split_callback.second).Run(ret);
+     }
+   }
+ }
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++int SharedDictionaryNetworkTransaction::RestartWithSecureDnsOnly(
++    CompletionOnceCallback callback) {
++  shared_dictionary_used_response_info_.reset();
++  return network_transaction_->RestartWithSecureDnsOnly(
++      base::BindOnce(&SharedDictionaryNetworkTransaction::OnStartCompleted,
++                     base::Unretained(this), std::move(callback)));
++}
++#endif
++
+ int SharedDictionaryNetworkTransaction::RestartIgnoringLastError(
+     CompletionOnceCallback callback) {
+   shared_dictionary_used_response_info_.reset();
+   return network_transaction_->RestartIgnoringLastError(
+       base::BindOnce(&SharedDictionaryNetworkTransaction::OnStartCompleted,
+@@ -474,10 +486,17 @@ void SharedDictionaryNetworkTransaction::
+ ConnectionAttempts SharedDictionaryNetworkTransaction::GetConnectionAttempts()
+     const {
+   return network_transaction_->GetConnectionAttempts();
+ }
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++ConnectionAttempts
++SharedDictionaryNetworkTransaction::GetExtraConnectionAttempts() const {
++  return network_transaction_->GetExtraConnectionAttempts();
++}
++#endif
++
+ void SharedDictionaryNetworkTransaction::CloseConnectionOnDestruction() {
+   network_transaction_->CloseConnectionOnDestruction();
+ }
+ 
+ bool SharedDictionaryNetworkTransaction::IsMdlMatchForMetrics() const {

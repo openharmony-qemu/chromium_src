@@ -1,0 +1,15 @@
+diff a/net/http/transport_security_state.h b/net/http/transport_security_state.h	(rejected hunks)
+@@ -38,10 +38,13 @@ namespace net {
+ namespace ct {
+ enum class CTPolicyCompliance;
+ }
+ 
+ class X509Certificate;
++#if BUILDFLAG(ARKWEB_NETWORK_BASE)
++class ArkWebTransportSecurityStateExt;
++#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
+ 
+ void NET_EXPORT_PRIVATE SetTransportSecurityStateSourceForTesting(
+     const TransportSecurityStateSource* source);
+ 
+ // Whether an insecure connection should be upgraded to use SSL. For metrics

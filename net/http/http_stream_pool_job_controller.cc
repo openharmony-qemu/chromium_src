@@ -45,6 +45,11 @@
 #include "url/scheme_host_port.h"
 #include "url/url_constants.h"
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 namespace net {
 
 HttpStreamPool::JobController::Alternative::Alternative(
@@ -222,7 +227,12 @@ void HttpStreamPool::JobController::HandleStreamRequest(
         FROM_HERE,
         base::BindOnce(&HttpStreamPool::JobController::CallOnStreamFailed,
                        weak_ptr_factory_.GetWeakPtr(), ERR_UNSAFE_PORT,
-                       NetErrorDetails(), ResolveErrorInfo()));
+                       NetErrorDetails(), ResolveErrorInfo()
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                                              ,
+                       ResolveInfo(), false /* secure_dns_fallback_resolved */
+#endif
+                           ));
     return;
   }
 
@@ -241,7 +251,12 @@ void HttpStreamPool::JobController::HandleStreamRequest(
         FROM_HERE,
         base::BindOnce(
             &HttpStreamPool::JobController::CallRequestCompleteAndStreamReady,
-            weak_ptr_factory_.GetWeakPtr()));
+            weak_ptr_factory_.GetWeakPtr()
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                ,
+            ResolveInfo()
+#endif
+                ));
     return;
   }
 
@@ -382,13 +397,22 @@ void HttpStreamPool::JobController::OnStreamReady(
   CHECK(!stream_ready_time_.has_value());
   stream_ready_time_ = base::TimeTicks::Now();
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info = job->resolve_info();
+#endif
+
   // Use PostTask to align the behavior with HttpStreamFactory::Job, see
   // https://crrev.com/2827533002.
   // TODO(crbug.com/346835898): Avoid using PostTask here if possible.
   TaskRunner(priority_)->PostTask(
       FROM_HERE,
       base::BindOnce(&JobController::CallRequestCompleteAndStreamReady,
-                     weak_ptr_factory_.GetWeakPtr()));
+                     weak_ptr_factory_.GetWeakPtr()
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                         ,
+                     std::move(resolve_info)
+#endif
+                         ));
 }
 
 void HttpStreamPool::JobController::OnStreamFailed(
@@ -405,11 +429,21 @@ void HttpStreamPool::JobController::OnStreamFailed(
     // Use PostTask to align the behavior with HttpStreamFactory::Job, see
     // https://crrev.com/2827533002.
     // TODO(crbug.com/346835898): Avoid using PostTask here if possible.
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    ResolveInfo resolve_info = job->resolve_info();
+    bool secure_dns_fallback_resolved = job->secure_dns_fallback_resolved();
+#endif
+
     TaskRunner(priority_)->PostTask(
         FROM_HERE,
         base::BindOnce(&JobController::CallOnStreamFailed,
                        weak_ptr_factory_.GetWeakPtr(), status,
-                       net_error_details, std::move(resolve_error_info)));
+                       net_error_details, std::move(resolve_error_info)
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                                              ,
+                       std::move(resolve_info), secure_dns_fallback_resolved
+#endif
+                           ));
   }
 }
 
@@ -422,13 +456,39 @@ void HttpStreamPool::JobController::OnCertificateError(
 
   stream_request_->AddConnectionAttempts(job->connection_attempts());
   CancelOtherJob(job);
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info;
+  bool secure_dns_fallback_resolved = false;
+#endif
+  bool used_fallback_proxy = false;
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx) &&
+      job) {
+    used_fallback_proxy = job->proxy_info().used_fallback_proxy();
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    resolve_info = job->resolve_info();
+    secure_dns_fallback_resolved = job->secure_dns_fallback_resolved();
+#endif
+  }
+#endif
   // Use PostTask to align the behavior with HttpStreamFactory::Job, see
   // https://crrev.com/2827533002.
   // TODO(crbug.com/346835898): Avoid using PostTask here if possible.
   TaskRunner(priority_)->PostTask(
       FROM_HERE,
       base::BindOnce(&JobController::CallOnCertificateError,
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+                     weak_ptr_factory_.GetWeakPtr(), status, ssl_info,
+                     used_fallback_proxy
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                     , std::move(resolve_info), secure_dns_fallback_resolved
+#endif
+                     ));
+#else
                      weak_ptr_factory_.GetWeakPtr(), status, ssl_info));
+#endif
 }
 
 void HttpStreamPool::JobController::OnNeedsClientAuth(
@@ -662,7 +722,12 @@ void HttpStreamPool::JobController::StartAltSvcQuicPreconnect() {
   origin_job_->Start();
 }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+void HttpStreamPool::JobController::CallRequestCompleteAndStreamReady(
+    ResolveInfo resolve_info) {
+#else
 void HttpStreamPool::JobController::CallRequestCompleteAndStreamReady() {
+#endif
   CHECK(stream_request_);
   CHECK(delegate_);
   CHECK(pending_stream_);
@@ -684,21 +749,54 @@ void HttpStreamPool::JobController::CallRequestCompleteAndStreamReady() {
       .session_source = pending_stream_->session_source,
       .advertised_alt_svc_state = advertised_alt_svc_state_,
   });
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  delegate_->OnStreamReady(proxy_info_, std::move(pending_stream_->stream),
+                           resolve_info);
+#else
   delegate_->OnStreamReady(proxy_info_, std::move(pending_stream_->stream));
+#endif
 }
 
 void HttpStreamPool::JobController::CallOnStreamFailed(
     int status,
     const NetErrorDetails& net_error_details,
-    ResolveErrorInfo resolve_error_info) {
+    ResolveErrorInfo resolve_error_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    ,
+    ResolveInfo resolve_info,
+    bool secure_dns_fallback_resolved
+#endif
+) {
   delegate_->OnStreamFailed(status, net_error_details, proxy_info_,
-                            std::move(resolve_error_info));
+                            std::move(resolve_error_info)
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                                ,
+                            std::move(resolve_info), secure_dns_fallback_resolved
+#endif
+  );
 }
 
 void HttpStreamPool::JobController::CallOnCertificateError(
     int status,
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    const SSLInfo& ssl_info,
+    bool used_fallback_proxy
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    ,
+    ResolveInfo resolve_info,
+    bool secure_dns_fallback_resolved
+#endif
+    ) {
+  delegate_->OnCertificateError(status, ssl_info, used_fallback_proxy
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                                , resolve_info, secure_dns_fallback_resolved);
+#else
+                                );
+#endif
+#else
     const SSLInfo& ssl_info) {
   delegate_->OnCertificateError(status, ssl_info);
+#endif
 }
 
 void HttpStreamPool::JobController::CallOnNeedsClientAuth(

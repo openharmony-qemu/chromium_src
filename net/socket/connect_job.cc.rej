@@ -1,0 +1,46 @@
+diff a/net/socket/connect_job.cc b/net/socket/connect_job.cc	(rejected hunks)
+@@ -140,10 +147,29 @@ int ConnectJob::Connect() {
+ ConnectionAttempts ConnectJob::GetConnectionAttempts() const {
+   // Return empty list by default - used by proxy classes.
+   return ConnectionAttempts();
+ }
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++void ConnectJob::SetResolveInfoToSocket(const ResolveInfo& resolve_info) {
++  if (socket_) {
++    socket_->SetDnsResolveInfo(resolve_info);
++  }
++}
++
++void ConnectJob::SetExtraConnectionAttemptsToSocket(
++    const ConnectionAttempts& extra_connection_attempts) {
++  if (socket_) {
++    socket_->SetExtraConnectionAttempt(extra_connection_attempts);
++  }
++}
++
++ConnectionAttempts ConnectJob::GetExtraConnectionAttempts() const {
++  return {};
++}
++#endif
++
+ bool ConnectJob::IsSSLError() const {
+   return false;
+ }
+ 
+ scoped_refptr<SSLCertRequestInfo> ConnectJob::GetCertRequestInfo() {
+@@ -214,10 +245,14 @@ void ConnectJob::StopTimerAndLogConnectCompletion(int net_error) {
+   // Stop the timer on completion, if it's still running. ConnectJobs are
+   // generally deleted immediately, anyways, but best to be safe.
+   timer_.Stop();
+ 
+   connect_timing_.connect_end = base::TimeTicks::Now();
++#if BUILDFLAG(ARKWEB_NETWORK_DFX)
++  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
++               "connectEnd", connect_timing_.connect_end);
++#endif
+   net_log().EndEventWithNetErrorCode(net_log_connect_event_type_, net_error);
+ }
+ 
+ void ConnectJob::OnTimeout() {
+   // Make sure the socket is NULL before calling into |delegate|.

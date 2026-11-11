@@ -1,0 +1,18 @@
+diff a/net/proxy_resolution/proxy_info.h b/net/proxy_resolution/proxy_info.h	(rejected hunks)
+@@ -195,10 +215,16 @@ class NET_EXPORT ProxyInfo {
+   MutableNetworkTrafficAnnotationTag traffic_annotation_;
+ 
+   // Whether the proxy result represent a proxy bypass.
+   bool did_bypass_proxy_ = false;
+ 
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++  bool used_fallback_proxy_ = false;
++  bool use_fallback_proxy_direct_ = false;
++  bool is_accelerate_proxy_ = false;
++#endif
++
+   // Whether the request that uses this proxy config caused a match with the
+   // masked domain list.
+   // This is a temporary workaround to gather initial metrics for IP Protection.
+   // TODO(crbug.com/40947771): Remove once the experiment is concluded.
+   bool is_mdl_match_ = false;

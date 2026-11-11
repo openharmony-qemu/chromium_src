@@ -423,6 +423,8 @@ class TestProxyFallbackProxyDelegate : public ProxyDelegate {
     return last_proxy_fallback_net_error_;
   }
 
+#include "arkweb/chromium_ext/net/proxy_resolution/test_proxy_fallback_proxy_delegate_for_include.cc"
+
   const ProxyRetryInfoMap& last_proxy_retry_info() const {
     return last_proxy_retry_info_;
   }

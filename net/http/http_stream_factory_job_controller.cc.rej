@@ -1,0 +1,40 @@
+diff a/net/http/http_stream_factory_job_controller.cc b/net/http/http_stream_factory_job_controller.cc	(rejected hunks)
+@@ -824,10 +875,17 @@ int HttpStreamFactory::JobController::DoResolveProxy() {
+     return OK;
+   }
+ 
+   CompletionOnceCallback io_callback =
+       base::BindOnce(&JobController::OnIOComplete, base::Unretained(this));
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
++          ::switches::kEnableNwebEx) &&
++      request_info_.retry_with_fallback_proxy) {
++    proxy_info_.set_use_fallback_proxy_direct(true);
++  }
++#endif
+   return session_->proxy_resolution_service()->ResolveProxy(
+       request_info_.url, request_info_.method,
+       request_info_.network_anonymization_key, &proxy_info_,
+       std::move(io_callback), &proxy_resolve_request_, net_log_, priority_);
+ }
+@@ -948,12 +1006,20 @@ int HttpStreamFactory::JobController::DoCreateJobs() {
+             this, PRECONNECT, session_, request_info_, IDLE, proxy_info_,
+             allowed_bad_certs_, std::move(destination), is_websocket_,
+             enable_ip_based_pooling_for_h2_, net_log_.net_log(),
+             NextProto::kProtoUnknown, quic::ParsedQuicVersion::Unsupported(),
+             management_config_);
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++        preconnect_backup_job_->SetFromPreload(from_preload_);
++#endif
+       }
+     }
++
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++    main_job_->SetFromPreload(from_preload_);
++#endif
++
+     main_job_->Preconnect(num_streams_);
+     return OK;
+   }
+   main_job_ = job_factory_->CreateJob(
+       this, MAIN, session_, request_info_, priority_, proxy_info_,

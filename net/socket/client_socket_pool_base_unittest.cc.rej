@@ -1,0 +1,19 @@
+diff a/net/socket/client_socket_pool_base_unittest.cc b/net/socket/client_socket_pool_base_unittest.cc	(rejected hunks)
+@@ -561,11 +568,16 @@ class TestConnectJobFactory : public ConnectJobFactory {
+       SocketTag socket_tag,
+       const NetworkAnonymizationKey& network_anonymization_key,
+       SecureDnsPolicy secure_dns_policy,
+       bool disable_cert_network_fetches,
+       const CommonConnectJobParams* common_connect_job_params,
+-      ConnectJob::Delegate* delegate) const override {
++      ConnectJob::Delegate* delegate
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      bool secure_dns_only = false
++#endif
++      ) const override {
+     EXPECT_TRUE(!job_types_ || !job_types_->empty());
+     TestConnectJob::JobType job_type = job_type_;
+     if (job_types_ && !job_types_->empty()) {
+       job_type = job_types_->front();
+       job_types_->pop_front();

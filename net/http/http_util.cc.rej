@@ -1,0 +1,16 @@
+diff a/net/http/http_util.cc b/net/http/http_util.cc	(rejected hunks)
+@@ -27,10 +27,14 @@
+ #include "net/base/parse_number.h"
+ #include "net/base/url_util.h"
+ #include "net/http/http_response_headers.h"
+ #include "url/gurl.h"
+ 
++#if BUILDFLAG(ARKWEB_DFX_LOGGING)
++#include "arkweb/chromium_ext/net/http/http_util_for_include.cc"
++#endif
++
+ namespace net {
+ 
+ namespace {
+ 
+ template <typename ConstIterator>

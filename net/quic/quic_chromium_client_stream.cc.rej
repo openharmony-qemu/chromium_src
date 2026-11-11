@@ -1,0 +1,39 @@
+diff a/net/quic/quic_chromium_client_stream.cc b/net/quic/quic_chromium_client_stream.cc	(rejected hunks)
+@@ -145,12 +150,17 @@ void QuicChromiumClientStream::Handle::OnClose() {
+   OnError(net_error_);
+ }
+ 
+ void QuicChromiumClientStream::Handle::OnError(int error) {
+   net_error_ = error;
+-  if (stream_)
++  if (stream_) {
+     SaveState();
++
++    if (is_http_datagram_visitor_registered_) {
++      UnregisterHttp3DatagramVisitor();
++    }
++  }
+   stream_ = nullptr;
+ 
+   // Post a task to invoke the callbacks to ensure that there is no reentrancy.
+   // A ScopedPacketFlusher might cause an error which closes the stream under
+   // the call stack of the owner of the handle.
+@@ -369,16 +410,18 @@ void QuicChromiumClientStream::Handle::Reset(
+ 
+ void QuicChromiumClientStream::Handle::RegisterHttp3DatagramVisitor(
+     Http3DatagramVisitor* visitor) {
+   if (stream_) {
+     stream_->RegisterHttp3DatagramVisitor(visitor);
++    is_http_datagram_visitor_registered_ = true;
+   }
+ }
+ 
+ void QuicChromiumClientStream::Handle::UnregisterHttp3DatagramVisitor() {
+   if (stream_) {
+     stream_->UnregisterHttp3DatagramVisitor();
++    is_http_datagram_visitor_registered_ = false;
+   }
+ }
+ 
+ quic::QuicStreamId QuicChromiumClientStream::Handle::id() const {
+   if (!stream_)

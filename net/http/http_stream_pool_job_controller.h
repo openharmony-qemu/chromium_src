@@ -167,15 +167,37 @@ class HttpStreamPool::JobController : public HttpStreamPool::Job::Delegate,
   // Calls the request's Complete() and tells the delegate that a stream, now
   // stored in `pending_stream_`, is ready. Used when there is an existing
   // QUIC/SPDY session that can serve the request.
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  void CallRequestCompleteAndStreamReady(ResolveInfo resolve_info);
+#else
   void CallRequestCompleteAndStreamReady();
+#endif
 
   // Calls the request's stream failed callback.
   void CallOnStreamFailed(int status,
                           const NetErrorDetails& net_error_details,
-                          ResolveErrorInfo resolve_error_info);
+                          ResolveErrorInfo resolve_error_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                          ,
+                          ResolveInfo resolve_info,
+                          bool secure_dns_fallback_resolved
+#endif
+  );
 
   // Calls the request's certificate error callback.
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void CallOnCertificateError(int status,
+                              const SSLInfo& ssl_info,
+                              bool used_fallback_proxy
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                              ,
+                              ResolveInfo resolve_info,
+                              bool secure_dns_fallback_resolved
+#endif
+                              );
+#else
   void CallOnCertificateError(int status, const SSLInfo& ssl_info);
+#endif
 
   // Calls the request's client auth callback.
   void CallOnNeedsClientAuth(SSLCertRequestInfo* cert_info);

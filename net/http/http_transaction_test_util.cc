@@ -44,6 +44,8 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "url/gurl.h"
 
+#include "arkweb/chromium_ext/net/http/http_transaction_test_util_for_include.cc"
+
 namespace net {
 
 namespace {
@@ -344,6 +346,13 @@ int MockNetworkTransaction::RestartIgnoringLastError(
     CompletionOnceCallback callback) {
   return ERR_FAILED;
 }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+int MockNetworkTransaction::RestartWithSecureDnsOnly(
+    CompletionOnceCallback callback) {
+  return ERR_FAILED;
+}
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
 int MockNetworkTransaction::RestartWithCertificate(
     scoped_refptr<X509Certificate> client_cert,

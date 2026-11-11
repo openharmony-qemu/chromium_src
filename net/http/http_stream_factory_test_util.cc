@@ -57,18 +57,18 @@ void MockHttpStreamRequestDelegate::OnStreamFailed(
     int status,
     const NetErrorDetails& net_error_details,
     const ProxyInfo& used_proxy_info,
-    ResolveErrorInfo resolve_error_info) {
+    ResolveErrorInfo resolve_error_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    ,
+    ResolveInfo resolve_info,
+    bool secure_dns_fallback_resolved
+#endif
+    ) {
   CHECK(!IsDone());
 
   net_error_ = status;
   used_proxy_info_ = used_proxy_info;
   done_run_loop_.Quit();
-}
-
-void MockHttpStreamRequestDelegate::OnCertificateError(
-    int status,
-    const SSLInfo& ssl_info) {
-  NOTREACHED();
 }
 
 void MockHttpStreamRequestDelegate::OnNeedsProxyAuth(

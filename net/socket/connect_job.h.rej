@@ -1,0 +1,50 @@
+diff a/net/socket/connect_job.h b/net/socket/connect_job.h	(rejected hunks)
+@@ -276,10 +283,33 @@ class NET_EXPORT_PRIVATE ConnectJob {
+   // Sets |done_closure_| which will be called when |this| is deleted.
+   void set_done_closure(base::OnceClosure done_closure);
+ 
+   const NetLogWithSource& net_log() const { return net_log_; }
+ 
++#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
++  virtual void SetConnectTimeout(int timeout_override) = 0;
++#endif
++
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  virtual void SetFromPreload(bool from_preload) {
++    from_preload_ = from_preload;
++  }
++
++  bool IsFromPreload() const {
++    return from_preload_;
++  }
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  virtual ResolveInfo GetResolveInfo() const { return {}; }
++  virtual bool SecureDnsFallbackResolved() const { return false; }
++  void SetResolveInfoToSocket(const ResolveInfo& resolve_info);
++  virtual ConnectionAttempts GetExtraConnectionAttempts() const;
++  void SetExtraConnectionAttemptsToSocket(
++      const ConnectionAttempts& extra_connection_attempts);
++#endif
++
+  protected:
+   const SocketTag& socket_tag() const { return socket_tag_; }
+   ClientSocketFactory* client_socket_factory() {
+     return common_connect_job_params_->client_socket_factory;
+   }
+@@ -360,10 +398,14 @@ class NET_EXPORT_PRIVATE ConnectJob {
+   const bool top_level_job_;
+   NetLogWithSource net_log_;
+   // This is called when |this| is deleted.
+   base::ScopedClosureRunner done_closure_;
+   const NetLogEventType net_log_connect_event_type_;
++
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  bool from_preload_ = false;
++#endif
+ };
+ 
+ }  // namespace net
+ 
+ #endif  // NET_SOCKET_CONNECT_JOB_H_

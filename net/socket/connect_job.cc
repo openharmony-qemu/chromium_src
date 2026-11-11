@@ -24,6 +24,9 @@
 #include "net/socket/stream_socket.h"
 #include "net/socket/transport_connect_job.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -121,9 +124,13 @@ void ConnectJob::ChangePriority(RequestPriority priority) {
 }
 
 int ConnectJob::Connect() {
-  if (!timeout_duration_.is_zero()) {
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  if (!timeout_override_.is_zero()) {
+    timer_.Start(FROM_HERE, timeout_override_, this, &ConnectJob::OnTimeout);
+  } else
+#endif
+      if (!timeout_duration_.is_zero())
     timer_.Start(FROM_HERE, timeout_duration_, this, &ConnectJob::OnTimeout);
-  }
 
   LogConnectStart();
 
@@ -187,6 +194,11 @@ void ConnectJob::SetSocket(std::unique_ptr<StreamSocket> socket,
     }
   }
   socket_ = std::move(socket);
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  if (IsFromPreload() && socket_ != nullptr) {
+    socket_->SetFromPreload(IsFromPreload());
+  }
+#endif
 }
 
 void ConnectJob::NotifyDelegateOfCompletion(int rv) {

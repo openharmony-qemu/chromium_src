@@ -33,6 +33,13 @@
 #include "net/socket/ssl_client_socket.h"
 #include "net/ssl/ssl_config.h"
 #include "net/third_party/quiche/src/quiche/quic/core/quic_versions.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/net/dns/public/resolve_info.h"
+#endif
 
 namespace net {
 
@@ -335,6 +342,14 @@ class NET_EXPORT_PRIVATE ConnectJob {
   // Connection establishment timing information.
   // TODO(mmenke): This should be private.
   LoadTimingInfo::ConnectTiming connect_timing_;
+
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  base::TimeDelta timeout_override_ = base::TimeDelta();
+#endif
+#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+  bool multi_ip_enabled_{true};
+  base::TimeDelta multi_connect_interval_time_ = base::Milliseconds(300);
+#endif
 
  private:
   virtual int ConnectInternal() = 0;

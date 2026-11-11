@@ -19,6 +19,9 @@
 #include "ui/gfx/geometry/vector2d_f.h"
 #include "ui/gfx/selection_bound.h"
 
+#if BUILDFLAG(ARKWEB_MENU)
+#include "ui/gfx/geometry/rect_f.h"
+#endif
 namespace cc {
 
 // Contains information to assist in making a decision about forwarding
@@ -103,6 +106,10 @@ class CC_EXPORT RenderFrameMetadata {
   // Selection region relative to the current viewport. If the selection is
   // empty or otherwise unused, the bound types will indicate such.
   viz::Selection<gfx::SelectionBound> selection;
+
+#if BUILDFLAG(ARKWEB_MENU)
+  gfx::Rect clipped_selection_bounds;
+#endif
 
   // Determines whether the page is mobile optimized or not, which means at
   // least one of the following has to be true:

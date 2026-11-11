@@ -486,6 +486,10 @@ void LayerImpl::CopyPropertiesTo(LayerImpl* layer) const {
       layer->layer_property_changed_from_property_trees_ = true;
     }
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    layer_impl_utils_->LayerImplPushPropertiesTo(layer);
+#endif
+
     layer->SetBounds(bounds_);
 
     layer->UnionUpdateRect(update_rect_);

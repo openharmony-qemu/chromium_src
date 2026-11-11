@@ -1,0 +1,56 @@
+diff a/cc/scheduler/scheduler_state_machine.cc b/cc/scheduler/scheduler_state_machine.cc	(rejected hunks)
+@@ -970,10 +976,13 @@ void SchedulerStateMachine::WillNotifyBeginMainFrameNotExpectedSoon() {
+   DCHECK(!did_notify_begin_main_frame_not_expected_soon_);
+   did_notify_begin_main_frame_not_expected_soon_ = true;
+ }
+ 
+ void SchedulerStateMachine::WillCommit(bool commit_has_no_updates) {
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  TRACE_EVENT0("cc", "SchedulerStateMachine::WillCommit");
++#endif
+   bool can_have_pending_tree =
+       commit_has_no_updates &&
+       (settings_.main_frame_before_activation_enabled ||
+        settings_.main_frame_before_commit_enabled ||
+        current_pending_tree_is_impl_side_);
+@@ -1227,24 +1239,40 @@ bool SchedulerStateMachine::BeginFrameNeeded() const {
+ }
+ 
+ bool SchedulerStateMachine::ShouldSubscribeToBeginFrames() const {
+   // We can't handle BeginFrames when output surface isn't initialized.
+   // TODO(brianderson): Support output surface creation inside a BeginFrame.
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  if (!HasInitializedLayerTreeFrameSink()) {
++    TRACE_EVENT0("cc", "SchedulerStateMachine::ShouldSubscribeToBeginFrames"
++      "not HasInitializedLayerTreeFrameSink");
++    return false;
++  }
++#else
+   if (!HasInitializedLayerTreeFrameSink())
+     return false;
++#endif
+ 
+   // The propagation of the needsBeginFrame signal to viz is inherently racy
+   // with issuing the next BeginFrame. In full-pipe mode, it is important we
+   // don't miss a BeginFrame because our needsBeginFrames signal propagated to
+   // viz too slowly. To avoid the race, we simply always request BeginFrames
+   // from viz.
+   if (settings_.wait_for_all_pipeline_stages_before_draw)
+     return true;
+ 
+   // If we are not visible, we don't need BeginFrame messages.
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  if (!visible_) {
++    TRACE_EVENT0("cc", "SchedulerStateMachine::ShouldSubscribeToBeginFrames"
++      "visible_ false");
++    return false;
++  }
++#else
+   if (!visible_)
+     return false;
++#endif
+ 
+   return BeginFrameRequiredForAction() || BeginFrameNeededForVideo() ||
+          ProactiveBeginFrameWanted();
+ }
+ 

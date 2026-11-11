@@ -1,0 +1,24 @@
+diff a/cc/layers/layer.cc b/cc/layers/layer.cc	(rejected hunks)
+@@ -71,14 +71,22 @@ struct SameSizeAsLayer : public base::RefCounted<SameSizeAsLayer>,
+   gfx::Vector2dF offset;
+   bool bool_fields[2];
+ #if DCHECK_IS_ON()
+   bool allow_remove_for_readd;
+ #endif
++  std::unique_ptr<LayerUtils> layer_utils_;
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++  bool should_overlay_;
++#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
++
+   uint8_t bit_fields[2];
+ #if BUILDFLAG(IS_CHROMEOS)
+   bool is_valid_to_destroy_;
+ #endif
++#if BUILDFLAG(IS_ARKWEB) && defined(__arm__)
++  char dummy[8];
++#endif
+ };
+ 
+ static_assert(sizeof(Layer) == sizeof(SameSizeAsLayer),
+               "Layer should stay small");
+ 

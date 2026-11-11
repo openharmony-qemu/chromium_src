@@ -1,0 +1,13 @@
+diff a/cc/layers/painted_scrollbar_layer.cc b/cc/layers/painted_scrollbar_layer.cc	(rejected hunks)
+@@ -291,10 +292,11 @@ bool PaintedScrollbarLayer::UpdateThumbIfNeeded() {
+       // Clear thumb needs repaint regardless of if the thumb's color changed.
+       scrollbar_.Write(*this)->ClearThumbNeedsRepaint();
+     }
+     return updated;
+   }
++#endif
+ 
+   gfx::Size thumb_size = thumb_size_.Read(*this);
+   gfx::Size scaled_thumb_size = LayerSizeToContentSize(thumb_size);
+   if (has_thumb_.Read(*this) && !scaled_thumb_size.IsEmpty()) {
+     if (!thumb_resource_.Read(*this) ||

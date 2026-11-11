@@ -708,6 +708,10 @@ LayerTreeHostImpl::LayerTreeHostImpl(
       &LayerTreeHostImpl::NotifyCompositorMetricsTrackerResults,
       weak_factory_.GetWeakPtr()));
 
+#if BUILDFLAG(IS_ARKWEB)
+  is_ohos_pc_ui_setting_ = base::ohos::IsPcDevice() ? true : false;
+#endif
+
   if (settings_.is_layer_tree_for_ui) {
     total_invalidated_area_ = 0u;
   }
@@ -2319,6 +2323,11 @@ void LayerTreeHostImpl::OnDraw(const gfx::Transform& transform,
     // draw as well.
     SetFullViewportDamage();
   }
+
+#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
+  external_transform_ = gfx::Transform();
+  external_viewport_ = gfx::Rect();
+#endif
 }
 
 void LayerTreeHostImpl::OnCompositorFrameTransitionDirectiveProcessed(
@@ -2814,6 +2823,10 @@ std::optional<SubmitInfo> LayerTreeHostImpl::DrawLayers(FrameData* frame) {
       compositor_frame.metadata.trees_in_viz_timing_details
           .submit_compositor_frame = submit_time;
     }
+
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+OHOS_TRACE_EVENT0("viz,benchmark", "MainFrame.SubmitCompositorFrame");
+#endif
     layer_tree_frame_sink_->SubmitCompositorFrame(
         std::move(compositor_frame),
         /*hit_test_data_changed=*/false);
@@ -3188,7 +3201,10 @@ viz::CompositorFrame LayerTreeHostImpl::GenerateCompositorFrame(
   // removed, then can set `has_only_content_frame_interval_updates`.
   metadata.frame_interval_inputs.has_only_content_frame_interval_updates =
       frame->damage_reasons.empty();
-
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  frame_rate_estimator_.ClearBeginFrameThrottleSettings();
+  metadata.begin_frame_ack.preferred_frame_interval = ThrottleFrameEnd();
+#endif
   metadata.activation_dependencies = std::move(frame->activation_dependencies);
   active_tree()->FinishSwapPromises(&metadata);
   // The swap-promises should not change the frame-token.
@@ -3830,6 +3846,21 @@ void LayerTreeHostImpl::ActivateSyncTree() {
     pending_tree_->PushPropertyTreesTo(active_tree_.get());
     active_tree_->lifecycle().AdvanceTo(
         LayerTreeLifecycle::kSyncedPropertyTrees);
+
+#if BUILDFLAG(ARKWEB_WEBGL)
+    bool should_defer_impl_invalidation = false;
+    for (EffectTreeLayerListIterator it(pending_tree_.get());
+        it.state() != EffectTreeLayerListIterator::State::kEnd; ++it) {
+      if (it.state() == EffectTreeLayerListIterator::State::kLayer) {
+        LayerImpl* layer = it.current_layer();
+        if (layer->ShouldDeferImplInvalidation()) {
+          should_defer_impl_invalidation = true;
+        }
+      }
+    }
+    client_->SetDeferInvalidationForFastMainFrameFromImpl(
+                 should_defer_impl_invalidation);
+#endif
 
     TreeSynchronizer::PushLayerProperties(pending_tree(), active_tree());
 

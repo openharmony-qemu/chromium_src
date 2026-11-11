@@ -1,0 +1,26 @@
+diff a/cc/input/input_handler.h b/cc/input/input_handler.h	(rejected hunks)
+@@ -47,10 +47,11 @@ class CompositorDelegateForInput;
+ class LatencyInfoSwapPromiseMonitor;
+ class LayerImpl;
+ class ScrollbarController;
+ class ScrollElasticityHelper;
+ class Viewport;
++class InputHandlerUtils;
+ 
+ enum class PointerResultType { kUnhandled = 0, kScrollbarScroll };
+ 
+ // These enum values are reported in UMA. So these values should never be
+ // removed or changed.
+@@ -893,10 +914,12 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
+   // last commit and the next one.
+   base::flat_set<ElementId> pending_scrollend_containers_;
+ 
+   base::TimeTicks last_scroll_begin_time_;
+ 
++  std::unique_ptr<InputHandlerUtils> handler_utils_;
++
+   // https://drafts.csswg.org/css-scroll-snap-1/#scroll-types.
+   ScrollSourceType last_latched_scroll_source_type_ = ScrollSourceType::kNone;
+ 
+   // Must be the last member to ensure this is destroyed first in the
+   // destruction order and invalidates all weak pointers.

@@ -1,0 +1,14 @@
+diff a/cc/test/pixel_test.cc b/cc/test/pixel_test.cc	(rejected hunks)
+@@ -4,11 +4,11 @@
+ 
+ #include "cc/test/pixel_test.h"
+ 
+ #include <memory>
+ #include <utility>
+-
++#include "base/files/file_util.h"
+ #include "base/command_line.h"
+ #include "base/feature_list.h"
+ #include "base/functional/bind.h"
+ #include "base/functional/callback_helpers.h"
+ #include "base/memory/read_only_shared_memory_region.h"

@@ -1,0 +1,189 @@
+diff a/cc/tiles/software_image_decode_cache_unittest.cc b/cc/tiles/software_image_decode_cache_unittest.cc	(rejected hunks)
+@@ -2382,7 +2382,187 @@ TEST_F(SoftwareImageDecodeCacheTest, ReduceCacheOnUnrefWithDraw) {
+ 
+   EXPECT_EQ(cache_.GetNumCacheEntriesForTesting(),
+             cache_.GetMaxNumCacheEntriesForTesting());
+ }
+ 
++// Heavy downscale with low quality produces a subrect-and-scale key whose
++// target size is the scaled image size.
++TEST_F(SoftwareImageDecodeCacheTest, ImageKeyLowQualityHeavyDownscale) {
++  PaintImage paint_image = CreatePaintImage(100, 100);
++  bool is_decomposable = true;
++  DrawImage draw_image(
++      paint_image, false,
++      SkIRect::MakeWH(paint_image.width(), paint_image.height()),
++      PaintFlags::FilterQuality::kLow,
++      CreateMatrix(SkSize::Make(0.25f, 0.25f), is_decomposable),
++      PaintImage::kDefaultFrameIndex, DefaultTargetColorParams());
++
++  auto key = SoftwareImageDecodeCache::CacheKey::FromDrawImage(
++      draw_image, kN32_SkColorType);
++  EXPECT_EQ(draw_image.frame_key(), key.frame_key());
++  EXPECT_EQ(key.type(), SoftwareImageDecodeCache::CacheKey::kSubrectAndScale);
++  EXPECT_EQ(25, key.target_size().width());
++  EXPECT_EQ(25, key.target_size().height());
++  EXPECT_EQ(25u * 25u * 4u, key.locked_bytes());
++}
++
++// Slight downscale with low quality keeps the subrect-and-scale path.
++TEST_F(SoftwareImageDecodeCacheTest, ImageKeyLowQualitySlightDownscale) {
++  PaintImage paint_image = CreatePaintImage(100, 100);
++  bool is_decomposable = true;
++  DrawImage draw_image(
++      paint_image, false,
++      SkIRect::MakeWH(paint_image.width(), paint_image.height()),
++      PaintFlags::FilterQuality::kLow,
++      CreateMatrix(SkSize::Make(0.75f, 0.75f), is_decomposable),
++      PaintImage::kDefaultFrameIndex, DefaultTargetColorParams());
++
++  auto key = SoftwareImageDecodeCache::CacheKey::FromDrawImage(
++      draw_image, kN32_SkColorType);
++  EXPECT_EQ(draw_image.frame_key(), key.frame_key());
++  EXPECT_EQ(100, key.target_size().width());
++  EXPECT_EQ(100, key.target_size().height());
++  EXPECT_EQ(40000u, key.locked_bytes());
++}
++
++// Nearest-neighbor quality with an identity matrix keeps the original decode.
++TEST_F(SoftwareImageDecodeCacheTest, ImageKeyNoneQualityIdentityMatrix) {
++  PaintImage paint_image = CreatePaintImage(100, 100);
++  bool is_decomposable = true;
++  DrawImage draw_image(
++      paint_image, false,
++      SkIRect::MakeWH(paint_image.width(), paint_image.height()),
++      PaintFlags::FilterQuality::kNone,
++      CreateMatrix(SkSize::Make(1.0f, 1.0f), is_decomposable),
++      PaintImage::kDefaultFrameIndex, DefaultTargetColorParams());
++
++  auto key = SoftwareImageDecodeCache::CacheKey::FromDrawImage(
++      draw_image, kN32_SkColorType);
++  EXPECT_EQ(draw_image.frame_key(), key.frame_key());
++  EXPECT_TRUE(key.is_nearest_neighbor());
++  EXPECT_EQ(key.type(), SoftwareImageDecodeCache::CacheKey::kOriginal);
++  EXPECT_EQ(100, key.target_size().width());
++  EXPECT_EQ(100, key.target_size().height());
++  EXPECT_EQ(100u * 100u * 4u, key.locked_bytes());
++}
++
++// Nearest-neighbor quality with an upscale matrix still keeps the original
++// decode, since nearest-neighbor sampling never scales the cached image.
++TEST_F(SoftwareImageDecodeCacheTest, ImageKeyNoneQualityUpscale) {
++  PaintImage paint_image = CreatePaintImage(100, 100);
++  bool is_decomposable = true;
++  DrawImage draw_image(
++      paint_image, false,
++      SkIRect::MakeWH(paint_image.width(), paint_image.height()),
++      PaintFlags::FilterQuality::kNone,
++      CreateMatrix(SkSize::Make(2.0f, 2.0f), is_decomposable),
++      PaintImage::kDefaultFrameIndex, DefaultTargetColorParams());
++
++  auto key = SoftwareImageDecodeCache::CacheKey::FromDrawImage(
++      draw_image, kN32_SkColorType);
++  EXPECT_EQ(draw_image.frame_key(), key.frame_key());
++  EXPECT_TRUE(key.is_nearest_neighbor());
++  EXPECT_EQ(key.type(), SoftwareImageDecodeCache::CacheKey::kOriginal);
++  EXPECT_EQ(100, key.target_size().width());
++  EXPECT_EQ(100, key.target_size().height());
++  EXPECT_EQ(100u * 100u * 4u, key.locked_bytes());
++}
++
++// A half-width clipped subrect with nearest-neighbor quality still produces a
++// nearest-neighbor key whose target is non-empty.
++TEST_F(SoftwareImageDecodeCacheTest, ClippedSubrectNoneQualityIsNearest) {
++  PaintImage paint_image = CreatePaintImage(100, 100);
++  bool is_decomposable = true;
++  DrawImage draw_image(
++      paint_image, false, SkIRect::MakeXYWH(0, 0, 50, 100),
++      PaintFlags::FilterQuality::kNone,
++      CreateMatrix(SkSize::Make(0.5f, 0.5f), is_decomposable),
++      PaintImage::kDefaultFrameIndex, DefaultTargetColorParams());
++
++  auto key = SoftwareImageDecodeCache::CacheKey::FromDrawImage(
++      draw_image, kN32_SkColorType);
++  EXPECT_EQ(draw_image.frame_key(), key.frame_key());
++  EXPECT_TRUE(key.is_nearest_neighbor());
++  EXPECT_GT(key.target_size().width(), 0);
++  EXPECT_GT(key.target_size().height(), 0);
++  EXPECT_GT(key.locked_bytes(), 0u);
++}
++
++// A half-width clipped subrect with low quality produces a non-nearest,
++// non-empty target key.
++TEST_F(SoftwareImageDecodeCacheTest, ClippedSubrectLowQualityDownscaleKey) {
++  PaintImage paint_image = CreatePaintImage(100, 100);
++  bool is_decomposable = true;
++  DrawImage draw_image(
++      paint_image, false, SkIRect::MakeXYWH(0, 0, 50, 100),
++      PaintFlags::FilterQuality::kLow,
++      CreateMatrix(SkSize::Make(0.5f, 0.5f), is_decomposable),
++      PaintImage::kDefaultFrameIndex, DefaultTargetColorParams());
++
++  auto key = SoftwareImageDecodeCache::CacheKey::FromDrawImage(
++      draw_image, kN32_SkColorType);
++  EXPECT_EQ(draw_image.frame_key(), key.frame_key());
++  EXPECT_FALSE(key.is_nearest_neighbor());
++  EXPECT_GT(key.target_size().width(), 0);
++  EXPECT_GT(key.target_size().height(), 0);
++  EXPECT_GT(key.locked_bytes(), 0u);
++}
++
++// A half-width clipped subrect upscaled with low quality produces a non-empty
++// target key.
++TEST_F(SoftwareImageDecodeCacheTest, ClippedSubrectLowQualityUpscaleKey) {
++  PaintImage paint_image = CreatePaintImage(100, 100);
++  bool is_decomposable = true;
++  DrawImage draw_image(
++      paint_image, false, SkIRect::MakeXYWH(0, 0, 50, 100),
++      PaintFlags::FilterQuality::kLow,
++      CreateMatrix(SkSize::Make(2.0f, 2.0f), is_decomposable),
++      PaintImage::kDefaultFrameIndex, DefaultTargetColorParams());
++
++  auto key = SoftwareImageDecodeCache::CacheKey::FromDrawImage(
++      draw_image, kN32_SkColorType);
++  EXPECT_EQ(draw_image.frame_key(), key.frame_key());
++  EXPECT_GT(key.target_size().width(), 0);
++  EXPECT_GT(key.target_size().height(), 0);
++  EXPECT_GT(key.locked_bytes(), 0u);
++}
++
++// A top-half vertical strip clipped subrect with low quality produces a
++// non-empty target key.
++TEST_F(SoftwareImageDecodeCacheTest, ClippedSubrectVerticalStripKey) {
++  PaintImage paint_image = CreatePaintImage(100, 100);
++  bool is_decomposable = true;
++  DrawImage draw_image(
++      paint_image, false, SkIRect::MakeXYWH(0, 0, 100, 50),
++      PaintFlags::FilterQuality::kLow,
++      CreateMatrix(SkSize::Make(0.5f, 0.5f), is_decomposable),
++      PaintImage::kDefaultFrameIndex, DefaultTargetColorParams());
++
++  auto key = SoftwareImageDecodeCache::CacheKey::FromDrawImage(
++      draw_image, kN32_SkColorType);
++  EXPECT_EQ(draw_image.frame_key(), key.frame_key());
++  EXPECT_GT(key.target_size().width(), 0);
++  EXPECT_GT(key.target_size().height(), 0);
++  EXPECT_GT(key.locked_bytes(), 0u);
++}
++
++// An interior corner clipped subrect with low quality produces a non-empty
++// target key.
++TEST_F(SoftwareImageDecodeCacheTest, ClippedSubrectCornerRectKey) {
++  PaintImage paint_image = CreatePaintImage(100, 100);
++  bool is_decomposable = true;
++  DrawImage draw_image(
++      paint_image, false, SkIRect::MakeXYWH(10, 10, 40, 40),
++      PaintFlags::FilterQuality::kLow,
++      CreateMatrix(SkSize::Make(0.5f, 0.5f), is_decomposable),
++      PaintImage::kDefaultFrameIndex, DefaultTargetColorParams());
++
++  auto key = SoftwareImageDecodeCache::CacheKey::FromDrawImage(
++      draw_image, kN32_SkColorType);
++  EXPECT_EQ(draw_image.frame_key(), key.frame_key());
++  EXPECT_GT(key.target_size().width(), 0);
++  EXPECT_GT(key.target_size().height(), 0);
++  EXPECT_GT(key.locked_bytes(), 0u);
++}
++
+ }  // namespace
+ }  // namespace cc

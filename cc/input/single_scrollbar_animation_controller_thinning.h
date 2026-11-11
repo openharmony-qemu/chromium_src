@@ -22,6 +22,13 @@ class ScrollbarAnimationControllerClient;
 // ScrollbarAnimationControllerThinning for one scrollbar
 class CC_EXPORT SingleScrollbarAnimationControllerThinning {
  public:
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  static constexpr float kIdleThicknessScale = 0.5f;
+  static constexpr float kMouseMoveDistanceToTriggerExpand = 12.f;
+#else
+  static constexpr float kIdleThicknessScale = 0.4f;
+  static constexpr float kMouseMoveDistanceToTriggerExpand = 25.f;
+#endif
   static std::unique_ptr<SingleScrollbarAnimationControllerThinning> Create(
       ElementId scroll_element_id,
       ScrollbarOrientation orientation,
@@ -54,8 +61,9 @@ class CC_EXPORT SingleScrollbarAnimationControllerThinning {
   void StopAnimation();
 
   void DidScrollUpdate();
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
   void DidRequestShow();
-
+#endif
   void DidMouseDown();
   void DidMouseUp();
   void DidMouseLeave();

@@ -1,0 +1,71 @@
+diff a/cc/tiles/gpu_image_decode_cache.cc b/cc/tiles/gpu_image_decode_cache.cc	(rejected hunks)
+@@ -8,10 +8,15 @@
+ 
+ #include <algorithm>
+ #include <limits>
+ #include <string>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(ARKWEB_CLIPPED_IMAGE_SCALING) || BUILDFLAG(ARKWEB_GPU_IMAGE_PERSISTENT_CACHE_LIMIT)
++#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
++#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
++#endif
+ #include "base/auto_reset.h"
+ #include "base/command_line.h"
+ #include "base/containers/contains.h"
+ #include "base/containers/span.h"
+ #include "base/debug/alias.h"
+@@ -58,21 +63,27 @@
+ #include "ui/gfx/color_space.h"
+ #include "ui/gfx/geometry/size.h"
+ #include "ui/gfx/geometry/skia_conversions.h"
+ #include "ui/gfx/skia_span_util.h"
+ #include "ui/gl/trace_util.h"
+-
++#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++static const int kMaxRenderTargetSize = 8192;
++#endif
+ namespace cc {
+ 
+ namespace {
+ 
+ // The number or entries to keep in the cache, depending on the memory state of
+ // the system. This limit can be breached by in-use cache items, which cannot
+ // be deleted.
+ static const int kNormalMaxItemsInCacheForGpu = 2000;
+ static const int kSuspendedMaxItemsInCacheForGpu = 0;
+ 
++#if BUILDFLAG(ARKWEB_GPU_IMAGE_PERSISTENT_CACHE_LIMIT)
++  constexpr size_t kArkWebMaxPersistentCacheMemoryBytes = 32 * 1024 * 1024;
++#endif
++
+ // The maximum number of images that we can lock simultaneously in our working
+ // set. This is separate from the memory limit, as keeping very large numbers
+ // of small images simultaneously locked can lead to performance issues and
+ // memory spikes.
+ static const int kMaxItemsInWorkingSet = 256;
+@@ -1353,10 +1385,24 @@ void GpuImageDecodeCache::AddToPersistentCache(const DrawImage& draw_image,
+                                                scoped_refptr<ImageData> data) {
+   if (features::EnablePurgeGpuImageDecodeCache()) {
+     DCHECK(persistent_cache_.empty() || has_pending_purge_task());
+     PostPurgeOldCacheEntriesTask();
+   }
++#if BUILDFLAG(ARKWEB_CLIPPED_IMAGE_SCALING)
++  if (ShouldEnableClippedImageScaling()) {
++    int cid = draw_image.frame_key().content_id();
++    int mip = data->upload_scale_mip_level;
++    gfx::Size base_size = draw_image.paint_image().GetSize(AuxImage::kDefault);
++    bool is_clipped = draw_image.src_rect() !=
++      SkIRect::MakeSize(draw_image.paint_image().GetSkISize(AuxImage::kDefault));
++    if (is_clipped && mip > 0) {
++      LOG(DEBUG) << "ArkWebClipImgCache CACHE cid=" << cid
++          << " base=" << base_size.width() << "x" << base_size.height()
++          << " mipLevel=" << mip;
++    }
++  }
++#endif
+ 
+   WillAddCacheEntry(draw_image);
+   persistent_cache_memory_size_ += data->GetTotalSize();
+   persistent_cache_.Put(draw_image.frame_key(), std::move(data));
+ }

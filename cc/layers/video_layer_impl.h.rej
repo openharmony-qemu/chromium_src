@@ -1,0 +1,41 @@
+diff a/cc/layers/video_layer_impl.h b/cc/layers/video_layer_impl.h
+--- a/cc/layers/video_layer_impl.h
++++ b/cc/layers/video_layer_impl.h
+@@ -21,10 +21,11 @@ class VideoResourceUpdater;
+ }
+ 
+ namespace cc {
+ class VideoFrameProvider;
+ class VideoFrameProviderClientImpl;
++class VideoLayerImplUtils;
+ 
+ class CC_EXPORT VideoLayerImpl : public LayerImpl {
+  public:
+   // Must be called on the impl thread while the main thread is blocked. This is
+   // so that |provider| stays alive while this is being created.
+@@ -35,10 +36,11 @@ class CC_EXPORT VideoLayerImpl : public LayerImpl {
+       const media::VideoTransformation& video_transform);
+   VideoLayerImpl(const VideoLayerImpl&) = delete;
+   ~VideoLayerImpl() override;
+ 
+   VideoLayerImpl& operator=(const VideoLayerImpl&) = delete;
++  friend class VideoLayerImplUtils;
+ 
+   // LayerImpl implementation.
+   mojom::LayerType GetLayerType() const override;
+   std::unique_ptr<LayerImpl> CreateLayerImpl(
+       LayerTreeImpl* tree_impl) const override;
+@@ -73,10 +75,13 @@ class CC_EXPORT VideoLayerImpl : public LayerImpl {
+   scoped_refptr<media::VideoFrame> frame_;
+ 
+   media::VideoTransformation video_transform_;
+ 
+   std::unique_ptr<media::VideoResourceUpdater> updater_;
++
++  raw_ptr<VideoLayerImplUtils> videoImplUtils_;
+ };
+ 
+ }  // namespace cc
+ 
++#include "arkweb/chromium_ext/cc/layer/video_layer_impl_utils.h"
+ #endif  // CC_LAYERS_VIDEO_LAYER_IMPL_H_

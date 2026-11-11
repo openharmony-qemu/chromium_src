@@ -16,6 +16,7 @@
 #include "cc/raster/tile_task.h"
 #include "cc/tiles/image_decode_cache_utils.h"
 #include "cc/tiles/tile_priority.h"
+#include "arkweb/build/features/features.h"
 
 namespace cc {
 

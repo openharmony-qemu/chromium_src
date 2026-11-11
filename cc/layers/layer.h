@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
@@ -39,6 +40,9 @@
 #include "ui/gfx/geometry/rounded_corners_f.h"
 #include "ui/gfx/geometry/rrect_f.h"
 #include "ui/gfx/geometry/transform.h"
+
+#include "arkweb/chromium_ext/cc/layer/layer_ext.h"
+#include "arkweb/chromium_ext/cc/layer/layer_utils.h"
 
 namespace viz {
 class CopyOutputRequest;
@@ -87,7 +91,8 @@ struct CC_EXPORT LayerDebugInfo {
 // parent (or none at the root). Layers within the tree, other than the root
 // layer, are kept alive by that tree relationship, with refpointer ownership
 // from parents to children.
-class CC_EXPORT Layer : public base::RefCounted<Layer>,
+class CC_EXPORT Layer : public LayerExt,
+                        public base::RefCounted<Layer>,
                         public ProtectedSequenceSynchronizer {
  public:
   // An invalid layer id, as all layer ids are positive.
@@ -1275,6 +1280,8 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
 
   static constexpr gfx::Transform kIdentityTransform{};
   static constexpr gfx::RoundedCornersF kNoRoundedCornersF{};
+
+  std::unique_ptr<LayerUtils> layer_utils_;
 };
 
 }  // namespace cc

@@ -331,6 +331,10 @@ class CC_PAINT_EXPORT PaintFlags final : public CorePaintFlags {
   bool HasDiscardableImages(
       gfx::ContentColorUsage* content_color_usage = nullptr) const;
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  void SetColorFilterWithZeroSaturation();
+#endif
+
  private:
   friend class PaintOpReader;
   friend class PaintOpWriter;

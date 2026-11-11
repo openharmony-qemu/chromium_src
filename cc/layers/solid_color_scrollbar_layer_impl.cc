@@ -11,6 +11,9 @@
 #include "cc/input/scroll_utils.h"
 #include "cc/trees/occlusion.h"
 #include "components/viz/common/quads/solid_color_draw_quad.h"
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+#include "cc/base/math_util.h"
+#endif
 
 namespace cc {
 
@@ -102,15 +105,26 @@ void SolidColorScrollbarLayerImpl::AppendQuads(
     AppendQuadsData* append_quads_data) {
   viz::SharedQuadState* shared_quad_state =
       render_pass->CreateAndAppendSharedQuadState();
+#if !BUILDFLAG(ARKWEB_SCROLLBAR)
   PopulateSharedQuadState(shared_quad_state, contents_opaque());
 
   AppendDebugBorderQuad(render_pass, gfx::Rect(bounds()), shared_quad_state,
                         append_quads_data);
-
+#endif
   gfx::Rect thumb_quad_rect(ComputeThumbQuadRect());
   gfx::Rect visible_quad_rect =
       draw_properties().occlusion_in_content_space.GetUnoccludedContentRect(
           thumb_quad_rect);
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  gfx::RRectF rounded_corner_bounds =
+      gfx::RRectF(gfx::RectF(MathUtil::MapEnclosingClippedRect(
+                      DrawTransform(), thumb_quad_rect)),
+                  thumb_quad_rect.width() / 2);
+  layer_impl_utils()->PopulateSharedQuadStateForScrollLayer(
+      shared_quad_state, contents_opaque(), rounded_corner_bounds);
+  AppendDebugBorderQuad(render_pass, gfx::Rect(bounds()), shared_quad_state,
+                        append_quads_data);
+#endif
   if (visible_quad_rect.IsEmpty())
     return;
 

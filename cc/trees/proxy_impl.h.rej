@@ -1,0 +1,71 @@
+diff a/cc/trees/proxy_impl.h b/cc/trees/proxy_impl.h	(rejected hunks)
+@@ -116,10 +120,20 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
+   size_t CommitDurationSampleCountForTesting() const override;
+   const DelayedUniqueNotifier& SmoothnessPriorityExpirationNotifierForTesting()
+       const {
+     return smoothness_priority_expiration_notifier_;
+   }
++
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  void OnLayerRectUpdate(int id, const gfx::Rect& rect) override;
++
++  void OnLayerRectVisibilityChange(int id, bool visibility) override;
++#endif
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) override;
++#endif // ARKWEB_VIDEO_ASSISTANT
++
+   void SetShouldThrottleFrameRate(bool flag);
+ 
+   void NotifyNewLocalSurfaceIdExpectedWhilePaused();
+ 
+  private:
+@@ -138,10 +152,14 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
+   void SetNeedsPrepareTilesOnImplThread() override;
+   void SetNeedsCommitOnImplThread(bool urgent) override;
+   void SetVideoNeedsBeginFrames(bool needs_begin_frames) override;
+   void DidChangeBeginFrameSourcePaused(bool paused) override;
+   void SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) override;
++#if BUILDFLAG(ARKWEB_WEBGL)
++  void SetDeferInvalidationForFastMainFrameFromImpl(
++           bool defer_invalidation_for_fast_main_frame) override;
++#endif
+   bool IsInsideDraw() override;
+   void RenewTreePriority() override;
+   void PostDelayedAnimationTaskOnImplThread(base::OnceClosure task,
+                                             base::TimeDelta delay) override;
+   void DidActivateSyncTree() override;
+@@ -199,11 +217,17 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
+   void SendBeginMainFrameNotExpectedSoon() override;
+   void ScheduledActionBeginMainFrameNotExpectedUntil(
+       base::TimeTicks time) override;
+   void FrameIntervalUpdated(base::TimeDelta interval) override {}
+   void OnBeginImplFrameDeadline() override;
+-
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  void HandleScrollUpdateForInternalBeginFrame(
++      const viz::BeginFrameArgs& args) override;
++#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
++#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
++  void OnScheduledActionDraw() override;
++#endif
+   DrawResult DrawInternal(bool forced_draw);
+ 
+   bool IsImplThread() const;
+   bool IsMainThreadBlocked() const;
+   base::SingleThreadTaskRunner* MainThreadTaskRunner();
+@@ -242,10 +266,14 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
+   // thread.
+   bool next_frame_is_newly_committed_frame_;
+ 
+   bool inside_draw_;
+ 
++#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
++  bool pinch_smooth_ = false;
++#endif
++
+   raw_ptr<TaskRunnerProvider> task_runner_provider_;
+ 
+   DelayedUniqueNotifier smoothness_priority_expiration_notifier_;
+ 
+   std::unique_ptr<LayerTreeHostImpl> host_impl_;

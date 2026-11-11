@@ -1,0 +1,44 @@
+diff a/cc/layers/layer_impl.cc b/cc/layers/layer_impl.cc	(rejected hunks)
+@@ -115,10 +115,12 @@ LayerImpl::LayerImpl(LayerTreeImpl* tree_impl, int id)
+   DCHECK_GT(stable_id_for_shared_quad_state_, 0);
+ 
+   DCHECK(layer_tree_impl_);
+   layer_tree_impl_->RegisterLayer(this);
+ 
++  layer_impl_utils_ = std::make_unique<LayerImplUtils>(this);
++
+   SetNeedsPushProperties(LayerImpl::kChangedAllProperties);
+ }
+ 
+ LayerImpl::~LayerImpl() {
+   layer_tree_impl_->UnregisterLayer(this);
+@@ -474,18 +480,29 @@ void LayerImpl::PushPropertiesTo(LayerImpl* layer) {
+     layer->SetNeedsPushProperties(changed_properties_);
+   }
+ 
+   // Reset any state that should be cleared for the next update.
+   ResetChangeTracking();
++
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++  layer->layer_impl_utils()->SetShouldInterceptTouchEvent(
++      layer_impl_utils_->ShouldInterceptTouchEvent());
++#endif
+ }
+ 
+ bool LayerImpl::IsAffectedByPageScale() const {
+   TransformTree& transform_tree = GetTransformTree();
+   return transform_tree.Node(transform_tree_index())
+       ->in_subtree_of_page_scale_layer;
+ }
+ 
++#if BUILDFLAG(ARKWEB_WEBGL)
++bool LayerImpl::ShouldDeferImplInvalidation() const {
++  return false;
++}
++#endif
++
+ DamageReasonSet LayerImpl::GetDamageReasonsFromLayerPropertyChange() const {
+   DamageReasonSet reasons;
+   if (layer_property_changed_not_from_property_trees_ ||
+       layer_property_changed_from_property_trees_ ||
+       GetPropertyTrees()->full_tree_damaged()) {

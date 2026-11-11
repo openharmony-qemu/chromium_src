@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
 #include "base/memory/raw_ptr.h"
@@ -39,6 +40,9 @@
 #include "cc/trees/viewport_property_ids.h"
 #include "cc/view_transition/view_transition_request.h"
 #include "components/viz/common/surfaces/local_surface_id.h"
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+#include "components/viz/common/surfaces/frame_sink_id.h"
+#endif
 #include "third_party/skia/include/core/SkColor.h"
 #include "ui/gfx/delegated_ink_metadata.h"
 #include "ui/gfx/display_color_spaces.h"
@@ -109,6 +113,13 @@ struct CC_EXPORT CommitState {
   int hud_layer_id = Layer::INVALID_ID;
   int source_frame_number = 0;
   LayerSelection selection;
+
+#if BUILDFLAG(ARKWEB_MENU)
+  gfx::Rect clipped_selection_bounds;
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  viz::FrameSinkId arkweb_frame_sink_id;
+#endif
   LayerTreeDebugState debug_state;
   OverscrollBehavior overscroll_behavior;
   SkColor4f background_color = SkColors::kWhite;

@@ -42,6 +42,7 @@
 #include "ui/gfx/geometry/point_f.h"
 #include "ui/gfx/geometry/quad_f.h"
 #include "ui/gfx/geometry/vector2d_f.h"
+#include "cc/input/input_handler_utils.h"
 
 namespace cc {
 
@@ -109,7 +110,9 @@ base::WeakPtr<InputHandler> InputHandler::Create(
 InputHandler::InputHandler(CompositorDelegateForInput& compositor_delegate)
     : compositor_delegate_(compositor_delegate),
       scrollbar_controller_(std::make_unique<ScrollbarController>(
-          &compositor_delegate_->GetImplDeprecated())) {}
+          &compositor_delegate_->GetImplDeprecated())) {
+  handler_utils_ = std::make_unique<InputHandlerUtils>(this);
+}
 
 InputHandler::~InputHandler() = default;
 
@@ -847,8 +850,19 @@ void InputHandler::SetSynchronousInputHandlerRootScrollOffset(
                "offset_x", root_content_offset.x(), "offset_y",
                root_content_offset.y());
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  gfx::Vector2dF physical_delta =
+      gfx::Vector2dF(root_content_offset.x(), root_content_offset.y());
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+      float page_scroll_offset = 0.0;
+      if (condition_) {
+        page_scroll_offset = GetViewport().TotalScrollOffset().y();
+      }
+#endif
+#else
   gfx::Vector2dF physical_delta =
       root_content_offset - GetViewport().TotalScrollOffset();
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   physical_delta.Scale(ActiveTree().page_scale_factor_for_scroll());
 
   gfx::Vector2dF consumed_delta =
@@ -998,6 +1012,11 @@ InputHandler::EventListenerTypeForTouchStartOrMoveAt(
   if (layer_impl_with_touch_handler == nullptr) {
     if (out_touch_action)
       *out_touch_action = TouchAction::kAuto;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    if (handler_utils_->IsNativeLayer(device_viewport_touch_rect.origin())) {
+      return InputHandler::TouchStartOrMoveEventListenerType::kHandler;
+    }
+#endif
     return InputHandler::TouchStartOrMoveEventListenerType::kNoHandler;
   }
 

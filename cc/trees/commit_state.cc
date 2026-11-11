@@ -38,6 +38,12 @@ CommitState::CommitState(const CommitState& prev)
       hud_layer_id(prev.hud_layer_id),
       source_frame_number(prev.source_frame_number),
       selection(prev.selection),
+#if BUILDFLAG(ARKWEB_MENU)
+      clipped_selection_bounds(prev.clipped_selection_bounds),
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+      arkweb_frame_sink_id(prev.arkweb_frame_sink_id),
+#endif
       debug_state(prev.debug_state),
       overscroll_behavior(prev.overscroll_behavior),
       background_color(prev.background_color),

@@ -31,6 +31,11 @@
 #include "ui/gfx/geometry/transform.h"
 #include "ui/gfx/geometry/vector2d_f.h"
 
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/command_line.h"
+#endif
+
 namespace cc {
 namespace {
 // These constants were chosen empirically for their visually pleasant behavior.

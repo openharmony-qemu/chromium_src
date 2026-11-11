@@ -1,0 +1,15 @@
+diff a/cc/layers/solid_color_scrollbar_layer.cc b/cc/layers/solid_color_scrollbar_layer.cc	(rejected hunks)
+@@ -44,11 +44,13 @@ scoped_refptr<SolidColorScrollbarLayer> SolidColorScrollbarLayer::CreateOrReuse(
+     result = existing_layer;
+   } else {
+     result = Create(scrollbar->Orientation(), thumb_thickness, track_start,
+                     scrollbar->IsLeftSideVerticalScrollbar());
+   }
++#if !BUILDFLAG(ARKWEB_SCROLLBAR)
+   result->SetColor(scrollbar->ThumbColor());
++#endif
+   return result;
+ }
+ 
+ scoped_refptr<SolidColorScrollbarLayer> SolidColorScrollbarLayer::Create(
+     ScrollbarOrientation orientation,

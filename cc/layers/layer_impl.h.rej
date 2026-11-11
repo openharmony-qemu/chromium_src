@@ -1,0 +1,35 @@
+diff a/cc/layers/layer_impl.h b/cc/layers/layer_impl.h	(rejected hunks)
+@@ -405,10 +409,14 @@ class CC_EXPORT LayerImpl {
+ 
+   virtual std::unique_ptr<LayerImpl> CreateLayerImpl(
+       LayerTreeImpl* tree_impl) const;
+   virtual void PushPropertiesTo(LayerImpl* layer);
+ 
++#if BUILDFLAG(ARKWEB_WEBGL)
++  virtual bool ShouldDeferImplInvalidation() const;
++#endif
++
+   // Internal to property tree construction (which only happens in tests on a
+   // LayerImpl tree. See Layer::IsSnappedToPixelGridInTarget() for explanation,
+   // as this mirrors that method.
+   virtual bool IsSnappedToPixelGridInTarget();
+ 
+@@ -517,10 +525,18 @@ class CC_EXPORT LayerImpl {
+ 
+   virtual viz::ViewTransitionElementResourceId ViewTransitionResourceId() const;
+ 
+   virtual void SetInInvisibleLayerTree() {}
+ 
++#if BUILDFLAG(ARKWEB_TEST)
++  virtual LayerImplUtils* layer_impl_utils() {
++#else
++  LayerImplUtils* layer_impl_utils() {
++#endif  // BUILDFLAG(ARKWEB_TEST)
++    return layer_impl_utils_.get();
++  }
++
+   enum : uint8_t {
+     kChangedPropertyTreeIndex = 1 << 0,
+     kChangedGeneralProperty = 1 << 1,
+     kChangedAllProperties = kChangedPropertyTreeIndex | kChangedGeneralProperty,
+   };

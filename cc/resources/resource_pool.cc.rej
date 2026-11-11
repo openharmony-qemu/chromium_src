@@ -1,0 +1,36 @@
+diff a/cc/resources/resource_pool.cc b/cc/resources/resource_pool.cc	(rejected hunks)
+@@ -164,10 +164,15 @@ bool ResourceMeetsSizeRequirements(const gfx::Size& requested_size,
+ }  // namespace
+ 
+ constexpr base::TimeDelta ResourcePool::kDefaultExpirationDelay;
+ constexpr base::TimeDelta ResourcePool::kDefaultMaxFlushDelay;
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++constexpr base::TimeDelta ResourcePool::kDefaultMaxExpirationDelay;
++constexpr size_t ResourcePool::kUnusedResourcesToKeep;
++#endif
++
+ ResourcePool::ResourcePool(
+     viz::ClientResourceProvider* resource_provider,
+     viz::RasterContextProvider* context_provider,
+     scoped_refptr<base::SingleThreadTaskRunner> task_runner,
+     const base::TimeDelta& expiration_delay,
+@@ -627,11 +645,17 @@ void ResourcePool::EvictResourcesNotUsedSince(base::TimeTicks time_limit) {
+     // as this may not exactly line up with the time a resource became non-busy.
+     // However, this should be roughly ordered, and will only introduce slight
+     // delays in freeing expired resources.
+     if (unused_resources_.back()->last_usage() > time_limit)
+       return;
+-
++#if BUILDFLAG(IS_ARKWEB_EXT)
++    if (delete_unused_resources_delay_enabled_ &&
++        unused_resources_.size() <= kUnusedResourcesToKeep &&
++        unused_resources_.back()->last_usage() + kDefaultMaxExpirationDelay > time_limit) {
++      return;
++    }
++#endif
+     DCHECK_GE(unused_memory_usage_bytes_,
+               unused_resources_.back()->memory_usage());
+     unused_memory_usage_bytes_ -= unused_resources_.back()->memory_usage();
+     DeleteResource(PopBack(&unused_resources_));
+   }

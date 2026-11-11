@@ -1,0 +1,33 @@
+diff a/cc/base/features.h b/cc/base/features.h	(rejected hunks)
+@@ -11,11 +11,13 @@
+ #include "base/metrics/field_trial_params.h"
+ #include "build/build_config.h"
+ #include "cc/base/base_export.h"
+ 
+ namespace features {
+-
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++CC_BASE_EXPORT BASE_DECLARE_FEATURE(kOverlayVisualScrollbar);
++#endif
+ CC_BASE_EXPORT BASE_DECLARE_FEATURE(kComputeRasterTranslateForExternalScale);
+ CC_BASE_EXPORT BASE_DECLARE_FEATURE(kSynchronizedScrolling);
+ 
+ // When enabled, the scheduler will allow deferring impl invalidation frames
+ // for N frames (default 1) to reduce contention with main frames, allowing
+@@ -284,10 +286,16 @@ CC_BASE_EXPORT BASE_DECLARE_FEATURE(kManualBeginFrame);
+ // event metrics if the frame wasn't produced due to NO DAMAGE. In all other
+ // cases, it preserves the saved event metrics.
+ CC_BASE_EXPORT BASE_DECLARE_FEATURE(
+     kDropMetricsFromNonProducedFramesOnlyIfTheyHadNoDamage);
+ 
++#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
++CC_BASE_EXPORT BASE_DECLARE_FEATURE(kThrottleFrameRateOnManyDidNotProduceFrame);
++CC_BASE_EXPORT extern const base::FeatureParam<int>
++    kNumDidNotProduceFrameBeforeThrottle;
++#endif
++
+ // When enabled, GpuImageDecodeCache will release its lock during the expensive
+ // transfer cache entry serialization and upload steps, as well as during
+ // raster dark mode filter generation.
+ CC_BASE_EXPORT BASE_DECLARE_FEATURE(kUnlockDuringGpuImageOperations);
+ 

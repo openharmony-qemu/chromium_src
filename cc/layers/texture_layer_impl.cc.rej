@@ -1,0 +1,22 @@
+diff a/cc/layers/texture_layer_impl.cc b/cc/layers/texture_layer_impl.cc	(rejected hunks)
+@@ -45,10 +45,20 @@ std::unique_ptr<LayerImpl> TextureLayerImpl::CreateLayerImpl(
+ bool TextureLayerImpl::IsSnappedToPixelGridInTarget() {
+   // See TextureLayer::IsSnappedToPixelGridInTarget() for explanation of |true|.
+   return true;
+ }
+ 
++#if BUILDFLAG(ARKWEB_WEBGL)
++bool TextureLayerImpl::ShouldDeferImplInvalidation() const {
++  if (!transferable_resource_.enable_defer_impl_invalidation_workaround) {
++    return false;
++  }
++  TRACE_EVENT0("cc", "TextureLayerImpl::ShouldDeferImplInvalidation");
++  return true;
++}
++#endif
++
+ void TextureLayerImpl::PushPropertiesTo(LayerImpl* layer) {
+   LayerImpl::PushPropertiesTo(layer);
+   TextureLayerImpl* texture_layer = static_cast<TextureLayerImpl*>(layer);
+   texture_layer->SetUVTopLeft(uv_top_left_);
+   texture_layer->SetUVBottomRight(uv_bottom_right_);

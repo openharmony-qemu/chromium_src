@@ -919,6 +919,22 @@ std::unique_ptr<base::android::ScopedHardwareBufferFenceSync>
 OverlayImageRepresentation::GetAHardwareBufferFenceSync() {
   NOTREACHED();
 }
+#elif BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+OH_NativeBuffer* OverlayImageRepresentation::GetOHNativeBuffer() {
+  NOTREACHED();
+}
+void OverlayImageRepresentation::InUseByWindowServerInc() {
+  NOTREACHED();
+}
+void OverlayImageRepresentation::InUseByWindowServerDec() {
+  NOTREACHED();
+}
+bool OverlayImageRepresentation::IsInUseByWindowServer() const {
+  return false;
+}
+scoped_refptr<gfx::NativePixmap> OverlayImageRepresentation::GetNativePixmap() {
+  return backing()->GetNativePixmap();
+}
 #elif BUILDFLAG(IS_OZONE)
 scoped_refptr<gfx::NativePixmap> OverlayImageRepresentation::GetNativePixmap() {
   return backing()->GetNativePixmap();

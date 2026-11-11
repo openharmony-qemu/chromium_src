@@ -698,7 +698,7 @@ bool SharedContextState::InitializeGraphite(
         /*require_ordered_recordings=*/false);
   }
 
-  transfer_cache_ = std::make_unique<ServiceTransferCache>(
+  transfer_cache_ = std::make_unique<ServiceTransferCacheExt>(
       gpu_preferences,
       base::BindRepeating(&SharedContextState::ScheduleSkiaCleanup,
                           base::Unretained(this)));
@@ -1387,6 +1387,9 @@ std::optional<error::ContextLostReason> SharedContextState::GetResetStatus(
     }
 
     if (gr_context_->oomed()) {
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+      ReportSkiaOOMError("SKIA_OOM_ERROR.");
+#endif
       LOG(ERROR) << "SharedContextState context lost via Skia OOM.";
       return error::kOutOfMemory;
     }

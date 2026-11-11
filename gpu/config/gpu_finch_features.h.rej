@@ -1,0 +1,14 @@
+diff a/gpu/config/gpu_finch_features.h b/gpu/config/gpu_finch_features.h	(rejected hunks)
+@@ -96,11 +96,11 @@ GPU_CONFIG_EXPORT BASE_DECLARE_FEATURE(kNoDiscardableMemoryForGpuDecodePath);
+ 
+ GPU_CONFIG_EXPORT BASE_DECLARE_FEATURE(kEnableDrDc);
+ 
+ GPU_CONFIG_EXPORT BASE_DECLARE_FEATURE(kPruneOldTransferCacheEntries);
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_VULKAN)
+ // This flag is use additionally with kEnableDrDc to enable the feature for
+ // vulkan enabled android devices.
+ GPU_CONFIG_EXPORT BASE_DECLARE_FEATURE(kEnableDrDcVulkan);
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 

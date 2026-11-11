@@ -1,0 +1,13 @@
+diff a/gpu/command_buffer/service/shared_image/ozone_image_backing.cc b/gpu/command_buffer/service/shared_image/ozone_image_backing.cc	(rejected hunks)
+@@ -7,10 +7,11 @@
+ #include <dawn/webgpu.h>
+ 
+ #include <memory>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/contains.h"
+ #include "base/debug/crash_logging.h"
+ #include "base/logging.h"
+ #include "base/memory/scoped_refptr.h"
+ #include "base/notimplemented.h"

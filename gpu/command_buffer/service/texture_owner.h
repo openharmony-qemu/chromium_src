@@ -16,6 +16,10 @@
 #include "gpu/gpu_gles2_export.h"
 #include "ui/gl/android/scoped_java_surface.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/build/features/features.h"
+#endif
+
 namespace base {
 namespace android {
 class ScopedHardwareBufferFenceSync;
@@ -88,6 +92,10 @@ class GPU_GLES2_EXPORT TextureOwner
   // TextureOwner is bound to.
   virtual std::unique_ptr<base::android::ScopedHardwareBufferFenceSync>
   GetAHardwareBuffer() = 0;
+
+#if BUILDFLAG(ARKWEB_VULKAN)
+  virtual std::unique_ptr<ScopedNativeBufferFenceSync> GetNativeBuffer() = 0;
+#endif
 
   // Retrieves backing size and visible rect associated with the most recent
   // image. |rotated_visible_size| is the size of the visible region

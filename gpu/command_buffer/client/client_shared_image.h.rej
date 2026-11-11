@@ -1,0 +1,13 @@
+diff a/gpu/command_buffer/client/client_shared_image.h b/gpu/command_buffer/client/client_shared_image.h	(rejected hunks)
+@@ -175,11 +176,10 @@ class GPU_COMMAND_BUFFER_CLIENT_EXPORT ClientSharedImage
+   std::optional<gfx::BufferUsage> buffer_usage() const { return buffer_usage_; }
+   std::string debug_label() const { return debug_label_; }
+   bool is_software() const { return is_software_; }
+ 
+   bool HasHolder() { return sii_holder_ != nullptr; }
+-
+   // Returns a clone of the GpuMemoryBufferHandle associated with this ClientSI.
+   // Valid to call only if this instance was created with a non-null
+   // GpuMemoryBuffer.
+   gfx::GpuMemoryBufferHandle CloneGpuMemoryBufferHandle() const;
+ 

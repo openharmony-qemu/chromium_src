@@ -1,0 +1,28 @@
+diff a/gpu/command_buffer/client/test_shared_image_interface.cc b/gpu/command_buffer/client/test_shared_image_interface.cc	(rejected hunks)
+@@ -14,10 +14,12 @@
+ #include <lib/sys/cpp/component_context.h>
+ #endif
+ 
+ #include "base/check.h"
+ #include "base/notreached.h"
++#include "base/numerics/checked_math.h"
++#include "base/numerics/safe_conversions.h"
+ #include "build/build_config.h"
+ #include "components/viz/common/resources/shared_image_format_utils.h"
+ #include "gpu/command_buffer/client/client_shared_image.h"
+ #include "gpu/command_buffer/common/shared_image_capabilities.h"
+ #include "testing/gtest/include/gtest/gtest.h"
+@@ -433,11 +435,12 @@ TestSharedImageInterface::CreateNativePixmapBackedSharedImage(
+     CHECK(height_in_pixels);
+     size_t stride =
+         viz::SharedMemoryRowSizeForSharedImageFormat(format, i, size.width())
+             .value();
+     native_pixmap_handle.planes.emplace_back(
+-        stride, 0, height_in_pixels * stride,
++        base::checked_cast<uint32_t>(stride), 0,
++        base::CheckMul(height_in_pixels, stride).ValueOrDie<uint64_t>(),
+         base::ScopedFD(open("/dev/zero", O_RDWR)));
+   }
+ 
+   return CreateSharedImage(
+       si_info, surface_handle, buffer_usage,

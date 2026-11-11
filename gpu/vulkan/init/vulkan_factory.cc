@@ -5,6 +5,7 @@
 #include "gpu/vulkan/init/vulkan_factory.h"
 #include "build/build_config.h"
 
+#include "arkweb/build/features/features.h"
 #include <memory>
 #include <ostream>
 
@@ -57,6 +58,7 @@ std::unique_ptr<VulkanImplementation> CreateVulkanImplementation(
   return std::make_unique<VulkanImplementationMac>(use_swiftshader);
 #else
   NOTREACHED();
+#endif
 #endif
 #endif
 }

@@ -1,0 +1,16 @@
+diff a/gpu/ipc/service/gpu_watchdog_thread.cc b/gpu/ipc/service/gpu_watchdog_thread.cc	(rejected hunks)
+@@ -38,10 +38,14 @@
+ 
+ #if BUILDFLAG(IS_WIN)
+ #include <windows.h>
+ #endif
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/gpu/ipc/service/gpu_hang_adapter.h"
++#endif
++
+ namespace gpu {
+ 
+ base::TimeDelta GetGpuWatchdogTimeout(bool software_rendering) {
+   if (base::FeatureList::IsEnabled(features::kConfigurableGPUWatchdogTimeout)) {
+     int seconds = features::kConfigurableGPUWatchdogTimeoutSeconds.Get();

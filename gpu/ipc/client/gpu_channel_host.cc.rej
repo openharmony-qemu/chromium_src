@@ -1,0 +1,14 @@
+diff a/gpu/ipc/client/gpu_channel_host.cc b/gpu/ipc/client/gpu_channel_host.cc	(rejected hunks)
+@@ -63,10 +63,12 @@ GpuChannelHost::GpuChannelHost(
+ 
+   next_image_id_.GetNext();
+   for (int32_t i = 0;
+        i <= static_cast<int32_t>(GpuChannelReservedRoutes::kMaxValue); ++i)
+     next_route_id_.GetNext();
++
++  gpu_channel_host_utils_ = std::make_unique<GpuChannelHostUtils>(this);
+ }
+ 
+ mojom::GpuChannel& GpuChannelHost::GetGpuChannel() {
+   return *gpu_channel_.get();
+ }

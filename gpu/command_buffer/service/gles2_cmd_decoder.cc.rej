@@ -1,0 +1,339 @@
+diff a/gpu/command_buffer/service/gles2_cmd_decoder.cc b/gpu/command_buffer/service/gles2_cmd_decoder.cc	(rejected hunks)
+@@ -20,10 +20,11 @@
+ #include <set>
+ #include <string_view>
+ #include <unordered_map>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/compiler_specific.h"
+ #include "base/containers/contains.h"
+ #include "base/containers/flat_set.h"
+ #include "base/containers/heap_array.h"
+ #include "base/containers/queue.h"
+@@ -932,10 +933,11 @@ class GLES2DecoderImpl : public GLES2Decoder,
+   // Get the format/type of the currently bound frame buffer (either FBO or
+   // regular back buffer).
+   // If the color image is a renderbuffer, returns 0 for type.
+   GLenum GetBoundReadFramebufferTextureType();
+   GLenum GetBoundReadFramebufferInternalFormat();
++  bool IsBoundReadFramebufferMultisampledRenderbuffer();
+ 
+   // Get the i-th draw buffer's internal format/type from the bound framebuffer.
+   // If no framebuffer is bound, or no image is attached, or the DrawBuffers
+   // setting for that image is GL_NONE, return 0.
+   GLenum GetBoundColorDrawBufferType(GLint drawbuffer_i);
+@@ -4243,10 +4245,22 @@ GLenum GLES2DecoderImpl::GetBoundReadFramebufferInternalFormat() {
+     }
+     return back_buffer_color_format_;
+   }
+ }
+ 
++bool GLES2DecoderImpl::IsBoundReadFramebufferMultisampledRenderbuffer() {
++  Framebuffer* read_framebuffer = GetBoundReadFramebuffer();
++  // We check if the read framebuffer is a multisampled renderbuffer.
++  // We explicitly do NOT block multisampled texture attachments (with target
++  // GL_TEXTURE_2D, etc.) because they are implicit resolve textures (allocated
++  // via FramebufferTexture2DMultisampleEXT) and are safe to copy from (they are
++  // resolved on the fly). True multisampled textures
++  // (GL_TEXTURE_2D_MULTISAMPLE) are not supported by the validating decoder.
++  return read_framebuffer &&
++         read_framebuffer->GetReadBufferIsMultisampledRenderbuffer();
++}
++
+ GLenum GLES2DecoderImpl::GetBoundColorDrawBufferType(GLint drawbuffer_i) {
+   DCHECK(drawbuffer_i >= 0 &&
+          drawbuffer_i < static_cast<GLint>(group_->max_draw_buffers()));
+   Framebuffer* framebuffer = GetBoundDrawFramebuffer();
+   if (!framebuffer) {
+@@ -8232,16 +8246,10 @@ void GLES2DecoderImpl::DoLinkProgram(GLuint program_id) {
+     LOCAL_SET_GL_ERROR(GL_INVALID_OPERATION, "glLinkProgram",
+                        "program is active for transform feedback");
+     return;
+   }
+ 
+-  if (program->IsActiveForTransformFeedback()) {
+-    LOCAL_SET_GL_ERROR(GL_INVALID_OPERATION, "glLinkProgram",
+-                       "program is active for transform feedback");
+-    return;
+-  }
+-
+   LogClientServiceForInfo(program, program_id, "glLinkProgram");
+   if (program->Link(shader_manager(),
+                     client())) {
+     if (features().webgl_multi_draw)
+       program_manager()->UpdateDrawIDUniformLocation(program);
+@@ -11268,10 +11276,22 @@ error::Error GLES2DecoderImpl::HandleReadPixels(uint32_t immediate_data_size,
+                                            &skip_size,
+                                            &padding)) {
+     return error::kOutOfBounds;
+   }
+ 
++  // Defense-in-depth: read_pixel_format may accept enums (e.g. sized norm16
++  // internal formats) that GLES2Util::ElementsPerGroup does not recognize, in
++  // which case ComputeImageDataSizesES3 succeeds with a 0-byte size. If we
++  // proceeded, GetSharedMemoryAs would validate 0 bytes and we would hand the
++  // pointer to the native driver, which writes width*height*bpp bytes -> OOB
++  // write past the renderer's transfer buffer in the GPU process.
++  if (width > 0 && height > 0 && pixels_size == 0) {
++    LOCAL_SET_GL_ERROR(GL_INVALID_OPERATION, func_name,
++                       "unsupported format/type combination");
++    return error::kNoError;
++  }
++
+   uint8_t* pixels = nullptr;
+   Buffer* buffer = state_.bound_pixel_pack_buffer.get();
+   if (pixels_shm_id == 0) {
+     if (!buffer) {
+       return error::kInvalidArguments;
+@@ -12185,15 +12205,20 @@ bool GLES2DecoderImpl::ClearLevelUsingGL(Texture* texture,
+                      (have_depth ? GL_DEPTH_BUFFER_BIT : 0) |
+                      (have_stencil ? GL_STENCIL_BUFFER_BIT : 0));
+     result = true;
+   }
+   RestoreClearState();
+-  api()->glDeleteFramebuffersEXTFn(1, &fb);
++  // Restore the previous framebuffer binding *before* deleting the temporary
++  // FBO. Some Imagination/PowerVR drivers retain an internal reference to the
++  // previously-bound FBO across bind transitions; deleting it while bound and
++  // then rebinding can dereference freed driver state. See the
++  // ensure_previous_framebuffer_not_deleted workaround.
+   Framebuffer* framebuffer = GetFramebufferInfoForTarget(fb_target);
+   GLuint fb_service_id =
+       framebuffer ? framebuffer->service_id() : GetBackbufferServiceId();
+   BindFramebuffer(fb_target, fb_service_id);
++  api()->glDeleteFramebuffersEXTFn(1, &fb);
+   return result;
+ }
+ 
+ bool GLES2DecoderImpl::ClearCompressedTextureLevel(Texture* texture,
+                                                    unsigned target,
+@@ -13407,10 +13432,16 @@ void GLES2DecoderImpl::DoCopyTexImage2D(
+   if (!CheckBoundReadFramebufferValid(func_name,
+                                       GL_INVALID_FRAMEBUFFER_OPERATION)) {
+     return;
+   }
+ 
++  if (IsBoundReadFramebufferMultisampledRenderbuffer()) {
++    LOCAL_SET_GL_ERROR(GL_INVALID_OPERATION, func_name,
++                       "cannot copy from a multisampled framebuffer");
++    return;
++  }
++
+   GLenum read_format = GetBoundReadFramebufferInternalFormat();
+   GLenum read_type = GetBoundReadFramebufferTextureType();
+   if (!ValidateCopyTexFormat(func_name, internal_format,
+                              read_format, read_type)) {
+     return;
+@@ -13528,13 +13559,13 @@ void GLES2DecoderImpl::DoCopyTexImage2D(
+       if (attached_texture_level != texture->base_level())
+         reset_source_texture_base_level_max_level = true;
+     }
+   }
+   if (reset_source_texture_base_level_max_level) {
+-    api()->glTexParameteriFn(target, GL_TEXTURE_BASE_LEVEL,
++    api()->glTexParameteriFn(texture->target(), GL_TEXTURE_BASE_LEVEL,
+                              attached_texture_level);
+-    api()->glTexParameteriFn(target, GL_TEXTURE_MAX_LEVEL,
++    api()->glTexParameteriFn(texture->target(), GL_TEXTURE_MAX_LEVEL,
+                              attached_texture_level);
+   }
+ 
+   // Clip to size to source dimensions
+   gfx::Rect src(x, y, width, height);
+@@ -13609,13 +13640,13 @@ void GLES2DecoderImpl::DoCopyTexImage2D(
+       api()->glCopyTexImage2DFn(target, level, final_internal_format, x, y,
+                                 width, height, border);
+     }
+   }
+   if (reset_source_texture_base_level_max_level) {
+-    api()->glTexParameteriFn(target, GL_TEXTURE_BASE_LEVEL,
++    api()->glTexParameteriFn(texture->target(), GL_TEXTURE_BASE_LEVEL,
+                              texture->base_level());
+-    api()->glTexParameteriFn(target, GL_TEXTURE_MAX_LEVEL,
++    api()->glTexParameteriFn(texture->target(), GL_TEXTURE_MAX_LEVEL,
+                              texture->max_level());
+   }
+   GLenum error = LOCAL_PEEK_GL_ERROR(func_name);
+   if (error == GL_NO_ERROR) {
+     texture_manager()->SetLevelInfo(texture_ref, target, level, internal_format,
+@@ -13659,10 +13690,16 @@ void GLES2DecoderImpl::DoCopyTexSubImage2D(
+   if (!CheckBoundReadFramebufferValid(func_name,
+                                       GL_INVALID_FRAMEBUFFER_OPERATION)) {
+     return;
+   }
+ 
++  if (IsBoundReadFramebufferMultisampledRenderbuffer()) {
++    LOCAL_SET_GL_ERROR(GL_INVALID_OPERATION, func_name,
++                       "cannot copy from a multisampled framebuffer");
++    return;
++  }
++
+   GLenum read_format = GetBoundReadFramebufferInternalFormat();
+   GLenum read_type = GetBoundReadFramebufferTextureType();
+   if (!ValidateCopyTexFormat(func_name, internal_format,
+                              read_format, read_type)) {
+     return;
+@@ -13686,33 +13723,41 @@ void GLES2DecoderImpl::DoCopyTexSubImage2D(
+ 
+   GLint dx = src.x() - x;
+   GLint dy = src.y() - y;
+   GLint destX = xoffset + dx;
+   GLint destY = yoffset + dy;
++
++  LOCAL_COPY_REAL_GL_ERRORS_TO_WRAPPER(func_name);
++
+   // It's only legal to skip clearing the level of the target texture
+   // if the entire level is being redefined.
+   GLsizei level_width = 0;
+   GLsizei level_height = 0;
+   GLsizei level_depth = 0;
+   bool have_level = texture->GetLevelSize(
+       target, level, &level_width, &level_height, &level_depth);
+   // Validated above.
+   DCHECK(have_level);
++
++  bool set_cleared = false;
++  gfx::Rect cleared_rect_to_set;
++  bool set_cleared_rect = false;
++
+   if (destX == 0 && destY == 0 &&
+       src.width() == level_width && src.height() == level_height) {
+     // Write all pixels in below.
+-    texture_manager()->SetLevelCleared(texture_ref, target, level, true);
++    set_cleared = true;
+   } else {
+     gfx::Rect cleared_rect;
+     if (TextureManager::CombineAdjacentRects(
+             texture->GetLevelClearedRect(target, level),
+             gfx::Rect(destX, destY, src.width(), src.height()),
+             &cleared_rect)) {
+       DCHECK_GE(cleared_rect.size().GetArea(),
+                 texture->GetLevelClearedRect(target, level).size().GetArea());
+-      texture_manager()->SetLevelClearedRect(texture_ref, target, level,
+-                                             cleared_rect);
++      cleared_rect_to_set = cleared_rect;
++      set_cleared_rect = true;
+     } else {
+       // Otherwise clear part of texture level that is not already cleared.
+       if (!texture_manager()->ClearTextureLevel(this, texture_ref, target,
+                                                 level)) {
+         LOCAL_SET_GL_ERROR(GL_OUT_OF_MEMORY, func_name, "dimensions too big");
+@@ -13735,10 +13780,19 @@ void GLES2DecoderImpl::DoCopyTexSubImage2D(
+   } else {
+     api()->glCopyTexSubImage2DFn(target, level, destX, destY, src.x(), src.y(),
+                                  src.width(), src.height());
+   }
+ 
++  if (LOCAL_PEEK_GL_ERROR(func_name) == GL_NO_ERROR) {
++    if (set_cleared) {
++      texture_manager()->SetLevelCleared(texture_ref, target, level, true);
++    } else if (set_cleared_rect) {
++      texture_manager()->SetLevelClearedRect(texture_ref, target, level,
++                                             cleared_rect_to_set);
++    }
++  }
++
+   // This may be a slow command.  Exit command processing to allow for
+   // context preemption and GPU watchdog checks.
+   ExitCommandProcessingEarly();
+ }
+ 
+@@ -13773,10 +13827,16 @@ void GLES2DecoderImpl::DoCopyTexSubImage3D(
+   if (!CheckBoundReadFramebufferValid(func_name,
+                                       GL_INVALID_FRAMEBUFFER_OPERATION)) {
+     return;
+   }
+ 
++  if (IsBoundReadFramebufferMultisampledRenderbuffer()) {
++    LOCAL_SET_GL_ERROR(GL_INVALID_OPERATION, func_name,
++                       "cannot copy from a multisampled framebuffer");
++    return;
++  }
++
+   GLenum read_format = GetBoundReadFramebufferInternalFormat();
+   GLenum read_type = GetBoundReadFramebufferTextureType();
+   if (!ValidateCopyTexFormat(func_name, internal_format,
+                              read_format, read_type)) {
+     return;
+@@ -16075,10 +16135,31 @@ void GLES2DecoderImpl::TexStorageImpl(GLenum target,
+       GetCompressedFormatInfo(internal_format);
+   if (format_info != nullptr && !format_info->support_check(*feature_info_)) {
+     compatibility_internal_format = format_info->decompressed_internal_format;
+   }
+ 
++  // TODO(zmo): We might need to emulate TexStorage using TexImage or
++  // CompressedTexImage on Mac OSX where we expose ES3 APIs when the underlying
++  // driver is lower than 4.2 and ARB_texture_storage extension doesn't exist.
++  LOCAL_COPY_REAL_GL_ERRORS_TO_WRAPPER(function_name);
++  if (dimension == ContextState::k2D) {
++    api()->glTexStorage2DEXTFn(target, levels, compatibility_internal_format,
++                               width, height);
++  } else {
++    api()->glTexStorage3DFn(target, levels, compatibility_internal_format,
++                            width, height, depth);
++  }
++  GLenum error = LOCAL_PEEK_GL_ERROR(function_name);
++  if (error != GL_NO_ERROR) {
++    // The driver rejected the allocation. Do NOT update the decoder-side
++    // LevelInfo / immutable flag, otherwise subsequent TexSubImage bounds
++    // checks (Texture::ValidForTexture) would validate against dimensions
++    // that the driver never allocated, allowing oversized writes to be
++    // forwarded to the native driver.
++    return;
++  }
++
+   {
+     GLsizei level_width = width;
+     GLsizei level_height = height;
+     GLsizei level_depth = depth;
+ 
+@@ -16103,21 +16184,10 @@ void GLES2DecoderImpl::TexStorageImpl(GLenum target,
+         level_depth = std::max(1, level_depth >> 1);
+     }
+     texture->ApplyFormatWorkarounds(feature_info_.get());
+     texture->SetImmutable(true, true);
+   }
+-
+-  // TODO(zmo): We might need to emulate TexStorage using TexImage or
+-  // CompressedTexImage on Mac OSX where we expose ES3 APIs when the underlying
+-  // driver is lower than 4.2 and ARB_texture_storage extension doesn't exist.
+-  if (dimension == ContextState::k2D) {
+-    api()->glTexStorage2DEXTFn(target, levels, compatibility_internal_format,
+-                               width, height);
+-  } else {
+-    api()->glTexStorage3DFn(target, levels, compatibility_internal_format,
+-                            width, height, depth);
+-  }
+ }
+ 
+ void GLES2DecoderImpl::DoTexStorage2DEXT(GLenum target,
+                                          GLsizei levels,
+                                          GLenum internal_format,
+@@ -16757,11 +16829,12 @@ bool GLES2DecoderImpl::UnmapBufferHelper(Buffer* buffer, GLenum target) {
+     void* mem = mapped_range->GetShmPointer();
+     DCHECK(mem);
+     DCHECK(mapped_range->pointer);
+     UNSAFE_TODO(memcpy(mapped_range->pointer, mem, mapped_range->size));
+     if (buffer->shadowed()) {
+-      buffer->SetRange(mapped_range->offset, mapped_range->size, mem);
++      buffer->SetRange(mapped_range->offset, mapped_range->size,
++                       mapped_range->pointer);
+     }
+   }
+   buffer->RemoveMappedRange();
+   if (WasContextLost())
+     return true;
+@@ -16848,11 +16921,11 @@ void GLES2DecoderImpl::DoFlushMappedBufferRange(
+   char* gpu_data = reinterpret_cast<char*>(mapped_range->pointer.get());
+   DCHECK(gpu_data);
+   UNSAFE_TODO(memcpy(gpu_data + offset, client_data + offset, size));
+   if (buffer->shadowed()) {
+     buffer->SetRange(mapped_range->offset + offset, size,
+-                     UNSAFE_TODO(client_data + offset));
++                     UNSAFE_TODO(gpu_data + offset));
+   }
+   api()->glFlushMappedBufferRangeFn(target, offset, size);
+ }
+ 
+ void GLES2DecoderImpl::DoFramebufferMemorylessPixelLocalStorageANGLE(

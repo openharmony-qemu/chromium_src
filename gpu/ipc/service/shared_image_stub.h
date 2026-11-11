@@ -157,6 +157,9 @@ class GPU_IPC_SERVICE_EXPORT SharedImageStub {
   base::ReadOnlySharedMemoryRegion upload_memory_;
   base::ReadOnlySharedMemoryMapping upload_memory_mapping_;
 
+  bool create_shared_image_;
+  bool gl_color_space_;
+
 #if BUILDFLAG(IS_WIN)
   // Fences held by external processes. Registered and signaled from ipc
   // channel. Using DXGIHandleToken to identify the fence.

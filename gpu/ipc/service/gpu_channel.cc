@@ -75,6 +75,8 @@
 #include "ui/ozone/public/ozone_platform.h"
 #endif  // BUILDFLAG(IS_OZONE)
 
+#include "arkweb/chromium_ext/gpu/ipc/service/gpu_channel_ext.h"
+
 namespace gpu {
 
 namespace {
@@ -159,6 +161,10 @@ class GPU_IPC_SERVICE_EXPORT GpuChannelMessageFilter
       CreateCommandBufferCallback callback) override;
   void DestroyCommandBuffer(int32_t routing_id,
                             DestroyCommandBufferCallback callback) override;
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  void DecodeHeif(mojo_base::BigBuffer heif_data,
+                  DecodeHeifCallback callback) override;
+#endif
   void FlushDeferredRequests(std::vector<mojom::DeferredRequestPtr> requests,
                              uint32_t flushed_deferred_message_id) override;
 
@@ -214,6 +220,14 @@ class GPU_IPC_SERVICE_EXPORT GpuChannelMessageFilter
         std::vector<SyncToken>()));
   }
 #endif  // BUILDFLAG(IS_FUCHSIA)
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetBlanklessDumpInfo(uint32_t nweb_id,
+                            uint64_t key,
+                            uint64_t frame_sink_id,
+                            int32_t lcp_time,
+                            int64_t pref_hash) override;
+#endif
 
   // Map of route id to scheduler sequence id.
   base::flat_map<int32_t, SequenceId> route_sequences_;
@@ -366,6 +380,12 @@ void GpuChannelMessageFilter::FlushDeferredRequests(
         routing_id = request->params->get_destroy_dcomp_texture();
         break;
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+      case mojom::DeferredRequestParams::Tag::kDestroyNativeTexture:
+        routing_id = request->params->get_destroy_native_texture();
+        break;
+#endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
 
       case mojom::DeferredRequestParams::Tag::kCommandBufferRequest:
         routing_id = request->params->get_command_buffer_request()->routing_id;
@@ -832,12 +852,23 @@ void GpuChannel::ExecuteDeferredRequest(
     mojom::DeferredRequestParamsPtr params,
     FenceSyncReleaseDelegate* release_delegate) {
   TRACE_EVENT0("gpu", "GpuChannel::ExecuteDeferredRequest");
+#if BUILDFLAG(IS_ARKWEB)
+  if (params.get() == nullptr) {
+    return;
+  }
+#endif  // BUILDFLAG(IS_ARKWEB)
   switch (params->which()) {
 #if BUILDFLAG(IS_WIN)
     case mojom::DeferredRequestParams::Tag::kDestroyDcompTexture:
       DestroyDCOMPTexture(params->get_destroy_dcomp_texture());
       break;
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    case mojom::DeferredRequestParams::Tag::kDestroyNativeTexture:
+      AsGpuChannelExt()->DestroyNativeTexture(params->get_destroy_native_texture());
+      break;
+#endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
 
     case mojom::DeferredRequestParams::Tag::kCommandBufferRequest: {
       mojom::DeferredCommandBufferRequest& request =

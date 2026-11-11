@@ -1,0 +1,13 @@
+diff a/gpu/command_buffer/service/shared_image/egl_image_backing.cc b/gpu/command_buffer/service/shared_image/egl_image_backing.cc	(rejected hunks)
+@@ -4,10 +4,11 @@
+ 
+ #include "gpu/command_buffer/service/shared_image/egl_image_backing.h"
+ 
+ #include <optional>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/memory/raw_ptr.h"
+ #include "gpu/command_buffer/common/shared_image_usage.h"
+ #include "gpu/command_buffer/service/gl_utils.h"
+ #include "gpu/command_buffer/service/shared_context_state.h"
+ #include "gpu/command_buffer/service/shared_image/shared_image_gl_utils.h"

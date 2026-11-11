@@ -1,0 +1,80 @@
+diff a/gpu/command_buffer/service/shared_image/shared_image_factory.cc b/gpu/command_buffer/service/shared_image/shared_image_factory.cc	(rejected hunks)
+@@ -6,10 +6,11 @@
+ 
+ #include <inttypes.h>
+ 
+ #include <memory>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/contains.h"
+ #include "base/debug/crash_logging.h"
+ #include "base/debug/dump_without_crashing.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "base/strings/string_split.h"
+@@ -89,10 +91,14 @@
+ 
+ #if BUILDFLAG(IS_ANDROID)
+ #include "gpu/command_buffer/service/shared_image/ahardwarebuffer_image_backing_factory.h"
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
++#if BUILDFLAG(ARKWEB_VULKAN)
++#include "gpu/command_buffer/service/shared_image/ohos_native_buffer_image_backing_factory.h"
++#endif
++
+ #if BUILDFLAG(USE_DAWN)
+ #include "gpu/command_buffer/service/shared_image/dawn_image_backing_factory.h"
+ #endif  // BUILDFLAG(USE_DAWN)
+ 
+ namespace gpu {
+@@ -503,11 +519,15 @@ bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
+         mailbox, format, surface_handle, size, color_space, surface_origin,
+         alpha_type, SharedImageUsageSet(usage), debug_label,
+         IsSharedBetweenThreads(usage), buffer_usage);
+ 
+     if (backing) {
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++      LOG(DEBUG) << "CreateSharedImageBackedByBuffer[" << backing->GetName()
++#else
+       DVLOG(1) << "CreateSharedImageBackedByBuffer[" << backing->GetName()
++#endif
+                << "] size=" << size.ToString()
+                << " usage=" << CreateLabelForSharedImageUsage(usage)
+                << " format=" << format.ToString();
+     }
+   } else {
+@@ -578,11 +598,16 @@ bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
+   auto backing = factory->CreateSharedImage(
+       mailbox, format, size, color_space, surface_origin, alpha_type,
+       SharedImageUsageSet(usage), std::move(debug_label),
+       IsSharedBetweenThreads(usage), data);
+   if (backing) {
+-    DVLOG(1) << "CreateSharedImagePixels[" << backing->GetName()
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++    LOG(DEBUG)
++#else
++    DVLOG(1)
++#endif
++             << "CreateSharedImagePixels[" << backing->GetName()
+              << "] with pixels size=" << size.ToString()
+              << " usage=" << CreateLabelForSharedImageUsage(usage)
+              << " format=" << format.ToString();
+   }
+   return RegisterBacking(std::move(backing));
+@@ -635,11 +660,16 @@ bool SharedImageFactory::CreateSharedImage(
+         std::move(debug_label), IsSharedBetweenThreads(usage),
+         std::move(buffer_handle));
+   }
+ 
+   if (backing) {
+-    DVLOG(1) << "CreateSharedImageWithBuffer[" << backing->GetName()
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++    LOG(DEBUG)
++#else
++    DVLOG(1)
++#endif
++             << "CreateSharedImageWithBuffer[" << backing->GetName()
+              << "] size=" << size.ToString()
+              << " usage=" << CreateLabelForSharedImageUsage(usage)
+              << " format=" << format.ToString()
+              << " gmb_type=" << GmbTypeToString(gmb_type);
+   }

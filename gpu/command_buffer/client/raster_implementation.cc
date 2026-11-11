@@ -1701,6 +1701,13 @@ void RasterImplementation::ReadbackYUVPixelsAsync(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  if (yuv_request_queue_.size() > QUEUE_MAX_SIZE) {
+    LOG(DEBUG) << "No push request to enqueue, the request can not be processed in time.";
+    return;
+  }
+#endif
+
   auto y_offset = static_cast<GLuint>(base::bits::AlignUp(
       sizeof(cmds::ReadbackYUVImagePixelsINTERNALImmediate::Result),
       sizeof(uint64_t)));

@@ -8,6 +8,11 @@ import("//skia/features.gni")
 import("//third_party/dawn/scripts/dawn_features.gni")
 import("//third_party/protobuf/proto_library.gni")
 import("//ui/gl/features.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
+
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+}
 
 config("implementation") {
   defines = [ "GPU_COMMAND_BUFFER_SERVICE_IMPLEMENTATION" ]
@@ -231,6 +236,8 @@ target(link_target_type, "gles2_sources") {
     "service_font_manager.h",
     "service_transfer_cache.cc",
     "service_transfer_cache.h",
+    "../../../arkweb/chromium_ext/gpu/command_buffer/service/service_transfer_cache_ext.cc",
+    "../../../arkweb/chromium_ext/gpu/command_buffer/service/service_transfer_cache_ext.h",
     "service_utils.cc",
     "service_utils.h",
     "shader_manager.cc",
@@ -269,6 +276,7 @@ target(link_target_type, "gles2_sources") {
     "shared_image/raw_draw_image_backing_factory.h",
     "shared_image/shared_image_backing.cc",
     "shared_image/shared_image_backing.h",
+    "../../../arkweb/chromium_ext/gpu/command_buffer/service/shared_image/shared_image_backing_factory_ext.h",
     "shared_image/shared_image_backing_factory.cc",
     "shared_image/shared_image_backing_factory.h",
     "shared_image/shared_image_copy_manager.cc",
@@ -276,6 +284,8 @@ target(link_target_type, "gles2_sources") {
     "shared_image/shared_image_copy_strategy.h",
     "shared_image/shared_image_factory.cc",
     "shared_image/shared_image_factory.h",
+    "../../../arkweb/chromium_ext/gpu/command_buffer/service/shared_image/shared_image_factory_ext.cc",
+    "../../../arkweb/chromium_ext/gpu/command_buffer/service/shared_image/shared_image_factory_ext.h",
     "shared_image/shared_image_format_service_utils.cc",
     "shared_image/shared_image_format_service_utils.h",
     "shared_image/shared_image_gl_utils.cc",
@@ -422,6 +432,8 @@ target(link_target_type, "gles2_sources") {
       "shared_image/ozone_image_backing.cc",
       "shared_image/ozone_image_backing.h",
       "shared_image/ozone_image_backing_factory.cc",
+      "../../../arkweb/chromium_ext/gpu/command_buffer/service/shared_image/ozone_image_backing_factory_ext.cc",
+      "../../../arkweb/chromium_ext/gpu/command_buffer/service/shared_image/ozone_image_backing_factory_ext.h",
       "shared_image/ozone_image_backing_factory.h",
       "shared_image/ozone_image_gl_textures_holder.cc",
       "shared_image/ozone_image_gl_textures_holder.h",
@@ -689,6 +701,25 @@ if (is_android) {
       "//testing/gtest",
       "//ui/gl",
       "//ui/gl/init",
+    ]
+  }
+}
+
+if (is_arkweb) {
+  static_library("ohos_texture_owner_test_support") {
+    testonly = true
+    sources = [
+      "../../../arkweb/chromium_ext/gpu/command_buffer/service/ohos/mock_native_image_texture_owner.cc",
+      "../../../arkweb/chromium_ext/gpu/command_buffer/service/ohos/mock_native_image_texture_owner.h",
+      "ref_counted_lock_for_test.cc",
+      "ref_counted_lock_for_test.h",
+    ]
+    deps = [
+      ":gles2",
+      "//base/test:test_support",
+      "//gpu:test_support",
+      "//testing/gmock",
+      "//testing/gtest",
     ]
   }
 }

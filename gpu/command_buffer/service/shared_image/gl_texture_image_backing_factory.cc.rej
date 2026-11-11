@@ -1,0 +1,15 @@
+diff a/gpu/command_buffer/service/shared_image/gl_texture_image_backing_factory.cc b/gpu/command_buffer/service/shared_image/gl_texture_image_backing_factory.cc	(rejected hunks)
+@@ -15,10 +15,13 @@
+ #include "gpu/config/gpu_preferences.h"
+ #include "ui/gl/gl_gl_api_implementation.h"
+ #include "ui/gl/gl_implementation.h"
+ #include "ui/gl/progress_reporter.h"
+ 
++#include "base/command_line.h"
++#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
++
+ namespace gpu {
+ namespace {
+ 
+ constexpr SharedImageUsageSet kWebGPUUsages =
+     SHARED_IMAGE_USAGE_WEBGPU_READ | SHARED_IMAGE_USAGE_WEBGPU_WRITE |

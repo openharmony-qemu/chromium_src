@@ -16,6 +16,10 @@
 #include "gpu/vulkan/vulkan_fence_helper.h"
 #include "gpu/vulkan/vulkan_function_pointers.h"
 
+#if BUILDFLAG(ARKWEB_VULKAN_INC_PRESENT)
+#include "base/trace_event/trace_event.h"
+#endif
+
 namespace gpu {
 
 namespace {
@@ -365,6 +369,12 @@ bool VulkanSwapChain::PresentBuffer(const gfx::Rect& rect) {
 
   auto& current_image_data = images_[*acquired_image_];
   DCHECK(current_image_data.present_semaphore != VK_NULL_HANDLE);
+
+#if BUILDFLAG(ARKWEB_VULKAN_INC_PRESENT)
+  TRACE_EVENT2("gpu", "VulkanSwapChain::PresentBuffer",
+               "is_incremental_present_supported_", is_incremental_present_supported_,
+               "rect info", rect.ToString());
+#endif
 
   VkRectLayerKHR rect_layer = {
       .offset = {rect.x(), rect.y()},

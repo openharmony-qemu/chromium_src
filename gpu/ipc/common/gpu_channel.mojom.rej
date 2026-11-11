@@ -1,0 +1,50 @@
+diff a/gpu/ipc/common/gpu_channel.mojom b/gpu/ipc/common/gpu_channel.mojom	(rejected hunks)
+@@ -24,10 +24,11 @@ import "ui/gfx/mojom/color_space.mojom";
+ import "ui/gfx/mojom/gpu_fence_handle.mojom";
+ import "ui/gfx/mojom/native_handle_types.mojom";
+ import "ui/gfx/mojom/presentation_feedback.mojom";
+ import "ui/gl/mojom/gpu_preference.mojom";
+ import "url/mojom/url.mojom";
++import "mojo/public/mojom/base/big_buffer.mojom";
+ 
+ // Maps to its namesake in gpu/command_buffer/common/context_creation_attribs.h.
+ enum ContextType {
+   kWebGL1,
+   kWebGL2,
+@@ -178,10 +179,16 @@ interface GpuChannel {
+   // if `Add/RemoveRoute()` is called with a pre-existing routing id.
+   [Sync, EnableIf=is_win] CreateDCOMPTexture(
+       int32 route_id,
+       pending_associated_receiver<DCOMPTexture> receiver) => (bool success);
+ 
++  [Sync, EnableIf=is_arkweb] CreateNativeTexture(
++      int32 native_id,
++      int32 texture_owner_mode,
++      bool is_custom_media_player,
++      pending_associated_receiver<StreamTexture> receiver) => (int32 native_embed_id);
++
+   // This interface is used by MediaFoundationRendererClient to subscribe
+   // to overlay state information from the Viz layer (as provided by the
+   // DCOverlayProcessor). The MediaFoundationRendererClient uses the overlay
+   // state associated with a Video Frame texture (correlated via 'mailbox') as
+   // a heuristic to determine the best video presentation mode to use.
+@@ -238,10 +245,19 @@ interface GpuChannel {
+   // used for shared memory GMBs whereas this method is used for native GMBs.
+   [EnableIf=is_win|is_android]
+   CopyNativeGmbToSharedMemoryAsync(gfx.mojom.GpuMemoryBufferHandle
+       buffer_handle, mojo_base.mojom.UnsafeSharedMemoryRegion shared_memory)
+                      => (bool success);
++
++  [EnableIf=arkweb_blank_optimize]
++  SetBlanklessDumpInfo(uint32 nweb_id, uint64 blankless_key, uint64 frame_sink_id, int32 lcp_time, int64 pref_hash);
++
++  [Sync, EnableIf=arkweb_heif_support]
++  DecodeHeif(mojo_base.mojom.BigBuffer heif_data)
++      => (array<uint8> pixels, 
++          gfx.mojom.Size size, 
++          string error);
+ };
+ 
+ // Interface used to issue commands to a specific CommandBuffer instance in the
+ // GPU process.
+ interface CommandBuffer {

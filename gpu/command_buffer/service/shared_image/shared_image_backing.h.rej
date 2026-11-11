@@ -1,0 +1,30 @@
+diff a/gpu/command_buffer/service/shared_image/shared_image_backing.h b/gpu/command_buffer/service/shared_image/shared_image_backing.h	(rejected hunks)
+@@ -8,10 +8,11 @@
+ #include <dawn/webgpu_cpp.h>
+ 
+ #include <memory>
+ #include <optional>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/raw_ptr_exclusion.h"
+ #include "base/memory/scoped_refptr.h"
+ #include "base/memory/stack_allocated.h"
+ #include "base/synchronization/lock.h"
+@@ -101,11 +102,16 @@ enum class SharedImageBackingType {
+   kIOSurface = 15,
+   kDCompSurface = 16,
+   kDXGISwapChain = 17,
+   kWrappedGraphiteTexture = 18,
+   kDawn = 19,
++#if BUILDFLAG(ARKWEB_VULKAN)
++  kOHOSNativeBuffer = 20,
++  kMaxValue = kOHOSNativeBuffer
++#else
+   kMaxValue = kDawn
++#endif
+ };
+ 
+ #if BUILDFLAG(IS_WIN)
+ using VideoDevice = Microsoft::WRL::ComPtr<ID3D11Device>;
+ #else

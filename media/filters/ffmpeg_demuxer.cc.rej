@@ -1,0 +1,27 @@
+diff a/media/filters/ffmpeg_demuxer.cc b/media/filters/ffmpeg_demuxer.cc	(rejected hunks)
+@@ -834,19 +840,25 @@ std::string FFmpegDemuxerStream::GetMetadata(const char* key) const {
+ FFmpegDemuxer::FFmpegDemuxer(
+     const scoped_refptr<base::SequencedTaskRunner>& task_runner,
+     DataSource* data_source,
+     const EncryptedMediaInitDataCB& encrypted_media_init_data_cb,
+     MediaTracksUpdatedCB media_tracks_updated_cb,
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++    scoped_refptr<MediaReportInfo> media_info,
++#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+     MediaLog* media_log,
+     bool is_local_file)
+     : task_runner_(task_runner),
+       // FFmpeg has no asynchronous API, so we use base::WaitableEvents inside
+       // the BlockingUrlProtocol to handle hops to the render thread for network
+       // reads and seeks.
+       blocking_task_runner_(base::ThreadPool::CreateSequencedTaskRunner(
+           {base::MayBlock(), base::TaskPriority::USER_BLOCKING})),
+       data_source_(data_source),
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++      media_info_(media_info),
++#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+       media_log_(media_log),
+       encrypted_media_init_data_cb_(encrypted_media_init_data_cb),
+       media_tracks_updated_cb_(std::move(media_tracks_updated_cb)),
+       is_local_file_(is_local_file) {
+   DCHECK(task_runner_.get());

@@ -1,0 +1,27 @@
+diff a/media/mojo/clients/BUILD.gn b/media/mojo/clients/BUILD.gn	(rejected hunks)
+@@ -155,10 +164,11 @@ source_set("unit_tests") {
+     "//base/test:test_support",
+     "//gpu:test_support",
+     "//gpu/ipc/common:test_support",
+     "//media:test_support",
+     "//media/mojo:test_support",
++    "//mojo/public/cpp/test_support:test_utils",
+     "//testing/gmock",
+     "//testing/gtest",
+   ]
+ 
+   if (is_android) {
+@@ -179,9 +189,13 @@ source_set("unit_tests") {
+       "//content/renderer",
+       "//media",
+     ]
+   }
+ 
++  if (enable_arkweb) {
++    deps += [ "//arkweb/build/features" ]
++  }
++
+   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and
+   # enable the diagnostic by removing this line.
+   configs += [ "//build/config/compiler:no_exit_time_destructors" ]
+ }

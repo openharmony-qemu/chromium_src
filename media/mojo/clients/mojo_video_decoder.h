@@ -71,6 +71,10 @@ class MojoVideoDecoder final : public VideoDecoder,
   bool NeedsBitstreamConversion() const final;
   bool CanReadWithoutStalling() const final;
   int GetMaxDecodeRequests() const final;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetVideoSurface(int32_t widget_id) final;
+  void SetPreciseSeekTarget(int64_t target_timestamp) final;
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   // mojom::VideoDecoderClient implementation.
   void OnVideoFrameDecoded(
@@ -83,6 +87,13 @@ class MojoVideoDecoder final : public VideoDecoder,
   void set_writer_capacity_for_testing(uint32_t capacity) {
     writer_capacity_ = capacity;
   }
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(bool enable) final;
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer() final;
+  void ResumeDmaBuffer() final;
+#endif  // ARKWEB_MEDIA_DMABUF
 
  private:
   void FailInit(InitCB init_cb, DecoderStatus err);

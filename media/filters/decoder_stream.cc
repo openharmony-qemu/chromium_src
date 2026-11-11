@@ -164,6 +164,9 @@ std::string DecoderStream<StreamType>::GetStreamTypeString() {
 template <DemuxerStream::Type StreamType>
 void DecoderStream<StreamType>::Initialize(DemuxerStream* stream,
                                            InitCB init_cb,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                           VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                                            CdmContext* cdm_context,
                                            StatisticsCB statistics_cb,
                                            WaitingCB waiting_cb) {
@@ -177,6 +180,9 @@ void DecoderStream<StreamType>::Initialize(DemuxerStream* stream,
   init_cb_ = std::move(init_cb);
   cdm_context_ = cdm_context;
   statistics_cb_ = std::move(statistics_cb);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  decoder_changed_cb_ = std::move(decoder_changed_cb);
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   // Make a copy here since it's also passed to |decoder_selector_| below.
   waiting_cb_ = waiting_cb;
@@ -444,7 +450,11 @@ void DecoderStream<StreamType>::OnDecoderSelected(
       MEDIA_LOG(ERROR, media_log_)
           << GetStreamTypeString() << " decoder initialization failed with "
           << std::move(decoder_or_error).error();
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      std::move(init_cb_).Run(false, false, "No Decoder");
+#else
       std::move(init_cb_).Run(false);
+#endif // ARKWEB_VIDEO_ASSISTANT
       // Node that |decoder_or_error| is not actually lost in this case, as
       // DecoderSelector is keeping track of it to use in case there are no
       // successfully initialized decoders.
@@ -482,6 +492,13 @@ void DecoderStream<StreamType>::OnDecoderSelected(
       << traits_->GetDecoderConfig(stream_).AsHumanReadableString();
 
   if (state_ == State::kStateReinitializingDecoder) {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    if (decoder_changed_cb_) {
+      decoder_changed_cb_.Run(
+        SupportVideoSurface(decoder_->GetDecoderType()),
+        GetDecoderName(decoder_->GetDecoderType()));
+    }
+#endif // OHOS_VIDEO_ASSISTANT
     CompleteDecoderReinitialization(OkStatus());
     return;
   }
@@ -490,7 +507,13 @@ void DecoderStream<StreamType>::OnDecoderSelected(
   state_ = State::kStateNormal;
   if (StreamTraits::NeedsBitstreamConversion(decoder_.get()))
     stream_->EnableBitstreamConverter();
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  std::move(init_cb_).Run(true,
+      SupportVideoSurface(decoder_->GetDecoderType()),
+      GetDecoderName(decoder_->GetDecoderType()));
+#else
   std::move(init_cb_).Run(true);
+#endif // ARKWEB_VIDEO_ASSISTANT
 }
 
 template <DemuxerStream::Type StreamType>

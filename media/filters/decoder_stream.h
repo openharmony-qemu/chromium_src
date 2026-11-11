@@ -71,6 +71,9 @@ class MEDIA_EXPORT DecoderStream {
   // stream is not encrypted.
   void Initialize(DemuxerStream* stream,
                   InitCB init_cb,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                  VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                   CdmContext* cdm_context,
                   StatisticsCB statistics_cb,
                   WaitingCB waiting_cb);
@@ -153,6 +156,18 @@ class MEDIA_EXPORT DecoderStream {
       base::PassKey<class VideoDecoderStreamTest>) {
     return decoder_selector_;
   }
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetVideoSurface(int surface_id);
+  void SetPreciseSeekTarget(int64_t target_timestamp);
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(bool enable);
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer();
+  void ResumeDmaBuffer();
+#endif  // ARKWEB_MEDIA_DMABUF
 
  private:
   enum class State {
@@ -306,6 +321,10 @@ class MEDIA_EXPORT DecoderStream {
   bool encryption_type_reported_ = false;
 
   int fallback_buffers_being_decoded_ = 0;
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  VideoDecoderChangedCB decoder_changed_cb_;
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   // Last timestamp seen by DecodeInternal(), used for average duration when
   // explicit duration information is missing.

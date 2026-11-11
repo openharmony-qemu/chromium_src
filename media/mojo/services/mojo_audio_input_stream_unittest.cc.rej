@@ -1,0 +1,18 @@
+diff a/media/mojo/services/mojo_audio_input_stream_unittest.cc b/media/mojo/services/mojo_audio_input_stream_unittest.cc
+--- a/media/mojo/services/mojo_audio_input_stream_unittest.cc
++++ b/media/mojo/services/mojo_audio_input_stream_unittest.cc
+@@ -123,10 +123,14 @@ class MockClient : public mojom::AudioInputStreamClient {
+ 
+   MOCK_METHOD1(OnMutedStateChanged, void(bool));
+ 
+   MOCK_METHOD1(OnError, void(mojom::InputStreamErrorCode));
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
++  MOCK_METHOD1(OnPausedStateChanged, void(bool));
++#endif // ARKWEB_MEDIA_CAPTURE
++
+  private:
+   base::UnsafeSharedMemoryRegion region_;
+   std::unique_ptr<base::CancelableSyncSocket> socket_;
+ };
+ 

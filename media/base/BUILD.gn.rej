@@ -1,0 +1,22 @@
+diff a/media/base/BUILD.gn b/media/base/BUILD.gn	(rejected hunks)
+@@ -516,10 +528,20 @@ source_set("base") {
+       "media_drm_key_type.h",
+       "media_drm_storage.cc",
+       "media_drm_storage.h",
+     ]
+   }
++
++  if (defined(arkweb_custom_video_player) && arkweb_custom_video_player) {
++    import("//arkweb/chromium_ext/media/base/arkweb_media_base.gni") 
++    sources += arkweb_media_base_custom_sources
++  }
++
++  if (defined(arkweb_media_capabilities_enhance) && arkweb_media_capabilities_enhance) {
++    import("//arkweb/chromium_ext/media/base/arkweb_media_base.gni")
++    sources += arkweb_media_base_capabilities_sources
++  }
+ }
+ 
+ source_set("video_facing") {
+   sources = [ "video_facing.h" ]
+ }

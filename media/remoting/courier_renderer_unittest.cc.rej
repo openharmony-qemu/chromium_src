@@ -1,0 +1,15 @@
+diff a/media/remoting/courier_renderer_unittest.cc b/media/remoting/courier_renderer_unittest.cc	(rejected hunks)
+@@ -328,10 +328,13 @@ class CourierRendererTest : public testing::Test {
+           this->RpcMessageResponseBot(message);
+         });
+     RunPendingTasks();
+     renderer_->Initialize(
+         media_resource_.get(), render_client_.get(),
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++        RequestSurfaceCB(), VideoDecoderChangedCB(),
++#endif // ARKWEB_VIDEO_ASSISTANT
+         base::BindOnce(&RendererClientImpl::OnPipelineStatus,
+                        base::Unretained(render_client_.get())));
+     RunPendingTasks();
+     RewireSendMessageCallbackToSink();
+     RunPendingTasks();

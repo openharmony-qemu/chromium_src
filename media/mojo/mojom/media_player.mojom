@@ -92,6 +92,14 @@ interface MediaPlayerObserver {
   // indicating in |stream_ended| if playback has reached the end of the stream.
   OnMediaPaused(bool stream_ended);
 
+  // Notifies that avsession is over.
+  [EnableIf=arkweb_media_avsession]
+  OnEndAVSession(bool is_hidden);
+
+  // Notifies that the media player gone.
+  [EnableIf=arkweb_activity_state]
+  OnMediaPlayerGone();
+
   // Notifies that the muted status of the media player has changed.
   OnMutedStatusChanged(bool muted);
 
@@ -150,4 +158,7 @@ interface MediaPlayerHost {
   OnMediaPlayerAdded(pending_associated_remote<MediaPlayer> player_remote,
                      pending_associated_receiver<MediaPlayerObserver> observer,
                      int32 player_id);
+
+  [EnableIf=arkweb_video_assistant]
+  RequestVideoAssistantConfig() => (VideoAssistantConfig config);
 };

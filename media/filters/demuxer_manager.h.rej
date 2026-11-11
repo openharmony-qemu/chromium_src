@@ -1,0 +1,87 @@
+diff a/media/filters/demuxer_manager.h b/media/filters/demuxer_manager.h	(rejected hunks)
+@@ -6,10 +6,11 @@
+ #define MEDIA_FILTERS_DEMUXER_MANAGER_H_
+ 
+ #include <optional>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/functional/callback.h"
+ #include "base/memory/memory_pressure_listener.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/weak_ptr.h"
+ #include "base/task/sequenced_task_runner.h"
+@@ -59,10 +64,13 @@ class MEDIA_EXPORT DemuxerManager {
+     virtual void OnError(PipelineStatus status) = 0;
+ 
+     // Used for controlling the client when a demuxer swap happens.
+     virtual void StopForDemuxerReset() = 0;
+     virtual void RestartForHls() = 0;
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++    virtual void RestartForPrimitive() = 0;
++#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+ 
+ #if BUILDFLAG(ENABLE_FFMPEG) || BUILDFLAG(ENABLE_HLS_DEMUXER)
+     virtual void AddTrack(const MediaTrack&) = 0;
+     virtual void RemoveTrack(const MediaTrack&) = 0;
+     virtual void SetTrackState(const MediaTrack&, MediaTrack::State) = 0;
+@@ -105,11 +115,11 @@ class MEDIA_EXPORT DemuxerManager {
+   void InvalidateWeakPtrs();
+ 
+   void OnPipelineError(PipelineStatus error);
+   void SetLoadedUrl(GURL url);
+   const GURL& LoadedUrl() const;
+-#if BUILDFLAG(ENABLE_HLS_DEMUXER)
++#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
+   PipelineStatus SelectHlsFallbackMechanism(bool cryptographic_url);
+ #endif  // BUILDFLAG(ENABLE_HLS_DEMUXER)
+   void DisallowFallback();
+ 
+   // Methods that help manage demuxers
+@@ -123,10 +133,13 @@ class MEDIA_EXPORT DemuxerManager {
+   // if a demuxer couldn't be created.
+   PipelineStatus CreateDemuxer(
+       bool load_media_source,
+       DataSource::Preload preload,
+       bool needs_first_frame,
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++      bool should_create_custom_renderer,
++#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+       DemuxerCreatedCB on_demuxer_created,
+       base::flat_map<std::string, std::string> headers);
+ 
+   // Methods that help manage or access |data_source_|
+   DataSource* GetDataSourceForTesting() const;
+@@ -147,11 +160,17 @@ class MEDIA_EXPORT DemuxerManager {
+   bool HasDemuxerOverride() const;
+   std::optional<GURL> GetDataSourceUrlAfterRedirects() const;
+   bool DataSourceFullyBuffered() const;
+   bool IsStreaming() const;
+   bool IsLiveContent() const;
+-
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++  const std::string GetMimeType() const;
++  int32_t GetByteRate() const;
++  int64_t GetFileSize() const;
++  const std::vector<std::string> GetAudioCodecs() const;
++  const std::vector<std::string> GetVideoCodecs() const;
++#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+  private:
+   // Demuxer creation and helper methods
+   std::unique_ptr<Demuxer> CreateChunkDemuxer();
+ 
+ #if BUILDFLAG(ENABLE_FFMPEG)
+@@ -174,10 +193,13 @@ class MEDIA_EXPORT DemuxerManager {
+   void OnEncryptedMediaInitData(EmeInitDataType init_data_type,
+                                 const std::vector<uint8_t>& init_data);
+   void OnChunkDemuxerOpened();
+   void OnProgress();
+   void RestartClientForHLS();
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++  void RestartClientForPrimitive();
++#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+   void FreeResourcesAfterMediaThreadWait(base::OnceClosure cb);
+ 
+ #if BUILDFLAG(ENABLE_FFMPEG)
+   void OnFFmpegMediaTracksUpdated(std::unique_ptr<MediaTracks> tracks);
+ #endif  // BUILDFLAG(ENABLE_FFMPEG)

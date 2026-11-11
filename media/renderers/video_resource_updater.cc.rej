@@ -1,0 +1,85 @@
+diff a/media/renderers/video_resource_updater.cc b/media/renderers/video_resource_updater.cc
+--- a/media/renderers/video_resource_updater.cc
++++ b/media/renderers/video_resource_updater.cc
+@@ -56,10 +56,13 @@
+ #include "third_party/skia/include/core/SkYUVAInfo.h"
+ #include "ui/gfx/geometry/skia_conversions.h"
+ #include "ui/gfx/video_types.h"
+ #include "ui/gl/gl_enums.h"
+ #include "ui/gl/trace_util.h"
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++#include "base/ohos/sys_info_utils_ext.h"
++#endif
+ 
+ namespace media {
+ namespace {
+ 
+ // Generates process-unique IDs to use for tracing video resources.
+@@ -602,10 +605,13 @@ void VideoResourceUpdater::AppendQuad(
+       if (frame->metadata().dcomp_surface) {
+         texture_quad->overlay_priority_hint = viz::OverlayPriority::kRequired;
+       }
+ #endif
+       texture_quad->is_video_frame = true;
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++      texture_quad->render_video_view = frame->metadata().render_video_view;
++#endif // ARKWEB_VIDEO_ASSISTANT
+       resource_provider_->ValidateResource(texture_quad->resource_id);
+       break;
+     }
+     case VideoFrameResourceType::NONE:
+       NOTIMPLEMENTED();
+@@ -718,10 +724,13 @@ VideoResourceUpdater::FrameResource* VideoResourceUpdater::AllocateResource(
+   return all_resources_.back().get();
+ }
+ 
+ VideoFrameExternalResource VideoResourceUpdater::CopyHardwareResource(
+     VideoFrame* video_frame) {
++#if BUILDFLAG(IS_ARKWEB)
++  TRACE_EVENT0("cc", "VideoResourceUpdater::CopyHardwareResource");
++#endif
+   VideoFrameExternalResource external_resource;
+   external_resource.type = VideoFrameResourceType::RGBA_PREMULTIPLIED;
+ 
+   const gfx::Size output_resource_size = video_frame->coded_size();
+   auto shared_image = video_frame->shared_image();
+@@ -788,10 +797,13 @@ VideoFrameExternalResource VideoResourceUpdater::CreateForHardwareFrame(
+   TRACE_EVENT0("media", "VideoResourceUpdater::CreateForHardwareFrame");
+   if (!context_provider_) {
+     return VideoFrameExternalResource();
+   }
+ 
++  TRACE_EVENT2("media", "VideoResourceUpdater::CreateForHardwarePlanes",
++      "copy_required", video_frame->metadata().copy_required, "format", VideoPixelFormatToString(video_frame->format()));
++
+   if (video_frame->metadata().copy_required) {
+     return CopyHardwareResource(video_frame.get());
+   }
+ 
+   VideoFrameExternalResource external_resource;
+@@ -827,16 +839,24 @@ VideoFrameExternalResource VideoResourceUpdater::CreateForHardwareFrame(
+   if (video_frame->metadata().read_lock_fences_enabled) {
+     transfer_resource.synchronization_type =
+         viz::TransferableResource::SynchronizationType::kGpuCommandsCompleted;
+   }
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
+   transfer_resource.ycbcr_info = video_frame->ycbcr_info();
++#endif
++
++#if BUILDFLAG(IS_ANDROID)
+   transfer_resource.is_backed_by_surface_view =
+       video_frame->metadata().in_surface_view;
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_AI_HDR)
++  transfer_resource.is_ai_hdr_active =
++      video_frame->metadata().is_ai_hdr_active;
++#endif
++
+ #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)
+   transfer_resource.wants_promotion_hint =
+       video_frame->metadata().wants_promotion_hint;
+ #endif
+ 

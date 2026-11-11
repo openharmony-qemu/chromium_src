@@ -1,0 +1,28 @@
+diff a/media/base/audio_processing.h b/media/base/audio_processing.h	(rejected hunks)
+@@ -7,10 +7,11 @@
+ 
+ #include <string>
+ 
+ #include "build/build_config.h"
+ #include "media/base/media_export.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace media {
+ 
+ // This struct specifies software audio processing effects to be applied by
+ // Chrome to mic capture audio. If system / hardware effects replace effects in
+@@ -42,11 +43,13 @@ struct MEDIA_EXPORT AudioProcessingSettings {
+ #if !BUILDFLAG(IS_IOS)
+     if (echo_cancellation || automatic_gain_control) {
+       return true;
+     }
+ #endif
+-
++#if BUILDFLAG(ARKWEB_WEBRTC)
++  return true;
++#endif
+     return noise_suppression;
+   }
+ 
+   // Stringifies the settings for human-readable logging.
+   std::string ToString() const;

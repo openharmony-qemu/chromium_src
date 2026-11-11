@@ -44,6 +44,10 @@ class MEDIA_EXPORT VideoRenderer {
   virtual void Initialize(DemuxerStream* stream,
                           CdmContext* cdm_context,
                           RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                          RequestSurfaceCB request_surface_cb,
+                          VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                           const TimeSource::WallClockTimeCB& wall_clock_time_cb,
                           PipelineStatusCallback init_cb) = 0;
 
@@ -71,6 +75,16 @@ class MEDIA_EXPORT VideoRenderer {
   // |latency_hint| may be nullopt to indicate the hint has been cleared
   // (restore UA default).
   virtual void SetLatencyHint(std::optional<base::TimeDelta> latency_hint) = 0;
+#if BUILDFLAG(ARKWEB_PIP)
+  virtual void PipEnable(bool enable) = 0;
+#endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  virtual void SetPreciseSeekTarget(int64_t target_timestamp) = 0;
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  virtual void RecycleDmaBuffer() = 0;
+  virtual void ResumeDmaBuffer() = 0;
+#endif  // ARKWEB_MEDIA_DMABUF
 };
 
 }  // namespace media

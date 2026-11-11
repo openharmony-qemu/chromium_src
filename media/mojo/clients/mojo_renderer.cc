@@ -45,6 +45,10 @@ MojoRenderer::~MojoRenderer() {
 
 void MojoRenderer::Initialize(MediaResource* media_resource,
                               media::RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                              RequestSurfaceCB request_surface_cb,
+                              VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                               PipelineStatusCallback init_cb) {
   DVLOG(1) << __func__;
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
@@ -86,6 +90,9 @@ void MojoRenderer::Initialize(MediaResource* media_resource,
   // Using base::Unretained(this) is safe because |this| owns
   // |remote_renderer_|, and the callback won't be dispatched if
   // |remote_renderer_| is destroyed.
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  InitializeRendererFromUrlExt();
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
   remote_renderer_->Initialize(client_receiver_.BindNewEndpointAndPassRemote(),
                                std::move(stream_proxies),
                                base::BindOnce(&MojoRenderer::OnInitialized,
@@ -214,13 +221,17 @@ void MojoRenderer::OnBufferingStateChange(BufferingState state,
                                           BufferingStateChangeReason reason) {
   DVLOG(2) << __func__;
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
-  client_->OnBufferingStateChange(state, reason);
+  if (client_) {
+    client_->OnBufferingStateChange(state, reason);
+  }
 }
 
 void MojoRenderer::OnEnded() {
   DVLOG(1) << __func__;
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
-  client_->OnEnded();
+  if (client_) {
+    client_->OnEnded();
+  }
 }
 
 void MojoRenderer::OnError(const PipelineStatus& status) {
@@ -229,7 +240,9 @@ void MojoRenderer::OnError(const PipelineStatus& status) {
   DCHECK(!init_cb_);
 
   encountered_error_ = true;
-  client_->OnError(status);
+  if (client_) {
+    client_->OnError(status);
+  }
 }
 
 void MojoRenderer::OnVideoNaturalSizeChange(const gfx::Size& size) {
@@ -240,25 +253,33 @@ void MojoRenderer::OnVideoNaturalSizeChange(const gfx::Size& size) {
     video_renderer_sink_->PaintSingleFrame(
         video_overlay_factory_->CreateFrame(size));
   }
-  client_->OnVideoNaturalSizeChange(size);
+  if (client_) {
+    client_->OnVideoNaturalSizeChange(size);
+  }
 }
 
 void MojoRenderer::OnVideoOpacityChange(bool opaque) {
   DVLOG(2) << __func__ << ": " << opaque;
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
-  client_->OnVideoOpacityChange(opaque);
+  if (client_) {
+    client_->OnVideoOpacityChange(opaque);
+  }
 }
 
 void MojoRenderer::OnAudioConfigChange(const AudioDecoderConfig& config) {
   DVLOG(2) << __func__ << ": " << config.AsHumanReadableString();
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
-  client_->OnAudioConfigChange(config);
+  if (client_) {
+    client_->OnAudioConfigChange(config);
+  }
 }
 
 void MojoRenderer::OnVideoConfigChange(const VideoDecoderConfig& config) {
   DVLOG(2) << __func__ << ": " << config.AsHumanReadableString();
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
-  client_->OnVideoConfigChange(config);
+  if (client_) {
+    client_->OnVideoConfigChange(config);
+  }
 }
 
 void MojoRenderer::OnStatisticsUpdate(const PipelineStatistics& stats) {
@@ -274,7 +295,9 @@ void MojoRenderer::OnStatisticsUpdate(const PipelineStatistics& stats) {
 void MojoRenderer::OnWaiting(WaitingReason reason) {
   DVLOG(1) << __func__;
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
-  client_->OnWaiting(reason);
+  if (client_) {
+    client_->OnWaiting(reason);
+  }
 }
 
 void MojoRenderer::OnConnectionError() {
@@ -336,6 +359,11 @@ void MojoRenderer::OnInitialized(media::RendererClient* client, bool success) {
     // It'd be nice to provide this before Initialize(), but that causes some
     // MojoRenderer implementations to crash.
     SetVolume(volume_);
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    OnInitializedExt();
+#endif
+
   }
 
   std::move(init_cb_).Run(success ? PIPELINE_OK
@@ -375,5 +403,4 @@ void MojoRenderer::CancelPendingCallbacks() {
   if (cdm_attached_cb_)
     std::move(cdm_attached_cb_).Run(false);
 }
-
 }  // namespace media

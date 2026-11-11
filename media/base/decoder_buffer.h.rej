@@ -1,0 +1,16 @@
+diff a/media/base/decoder_buffer.h b/media/base/decoder_buffer.h	(rejected hunks)
+@@ -283,11 +289,13 @@ class MEDIA_EXPORT DecoderBuffer
+   // WARNING: This is a highly allocated object. Care should be taken when
+   // adding any fields to make sure they are absolutely necessary. If a field
+   // must be added and can be optional, ensure it is heap allocated through the
+   // usage of something like std::unique_ptr.
+   // ***************************************************************************
+-
++#if BUILDFLAG(IS_ARKWEB)
++  size_t size_;
++#endif
+   // Presentation time of the frame.
+   base::TimeDelta timestamp_;
+ 
+   // Presentation duration of the frame.
+   base::TimeDelta duration_;

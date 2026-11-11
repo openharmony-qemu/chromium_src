@@ -174,6 +174,12 @@ class MEDIA_EXPORT DecoderBuffer
     DCHECK(!external_memory_);
     return const_cast<uint8_t*>(data_.data());
   }
+#if BUILDFLAG(IS_ARKWEB)
+  size_t data_size() const {
+    DCHECK(!end_of_stream());
+    return size_;
+  }
+#endif
 
   // TODO(crbug.com/41383992): Remove writable_span().
   base::span<uint8_t> writable_span() const {

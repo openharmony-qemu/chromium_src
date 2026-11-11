@@ -98,11 +98,20 @@ class MEDIA_EXPORT PipelineImpl : public Pipeline {
   void Start(StartType start_type,
              Demuxer* demuxer,
              Client* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+             RequestSurfaceCB request_surface_cb,
+             VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
              PipelineStatusCallback seek_cb) override;
   void Stop() override;
   void Seek(base::TimeDelta time, PipelineStatusCallback seek_cb) override;
   void Suspend(PipelineStatusCallback suspend_cb) override;
-  void Resume(base::TimeDelta time, PipelineStatusCallback seek_cb) override;
+  void Resume(base::TimeDelta time,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+              RequestSurfaceCB request_surface_cb,
+              VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
+              PipelineStatusCallback seek_cb) override;
   bool IsRunning() const override;
   bool IsSuspended() const override;
   double GetPlaybackRate() const override;
@@ -135,6 +144,20 @@ class MEDIA_EXPORT PipelineImpl : public Pipeline {
 
   void OnExternalVideoFrameRequest() override;
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  void SetMediaPlayerState(bool is_suspend, int suspend_type) override;
+  void SetPlaybackRateWithReason(double playback_rate, ActionReason reason) override;
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(bool enable) override;
+#endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetPreciseSeekTarget(int64_t target_timestamp) override;
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer() override;
+  void ResumeDmaBuffer() override;
+#endif  // ARKWEB_MEDIA_DMABUF
  private:
   friend class MediaLog;
   class RendererWrapper;

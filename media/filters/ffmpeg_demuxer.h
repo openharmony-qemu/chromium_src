@@ -209,6 +209,9 @@ class MEDIA_EXPORT FFmpegDemuxer : public Demuxer {
                 DataSource* data_source,
                 const EncryptedMediaInitDataCB& encrypted_media_init_data_cb,
                 MediaTracksUpdatedCB media_tracks_updated_cb,
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+                scoped_refptr<MediaReportInfo> media_info,
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
                 MediaLog* media_log,
                 bool is_local_file);
 

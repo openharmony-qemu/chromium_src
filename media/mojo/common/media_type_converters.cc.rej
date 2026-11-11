@@ -1,0 +1,41 @@
+diff a/media/mojo/common/media_type_converters.cc b/media/mojo/common/media_type_converters.cc	(rejected hunks)
+@@ -182,13 +182,21 @@ TypeConverter<scoped_refptr<media::DecoderBuffer>,
+   buffer->set_timestamp(mojo_buffer->timestamp);
+   buffer->set_duration(mojo_buffer->duration);
+   buffer->set_is_key_frame(mojo_buffer->is_key_frame);
+ 
+   if (mojo_buffer->decrypt_config) {
+-    buffer->set_decrypt_config(
+-        mojo_buffer->decrypt_config
+-            .To<std::unique_ptr<media::DecryptConfig>>());
++    auto decrypt_config =
++        mojo_buffer->decrypt_config.To<std::unique_ptr<media::DecryptConfig>>();
++    if (!decrypt_config) {
++      return nullptr;
++    }
++    buffer->set_decrypt_config(std::move(decrypt_config));
++
++    if (!media::DecoderBuffer::DoSubsamplesMatch(*buffer)) {
++      DVLOG(1) << __func__ << ": Subsamples do not match buffer size";
++      return nullptr;
++    }
+   }
+ 
+   // TODO(dalecurtis): We intentionally do not deserialize the data section of
+   // the DecoderBuffer here; this must instead be done by clients via their
+   // own DataPipe.  See http://crbug.com/432960
+@@ -214,12 +222,12 @@ TypeConverter<media::mojom::AudioBufferPtr, media::AudioBuffer>::Convert(
+     // `media::AudioBuffer`.
+     // `data_size()` refers to the amount of memory really used by the audio
+     // data. The rest is padding, which we don't need to copy.
+     // Safe to CHECK here since this is into Mojo not From mojo (and thus not
+     // untrusted input).
+-    DCHECK_GT(input.data_size(), 0u);
+-    DCHECK_GE(input.data_size(), input.data_->span().size());
++    CHECK_GT(input.data_size(), 0u);
++    CHECK_LE(input.data_size(), input.data_->span().size());
+     auto buffer_start = input.data_->span().begin();
+     auto buffer_end = buffer_start + input.data_size();
+     buffer->data.assign(buffer_start, buffer_end);
+   }
+ 

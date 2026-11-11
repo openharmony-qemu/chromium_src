@@ -434,6 +434,12 @@ struct VideoFrameMetadata {
 
   bool in_surface_view;
 
+  [EnableIf=arkweb_render_video_view]
+  bool render_video_view;
+
+  [EnableIf=arkweb_ai_hdr]
+  bool is_ai_hdr_active;
+
   bool wants_promotion_hint;
 
   bool protected_video;
@@ -675,6 +681,12 @@ enum RendererType {
   kCastStreaming = 9,    // CastStreamingRendererFactory
   kContentEmbedderDefined = 10,  // Defined by the content embedder
   kTest= 11,             // Renderer implementations used in tests
+  [EnableIf=arkweb_media]
+  kNative = 12,
+  [EnableIf=arkweb_custom_video_player]
+  kOHOSCustomMediaPlayer = 13,
+  [EnableIf=arkweb_media]
+  kOHOSMediaPlayer = 14,  // OHOSMediaPlayerRendererFactory
 };
 
 // See media/base/demuxer.h for description.
@@ -687,6 +699,8 @@ enum DemuxerType {
   kFrameInjectingDemuxer = 5,
   kStreamProviderDemuxer = 6,
   kManifestDemuxer = 7,
+  [EnableIf=arkweb_custom_video_player|arkweb_media_hls]
+  kOhosMediaPlayerDemuxer = 8,
 };
 
 // See media::CreateCdmStatus

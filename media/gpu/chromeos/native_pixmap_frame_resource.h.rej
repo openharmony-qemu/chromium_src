@@ -1,0 +1,14 @@
+diff a/media/gpu/chromeos/native_pixmap_frame_resource.h b/media/gpu/chromeos/native_pixmap_frame_resource.h	(rejected hunks)
+@@ -95,11 +95,11 @@ class NativePixmapFrameResource : public FrameResource {
+   // Always returns nullptr.
+   std::unique_ptr<VideoFrame::ScopedMapping> MapGMBOrSharedImage()
+       const override;
+   const VideoFrameLayout& layout() const override;
+   VideoPixelFormat format() const override;
+-  int stride(size_t plane) const override;
++  size_t stride(size_t plane) const override;
+   VideoFrame::StorageType storage_type() const override;
+   int row_bytes(size_t plane) const override;
+   const gfx::Size& coded_size() const override;
+   const gfx::Rect& visible_rect() const override;
+   const gfx::Size& natural_size() const override;

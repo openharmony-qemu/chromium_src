@@ -13,6 +13,7 @@
 #include "build/build_config.h"
 #include "media/media_buildflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "arkweb/build/features/features.h"
 
 namespace media {
 
@@ -31,7 +32,11 @@ const char kComponentPlatform[] =
 #elif BUILDFLAG(IS_FUCHSIA)
     "fuchsia";
 #else
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(IS_ARKWEB)
+    "";
+#else
 #error unsupported platform
+#endif
 #endif
 
 // Name of the component architecture.

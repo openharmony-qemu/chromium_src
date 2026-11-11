@@ -1,0 +1,19 @@
+diff a/media/gpu/test/test_gbm_buffer_manager.cc b/media/gpu/test/test_gbm_buffer_manager.cc	(rejected hunks)
+@@ -106,13 +106,14 @@ TestGbmBuffer::TestGbmBuffer(gbm_bo* buffer_object)
+     : buffer_object_(buffer_object), mapped_(false) {
+   gfx::NativePixmapHandle native_pixmap_handle;
+   for (size_t i = 0;
+        i < static_cast<size_t>(gbm_bo_get_plane_count(buffer_object)); ++i) {
+     native_pixmap_handle.planes.push_back(gfx::NativePixmapPlane(
+-        gbm_bo_get_stride_for_plane(buffer_object, i),
+-        gbm_bo_get_offset(buffer_object, i),
+-        gbm_bo_get_plane_size(buffer_object, i),
++        base::checked_cast<uint32_t>(
++            gbm_bo_get_stride_for_plane(buffer_object, i)),
++        base::checked_cast<uint64_t>(gbm_bo_get_offset(buffer_object, i)),
++        base::strict_cast<uint64_t>(gbm_bo_get_plane_size(buffer_object, i)),
+         base::ScopedFD(gbm_bo_get_plane_fd(buffer_object, i))));
+   }
+   handle_ = gfx::GpuMemoryBufferHandle(std::move(native_pixmap_handle));
+ }
+ 

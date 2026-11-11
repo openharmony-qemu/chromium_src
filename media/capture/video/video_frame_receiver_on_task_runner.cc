@@ -78,6 +78,7 @@ void VideoFrameReceiverOnTaskRunner::OnLog(const std::string& message) {
 }
 
 void VideoFrameReceiverOnTaskRunner::OnStarted() {
+  LOG(ERROR) << __func__;
   task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&VideoFrameReceiver::OnStarted, receiver_));
 }

@@ -29,6 +29,10 @@
 #include "url/gurl.h"
 #endif  // BUILDFLAG(ENABLE_HLS_DEMUXER)
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+#include "arkweb/chromium_ext/media/base/media_report_info.h"
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
 namespace media {
 
 // This class manages both an implementation of Demuxer and of
@@ -65,7 +69,9 @@ class MEDIA_EXPORT DemuxerManager {
     virtual base::SequenceBound<HlsDataSourceProvider>
     GetHlsDataSourceProvider() = 0;
 #endif  // BUILDFLAG(ENABLE_HLS_DEMUXER)
-
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+    virtual void UpdateMediaPlayerUrlType(media::MediaPlayerUrlType type);
+#endif
     // Returns true if playback would be able to start if data is present.
     virtual bool CouldPlayIfEnoughData() = 0;
 
@@ -178,6 +184,10 @@ class MEDIA_EXPORT DemuxerManager {
   // The demuxers need access the the media task runner and media log.
   const scoped_refptr<base::SequencedTaskRunner> media_task_runner_;
   std::unique_ptr<MediaLog> media_log_;
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  scoped_refptr<MediaReportInfo> media_info_;
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
   // Used for FFmpegDemuxer in most cases and for creating MemoryDataSource
   // objects.

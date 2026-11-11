@@ -1,0 +1,55 @@
+diff a/media/mojo/services/mojo_renderer_service.cc b/media/mojo/services/mojo_renderer_service.cc	(rejected hunks)
+@@ -14,10 +14,11 @@
+ #include "media/base/cdm_context.h"
+ #include "media/base/renderer.h"
+ #include "media/mojo/common/media_type_converters.h"
+ #include "media/mojo/services/media_resource_shim.h"
+ #include "media/mojo/services/mojo_cdm_service_context.h"
++#include "mojo/public/cpp/bindings/message.h"
+ 
+ namespace media {
+ 
+ // Time interval to update media time.
+ constexpr auto kTimeUpdateInterval = base::Milliseconds(125);
+@@ -56,20 +57,40 @@ void MojoRendererService::Initialize(
+     mojo::PendingAssociatedRemote<mojom::RendererClient> client,
+     std::optional<std::vector<mojo::PendingRemote<mojom::DemuxerStream>>>
+         streams,
+     InitializeCallback callback) {
+   DVLOG(1) << __func__;
+-  DCHECK_EQ(state_, STATE_UNINITIALIZED);
++  if (state_ != STATE_UNINITIALIZED) {
++    std::move(callback).Run(false);
++    mojo::ReportBadMessage("MojoRendererService is already initialized");
++    return;
++  }
+ 
+   client_.Bind(std::move(client));
+   state_ = STATE_INITIALIZING;
+ 
+   DCHECK(streams.has_value());
++#if BUILDFLAG(ARKWEB_MEDIA)
++  if (!streams.has_value()) {
++    std::move(callback).Run(false);
++    return;
++  }
++#endif
+   media_resource_ = std::make_unique<MediaResourceShim>(
+       std::move(*streams),
+       base::BindOnce(&MojoRendererService::OnAllStreamsReady, weak_this_,
+                      std::move(callback)));
++#if BUILDFLAG(ARKWEB_MEDIA_HLS)
++  renderer_->Initialize(
++      media_resource_.get(), this,
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++      media::RequestSurfaceCB(),
++      media::VideoDecoderChangedCB(),
++#endif // ARKWEB_VIDEO_ASSISTANT
++      base::BindOnce(&MojoRendererService::OnRendererInitializeDone, weak_this_,
++                     std::move(callback)));
++#endif
+ }
+ 
+ void MojoRendererService::Flush(FlushCallback callback) {
+   DVLOG(2) << __func__;
+   DCHECK(state_ == STATE_PLAYING || state_ == STATE_ERROR);

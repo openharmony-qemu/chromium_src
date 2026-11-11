@@ -59,6 +59,9 @@ bool IsLocalFile(const GURL& url) {
   return url.SchemeIsFile() || url.SchemeIsFileSystem() ||
          url.SchemeIs(url::kContentScheme) ||
          url.SchemeIs(url::kContentIDScheme) ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         url.SchemeIs("arkweb-extension") ||
+#endif
          url.SchemeIs("chrome-extension");
 }
 #endif
@@ -133,7 +136,7 @@ void DemuxerManager::OnPipelineError(PipelineStatus error) {
 
     return;
   }
-#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER)
+#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
 
   client_->OnError(std::move(error));
 }
@@ -258,6 +261,16 @@ PipelineStatus DemuxerManager::CreateDemuxer(
              /*is_static=*/false);
   }
 #endif  // BUILDFLAG(ENABLE_HLS_DEMUXER)
+
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+  if (hls_fallback_) {
+    SetDemuxer(std::make_unique<OhosMediaPlayerDemuxer>(media_task_runner_));
+    return std::move(on_demuxer_created)
+        .Run(demuxer_.get(), Pipeline::StartType::kNormal,
+             /*is_streaming = */ false,
+             /*is_static = */ false);
+  }
+#endif
 
   // TODO(sandersd): FileSystem objects may also be non-static, but due to our
   // caching layer such situations are broken already. http://crbug.com/593159
@@ -529,3 +542,7 @@ void DemuxerManager::DemuxerRequestsSeek(base::TimeDelta time) {
 }
 
 }  // namespace media
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+#include "arkweb/chromium_ext/media/filters/demuxer_manager_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE

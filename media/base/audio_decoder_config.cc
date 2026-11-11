@@ -87,7 +87,12 @@ bool AudioDecoderConfig::Matches(const AudioDecoderConfig& config) const {
        config.should_discard_decoder_delay()) &&
       (target_output_channel_layout() ==
        config.target_output_channel_layout()) &&
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+      (target_output_sample_format() == config.target_output_sample_format()) &&
+      (aac_extra_data() == config.aac_extra_data()));
+#else
       (target_output_sample_format() == config.target_output_sample_format()));
+#endif
 }
 
 std::string AudioDecoderConfig::AsHumanReadableString() const {

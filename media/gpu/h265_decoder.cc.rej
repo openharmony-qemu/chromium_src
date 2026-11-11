@@ -1,0 +1,21 @@
+diff a/media/gpu/h265_decoder.cc b/media/gpu/h265_decoder.cc	(rejected hunks)
+@@ -1167,10 +1167,19 @@ bool H265Decoder::PerformDpbOperations(const H265SPS* sps) {
+   if (dpb_.IsFull()) {
+     DVLOG(1) << "Could not free up space in DPB for current picture";
+     return false;
+   }
+ 
++  // Non-decodable RASL frames are not stored in the DPB because the picture
++  // is not actually decoded so it doesn't make sense to store it.
++  if (curr_pic_->no_rasl_output_flag_ &&
++      (curr_pic_->nal_unit_type_ == H265NALU::RASL_N ||
++       curr_pic_->nal_unit_type_ == H265NALU::RASL_R)) {
++    DVLOG(1) << "Skipping storing non-decodable RASL frame in DPB";
++    return true;
++  }
++
+   // Put the current pic in the DPB.
+   dpb_.StorePicture(curr_pic_, H265Picture::kShortTermFoll);
+   return true;
+ }
+ 

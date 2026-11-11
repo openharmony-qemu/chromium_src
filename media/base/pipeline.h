@@ -22,6 +22,10 @@
 #include "media/base/waiting.h"
 #include "ui/gfx/geometry/size.h"
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#include "arkweb/chromium_ext/media/base/action_reason.h"
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+
 namespace media {
 
 class CdmContext;
@@ -109,6 +113,10 @@ class MEDIA_EXPORT Pipeline {
   virtual void Start(StartType start_type,
                      Demuxer* demuxer,
                      Client* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                     RequestSurfaceCB request_surface_cb,
+                     VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                      PipelineStatusCallback seek_cb) = 0;
 
   // Track switching works similarly for both audio and video. Callbacks are
@@ -187,6 +195,10 @@ class MEDIA_EXPORT Pipeline {
   // It is an error to call this method if the pipeline has not finished
   // suspending.
   virtual void Resume(base::TimeDelta timestamp,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                      RequestSurfaceCB request_surface_cb,
+                      VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                       PipelineStatusCallback seek_cb) = 0;
 
   // Returns true if the pipeline has been started via Start().  If IsRunning()
@@ -262,6 +274,22 @@ class MEDIA_EXPORT Pipeline {
   using CdmAttachedCB = base::OnceCallback<void(bool)>;
   virtual void SetCdm(CdmContext* cdm_context,
                       CdmAttachedCB cdm_attached_cb) = 0;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  virtual void SetMediaPlayerState(bool is_suspend, int suspend_type) {}
+  virtual void SetPlaybackRateWithReason(double playback_rate,
+      ActionReason reason) {}
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_PIP)
+  virtual void PipEnable(bool enable) {}
+#endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  virtual void SetPreciseSeekTarget(int64_t target_timestamp) {}
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  virtual void RecycleDmaBuffer() {}
+  virtual void ResumeDmaBuffer() {}
+#endif  // ARKWEB_MEDIA_DMABUF
 };
 
 }  // namespace media

@@ -1,0 +1,13 @@
+diff a/media/capture/video/video_capture_metrics.cc b/media/capture/video/video_capture_metrics.cc	(rejected hunks)
+@@ -10,10 +10,11 @@
+ #include "base/containers/span.h"
+ #include "base/logging.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "base/metrics/histogram_macros.h"
+ #include "ui/gfx/geometry/size.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace {
+ 
+ // These resolutions are ones supported on a test webcam. Names given
+ // where possible, from https://en.wikipedia.org/wiki/List_of_common_resolutions

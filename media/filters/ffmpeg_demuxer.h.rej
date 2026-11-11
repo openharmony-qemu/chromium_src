@@ -1,0 +1,43 @@
+diff a/media/filters/ffmpeg_demuxer.h b/media/filters/ffmpeg_demuxer.h	(rejected hunks)
+@@ -28,10 +28,11 @@
+ #include <memory>
+ #include <optional>
+ #include <string>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/flat_map.h"
+ #include "base/functional/callback.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/weak_ptr.h"
+ #include "base/task/sequenced_task_runner.h"
+@@ -45,10 +46,14 @@
+ #include "media/base/video_decoder_config.h"
+ #include "media/ffmpeg/scoped_av_packet.h"
+ #include "media/filters/blocking_url_protocol.h"
+ #include "media/media_buildflags.h"
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++#include "arkweb/chromium_ext/media/base/media_report_info.h"
++#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
++
+ // FFmpeg forward declarations.
+ struct AVFormatContext;
+ struct AVStream;
+ 
+ namespace media {
+@@ -348,10 +356,14 @@ class MEDIA_EXPORT FFmpegDemuxer : public Demuxer {
+ 
+   // Provides asynchronous IO to this demuxer. Consumed by |url_protocol_| to
+   // integrate with libavformat.
+   raw_ptr<DataSource> data_source_;
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++  scoped_refptr<MediaReportInfo> media_info_;
++#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
++
+   raw_ptr<MediaLog> media_log_;
+ 
+   // Derived bitrate after initialization has completed.
+   int bitrate_ = 0;
+ 

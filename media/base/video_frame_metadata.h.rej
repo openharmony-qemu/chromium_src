@@ -1,0 +1,26 @@
+diff a/media/base/video_frame_metadata.h b/media/base/video_frame_metadata.h	(rejected hunks)
+@@ -138,10 +138,24 @@ struct MEDIA_EXPORT VideoFrameMetadata {
+   // is set. if `allow_overlay` is set, but `in_surface_view` is not Display
+   // Compositor will process frame and generate appropriate overlay promotion
+   // hints, but will still composite video.
+   bool in_surface_view = false;
+ 
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  // ArkWeb OHOS: when true, the video frame is rendered directly by the
++  // OHOS Rosen render service. Drives frame-level skip_present in viz so the
++  // fully-occluded web surface is not presented.
++  bool render_video_view = false;
++#endif
++
++#if BUILDFLAG(ARKWEB_AI_HDR)
++  // ArkWeb OHOS: when true, the video frame has been processed by VPE
++  // (Video Processing Engine) for AI HDR enhancement. Drives overlay_handled
++  // in CheckOverlaySupportImpl to force delegated compositing for AI HDR frames.
++  bool is_ai_hdr_active = false;
++#endif
++
+   // Android & Windows only: if set, then this frame's resource would like to
+   // be notified about its promotability to an overlay.
+   bool wants_promotion_hint = false;
+ 
+   // Windows only: set when frame is backed by a dcomp surface handle.

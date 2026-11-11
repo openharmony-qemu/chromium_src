@@ -1,0 +1,20 @@
+diff a/media/audio/audio_io.h b/media/audio/audio_io.h	(rejected hunks)
+@@ -179,10 +185,18 @@ class MEDIA_EXPORT AudioInputStream {
+     kFailedSystemPermissions,
+     // Failed to open as the device is exclusively opened by another app.
+     kFailedInUse,
+   };
+ 
++#if BUILDFLAG(ARKWEB_WEBRTC)
++  enum class AudioCaptureState {
++    NONE,
++    PAUSE,
++    ACTIVE,
++  };
++#endif
++
+   // Open the stream and prepares it for recording. Call Start() to actually
+   // begin recording.
+   virtual OpenOutcome Open() = 0;
+ 
+   // Starts recording audio and generating AudioInputCallback::OnData().

@@ -385,7 +385,11 @@ class FFmpegDemuxerTest : public testing::Test {
 
     demuxer_ = std::make_unique<FFmpegDemuxer>(
         base::SingleThreadTaskRunner::GetCurrentDefault(), data_source_.get(),
-        encrypted_media_init_data_cb, tracks_updated_cb, media_log, false);
+        encrypted_media_init_data_cb, tracks_updated_cb,
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+        base::MakeRefCounted<MediaReportInfo>(),
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+        media_log, false);
   }
 
   void CreateDataSource(const std::string& name) {

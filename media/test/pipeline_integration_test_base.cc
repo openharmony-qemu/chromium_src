@@ -426,6 +426,10 @@ PipelineStatus PipelineIntegrationTestBase::StartPipelineWithHlsManifest(
   base::RunLoop run_loop;
   pipeline_->Start(
       Pipeline::StartType::kNormal, demuxer_.get(), this,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      RequestSurfaceCB(),
+      VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindOnce(&PipelineIntegrationTestBase::OnStatusCallback,
                      base::Unretained(this), run_loop.QuitClosure()));
   RunUntilQuitOrEndedOrError(&run_loop);
@@ -624,6 +628,10 @@ bool PipelineIntegrationTestBase::Resume(base::TimeDelta seek_time) {
   EXPECT_CALL(*this, OnBufferingStateChange(BUFFERING_HAVE_ENOUGH, _))
       .WillOnce(InvokeWithoutArgs(&run_loop, &base::RunLoop::Quit));
   pipeline_->Resume(seek_time,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                    RequestSurfaceCB(),
+                    VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
                     base::BindOnce(&PipelineIntegrationTestBase::OnSeeked,
                                    base::Unretained(this), seek_time));
   RunUntilQuitOrError(&run_loop);
@@ -689,6 +697,9 @@ void PipelineIntegrationTestBase::CreateDemuxer(
       base::BindRepeating(
           &PipelineIntegrationTestBase::DemuxerMediaTracksUpdatedCB,
           base::Unretained(this)),
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+      base::MakeRefCounted<MediaReportInfo>(),
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
       &media_log_, true));
 #endif
 }
@@ -928,6 +939,10 @@ PipelineStatus PipelineIntegrationTestBase::StartPipelineWithMediaSource(
 
   pipeline_->Start(
       Pipeline::StartType::kNormal, demuxer_.get(), this,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      RequestSurfaceCB(),
+      VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindOnce(&PipelineIntegrationTestBase::OnStatusCallback,
                      base::Unretained(this), run_loop.QuitClosure()));
 

@@ -17,4 +17,8 @@ interface ProvisionFetcher {
   // MediaDrm.ProvisionRequest. |response| will be empty iff |result| is false.
   Retrieve(url.mojom.Url default_url, string request_data)
       => (bool result, string response);
+
+  [EnableIf=arkweb_enable_wiseplay]
+  RetrieveWiseplayLicense(url.mojom.Url default_url, string request_data)
+      => (bool result, string response);
 };

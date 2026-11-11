@@ -1,0 +1,31 @@
+diff a/media/base/ipc/media_param_traits.h b/media/base/ipc/media_param_traits.h	(rejected hunks)
+@@ -9,11 +9,10 @@
+ #include "ipc/param_traits.h"
+ #include "media/base/ipc/media_param_traits_macros.h"
+ 
+ namespace media {
+ class AudioParameters;
+-class EncryptionPattern;
+ }
+ 
+ namespace IPC {
+ 
+ template <>
+@@ -32,17 +31,8 @@ struct ParamTraits<media::AudioParameters::HardwareCapabilities> {
+   static bool Read(const base::Pickle* m,
+                    base::PickleIterator* iter,
+                    param_type* r);
+ };
+ 
+-template <>
+-struct ParamTraits<media::EncryptionPattern> {
+-  typedef media::EncryptionPattern param_type;
+-  static void Write(base::Pickle* m, const param_type& p);
+-  static bool Read(const base::Pickle* m,
+-                   base::PickleIterator* iter,
+-                   param_type* r);
+-};
+-
+ }  // namespace IPC
+ 
+ #endif  // MEDIA_BASE_IPC_MEDIA_PARAM_TRAITS_H_

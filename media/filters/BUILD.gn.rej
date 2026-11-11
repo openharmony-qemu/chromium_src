@@ -1,0 +1,47 @@
+diff a/media/filters/BUILD.gn b/media/filters/BUILD.gn	(rejected hunks)
+@@ -3,10 +3,14 @@
+ # found in the LICENSE file.
+ 
+ import("//media/gpu/args.gni")
+ import("//media/media_options.gni")
+ 
++if (is_arkweb) {
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++}
++
+ if (media_use_symphonia) {
+   rust_static_library("symphonia_glue") {
+     # Needed because CXX generates unsafe code, for example using export_name
+     # is inherently unsafe.
+     allow_unsafe = true
+@@ -56,10 +60,12 @@ source_set("filters") {
+     "demuxer_manager.h",
+     "file_data_source.cc",
+     "file_data_source.h",
+     "frame_processor.cc",
+     "frame_processor.h",
++    "h26x_annex_b_bitstream_builder.cc",
++    "h26x_annex_b_bitstream_builder.h",
+     "memory_data_source.cc",
+     "memory_data_source.h",
+     "offloading_video_decoder.cc",
+     "offloading_video_decoder.h",
+     "pipeline_controller.cc",
+@@ -246,17 +261,10 @@ source_set("filters") {
+         "/DELAYLOAD:packages/Microsoft.VCRTForwarders.140.1.0.6/runtimes/win10-x64/native/release/vcruntime140_app.dll",
+       ]
+     }
+   }
+ 
+-  if (is_win || use_vaapi) {
+-    sources += [
+-      "h26x_annex_b_bitstream_builder.cc",
+-      "h26x_annex_b_bitstream_builder.h",
+-    ]
+-  }
+-
+   if (enable_hls_demuxer) {
+     sources += [
+       "hls_data_source_provider.cc",
+       "hls_data_source_provider.h",
+       "hls_data_source_provider_impl.cc",

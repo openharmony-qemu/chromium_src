@@ -1,0 +1,18 @@
+diff a/media/capture/video_capture_types.h b/media/capture/video_capture_types.h	(rejected hunks)
+@@ -363,10 +367,16 @@ struct CAPTURE_EXPORT VideoCaptureParams {
+ 
+   // Starts at 0 when the capture starts, and is incremented whenever the target
+   // of the capture is dynamically changed, as for example when using
+   // share-this-tab-instead.
+   uint32_t capture_version_source = 0;
++
++#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
++  bool is_picker_show = false;
++
++  int nweb_id = 0;
++#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+ };
+ 
+ CAPTURE_EXPORT std::ostream& operator<<(
+     std::ostream& os,
+     const VideoCaptureParams::SuggestedConstraints& constraints);

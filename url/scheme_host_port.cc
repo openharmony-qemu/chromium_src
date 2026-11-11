@@ -239,10 +239,25 @@ GURL SchemeHostPort::GetURL() const {
   // here. Note: Non-special urls with empty paths do not have an appended "/".
   // Note: per RFC 6454 we cannot do this for normal Origin serialization.
   DCHECK(!parsed.path.is_valid());
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
+    // Append "/" only if the URL is standard. If the flag is enabled,
+    // non-special URLs can have an empty path and GURL doesn't append "/" to
+    // that.
+    if (IsStandardScheme(scheme_)) {
+      parsed.path = Component(serialized.length(), 1);
+      serialized.append("/");
+    }
+  } else {
+    parsed.path = Component(serialized.length(), 1);
+    serialized.append("/");
+  }
+#else
   if (IsStandardScheme(scheme_)) {
     parsed.path = Component(serialized.length(), 1);
     serialized.append("/");
   }
+#endif
 
   return GURL(std::move(serialized), parsed, true);
 }
@@ -288,7 +303,12 @@ std::string SchemeHostPort::SerializeInternal(url::Parsed* parsed) const {
 }
 
 bool SchemeHostPort::ShouldDiscardHostAndPort(std::string_view scheme) {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  return IsAndroidWebViewHackEnabledScheme(scheme) &&
+         IsUsingStandardCompliantNonSpecialSchemeURLParsing();
+#else
   return IsAndroidWebViewHackEnabledScheme(scheme);
+#endif
 }
 
 std::ostream& operator<<(std::ostream& out,

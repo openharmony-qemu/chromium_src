@@ -1,0 +1,20 @@
+diff a/url/url_canon_relative.cc b/url/url_canon_relative.cc	(rejected hunks)
+@@ -184,12 +184,18 @@ bool DoIsRelativeUrl(std::string_view base,
+   // URL Standard: https://url.spec.whatwg.org/#scheme-state
+   //
+   // scheme state:
+   // > 2.6. Otherwise, if url is special, base is non-null, and base’s scheme is
+   // >      url’s scheme:
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  if ((IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
++      !IsStandard(base_parsed.scheme.MaybeAsViewOn(base))) ||
++#else
+   if (!IsStandard(base_parsed.scheme.MaybeAsViewOn(base)) ||
++#endif
+       !AreSchemesEqual(base.data(), base_parsed.scheme, url.data(), scheme)) {
++
+     return true;
+   }
+ 
+   // When the scheme that they both share is not hierarchical, treat the
+   // incoming scheme as absolute (this way with the base of "data:foo",

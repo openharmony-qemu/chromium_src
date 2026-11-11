@@ -1,0 +1,30 @@
+diff a/cc/paint/image_transfer_cache_entry.h b/cc/paint/image_transfer_cache_entry.h	(rejected hunks)
+@@ -22,10 +22,11 @@
+ #include "third_party/skia/include/core/SkYUVAInfo.h"
+ #include "third_party/skia/include/gpu/ganesh/GrTypes.h"
+ #include "third_party/skia/include/private/SkGainmapInfo.h"
+ #include "ui/gfx/color_space.h"
+ #include "ui/gfx/hdr_metadata.h"
++#include "arkweb/build/features/features.h"
+ 
+ class GrDirectContext;
+ class SkColorSpace;
+ class SkImage;
+ class SkPixmap;
+@@ -153,10 +154,16 @@ class CC_PAINT_EXPORT ServiceImageTransferCacheEntry final
+                                      SkYUVAInfo::Subsampling subsampling,
+                                      SkYUVColorSpace yuv_color_space,
+                                      size_t buffer_byte_size,
+                                      bool needs_mips);
+ 
++#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++  bool BuildFromRGBAHardwareDecodedImage(GrDirectContext* context,
++                                         std::vector<sk_sp<SkImage>> plane_images,
++                                         size_t buffer_byte_size);
++#endif
++
+   // ServiceTransferCacheEntry implementation:
+   size_t CachedSize() const final;
+   bool Deserialize(GrDirectContext* gr_context,
+                    skgpu::graphite::Recorder* graphite_recorder,
+                    base::span<const uint8_t> data) final;

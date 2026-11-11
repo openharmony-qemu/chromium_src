@@ -900,6 +900,23 @@ size_t GpuImageDecodeCache::ImageData::GetTotalSize() const {
 ////////////////////////////////////////////////////////////////////////////////
 // GpuImageDecodeCache
 
+#if BUILDFLAG(ARKWEB_CLIPPED_IMAGE_SCALING)
+namespace {
+bool ShouldEnableClippedImageScaling() {
+  static bool enabled = [] {
+    int memtest = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                      .GetSystemPropertiesInstance()
+                      .GetIntParameter("web.debug.memtest", 0);
+    bool result = base::ohos::IsOhosLowEndDevice() && (memtest == 0 || memtest == 3);
+    LOG(DEBUG) << "ArkWebClipImgCache ShouldEnableClippedImageScaling memtest="
+               << memtest << " result=" << result;
+    return result;
+  }();
+  return enabled;
+}
+}  // namespace
+#endif
+
 GpuImageDecodeCache::GpuImageDecodeCache(
     viz::RasterContextProvider* context,
     SkColorType color_type,
@@ -911,8 +928,12 @@ GpuImageDecodeCache::GpuImageDecodeCache(
       max_texture_size_(max_texture_size),
       generator_client_id_(PaintImage::GetNextGeneratorClientId()),
       enable_clipped_image_scaling_(
-          base::CommandLine::ForCurrentProcess()->HasSwitch(
-              switches::kEnableClippedImageScaling)),
+#if BUILDFLAG(ARKWEB_CLIPPED_IMAGE_SCALING)
+        ShouldEnableClippedImageScaling()),
+#else
+        base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kEnableClippedImageScaling)),
+#endif
       persistent_cache_(PersistentCache::NO_AUTO_EVICT),
       max_working_set_bytes_(max_working_set_bytes),
       max_working_set_items_(kMaxItemsInWorkingSet),
@@ -1591,6 +1612,15 @@ int GpuImageDecodeCache::CalculateUploadScaleMipLevel(
     if (is_clipped)
       return 0;
   }
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  // Heif uses hardware-accelerated decode, scaling is not currently supported
+  // for hardware-accelerated decodes
+  const auto* image_metadata =
+      draw_image.paint_image().GetImageHeaderMetadata();
+  if (image_metadata && image_metadata->image_type == ImageType::kHEIF) {
+    return 0;
+  }
+#endif
 
   gfx::Size base_size = draw_image.paint_image().GetSize(aux_image);
   // Ceil our scaled size so that the mip map generated is guaranteed to be
@@ -1876,6 +1906,19 @@ bool GpuImageDecodeCache::ExceedsCacheLimits() const {
   } else {
     items_limit = kNormalMaxItemsInCacheForGpu;
   }
+
+#if BUILDFLAG(ARKWEB_GPU_IMAGE_PERSISTENT_CACHE_LIMIT)
+  static int persistent_cache_memory_limit = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                 .GetSystemPropertiesInstance()
+                                 .GetIntParameter("web.debug.memtest", 0);
+  if (base::ohos::IsOhosLowEndDevice() && 
+      (persistent_cache_memory_limit == 0 || persistent_cache_memory_limit == 4) && 
+      persistent_cache_memory_size_ > kArkWebMaxPersistentCacheMemoryBytes) {
+     LOG(DEBUG) << "Persistent Cache limits exceeded," <<                                                        
+                   " cache_memory_size=" << persistent_cache_memory_size_;                                             
+    return true;
+  }
+#endif
 
   return persistent_cache_.size() > items_limit;
 }

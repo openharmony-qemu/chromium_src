@@ -1,0 +1,312 @@
+diff a/cc/trees/layer_tree_host_impl.cc b/cc/trees/layer_tree_host_impl.cc	(rejected hunks)
+@@ -13,10 +13,11 @@
+ #include <memory>
+ #include <optional>
+ #include <string>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/auto_reset.h"
+ #include "base/command_line.h"
+ #include "base/compiler_specific.h"
+ #include "base/containers/adapters.h"
+ #include "base/containers/contains.h"
+@@ -152,10 +153,24 @@
+ #include "ui/gfx/geometry/size_conversions.h"
+ #include "ui/gfx/geometry/skia_conversions.h"
+ #include "ui/gfx/geometry/vector2d_conversions.h"
+ #include "ui/gfx/geometry/vector2d_f.h"
+ #include "ui/gfx/skia_span_util.h"
++#include "arkweb/build/features/features.h"
++#include "cc/trees/layer_tree_impl_utils.h"
++
++#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE) || BUILDFLAG(ARKWEB_THROTTLE_FRAME)
++#include "cc/trees/layer_tree_host_impl_for_include.cc"
++#endif
++
++#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
++#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
++#endif
++
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
++#endif
+ 
+ namespace cc {
+ namespace {
+ 
+ // In BuildHitTestData we iterate all layers to find all layers that overlap
+@@ -526,11 +541,15 @@ LayerTreeHostImpl::LayerTreeHostImpl(
+       has_input_resetter_(
+           GetTaskRunner(),
+           base::BindRepeating(&LayerTreeHostImpl::ResetHasInputForFrameInterval,
+                               base::Unretained(this)),
+           kHasInputResetDelay),
+-      contains_srgb_cache_(kContainsSrgbCacheSize) {
++      contains_srgb_cache_(kContainsSrgbCacheSize)
++#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
++      , frame_rate_estimator_(GetTaskRunner())
++#endif
++       {
+   CHECK(!(settings.scrollbar_flash_once_after_scroll_update &&
+           settings.scrollbar_flash_after_any_scroll_update))
+       << "Only one of "
+       << "scrollbar_flash_once_after_scroll_update "
+       << "or "
+@@ -1273,10 +1296,13 @@ void LayerTreeHostImpl::DidScrollForMetrics() {
+ 
+ void LayerTreeHostImpl::NotifyInputEvent(bool is_fling) {
+   has_input_for_frame_interval_ = true;
+   has_input_resetter_.Schedule();
+   has_non_fling_input_since_last_frame_ |= (!is_fling);
++#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
++  frame_rate_estimator_.NotifyInputEvent();
++#endif
+ }
+ 
+ void LayerTreeHostImpl::QueueSwapPromiseForMainThreadScrollUpdate(
+     std::unique_ptr<SwapPromise> swap_promise) {
+   swap_promises_for_main_thread_scroll_update_.push_back(
+@@ -1788,10 +1814,14 @@ DrawResult LayerTreeHostImpl::PrepareToDraw(FrameData* frame,
+                                             bool expects_to_draw) {
+   DCHECK(!expects_to_draw || settings_.trees_in_viz_in_viz_process);
+ 
+   TRACE_EVENT1("cc", "LayerTreeHostImpl::PrepareToDraw", "SourceFrameNumber",
+                active_tree_->source_frame_number());
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
++                    std::to_string(CurrentBeginFrameArgs().trace_id), "step", "GenerateRenderPass");
++#endif
+   if (input_delegate_)
+     input_delegate_->WillDraw();
+ 
+   // No need to record metrics each time we draw, 1% is enough.
+   constexpr double kSamplingFrequency = .01;
+@@ -2353,11 +2383,15 @@ void LayerTreeHostImpl::SetExternalTilePriorityConstraints(
+     const gfx::Transform& transform) {
+   const bool tile_priority_params_changed =
+       viewport_rect_for_tile_priority_ != viewport_rect;
+   viewport_rect_for_tile_priority_ = viewport_rect;
+ 
++#if BUILDFLAG(ARKWEB_SYNC_RENDER)
++  if (isNeedDrawRect_ || tile_priority_params_changed) {
++#else
+   if (tile_priority_params_changed) {
++#endif
+     active_tree_->set_needs_update_draw_properties();
+     if (pending_tree_)
+       pending_tree_->set_needs_update_draw_properties();
+ 
+     // Compositor, not LayerTreeFrameSink, is responsible for setting damage
+@@ -2799,10 +2838,34 @@ RenderFrameMetadata LayerTreeHostImpl::MakeRenderFrameMetadata(
+   metadata.has_offset_tag = browser_controls_offset_manager_->HasOffsetTag();
+ #endif
+ 
+   bool allocate_new_local_surface_id = false;
+ 
++#if BUILDFLAG(IS_ARKWEB)
++  metadata.bottom_controls_height =
++      browser_controls_offset_manager_->BottomControlsHeight();
++  metadata.bottom_controls_shown_ratio =
++      browser_controls_offset_manager_->BottomControlsShownRatio();
++  metadata.top_controls_min_height_offset =
++      browser_controls_offset_manager_->TopControlsMinHeightOffset();
++  metadata.bottom_controls_min_height_offset =
++      browser_controls_offset_manager_->BottomControlsMinHeightOffset();
++  metadata.scrollable_viewport_size = active_tree_->ScrollableViewportSize();
++  metadata.root_layer_size = active_tree_->ScrollableSize();
++  if (InnerViewportScrollNode()) {
++    DCHECK(OuterViewportScrollNode());
++    metadata.root_overflow_y_hidden =
++        !OuterViewportScrollNode()->user_scrollable_vertical ||
++        !InnerViewportScrollNode()->user_scrollable_vertical;
++  }
++#endif
++
++#if BUILDFLAG(ARKWEB_MENU)
++  metadata.clipped_selection_bounds =
++    active_tree_->layer_tree_impl_utils()->GetClippedVisualViewportSelectionBounds();
++#endif
++
+   if (last_draw_render_frame_metadata_) {
+     const float last_root_scroll_offset_y =
+         last_draw_render_frame_metadata_->root_scroll_offset
+             .value_or(gfx::PointF())
+             .y();
+@@ -3170,10 +3237,14 @@ std::optional<SubmitInfo> LayerTreeHostImpl::DrawLayers(FrameData* frame) {
+   };
+ }
+ 
+ viz::CompositorFrame LayerTreeHostImpl::GenerateCompositorFrame(
+     FrameData* frame) {
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
++                    std::to_string(CurrentBeginFrameArgs().trace_id), "step", "GenerateCompositorFrame");
++#endif
+   if (!settings_.trees_in_viz_in_viz_process) {
+     memory_history_->SaveEntry(tile_manager_.memory_stats_from_last_assign());
+   }
+ 
+   if (debug_state_.ShowDebugRects()) {
+@@ -3184,10 +3255,16 @@ viz::CompositorFrame LayerTreeHostImpl::GenerateCompositorFrame(
+ 
+   TRACE_EVENT_INSTANT2("cc", "Scroll Delta This Frame",
+                        TRACE_EVENT_SCOPE_THREAD, "x",
+                        scroll_accumulated_this_frame_.x(), "y",
+                        scroll_accumulated_this_frame_.y());
++
++#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
++  g_frameIsScrolling = scroll_accumulated_this_frame_.x() != 0 ||
++                       scroll_accumulated_this_frame_.y() != 0;
++#endif
++
+   scroll_accumulated_this_frame_ = gfx::Vector2dF();
+ 
+   bool is_new_trace;
+   TRACE_EVENT_IS_NEW_TRACE(&is_new_trace);
+   if (is_new_trace) {
+@@ -3217,10 +3294,15 @@ viz::CompositorFrame LayerTreeHostImpl::GenerateCompositorFrame(
+         draw_mode, layer_tree_frame_sink_, resource_provider_.get(),
+         raster_caps(), frame->render_passes);
+   }
+ 
+   viz::CompositorFrameMetadata metadata = MakeCompositorFrameMetadata();
++
++#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
++  metadata.is_scrolling = g_frameIsScrolling;
++#endif
++
+   bool has_view_transition_with_animate = false;
+ 
+   // Don't compute transition directives in TreesInViz mode because
+   // the requests will be sent over to viz to compute them.
+   // If we call TakeViewTransitionRequests() here, it will clear the requests
+@@ -3428,12 +3513,22 @@ viz::CompositorFrame LayerTreeHostImpl::GenerateCompositorFrame(
+     ApplyFirstScrollTracking(metadata.latency_info.front(),
+                              metadata.frame_token);
+     for (auto& latency : metadata.latency_info) {
+       latency.AddLatencyNumberWithTimestamp(
+           ui::INPUT_EVENT_LATENCY_RENDERER_SWAP_COMPONENT, draw_time);
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
++                        std::to_string(latency.trace_id()), "step", "INPUT_EVENT_LATENCY_RENDERER_SWAP_COMPONENT");
++#endif
++    }
+     }
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  for (auto& latency : metadata.latency_info) {
++      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
++                        std::to_string(latency.trace_id()), "step", "STEP_SWAP_BUFFERS");
+   }
++#endif
+ 
+   // Collect all resource ids in the render passes into a single array.
+   std::vector<viz::ResourceId> resources;
+   for (const auto& render_pass : frame->render_passes) {
+     for (auto* quad : render_pass->quad_list) {
+@@ -3749,12 +3844,32 @@ void LayerTreeHostImpl::DidNotProduceFrame(const viz::BeginFrameAck& ack,
+             return "kDrawThrottled";
+         }
+         return "";
+       }(),
+       "Frame Sequence Number", ack.frame_id.sequence_number);
++#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
++  bool is_scrolling = CurrentlyScrollingNode() != nullptr ||
++    IsPinchGestureActive() ||
++    GetActivelyScrollingType() != ActivelyScrollingType::kNone ||
++    mutator_host_->HasImplOnlyAutoScrollAnimatingElement();
++  if (is_scrolling) {
++    frame_rate_estimator_.ClearBeginFrameThrottleSettings();
++  } else {
++    frame_rate_estimator_.DidNotProduceFrameWithReason(reason);
++  }
++#endif
+   if (layer_tree_frame_sink_) {
++#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
++	  viz::BeginFrameAck adjust_ack = ack;
++    if (IsThrottleEnable()) {
++      adjust_ack.preferred_frame_interval = frame_rate_estimator_.GetPreferredInterval();
++      ThrottleFrameStart();
++    }
++    layer_tree_frame_sink_->DidNotProduceFrame(adjust_ack, reason);
++#else
+     layer_tree_frame_sink_->DidNotProduceFrame(ack, reason);
++#endif
+   }
+   if (reason == FrameSkippedReason::kNoDamage ||
+       !base::FeatureList::IsEnabled(
+           features::kDropMetricsFromNonProducedFramesOnlyIfTheyHadNoDamage)) {
+     // While scrolling, we save all event metrics. It is possible that this
+@@ -4609,10 +4739,12 @@ void LayerTreeHostImpl::ReleaseLayerTreeFrameSink() {
+       features::kSkipFinishDuringReleaseLayerTreeFrameSink);
+ #if BUILDFLAG(IS_WIN)
+   // Windows does not have stability issues that require calling Finish.
+   // To minimize risk, only avoid waiting for the UI layer tree.
+   should_finish &= !settings_.is_layer_tree_for_ui;
++#elif BUILDFLAG(IS_ARKWEB)
++  should_finish &= !settings_.is_layer_tree_for_ui || !is_ohos_pc_ui_setting_;
+ #endif
+ 
+   if (should_finish && layer_tree_frame_sink_->context_provider()) {
+     // TODO(kylechar): Exactly where this finish call is still required is not
+     // obvious. Attempts have been made to remove it which caused problems, eg.
+@@ -4704,10 +4836,15 @@ bool LayerTreeHostImpl::InitializeFrameSink(
+     resource_pool_ = std::make_unique<ResourcePool>(
+         resource_provider_.get(), layer_tree_frame_sink_->context_provider(),
+         GetTaskRunner(), ResourcePool::kDefaultExpirationDelay,
+         settings_.disallow_non_exact_resource_reuse);
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++    resource_pool_->EnableDeleteUnusedResourcesDelay(
++        settings_.enable_delete_unused_resources_delay);
++#endif
++
+     CreateTileManagerResources();
+     RecreateTileResources();
+   }
+ 
+   client_->OnCanDrawStateChanged(CanDraw());
+@@ -4723,10 +4860,15 @@ bool LayerTreeHostImpl::InitializeFrameSink(
+   const viz::LocalSurfaceId& local_surface_id = GetCurrentLocalSurfaceId();
+   if (local_surface_id.is_valid() && !settings().trees_in_viz_in_viz_process) {
+     AllocateLocalSurfaceId();
+   }
+ 
++  if (need_layer_tree_frame_sink_) {
++    OnSetBypassVsyncCondition(condition_);
++    need_layer_tree_frame_sink_ = false;
++  }
++
+   return true;
+ }
+ 
+ void LayerTreeHostImpl::SetBeginFrameSource(viz::BeginFrameSource* source) {
+   client_->SetBeginFrameSource(source);
+@@ -4986,10 +5128,27 @@ void LayerTreeHostImpl::DidScrollContent(ElementId element_id,
+     // won't be recorded.
+     SetNeedsRedraw(/*animation_only=*/false, /*skip_if_inside_draw=*/false);
+   }
+ }
+ 
++#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
++void LayerTreeHostImpl::ScheduledActionDraw() {
++  client_->OnScheduledActionDraw();
++}
++
++void LayerTreeHostImpl::OnSetBypassVsyncCondition(int32_t condition) {
++  if (!layer_tree_frame_sink_) {
++    LOG(INFO)
++        << "layer_tree_frame_sink_::need_layer_tree_frame_sink_:true";
++      need_layer_tree_frame_sink_ = true;
++      condition_ = condition;
++      return ;
++  }
++  layer_tree_frame_sink_->OnSetBypassVsyncCondition(condition);
++}
++#endif
++
+ float LayerTreeHostImpl::DeviceScaleFactor() const {
+   return active_tree_->device_scale_factor();
+ }
+ 
+ float LayerTreeHostImpl::PageScaleFactor() const {

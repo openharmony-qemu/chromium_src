@@ -1,0 +1,16 @@
+diff a/cc/tiles/image_decode_cache.h b/cc/tiles/image_decode_cache.h	(rejected hunks)
+@@ -82,10 +83,14 @@ class CC_EXPORT ImageDecodeCache {
+         return ScopedImageType::kAvif;
+       case ImageType::kBMP:
+         return ScopedImageType::kBmp;
+       case ImageType::kGIF:
+         return ScopedImageType::kGif;
++#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++      case ImageType::kHEIF:
++        return ScopedImageType::kHeif;
++#endif
+       case ImageType::kICO:
+         return ScopedImageType::kIco;
+       case ImageType::kJPEG:
+         return ScopedImageType::kJpeg;
+       case ImageType::kPNG:

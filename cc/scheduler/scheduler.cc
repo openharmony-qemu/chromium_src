@@ -85,6 +85,7 @@ Scheduler::Scheduler(
   wants_animate_only_begin_frames_ = true;
 
   ProcessScheduledActions();
+  scheduler_utils_ = std::make_unique<SchedulerUtils>(this);
 }
 
 Scheduler::~Scheduler() {

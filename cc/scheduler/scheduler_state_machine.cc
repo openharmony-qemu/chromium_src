@@ -843,11 +843,17 @@ bool SchedulerStateMachine::ShouldDeferInvalidatingForMainFrame() const {
 }
 
 void SchedulerStateMachine::WillPerformImplSideInvalidation() {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT0("cc", "SchedulerStateMachine::WillPerformImplSideInvalidation");
+#endif
   current_pending_tree_is_impl_side_ = true;
   WillPerformImplSideInvalidationInternal();
 }
 
 void SchedulerStateMachine::WillPerformImplSideInvalidationInternal() {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT0("cc", "SchedulerStateMachine::WillPerformImplSideInvalidationInternal");
+#endif
   DCHECK(needs_impl_side_invalidation_);
   DCHECK(!has_pending_tree_);
 
@@ -997,6 +1003,9 @@ void SchedulerStateMachine::WillActivate() {
   // We cannot activate the pending tree while paint worklets are still being
   // processed; the pending tree *must* be fully painted before it can ever be
   // activated because we cannot paint the active tree.
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT0("cc", "SchedulerStateMachine::WillActivate");
+#endif
   DCHECK(!processing_paint_worklets_for_pending_tree_);
 
   if (layer_tree_frame_sink_state_ ==

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "cc/resources/ui_resource_bitmap.h"
+#include "arkweb/build/features/features.h"
 
 #include <stdint.h>
 

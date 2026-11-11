@@ -153,6 +153,12 @@ class CC_EXPORT CategorizedWorkerPoolJob : public CategorizedWorkerPool {
   void Start(int max_concurrency_foreground) override;
   void Shutdown() override;
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  base::JobHandle* GetForegroundJobHandle() {
+    return &foreground_job_handle_;
+  }
+#endif
+
  private:
   ~CategorizedWorkerPoolJob() override;
 

@@ -694,7 +694,8 @@ void ResourcePool::EvictExpiredResources() {
   evict_expired_resources_pending_ = false;
   base::TimeTicks current_time = clock_->NowTicks();
 
-  EvictResourcesNotUsedSince(current_time - resource_expiration_delay_);
+  base::TimeTicks time_limit = current_time - resource_expiration_delay_;
+  EvictResourcesNotUsedSince(time_limit);
 
   if (unused_resources_.empty() ||
       flush_evicted_resources_deadline_ <= current_time) {
@@ -708,10 +709,22 @@ void ResourcePool::EvictExpiredResources() {
     // If we still have evictable resources, schedule a call to
     // EvictExpiredResources for either (a) the time when the LRU buffer expires
     // or (b) the deadline to explicitly flush previously evicted resources.
-    ScheduleEvictExpiredResourcesIn(
+    base::TimeDelta time_from_now =
         std::min(GetUsageTimeForLRUResource() + resource_expiration_delay_,
                  flush_evicted_resources_deadline_) -
-        current_time);
+        current_time;
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+    if (delete_unused_resources_delay_enabled_) {
+      base::TimeDelta delay =
+          unused_resources_.back()->last_usage() < time_limit
+              ? kDefaultExpirationDelay
+              : base::Seconds(0);
+      time_from_now = std::max(time_from_now, delay);
+    }
+#endif
+
+    ScheduleEvictExpiredResourcesIn(time_from_now);
   }
 }
 
@@ -822,5 +835,11 @@ void ResourcePool::PoolResource::OnMemoryDump(
   uint64_t busy_size = is_busy ? total_bytes : 0u;
   dump->AddScalar("busy_size", MemoryAllocatorDump::kUnitsBytes, busy_size);
 }
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+void ResourcePool::EnableDeleteUnusedResourcesDelay(bool enable) {
+  delete_unused_resources_delay_enabled_ = enable;
+}
+#endif
 
 }  // namespace cc

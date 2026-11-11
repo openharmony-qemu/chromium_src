@@ -119,7 +119,9 @@ Layer::Layer()
       ignore_set_needs_commit_for_test_(false),
       subtree_property_changed_(false),
       bitflags_(0u),
-      changed_properties_(0u) {}
+      changed_properties_(0u) {
+  layer_utils_ = std::make_unique<LayerUtils>(this);
+}
 
 Layer::~Layer() {
   // Our parent should be holding a reference to us so there should be no
@@ -1544,6 +1546,9 @@ void Layer::PushDirtyPropertiesTo(LayerImpl* layer,
     if (subtree_property_changed_.Read(*this)) {
       layer->NoteLayerPropertyChanged();
     }
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    layer_utils_->PushPropertiesToImpl(layer);
+#endif
     layer->SetTouchActionRegion(inputs.touch_action_region);
     layer->SetContentsOpaque(inputs.contents_opaque);
     layer->SetContentsOpaqueForText(inputs.contents_opaque_for_text);

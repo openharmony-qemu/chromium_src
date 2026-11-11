@@ -1,0 +1,18 @@
+diff a/cc/paint/paint_image.h b/cc/paint/paint_image.h	(rejected hunks)
+@@ -40,11 +42,15 @@ namespace cc {
+ struct FrameMetadata;
+ class PaintImageGenerator;
+ class PaintWorkletInput;
+ class TextureBacking;
+ 
+-enum class ImageType { kPNG, kJPEG, kWEBP, kGIF, kICO, kBMP, kAVIF, kInvalid };
++enum class ImageType { kPNG, kJPEG, kWEBP, kGIF, kICO, kBMP, kAVIF,
++#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++ kHEIF,
++#endif
++ kInvalid };
+ 
+ // An encoded image may include several auxiliary images within it. This enum
+ // is used to index those images. Auxiliary images can have different sizes and
+ // pixel formats from the default image.
+ enum class AuxImage : size_t {

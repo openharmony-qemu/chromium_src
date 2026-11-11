@@ -1,0 +1,13 @@
+diff a/cc/slim/frame_sink_impl.cc b/cc/slim/frame_sink_impl.cc	(rejected hunks)
+@@ -6,10 +6,11 @@
+ 
+ #include <string>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/check.h"
+ #include "base/containers/flat_set.h"
+ #include "base/functional/bind.h"
+ #include "base/task/common/task_annotator.h"
+ #include "base/threading/platform_thread.h"

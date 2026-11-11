@@ -1,0 +1,30 @@
+diff a/cc/paint/image_transfer_cache_entry_unittest.cc b/cc/paint/image_transfer_cache_entry_unittest.cc	(rejected hunks)
+@@ -270,11 +270,11 @@ TEST_P(ImageTransferCacheEntryTest, MAYBE_Deserialize) {
+ 
+   client_entry.reset();
+   entry.reset();
+ }
+ 
+-TEST_P(ImageTransferCacheEntryTest, HardwareDecodedNoMipsAtCreation) {
++TEST_P(ImageTransferCacheEntryTest, HardwareDecodedMipsAfterCreation) {
+   base::HeapArray<bool> release_flags;
+   std::vector<sk_sp<SkImage>> plane_images = CreateTestYUVImage(release_flags);
+   const size_t plane_images_size = plane_images.size();
+   ASSERT_EQ(static_cast<size_t>(SkYUVAInfo::NumPlanes(GetParam())),
+             plane_images_size);
+@@ -328,11 +328,15 @@ TEST_P(ImageTransferCacheEntryTest, HardwareDecodedMipsAtCreation) {
+   ASSERT_TRUE(entry->image());
+   EXPECT_TRUE(
+       CheckImageIsSolidColor(entry->image(), SkColorSetRGB(255, 121, 255)));
+ }
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++TEST_P(ImageTransferCacheEntryTest, HardwareDecodedMipsAfterCreation_ext) {
++#else
+ TEST_P(ImageTransferCacheEntryTest, HardwareDecodedMipsAfterCreation) {
++#endif
+   base::HeapArray<bool> release_flags;
+   std::vector<sk_sp<SkImage>> plane_images = CreateTestYUVImage(release_flags);
+   const size_t plane_images_size = plane_images.size();
+   ASSERT_EQ(static_cast<size_t>(SkYUVAInfo::NumPlanes(GetParam())),
+             plane_images_size);

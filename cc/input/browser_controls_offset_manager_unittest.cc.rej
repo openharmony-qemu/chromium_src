@@ -1,0 +1,16 @@
+diff a/cc/input/browser_controls_offset_manager_unittest.cc b/cc/input/browser_controls_offset_manager_unittest.cc	(rejected hunks)
+@@ -126,11 +126,13 @@ class MockBrowserControlsOffsetManagerClient
+ 
+   void ScrollVerticallyBy(float dy) {
+     gfx::Vector2dF viewport_scroll_delta = manager()->ScrollBy({0.f, dy});
+     viewport_scroll_offset_ += viewport_scroll_delta;
+   }
+-
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  void SetupScrollBy() override {}
++#endif // ARKWEB_UNITTESTS
+  private:
+   FakeImplTaskRunnerProvider task_runner_provider_;
+   TestTaskGraphRunner task_graph_runner_;
+   FakeLayerTreeHostImpl host_impl_;
+   std::unique_ptr<LayerTreeImpl> active_tree_;

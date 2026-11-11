@@ -28,6 +28,8 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/hdr_metadata.h"
+#include "build/build_config.h"
+#include "arkweb/build/features/features.h"
 
 class SkBitmap;
 class SkColorSpace;

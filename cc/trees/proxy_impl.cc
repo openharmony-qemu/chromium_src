@@ -441,6 +441,9 @@ void ProxyImpl::NotifyReadyToCommitOnImpl(
                         READY_TO_COMMIT_ON_IMPL);
               });
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT0("cc,benchmark", "ProxyImpl::ReadyToCommit");
+#endif
   DCHECK(!data_for_commit_.get());
   DCHECK(IsImplThread());
   DCHECK(scheduler_);
@@ -844,6 +847,10 @@ void ProxyImpl::ScheduledActionSendBeginMainFrame(
           begin_frame_id->set_sequence_number(args.frame_id.sequence_number);
           begin_frame_id->set_source_id(args.frame_id.source_id);
         });
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                      std::to_string(args.trace_id), "step", "SendBeginMainFrame");
+#endif
   }
   MainThreadTaskRunner()->PostTask(
       FROM_HERE,
@@ -853,7 +860,7 @@ void ProxyImpl::ScheduledActionSendBeginMainFrame(
 }
 
 DrawResult ProxyImpl::ScheduledActionDrawIfPossible() {
-  TRACE_EVENT0("cc", "ProxyImpl::ScheduledActionDraw");
+  OHOS_TRACE_EVENT0("cc", "ProxyImpl::ScheduledActionDraw");
   DCHECK(IsImplThread());
 
   // The scheduler should never generate this call when it can't draw.
@@ -862,6 +869,14 @@ DrawResult ProxyImpl::ScheduledActionDrawIfPossible() {
   bool forced_draw = false;
   return DrawInternal(forced_draw);
 }
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void ProxyImpl::OnScheduledActionDraw() {
+  DCHECK(IsImplThread());
+  TRACE_EVENT0("cc", "ProxyImpl::OnScheduledActionDraw");
+  ScheduledActionDrawIfPossible();
+}
+#endif
 
 DrawResult ProxyImpl::ScheduledActionDrawForced() {
   TRACE_EVENT0("cc", "ProxyImpl::ScheduledActionDrawForced");

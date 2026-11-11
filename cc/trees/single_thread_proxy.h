@@ -9,6 +9,7 @@
 #include <memory>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/cancelable_callback.h"
 #include "base/containers/flat_set.h"
 #include "base/memory/raw_ptr.h"

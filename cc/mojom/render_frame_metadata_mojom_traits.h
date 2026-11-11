@@ -175,6 +175,48 @@ struct COMPONENT_EXPORT(CC_SHARED_MOJOM_TRAITS)
   }
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+  static const gfx::SizeF& scrollable_viewport_size(
+      const cc::RenderFrameMetadata& metadata) {
+    return metadata.scrollable_viewport_size;
+  }
+
+  static const gfx::SizeF& root_layer_size(
+      const cc::RenderFrameMetadata& metadata) {
+    return metadata.root_layer_size;
+  }
+
+  static bool root_overflow_y_hidden(const cc::RenderFrameMetadata& metadata) {
+    return metadata.root_overflow_y_hidden;
+  }
+
+  static float bottom_controls_height(const cc::RenderFrameMetadata& metadata) {
+    return metadata.bottom_controls_height;
+  }
+
+  static float bottom_controls_shown_ratio(
+      const cc::RenderFrameMetadata& metadata) {
+    return metadata.bottom_controls_shown_ratio;
+  }
+
+  static float top_controls_min_height_offset(
+      const cc::RenderFrameMetadata& metadata) {
+    return metadata.top_controls_min_height_offset;
+  }
+
+  static float bottom_controls_min_height_offset(
+      const cc::RenderFrameMetadata& metadata) {
+    return metadata.bottom_controls_min_height_offset;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_MENU)
+  static const gfx::Rect& clipped_selection_bounds(
+    const cc::RenderFrameMetadata& metadata) {
+    return metadata.clipped_selection_bounds;
+  }
+#endif
+
   static bool Read(cc::mojom::RenderFrameMetadataDataView data,
                    cc::RenderFrameMetadata* out);
 };

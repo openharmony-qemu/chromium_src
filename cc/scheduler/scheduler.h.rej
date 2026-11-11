@@ -1,0 +1,24 @@
+diff a/cc/scheduler/scheduler.h b/cc/scheduler/scheduler.h	(rejected hunks)
+@@ -88,17 +90,22 @@ class SchedulerClient {
+   virtual void SendBeginMainFrameNotExpectedSoon() = 0;
+   virtual void ScheduledActionBeginMainFrameNotExpectedUntil(
+       base::TimeTicks time) = 0;
+   virtual void FrameIntervalUpdated(base::TimeDelta interval) = 0;
+   virtual void OnBeginImplFrameDeadline() = 0;
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  virtual void HandleScrollUpdateForInternalBeginFrame(
++      const viz::BeginFrameArgs& args) {}
++#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+ 
+  protected:
+   virtual ~SchedulerClient() {}
+ };
+ 
+ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
+  public:
++  friend class SchedulerUtils;
+   Scheduler(SchedulerClient* client,
+             const SchedulerSettings& scheduler_settings,
+             int layer_tree_host_id,
+             base::SingleThreadTaskRunner* task_runner,
+             std::unique_ptr<CompositorTimingHistory> compositor_timing_history,

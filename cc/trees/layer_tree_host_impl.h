@@ -315,6 +315,11 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
 
   void DetachInputDelegateAndRenderFrameObserver();
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void ScheduledActionDraw() override;
+  void OnSetBypassVsyncCondition(int32_t condition);
+#endif
+
   FrameSequenceTrackerCollection& frame_trackers() { return frame_trackers_; }
 
   // VisualDeviceViewportSize is the size of the global viewport across all
@@ -521,6 +526,9 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   void SetExternalTilePriorityConstraints(
       const gfx::Rect& viewport_rect,
       const gfx::Transform& transform) override;
+#if BUILDFLAG(ARKWEB_SYNC_RENDER) && BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
+  void SetDrawRectState(bool isNeedDrawRect) override;
+#endif
   std::optional<viz::HitTestRegionList> BuildHitTestData() override;
   void DidLoseLayerTreeFrameSink() override;
   void DidReceiveCompositorFrameAck() override;
@@ -620,6 +628,12 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   virtual void DidFinishImplFrame(const viz::BeginFrameArgs& args);
   void DidNotProduceFrame(const viz::BeginFrameAck& ack,
                           FrameSkippedReason reason);
+ #if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  base::TimeDelta ThrottleFrameEnd();
+  void ThrottleFrameStart();
+  bool IsThrottleEnable();
+ #endif
+
   void DidChangeBeginFrameSourcePaused(bool paused);
   void OnBeginImplFrameDeadline();
   void DidModifyTilePriorities(bool pending_update_tiles);
@@ -896,6 +910,22 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
       const viz::ViewTransitionElementResourceId& id,
       const gfx::RectF& rect);
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void OnLayerRectUpdate(int id, const gfx::Rect& rect);
+
+  void OnLayerRectVisibilityChange(int id, bool visibility);
+#endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds);
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  void SetArkWebFrameSinkIdToFrameSink(const viz::FrameSinkId& frame_sink_id);
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS) && BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
+  void SetupScrollBy() override;
+#endif
+
   void UpdateChildLocalSurfaceId();
 
   void ReturnResource(viz::ReturnedResource returned_resource);
@@ -1125,7 +1155,10 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
       worker_context_visibility_;
 
   RasterCapabilities raster_caps_;
-
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  bool need_layer_tree_frame_sink_ = false;
+  int condition_ = 0;
+#endif
   std::unique_ptr<RasterBufferProvider> raster_buffer_provider_;
   std::unique_ptr<ResourcePool> resource_pool_;
   std::unique_ptr<RasterQueryQueue> pending_raster_queries_;
@@ -1357,9 +1390,22 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   // was reused.
   viz::BeginFrameArgs last_draw_active_tree_begin_frame_args_;
 
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  bool isNeedDrawRect_ = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  bool throttleFrameStarted_ = false;
+  FrameRateEstimator frame_rate_estimator_;
+#endif
+
   // When true, we are expected to get a new local surface id with the next
   // commit.
   bool new_local_surface_id_expected_ = false;
+
+#if BUILDFLAG(IS_ARKWEB)
+  bool is_ohos_pc_ui_setting_ = false;
+#endif
 
   // Track previously visible scrollable elements for viewport visibility
   // detection.

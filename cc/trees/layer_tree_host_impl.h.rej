@@ -1,0 +1,47 @@
+diff a/cc/trees/layer_tree_host_impl.h b/cc/trees/layer_tree_host_impl.h	(rejected hunks)
+@@ -14,10 +14,14 @@
+ #include <unordered_map>
+ #include <unordered_set>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/containers/flat_map.h"
+ #include "base/containers/flat_set.h"
+ #include "base/containers/lru_cache.h"
+ #include "base/functional/callback.h"
+ #include "base/memory/memory_pressure_listener.h"
+@@ -79,10 +83,14 @@
+ #include "components/viz/common/surfaces/surface_range.h"
+ #include "components/viz/common/view_transition_element_resource_id.h"
+ #include "ui/gfx/geometry/rect.h"
+ #include "ui/gfx/geometry/vector2d_f.h"
+ 
++#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
++#include "arkweb/chromium_ext/cc/trees/frame_rate_estimator_ohos.h"
++#endif
++
+ namespace gfx {
+ class PointF;
+ }
+ 
+ namespace ukm {
+@@ -641,10 +663,15 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
+     return CommitsToActiveTree() ? active_tree_.get() : pending_tree_.get();
+   }
+   virtual void CreatePendingTree();
+   virtual void ActivateSyncTree();
+ 
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS) && BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
++  virtual void HandleScrollUpdateForInternalBeginFrame(
++      const viz::BeginFrameArgs& args);
++#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
++
+   // Shortcuts to layers/nodes on the active tree.
+   ScrollNode* InnerViewportScrollNode() const;
+   ScrollNode* OuterViewportScrollNode() const;
+   ScrollNode* CurrentlyScrollingNode();
+   const ScrollNode* CurrentlyScrollingNode() const;

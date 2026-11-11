@@ -1,0 +1,70 @@
+diff a/cc/input/input_handler.cc b/cc/input/input_handler.cc	(rejected hunks)
+@@ -338,12 +341,16 @@ InputHandler::ScrollStatus InputHandler::RootScrollBegin(
+ InputHandlerScrollResult InputHandler::ScrollUpdate(
+     ScrollState scroll_state,
+     base::TimeDelta delayed_by) {
+   // The current_native_scrolling_element should only be set for ScrollBegin.
+   DCHECK(!scroll_state.data()->current_native_scrolling_element());
+-  TRACE_EVENT2("cc", "InputHandler::ScrollUpdate", "dx", scroll_state.delta_x(),
++  OHOS_TRACE_EVENT2("cc", "InputHandler::ScrollUpdate", "dx", scroll_state.delta_x(),
+                "dy", scroll_state.delta_y());
++#if BUILDFLAG(ARKWEB_PDF)
++  InputHandlerUtils::pdf_delta_x_ = scroll_state.delta_x();
++  InputHandlerUtils::pdf_delta_y_ = scroll_state.delta_y();
++#endif
+ 
+   if (!CurrentlyScrollingNode())
+     return InputHandlerScrollResult();
+ 
+   const ScrollNode& scroll_node = *CurrentlyScrollingNode();
+@@ -793,13 +811,31 @@ void InputHandler::SetSynchronousInputHandlerRootScrollOffset(
+   SetNeedsCommit();
+ 
+   // After applying the synchronous input handler's scroll offset, tell it what
+   // we ended up with.
+   UpdateRootLayerStateForSynchronousInputHandler();
+-
++#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
++  TRACE_EVENT2("cc", "InputHandler::SetSynchronousInputHandlerRootScrollOffset",
++               "page_scroll_offset", page_scroll_offset, "condition", condition_);
++  if (page_scroll_offset < 1e-6 && condition_) {
++    compositor_delegate_->ScheduledActionDraw();
++  } else {
++#endif
+   compositor_delegate_->SetNeedsFullViewportRedraw();
++#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
++  }
++#endif
++}
++
++#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
++void InputHandler::SetBypassVsyncCondition(int32_t condition) {
++  condition_ = condition;
++  LOG(INFO) << "InputHandler::SetBypassVsyncCondition condition:"
++            << condition;
++  compositor_delegate_->GetImplDeprecated().OnSetBypassVsyncCondition(condition);
+ }
++#endif
+ 
+ void InputHandler::PinchGestureBegin(const gfx::Point& anchor,
+                                      ui::ScrollInputType source) {
+   DCHECK(source == ui::ScrollInputType::kTouchscreen ||
+          source == ui::ScrollInputType::kWheel);
+@@ -1499,10 +1540,17 @@ ActivelyScrollingType InputHandler::GetActivelyScrollingType() const {
+ 
+ bool InputHandler::IsHandlingTouchSequence() const {
+   return is_handling_touch_sequence_;
+ }
+ 
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++void InputHandler::HandleScrollUpdateForInternalBeginFrame(
++    const viz::BeginFrameArgs& args) {
++  handler_utils_->HandleScrollUpdateForInternalBeginFrame(args);
++}
++#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
++
+ bool InputHandler::IsCurrentScrollMainRepainted() const {
+   const ScrollNode* scroll_node = CurrentlyScrollingNode();
+   if (scroll_node) {
+     uint32_t repaint_reasons =
+         GetScrollTree().GetMainThreadRepaintReasons(*scroll_node);

@@ -1,0 +1,29 @@
+diff a/cc/trees/proxy_main.cc b/cc/trees/proxy_main.cc	(rejected hunks)
+@@ -578,15 +580,27 @@ void ProxyMain::SetShouldWarmUp() {
+   ImplThreadTaskRunner()->PostTask(
+       FROM_HERE, base::BindOnce(&ProxyImpl::SetShouldWarmUpOnImpl,
+                                 base::Unretained(proxy_impl_.get())));
+ }
+ 
++#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
++void ProxyMain::SetPinchSmoothMode(bool isEnable) {
++  TRACE_EVENT1("cc", "ProxyMain::SetPinchSmoothMode", "isEnable", isEnable);
++  ImplThreadTaskRunner()->PostTask(
++      FROM_HERE, base::BindOnce(&ProxyImpl::SetPinchSmoothModeOnImpl,
++                                base::Unretained(proxy_impl_.get()), isEnable));
++}
++#endif
++
+ void ProxyMain::SetNeedsAnimate(bool urgent) {
+   DCHECK(IsMainThread());
+   if (SendCommitRequestToImplThreadIfNeeded(ANIMATE_PIPELINE_STAGE, urgent)) {
+     TRACE_EVENT_INSTANT1("cc", "ProxyMain::SetNeedsAnimate",
+                          TRACE_EVENT_SCOPE_THREAD, "urgent", urgent);
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  TRACE_EVENT0("cc", "ProxyMain::SetNeedsAnimate");
++#endif
+   }
+ }
+ 
+ void ProxyMain::SetNeedsUpdateLayers() {
+   DCHECK(IsMainThread());

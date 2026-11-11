@@ -1,0 +1,15 @@
+diff a/cc/trees/layer_tree_host.h b/cc/trees/layer_tree_host.h	(rejected hunks)
+@@ -86,10 +87,13 @@ class RasterDarkModeFilter;
+ class RenderFrameMetadataObserver;
+ class RenderingStatsInstrumentation;
+ class TaskGraphRunner;
+ class UIResourceManager;
+ class UkmRecorderFactory;
++#if BUILDFLAG(IS_ARKWEB)
++class LayerTreeHostExt;
++#endif
+ 
+ struct CommitState;
+ struct CompositorCommitData;
+ struct OverscrollBehavior;
+ struct RenderingStats;

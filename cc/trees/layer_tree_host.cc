@@ -121,7 +121,11 @@ std::unique_ptr<LayerTreeHost> LayerTreeHost::CreateThreaded(
   DCHECK(main_task_runner);
   DCHECK(impl_task_runner);
   auto layer_tree_host = base::WrapUnique(
+#if BUILDFLAG(IS_ARKWEB)
+      new LayerTreeHostExt(std::move(params), CompositorMode::THREADED));
+#else
       new LayerTreeHost(std::move(params), CompositorMode::THREADED));
+#endif
   layer_tree_host->InitializeThreaded(std::move(main_task_runner),
                                       std::move(impl_task_runner));
   return layer_tree_host;

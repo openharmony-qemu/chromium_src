@@ -1,0 +1,39 @@
+diff a/cc/layers/layer.h b/cc/layers/layer.h	(rejected hunks)
+@@ -49,10 +53,12 @@ class LayerImpl;
+ class LayerTreeHost;
+ class LayerTreeHostCommon;
+ class LayerTreeImpl;
+ class MicroBenchmark;
+ class PictureLayer;
++class LayerExt;
++class LayerUtils;
+ class PropertyTrees;
+ 
+ struct CommitState;
+ struct ThreadUnsafeCommitState;
+ 
+@@ -872,19 +879,24 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
+ 
+   // If the content of this layer is provided by a cached or live render
+   // surface, returns the ID of that resource.
+   virtual viz::ViewTransitionElementResourceId ViewTransitionResourceId() const;
+ 
++  LayerUtils* layer_utils() {
++    return layer_utils_.get();
++  }
++
+ #if BUILDFLAG(IS_CHROMEOS)
+   bool is_valid_to_destroy() const { return is_valid_to_destroy_; }
+ 
+   void set_is_valid_to_destroy(bool enable) { is_valid_to_destroy_ = enable; }
+ #endif
+ 
+  protected:
+   friend class LayerImpl;
+   friend class TreeSynchronizer;
++  friend class LayerUtils;
+ 
+   Layer();
+   ~Layer() override;
+ 
+   // This is implementation helper for PushPropertiesTo().

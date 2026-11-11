@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/chromium_ext/cc/scheduler/scheduler_utils.h"
 #include "base/cancelable_callback.h"
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
@@ -44,6 +45,7 @@ namespace cc {
 struct BeginMainFrameMetrics;
 class CompositorTimingHistory;
 class CompositorFrameReportingController;
+class SchedulerUtils;
 
 enum class FrameSkippedReason {
   kRecoverLatency,
@@ -246,6 +248,12 @@ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
   // updates of new layer tree state.
   void SetDeferBeginMainFrame(bool defer_begin_main_frame);
 
+#if BUILDFLAG(ARKWEB_WEBGL)
+  SchedulerUtils* GetSchedulerUtils() const {
+    return scheduler_utils_.get();
+  }
+#endif
+
   // Pausing rendering prevents new main frames and impl-side invalidations from
   // being triggered. Impl frames are drawn until any in-flight updates from the
   // main thread are drawn.
@@ -411,6 +419,7 @@ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
   bool IsInsideAction(SchedulerStateMachine::Action action) {
     return inside_action_ == action;
   }
+  std::unique_ptr<SchedulerUtils> scheduler_utils_;
 };
 
 }  // namespace cc

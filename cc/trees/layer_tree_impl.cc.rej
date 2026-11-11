@@ -1,0 +1,19 @@
+diff a/cc/trees/layer_tree_impl.cc b/cc/trees/layer_tree_impl.cc	(rejected hunks)
+@@ -839,10 +841,17 @@ void LayerTreeImpl::PullLayerTreePropertiesFrom(CommitState& commit_state) {
+ 
+   SetViewportPropertyIds(commit_state.viewport_property_ids);
+ 
+   RegisterSelection(commit_state.selection);
+ 
++#if BUILDFLAG(ARKWEB_MENU)
++  utils_->RegisterClippedVisualViewportSelectionBounds(commit_state.clipped_selection_bounds);
++#endif
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
++  host_impl_->SetArkWebFrameSinkIdToFrameSink(commit_state.arkweb_frame_sink_id);
++#endif
++
+   PushPageScaleFromMainThread(commit_state.page_scale_factor,
+                               commit_state.min_page_scale_factor,
+                               commit_state.max_page_scale_factor);
+ 
+   SetBrowserControlsParams(commit_state.browser_controls_params);

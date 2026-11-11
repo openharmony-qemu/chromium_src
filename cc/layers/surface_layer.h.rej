@@ -1,0 +1,18 @@
+diff a/cc/layers/surface_layer.h b/cc/layers/surface_layer.h	(rejected hunks)
+@@ -79,10 +114,16 @@ class CC_EXPORT SurfaceLayer : public Layer {
+     return deadline_in_frames_.Read(*this);
+   }
+ 
+  protected:
+   SurfaceLayer();
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  SurfaceLayer(UpdateSubmissionStateCB updateSubmissionStateCB,
++                                          RectChangeCallback callback,
++                                          RectVisibilityChangeCallback visibilitycallback,
++                                          LayerRemovedVisibilityCallback layerRemovedCallback);
++#endif
+   explicit SurfaceLayer(UpdateSubmissionStateCB);
+   bool HasDrawableContent() const override;
+ 
+   void PushDirtyPropertiesTo(
+       LayerImpl* layer,

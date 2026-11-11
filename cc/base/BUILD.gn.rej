@@ -1,0 +1,13 @@
+diff a/cc/base/BUILD.gn b/cc/base/BUILD.gn	(rejected hunks)
+@@ -57,10 +57,11 @@ cc_component("base") {
+     "//skia",
+     "//ui/base:features",
+     "//ui/gfx/animation",
+     "//ui/gfx/geometry",
+     "//ui/gfx/geometry:geometry_skia",
++    "//arkweb/build/features",
+   ]
+ 
+   defines = [ "CC_BASE_IMPLEMENTATION=1" ]
+ }
+ 

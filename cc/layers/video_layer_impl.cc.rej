@@ -1,0 +1,37 @@
+diff a/cc/layers/video_layer_impl.cc b/cc/layers/video_layer_impl.cc
+--- a/cc/layers/video_layer_impl.cc
++++ b/cc/layers/video_layer_impl.cc
+@@ -48,10 +48,11 @@ VideoLayerImpl::VideoLayerImpl(
+     scoped_refptr<VideoFrameProviderClientImpl> provider_client_impl,
+     const media::VideoTransformation& video_transform)
+     : LayerImpl(tree_impl, id),
+       provider_client_impl_(std::move(provider_client_impl)),
+       video_transform_(video_transform) {
++  videoImplUtils_ = new VideoLayerImplUtils(this);
+ }
+ 
+ VideoLayerImpl::~VideoLayerImpl() {
+   if (!provider_client_impl_->Stopped()) {
+     DCHECK(layer_tree_impl()->task_runner_provider()->IsImplThread());
+@@ -77,13 +78,21 @@ bool VideoLayerImpl::WillDraw(DrawMode draw_mode,
+                               viz::ClientResourceProvider* resource_provider)
+     NO_THREAD_SAFETY_ANALYSIS {
+   if (draw_mode == DRAW_MODE_RESOURCELESS_SOFTWARE)
+     return false;
+ 
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  videoImplUtils_->VisibilityChange();
++#endif
++
+   if (!LayerImpl::WillDraw(draw_mode, resource_provider))
+     return false;
+ 
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  videoImplUtils_->LayerRectUpdate();
++#endif
++
+   // Explicitly acquire and release the provider mutex so it can be held from
+   // WillDraw to DidDraw. Since the compositor thread is in the middle of
+   // drawing, the layer will not be destroyed before DidDraw is called.
+   // Therefore, the only thing that will prevent this lock from being released
+   // is the GPU process locking it. As the GPU process can't cause the

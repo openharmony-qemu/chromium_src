@@ -1,0 +1,18 @@
+diff a/cc/trees/layer_tree_host_client.h b/cc/trees/layer_tree_host_client.h
+--- a/cc/trees/layer_tree_host_client.h
++++ b/cc/trees/layer_tree_host_client.h
+@@ -219,10 +219,14 @@ class CC_EXPORT LayerTreeHostClient {
+   // future OnBeginFrames.
+   //
+   // To determine when presentation occurred see `DidPresentCompositorFrame`.
+   virtual void DidReceiveCompositorFrameAckDeprecatedForCompositor() {}
+ 
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  virtual void OnLayerRectUpdate(int id, const gfx::Rect& rect) {}
++#endif
++
+  protected:
+   virtual ~LayerTreeHostClient() = default;
+ };
+ 
+ // LayerTreeHost->WebThreadScheduler callback interface. Instances of this class

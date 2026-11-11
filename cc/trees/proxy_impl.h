@@ -8,6 +8,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include "arkweb/build/features/features.h"
 
 #include "base/memory/raw_ptr.h"
 #include "base/memory/shared_memory_mapping.h"
@@ -94,6 +95,9 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplDelegate,
       std::vector<std::unique_ptr<SwapPromise>> swap_promises,
       bool scroll_and_viewport_changes_synced);
   void SetVisibleOnImpl(bool visible);
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
+  void SetPinchSmoothModeOnImpl(bool isEnable);
+#endif
   void SetShouldWarmUpOnImpl();
   void ReleaseLayerTreeFrameSinkOnImpl(CompletionEvent* completion);
   void FinishGLOnImpl(CompletionEvent* completion);

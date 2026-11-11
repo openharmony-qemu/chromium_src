@@ -31,6 +31,11 @@
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
+#include "arkweb/build/features/features.h"
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/cc/mojo_embedder/async_layer_tree_frame_sink_utils.h"
+#endif
 
 namespace viz {
 class RasterContextProvider;
@@ -40,6 +45,8 @@ namespace cc {
 
 class LayerContext;
 class LayerTreeHostImpl;
+
+class AsyncLayerTreeFrameSinkUtils;
 
 namespace mojo_embedder {
 
@@ -195,7 +202,7 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
   mojo::Remote<viz::mojom::CompositorFrameSink> compositor_frame_sink_;
   mojo::AssociatedRemote<viz::mojom::CompositorFrameSink>
       compositor_frame_sink_associated_;
-  // One of |compositor_frame_sink_| or |compositor_frame_sink_associated_| will
+  // One of |compositor_frame_sink_| or |compositor_frame_sink_associated_| will：i
   // be bound after calling BindToClient(). |compositor_frame_sink_ptr_| will
   // point to message pipe we want to use. It must be declared last and cleared
   // first.

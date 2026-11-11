@@ -222,6 +222,14 @@ void AsyncLayerTreeFrameSink::SubmitCompositorFrame(
     last_hit_test_data_ = *hit_test_region_list;
   }
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  async_layer_tree_frame_sink_utils_->SubmitCompositorFrameDfxDumpLog(local_surface_id_);
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  async_layer_tree_frame_sink_utils_->AnalyzeFrameForBlankScreen(frame);
+#endif
+
   if (last_submitted_local_surface_id_ != local_surface_id_) {
     last_submitted_local_surface_id_ = local_surface_id_;
     last_submitted_device_scale_factor_ = frame.device_scale_factor();
@@ -285,6 +293,10 @@ void AsyncLayerTreeFrameSink::DidNotProduceFrame(const viz::BeginFrameAck& ack,
         data->set_frame_skipped_reason(to_proto_enum(reason));
         data->set_surface_frame_trace_id(ack.trace_id);
       });
+
+#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
+  async_layer_tree_frame_sink_utils_->SubmitCompositorFrameArkWebSwapBuTr(ack.trace_id, reason);
+#endif
 
   ExportFrameTiming();
 
@@ -366,6 +378,9 @@ void AsyncLayerTreeFrameSink::OnBeginFrame(
   }
 
   if (!needs_begin_frames_) {
+#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
+    async_layer_tree_frame_sink_utils_->OnBeginFrameArkWebSwBuTr(args.trace_id);
+#endif
     // We had a race with SetNeedsBeginFrame(false) and still need to let the
     // sink know that we didn't use this BeginFrame. OnBeginFrame() can also be
     // called to deliver presentation feedback.

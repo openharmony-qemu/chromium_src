@@ -7,11 +7,19 @@
 
 #include <stdint.h>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/containers/circular_deque.h"
 #include "base/memory/raw_ptr.h"
 #include "base/time/default_tick_clock.h"
 #include "base/time/time.h"
 #include "net/base/net_export.h"
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#include "net/base/ip_endpoint.h"
+#endif
 
 namespace base {
 class TickClock;
@@ -73,6 +81,11 @@ class NET_EXPORT_PRIVATE DnsUdpTracker {
     tick_clock_ = tick_clock;
   }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  void RecordLocalAddress(const IPEndPoint& ip_addr);
+  void GetLocalAddress(IPEndPoint* address);
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+
  private:
   struct QueryData;
 
@@ -87,6 +100,10 @@ class NET_EXPORT_PRIVATE DnsUdpTracker {
   // recognized from recent queries.
   base::circular_deque<base::TimeTicks> recent_unrecognized_id_hits_;
   base::circular_deque<base::TimeTicks> recent_recognized_id_hits_;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  IPEndPoint local_address_;
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
   raw_ptr<const base::TickClock> tick_clock_ =
       base::DefaultTickClock::GetInstance();

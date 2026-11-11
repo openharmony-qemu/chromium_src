@@ -1,0 +1,19 @@
+diff a/net/dns/dns_test_util.h b/net/dns/dns_test_util.h	(rejected hunks)
+@@ -406,10 +406,17 @@ class MockDnsClient : public DnsClient {
+   MockDnsClient(DnsConfig config, MockDnsClientRuleList rules);
+   ~MockDnsClient() override;
+ 
+   // DnsClient interface:
+   bool CanUseSecureDnsTransactions() const override;
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  void GetLocalAddress(IPEndPoint* address) override{};
++  bool CanUseSecureDnsFallbackTransactions(
++    ResolveContext* context) const override {
++      return false;
++  };
++#endif
+   bool CanUseInsecureDnsTransactions() const override;
+   bool CanQueryAdditionalTypesViaInsecureDns() const override;
+   void SetInsecureEnabled(bool enabled, bool additional_types_enabled) override;
+   bool FallbackFromSecureTransactionPreferred(
+       ResolveContext* resolve_context) const override;

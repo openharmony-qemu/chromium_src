@@ -27,6 +27,9 @@
 #include "net/socket/stream_socket_handle.h"
 #include "net/socket/websocket_endpoint_lock_manager.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -40,6 +43,9 @@ WebSocketTransportClientSocketPool::WebSocketTransportClientSocketPool(
                        common_connect_job_params,
                        std::make_unique<ConnectJobFactory>()) {
   DCHECK(common_connect_job_params->websocket_endpoint_lock_manager);
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  utils->SetConnectTimeout(0);
+#endif
 }
 
 WebSocketTransportClientSocketPool::~WebSocketTransportClientSocketPool() {
@@ -114,6 +120,9 @@ int WebSocketTransportClientSocketPool::RequestSocket(
       CreateConnectJob(group_id, params, proxy_annotation_tag, priority,
                        SocketTag(), connect_job_delegate.get());
 
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  connect_job->SetConnectTimeout(utils->GetConnectTimeout());
+#endif
   int result = connect_job_delegate->Connect(std::move(connect_job));
 
   // Regardless of the outcome of |connect_job|, it will always be bound to
@@ -323,6 +332,12 @@ bool WebSocketTransportClientSocketPool::TryHandOutSocket(
     HandOutSocket(std::move(socket), connect_timing, handle, request_net_log);
     handed_out_socket = true;
   }
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  else {
+    handle->SetResolveInfo(
+        connect_job_delegate->connect_job()->GetResolveInfo());
+  }
+#endif
 
   request_net_log.EndEventWithNetErrorCode(NetLogEventType::SOCKET_POOL,
                                            result);
@@ -395,6 +410,12 @@ void WebSocketTransportClientSocketPool::HandOutSocket(
   DCHECK(socket);
   DCHECK_EQ(StreamSocketHandle::SocketReuseType::kUnused, handle->reuse_type());
   DCHECK_EQ(0, handle->idle_time().InMicroseconds());
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (socket) {
+    handle->SetResolveInfo(socket->GetDnsResolveInfo());
+  }
+#endif
 
   handle->SetSocket(std::move(socket));
   handle->set_group_generation(0);

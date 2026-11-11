@@ -1,0 +1,15 @@
+diff a/net/shared_dictionary/shared_dictionary_network_transaction.h b/net/shared_dictionary/shared_dictionary_network_transaction.h	(rejected hunks)
+@@ -90,10 +97,13 @@ class NET_EXPORT SharedDictionaryNetworkTransaction : public HttpTransaction {
+   void SetModifyRequestHeadersCallback(
+       base::RepeatingCallback<void(HttpRequestHeaders*)> callback) override;
+   void SetIsSharedDictionaryReadAllowedCallback(
+       base::RepeatingCallback<bool()> callback) override;
+   ConnectionAttempts GetConnectionAttempts() const override;
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  ConnectionAttempts GetExtraConnectionAttempts() const override;
++#endif
+   void CloseConnectionOnDestruction() override;
+   bool IsMdlMatchForMetrics() const override;
+ 
+  private:
+   enum class DictionaryStatus {

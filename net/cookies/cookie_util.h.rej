@@ -1,0 +1,128 @@
+diff a/net/cookies/cookie_util.h b/net/cookies/cookie_util.h	(rejected hunks)
+@@ -171,12 +171,12 @@ enum class ActivateStorageAccessRetryOutcome {
+ NET_EXPORT void FireStorageAccessHistogram(StorageAccessResult result);
+ 
+ // Returns the effective TLD+1 for a given host. This only makes sense for http
+ // and https schemes. For other schemes, the host will be returned unchanged
+ // (minus any leading period).
+-NET_EXPORT std::string GetEffectiveDomain(std::string_view scheme,
+-                                          std::string_view host);
++NET_EXPORT std::string GetEffectiveDomain(const std::string& scheme,
++                                          const std::string& host);
+ 
+ // Determine the actual cookie domain based on the domain string passed
+ // (if any) and the URL from which the cookie came.
+ // On success returns either a
+ //   -host cookie domain (ex: "google.com")
+@@ -260,11 +260,11 @@ NET_EXPORT bool IsDomainMatch(const std::string_view domain,
+ NET_EXPORT bool IsOnPath(const std::string_view cookie_path,
+                          const std::string_view url_path);
+ 
+ // Returns the CookiePrefix (or COOKIE_PREFIX_NONE if none) that
+ // applies to the given cookie |name|.
+-CookiePrefix GetCookiePrefix(std::string_view name);
++CookiePrefix GetCookiePrefix(const std::string& name);
+ 
+ // Returns true if the cookie does not violate any constraints imposed
+ // by the cookie name's prefix, as described in
+ // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-13#name-cookie-name-prefixes
+ bool IsCookiePrefixValid(CookiePrefix prefix,
+@@ -431,11 +431,11 @@ ComputeFirstPartySetMetadataMaybeAsync(
+                             FirstPartySetsCacheFilter::MatchInfo)> callback);
+ 
+ // Converts a string representing the http request method to its enum
+ // representation.
+ NET_EXPORT CookieOptions::SameSiteCookieContext::ContextMetadata::HttpMethod
+-HttpMethodStringToEnum(std::string_view in);
++HttpMethodStringToEnum(const std::string& in);
+ 
+ // Takes a CookieAccessResult and returns a bool, returning true if the
+ // CookieInclusionStatus in CookieAccessResult was set to "include", else
+ // returning false.
+ //
+@@ -188,18 +188,18 @@ NET_EXPORT std::optional<std::string> GetCookieDomainWithString(
+     std::string_view domain_string,
+     CookieInclusionStatus& status);
+ 
+ // Returns true if a domain string represents a host-only cookie,
+ // i.e. it doesn't begin with a leading '.' character.
+-NET_EXPORT bool DomainIsHostOnly(std::string_view domain_string);
++NET_EXPORT bool DomainIsHostOnly(const std::string& domain_string);
+ 
+ // If |cookie_domain| is nonempty and starts with a "." character, this returns
+ // the substring of |cookie_domain| without the leading dot. (Note only one
+ // leading dot is stripped, if there are multiple.) Otherwise it returns
+ // |cookie_domain|. This is useful for converting from CanonicalCookie's
+ // representation of a cookie domain to the RFC's notion of a cookie's domain.
+-NET_EXPORT std::string CookieDomainAsHost(std::string_view cookie_domain);
++NET_EXPORT std::string CookieDomainAsHost(const std::string& cookie_domain);
+ 
+ // Parses the string with the cookie expiration time (very forgivingly).
+ // Returns the "null" time on failure.
+ //
+ // If the expiration date is below or above the platform-specific range
+@@ -217,29 +217,29 @@ NET_EXPORT std::string CanonPathWithString(const GURL& url,
+ // The first field can be the combined domain-and-host-only-flag (e.g. the
+ // string returned by CanonicalCookie::Domain()) as opposed to the domain
+ // attribute per RFC6265bis. The GURL is constructed after stripping off any
+ // leading dot.
+ // Note: the GURL returned by this method is not guaranteed to be valid.
+-NET_EXPORT GURL CookieDomainAndPathToURL(std::string_view domain,
+-                                         std::string_view path,
+-                                         std::string_view source_scheme);
+-NET_EXPORT GURL CookieDomainAndPathToURL(std::string_view domain,
+-                                         std::string_view path,
++NET_EXPORT GURL CookieDomainAndPathToURL(const std::string& domain,
++                                         const std::string& path,
++                                         const std::string& source_scheme);
++NET_EXPORT GURL CookieDomainAndPathToURL(const std::string& domain,
++                                         const std::string& path,
+                                          bool is_https);
+-NET_EXPORT GURL CookieDomainAndPathToURL(std::string_view domain,
+-                                         std::string_view path,
++NET_EXPORT GURL CookieDomainAndPathToURL(const std::string& domain,
++                                         const std::string& path,
+                                          CookieSourceScheme source_scheme);
+ 
+ // Convenience for converting a cookie origin (domain and https pair) to a URL.
+-NET_EXPORT GURL CookieOriginToURL(std::string_view domain, bool is_https);
++NET_EXPORT GURL CookieOriginToURL(const std::string& domain, bool is_https);
+ 
+ // Returns a URL that could have been the cookie's source.
+ // Not guaranteed to actually be the URL that set the cookie. Not guaranteed to
+ // be a valid GURL. Intended as a shim for SetCanonicalCookieAsync calls, where
+ // a source URL is required but only a source scheme may be available.
+ NET_EXPORT GURL SimulatedCookieSource(const CanonicalCookie& cookie,
+-                                      std::string_view source_scheme);
++                                      const std::string& source_scheme);
+ 
+ // Provisional evaluation of acceptability of setting secure cookies on
+ // `source_url` based only on the `source_url`'s scheme and whether it
+ // is a localhost URL.  If this returns kNonCryptographic, it may be upgraded to
+ // kTrustworthy by a CookieAccessDelegate when the cookie operation is being
+@@ -299,11 +299,11 @@ using ParsedRequestCookies = std::vector<ParsedRequestCookie>;
+ // following the cookie-string schema of RFC 6265, section 4.2.1, and returns
+ // cookie name/value pairs. If cookie values are presented in double quotes,
+ // these will appear in |parsed_cookies| as well. The cookie header can be
+ // written by non-Chromium consumers (such as extensions), so the header may not
+ // be well-formed.
+-NET_EXPORT void ParseRequestCookieLine(std::string_view header_value,
++NET_EXPORT void ParseRequestCookieLine(const std::string& header_value,
+                                        ParsedRequestCookies* parsed_cookies);
+ 
+ // Writes all cookies of |parsed_cookies| into a HTTP Request header value
+ // that belongs to the "Cookie" header. The entries of |parsed_cookies| must
+ // already be appropriately escaped.
+@@ -348,11 +348,11 @@ NET_EXPORT std::string SerializeRequestCookieLine(
+ //
+ // `http_method` is used to enforce the requirement that, in a context that's
+ // lax same-site but not strict same-site, SameSite=lax cookies be only sent
+ // when the method is "safe" in the RFC7231 section 4.2.1 sense.
+ NET_EXPORT CookieOptions::SameSiteCookieContext
+-ComputeSameSiteContextForRequest(std::string_view http_method,
++ComputeSameSiteContextForRequest(const std::string& http_method,
+                                  const std::vector<GURL>& url_chain,
+                                  const SiteForCookies& site_for_cookies,
+                                  const std::optional<url::Origin>& initiator,
+                                  bool is_main_frame_navigation,
+                                  bool force_ignore_site_for_cookies,

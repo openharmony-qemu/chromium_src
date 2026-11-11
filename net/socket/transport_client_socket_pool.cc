@@ -907,8 +907,15 @@ void TransportClientSocketPool::OnSSLConfigForServersChanged(
   }
 
   bool refreshed_any = false;
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  bool refresh_all = true;
+#endif
   for (auto it = group_map_.begin(); it != group_map_.end();) {
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+    if (proxy_matches || refresh_all ||
+#else
     if (proxy_matches ||
+#endif
         (GURL::SchemeIsCryptographic(it->first.destination().scheme()) &&
          servers.contains(
              HostPortPair::FromSchemeHostPort(it->first.destination())))) {
@@ -980,10 +987,15 @@ void TransportClientSocketPool::CleanupIdleSocketsInGroup(
   while (idle_socket_it != group->idle_sockets().end()) {
     bool should_clean_up = force;
     const char* reason_for_closing_socket = net_log_reason_utf8;
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+    base::TimeDelta timeout =
+        TransportClientSocketPoolUtils::UnusedIdleSocketTimeoutExt(
+            idle_socket_it, this);
+#else
     base::TimeDelta timeout = idle_socket_it->socket->WasEverUsed()
                                   ? used_idle_socket_timeout_
                                   : unused_idle_socket_timeout_;
-
+#endif
     // Timeout errors take precedence over the reason for flushing sockets in
     // the group, if applicable.
     if (now - idle_socket_it->start_time >= timeout) {
@@ -1231,6 +1243,11 @@ void TransportClientSocketPool::HandOutSocket(
     Group* group,
     const NetLogWithSource& net_log) {
   DCHECK(socket);
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (socket) {
+    handle->SetResolveInfo(socket->GetDnsResolveInfo());
+  }
+#endif
   handle->SetSocket(std::move(socket));
   handle->set_reuse_type(reuse_type);
   handle->set_idle_time(idle_time);
@@ -1757,6 +1774,11 @@ void TransportClientSocketPool::Group::OnBackupJobTimerFired(
         return NetLogCreateConnectJobParams(true /* backup_job */, &group_id_);
       });
   ConnectJob* backup_job = owned_backup_job.get();
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || \
+    BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  TransportClientSocketPoolUtils::BackupJobSetConnectTimeoutExt(
+      group_id, backup_job, this);
+#endif
   AddJob(std::move(owned_backup_job), false);
   client_socket_pool_->connecting_socket_count_++;
   int rv = backup_job->Connect();

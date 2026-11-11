@@ -1,0 +1,126 @@
+diff a/net/dns/host_resolver_dns_task.h b/net/dns/host_resolver_dns_task.h	(rejected hunks)
+@@ -26,10 +26,11 @@
+ #include "net/dns/host_resolver.h"
+ #include "net/dns/httpssvc_metrics.h"
+ #include "net/dns/public/secure_dns_mode.h"
+ #include "net/dns/resolve_context.h"
+ #include "net/log/net_log_with_source.h"
++#include "arkweb/chromium_ext/net/dns/arkweb_host_resolver_dns_task_ext.h"
+ 
+ namespace net {
+ 
+ class DnsClient;
+ class DnsTransaction;
+@@ -41,10 +42,11 @@ class HostResolverInternalErrorResult;
+ // a DNS stub resolver. One DnsTransaction is created for each resolution
+ // needed, which for AF_UNSPEC resolutions includes both A and AAAA. The
+ // transactions are scheduled separately and started separately.
+ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
+  public:
++  friend class ArkWebHostResolverDnsTaskExt;
+   using Results = std::set<std::unique_ptr<HostResolverInternalResult>>;
+   using ResultRefs = std::set<const HostResolverInternalResult*>;
+ 
+   // Represents a single transaction results.
+   struct SingleTransactionResults {
+@@ -65,11 +67,16 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
+   class Delegate {
+    public:
+     virtual void OnDnsTaskComplete(base::TimeTicks start_time,
+                                    bool allow_fallback,
+                                    Results results,
+-                                   bool secure) = 0;
++                                   bool secure
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++                                   ,
++                                   std::vector<IPEndPoint> truncation_result = {}
++#endif
++                                   ) = 0;
+ 
+     // Called when one transaction completes successfully, or one more
+     // transactions get cancelled, but only if more transactions are
+     // needed. If no more transactions are needed, expect `OnDnsTaskComplete()`
+     // to be called instead. `single_transaction_results` is passed only when
+@@ -81,10 +88,17 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
+ 
+     virtual bool IsHappyEyeballsV3Enabled() const = 0;
+ 
+     virtual void AddTransactionTimeQueued(base::TimeDelta time_queued) = 0;
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++    virtual void AddTransactionResultForReport(const DnsQueryType query_type,
++                                               int net_error) = 0;
++    virtual void InitReportInfoForDohFallback() = 0;
++    virtual bool CanUseSecureDnsFallback(ResolveContext* resolve_context) = 0;
++#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++
+    protected:
+     Delegate() = default;
+     virtual ~Delegate() = default;
+   };
+ 
+@@ -97,10 +111,13 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
+                       SecureDnsMode secure_dns_mode,
+                       Delegate* delegate,
+                       const NetLogWithSource& job_net_log,
+                       const base::TickClock* tick_clock,
+                       bool fallback_available,
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++                      bool secure_fallback,
++#endif
+                       const HostResolver::HttpsSvcbOptions& https_svcb_options);
+   ~HostResolverDnsTask();
+ 
+   HostResolverDnsTask(const HostResolverDnsTask&) = delete;
+   HostResolverDnsTask& operator=(const HostResolverDnsTask&) = delete;
+@@ -113,12 +130,24 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
+     return base::checked_cast<int>(transactions_in_progress_.size());
+   }
+ 
+   bool secure() const { return secure_; }
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  bool secure_fallback() { return secure_fallback_; }
++  bool need_to_sniff_ip_result() { return need_to_sniff_ip_result_; }
++#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++
+   bool https_disabled() const { return https_disabled_; }
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  void MaybeModifyInsecureDnsTaskResolveResults(
++      const std::string& host,
++      Results& transaction_results,
++      std::vector<IPEndPoint>& truncation_results);
++#endif
++
+   void StartNextTransaction();
+ 
+   base::WeakPtr<HostResolverDnsTask> AsWeakPtr() {
+     return weak_ptr_factory_.GetWeakPtr();
+   }
+@@ -263,15 +298,25 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
+   // If true, there are still significant fallback options available if this
+   // task completes unsuccessfully. Used as a signal that underlying
+   // transactions should timeout more quickly.
+   bool fallback_available_;
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  bool secure_fallback_{false};
++  bool need_to_sniff_ip_result_ = false;
++  std::unique_ptr<ArkWebHostResolverDnsTaskExt> utils;
++#endif
++
+   const HostResolver::HttpsSvcbOptions https_svcb_options_;
+ 
+   // Set to true when HTTPS query is disabled.
+   bool https_disabled_ = false;
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  std::vector<IPEndPoint> truncation_results_ = {};
++#endif
++
+   base::WeakPtrFactory<HostResolverDnsTask> weak_ptr_factory_{this};
+ };
+ 
+ }  // namespace net
+ 

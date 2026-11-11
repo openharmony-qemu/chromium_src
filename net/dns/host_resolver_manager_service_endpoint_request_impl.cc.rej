@@ -1,0 +1,132 @@
+diff a/net/dns/host_resolver_manager_service_endpoint_request_impl.cc b/net/dns/host_resolver_manager_service_endpoint_request_impl.cc	(rejected hunks)
+@@ -4,10 +4,13 @@
+ 
+ #include "net/dns/host_resolver_manager_service_endpoint_request_impl.h"
+ 
+ #include <sstream>
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/containers/to_vector.h"
+ #include "base/memory/safe_ref.h"
+ #include "base/no_destructor.h"
+ #include "base/notreached.h"
+ #include "base/types/optional_util.h"
+@@ -82,10 +89,14 @@ HostResolverManager::ServiceEndpointRequestImpl::~ServiceEndpointRequestImpl() {
+ int HostResolverManager::ServiceEndpointRequestImpl::Start(Delegate* delegate) {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+   CHECK(!delegate_);
+   CHECK(manager_);
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  resolve_info_.query_host = host_.ToString();
++#endif
++
+   if (!resolve_context_) {
+     error_info_ = ResolveErrorInfo(ERR_CONTEXT_SHUT_DOWN);
+     return ERR_CONTEXT_SHUT_DOWN;
+   }
+ 
+@@ -203,15 +214,32 @@ void HostResolverManager::ServiceEndpointRequestImpl::AssignJob(
+   job_ = job;
+ }
+ 
+ void HostResolverManager::ServiceEndpointRequestImpl::OnJobCompleted(
+     const HostCache::Entry& results,
+-    bool obtained_securely) {
++    bool obtained_securely
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++    ,
++    int dns_status,
++    const std::vector<TaskType>& finished_tasks,
++    const std::vector<IPEndPoint>& truncation_results,
++    bool secure_dns_fallback_resolved
++#endif
++) {
+   CHECK(job_);
+   CHECK(delegate_);
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
++          switches::kEnableNwebEx)) {
++    set_resolve_info(results.error(), dns_status, finished_tasks,
++                     truncation_results);
++    secure_dns_fallback_resolved_ = secure_dns_fallback_resolved;
++  }
++#endif
++
+   job_.reset();
+   SetFinalizedResultFromLegacyResults(results);
+   MaybeClearStaleResults();
+ 
+   const bool is_secure_network_error =
+@@ -324,10 +352,14 @@ int HostResolverManager::ServiceEndpointRequestImpl::DoResolveLocally() {
+   job_key_ = JobKey(host_, resolve_context_.get());
+   IPAddress ip_address;
+   manager_->InitializeJobKeyAndIPAddress(
+       network_anonymization_key_, parameters_, net_log_, *job_key_, ip_address);
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  int dns_status = kDnsResolvedUndefined;
++#endif
++
+   const bool only_ipv6_reachable = false;
+   const bool stale_allowed_while_refreshing =
+       parameters_.cache_usage ==
+       ResolveHostParameters::CacheUsage::STALE_ALLOWED_WHILE_REFRESHING;
+ 
+@@ -343,11 +375,16 @@ int HostResolverManager::ServiceEndpointRequestImpl::DoResolveLocally() {
+   }
+ 
+   HostCache::Entry results = manager_->ResolveLocally(
+       only_ipv6_reachable, *job_key_, ip_address, cache_usage,
+       parameters_.secure_dns_policy, parameters_.source, net_log_, host_cache(),
+-      &tasks_, &stale_info_);
++      &tasks_, &stale_info_
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++      ,
++      dns_status, resolve_info_, secure_dns_fallback_resolved_
++#endif
++  );
+   bool is_stale = results.error() == OK && stale_info_.has_value() &&
+                   stale_info_->is_stale();
+ 
+   if (is_stale && stale_allowed_while_refreshing) {
+     // When a stale result is found, ResolveLocally() returns the stale result
+@@ -363,21 +400,33 @@ int HostResolverManager::ServiceEndpointRequestImpl::DoResolveLocally() {
+     std::optional<HostCache::EntryStaleness> maybe_fresh_info;
+     HostCache::Entry maybe_non_stale_results = manager_->ResolveLocally(
+         only_ipv6_reachable, *job_key_, ip_address,
+         ResolveHostParameters::CacheUsage::ALLOWED,
+         parameters_.secure_dns_policy, parameters_.source, net_log_,
+-        host_cache(), &tasks_, &maybe_fresh_info);
++        host_cache(), &tasks_, &maybe_fresh_info
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++        ,
++        dns_status, resolve_info_, secure_dns_fallback_resolved_
++#endif
++    );
+     CHECK(!maybe_fresh_info.has_value() || !maybe_fresh_info->is_stale());
+     if (maybe_non_stale_results.error() != ERR_DNS_CACHE_MISS ||
+         tasks_.empty()) {
+       stale_info_ = maybe_fresh_info;
+       results = std::move(maybe_non_stale_results);
+       is_stale = false;
+     }
+     CHECK(parameters_.source != HostResolverSource::LOCAL_ONLY);
+   }
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  if (base::FeatureList::IsEnabled(
++          network::features::kEnableNwebExHttpDnsFallback)) {
++    MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(results, dns_status);
++  }
++#endif
++
+   if (is_stale && stale_allowed_while_refreshing) {
+     // Allow using stale results only when there is no network change.
+     // TODO(crbug.com/383174960): This also exclude results that are obtained
+     // from the same network but the device got disconnected/connected events.
+     // Ideally we should be able to use such results.

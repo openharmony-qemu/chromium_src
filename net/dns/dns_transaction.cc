@@ -205,6 +205,10 @@ class DnsOverHttpsProbeRunner : public DnsProbeRunner {
     DCHECK(context_);
 
     const auto& config = session_->config().doh_config;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "probe runner running server size: "
+                       << config.servers().size();
+#endif
     // Start probe sequences for any servers where it is not currently running.
     for (size_t i = 0; i < config.servers().size(); i++) {
       if (!probe_stats_list_[i]) {
@@ -885,6 +889,13 @@ class DnsTransactionImpl final : public DnsTransaction {
   bool MoreAttemptsAllowed() const {
     if (had_tcp_retry_)
       return false;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    // AAAA/A类型的请求在重试前需要查看A/AAAA类型的请求是否成功,如果成功,此处就不需要重试了
+    if (not_need_more_attempt_query_type_ == qtype_) {
+      return false;
+    }
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
     return dns_server_iterator_->AttemptAvailable();
   }

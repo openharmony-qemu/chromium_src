@@ -18,6 +18,16 @@
 #include "net/base/address_map_cache_linux.h"
 #endif
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+#include "arkweb/ohos_adapter_ndk/interfaces/net_connect_adapter.h"
+#include "base/memory/weak_ptr.h"
+#include "base/task/sequenced_task_runner.h"
+#endif
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 namespace net {
 
 // A NetworkChangeNotifier that needs to be told about network changes by some
@@ -46,6 +56,39 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
       NetworkChangeNotifier::ConnectionType connection_type,
       NetworkChangeNotifier::ConnectionSubtype connection_subtype);
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  const std::vector<std::string> GetCurrentDnsServers() override;
+#endif
+
+#if BUILDFLAG(ENABLE_ARKWEB_EXT) && BUILDFLAG(ARKWEB_NETWORK_BASE)
+  void OnVpnAvailable();
+  void OnVpnLost();
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  void BindDnsToNetwork(int network_for_dns) override;
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+  const std::vector<std::string> GetNetAddrListByNetId(int32_t netId);
+
+  // For bind dns to network.
+  void SetAddrListForBindedNetwork(std::vector<std::string> new_addr_list);
+  const std::vector<std::string> GetAddrListForBindedNetwork();
+
+  // For default address list.
+  void SetDefaultAddrList(std::vector<std::string> new_addr_list);
+  const std::vector<std::string> GetDefaultAddrList();
+
+  const std::vector<std::string> GetActiveDnsServers();
+#endif  // ENABLE_ARKWEB_EXT
+#endif  // ARKWEB_EXT_NETWORK_CONNECTION
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  bool IsCaptivePortalInternal() override;
+  bool IsNetworkValidatedInternal() override;
+  void UpdateNetworkCapabilityOnUIThread();
+  void PostUpdateNetworkCapabilityTask();
+#endif
+
  protected:
   // NetworkChangeNotifier overrides.
   NetworkChangeNotifier::ConnectionType GetCurrentConnectionType()
@@ -59,6 +102,11 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
 
  private:
   friend class NetworkChangeNotifierPassiveTest;
+#if BUILDFLAG(ARKWEB_NETWORK_BASE) ||           \
+    BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || \
+    BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  friend class NetworkChangeNotifierPassiveUtils;
+#endif
 
   // For testing purposes, allows specifying a SystemDnsConfigChangeNotifier.
   // If |system_dns_config_notifier| is nullptr, NetworkChangeNotifier create a

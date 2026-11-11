@@ -1,0 +1,131 @@
+diff a/net/socket/transport_connect_job.h b/net/socket/transport_connect_job.h	(rejected hunks)
+@@ -53,11 +57,16 @@ class NET_EXPORT_PRIVATE TransportSocketParams
+   // used.
+   TransportSocketParams(Endpoint destination,
+                         NetworkAnonymizationKey network_anonymization_key,
+                         SecureDnsPolicy secure_dns_policy,
+                         OnHostResolutionCallback host_resolution_callback,
+-                        base::flat_set<std::string> supported_alpns);
++                        base::flat_set<std::string> supported_alpns
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++                        ,
++                        bool secure_dns_only = false
++#endif
++  );
+ 
+   TransportSocketParams(const TransportSocketParams&) = delete;
+   TransportSocketParams& operator=(const TransportSocketParams&) = delete;
+ 
+   const Endpoint& destination() const { return destination_; }
+@@ -69,32 +78,44 @@ class NET_EXPORT_PRIVATE TransportSocketParams
+     return host_resolution_callback_;
+   }
+   const base::flat_set<std::string>& supported_alpns() const {
+     return supported_alpns_;
+   }
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  bool secure_dns_only() const { return secure_dns_only_; }
++#endif
+ 
+  private:
+   friend class base::RefCounted<TransportSocketParams>;
+   ~TransportSocketParams();
+ 
+   const Endpoint destination_;
+   const NetworkAnonymizationKey network_anonymization_key_;
+   const SecureDnsPolicy secure_dns_policy_;
+   const OnHostResolutionCallback host_resolution_callback_;
+   const base::flat_set<std::string> supported_alpns_;
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  const bool secure_dns_only_;
++#endif
+ };
+ 
++HostPortPair ToLegacyDestinationEndpoint(const TransportSocketParams::Endpoint& endpoint);
++
+ // TransportConnectJob handles the host resolution necessary for socket creation
+ // and the transport (likely TCP) connect. TransportConnectJob also has fallback
+ // logic for IPv6 connect() timeouts (which may happen due to networks / routers
+ // with broken IPv6 support). Those timeouts take 20s, so rather than make the
+ // user wait 20s for the timeout to fire, we use a fallback timer
+ // (kIPv6FallbackTime) and start a connect() to a IPv4 address if the timer
+ // fires. Then we race the IPv4 connect() against the IPv6 connect() (which has
+ // a headstart) and return the one that completes first to the socket pool.
+ class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
+  public:
++#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
++  static const int kMaxMultiSocketNum = 15;
++#endif
++
+   class NET_EXPORT_PRIVATE Factory {
+    public:
+     Factory() = default;
+     virtual ~Factory() = default;
+ 
+@@ -141,22 +162,39 @@ class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
+   TransportConnectJob(const TransportConnectJob&) = delete;
+   TransportConnectJob& operator=(const TransportConnectJob&) = delete;
+ 
+   ~TransportConnectJob() override;
+ 
++  virtual ArkWebTransportConnectJobExt *AsArkWebTransportConnectJobExt() { return nullptr; }
++
+   // ConnectJob methods.
+   LoadState GetLoadState() const override;
+   bool HasEstablishedConnection() const override;
+   ConnectionAttempts GetConnectionAttempts() const override;
++
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  ResolveInfo GetResolveInfo() const override;
++  ConnectionAttempts GetExtraConnectionAttempts() const override;
++  bool SecureDnsFallbackResolved() const override;
++#endif
++
+   ResolveErrorInfo GetResolveErrorInfo() const override;
+   std::optional<HostResolverEndpointResult> GetHostResolverEndpointResult()
+       const override;
+ 
+   static base::TimeDelta ConnectionTimeout();
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  void SetFromPreload(bool from_preload) override {}
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
++  void SetConnectTimeout(int timeout_override) override {}
++#endif
+  private:
+   friend class TransportConnectSubJob;
++  friend class ArkWebTransportConnectJobExt;
+ 
+   enum State {
+     STATE_RESOLVE_HOST,
+     STATE_RESOLVE_HOST_COMPLETE,
+     STATE_RESOLVE_HOST_CALLBACK_COMPLETE,
+@@ -231,10 +277,26 @@ class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
+   base::OneShotTimer fallback_timer_;
+ 
+   ResolveErrorInfo resolve_error_info_;
+   ConnectionAttempts connection_attempts_;
+ 
++#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
++  base::RepeatingTimer multi_connect_timer_;
++  base::RepeatingTimer multi_connect_fallback_timer_;
++  std::vector<IPEndPoint> multi_connect_ip_addresses_;
++  std::vector<IPEndPoint> multi_connect_fallback_ip_addresses_;
++  std::vector<std::unique_ptr<TransportConnectSubJob>> multi_connect_jobs_;
++  std::vector<std::unique_ptr<TransportConnectSubJob>>
++      multi_connect_fallback_jobs_;
++#endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
++
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  ResolveInfo resolve_info_;
++  ConnectionAttempts extra_connection_attempts_;
++  bool secure_dns_fallback_resolved_ = false;
++#endif
++
+   base::WeakPtrFactory<TransportConnectJob> weak_ptr_factory_{this};
+ };
+ 
+ }  // namespace net
+ 

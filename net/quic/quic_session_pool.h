@@ -296,6 +296,14 @@ class NET_EXPORT_PRIVATE QuicSessionRequest {
     removed_from_job_ = true;
   }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  void SetDnsResolveInfo(const ResolveInfo& resolve_info) {
+    resolve_info_ = resolve_info;
+  }
+
+  const ResolveInfo& GetDnsResolveInfo() const { return resolve_info_; }
+#endif
+
  private:
   raw_ptr<QuicSessionPool> pool_;
   QuicSessionKey session_key_;

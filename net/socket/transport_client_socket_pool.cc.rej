@@ -1,0 +1,192 @@
+diff a/net/socket/transport_client_socket_pool.cc b/net/socket/transport_client_socket_pool.cc	(rejected hunks)
+@@ -135,10 +135,14 @@ struct TransportClientSocketPool::IdleSocket {
+ 
+   std::unique_ptr<StreamSocket> socket;
+   base::TimeTicks start_time;
+ };
+ 
++}  // namespace net
++#include "arkweb/chromium_ext/net/socket/transport_client_socket_pool_for_include.cc"
++namespace net {
++
+ TransportClientSocketPool::TransportClientSocketPool(
+     size_t socket_soft_cap,
+     size_t max_sockets_per_group,
+     SocketPoolAdditionalCapacity additional_capacity,
+     base::TimeDelta unused_idle_socket_timeout,
+@@ -462,14 +466,22 @@ int TransportClientSocketPool::RequestSocketInternal(
+   group = GetOrCreateGroup(group_id,
+                            !request.fail_if_alias_requires_proxy_override());
+   std::unique_ptr<ConnectJob> connect_job(CreateConnectJob(
+       group_id, request.socket_params(), request.proxy_annotation_tag(),
+       request.priority(), request.socket_tag(), group));
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  connect_job->SetFromPreload(request.socket_params()->IsFromPreload());
++#endif
+   connect_job->net_log().AddEvent(
+       NetLogEventType::SOCKET_POOL_CONNECT_JOB_CREATED, [&] {
+         return NetLogCreateConnectJobParams(false /* backup_job */, &group_id);
+       });
++#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || \
++    BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  TransportClientSocketPoolUtils::ConnectJobSetConnectTimeoutExt(
++      group_id, connect_job, this);
++#endif
+ 
+   int rv = connect_job->Connect();
+   if (rv == ERR_IO_PENDING) {
+     if (preconnect_done_closure) {
+       DCHECK(preconnecting);
+@@ -491,17 +503,28 @@ int TransportClientSocketPool::RequestSocketInternal(
+       AddIdleSocket(connect_job->PassSocket(), group);
+   } else {
+     DCHECK(handle);
+     if (rv != OK)
+       handle->SetAdditionalErrorState(connect_job.get());
++
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++    handle->SetExtraConnectionAttempts(
++        connect_job.get()->GetExtraConnectionAttempts());
++#endif
++
+     std::unique_ptr<StreamSocket> socket = connect_job->PassSocket();
+     if (socket) {
+       HandOutSocket(std::move(socket),
+                     StreamSocketHandle::SocketReuseType::kUnused,
+                     connect_job->connect_timing(), handle,
+                     /*time_idle=*/base::TimeDelta(), group, request.net_log());
+     }
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++    else {
++      handle->SetResolveInfo(connect_job->GetResolveInfo());
++    }
++#endif
+   }
+   if (group->IsEmpty())
+     RemoveGroup(group_id);
+ 
+   return rv;
+@@ -556,11 +579,16 @@ bool TransportClientSocketPool::AssignIdleSocketToRequest(
+     // HttpNetworkTransaction retrying on some errors.
+     ClientSocketHandle::SocketReuseType reuse_type =
+         socket->WasEverUsed()
+             ? StreamSocketHandle::SocketReuseType::kReusedIdle
+             : StreamSocketHandle::SocketReuseType::kUnusedIdle;
+-
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++    if (socket && request.handle()) {
++      request.handle()->SetExtraConnectionAttempts(
++          socket->GetExtraConnectionAttempts());
++    }
++#endif
+     HandOutSocket(std::move(socket), reuse_type,
+                   LoadTimingInfo::ConnectTiming(), request.handle(), idle_time,
+                   group, request.net_log());
+     return true;
+   }
+@@ -823,18 +851,26 @@ TransportClientSocketPool::TransportClientSocketPool(
+       unused_idle_socket_timeout_(unused_idle_socket_timeout),
+       used_idle_socket_timeout_(used_idle_socket_timeout),
+       cleanup_on_ip_address_change_(cleanup_on_ip_address_change),
+       connect_backup_jobs_enabled_(connect_backup_jobs_enabled &&
+                                    g_connect_backup_jobs_enabled),
+-      ssl_client_context_(ssl_client_context) {
++      ssl_client_context_(ssl_client_context)
++#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
++      ,
++      arkweb_used_idle_socket_timeout_(used_idle_socket_timeout)
++#endif
++{
+   DCHECK_LE(max_sockets_per_group, socket_soft_cap);
+ 
+   if (cleanup_on_ip_address_change_)
+     NetworkChangeNotifier::AddIPAddressObserver(this);
+ 
+   if (ssl_client_context_)
+     ssl_client_context_->AddObserver(this);
++#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
++  utils->SetConnectTimeout(0);
++#endif
+ }
+ 
+ void TransportClientSocketPool::OnSSLConfigChanged(
+     SSLClientContext::SSLConfigChangeType change_type) {
+   const char* message = nullptr;
+@@ -1008,11 +1056,28 @@ TransportClientSocketPool::Group* TransportClientSocketPool::GetOrCreateGroup(
+   return group;
+ }
+ 
+ void TransportClientSocketPool::RemoveGroup(const GroupId& group_id) {
+   auto it = group_map_.find(group_id);
++
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
++          switches::kEnableNwebExHttpDnsFallback)) {
++    if (it == group_map_.end()) {
++      LOG(ERROR) << "the group of this group_id is empty";
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++      LOG_FEEDBACK(ERROR) << "the group of this group_id is empty";
++#endif
++
++      return;
++    }
++  } else {
++  CHECK(it != group_map_.end());
++  }
++#else
+   CHECK(it != group_map_.end());
++#endif
+ 
+   RemoveGroup(it);
+ }
+ 
+ TransportClientSocketPool::GroupMap::iterator
+@@ -1402,16 +1472,28 @@ void TransportClientSocketPool::OnConnectJobComplete(Group* group,
+   // The case where there's no request is handled above.
+   DCHECK(request);
+ 
+   if (result != OK)
+     request->handle()->SetAdditionalErrorState(job);
++
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  request->handle()->SetExtraConnectionAttempts(
++      job->GetExtraConnectionAttempts());
++#endif
++
+   if (job->socket()) {
+     HandOutSocket(job->PassSocket(),
+                   StreamSocketHandle::SocketReuseType::kUnused,
+                   job->connect_timing(), request->handle(), base::TimeDelta(),
+                   group, request->net_log());
+   }
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  else {
++    request->handle()->SetResolveInfo(job->GetResolveInfo());
++  }
++#endif
++
+   request->net_log().EndEventWithNetErrorCode(NetLogEventType::SOCKET_POOL,
+                                               result);
+   InvokeUserCallbackLater(request->handle(), request->release_callback(),
+                           result, request->socket_tag());
+   if (!bound_request)
+@@ -1495,10 +1577,19 @@ void TransportClientSocketPool::TryToCloseSocketsInLayeredPools() {
+     if (!CloseOneIdleConnectionInHigherLayeredPool())
+       return;
+   }
+ }
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
++void TransportClientSocketPool::SetSocketIdleTimeout(int32_t timeout) {
++  if (arkweb_used_idle_socket_timeout_.InSeconds() != timeout) {
++    arkweb_used_idle_socket_timeout_ = base::Seconds(timeout);
++    CleanupIdleSockets(false, nullptr /* net_log_reason_utf8 */);
++  }
++}
++#endif
++
+ TransportClientSocketPool::GroupMap::iterator
+ TransportClientSocketPool::RefreshGroup(GroupMap::iterator it,
+                                         const base::TimeTicks& now,
+                                         const char* net_log_reason_utf8) {
+   Group* group = it->second;

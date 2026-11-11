@@ -27,6 +27,11 @@ void ProxyInfo::Use(const ProxyInfo& other) {
   proxy_list_ = other.proxy_list_;
   proxy_retry_info_ = other.proxy_retry_info_;
   did_bypass_proxy_ = other.did_bypass_proxy_;
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  used_fallback_proxy_ = other.used_fallback_proxy_;
+  use_fallback_proxy_direct_ = other.use_fallback_proxy_direct_;
+  is_accelerate_proxy_ = other.is_accelerate_proxy_;
+#endif
 }
 
 void ProxyInfo::UseDirect() {
@@ -107,6 +112,10 @@ void ProxyInfo::Reset() {
   proxy_list_.Clear();
   proxy_retry_info_.clear();
   did_bypass_proxy_ = false;
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  used_fallback_proxy_ = false;
+  is_accelerate_proxy_ = false;
+#endif
 }
 
 bool ProxyInfo::AllChainProxiesAreHttps() const {

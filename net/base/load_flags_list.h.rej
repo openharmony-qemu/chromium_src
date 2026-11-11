@@ -1,0 +1,13 @@
+diff a/net/base/load_flags_list.h b/net/base/load_flags_list.h	(rejected hunks)
+@@ -125,5 +127,10 @@ LOAD_FLAG(IS_MAIN_FRAME_ORIGIN_RECENTLY_ACCESSED, 1 << 19)
+ 
+ // This load will not send any cookies. For CEF usage.
+ LOAD_FLAG(DO_NOT_SEND_COOKIES, 1 << 19)
+ 
+ // See note at top of file about why adding LoadFlags is often a bad idea.
++
++#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
++// This load will ignoring Cache-Control: no-store
++LOAD_FLAG(IGNORE_CACHE_CONTROL, 1 << 20)
++#endif
+\ No newline at end of file

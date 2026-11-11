@@ -301,6 +301,13 @@ int SOCKSClientSocket::DoResolveHost() {
 
 int SOCKSClientSocket::DoResolveHostComplete(int result) {
   resolve_error_info_ = resolve_host_request_->GetResolveErrorInfo();
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  resolve_info_ = resolve_host_request_->GetResolveInfo();
+  secure_dns_fallback_resolved_ =
+      resolve_host_request_->SecureDnsFallbackResolved();
+#endif
+
   if (result != OK) {
     // Resolving the hostname failed; fail the request rather than automatically
     // falling back to SOCKS4a (since it can be confusing to see invalid IP
@@ -465,5 +472,15 @@ int SOCKSClientSocket::GetLocalAddress(IPEndPoint* address) const {
 ResolveErrorInfo SOCKSClientSocket::GetResolveErrorInfo() const {
   return resolve_error_info_;
 }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+ResolveInfo SOCKSClientSocket::GetResolveInfo() const {
+  return resolve_info_;
+}
+
+bool SOCKSClientSocket::SecureDnsFallbackResolved() const {
+  return secure_dns_fallback_resolved_;
+}
+#endif
 
 }  // namespace net

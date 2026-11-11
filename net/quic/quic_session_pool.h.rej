@@ -1,0 +1,52 @@
+diff a/net/quic/quic_session_pool.h b/net/quic/quic_session_pool.h	(rejected hunks)
+@@ -294,10 +302,13 @@ class NET_EXPORT_PRIVATE QuicSessionRequest {
+   bool expect_on_quic_session_creation_ = false;
+   // Callback passed to WaitForHostResolution().
+   CompletionOnceCallback host_resolution_callback_;
+ 
+   CompletionOnceCallback create_session_callback_;
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  ResolveInfo resolve_info_;
++#endif
+ };
+ 
+ // Manages a pool of QuicChromiumClientSessions.
+ class NET_EXPORT_PRIVATE QuicSessionPool
+     : public NetworkChangeNotifier::IPAddressObserver,
+@@ -542,10 +553,21 @@ class NET_EXPORT_PRIVATE QuicSessionPool
+     return session_attempt_manager_.get();
+   }
+ 
+   struct QuicCryptoClientConfigKey;
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  void SetDnsResolveInfo(const ResolveInfo& resolve_info) {
++    resolve_info_ = resolve_info;
++  }
++  std::optional<ResolveInfo> TakeDnsResolveInfo() {
++    std::optional<ResolveInfo> resolve_info = std::move(resolve_info_);
++    resolve_info_ = std::nullopt;
++    return resolve_info;
++  }
++#endif
++
+  private:
+   class Job;
+   class DirectJob;
+   class ProxyJob;
+   class QuicCryptoClientConfigOwner;
+@@ -924,10 +946,14 @@ class NET_EXPORT_PRIVATE QuicSessionPool
+ 
+   std::unique_ptr<QuicSessionAttemptManager> session_attempt_manager_;
+ 
+   std::optional<base::TimeDelta> time_delay_for_waiting_job_for_testing_;
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  std::optional<ResolveInfo> resolve_info_;
++#endif
++
+   base::WeakPtrFactory<QuicSessionPool> weak_factory_{this};
+ };
+ 
+ // Refcounted class that owns quic::QuicCryptoClientConfig and tracks how many
+ // consumers are using it currently. When the last reference is freed, the

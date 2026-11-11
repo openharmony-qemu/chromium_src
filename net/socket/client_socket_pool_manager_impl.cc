@@ -21,6 +21,9 @@
 #include "net/socket/transport_client_socket_pool.h"
 #include "net/socket/transport_connect_job.h"
 #include "net/socket/websocket_transport_client_socket_pool.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -120,5 +123,8 @@ base::Value ClientSocketPoolManagerImpl::SocketPoolInfoToValue() const {
 
   return base::Value(std::move(list));
 }
-
 }  // namespace net
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/net/socket/client_socket_pool_manager_impl_for_include.cc"
+#endif

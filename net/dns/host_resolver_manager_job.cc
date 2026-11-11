@@ -47,6 +47,11 @@
 #include "net/log/net_log_with_source.h"
 #include "url/url_constants.h"
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#include "net/base/features.h"
+#include "services/network/public/cpp/features.h"
+#endif
+
 namespace net {
 
 namespace {
@@ -478,6 +483,11 @@ void HostResolverManager::Job::OnEvicted() {
 
 bool HostResolverManager::Job::ServeFromHosts() {
   DCHECK_GT(num_active_requests(), 0u);
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  dns_status_ = kDnsResolvedFromHosts;
+#endif
+
   std::set<std::unique_ptr<HostResolverInternalResult>> results =
       resolver_->ServeFromHosts(
           key_.host.GetHostnameWithoutBrackets(), key_.query_types,
@@ -803,6 +813,44 @@ void HostResolverManager::Job::OnSystemTaskComplete(
 
   auto aliases = std::set<std::string>(addr_list.dns_aliases().begin(),
                                        addr_list.dns_aliases().end());
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  if (base::FeatureList::IsEnabled(
+          network::features::kEnableNwebExHttpDnsFallback)) {
+    AddressList new_addr_list = addr_list;
+    bool secure_dns_fallback_available = false;
+    if (resolver_) {
+      secure_dns_fallback_available =
+          resolver_->CanUseSecureDnsFallback(&*key_.resolve_context);
+    }
+
+    std::vector<IPEndPoint> truncation_results;
+    if (AsArkWebHostResolverManagerJobExt()) {
+      AsArkWebHostResolverManagerJobExt()->MaybeModifyProcResolveResults(
+          std::string(key_.host.GetHostnameWithoutBrackets()),
+          secure_dns_fallback_available, net_error, new_addr_list, truncation_results);
+
+      if (AsArkWebHostResolverManagerJobExt()->CheckDnsFallBackTask(
+              net_error)) {
+        return;
+      }
+
+      AsArkWebHostResolverManagerJobExt()->RecordIllegalIPAddrToLog(
+          std::string(key_.host.GetHostnameWithoutBrackets()), new_addr_list);
+    }
+
+    CompleteRequests(
+        HostCache::Entry(
+            net_error,
+            net_error == OK
+                ? AddressList::CopyWithPort(new_addr_list, 0).endpoints()
+                : std::vector<IPEndPoint>(),
+            std::set<std::string>(), HostCache::Entry::SOURCE_UNKNOWN),
+        ttl, /*allow_cache=*/true, /*secure=*/false, TaskType::SYSTEM, truncation_results);
+
+    return;
+  }
+#endif
 
   // Source unknown because the system resolver could have gotten it from a
   // hosts file, its own cache, a DNS lookup or somewhere else.

@@ -17,6 +17,10 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "net/base/ip_endpoint.h"
+#endif
+
 namespace net {
 
 namespace {

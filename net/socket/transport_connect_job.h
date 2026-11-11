@@ -30,12 +30,16 @@
 #include "net/socket/connect_job.h"
 #include "net/socket/connection_attempts.h"
 #include "url/scheme_host_port.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
 class NetLogWithSource;
 class SocketTag;
 class TransportConnectSubJob;
+class ArkWebTransportConnectJobExt;
 
 class NET_EXPORT_PRIVATE TransportSocketParams
     : public base::RefCounted<TransportSocketParams> {
@@ -184,7 +188,15 @@ class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
 
   // Although it is not strictly necessary, it makes the code simpler if each
   // subjob knows what type it is.
-  enum SubJobType { SUB_JOB_IPV4, SUB_JOB_IPV6 };
+  enum SubJobType {
+    SUB_JOB_IPV4,
+    SUB_JOB_IPV6
+#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+    ,
+    SUB_MULTI_JOB,
+    SUB_MULTI_FALLBACK_JOB,
+#endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+  };
 
   void OnIOComplete(int result);
   int DoLoop(int result);

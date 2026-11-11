@@ -1,0 +1,37 @@
+diff a/net/dns/host_resolver.cc b/net/dns/host_resolver.cc	(rejected hunks)
+@@ -103,10 +103,17 @@ class FailingRequestImpl : public HostResolver::ResolveHostRequest,
+       const override {
+     static const std::optional<HostCache::EntryStaleness> nullopt_result;
+     return nullopt_result;
+   }
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  ResolveInfo GetResolveInfo() const override {
++    return ResolveInfo(error_, kDnsResolvedUndefined);
++  }
++  bool SecureDnsFallbackResolved() const override { return false; }
++#endif
++
+  private:
+   const int error_;
+ };
+ 
+ // Similar to FailingRequestImpl, but for ServiceEndpointRequest.
+@@ -141,10 +148,17 @@ class FailingServiceEndpointRequestImpl
+     return nullptr;
+   }
+ 
+   bool IsStaleWhileRefresing() const override { return false; }
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  ResolveInfo GetResolveInfo() const override {
++    return ResolveInfo(error_, kDnsResolvedUndefined);
++  }
++  bool SecureDnsFallbackResolved() const override { return false; }
++#endif
++
+   void ChangeRequestPriority(RequestPriority priority) override {}
+ 
+  private:
+   const int error_;
+ };

@@ -578,4 +578,18 @@ void SSLConnectJob::ChangePriorityInternal(RequestPriority priority) {
   }
 }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+ResolveInfo SSLConnectJob::GetResolveInfo() const {
+  return resolve_info_;
+}
+
+ConnectionAttempts SSLConnectJob::GetExtraConnectionAttempts() const {
+  return extra_connection_attempts_;
+}
+
+bool SSLConnectJob::SecureDnsFallbackResolved() const {
+  return secure_dns_fallback_resolved_;
+}
+#endif
+
 }  // namespace net

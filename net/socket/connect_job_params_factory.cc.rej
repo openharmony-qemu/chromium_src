@@ -1,0 +1,102 @@
+diff a/net/socket/connect_job_params_factory.cc b/net/socket/connect_job_params_factory.cc	(rejected hunks)
+@@ -165,11 +165,16 @@ ConnectJobParams CreateProxyParams(
+     const std::optional<NetworkTrafficAnnotationTag>& proxy_annotation_tag,
+     const OnHostResolutionCallback& resolution_callback,
+     const NetworkAnonymizationKey& endpoint_network_anonymization_key,
+     SecureDnsPolicy secure_dns_policy,
+     const CommonConnectJobParams* common_connect_job_params,
+-    const NetworkAnonymizationKey& proxy_dns_network_anonymization_key) {
++    const NetworkAnonymizationKey& proxy_dns_network_anonymization_key
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++    ,
++    bool secure_dns_only
++#endif
++) {
+   const ProxyServer& proxy_server =
+       proxy_chain.GetProxyServer(proxy_chain_index);
+ 
+   // If the requested session will be used to speak to a downstream proxy, then
+   // it need not be partitioned based on the ultimate destination's NAK. If the
+@@ -232,17 +237,27 @@ ConnectJobParams CreateProxyParams(
+     // `SchemeHostPort`, so proxies can participate in ECH? Note doing so
+     // with `SCHEME_HTTP` requires handling the HTTPS record upgrade.
+     params = ConnectJobParams(base::MakeRefCounted<TransportSocketParams>(
+         proxy_server.host_port_pair(), proxy_dns_network_anonymization_key,
+         secure_dns_policy, resolution_callback,
+-        SupportedProtocolsFromSSLConfig(proxy_server_ssl_config)));
++        SupportedProtocolsFromSSLConfig(proxy_server_ssl_config)
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++            ,
++        secure_dns_only
++#endif
++        ));
+   } else {
+     params = CreateProxyParams(
+         proxy_server.host_port_pair(), true, endpoint, proxy_chain,
+         proxy_chain_index - 1, proxy_annotation_tag, resolution_callback,
+         endpoint_network_anonymization_key, secure_dns_policy,
+-        common_connect_job_params, proxy_dns_network_anonymization_key);
++        common_connect_job_params, proxy_dns_network_anonymization_key
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++        ,
++        secure_dns_only
++#endif
++    );
+   }
+ 
+   // For secure connections, wrap the underlying connection params in SSL
+   // params.
+   if (proxy_server.is_secure_http_like()) {
+@@ -286,11 +301,16 @@ ConnectJobParams ConstructConnectJobParams(
+     const OnHostResolutionCallback& resolution_callback,
+     const NetworkAnonymizationKey& endpoint_network_anonymization_key,
+     SecureDnsPolicy secure_dns_policy,
+     bool disable_cert_network_fetches,
+     const CommonConnectJobParams* common_connect_job_params,
+-    const NetworkAnonymizationKey& proxy_dns_network_anonymization_key) {
++    const NetworkAnonymizationKey& proxy_dns_network_anonymization_key
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++    ,
++    bool secure_dns_only
++#endif
++) {
+   DCHECK(proxy_chain.IsValid());
+ 
+   // Set up `ssl_config` if using SSL to the endpoint.
+   SSLConfig ssl_config;
+   if (UsingSsl(endpoint)) {
+@@ -318,22 +338,32 @@ ConnectJobParams ConstructConnectJobParams(
+   ConnectJobParams params;
+   if (proxy_chain.is_direct()) {
+     params = ConnectJobParams(base::MakeRefCounted<TransportSocketParams>(
+         ToTransportEndpoint(endpoint), endpoint_network_anonymization_key,
+         secure_dns_policy, resolution_callback,
+-        SupportedProtocolsFromSSLConfig(ssl_config)));
++        SupportedProtocolsFromSSLConfig(ssl_config)
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++            ,
++        secure_dns_only
++#endif
++        ));
+   } else {
+     bool should_tunnel = force_tunnel || UsingSsl(endpoint) ||
+                          !proxy_chain.is_get_to_proxy_allowed();
+     // Begin creating params for the last proxy in the chain. This will
+     // recursively create params "backward" through the chain to the first.
+     params = CreateProxyParams(
+         ToHostPortPair(endpoint), should_tunnel, endpoint, proxy_chain,
+         /*proxy_chain_index=*/proxy_chain.length() - 1, proxy_annotation_tag,
+         resolution_callback, endpoint_network_anonymization_key,
+         secure_dns_policy, common_connect_job_params,
+-        proxy_dns_network_anonymization_key);
++        proxy_dns_network_anonymization_key
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++        ,
++        secure_dns_only
++#endif
++    );
+   }
+ 
+   if (UsingSsl(endpoint)) {
+     // Wrap the final params (which includes connections through zero or more
+     // proxies) in SSLSocketParams to handle SSL to to the endpoint.

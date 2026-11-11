@@ -1,0 +1,27 @@
+diff a/net/quic/quic_proxy_datagram_client_socket.h b/net/quic/quic_proxy_datagram_client_socket.h	(rejected hunks)
+@@ -8,10 +8,11 @@
+ #include <stdint.h>
+ 
+ #include <queue>
+ #include <string_view>
+ 
++#include "base/memory/advanced_memory_safety_checks.h"
+ #include "net/base/completion_once_callback.h"
+ #include "net/base/ip_endpoint.h"
+ #include "net/base/net_export.h"
+ #include "net/log/net_log.h"
+ #include "net/log/net_log_with_source.h"
+@@ -35,10 +36,13 @@ class ProxyDelegate;
+ // ConnectViaStream is used to connect this socket over the provided QUIC stream
+ // to send and receive datagrams.
+ class NET_EXPORT_PRIVATE QuicProxyDatagramClientSocket
+     : public DatagramClientSocket,
+       public quic::QuicSpdyStream::Http3DatagramVisitor {
++  // TODO(crbug.com/495798630): Remove this macro once it gets fixed.
++  ADVANCED_MEMORY_SAFETY_CHECKS();
++
+  public:
+   // Initializes a QuicProxyDatagramClientSocket with the provided network
+   // log (source_net_log) and destination URL. The destination URL is
+   // derived from a URI Template containing the variables "target_host"
+   // and "target_port". These variables need to be prepopulated by the caller of

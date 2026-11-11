@@ -1,0 +1,16 @@
+diff a/net/http/http_basic_stream.cc b/net/http/http_basic_stream.cc	(rejected hunks)
+@@ -188,10 +189,14 @@ void HttpBasicStream::OnHandshakeConfirmed(CompletionOnceCallback callback,
+   if (rv == OK) {
+     // Note this time is only recorded if ConfirmHandshake() completed
+     // asynchronously. If it was synchronous, GetLoadTimingInfo() assumes the
+     // handshake was already confirmed or there was nothing to confirm.
+     confirm_handshake_end_ = base::TimeTicks::Now();
++#if BUILDFLAG(ARKWEB_NETWORK_DFX)
++    TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
++                 "connectEnd", confirm_handshake_end_);
++#endif
+   }
+   std::move(callback).Run(rv);
+ }
+ 
+ }  // namespace net

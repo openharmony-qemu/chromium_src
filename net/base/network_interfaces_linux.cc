@@ -44,6 +44,10 @@
 #include "net/base/network_interfaces_getifaddrs.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#include "net/base/network_interfaces_getifaddrs.h"
+#endif
+
 namespace net {
 
 namespace {
@@ -246,6 +250,14 @@ bool GetNetworkList(NetworkInterfaceList* networks, int policy) {
     return ret;
   }
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) && !defined(COMPONENT_BUILD) // FIXME
+  bool ret = internal::GetNetworkListUsingGetifaddrs(networks, policy);
+  // Use GetInterfaceConnectionType() to sharpen up interface types.
+  for (NetworkInterface& network : *networks)
+    network.type = internal::GetInterfaceConnectionType(network.name);
+  return ret;
+#else
 
   const AddressMapOwnerLinux* map_owner = nullptr;
   std::optional<internal::AddressTrackerLinux> temp_tracker;

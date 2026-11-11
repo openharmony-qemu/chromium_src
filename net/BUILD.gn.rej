@@ -1,0 +1,174 @@
+diff a/net/BUILD.gn b/net/BUILD.gn	(rejected hunks)
+@@ -14,20 +14,32 @@ import("//testing/test.gni")
+ import("//third_party/icu/config.gni")
+ import("//third_party/protobuf/proto_library.gni")
+ import("//tools/grit/grit_rule.gni")
+ import("//url/features.gni")
+ 
++if (is_arkweb) {
++  import("//arkweb/build/features/features.gni")
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++  if (is_arkweb_ext) {
++    import("//arkweb/ohos_nweb_ex/build/features/features.gni")
++    import("//arkweb/ohos_nweb_ex/overrides/net/chromium_net_ext.gni")
++  }
++}
++
+ if (is_android) {
+   import("//build/config/android/config.gni")
+   import("//build/config/android/rules.gni")
+   import("//components/cronet/android/cronet_test_templates.gni")
+   import("//third_party/jni_zero/jni_zero.gni")
+ } else if (is_mac) {
+   import("//build/config/mac/mac_sdk.gni")
+ } else if (is_ios) {
+   import("//build/config/apple/mobile_config.gni")
+   import("//build/config/ios/bundle_data_from_filelist.gni")
++} else if (is_ohos) {
++  import("//build/config/ohos/abi.gni")
++  import("//build/config/ohos/config.gni")
+ }
+ 
+ # Android:
+ # The way the cache uses mmap() is inefficient on some Android devices. If
+ # this flag is set, we hackily avoid using mmap() in the disk cache. We are
+@@ -62,12 +74,12 @@ enable_unix_sockets = is_posix && !is_ios
+ is_arm_cast_shell_build = (is_castos || is_cast_android) &&
+                           (current_cpu == "arm" || current_cpu == "arm64")
+ 
+ # Python works only on Linux, MacOS and Windows so exclude the others,
+ # chromecast, android, fuchsia, ios.
+-enable_python_utils =
+-    !is_arm_cast_shell_build && !is_android && !is_fuchsia && !is_ios
++enable_python_utils = !is_arm_cast_shell_build && !is_android && !is_fuchsia &&
++                      !is_ios && !is_ohos
+ 
+ # Platforms that cannot use python_utils (like Android but see full
+ # list above) will instead use a remote server.
+ use_remote_test_server =
+     !enable_python_utils && (enable_websockets || (is_cronet_build && !is_ios))
+@@ -1183,10 +1195,19 @@ component("net") {
+     "//components/network_time/time_tracker",
+     "//components/unexportable_keys",
+     "//net/http:transport_security_state_generated_files",
+     "//third_party/simdutf",
+   ]
++  if (defined(is_arkweb) && is_arkweb) {
++    deps += [
++      "//base:base_static",
++    ]
++  }
++
++  if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
++    sources += chromium_net_ext_gn_sources
++  }
+ 
+   public_deps = [
+     ":disk_cache_buildflags",
+     ":net_export_header",
+     ":net_features",
+@@ -1514,11 +1573,11 @@ component("net") {
+     } else {
+       sources += [ "disk_cache/blockfile/mapped_file_posix.cc" ]
+     }
+   }
+ 
+-  if (is_android || is_chromeos || is_linux) {
++  if (is_android || is_chromeos || is_linux || is_arkweb) {
+     sources += [
+       "base/network_change_notifier_passive.cc",
+       "base/network_change_notifier_passive.h",
+     ]
+   }
+@@ -1560,11 +1619,11 @@ component("net") {
+         "base/network_interfaces_getifaddrs_android.h",
+       ]
+     }
+   }
+ 
+-  if (chrome_root_store_supported) {
++  if (chrome_root_store_supported || arkweb_test) {
+     sources += [
+       "cert/internal/trust_store_chrome.cc",
+       "cert/internal/trust_store_chrome.h",
+     ]
+     deps += [
+@@ -3148,10 +3227,24 @@ target(_test_target_type, "net_unittests") {
+   configs += [ "//build/config:precompiled_headers" ]
+   defines = []
+   if (disable_zstd_filter) {
+     defines += [ "NET_DISABLE_ZSTD" ]
+   }
++  if (is_ohos) {
++    sources += [
++      "//arkweb/chromium_ext/net/cert/test_root_certs_ohos.cc",
++      "//net/tools/transport_security_state_generator/cert_util.cc",
++    ]
++    sources += arkweb_net_dns_unittest_sources
++    defines += [ "NET_UNITTESTS_OHOS_ENABLE" ]
++  }
++  if (defined(arkweb_ext_http_dns_fallback) && arkweb_ext_http_dns_fallback || is_ohos) {
++    ldflags += [
++      "-Wl,--wrap=OH_NetConn_GetDefaultNet",
++      "-Wl,--wrap=OH_NetConn_GetConnectionProperties",
++    ]
++  }
+ 
+   fuzztests = [
+     "HpackHeaderTableFuzzTest.CanCallMethodSequence",
+     "HttpNoVarySearchTest.AreEquivalentImplementationsMatch",
+     "PickleTest.FuzzRoundTrip",
+@@ -3199,10 +3292,27 @@ target(_test_target_type, "net_unittests") {
+     "//third_party/zlib",
+     "//url",
+     "//url:buildflags",
+   ]
+ 
++  if (is_arkweb) {
++    deps += [
++      "//arkweb/ohos_adapter_ndk:adapter_ndk",
++      "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_ndk",
++      "//third_party:huawei_securec",
++    ]
++    include_dirs = [
++      "//arkweb/glue",
++      "//arkweb/ohos_adapter_ndk/interfaces",
++      "//third_party/ohos_ndk/includes/ohos_adapter",
++    ]
++  }
++
++  if (defined(arkweb_ext_http_dns_fallback) && arkweb_ext_http_dns_fallback) {
++    deps += [ "//services/network/public/cpp:cpp", ]
++  }
++
+   if (!is_cronet_build) {
+     sources += [
+       "extras/sqlite/sqlite_persistent_cookie_store_unittest.cc",
+       "extras/sqlite/sqlite_persistent_shared_dictionary_store_unittest.cc",
+       "log/trace_net_log_observer_unittest.cc",
+@@ -3549,10 +3664,25 @@ target(_test_target_type, "net_unittests") {
+       sources += [ "disk_cache/sql/sql_persistent_store_queries_unittest.cc" ]
+       data_deps += [ "//third_party/sqlite:sqlite_dev_shell" ]
+     }
+   }
+ 
++  if (is_ohos && !arkweb_test) {
++    deps += [
++      "//content/public/common:static_switches",
++    ]
++  }
++
++  if (arkweb_test) {
++    sources += [
++      "//arkweb/chromium_ext/net/dns/arkweb_host_resolver_manager_job_ext_unittest.cc",
++      "//arkweb/chromium_ext/net/http/http_cache_transaction_for_include_unittest.cc",
++      "//arkweb/chromium_ext/net/http/http_cache_transaction_utils_unittest.cc",
++      "//arkweb/chromium_ext/net/http/http_proxy_connect_job_for_include_unittest.cc",
++    ]
++  }
++
+   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and
+   # enable the diagnostic by removing this line.
+   configs += [ "//build/config/compiler:no_exit_time_destructors" ]
+ }
+ 

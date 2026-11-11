@@ -30,6 +30,9 @@
 #include "net/spdy/spdy_session_key.h"
 #include "net/ssl/ssl_cert_request_info.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -224,6 +227,20 @@ class NET_EXPORT_PRIVATE HttpProxyConnectJob : public ConnectJob,
   // Updates the field trial parameters used in calculating timeouts.
   static void UpdateFieldTrialParametersForTesting();
 
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  void SetConnectTimeout(int timeout_override) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo GetResolveInfo() const override { return resolve_info_; }
+  ConnectionAttempts GetExtraConnectionAttempts() const override {
+    return extra_connection_attempts_;
+  }
+  bool SecureDnsFallbackResolved() const override {
+    return secure_dns_fallback_resolved_;
+  }
+#endif
+
   enum class HttpConnectResult {
     kSuccess,
     kError,
@@ -300,6 +317,11 @@ class NET_EXPORT_PRIVATE HttpProxyConnectJob : public ConnectJob,
 
   const HostPortPair& GetDestination() const;
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void ResetTimerExInBeginConnect();
+  void ResetTimerExInHttpProxyConnect();
+#endif
+
   std::string GetUserAgent() const;
 
   SpdySessionKey CreateSpdySessionKey() const;
@@ -332,6 +354,22 @@ class NET_EXPORT_PRIVATE HttpProxyConnectJob : public ConnectJob,
 
   // Time when the connection to the proxy was started.
   base::TimeTicks connect_start_time_;
+
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  // Only for transport_connect_job
+  int timeout_override_for_nested_job_{0};
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool is_fallback_proxy_server_{false};
+  int fallback_proxy_response_code_{0};
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info_;
+  ConnectionAttempts extra_connection_attempts_{};
+  bool secure_dns_fallback_resolved_ = false;
+#endif
 
   base::WeakPtrFactory<HttpProxyConnectJob> weak_ptr_factory_{this};
 };

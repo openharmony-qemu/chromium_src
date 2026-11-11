@@ -1,0 +1,88 @@
+diff a/net/http/http_network_transaction.cc b/net/http/http_network_transaction.cc	(rejected hunks)
+@@ -7,11 +7,12 @@
+ #include <deque>
+ #include <queue>
+ #include <set>
+ #include <utility>
+ #include <vector>
+-
++#include "base/command_line.h"
++#include "arkweb/build/features/features.h"
+ #include "base/base64url.h"
+ #include "base/compiler_specific.h"
+ #include "base/feature_list.h"
+ #include "base/format_macros.h"
+ #include "base/functional/bind.h"
+@@ -22,10 +23,13 @@
+ #include "base/metrics/sparse_histogram.h"
+ #include "base/notreached.h"
+ #include "base/strings/string_number_conversions.h"
+ #include "base/strings/string_util.h"
+ #include "base/time/time.h"
++#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
++#include "base/trace_event/trace_event.h"
++#endif
+ #include "base/timer/timer.h"
+ #include "base/trace_event/trace_event.h"
+ #include "base/tracing/protos/chrome_track_event.pbzero.h"
+ #include "base/values.h"
+ #include "build/build_config.h"
+@@ -328,10 +341,11 @@ HttpNetworkTransaction::HttpNetworkTransaction(RequestPriority priority,
+                                        base::Unretained(this))),
+       session_(session),
+       priority_(priority) {}
+ 
+ HttpNetworkTransaction::~HttpNetworkTransaction() {
++
+ #if BUILDFLAG(ENABLE_REPORTING)
+   // If no error or success report has been generated yet at this point, then
+   // this network transaction was prematurely cancelled.
+   GenerateNetworkErrorLoggingReport(ERR_ABORTED);
+ #endif  // BUILDFLAG(ENABLE_REPORTING)
+@@ -377,10 +391,14 @@ int HttpNetworkTransaction::Start(const HttpRequestInfo* request_info,
+ 
+   if (request_info->load_flags & LOAD_ONLY_FROM_CACHE) {
+     return ERR_CACHE_MISS;
+   }
+ 
++#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
++  AsArkWebHttpNetworkTransactionExt()->StartRecording();
++#endif
++
+   DCHECK(request_info->traffic_annotation.is_valid());
+   DCHECK(request_info->IsConsistent());
+   net_log_ = net_log;
+   request_ = request_info;
+   url_ = request_->url;
+@@ -599,10 +617,13 @@ void HttpNetworkTransaction::DidDrainBodyForAuthRestart(bool keep_alive) {
+       DCHECK_EQ(0, new_stream->GetTotalReceivedBytes());
+       DCHECK_EQ(0, new_stream->GetTotalSentBytes());
+       next_state_ = STATE_CONNECTED_CALLBACK;
+     }
+     stream_ = std::move(new_stream);
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++    stream_created_ = true;
++#endif
+   }
+ 
+   // Reset the other member variables.
+   ResetStateForAuthRestart();
+ }
+@@ -839,11 +865,16 @@ void HttpNetworkTransaction::CloseConnectionOnDestruction() {
+ bool HttpNetworkTransaction::IsMdlMatchForMetrics() const {
+   return proxy_info_.is_mdl_match();
+ }
+ 
+ void HttpNetworkTransaction::OnStreamReady(const ProxyInfo& used_proxy_info,
+-                                           std::unique_ptr<HttpStream> stream) {
++                                           std::unique_ptr<HttpStream> stream
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++                                           ,
++                                           const ResolveInfo resolve_info
++#endif
++) {
+   DCHECK_EQ(STATE_CREATE_STREAM_COMPLETE, next_state_);
+   DCHECK(stream_request_.get());
+ 
+   if (stream_) {
+     total_received_bytes_ += stream_->GetTotalReceivedBytes();

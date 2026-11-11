@@ -1,0 +1,13 @@
+diff a/net/http/http_status_code.h b/net/http/http_status_code.h	(rejected hunks)
+@@ -5,10 +5,11 @@
+ #ifndef NET_HTTP_HTTP_STATUS_CODE_H_
+ #define NET_HTTP_HTTP_STATUS_CODE_H_
+ 
+ #include <optional>
+ 
++#include "build/build_config.h"
+ #include "net/base/net_export.h"
+ 
+ namespace net {
+ 
+ // These values are persisted to logs. Entries should not be renumbered and

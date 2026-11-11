@@ -1,0 +1,122 @@
+diff a/net/socket/client_socket_pool_manager.cc b/net/socket/client_socket_pool_manager.cc	(rejected hunks)
+@@ -97,23 +97,39 @@ int InitSocketPoolHelper(
+     int num_preconnect_streams,
+     ClientSocketHandle* socket_handle,
+     HttpNetworkSession::SocketPoolType socket_pool_type,
+     CompletionOnceCallback callback,
+     const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback,
+-    bool fail_if_alias_requires_proxy_override) {
++    bool fail_if_alias_requires_proxy_override
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++    ,
++    bool secure_dns_only = false
++#endif
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++    ,
++    bool from_preload = false
++#endif
++  ) {
+   DCHECK(endpoint.IsValid());
+ 
+   session->ApplyTestingFixedPort(endpoint);
+ 
+   bool disable_cert_network_fetches =
+       !!(request_load_flags & LOAD_DISABLE_CERT_NETWORK_FETCHES);
+   ClientSocketPool::GroupId connection_group(
+       std::move(endpoint), privacy_mode, std::move(network_anonymization_key),
+-      secure_dns_policy, disable_cert_network_fetches);
++      secure_dns_policy, disable_cert_network_fetches
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      secure_dns_only
++#endif
++  );
+   scoped_refptr<ClientSocketPool::SocketParams> socket_params =
+       CreateSocketParams(connection_group, allowed_bad_certs);
+-
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  socket_params->SetFromPreload(from_preload);
++#endif
+   ClientSocketPool* pool =
+       session->GetSocketPool(socket_pool_type, proxy_info.proxy_chain());
+   ClientSocketPool::RespectLimits respect_limits =
+       ClientSocketPool::RespectLimits::ENABLED;
+   if ((request_load_flags & LOAD_IGNORE_LIMITS) != 0)
+@@ -223,19 +239,37 @@ int InitSocketHandleForHttpRequest(
+     const SocketTag& socket_tag,
+     const NetLogWithSource& net_log,
+     ClientSocketHandle* socket_handle,
+     CompletionOnceCallback callback,
+     const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback,
+-    bool fail_if_alias_requires_proxy_override) {
++    bool fail_if_alias_requires_proxy_override
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++    ,
++    bool secure_dns_only
++#endif
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++    ,
++    bool from_preload
++#endif
++    ) {
+   DCHECK(socket_handle);
+   return InitSocketPoolHelper(
+       std::move(endpoint), request_load_flags, request_priority, session,
+       proxy_info, allowed_bad_certs, privacy_mode,
+       std::move(network_anonymization_key), secure_dns_policy, socket_tag,
+       net_log, 0, socket_handle, HttpNetworkSession::NORMAL_SOCKET_POOL,
+       std::move(callback), proxy_auth_callback,
+-      fail_if_alias_requires_proxy_override);
++      fail_if_alias_requires_proxy_override
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      secure_dns_only
++#endif
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++      ,
++      from_preload
++#endif
++    );
+ }
+ 
+ int InitSocketHandleForWebSocketRequest(
+     url::SchemeHostPort endpoint,
+     int request_load_flags,
+@@ -280,11 +314,16 @@ int PreconnectSocketsForHttpRequest(
+     NetworkAnonymizationKey network_anonymization_key,
+     SecureDnsPolicy secure_dns_policy,
+     const NetLogWithSource& net_log,
+     int num_preconnect_streams,
+     bool fail_if_alias_requires_proxy_override,
+-    CompletionOnceCallback callback) {
++    CompletionOnceCallback callback
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++,
++    bool from_preload
++#endif
++    ) {
+   // Expect websocket schemes (ws and wss) to be converted to the http(s)
+   // equivalent.
+   DCHECK(endpoint.scheme() == url::kHttpScheme ||
+          endpoint.scheme() == url::kHttpsScheme);
+ 
+@@ -293,9 +332,18 @@ int PreconnectSocketsForHttpRequest(
+       proxy_info, allowed_bad_certs, privacy_mode,
+       std::move(network_anonymization_key), secure_dns_policy, SocketTag(),
+       net_log, num_preconnect_streams, nullptr,
+       HttpNetworkSession::NORMAL_SOCKET_POOL, std::move(callback),
+       ClientSocketPool::ProxyAuthCallback(),
+-      fail_if_alias_requires_proxy_override);
++      fail_if_alias_requires_proxy_override
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      false
++#endif
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++      ,
++      from_preload
++#endif
++    );
+ }
+ 
+ }  // namespace net

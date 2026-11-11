@@ -1,0 +1,12 @@
+diff a/net/dns/resolve_context.cc b/net/dns/resolve_context.cc	(rejected hunks)
+@@ -702,6 +706,10 @@ bool ResolveContext::ServerStatsToDohAvailability(
+     const ResolveContext::ServerStats& stats) {
+   return stats.last_failure_count < kAutomaticModeFailureLimit &&
+          stats.current_connection_success;
+ }
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++#include "arkweb/chromium_ext/net/dns/resolve_context_for_include.cc"
++#endif
++
+ }  // namespace net

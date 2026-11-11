@@ -1370,6 +1370,15 @@ void HttpStreamFactory::Job::OnSpdySessionAvailable(
   existing_spdy_session_ = spdy_session;
   next_state_ = STATE_CREATE_STREAM;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  resolve_info_ = existing_spdy_session_->GetResolveInfo();
+  if (delegate_) {
+    delegate_->AddExtraConnectionAttemptsToRequest(
+        this,
+        existing_spdy_session_->GetExtraConnectionAttempts());
+  }
+#endif
+
   // This will synchronously close `connection_`, so no need to worry about it
   // calling back into `this`. It will also immediately use
   // `existing_spdy_session_`, so there are no concerns about it being destroyed
@@ -1396,6 +1405,17 @@ void HttpStreamFactory::Job::MaybeCopyConnectionAttemptsFromHandle() {
   delegate_->AddConnectionAttemptsToRequest(this,
                                             connection_->connection_attempts());
 }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+void HttpStreamFactory::Job::MaybeCopyExtraConnectionAttemptsFromHandle() {
+  if (!connection_) {
+    return;
+  }
+
+  delegate_->AddExtraConnectionAttemptsToRequest(
+      this, connection_->GetExtraConnectionAttempts());
+}
+#endif
 
 HttpStreamFactory::JobFactory::JobFactory() = default;
 

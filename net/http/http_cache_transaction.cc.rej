@@ -1,0 +1,98 @@
+diff a/net/http/http_cache_transaction.cc b/net/http/http_cache_transaction.cc	(rejected hunks)
+@@ -36,10 +36,13 @@
+ #include "base/metrics/histogram_macros.h"
+ #include "base/pickle.h"
+ #include "base/strings/string_util.h"  // For EqualsCaseInsensitiveASCII.
+ #include "base/task/single_thread_task_runner.h"
+ #include "base/time/clock.h"
++#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
++#include "base/trace_event/trace_event.h"
++#endif
+ #include "base/time/time.h"
+ #include "base/trace_event/common/trace_event_common.h"
+ #include "base/trace_event/trace_event.h"
+ #include "base/trace_event/trace_id_helper.h"
+ #include "base/values.h"
+@@ -67,10 +70,22 @@
+ #include "net/http/http_util.h"
+ #include "net/http/no_vary_search_cache.h"
+ #include "net/log/net_log_event_type.h"
+ #include "net/ssl/ssl_cert_request_info.h"
+ #include "net/ssl/ssl_config_service.h"
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
++#endif
++
++#include "arkweb/chromium_ext/net/http/http_cache_transaction_utils.h"
++#include "arkweb/chromium_ext/net/http/http_cache_transaction_for_include.cc"
++
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++#include "base/command_line.h"
++#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
++#endif
+ 
+ using base::Time;
+ using base::TimeTicks;
+ 
+ namespace net {
+@@ -1658,10 +1712,14 @@ int HttpCache::Transaction::DoCacheReadResponseComplete(int result) {
+                                     result);
+   EndDiskCacheAccessTimeCount(DiskCacheAccessType::kRead);
+ 
+   // Record the time immediately before the cached response is parsed.
+   read_headers_since_ = TimeTicks::Now();
++#if BUILDFLAG(ARKWEB_NETWORK_DFX)
++  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
++               "responseStart", read_headers_since_);
++#endif
+ 
+   if (result != read_buf_->size() ||
+       !HttpCache::ParseResponseInfo(read_buf_->span(), &response_,
+                                     &truncated_)) {
+     return OnCacheReadError(result, true);
+@@ -4048,13 +4159,21 @@ void HttpCache::Transaction::SaveNetworkTransactionInfo(
+ 
+   const auto connection_attempts = transaction.GetConnectionAttempts();
+   network_transaction_info_.old_connection_attempts.insert(
+       network_transaction_info_.old_connection_attempts.end(),
+       connection_attempts.begin(), connection_attempts.end());
++
+   network_transaction_info_.old_remote_endpoint = IPEndPoint();
+   transaction.GetRemoteEndpoint(&network_transaction_info_.old_remote_endpoint);
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  const auto extra_attempts = transaction.GetExtraConnectionAttempts();
++  network_transaction_info_.old_extra_connection_attempts.insert(
++      network_transaction_info_.old_extra_connection_attempts.end(),
++      extra_attempts.begin(), extra_attempts.end());
++#endif
++
+   if (transaction.IsMdlMatchForMetrics()) {
+     network_transaction_info_.previous_mdl_match_for_metrics = true;
+   }
+ }
+ 
+@@ -4106,17 +4225,20 @@ void HttpCache::Transaction::TransitionToState(State state) {
+ }
+ 
+ bool HttpCache::Transaction::UpdateAndReportCacheability(
+     const HttpResponseHeaders& headers) {
+   // Do not cache no-store content.
+-  if (headers.HasHeaderValue("cache-control", "no-store")) {
++  if (headers.HasHeaderValue("cache-control", "no-store") 
++#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
++   && !(effective_load_flags_ & LOAD_IGNORE_CACHE_CONTROL)
++#endif
++   ) {
+     if (base::FeatureList::IsEnabled(features::kAvoidEntryCreationForNoStore)) {
+       cache_->MarkKeyNoStore(cache_key_);
+     }
+     return true;
+   }
+-
+   return false;
+ }
+ 
+ void HttpCache::Transaction::UpdateSecurityHeadersBeforeForwarding() {
+   // Because of COEP, we need to add CORP to the 304 of resources that set it

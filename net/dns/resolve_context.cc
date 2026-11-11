@@ -518,6 +518,10 @@ void ResolveContext::InvalidateCachesAndPerSessionData(
 
   if (!doh_server_stats_.empty())
     NotifyDohStatusObserversOfUnavailable(network_change);
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  NotifyDohStatsInit();
+#endif
 }
 
 void ResolveContext::StartDohAutoupgradeSuccessTimer(

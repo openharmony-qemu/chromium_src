@@ -1,0 +1,15 @@
+diff a/net/dns/dns_config_service.cc b/net/dns/dns_config_service.cc	(rejected hunks)
+@@ -173,11 +173,13 @@ void DnsConfigService::InvalidateHosts() {
+   StartTimer();
+ }
+ 
+ void DnsConfigService::OnConfigRead(DnsConfig config) {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
++#if !BUILDFLAG(ARKWEB_NETWORK_BASE)
+   DCHECK(config.IsValid());
++#endif
+ 
+   if (!config.EqualsIgnoreHosts(dns_config_)) {
+     dns_config_.CopyIgnoreHosts(config);
+     need_update_ = true;
+   }

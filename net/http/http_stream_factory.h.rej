@@ -1,0 +1,18 @@
+diff a/net/http/http_stream_factory.h b/net/http/http_stream_factory.h	(rejected hunks)
+@@ -99,10 +99,16 @@ class NET_EXPORT HttpStreamFactory {
+ 
+     int load_flags = 0;
+     PrivacyMode privacy_mode = PRIVACY_MODE_DISABLED;
+     SecureDnsPolicy secure_dns_policy = SecureDnsPolicy::kAllow;
+     SocketTag socket_tag;
++#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
++    bool secure_dns_only = false;
++#endif
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++    bool retry_with_fallback_proxy = false;
++#endif
+   };
+ 
+   // Calculates an appropriate SPDY session key for the given parameters.
+   static SpdySessionKey GetSpdySessionKey(
+       const ProxyChain& proxy_chain,

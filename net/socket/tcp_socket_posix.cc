@@ -70,6 +70,9 @@ namespace net {
 
 namespace {
 
+constexpr int32_t MIN_INITIAL_CONGESTION_WINDOW_SIZE = 10;
+constexpr int32_t MAX_INITIAL_CONGESTION_WINDOW_SIZE = 60;
+
 // SetTCPKeepAlive sets SO_KEEPALIVE.
 bool SetTCPKeepAlive(int fd, bool enable, int delay) {
   // Enabling TCP keepalives is the same on all platforms.
@@ -86,7 +89,8 @@ bool SetTCPKeepAlive(int fd, bool enable, int delay) {
   // A delay of 0 doesn't work, and is the default, so ignore that and rely on
   // whatever the OS defaults are once we turned it on above.
   if (delay) {
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
     // Setting the keepalive interval varies by platform.
 
     // Set seconds until first TCP keep alive.
@@ -498,6 +502,23 @@ int TCPSocketPosix::SetDefaultOptionsForServer() {
 
 void TCPSocketPosix::SetDefaultOptionsForClient() {
   DCHECK(socket_);
+
+  /* set init cwnd option*/
+#if BUILDFLAG(ARKWEB_CWND)
+#define TCP_USER_INITCWND 105
+  static int32_t init_cwnd =
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+          .GetSystemPropertiesInstance()
+          .GetInitialCongestionWindowSize();
+  LOG(DEBUG) << "initial_congestion_window_size in configuration = " << init_cwnd;
+  if (init_cwnd >= MIN_INITIAL_CONGESTION_WINDOW_SIZE &&
+      init_cwnd <= MAX_INITIAL_CONGESTION_WINDOW_SIZE) {
+    int ret = setsockopt(socket_->socket_fd(), SOL_TCP, TCP_USER_INITCWND, &init_cwnd, sizeof(init_cwnd));
+    if (ret != 0) {
+      PLOG(ERROR) << "Failed to setocketopt on fd: " << socket_->socket_fd();
+    }
+  }
+#endif
 
   // This mirrors the behaviour on Windows. See the comment in
   // tcp_socket_win.cc after searching for "NODELAY".

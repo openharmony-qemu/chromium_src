@@ -1,0 +1,28 @@
+diff a/net/dns/context_host_resolver.h b/net/dns/context_host_resolver.h	(rejected hunks)
+@@ -91,10 +91,26 @@ class NET_EXPORT ContextHostResolver : public HostResolver {
+   void SetTickClockForTesting(const base::TickClock* tick_clock);
+   ResolveContext* resolve_context_for_testing() {
+     return resolve_context_.get();
+   }
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  void GetLocalAddress(IPEndPoint* address) override;
++  bool CanUseSecureDnsFallback() const override;
++  bool IsDomainInWhitelist(const std::string& domain) const override;
++  bool IsIframeFallbackEnabled() const override;
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  std::string GetDnsServersString() override;
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
++  bool NeedRetryDnsOnDnsHijack(const GURL& url,
++                               const std::string& errorcode) const override;
++#endif
++
+  private:
+   std::unique_ptr<ResolveHostRequest> CreateRequestInternal(
+       HostResolver::Host host,
+       NetworkAnonymizationKey network_anonymization_key,
+       NetLogWithSource net_log,

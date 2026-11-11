@@ -81,6 +81,26 @@ class HostResolverManager::ServiceEndpointRequestImpl
     return resolve_context_ ? resolve_context_->host_cache() : nullptr;
   }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  void set_resolve_info(int error_code,
+                        int dns_status,
+                        const std::vector<TaskType> finished_tasks,
+                        const std::vector<IPEndPoint>& truncation_results);
+  ResolveInfo GetResolveInfo() const override { return resolve_info_; }
+  bool SecureDnsFallbackResolved() const override {
+    return secure_dns_fallback_resolved_;
+  }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  void MaybeModifyResolveLocallyResults(
+      HostCache::Entry& out_results,
+      std::vector<IPEndPoint>& truncation_results);
+  void MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      HostCache::Entry& out_results,
+      int dns_status);
+#endif
+#endif
+
   base::WeakPtr<ServiceEndpointRequestImpl> GetWeakPtr();
 
  private:
@@ -161,6 +181,12 @@ class HostResolverManager::ServiceEndpointRequestImpl
   ResolveErrorInfo error_info_;
 
   std::vector<TaskType> initial_tasks_;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info_;
+  bool is_for_arkweb_ex_{false};
+  bool secure_dns_fallback_resolved_ = false;
+#endif
 
   SEQUENCE_CHECKER(sequence_checker_);
 

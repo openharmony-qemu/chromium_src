@@ -26,6 +26,10 @@
 #include "net/url_request/url_request_context.h"
 #include "url/scheme_host_port.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/net/dns/host_resolver_manager_service_endpoint_request_impl_for_include.cc"
+#endif
+
 namespace net {
 
 HostResolverManager::ServiceEndpointRequestImpl::FinalizedResult::

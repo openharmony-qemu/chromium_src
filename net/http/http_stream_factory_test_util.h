@@ -64,7 +64,12 @@ class MockHttpStreamRequestDelegate : public HttpStreamRequest::Delegate {
   ~MockHttpStreamRequestDelegate() override;
 
   void OnStreamReady(const ProxyInfo& used_proxy_info,
-                     std::unique_ptr<HttpStream> stream) override;
+                     std::unique_ptr<HttpStream> stream
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                     ,
+                     ResolveInfo resolve_info
+#endif
+                     ) override;
   void OnWebSocketHandshakeStreamReady(
       const ProxyInfo& used_proxy_info,
       std::unique_ptr<WebSocketHandshakeStreamBase> stream) override;
@@ -74,8 +79,25 @@ class MockHttpStreamRequestDelegate : public HttpStreamRequest::Delegate {
   void OnStreamFailed(int status,
                       const NetErrorDetails& net_error_details,
                       const ProxyInfo& used_proxy_info,
-                      ResolveErrorInfo resolve_error_info) override;
-  void OnCertificateError(int status, const SSLInfo& ssl_info) override;
+                      ResolveErrorInfo resolve_error_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                      ,
+                      ResolveInfo resolve_info,
+                      bool secure_dns_fallback_resolved
+#endif
+                      ) override;
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY) && BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  MOCK_METHOD5(OnCertificateError, void(int status, const SSLInfo& ssl_info,
+                                        bool used_fallback_proxy, ResolveInfo resolve_info,
+                                        bool secure_dns_fallback_resolved));
+#elif BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  MOCK_METHOD3(OnCertificateError, void(int status, const SSLInfo& ssl_info,
+                                        bool used_fallback_proxy));
+#else
+  MOCK_METHOD2(OnCertificateError, void(int status, const SSLInfo& ssl_info));
+#endif
+
   void OnNeedsProxyAuth(const HttpResponseInfo& proxy_response,
                         const ProxyInfo& used_proxy_info,
                         HttpAuthController* auth_controller) override;

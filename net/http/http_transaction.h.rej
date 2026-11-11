@@ -1,0 +1,19 @@
+diff a/net/http/http_transaction.h b/net/http/http_transaction.h	(rejected hunks)
+@@ -229,10 +257,17 @@ class NET_EXPORT_PRIVATE HttpTransaction {
+   // secondary signal.
+   //
+   // Only use this method for metrics. It may be removed when associated
+   // histograms are removed.
+   virtual bool IsMdlMatchForMetrics() const = 0;
++
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  virtual void SetUpdateResRequestInfoCallback(
++    HttpTransaction::UpdateResRequestInfoCallback callback) { }
++  virtual void SetPreloadInfo(
++    const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& preload_info) { }
++#endif
+ };
+ 
+ }  // namespace net
+ 
+ #endif  // NET_HTTP_HTTP_TRANSACTION_H_

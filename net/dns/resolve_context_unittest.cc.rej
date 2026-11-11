@@ -1,0 +1,12 @@
+diff a/net/dns/resolve_context_unittest.cc b/net/dns/resolve_context_unittest.cc	(rejected hunks)
+@@ -1601,7 +1608,10 @@ TEST_F(ResolveContextTest, ClassicDnsServerIndexRotation) {
+   std::unique_ptr<DnsServerIterator> classic_itr2 =
+       context.GetClassicDnsIterator(session2->config(), session2.get());
+   EXPECT_LT(classic_itr2->GetNextAttemptIndex(), 2u);
+ }
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++#include "arkweb/chromium_ext/net/dns/resolve_context_for_include_unittest.cc"
++#endif  // ARKWEB_UNITTESTS
+ }  // namespace
+ }  // namespace net

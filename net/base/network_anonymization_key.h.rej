@@ -1,0 +1,28 @@
+diff a/net/base/network_anonymization_key.h b/net/base/network_anonymization_key.h	(rejected hunks)
+@@ -10,10 +10,11 @@
+ #include <ostream>
+ #include <string>
+ #include <tuple>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/memory/scoped_refptr.h"
+ #include "base/types/pass_key.h"
+ #include "base/unguessable_token.h"
+ #include "net/base/net_export.h"
+ #include "net/base/network_isolation_key.h"
+@@ -63,10 +64,14 @@ namespace net {
+ class NET_EXPORT NetworkAnonymizationKey {
+  public:
+   // Construct an empty key.
+   NetworkAnonymizationKey();
+ 
++#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
++  NetworkAnonymizationKey(bool should_check_top_frame_site);
++#endif
++
+   NetworkAnonymizationKey(
+       const NetworkAnonymizationKey& network_anonymization_key);
+   NetworkAnonymizationKey(NetworkAnonymizationKey&& network_anonymization_key);
+ 
+   ~NetworkAnonymizationKey();

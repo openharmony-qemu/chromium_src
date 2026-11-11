@@ -21,6 +21,10 @@
 #include "net/base/proxy_server.h"
 #include "net/proxy_resolution/proxy_list.h"
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/net/base/fallback_proxy_constants.h"
+#endif
+
 class GURL;
 
 namespace net {

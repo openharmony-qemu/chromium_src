@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "net/base/file_stream_context.h"
+#include "arkweb/build/features/features.h"
 
 #include <utility>
 
@@ -20,6 +21,10 @@
 #if BUILDFLAG(IS_MAC)
 #include "net/base/apple/guarded_fd.h"
 #endif  // BUILDFLAG(IS_MAC)
+
+#if BUILDFLAG(IS_OHOS) && BUILDFLAG(ARKWEB_FILE_UPLOAD)
+#include "arkweb/chromium_ext/base/datashare_uri_utils.h"
+#endif
 
 #if BUILDFLAG(IS_WIN)
 #include <windows.h>

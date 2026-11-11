@@ -1,0 +1,40 @@
+diff a/net/socket/client_socket_pool_manager.h b/net/socket/client_socket_pool_manager.h	(rejected hunks)
+@@ -93,11 +105,20 @@ int InitSocketHandleForHttpRequest(
+     const SocketTag& socket_tag,
+     const NetLogWithSource& net_log,
+     ClientSocketHandle* socket_handle,
+     CompletionOnceCallback callback,
+     const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback,
+-    bool fail_if_alias_requires_proxy_override);
++    bool fail_if_alias_requires_proxy_override
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++    ,
++    bool secure_dns_only = false
++#endif
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++    ,
++    bool from_preload = false
++#endif
++    );
+ 
+ // A helper method that uses the passed in proxy information to initialize a
+ // ClientSocketHandle with the relevant socket pool. Use this method for
+ // HTTP/HTTPS requests for WebSocket handshake. This function uses
+ // WEBSOCKET_SOCKET_POOL socket pools.
+@@ -129,10 +150,15 @@ int PreconnectSocketsForHttpRequest(
+     NetworkAnonymizationKey network_anonymization_key,
+     SecureDnsPolicy secure_dns_policy,
+     const NetLogWithSource& net_log,
+     int num_preconnect_streams,
+     bool fail_if_alias_requires_proxy_override,
+-    CompletionOnceCallback callback);
++    CompletionOnceCallback callback
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++,
++    bool from_preload = false
++#endif
++    );
+ 
+ }  // namespace net
+ 
+ #endif  // NET_SOCKET_CLIENT_SOCKET_POOL_MANAGER_H_

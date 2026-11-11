@@ -21,6 +21,9 @@
 #include "net/socket/client_socket_pool.h"
 #include "net/ssl/ssl_config.h"
 #include "url/scheme_host_port.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -76,6 +79,15 @@ class NET_EXPORT_PRIVATE ClientSocketPoolManager {
 
   // Creates a Value summary of the state of the socket pools.
   virtual base::Value SocketPoolInfoToValue() const = 0;
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  virtual void SetConnectTimeout(int seconds) = 0;
+#endif
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  virtual void SetConnectJobWithSecureDnsOnlyTimeout(int seconds) = 0;
+#endif
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  virtual void SetSocketIdleTimeout(int32_t timeout) = 0;
+#endif
 };
 
 // A helper method that uses the passed in proxy information to initialize a

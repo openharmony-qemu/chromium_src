@@ -463,7 +463,8 @@ HostResolverManager::HostResolverManager(
 #if BUILDFLAG(IS_WIN)
   EnsureWinsockInit();
 #endif
-#if (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID)) || \
+#if (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID) && \
+     !BUILDFLAG(IS_OHOS)) ||                                                  \
     BUILDFLAG(IS_FUCHSIA)
   RunLoopbackProbeJob();
 #endif
@@ -707,6 +708,12 @@ void HostResolverManager::SetDnsConfigOverrides(DnsConfigOverrides overrides) {
 
 void HostResolverManager::RegisterResolveContext(ResolveContext* context) {
   registered_contexts_.AddObserver(context);
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  context->SetHttpsDnsFallbackEnabled(https_dns_fallback_enabled_);
+  if (https_dns_fallback_enabled_) {
+    WarmUpHttpsDnsFallback(context);
+  }
+#endif
   context->InvalidateCachesAndPerSessionData(
       dns_client_ ? dns_client_->GetCurrentSession() : nullptr,
       false /* network_change */);
@@ -964,6 +971,9 @@ HostCache::Entry HostResolverManager::ResolveLocally(
             NetLogEventType::HOST_RESOLVER_MANAGER_CONFIG_PRESET_MATCH,
             [&] { return NetLogResults(resolved.value()); });
         StartBootstrapFollowup(job_key, cache, source_net_log);
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+        dns_status = kDnsResolvedFromHosts;
+#endif
         return resolved.value();
       }
     } else if (task == TaskType::HOSTS) {
@@ -1017,9 +1027,14 @@ HostResolverManager::Job* HostResolverManager::AddJobWithoutRequest(
     RequestPriority priority,
     const NetLogWithSource& source_net_log) {
   auto new_job =
-      std::make_unique<Job>(weak_ptr_factory_.GetWeakPtr(), key, cache_usage,
-                            host_cache, std::move(tasks), priority,
-                            source_net_log, tick_clock_, https_svcb_options_);
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      std::make_unique<ArkWebHostResolverManagerJobExt>(
+#else
+      std::make_unique<Job>(
+#endif
+          weak_ptr_factory_.GetWeakPtr(), key, cache_usage,
+          host_cache, std::move(tasks), priority, source_net_log, tick_clock_,
+          https_svcb_options_);
   auto insert_result = jobs_.emplace(std::move(key), std::move(new_job));
   auto& iterator = insert_result.first;
   bool is_new = insert_result.second;
@@ -1118,6 +1133,11 @@ std::optional<HostCache::Entry> HostResolverManager::MaybeServeFromCache(
     source_net_log.AddEvent(
         NetLogEventType::HOST_RESOLVER_MANAGER_CACHE_HIT,
         [&] { return NetLogResults(cache_result->second); });
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    if (out_is_from_secure_cache) {
+      *out_is_from_secure_cache = cache_result->first.secure;
+    }
+#endif
     return cache_result->second;
   }
   return std::nullopt;
@@ -1807,7 +1827,8 @@ void HostResolverManager::OnIPAddressChanged(
   // Abandon all ProbeJobs.
   probe_weak_ptr_factory_.InvalidateWeakPtrs();
   InvalidateCaches();
-#if (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID)) || \
+#if (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID) && \
+     !BUILDFLAG(IS_OHOS)) ||                                                  \
     BUILDFLAG(IS_FUCHSIA)
   RunLoopbackProbeJob();
 #endif
@@ -1926,6 +1947,15 @@ void HostResolverManager::InvalidateCaches(bool network_change) {
   }
   invalidation_in_progress_ = false;
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExHttpDnsFallback)) {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "Host caches has been invalidated";
+#endif
+  }
+#endif
+
 #if DCHECK_IS_ON()
   // Sanity checks that invalidation does not have reentrancy issues.
   DCHECK(self_ptr);
@@ -1961,5 +1991,32 @@ std::unique_ptr<DnsProbeRunner> HostResolverManager::CreateDohProbeRunner(
   return dns_client_->GetTransactionFactory()->CreateDohProbeRunner(
       resolve_context);
 }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+// static
+HostResolverManager::DnsTaskTransitionType
+HostResolverManager::ConvertFromTaskType(TaskType type) {
+  switch (type) {
+    case TaskType::SYSTEM:
+      return DnsTaskTransitionType::SYSTEM;
+    case TaskType::DNS:
+      return DnsTaskTransitionType::DNS;
+    case TaskType::SECURE_DNS:
+      return DnsTaskTransitionType::SECURE_DNS;
+    case TaskType::CACHE_LOOKUP:
+      return DnsTaskTransitionType::CACHE_LOOKUP;
+    case TaskType::INSECURE_CACHE_LOOKUP:
+      return DnsTaskTransitionType::INSECURE_CACHE;
+    case TaskType::SECURE_CACHE_LOOKUP:
+      return DnsTaskTransitionType::SECURE_CACHE;
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    case TaskType::SECURE_DNS_FALLBACK:
+      return DnsTaskTransitionType::SECURE_DNS_FALLBACK;
+#endif
+    default:
+      return DnsTaskTransitionType::DEFAULT;
+  }
+}
+#endif
 
 }  // namespace net

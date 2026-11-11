@@ -1,0 +1,87 @@
+diff a/net/socket/client_socket_pool.cc b/net/socket/client_socket_pool.cc	(rejected hunks)
+@@ -110,19 +113,29 @@ ClientSocketPool::GroupId::GroupId()
+ ClientSocketPool::GroupId::GroupId(
+     url::SchemeHostPort destination,
+     PrivacyMode privacy_mode,
+     NetworkAnonymizationKey network_anonymization_key,
+     SecureDnsPolicy secure_dns_policy,
+-    bool disable_cert_network_fetches)
++    bool disable_cert_network_fetches
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++    ,
++    bool secure_dns_only
++#endif
++    )
+     : destination_(std::move(destination)),
+       privacy_mode_(privacy_mode),
+       network_anonymization_key_(
+           NetworkAnonymizationKey::IsPartitioningEnabled()
+               ? std::move(network_anonymization_key)
+               : NetworkAnonymizationKey()),
+       secure_dns_policy_(secure_dns_policy),
+-      disable_cert_network_fetches_(disable_cert_network_fetches) {
++      disable_cert_network_fetches_(disable_cert_network_fetches)
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      secure_dns_only_(secure_dns_only)
++#endif
++{
+   DCHECK(destination_.IsValid());
+ 
+   // ClientSocketPool only expected to be used for HTTP/HTTPS/WS/WSS cases, and
+   // "ws"/"wss" schemes should be converted to "http"/"https" equivalent first.
+   DCHECK(destination_.scheme() == url::kHttpScheme ||
+@@ -145,11 +158,16 @@ std::string ClientSocketPool::GroupId::ToString() const {
+        GetSecureDnsPolicyGroupIdPrefix(secure_dns_policy_),
+        GetPrivacyModeGroupIdPrefix(privacy_mode_), destination_.Serialize(),
+        NetworkAnonymizationKey::IsPartitioningEnabled()
+            ? base::StrCat(
+                  {" <", network_anonymization_key_.ToDebugString(), ">"})
+-           : ""});
++           : ""
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++        ,
++        secure_dns_only_ ? "sdo/" : ""
++#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  });
+ }
+ 
+ ClientSocketPool::~ClientSocketPool() = default;
+ 
+ // static
+@@ -173,11 +191,16 @@ ClientSocketPool::ClientSocketPool(
+     : socket_soft_cap_(socket_soft_cap),
+       additional_capacity_(additional_capacity),
+       proxy_chain_(proxy_chain),
+       is_for_websockets_(is_for_websockets),
+       common_connect_job_params_(common_connect_job_params),
+-      connect_job_factory_(std::move(connect_job_factory)) {}
++      connect_job_factory_(std::move(connect_job_factory)) {
++#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || \
++    BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  utils = std::make_unique<ArkWebClientSocketPoolExt>(this);
++#endif
++}
+ 
+ void ClientSocketPool::NetLogTcpClientSocketPoolRequestedSocket(
+     const NetLogWithSource& net_log,
+     const GroupId& group_id) {
+   // TODO(eroman): Split out the host and port parameters.
+@@ -237,11 +260,16 @@ std::unique_ptr<ConnectJob> ClientSocketPool::CreateConnectJob(
+       group_id.destination(), GetProxyChain(), proxy_annotation_tag,
+       socket_params->allowed_bad_certs(), alpn_mode, force_tunnel,
+       group_id.privacy_mode(), resolution_callback, request_priority,
+       socket_tag, group_id.network_anonymization_key(),
+       group_id.secure_dns_policy(), group_id.disable_cert_network_fetches(),
+-      common_connect_job_params_, delegate);
++      common_connect_job_params_, delegate
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      group_id.secure_dns_only()
++#endif
++  );
+ }
+ 
+ void ClientSocketPool::UpdateStateBeforeAllocation() {
+   state_ = additional_capacity_.NextStateBeforeAllocation(
+       State(), SocketsInUse(), SocketSoftCap());

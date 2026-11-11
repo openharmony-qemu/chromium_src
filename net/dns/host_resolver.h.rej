@@ -1,0 +1,51 @@
+diff a/net/dns/host_resolver.h b/net/dns/host_resolver.h	(rejected hunks)
+@@ -35,10 +35,17 @@
+ #include "net/dns/public/mdns_listener_update_type.h"
+ #include "net/dns/public/resolve_error_info.h"
+ #include "net/dns/public/secure_dns_policy.h"
+ #include "net/log/net_log_with_source.h"
+ #include "url/scheme_host_port.h"
++#if BUILDFLAG(ENABLE_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++#include "arkweb/chromium_ext/net/dns/public/resolve_info.h"
++#endif
+ 
+ namespace net {
+ 
+ class AddressList;
+ class ContextHostResolver;
+@@ -189,10 +196,15 @@ class NET_EXPORT HostResolver {
+ 
+     // Changes the priority of the specified request. Can only be called while
+     // the request is running (after Start() returns |ERR_IO_PENDING| and before
+     // the callback is invoked).
+     virtual void ChangeRequestPriority(RequestPriority priority) {}
++
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++    virtual ResolveInfo GetResolveInfo() const { return {}; }
++    virtual bool SecureDnsFallbackResolved() const = 0;
++#endif
+   };
+ 
+   // Handler for a service endpoint resolution request. Unlike
+   // ResolveHostRequest, which waits for all responses, this could provide
+   // intermediate endpoint candidates in the middle of the resolution.
+@@ -264,10 +276,15 @@ class NET_EXPORT HostResolver {
+     virtual bool IsStaleWhileRefresing() const = 0;
+ 
+     // Change the priority of this request.
+     virtual void ChangeRequestPriority(RequestPriority priority) = 0;
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++    virtual ResolveInfo GetResolveInfo() const { return {}; }
++    virtual bool SecureDnsFallbackResolved() const = 0;
++#endif
++
+     // TODO(crbug.com/403373872): Remove this method once we identify the cause
+     // of the bug.
+     // Returns a string representation of the state of the request.
+     virtual std::string DebugString() const;
+   };

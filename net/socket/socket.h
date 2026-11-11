@@ -10,9 +10,16 @@
 #include <set>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "net/base/completion_once_callback.h"
 #include "net/base/net_export.h"
+#include "net/socket/connection_attempts.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT) // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "arkweb/chromium_ext/net/dns/public/resolve_info.h"
+#endif
 
 namespace net {
 
@@ -93,8 +100,20 @@ class NET_EXPORT Socket {
   // Retrieves any DNS aliases for the socket's remote endpoint.
   virtual const std::set<std::string>& GetDnsAliases() const;
 
+#if BUILDFLAG(IS_ARKWEB_EXT) // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  virtual void SetDnsResolveInfo(const ResolveInfo& resolve_info);
+  virtual const ResolveInfo& GetDnsResolveInfo() const;
+  virtual void SetExtraConnectionAttempt(const ConnectionAttempts& attempt);
+  virtual ConnectionAttempts GetExtraConnectionAttempts() const;
+#endif
+
  protected:
   std::set<std::string> dns_aliases_;
+
+#if BUILDFLAG(IS_ARKWEB_EXT) // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo dns_resolve_info_;
+  ConnectionAttempts extra_connection_attempts_;
+#endif
 };
 
 }  // namespace net

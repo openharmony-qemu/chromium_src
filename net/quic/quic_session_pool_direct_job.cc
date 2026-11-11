@@ -88,6 +88,11 @@ void QuicSessionPool::DirectJob::SetRequestExpectations(
       !session_creation_finished) {
     request->ExpectQuicSessionCreation();
   }
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  else {
+    request->SetDnsResolveInfo(resolve_host_request_->GetResolveInfo());
+  }
+#endif
 }
 
 void QuicSessionPool::DirectJob::UpdatePriority(RequestPriority old_priority,

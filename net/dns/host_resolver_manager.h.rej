@@ -1,0 +1,76 @@
+diff a/net/dns/host_resolver_manager.h b/net/dns/host_resolver_manager.h	(rejected hunks)
+@@ -310,14 +319,35 @@ class NET_EXPORT HostResolverManager
+     INSECURE_CACHE_LOOKUP = 5,
+     SECURE_CACHE_LOOKUP = 6,
+     CONFIG_PRESET = 7,
+     NAT64 = 8,
+     HOSTS = 9,
+-
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++    SECURE_DNS_FALLBACK = 10,
++    kMaxValue = SECURE_DNS_FALLBACK,
++#else
+     kMaxValue = HOSTS,
++#endif
+   };
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  enum DnsTaskTransitionType : uint32_t{DEFAULT = 0,
++                                        SYSTEM = 0x00000001,
++                                        DNS = 0x00000010,
++                                        SECURE_DNS = 0x00000100,
++                                        CACHE_LOOKUP = 0x00001000,
++                                        INSECURE_CACHE = 0x00010000,
++                                        SECURE_CACHE = 0x00100000,
++                                        SECURE_DNS_FALLBACK = 0x01000000};
++
++  static DnsTaskTransitionType ConvertFromTaskType(TaskType type);
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  static void CleanLocalTask(std::deque<TaskType>& out_tasks);
++#endif
++
+   // Returns true if the task is local, synchronous, and instantaneous.
+   static bool IsLocalTask(TaskType task);
+ 
+   // Initializes a job key and an IP address using manager properties and IPv6
+   // reachability. These job key and IP address are used to call
+@@ -352,11 +382,18 @@ class NET_EXPORT HostResolverManager
+       SecureDnsPolicy secure_dns_policy,
+       HostResolverSource source,
+       const NetLogWithSource& source_net_log,
+       HostCache* cache,
+       std::deque<TaskType>* out_tasks,
+-      std::optional<HostCache::EntryStaleness>* out_stale_info);
++      std::optional<HostCache::EntryStaleness>* out_stale_info
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++      ,
++      int& dns_status,
++      ResolveInfo& resolve_info,
++      bool& secure_dns_fallback_resolved
++#endif
++  );
+ 
+   // Creates and starts a Job to asynchronously attempt to resolve
+   // |request|.
+   void CreateAndStartJob(JobKey key,
+                          std::deque<TaskType> tasks,
+@@ -389,11 +426,16 @@ class NET_EXPORT HostResolverManager
+       HostCache* cache,
+       const HostCache::Key& key,
+       ResolveHostParameters::CacheUsage cache_usage,
+       bool ignore_secure,
+       const NetLogWithSource& source_net_log,
+-      std::optional<HostCache::EntryStaleness>* out_stale_info);
++      std::optional<HostCache::EntryStaleness>* out_stale_info
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++      ,
++      bool* is_from_secure_cache = nullptr
++#endif
++  );
+ 
+   // Returns any preset resolution result from the active DoH configuration that
+   // matches |key.host|.
+   std::optional<HostCache::Entry> MaybeReadFromConfig(const JobKey& key);
+ 

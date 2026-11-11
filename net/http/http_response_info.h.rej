@@ -1,0 +1,13 @@
+diff a/net/http/http_response_info.h b/net/http/http_response_info.h	(rejected hunks)
+@@ -7,10 +7,11 @@
+ 
+ #include <optional>
+ #include <set>
+ #include <string>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/time/time.h"
+ #include "net/base/auth.h"
+ #include "net/base/ip_endpoint.h"
+ #include "net/base/net_export.h"
+ #include "net/base/proxy_chain.h"

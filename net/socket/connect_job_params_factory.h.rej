@@ -1,0 +1,18 @@
+diff a/net/socket/connect_job_params_factory.h b/net/socket/connect_job_params_factory.h	(rejected hunks)
+@@ -41,10 +41,15 @@ NET_EXPORT_PRIVATE ConnectJobParams ConstructConnectJobParams(
+     const OnHostResolutionCallback& resolution_callback,
+     const NetworkAnonymizationKey& network_anonymization_key,
+     SecureDnsPolicy secure_dns_policy,
+     bool disable_cert_network_fetches,
+     const CommonConnectJobParams* common_connect_job_params,
+-    const NetworkAnonymizationKey& proxy_dns_network_anonymization_key);
++    const NetworkAnonymizationKey& proxy_dns_network_anonymization_key
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++    ,
++    bool secure_dns_only
++#endif
++);
+ 
+ }  // namespace net
+ 
+ #endif  // NET_SOCKET_CONNECT_JOB_PARAMS_FACTORY_H_

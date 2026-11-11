@@ -162,6 +162,26 @@ class NET_EXPORT ProxyInfo {
     return proxy_retry_info_;
   }
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void set_used_fallback_proxy(const bool used_fallback_proxy) {
+    used_fallback_proxy_ = used_fallback_proxy;
+  }
+
+  bool used_fallback_proxy() const { return used_fallback_proxy_; }
+
+  void set_use_fallback_proxy_direct(bool use_proxy_direct) {
+    use_fallback_proxy_direct_ = use_proxy_direct;
+  }
+
+  bool use_fallback_proxy_direct() { return use_fallback_proxy_direct_; }
+
+  void set_is_accelerate_proxy(bool is_accelerate_proxy) {
+    is_accelerate_proxy_ = is_accelerate_proxy;
+  }
+ 
+  bool is_accelerate_proxy() const { return is_accelerate_proxy_; }
+#endif
+
  private:
   // Reset proxy and config settings.
   void Reset();

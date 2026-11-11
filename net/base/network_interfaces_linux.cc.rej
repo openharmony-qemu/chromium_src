@@ -1,0 +1,13 @@
+diff a/net/base/network_interfaces_linux.cc b/net/base/network_interfaces_linux.cc	(rejected hunks)
+@@ -267,10 +279,11 @@ bool GetNetworkList(NetworkInterfaceList* networks, int policy) {
+   }
+ 
+   return internal::GetNetworkListImpl(
+       networks, policy, map_owner->GetOnlineLinks(), map_owner->GetAddressMap(),
+       &internal::AddressTrackerLinux::GetInterfaceName);
++#endif
+ }
+ 
+ std::string GetWifiSSID() {
+ // On Android, obtain the SSID using the Android-specific APIs.
+ #if BUILDFLAG(IS_ANDROID)

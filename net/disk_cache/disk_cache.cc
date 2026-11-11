@@ -160,6 +160,10 @@ CacheCreator::~CacheCreator() = default;
 void CacheCreator::Run() {
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
   static const bool kSimpleBackendIsDefault = true;
+#elif BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_CACHE)
+  static const bool kSimpleBackendIsDefault =
+      base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kSimpleBackendIsDefault);
 #else
   static const bool kSimpleBackendIsDefault = false;
 #endif
@@ -215,6 +219,12 @@ void CacheCreator::Run() {
 #if BUILDFLAG(IS_ANDROID)
   FailAttempt();
 #else
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_CACHE)
+  if (kSimpleBackendIsDefault) {
+    FailAttempt();
+    return;
+  }
+#endif  // BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_CACHE)
   auto cache = std::make_unique<disk_cache::BackendImpl>(
       path_, cleanup_tracker_.get(),
       /*cache_thread = */ nullptr, type_, net_log_);

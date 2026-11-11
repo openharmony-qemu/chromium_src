@@ -1,0 +1,19 @@
+diff a/net/http/http_stream_factory_test_util.cc b/net/http/http_stream_factory_test_util.cc	(rejected hunks)
+@@ -25,11 +25,16 @@ MockHttpStreamRequestDelegate::MockHttpStreamRequestDelegate() = default;
+ 
+ MockHttpStreamRequestDelegate::~MockHttpStreamRequestDelegate() = default;
+ 
+ void MockHttpStreamRequestDelegate::OnStreamReady(
+     const ProxyInfo& used_proxy_info,
+-    std::unique_ptr<HttpStream> stream) {
++    std::unique_ptr<HttpStream> stream
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++    ,
++    ResolveInfo resolve_info
++#endif
++    ) {
+   CHECK(!IsDone());
+ 
+   used_proxy_info_ = used_proxy_info;
+   http_stream_ = std::move(stream);
+   done_run_loop_.Quit();

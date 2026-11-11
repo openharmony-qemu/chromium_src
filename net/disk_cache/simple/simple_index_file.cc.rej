@@ -1,0 +1,40 @@
+diff a/net/disk_cache/simple/simple_index_file.cc b/net/disk_cache/simple/simple_index_file.cc	(rejected hunks)
+@@ -306,10 +311,14 @@ void SimpleIndexFile::SyncWriteToDisk(
+             temp_index_filename.DirName().value());
+   base::FilePath index_file_directory = temp_index_filename.DirName();
+   if (!file_operations->DirectoryExists(index_file_directory) &&
+       !file_operations->CreateDirectory(index_file_directory)) {
+     LOG(ERROR) << "Could not create a directory to hold the index file";
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++    LOG_FEEDBACK(ERROR)
++        << "Could not create a directory to hold the index file";
++#endif
+     return;
+   }
+ 
+   // There is a chance that the index containing all the necessary data about
+   // newly created entries will appear to be stale. This can happen if on-disk
+@@ -319,17 +328,23 @@ void SimpleIndexFile::SyncWriteToDisk(
+   base::Time cache_dir_mtime;
+   std::optional<base::File::Info> file_info =
+       file_operations->GetFileInfo(cache_directory);
+   if (!file_info) {
+     LOG(ERROR) << "Could not obtain information about cache age";
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++    LOG_FEEDBACK(ERROR) << "Could not obtain information about cache age";
++#endif
+     return;
+   }
+   cache_dir_mtime = file_info->last_modified;
+   SerializeFinalData(cache_dir_mtime, pickle.get());
+   if (!WritePickleFile(file_operations.get(), pickle.get(),
+                        temp_index_filename)) {
+     LOG(ERROR) << "Failed to write the temporary index file";
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++    LOG_FEEDBACK(ERROR) << "Failed to write the temporary index file";
++#endif
+     return;
+   }
+ 
+   // Atomically rename the temporary index file to become the real one.
+   if (!file_operations->ReplaceFile(temp_index_filename, index_filename,

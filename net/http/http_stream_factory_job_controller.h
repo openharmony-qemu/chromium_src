@@ -137,6 +137,12 @@ class HttpStreamFactory::JobController
       Job* job,
       const ConnectionAttempts& attempts) override;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  void AddExtraConnectionAttemptsToRequest(
+      Job* job,
+      const ConnectionAttempts& extra_attempts) override;
+#endif
+
   // Invoked when |job| finishes initiating a connection.
   // Resume the other job if there's an error raised.
   void OnConnectionInitialized(Job* job, int rv) override;
@@ -166,6 +172,12 @@ class HttpStreamFactory::JobController
   base::TimeDelta get_main_job_wait_time_for_tests() {
     return main_job_wait_time_;
   }
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  void SetFromPreload(bool from_preload) { from_preload_ = from_preload; }
+
+  bool IsFromPreload() const { return from_preload_; }
+#endif
 
  private:
   friend class test::JobControllerPeer;
@@ -389,6 +401,10 @@ class HttpStreamFactory::JobController
   // At the point where a Job is irrevocably tied to |request_|, we set this.
   // It will be nulled when the |request_| is finished.
   raw_ptr<Job> bound_job_ = nullptr;
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  bool from_preload_ = false;
+#endif
 
   // Keeps track of the connection keepalive info.
   std::optional<ConnectionManagementConfig> management_config_;

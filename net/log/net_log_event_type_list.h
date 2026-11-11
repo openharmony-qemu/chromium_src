@@ -16,6 +16,8 @@
 // For best practices on how to add new NetLog events see:
 // https://chromium.googlesource.com/chromium/src/+/HEAD/net/docs/net-log.md
 
+#include "arkweb/build/features/features.h"
+
 // --------------------------------------------------------------------------
 // General pseudo-events
 // --------------------------------------------------------------------------

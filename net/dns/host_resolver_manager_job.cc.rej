@@ -1,0 +1,209 @@
+diff a/net/dns/host_resolver_manager_job.cc b/net/dns/host_resolver_manager_job.cc	(rejected hunks)
+@@ -444,20 +454,30 @@ void HostResolverManager::Job::RunNextTask() {
+     start_time_ = tick_clock_->NowTicks();
+   }
+   tasks_.pop_front();
+   job_running_ = true;
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  finished_tasks_.push_back(next_task);
++#endif
++
+   switch (next_task) {
+     case TaskType::SYSTEM:
+       StartSystemTask();
+       break;
+     case TaskType::DNS:
+       StartDnsTask(false /* secure */);
+       break;
+     case TaskType::SECURE_DNS:
+       StartDnsTask(true /* secure */);
+       break;
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++    case TaskType::SECURE_DNS_FALLBACK:
++      secure_dns_fallback_resolved_ = true;
++      StartDnsTask(true /* secure */, true /* secure_fallback */);
++      break;
++#endif
+     case TaskType::MDNS:
+       StartMdnsTask();
+       break;
+     case TaskType::INSECURE_CACHE_LOOKUP:
+       InsecureCacheLookup();
+@@ -613,10 +633,14 @@ void HostResolverManager::Job::Start() {
+ void HostResolverManager::Job::StartSystemTask() {
+   DCHECK(dispatched_);
+   DCHECK_EQ(1, num_occupied_job_slots_);
+   DCHECK(HasAddressType(key_.query_types));
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  dns_status_ = kDnsResolvedBySystemDns;
++#endif
++
+   std::optional<HostResolverSystemTask::CacheParams> cache_params;
+   if (key_.resolve_context->host_resolver_cache()) {
+     cache_params.emplace(*key_.resolve_context->host_resolver_cache(),
+                          key_.network_anonymization_key);
+   }
+@@ -685,31 +747,50 @@ void HostResolverManager::Job::InsecureCacheLookup() {
+   std::optional<HostCache::EntryStaleness> stale_info;
+   std::optional<HostCache::Entry> resolved = resolver_->MaybeServeFromCache(
+       host_cache_, key_.ToCacheKey(/*secure=*/false), cache_usage_,
+       false /* ignore_secure */, net_log_, &stale_info);
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  dns_status_ = kDnsResolvedFromInsecureCache;
++#endif
++
+   if (resolved) {
+     DCHECK(stale_info);
+     DCHECK(!stale_info.value().is_stale());
+     CompleteRequestsWithoutCache(resolved.value(), std::move(stale_info),
+                                  TaskType::INSECURE_CACHE_LOOKUP);
+   } else {
+     RunNextTask();
+   }
+ }
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++void HostResolverManager::Job::StartDnsTask(bool secure, bool secure_fallback) {
++#else
+ void HostResolverManager::Job::StartDnsTask(bool secure) {
++#endif  // ARKWEB_EXT_HTTP_DNS_FALLBACK
+   DCHECK_EQ(secure, !dispatched_);
+   DCHECK_EQ(dispatched_ ? 1 : 0, num_occupied_job_slots_);
+   DCHECK(!resolver_->ShouldForceSystemResolverDueToTestOverride());
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION) && BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  if (secure_fallback) {
++    dns_status_ = kDnsResolvedByHttpsDns;
++  } else if (!secure) {
++    dns_status_ = kDnsResolvedByLocalDns;
++  }
++#endif
++
+   // Need to create the task even if we're going to post a failure instead of
+   // running it, as a "started" job needs a task to be properly cleaned up.
+   dns_task_ = std::make_unique<HostResolverDnsTask>(
+       resolver_->dns_client_.get(), key_.host, key_.network_anonymization_key,
+       key_.query_types, &*key_.resolve_context, secure, key_.secure_dns_mode,
+       this, net_log_, tick_clock_, !tasks_.empty() /* fallback_available */,
++      #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      secure_fallback,
++      #endif  // ARKWEB_EXT_HTTP_DNS_FALLBACK
+       https_svcb_options_);
+   dns_task_executed_ = true;
+   if (resolver_->IsHappyEyeballsV3Enabled()) {
+     dns_task_results_manager_ = std::make_unique<DnsTaskResultsManager>(
+         this, key_.host, key_.query_types, net_log_);
+@@ -774,11 +855,16 @@ void HostResolverManager::Job::OnDnsTaskFailure(
+ 
+ void HostResolverManager::Job::OnDnsTaskComplete(
+     base::TimeTicks start_time,
+     bool allow_fallback,
+     HostResolverDnsTask::Results results,
+-    bool secure) {
++    bool secure
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++    ,
++    std::vector<IPEndPoint> truncation_results
++#endif
++) {
+   DCHECK(dns_task_);
+ 
+   HostCache::Entry legacy_results(results, base::Time::Now(),
+                                   tick_clock_->NowTicks(),
+                                   HostCache::Entry::SOURCE_DNS);
+@@ -791,10 +877,18 @@ void HostResolverManager::Job::OnDnsTaskComplete(
+       legacy_results.ip_endpoints().empty()) {
+     legacy_results.set_error(ERR_NAME_NOT_RESOLVED);
+   }
+ 
+   base::TimeDelta duration = tick_clock_->NowTicks() - start_time;
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  if (base::FeatureList::IsEnabled(
++          network::features::kEnableNwebExHttpDnsFallback) &&
++      AsArkWebHostResolverManagerJobExt()) {
++    AsArkWebHostResolverManagerJobExt()->ReportDnsFallBackTaskResult(
++        legacy_results, duration);
++  }
++#endif
+   if (legacy_results.error() != OK) {
+     OnDnsTaskFailure(dns_task_->AsWeakPtr(), duration, allow_fallback,
+                      legacy_results, secure);
+     return;
+   }
+@@ -823,11 +917,16 @@ void HostResolverManager::Job::OnDnsTaskComplete(
+                               secure ? TaskType::SECURE_DNS : TaskType::DNS);
+     return;
+   }
+ 
+   CompleteRequests(legacy_results, bounded_ttl, true /* allow_cache */, secure,
+-                   secure ? TaskType::SECURE_DNS : TaskType::DNS);
++                   secure ? TaskType::SECURE_DNS : TaskType::DNS
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++                   ,
++                   truncation_results
++#endif
++  );
+ }
+ 
+ void HostResolverManager::Job::OnIntermediateTransactionsComplete(
+     std::optional<HostResolverDnsTask::SingleTransactionResults>
+         single_transaction_results) {
+@@ -1063,11 +1162,16 @@ void HostResolverManager::Job::MaybeCacheResult(const HostCache::Entry& results,
+ void HostResolverManager::Job::CompleteRequests(
+     const HostCache::Entry& results,
+     base::TimeDelta ttl,
+     bool allow_cache,
+     bool secure,
+-    std::optional<TaskType> task_type) {
++    std::optional<TaskType> task_type
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++    ,
++    const std::vector<IPEndPoint>& truncation_results
++#endif
++) {
+   CHECK(resolver_.get());
+ 
+   // This job must be removed from resolver's |jobs_| now to make room for a
+   // new job with the same key in case one of the OnComplete callbacks decides
+   // to spawn one. Consequently, if the job was owned by |jobs_|, the job
+@@ -1112,11 +1216,17 @@ void HostResolverManager::Job::CompleteRequests(
+       req->set_results(
+           results.CopyWithDefaultPort(req->request_host().GetPort()));
+     }
+     req->OnJobCompleted(
+         key_, results.error(),
+-        /*is_secure_network_error=*/secure && results.error() != OK);
++        /*is_secure_network_error=*/secure && results.error() != OK
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++        ,
++        dns_status_, finished_tasks_, truncation_results,
++        secure_dns_fallback_resolved_
++#endif
++    );
+ 
+     // Check if the resolver was destroyed as a result of running the
+     // callback. If it was, we could continue, but we choose to bail.
+     if (!resolver_.get()) {
+       return;
+@@ -1125,11 +1235,17 @@ void HostResolverManager::Job::CompleteRequests(
+ 
+   while (!service_endpoint_requests_.empty()) {
+     ServiceEndpointRequestImpl* request =
+         service_endpoint_requests_.head()->value();
+     request->RemoveFromList();
+-    request->OnJobCompleted(results, secure);
++    request->OnJobCompleted(results, secure
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++                            ,
++                            dns_status_, finished_tasks_, truncation_results,
++                            secure_dns_fallback_resolved_
++#endif
++    );
+     if (!resolver_.get()) {
+       return;
+     }
+   }
+ 

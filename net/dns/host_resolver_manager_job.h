@@ -144,6 +144,12 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
       const HostResolver::HttpsSvcbOptions& https_svcb_options);
   ~Job() override;
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  virtual ArkWebHostResolverManagerJobExt* AsArkWebHostResolverManagerJobExt() {
+    return nullptr;
+  }
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+
   // Add this job to the dispatcher.  If "at_head" is true, adds at the front
   // of the queue.
   void Schedule(bool at_head);
@@ -215,6 +221,10 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
   }
 
  private:
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  friend class ArkWebHostResolverManagerJobExt;
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+
   // Explains why a Job didn't attempt HTTPS query.
   // These values are persisted to logs. Entries should not be renumbered and
   // numeric values should never be reused.
@@ -489,9 +499,19 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
 
   base::TimeDelta total_transaction_time_queued_;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  int dns_status_ = kDnsResolvedUndefined;
+  std::vector<TaskType> finished_tasks_;
+  bool secure_dns_fallback_resolved_ = false;
+#endif
+
   base::WeakPtrFactory<Job> weak_ptr_factory_{this};
 };
 
 }  // namespace net
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#include "arkweb/chromium_ext/net/dns/arkweb_host_resolver_manager_job_ext.h"
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
 #endif  // NET_DNS_HOST_RESOLVER_MANAGER_JOB_H_

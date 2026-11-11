@@ -1,0 +1,14 @@
+diff a/net/http/http_cache.h b/net/http/http_cache.h	(rejected hunks)
+@@ -79,11 +80,11 @@ class NET_EXPORT HttpCache : public HttpTransactionFactory {
+     NORMAL = 0,
+     // Disables reads and writes from the cache.
+     // Equivalent to setting LOAD_DISABLE_CACHE on every request.
+     DISABLE
+   };
+-
++  friend class HttpTransactionUtils;
+   // A BackendFactory creates a backend object to be used by the HttpCache.
+   class NET_EXPORT BackendFactory {
+    public:
+     virtual ~BackendFactory() = default;
+ 

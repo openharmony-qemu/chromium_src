@@ -1,0 +1,40 @@
+diff a/net/base/test_proxy_delegate.h b/net/base/test_proxy_delegate.h	(rejected hunks)
+@@ -133,10 +137,38 @@ class TestProxyDelegate : public ProxyDelegate {
+   bool AliasRequiresProxyOverride(
+       const std::string scheme,
+       const std::vector<std::string>& dns_aliases,
+       const net::NetworkAnonymizationKey& network_anonymization_key) override;
+ 
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++  void OnTunnelConnectResult(
++      const net::ProxyChain& proxy_chain,
++      const std::string& host,
++      const net::HttpResponseHeaders& response_headers,
++      const net::HttpRequestHeaders& request_headers) override;
++  void AddSuccessMainFrameHosts(const std::string& host) override;
++  bool IsFallbackProxyFailedHost(const std::string& host) override;
++  bool IsFallbackProxySuccessMainFrameHost(const std::string& host) override;
++  void AddByPassRuleWithHost(const std::string& host) override;
++  void OnProxyConnectResult(const net::ProxyChain& proxy_chain,
++                            int net_error) override;
++  bool GetUrlMaliciousTypeAndHwCode(const std::vector<GURL>& url_chain,
++                                    int* malicious_type,
++                                    int* hw_code) override;
++  bool IsFallbackProxyMaliciousType(int malicious_type) override;
++  bool IsFallbackProxyHwCode(int hw_code) override;
++  bool IsFallbackProxyRetryErrorCode(int net_error) override;
++  bool IsFallbackProxyBlockHost(const std::string& host) override;
++  int GetMaliciousUrlCheckWaitTime() override;
++  int GetProxyConnectTimeout() override;
++  int GetProxyTunnelTimeout() override;
++  net::FallbackProxyStatus GetFallbackProxyStatus() override;
++  bool IsFallbackProxyServer(const net::ProxyChain& proxy_chain) override;
++  bool IsAccelerateProxyConfig() override;
++  bool IsDomainInProxyWhitelist(const std::string& domain) override;
++#endif
++
+  private:
+   // Creates an internal run loop to allow waiting for the asynchronous
+   // completion of `OnBeforeTunnelCallback()`. Callers must have called
+   // `MakeOnBeforeTunnelRequestCompleteAsync()` first. We need to create the run
+   // loop multiple times to handle proxy chains: if multiple proxies are nested,

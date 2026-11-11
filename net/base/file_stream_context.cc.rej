@@ -1,0 +1,20 @@
+diff a/net/base/file_stream_context.cc b/net/base/file_stream_context.cc	(rejected hunks)
+@@ -175,10 +180,18 @@ FileStream::Context::OpenResult FileStream::Context::OpenFileImpl(
+   // presumably happen on the wrong thread. There should be an async delete.
+ #if BUILDFLAG(IS_WIN)
+   open_flags |= base::File::FLAG_WIN_SHARE_DELETE;
+ #endif
+   base::File file(path, open_flags);
++#if BUILDFLAG(IS_OHOS) && BUILDFLAG(ARKWEB_FILE_UPLOAD)
++  if (path.IsDataShareUri()) {
++    file = base::OpenDatashareUriForRead(path);
++  } else {
++    open_flags |= base::File::FLAG_WIN_SHARE_DELETE;
++    file.Initialize(path, open_flags);
++  }
++#endif  // BUILDFLAG(IS_OHOS) && BUILDFLAG(ARKWEB_FILE_UPLOAD)
+   if (!file.IsValid()) {
+     return OpenResult(base::File(),
+                       IOResult::FromOSError(logging::GetLastSystemErrorCode()));
+   }
+ 

@@ -1,0 +1,220 @@
+diff a/net/dns/host_resolver_dns_task.cc b/net/dns/host_resolver_dns_task.cc	(rejected hunks)
+@@ -209,11 +217,10 @@ std::vector<IPEndPoint> ExtractAddressResultsForSort(
+       timed_expiration, HostResolverInternalResult::Source::kDns,
+       ERR_NAME_NOT_RESOLVED));
+ 
+   return endpoints_to_sort;
+ }
+-
+ }  // namespace
+ 
+ HostResolverDnsTask::SingleTransactionResults::SingleTransactionResults(
+     DnsQueryType query_type,
+     ResultRefs results)
+@@ -259,10 +266,13 @@ HostResolverDnsTask::HostResolverDnsTask(
+     SecureDnsMode secure_dns_mode,
+     Delegate* delegate,
+     const NetLogWithSource& job_net_log,
+     const base::TickClock* tick_clock,
+     bool fallback_available,
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++    bool secure_fallback,
++#endif
+     const HostResolver::HttpsSvcbOptions& https_svcb_options)
+     : client_(client),
+       host_(std::move(host)),
+       anonymization_key_(std::move(anonymization_key)),
+       resolve_context_(resolve_context->AsSafeRef()),
+@@ -271,19 +281,27 @@ HostResolverDnsTask::HostResolverDnsTask(
+       delegate_(delegate),
+       net_log_(job_net_log),
+       tick_clock_(tick_clock),
+       task_start_time_(tick_clock_->NowTicks()),
+       fallback_available_(fallback_available),
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      secure_fallback_(secure_fallback),
++#endif
+       https_svcb_options_(https_svcb_options) {
+   DCHECK(client_);
+   DCHECK(delegate_);
+ 
+   if (!secure_) {
+     DCHECK(client_->CanUseInsecureDnsTransactions());
+   }
+ 
+   PushTransactionsNeeded(MaybeDisableAdditionalQueries(query_types));
++
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  utils = std::make_unique<ArkWebHostResolverDnsTaskExt>(this);
++  delegate_->InitReportInfoForDohFallback();
++#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+ }
+ 
+ HostResolverDnsTask::~HostResolverDnsTask() = default;
+ 
+ void HostResolverDnsTask::StartNextTransaction() {
+@@ -363,10 +381,15 @@ DnsQueryTypeSet HostResolverDnsTask::MaybeDisableAdditionalQueries(
+ 
+   if (types.Has(DnsQueryType::HTTPS)) {
+     if (!secure_ && !client_->CanQueryAdditionalTypesViaInsecureDns()) {
+       https_disabled_ = true;
+       types.Remove(DnsQueryType::HTTPS);
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++    } else if (resolve_context_->IsHttpsDnsFallbackEnabled() &&
++               !client_->CanQueryAdditionalTypesViaInsecureDns()) {
++      types.Remove(DnsQueryType::HTTPS);
++#endif
+     } else {
+       DCHECK(!httpssvc_metrics_);
+       httpssvc_metrics_.emplace(secure_);
+     }
+   }
+@@ -528,17 +561,35 @@ void HostResolverDnsTask::OnDnsTransactionComplete(
+   // ERR_NAME_NOT_RESOLVED, so that is not a network error if received with a
+   // valid response.
+   bool fatal_error =
+       IsFatalTransactionFailure(net_error, transaction_info, response);
+   std::optional<DnsResponse> fake_response;
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  DnsResponseResultExtractor::ResultsOrError results;
++  bool anycast_fallback_used = false;
++  if (utils && utils->MaybeUseAnycastIPFallback(
++      std::string(host_.GetHostname()),
++      net_error, fatal_error, transaction_info.type, results)) {
++    anycast_fallback_used = true;
++  }
++  if (!anycast_fallback_used && net_error != OK &&
++      !(net_error == ERR_NAME_NOT_RESOLVED && response &&
++        response->IsValid())) {
++#else
+   if (net_error != OK && !(net_error == ERR_NAME_NOT_RESOLVED && response &&
+                            response->IsValid())) {
++#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+     if (transaction_info.error_behavior ==
+             TransactionErrorBehavior::kFallback ||
+         fatal_error) {
+       // Fail task (or maybe Job) completely on network failure.
+-      OnFailure(net_error, /*allow_fallback=*/!fatal_error);
++      OnFailure(net_error, /*allow_fallback=*/!fatal_error
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++                ,
++                nullptr, transaction_info.type
++#endif
++      );
+       return;
+     } else {
+       DCHECK((transaction_info.error_behavior ==
+                   TransactionErrorBehavior::kFatalOrEmpty &&
+               !fatal_error) ||
+@@ -549,15 +600,21 @@ void HostResolverDnsTask::OnDnsTransactionComplete(
+           host_.GetHostnameWithoutBrackets(), transaction_info.type);
+       response = &fake_response.value();
+     }
+   }
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  DCHECK(anycast_fallback_used || response);
++
++  if (!anycast_fallback_used) {
++#else
+   DCHECK(response);
+ 
+   DnsResponseResultExtractor::ResultsOrError results;
+   {
+     // Scope the extractor to ensure it is destroyed before `response`.
++#endif
+     DnsResponseResultExtractor extractor(*response);
+     results = extractor.ExtractDnsResults(
+         transaction_info.type,
+         /*original_domain_name=*/host_.GetHostnameWithoutBrackets(),
+         request_port);
+@@ -578,11 +635,16 @@ void HostResolverDnsTask::OnDnsTransactionComplete(
+       // IsFatalTransactionExtractionError() function.
+       DCHECK(!fatal_error);
+       DCHECK_EQ(transaction_info.type, DnsQueryType::HTTPS);
+       results = Results();
+     } else {
+-      OnFailure(ERR_DNS_MALFORMED_RESPONSE, /*allow_fallback=*/true);
++      OnFailure(ERR_DNS_MALFORMED_RESPONSE, /*allow_fallback=*/true
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++                ,
++                nullptr, transaction_info.type
++#endif
++      );
+       return;
+     }
+   }
+   CHECK(results.has_value());
+   net_log_.AddEvent(NetLogEventType::HOST_RESOLVER_DNS_TASK_EXTRACTION_RESULTS,
+@@ -833,11 +895,16 @@ void HostResolverDnsTask::HandleTransactionResults(
+   if (transaction_info.type == DnsQueryType::HTTPS &&
+       ShouldTriggerHttpToHttpsUpgrade(transaction_results)) {
+     // Disallow fallback. Otherwise DNS could be reattempted without HTTPS
+     // queries, and that would hide this error instead of triggering upgrade.
+     OnFailure(ERR_DNS_NAME_HTTPS_ONLY, /*allow_fallback=*/false,
+-              &transaction_results);
++              &transaction_results
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++              ,
++              transaction_info.type
++#endif
++    );
+     return;
+   }
+ 
+   // Failures other than ERR_NAME_NOT_RESOLVED cannot be merged with other
+   // transactions.
+@@ -872,10 +960,22 @@ void HostResolverDnsTask::HandleTransactionResults(
+        it != transaction_results.end();) {
+     result_refs.insert(it->get());
+     saved_results_.insert(std::move(transaction_results.extract(it++).value()));
+   }
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  if (base::FeatureList::IsEnabled(
++          network::features::kEnableNwebExHttpDnsFallback) &&
++      utils) {
++    HostCache::Entry legacy_results(saved_results_, base::Time::Now(),
++                                    tick_clock_->NowTicks(),
++                                    HostCache::Entry::SOURCE_DNS);
++    utils->ArkWebSetNotNeedQueryType(legacy_results.error(),
++                                     transaction_info.type);
++  }
++#endif
++
+   OnTransactionsFinished(
+       SingleTransactionResults(transaction_info.type, std::move(result_refs)));
+ }
+ 
+ void HostResolverDnsTask::OnTransactionsFinished(
+@@ -1026,18 +1146,28 @@ void HostResolverDnsTask::OnDeferredFailure(bool allow_fallback) {
+   results.insert(std::move(deferred_failure_));
+ 
+   // Expect this to result in destroying `this` and thus cancelling any
+   // remaining transactions.
+   delegate_->OnDnsTaskComplete(task_start_time_, allow_fallback,
+-                               std::move(results), secure_);
++                               std::move(results), secure_
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++                               ,
++                               truncation_results_
++#endif
++  );
+ }
+ 
+ void HostResolverDnsTask::OnSuccess(Results results) {
+   net_log_.EndEvent(NetLogEventType::HOST_RESOLVER_DNS_TASK,
+                     [&] { return NetLogResults(results); });
+   delegate_->OnDnsTaskComplete(task_start_time_, /*allow_fallback=*/true,
+-                               std::move(results), secure_);
++                               std::move(results), secure_
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++                               ,
++                               truncation_results_
++#endif
++  );
+ }
+ 
+ bool HostResolverDnsTask::AnyOfTypeTransactionsRemain(
+     std::initializer_list<DnsQueryType> types) const {
+   // Should only be called if some transactions are still running or waiting

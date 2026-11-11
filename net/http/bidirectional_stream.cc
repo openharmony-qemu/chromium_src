@@ -327,7 +327,12 @@ void BidirectionalStream::OnFailed(int status) {
 }
 
 void BidirectionalStream::OnStreamReady(const ProxyInfo& used_proxy_info,
-                                        std::unique_ptr<HttpStream> stream) {
+                                        std::unique_ptr<HttpStream> stream
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                                        ,
+                                        const ResolveInfo resolve_info
+#endif
+) {
   NOTREACHED();
 }
 
@@ -378,7 +383,13 @@ void BidirectionalStream::OnStreamFailed(
     int result,
     const NetErrorDetails& net_error_details,
     const ProxyInfo& used_proxy_info,
-    ResolveErrorInfo resolve_error_info) {
+    ResolveErrorInfo resolve_error_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    ,
+    const ResolveInfo resolve_info,
+    bool secure_dns_fallback_resolved
+#endif
+) {
   DCHECK_LT(result, 0);
   DCHECK_NE(result, ERR_IO_PENDING);
   DCHECK(stream_request_);
@@ -387,7 +398,17 @@ void BidirectionalStream::OnStreamFailed(
 }
 
 void BidirectionalStream::OnCertificateError(int result,
-                                             const SSLInfo& ssl_info) {
+                                             const SSLInfo& ssl_info
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+                                             ,
+                                             bool used_fallback_proxy
+#endif
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                                             ,
+                                             const ResolveInfo resolve_info,
+                                             bool secure_dns_fallback_resolved
+#endif
+) {
   DCHECK_LT(result, 0);
   DCHECK_NE(result, ERR_IO_PENDING);
   DCHECK(stream_request_);

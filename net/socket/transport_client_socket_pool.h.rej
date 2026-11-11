@@ -1,0 +1,13 @@
+diff a/net/socket/transport_client_socket_pool.h b/net/socket/transport_client_socket_pool.h	(rejected hunks)
+@@ -489,10 +490,11 @@ class NET_EXPORT_PRIVATE TransportClientSocketPool
+     bool fail_if_alias_requires_proxy_override() {
+       return fail_if_alias_requires_proxy_override_;
+     }
+ 
+    private:
++    friend class TransportClientSocketPoolUtils;
+     // Returns the iterator's unbound request after removing it from
+     // the queue. Expects the Group to pass SanityCheck() when called.
+     std::unique_ptr<Request> RemoveUnboundRequest(
+         const RequestQueue::Pointer& pointer);
+ 

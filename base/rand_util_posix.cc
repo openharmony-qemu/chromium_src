@@ -88,11 +88,14 @@ bool GetRandomSyscall(void* output, size_t output_length) {
     MSAN_UNPOISON(output, output_length);
     return true;
   }
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  LOG(WARNING) << "getrandom syscall failed, ret = " << r << ", output len = " \
+    << output_length << ", output addr = " << output << ", errno = " << errno;
+#endif
   return false;
 }
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
         // BUILDFLAG(IS_ANDROID)
-
 }  // namespace
 
 namespace internal {

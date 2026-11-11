@@ -726,6 +726,12 @@ void ThreadGroupImpl::WorkerDelegate::CleanupLockRequired(
   auto worker_iter = std::ranges::find(outer_->workers_, worker);
   CHECK(worker_iter != outer_->workers_.end());
   outer_->workers_.erase(worker_iter);
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING) && !BUILDFLAG(ARKWEB_TEST)
+  if (worker->GetRealTid() != kInvalidThreadId && base::ohos::IsPcDevice()) {
+    outer_->destroy_workers_ids_.push_back(worker->GetRealTid());
+  }
+#endif
 }
 
 void ThreadGroupImpl::WorkerDelegate::OnWorkerBecomesIdleLockRequired(
@@ -990,6 +996,11 @@ ThreadGroupImpl::CreateAndRegisterWorkerLockRequired(
       task_tracker_, worker_sequence_num_++, &lock_);
 
   workers_.push_back(worker);
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING) && !BUILDFLAG(ARKWEB_TEST)
+  if (worker && (base::ohos::IsPcDevice() || cmd_enable_report_thread_pool_)) {
+    create_workers_.push_back(worker);
+  }
+#endif
   executor->ScheduleStart(worker);
   DCHECK_LE(workers_.size(), max_tasks_);
 

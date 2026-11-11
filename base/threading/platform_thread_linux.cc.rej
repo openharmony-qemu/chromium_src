@@ -1,0 +1,13 @@
+diff a/base/threading/platform_thread_linux.cc b/base/threading/platform_thread_linux.cc	(rejected hunks)
+@@ -285,10 +298,11 @@ int ThreadTypeToNiceValue(const ThreadType thread_type) {
+     case ThreadType::kDisplayCritical:
+     case ThreadType::kInteractive:
+       return -8;
+     case ThreadType::kRealtimeAudio:
+       return -10;
++#endif
+   }
+ }
+ 
+ }  // namespace internal
+ 

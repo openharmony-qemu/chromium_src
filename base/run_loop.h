@@ -33,6 +33,10 @@ class ScopedDisableRunLoopTimeout;
 class MessagePumpAndroid;
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+class MessagePumpForUI;
+#endif
+
 #if BUILDFLAG(IS_IOS)
 class MessagePumpUIApplication;
 #endif
@@ -268,6 +272,10 @@ class BASE_EXPORT RunLoop {
   // Android doesn't support the blocking RunLoop::Run, so it calls
   // BeforeRun and AfterRun directly.
   friend class MessagePumpAndroid;
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+  friend class MessagePumpForUI;
 #endif
 
 #if BUILDFLAG(IS_IOS)

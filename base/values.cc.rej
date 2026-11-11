@@ -1,0 +1,34 @@
+diff a/base/values.cc b/base/values.cc	(rejected hunks)
+@@ -28,10 +28,11 @@
+ #include "base/strings/string_util.h"
+ #include "base/strings/utf_string_conversions.h"
+ #include "base/trace_event/memory_usage_estimator.h"  // no-presubmit-check
+ #include "base/trace_event/trace_event.h"
+ #include "base/tracing_buildflags.h"
++
+ #include "base/types/pass_key.h"
+ #include "base/types/to_address.h"
+ 
+ namespace base {
+ 
+@@ -350,10 +351,20 @@ DictValue Value::TakeDict() && {
+ 
+ ListValue Value::TakeList() && {
+   return std::move(GetList());
+ }
+ 
++#if BUILDFLAG(IS_ARKWEB)
++Value* Value::FindPath(std::string_view path) {
++  return GetDict().FindByDottedPath(path);
++}
++
++const Value* Value::FindPath(std::string_view path) const {
++  return GetDict().FindByDottedPath(path);
++}
++#endif
++
+ DictValue::DictValue() = default;
+ 
+ DictValue::DictValue(flat_map<std::string, std::unique_ptr<Value>> storage)
+     : storage_(std::move(storage)) {
+   DCHECK(std::ranges::all_of(storage_,

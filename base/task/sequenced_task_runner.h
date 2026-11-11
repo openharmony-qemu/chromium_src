@@ -40,6 +40,11 @@ class ExternalBeginFrameSourceWin;
 namespace webrtc {
 class ThreadWrapper;
 }  // namespace webrtc
+#if BUILDFLAG(ARKWEB_PDF)
+namespace chrome_pdf {
+class PdfViewWebPlugin;
+}  // namespace chrome_pdf
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
 namespace base {
 
@@ -85,6 +90,9 @@ class PostDelayedTaskPassKey {
 #if BUILDFLAG(IS_ANDROID)
   friend class base::android::PreFreezeBackgroundMemoryTrimmer;
 #endif
+#if BUILDFLAG(ARKWEB_PDF)
+  friend class chrome_pdf::PdfViewWebPlugin;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 };
 
 // Restricts access to RunOrPostTask() to authorized callers.

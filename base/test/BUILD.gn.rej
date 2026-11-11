@@ -1,0 +1,30 @@
+diff a/base/test/BUILD.gn b/base/test/BUILD.gn	(rejected hunks)
+@@ -6,10 +6,11 @@ import("//build/compiled_action.gni")
+ import("//build/config/features.gni")
+ import("//build/config/ui.gni")
+ import("//build/rust/rust_static_library.gni")
+ import("//build_overrides/build.gni")
+ import("//third_party/protobuf/proto_library.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ if (is_android) {
+   import("//build/config/android/rules.gni")
+   import("//third_party/jni_zero/jni_zero.gni")
+ }
+@@ -637,10 +645,16 @@ target(_target_type, "test_trace_processor") {
+   if (is_ios) {
+     info_plist = "test_trace_processor_impl.plist"
+     output_name = "TestTraceProcessor"
+     bundle_deps_filter = [ "//third_party/icu:icudata" ]
+   }
++
++  if (arkweb_unittests){
++    deps += [
++      "//base:base"
++    ]
++  }
+ }
+ 
+ if (is_android) {
+   android_library("public_transit_java") {
+     testonly = true

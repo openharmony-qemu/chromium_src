@@ -1,0 +1,27 @@
+diff a/base/threading/platform_thread_internal_posix.h b/base/threading/platform_thread_internal_posix.h	(rejected hunks)
+@@ -51,11 +51,11 @@ std::optional<ThreadType> GetCurrentEffectiveThreadTypeForPlatformForTest();
+ int GetCurrentThreadNiceValue();
+ int GetThreadNiceValue(PlatformThreadId id);
+ 
+ bool SetThreadNiceFromType(PlatformThreadId thread_id, ThreadType thread_type);
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+ void SetThreadTypeLinux(ProcessId process_id,
+                         PlatformThreadId thread_id,
+                         ThreadType thread_type,
+                         IsViaIPC via_ipc);
+ #endif
+@@ -65,11 +65,11 @@ void SetThreadTypeChromeOS(ProcessId process_id,
+                            ThreadType thread_type,
+                            IsViaIPC via_ipc);
+ #endif
+ #if BUILDFLAG(IS_CHROMEOS)
+ inline constexpr auto SetThreadType = SetThreadTypeChromeOS;
+-#elif BUILDFLAG(IS_LINUX)
++#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ inline constexpr auto SetThreadType = SetThreadTypeLinux;
+ #endif
+ 
+ }  // namespace internal
+ 

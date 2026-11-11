@@ -140,9 +140,11 @@ TaskAnnotator::~TaskAnnotator() = default;
 void TaskAnnotator::WillQueueTask(perfetto::StaticString trace_event_name,
                                   TaskMetadata* pending_task) {
   DCHECK(pending_task);
+#if !BUILDFLAG(ARKWEB_DFX_TRACING)
   TRACE_EVENT_INSTANT(
       "toplevel.flow", trace_event_name,
       perfetto::Flow::ProcessScoped(GetTaskTraceID(*pending_task)));
+#endif
 
   DCHECK(!pending_task->task_backtrace[0])
       << "Task backtrace was already set, task posted twice??";

@@ -1,0 +1,16 @@
+diff a/base/threading/thread.cc b/base/threading/thread.cc	(rejected hunks)
+@@ -193,11 +193,13 @@ bool Thread::StartWithOptions(Options options) {
+ #endif
+ 
+   // Reset |id_| here to support restarting the thread.
+   id_event_.Reset();
+   id_ = kInvalidThreadId;
+-
++#if BUILDFLAG(IS_ARKWEB)
++  real_id_ = kInvalidThreadId;
++#endif
+   SetThreadWasQuitProperly(false);
+ 
+   if (options.delegate) {
+     DCHECK(!options.message_pump_factory);
+     delegate_ = std::move(options.delegate);

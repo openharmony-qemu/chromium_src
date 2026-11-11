@@ -338,6 +338,17 @@ PlatformThreadId Thread::GetThreadId() const {
   return id_;
 }
 
+#if BUILDFLAG(IS_ARKWEB)
+PlatformThreadId Thread::GetThreadRealId() const {
+  if (!id_event_.IsSignaled()) {
+    // If the thread is created but not started yet, wait for |id_| being ready.
+    base::ScopedAllowBaseSyncPrimitivesOutsideBlockingScope allow_wait;
+    id_event_.Wait();
+  }
+  return real_id_;
+}
+#endif
+
 bool Thread::IsRunning() const {
   // TODO(gab): Fix improper usage of this API (http://crbug.com/629139) and
   // enable this check.
@@ -388,6 +399,9 @@ void Thread::ThreadMain() {
   // write in StartWithOptions().
   DCHECK_EQ(kInvalidThreadId, id_);
   id_ = PlatformThread::CurrentId();
+#if BUILDFLAG(IS_ARKWEB)
+  real_id_ = PlatformThread::CurrentRealId();
+#endif
   DCHECK_NE(kInvalidThreadId, id_);
   id_event_.Signal();
 

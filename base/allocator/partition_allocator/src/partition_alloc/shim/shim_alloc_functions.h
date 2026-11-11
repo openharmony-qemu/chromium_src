@@ -39,12 +39,31 @@ PA_ALWAYS_INLINE size_t GetCachedPageSize() {
 
 }  // namespace
 
+#if PA_BUILDFLAG(IS_OHOS)
+extern "C" __attribute__((weak)) void restrace(unsigned long long mask, void* addr, size_t size, const char* tag,
+  bool is_using);
+#endif
+
 // The Shim* functions below are the entry-points into the shim-layer and
 // are supposed to be invoked by the allocator_shim_override_*
 // headers to route the malloc / new symbols through the shim layer.
 // They are defined as ALWAYS_INLINE in order to remove a level of indirection
 // between the system-defined entry points and the shim implementations.
 extern "C" {
+
+#if PA_BUILDFLAG(IS_OHOS)
+const char* TAG_RES_VMA_ARKWEB = "RES_VMA_ARKWEB";
+const unsigned long long RES_VMA_ARKWEB = 1 << 26;
+
+void OhosRestrace(unsigned long long mask, void* addr, size_t size, const char* tag, bool is_using)
+{
+  if (restrace) {
+    if (addr != nullptr && tag != nullptr) {
+      (void)restrace(mask, addr, size, tag, is_using);
+    }
+  }
+}
+#endif
 
 // The general pattern for allocations is:
 // - Try to allocate, if succeeded return the pointer.
@@ -147,6 +166,9 @@ PA_ALWAYS_INLINE void ShimCppDeleteWithSize(void* address, size_t size) {
 #if PA_BUILDFLAG(IS_APPLE) && !PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
   context = malloc_default_zone();
 #endif
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosRestrace(RES_VMA_ARKWEB, address, size, TAG_RES_VMA_ARKWEB, false);
+#endif
   return chain_head->free_with_size_function(address, size, context);
 }
 
@@ -157,6 +179,9 @@ PA_ALWAYS_INLINE void ShimCppDeleteWithAlignment(void* address,
   void* context = nullptr;
 #if PA_BUILDFLAG(IS_APPLE) && !PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
   context = malloc_default_zone();
+#endif
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosRestrace(RES_VMA_ARKWEB, address, 0, TAG_RES_VMA_ARKWEB, false);
 #endif
   return chain_head->free_with_alignment_function(address, alignment, context);
 }
@@ -169,6 +194,9 @@ PA_ALWAYS_INLINE void ShimCppDeleteWithSizeAndAlignment(void* address,
   void* context = nullptr;
 #if PA_BUILDFLAG(IS_APPLE) && !PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
   context = malloc_default_zone();
+#endif
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosRestrace(RES_VMA_ARKWEB, address, size, TAG_RES_VMA_ARKWEB, false);
 #endif
   return chain_head->free_with_size_and_alignment_function(address, size,
                                                            alignment, context);
@@ -296,12 +324,18 @@ PA_ALWAYS_INLINE void* ShimPvalloc(size_t size,
 PA_ALWAYS_INLINE void ShimFree(void* address, void* context) {
   const allocator_shim::AllocatorDispatch* const chain_head =
       allocator_shim::internal::GetChainHead();
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosRestrace(RES_VMA_ARKWEB, address, 0, TAG_RES_VMA_ARKWEB, false);
+#endif
   return chain_head->free_function(address, context);
 }
 
 PA_ALWAYS_INLINE void ShimFreeWithSize(void* ptr, size_t size, void* context) {
   const allocator_shim::AllocatorDispatch* const chain_head =
       allocator_shim::internal::GetChainHead();
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosRestrace(RES_VMA_ARKWEB, ptr, size, TAG_RES_VMA_ARKWEB, false);
+#endif
   return chain_head->free_with_size_function(ptr, size, context);
 }
 

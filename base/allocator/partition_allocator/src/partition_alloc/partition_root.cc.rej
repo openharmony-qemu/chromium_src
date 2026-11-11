@@ -1,0 +1,14 @@
+diff a/base/allocator/partition_allocator/src/partition_alloc/partition_root.cc b/base/allocator/partition_allocator/src/partition_alloc/partition_root.cc	(rejected hunks)
+@@ -8,10 +8,12 @@
+ #pragma allow_unsafe_buffers
+ #endif
+ 
+ #include "partition_alloc/partition_root.h"
+ 
++#include <algorithm>
++#include <array>
+ #include <algorithm>
+ #include <array>
+ #include <cstdint>
+ 
+ #include "partition_alloc/bucket_lookup.h"

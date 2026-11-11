@@ -4,6 +4,7 @@
 
 import("../../partition_alloc.gni")
 import("buildflag_header.gni")
+import("//arkweb/build/features/features.gni")
 
 # //build_overrides/partition_alloc.gni should define partition_alloc_{
 # add,remove}_configs. But if not defined (e.g. the embedder misses the config),
@@ -612,6 +613,15 @@ if (is_clang_or_gcc) {
       deps += [ "//buildtools/third_party/libc++" ]
     }
 
+    if(is_ohos) {
+      deps += [ "//arkweb/build/features" ]
+    }
+    if (enable_arkweb) {
+      deps += [ "//arkweb/build/features" ]
+    }
+    if (enable_arkweb) {
+      public_deps += [ "//arkweb/build/features" ]
+    }
     public_configs = []
     if (is_fuchsia) {
       deps += [

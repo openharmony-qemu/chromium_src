@@ -1,0 +1,13 @@
+diff a/base/allocator/partition_alloc_features.cc b/base/allocator/partition_alloc_features.cc	(rejected hunks)
+@@ -149,11 +149,10 @@ constinit const FeatureParam<
+             kBrowserOnly,
+         &kPartitionAllocSchedulerLoopQuarantineTaskControlledPurgeEnabledProcessesOptions};
+ 
+ BASE_FEATURE(kPartitionAllocEventuallyZeroFreedMemory,
+              FEATURE_DISABLED_BY_DEFAULT);
+-
+ #endif  // PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
+ 
+ BASE_FEATURE(kPartitionAllocBackupRefPtr,
+ #if PA_BUILDFLAG(ENABLE_BACKUP_REF_PTR_FEATURE_FLAG)
+              FEATURE_ENABLED_BY_DEFAULT

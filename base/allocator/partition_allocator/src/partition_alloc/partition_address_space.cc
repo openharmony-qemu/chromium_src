@@ -41,6 +41,11 @@
 #include <sys/mman.h>
 #endif
 
+#if PA_BUILDFLAG(IS_OHOS)
+#include "arkweb/chromium_ext/base/allocator/partition_allocator/src/partition_alloc/partition_address_space_for_include.cc"
+#include <sys/prctl.h>
+#endif
+
 namespace partition_alloc::internal {
 
 #if PA_BUILDFLAG(HAS_64_BIT_POINTERS)
@@ -424,7 +429,14 @@ void PartitionAddressSpace::UninitForTesting() {
 #endif
   // The core pools (regular & BRP) were allocated using a single allocation of
   // double size.
+#if PA_CONFIG(MOVE_METADATA_OUT_OF_GIGACAGE) && PA_BUILDFLAG(IS_OHOS)
+  // OHOS: Glued Pools + Metadata Region were allocated as one contiguous block
+  // in Init(). Free the combined allocation.
+  FreePages(setup_.regular_pool_base_address_,
+            2 * CorePoolSize() + MetadataRegionSize());
+#else
   FreePages(setup_.regular_pool_base_address_, 2 * CorePoolSize());
+#endif  // PA_CONFIG(MOVE_METADATA_OUT_OF_GIGACAGE) && PA_BUILDFLAG(IS_OHOS)
   // Do not free pages for the configurable pool, because its memory is owned
   // by someone else, but deinitialize it nonetheless.
   setup_.regular_pool_base_address_ = kUninitializedPoolBaseAddress;
@@ -516,9 +528,20 @@ void PartitionAddressSpace::InitMetadataRegionAndOffsets() {
 #endif  // PA_BUILDFLAG(ENABLE_MOVE_METADATA_OUT_OF_GIGACAGE_TRIAL)
 
 #if PA_CONFIG(DYNAMICALLY_SELECT_POOL_SIZE)
+  // On OHOS, metadata_region_size_ was already set in Init() before the
+  // combined AllocPages call. Skip re-setting it here.
+#if !PA_BUILDFLAG(IS_OHOS)
   metadata_region_size_ = std::max(kConfigurablePoolMaxSize, CorePoolSize());
+#endif  // !PA_BUILDFLAG(IS_OHOS)
 #endif  // PA_CONFIG(DYNAMICALLY_SELECT_POOL_SIZE)
 
+#if PA_BUILDFLAG(IS_OHOS)
+  // OHOS: Metadata Region was already allocated contiguously with Glued Pools
+  // in Init(). Derive the start address from the existing allocation.
+  PA_DCHECK(RegularPoolBase() != kUninitializedPoolBaseAddress);
+  PA_DCHECK(BRPPoolBase() != kUninitializedPoolBaseAddress);
+  metadata_region_start_ = RegularPoolBase() + CorePoolSize() * 2;
+#else
   uintptr_t address =
       AllocPages(MetadataRegionSize(), PageAllocationGranularity(),
                  PageAccessibilityConfiguration(

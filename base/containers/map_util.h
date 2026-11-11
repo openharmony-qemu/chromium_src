@@ -41,10 +41,17 @@ constexpr internal::MappedType<Map>* FindOrNull(Map& map, const Key& key) {
 //
 // This function does not distinguish between a missing key and a key mapped
 // to a null value.
+#if defined(__clang__) && (__clang_major__ < 17)
+template <typename Map,
+          typename Key,
+          typename MappedElementType =
+              typename std::pointer_traits<internal::MappedType<Map>>::element_type>
+#else
 template <typename Map,
           typename Key = Map::key_type,
           typename MappedElementType =
               std::pointer_traits<internal::MappedType<Map>>::element_type>
+#endif
 constexpr MappedElementType* FindPtrOrNull(const Map& map, const Key& key) {
   auto it = map.find(key);
   return it != map.end() ? base::to_address(it->second) : nullptr;

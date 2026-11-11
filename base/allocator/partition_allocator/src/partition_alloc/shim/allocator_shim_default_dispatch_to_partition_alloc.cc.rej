@@ -1,0 +1,70 @@
+diff a/base/allocator/partition_allocator/src/partition_alloc/shim/allocator_shim_default_dispatch_to_partition_alloc.cc b/base/allocator/partition_allocator/src/partition_alloc/shim/allocator_shim_default_dispatch_to_partition_alloc.cc	(rejected hunks)
+@@ -402,18 +402,18 @@ void* PartitionAllocFunctionsInternal<base_alloc_flags, base_free_flags>::
+   return Allocator()
+       ->Realloc<base_alloc_flags | partition_alloc::AllocFlags::kReturnNull>(
+           address, size, "");
+ }
+ 
+-#if PA_BUILDFLAG(IS_CAST_ANDROID)
++#if PA_BUILDFLAG(IS_CAST_ANDROID) || PA_BUILDFLAG(IS_OHOS)
+ extern "C" {
+ void __real_free(void*);
+ }       // extern "C"
+-#endif  // PA_BUILDFLAG(IS_CAST_ANDROID)
++#endif  // PA_BUILDFLAG(IS_CAST_ANDROID) || PA_BUILDFLAG(IS_OHOS)
+ 
+ constexpr bool MightNeedToHandleSystemDeallocation() {
+-#if PA_BUILDFLAG(IS_APPLE) || PA_BUILDFLAG(IS_CAST_ANDROID)
++#if PA_BUILDFLAG(IS_APPLE) || PA_BUILDFLAG(IS_CAST_ANDROID) || PA_BUILDFLAG(IS_OHOS)
+   return true;
+ #else
+   return false;
+ #endif
+ }
+@@ -434,21 +434,21 @@ PA_ALWAYS_INLINE bool MaybeHandleSystemDeallocation(void* object) {
+ 
+   // On Android Chromecast devices, there is at least one case where a system
+   // malloc() pointer can be passed to PartitionAlloc's free(). If we don't own
+   // the pointer, pass it along. This should not have a runtime cost vs regular
+   // Android, since on Android we have a PA_CHECK() rather than the branch here.
+-#if PA_BUILDFLAG(IS_CAST_ANDROID)
++#if PA_BUILDFLAG(IS_CAST_ANDROID) || PA_BUILDFLAG(IS_OHOS)
+   if (!partition_alloc::IsManagedByPartitionAlloc(
+           reinterpret_cast<uintptr_t>(object)) &&
+       object) [[unlikely]] {
+     // A memory region allocated by the system allocator is passed in this
+     // function.  Forward the request to `free()`, which is `__real_free()`
+     // here.
+     __real_free(object);
+     return true;
+   }
+-#endif  // PA_BUILDFLAG(IS_CAST_ANDROID)
++#endif  // PA_BUILDFLAG(IS_CAST_ANDROID) || PA_BUILDFLAG(IS_OHOS)
+   return false;
+ }
+ 
+ // static
+ template <partition_alloc::AllocFlags base_alloc_flags,
+@@ -788,19 +788,20 @@ const AllocatorDispatch AllocatorDispatch::default_dispatch =
+ //
+ // TODO(lizeb): Implement the ones that doable.
+ 
+ extern "C" {
+ 
+-#if !PA_BUILDFLAG(IS_APPLE) && !PA_BUILDFLAG(IS_ANDROID)
++#if !PA_BUILDFLAG(IS_APPLE) && !PA_BUILDFLAG(IS_ANDROID) && !PA_BUILDFLAG(IS_OHOS)
+ 
+ SHIM_ALWAYS_EXPORT void malloc_stats(void) __THROW {}
+ 
+ SHIM_ALWAYS_EXPORT int mallopt(int cmd, int value) __THROW {
+   return 0;
+ }
+ 
+-#endif  // !PA_BUILDFLAG(IS_APPLE) && !PA_BUILDFLAG(IS_ANDROID)
++#endif  // !PA_BUILDFLAG(IS_APPLE) && !PA_BUILDFLAG(IS_ANDROID) && \
++        // !PA_BUILDFLAG(IS_OHOS)
+ 
+ #if PA_BUILDFLAG(IS_LINUX) || PA_BUILDFLAG(IS_CHROMEOS)
+ SHIM_ALWAYS_EXPORT struct mallinfo mallinfo(void) __THROW {
+   partition_alloc::SimplePartitionStatsDumper allocator_dumper;
+   Allocator()->DumpStats("malloc", true, &allocator_dumper);

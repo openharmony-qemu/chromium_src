@@ -163,6 +163,20 @@ AslrMask(uintptr_t bits) {
       ASLROffset() {
         return AslrAddress(0x1000000000ULL);
       }
+      #elif PA_BUILDFLAG(IS_OHOS)
+ 
+      // OHOS ARM64 has 39-bit VA (512GiB), divided into 8 segments of 64GiB.
+      // Constrain ASLR to segment 7 so that PA's combined 24GiB allocation
+      // (glued pools + metadata) always lands in the same 64GiB-aligned block,
+      // preventing address space fragmentation that blocks other components.
+      // AslrMask(35) gives a 32GiB range; after alignment masking (& ~(16GiB-1))
+      // the possible bases are 0x7000000000 or 0x7400000000 — both fit 24GiB.
+      PA_ALWAYS_INLINE PAGE_ALLOCATOR_CONSTANTS_DECLARE_CONSTEXPR uintptr_t ASLRMask() {
+        return AslrMask(35);
+      }
+      PA_ALWAYS_INLINE PAGE_ALLOCATOR_CONSTANTS_DECLARE_CONSTEXPR uintptr_t ASLROffset() {
+        return AslrAddress(0x7000000000ULL);
+      }
 
       #else
 

@@ -1,0 +1,14 @@
+diff a/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_constants.h b/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_constants.h	(rejected hunks)
+@@ -312,11 +312,11 @@ PA_DEFINE_OPERATORS_FOR_FLAGS(PoolHandleMask);
+ // unrealistic as of 2022.
+ //
+ // When pointer compression is enabled, we cannot use large pools (at most
+ // 8GB for each of the glued pools).
+ #if PA_BUILDFLAG(HAS_64_BIT_POINTERS)
+-#if PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_IOS) || \
++#if PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_IOS) || PA_BUILDFLAG(IS_OHOS) || \
+     PA_BUILDFLAG(ENABLE_POINTER_COMPRESSION)
+ constexpr size_t kPoolMaxSize = 8 * kGiB;
+ #else
+ constexpr size_t kPoolMaxSize = 16 * kGiB;
+ #endif

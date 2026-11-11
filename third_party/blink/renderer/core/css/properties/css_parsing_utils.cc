@@ -1010,7 +1010,7 @@ class MathFunctionParser {
       CSSParserTokenStream& stream,
       const CSSParserContext& context,
       CSSPrimitiveValue::ValueRange value_range,
-      const Flags parsing_flags = Flags({Flag::AllowPercent}),
+      const Flags parsing_flags = Flags(),
       CSSAnchorQueryTypes allowed_anchor_queries = kCSSAnchorQueryTypesNone,
       const CSSColorChannelMap& color_channel_map = {})
       : stream_(&stream), savepoint_(stream.Save()) {
@@ -1142,7 +1142,11 @@ CSSPrimitiveValue* ConsumeIntegerOrNumberCalc(
     return value;
   }
 
-  MathFunctionParser math_parser(stream, context, value_range);
+  using enum CSSMathExpressionNode::Flag;
+  using Flags = CSSMathExpressionNode::Flags;
+
+  MathFunctionParser math_parser(stream, context, value_range,
+                                 Flags({AllowPercent}));
   if (const CSSMathFunctionValue* calculation = math_parser.Value()) {
     if (calculation->Category() != kCalcNumber) {
       return nullptr;
@@ -1170,7 +1174,11 @@ CSSPrimitiveValue* ConsumeNumber(CSSParserTokenStream& stream,
         stream.ConsumeIncludingWhitespace().NumericValue(),
         token.GetUnitType());
   }
-  MathFunctionParser math_parser(stream, context, value_range);
+  using enum CSSMathExpressionNode::Flag;
+  using Flags = CSSMathExpressionNode::Flags;
+
+  MathFunctionParser math_parser(stream, context, value_range,
+                                 Flags({AllowPercent}));
   if (const CSSMathFunctionValue* calculation = math_parser.Value()) {
     if (calculation->Category() != kCalcNumber) {
       return nullptr;
@@ -1300,7 +1308,11 @@ CSSPrimitiveValue* ConsumePercent(CSSParserTokenStream& stream,
         stream.ConsumeIncludingWhitespace().NumericValue(),
         CSSPrimitiveValue::UnitType::kPercentage);
   }
-  MathFunctionParser math_parser(stream, context, value_range);
+  using enum CSSMathExpressionNode::Flag;
+  using Flags = CSSMathExpressionNode::Flags;
+
+  MathFunctionParser math_parser(stream, context, value_range,
+                                 Flags({AllowPercent}));
   if (const CSSMathFunctionValue* calculation = math_parser.Value()) {
     if (calculation->Category() == kCalcPercent) {
       return math_parser.ConsumeValue();
@@ -1463,8 +1475,7 @@ static CSSPrimitiveValue* ConsumeMathFunctionAngle(
     double minimum_value,
     double maximum_value) {
   MathFunctionParser math_parser(stream, context,
-                                 CSSPrimitiveValue::ValueRange::kAll,
-                                 CSSMathExpressionNode::Flags());
+                                 CSSPrimitiveValue::ValueRange::kAll);
   if (const CSSMathFunctionValue* calculation = math_parser.Value()) {
     if (calculation->Category() != kCalcAngle) {
       return nullptr;
@@ -1490,8 +1501,7 @@ static CSSPrimitiveValue* ConsumeMathFunctionAngle(
     CSSParserTokenStream& stream,
     const CSSParserContext& context) {
   MathFunctionParser math_parser(stream, context,
-                                 CSSPrimitiveValue::ValueRange::kAll,
-                                 CSSMathExpressionNode::Flags());
+                                 CSSPrimitiveValue::ValueRange::kAll);
   if (const CSSMathFunctionValue* calculation = math_parser.Value()) {
     if (calculation->Category() != kCalcAngle) {
       return nullptr;
@@ -1544,8 +1554,7 @@ CSSPrimitiveValue* ConsumeTime(CSSParserTokenStream& stream,
     }
     return nullptr;
   }
-  MathFunctionParser math_parser(stream, context, value_range,
-                                 CSSMathExpressionNode::Flags());
+  MathFunctionParser math_parser(stream, context, value_range);
   if (const CSSMathFunctionValue* calculation = math_parser.Value()) {
     if (calculation->Category() == kCalcTime) {
       return math_parser.ConsumeValue();
@@ -1572,8 +1581,7 @@ CSSPrimitiveValue* ConsumeResolution(CSSParserTokenStream& stream,
   }
 
   MathFunctionParser math_parser(stream, context,
-                                 CSSPrimitiveValue::ValueRange::kNonNegative,
-                                 CSSMathExpressionNode::Flags());
+                                 CSSPrimitiveValue::ValueRange::kNonNegative);
   const CSSMathFunctionValue* math_value = math_parser.Value();
   if (math_value && math_value->IsResolution()) {
     return math_parser.ConsumeValue();
@@ -2820,7 +2828,11 @@ static CSSPrimitiveValue* ConsumeGradientAngleOrPercent(
   if (token.GetType() == kPercentageToken) {
     return ConsumePercent(stream, context, value_range);
   }
-  MathFunctionParser math_parser(stream, context, value_range);
+  using enum CSSMathExpressionNode::Flag;
+  using Flags = CSSMathExpressionNode::Flags;
+
+  MathFunctionParser math_parser(stream, context, value_range,
+                                 Flags({AllowPercent}));
   if (const CSSMathFunctionValue* calculation = math_parser.Value()) {
     CalculationResultCategory category = calculation->Category();
     // TODO(fs): Add and support kCalcPercentAngle?

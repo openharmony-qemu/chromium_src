@@ -1,0 +1,15 @@
+diff a/media/test/pipeline_integration_test_base.cc b/media/test/pipeline_integration_test_base.cc	(rejected hunks)
+@@ -378,10 +382,13 @@ PipelineStatus PipelineIntegrationTestBase::StartInternal(
+   EXPECT_CALL(*this, OnVideoConfigChange(_)).Times(AnyNumber());
+ 
+   base::RunLoop run_loop;
+   pipeline_->Start(
+       Pipeline::StartType::kNormal, demuxer_.get(), this,
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++      RequestSurfaceCB(), VideoDecoderChangedCB(),
++#endif // ARKWEB_VIDEO_ASSISTANT
+       base::BindOnce(&PipelineIntegrationTestBase::OnStatusCallback,
+                      base::Unretained(this), run_loop.QuitClosure()));
+   RunUntilQuitOrEndedOrError(&run_loop);
+   return pipeline_status_;
+ }

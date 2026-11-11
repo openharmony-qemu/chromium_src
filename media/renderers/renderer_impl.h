@@ -55,6 +55,10 @@ class MEDIA_EXPORT RendererImpl final : public Renderer {
   // Renderer implementation.
   void Initialize(MediaResource* media_resource,
                   RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                  RequestSurfaceCB request_surface_cb,
+                  VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                   PipelineStatusCallback init_cb) final;
   void SetCdm(CdmContext* cdm_context, CdmAttachedCB cdm_attached_cb) final;
   void SetLatencyHint(std::optional<base::TimeDelta> latency_hint) final;
@@ -81,6 +85,17 @@ class MEDIA_EXPORT RendererImpl final : public Renderer {
   void set_video_underflow_threshold_for_testing(base::TimeDelta threshold) {
     video_underflow_threshold_.set_for_testing(threshold);
   }
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(bool enable) final;
+#endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetPreciseSeekTarget(int64_t target_timestamp) final;
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer() final;
+  void ResumeDmaBuffer() final;
+#endif  // ARKWEB_MEDIA_DMABUF
+
 
  private:
   class RendererClientInternal;
@@ -271,6 +286,11 @@ class MEDIA_EXPORT RendererImpl final : public Renderer {
   base::TimeDelta restarting_audio_time_ = kNoTimestamp;
 
   bool pending_video_track_change_ = false;
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  RequestSurfaceCB request_surface_cb_;
+  VideoDecoderChangedCB decoder_changed_cb_;
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   base::WeakPtr<RendererImpl> weak_this_;
   base::WeakPtrFactory<RendererImpl> weak_factory_{this};

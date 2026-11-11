@@ -47,6 +47,14 @@ mojom("mojom") {
     "webrtc_video_perf.mojom",
   ]
 
+  if (arkweb_same_layer) {
+    sources += arkweb_media_mojo_mojom_sources
+  }
+
+  if (arkweb_custom_video_player || arkweb_media_hls) {
+    sources += arkweb_media_media_player_mojom_sources
+  }
+
   if (enable_media_drm_storage) {
     sources += [ "media_drm_storage.mojom" ]
   }
@@ -419,6 +427,29 @@ mojom("mojom") {
           "//mojo/public/cpp/base/fuchsia:traits",
           "//third_party/fuchsia-sdk/sdk/fidl/fuchsia.media:fuchsia.media_hlcpp",
           "//third_party/fuchsia-sdk/sdk/fidl/fuchsia.media.drm:fuchsia.media.drm_hlcpp",
+        ]
+      },
+    ]
+  }
+
+  if (arkweb_custom_video_player || arkweb_media_hls) {
+    cpp_typemaps += [
+      {
+        types = [
+          {
+            mojom = "media.mojom.MediaPlayerUrlParams"
+            cpp = "::media::MediaPlayerUrlParams"
+          },
+        ]
+        traits_headers = [
+          "//arkweb/chromium_ext/media/mojo/mojom/media_player_url_params_mojom_traits.h"
+        ]
+        traits_sources = [
+          "//arkweb/chromium_ext/media/mojo/mojom/media_player_url_params_mojom_traits.cc"
+        ]
+        traits_public_deps = [
+          "//base",
+          "//media",
         ]
       },
     ]

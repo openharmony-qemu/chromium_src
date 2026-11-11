@@ -315,6 +315,10 @@ End2EndTestRenderer::~End2EndTestRenderer() {
 
 void End2EndTestRenderer::Initialize(MediaResource* media_resource,
                                      RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                     RequestSurfaceCB request_surface_cb,
+                                     VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                                      PipelineStatusCallback init_cb) {
   init_cb_ = std::move(init_cb);
 
@@ -324,6 +328,9 @@ void End2EndTestRenderer::Initialize(MediaResource* media_resource,
 
   courier_renderer_->Initialize(
       media_resource, client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      RequestSurfaceCB(), VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindOnce(&End2EndTestRenderer::OnCourierRendererInitialized,
                      weak_factory_.GetWeakPtr()));
 }
@@ -332,6 +339,9 @@ void End2EndTestRenderer::InitializeReceiverRenderer(PipelineStatus status) {
   DCHECK(status == PIPELINE_OK);
   receiver_->Initialize(
       stream_provider_.get(), nullptr,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      RequestSurfaceCB(), VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindOnce(&End2EndTestRenderer::OnReceiverInitialized,
                      weak_factory_.GetWeakPtr()));
 }

@@ -66,6 +66,18 @@ struct StructTraits<media::mojom::VideoFrameMetadataDataView,
     return input.in_surface_view;
   }
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  static bool render_video_view(const media::VideoFrameMetadata& input) {
+    return input.render_video_view;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_AI_HDR)
+  static bool is_ai_hdr_active(const media::VideoFrameMetadata& input) {
+    return input.is_ai_hdr_active;
+  }
+#endif
+
   static bool wants_promotion_hint(const media::VideoFrameMetadata& input) {
     return input.wants_promotion_hint;
   }

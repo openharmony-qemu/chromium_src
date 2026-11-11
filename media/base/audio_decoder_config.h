@@ -125,6 +125,12 @@ class MEDIA_EXPORT AudioDecoderConfig {
     return target_output_sample_format_;
   }
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  void set_aac_extra_data(std::vector<uint8_t> aac_extra_data) {
+    aac_extra_data_ = std::move(aac_extra_data);
+  }
+  const std::vector<uint8_t>& aac_extra_data() const { return aac_extra_data_; }
+#endif
  private:
   // WARNING: When modifying or adding any parameters, update the following:
   // - AudioDecoderConfig::AsHumanReadableString()

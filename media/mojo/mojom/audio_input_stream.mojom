@@ -23,6 +23,8 @@ interface AudioInputStream {
 interface AudioInputStreamClient {
   OnError(InputStreamErrorCode code);
   OnMutedStateChanged(bool is_muted);
+  [EnableIf=arkweb_media_capture]
+  OnPausedStateChanged(bool is_paused);
 };
 
 // An AudioInputStreamObserver gets notifications about events related to an

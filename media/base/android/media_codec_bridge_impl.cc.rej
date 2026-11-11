@@ -1,0 +1,15 @@
+diff a/media/base/android/media_codec_bridge_impl.cc b/media/base/android/media_codec_bridge_impl.cc	(rejected hunks)
+@@ -706,11 +706,12 @@ MediaCodecResult MediaCodecBridgeImpl::QueueSecureInputBuffer(
+     native_clear_array[0] = 0;
+     native_cypher_array[0] = data.size();
+   } else {
+     for (size_t i = 0; i < decrypt_config.subsamples().size(); ++i) {
+       const auto& subsamples = decrypt_config.subsamples()[i];
+-      if (subsamples.cypher_bytes > std::numeric_limits<jint>::max()) {
++      if (subsamples.cypher_bytes > std::numeric_limits<jint>::max() ||
++          subsamples.clear_bytes > std::numeric_limits<jint>::max()) {
+         return {MediaCodecResult::Codes::kError,
+                 "Subsample size is too large."};
+       }
+       native_clear_array[i] = subsamples.clear_bytes;
+       native_cypher_array[i] = subsamples.cypher_bytes;

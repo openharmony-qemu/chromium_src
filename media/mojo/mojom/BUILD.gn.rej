@@ -1,0 +1,129 @@
+diff a/media/mojo/mojom/BUILD.gn b/media/mojo/mojom/BUILD.gn	(rejected hunks)
+@@ -2,10 +2,16 @@
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//media/media_options.gni")
+ import("//mojo/public/tools/bindings/mojom.gni")
++import("//arkweb/build/features/features.gni")
++
++if (is_arkweb) {
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++  enabled_features = [ "is_arkweb" ]
++}
+ 
+ mojom("mojom") {
+   generate_java = true
+ 
+   # TODO(crbug.com/40499115): Conditionally add source files in this list when we
+@@ -114,18 +128,68 @@ mojom("mojom") {
+     # remove this dependency.
+     public_deps += [ "//sandbox/mac/mojom" ]
+   }
+ 
+   enabled_features = []
++
++  if (arkweb_enable_wiseplay) {
++    enabled_features += [ "arkweb_enable_wiseplay" ]
++  }
++
++  if (is_android || is_arkweb) {
++    enabled_features += [ "is_arkweb" ]
++    enabled_features += [ "is_android_or_arkweb" ]
++  }
++
++  if (arkweb_media) {
++    enabled_features += ["arkweb_media"]
++  }
++
++  if (arkweb_media_avsession) {
++    enabled_features += ["arkweb_media_avsession"]
++  }
++
++  if (arkweb_custom_video_player) {
++    enabled_features += ["arkweb_custom_video_player"]
++  }
++
++  if (arkweb_media_hls) {
++    enabled_features += ["arkweb_media_hls"]
++  }
++
++  if (arkweb_video_assistant) {
++    enabled_features += ["arkweb_video_assistant"]
++  }
++
+   if (allow_oop_video_decoder) {
+     enabled_features += [ "allow_oop_video_decoder" ]
+   }
+ 
++  if (arkweb_pip) {
++    enabled_features += ["arkweb_pip"]
++  }
++
++  if (arkweb_media_dmabuf) {
++    enabled_features += ["arkweb_media_dmabuf"]
++  }
++
++  if (arkweb_media_memory_pressure) {
++    enabled_features += ["arkweb_media_memory_pressure"]
++  }
++
+   if (use_linux_video_acceleration) {
+     enabled_features += [ "allow_linux_video_acceleration" ]
+   }
+ 
++  if (arkweb_media_cast) {
++    enabled_features += ["arkweb_media_cast"]
++  }
++
++  if (arkweb_media_capture) {
++    enabled_features += ["arkweb_media_capture"]
++  }
++
+   # Help select ServiceSandbox for media_service.mojom.
+   if (mojo_media_host == "browser") {
+     enabled_features += [ "mojo_media_in_browser" ]
+   } else if (mojo_media_host == "gpu") {
+     enabled_features += [ "mojo_media_in_gpu" ]
+@@ -137,10 +201,14 @@ mojom("mojom") {
+ 
+   if (enable_cast_renderer) {
+     enabled_features += [ "enable_cast_renderer" ]
+   }
+ 
++  if (is_arkweb) {
++    enabled_features += [ "is_arkweb" ]
++    enabled_features += [ "arkweb_activity_state" ]
++  }
+   shared_typemaps = [
+     {
+       types = [
+         {
+           mojom = "media.mojom.AudioParameters"
+@@ -415,10 +506,26 @@ mojom("mojom") {
+ 
+ mojom("media_types") {
+   generate_java = true
+   sources = [ "media_types.mojom" ]
+ 
++  enabled_features = []
++  if (arkweb_media) {
++    enabled_features += ["arkweb_media"]
++  }
++  if (arkweb_custom_video_player) {
++    enabled_features += ["arkweb_custom_video_player"]
++  }
++
++  if (arkweb_media_hls) {
++    enabled_features += ["arkweb_media_hls"]
++  }
++
++  if (arkweb_video_assistant) {
++    enabled_features += ["arkweb_render_video_view"]
++  }
++
+   shared_typemaps = [
+     {
+       types = [
+         {
+           mojom = "media.mojom.AudioPipelineInfo"

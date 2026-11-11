@@ -1,0 +1,16 @@
+diff a/media/base/video_frame_metadata.cc b/media/base/video_frame_metadata.cc	(rejected hunks)
+@@ -79,8 +85,14 @@ void VideoFrameMetadata::MergeMetadataFrom(
+ }
+ 
+ void VideoFrameMetadata::ClearTextureFrameMetadata() {
+   is_webgpu_compatible = false;
+   read_lock_fences_enabled = false;
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  render_video_view = false;
++#endif
++#if BUILDFLAG(ARKWEB_AI_HDR)
++  is_ai_hdr_active = false;
++#endif
+ }
+ 
+ }  // namespace media

@@ -12,6 +12,7 @@
 #include "base/time/time.h"
 #include "media/base/media_export.h"
 #include "media/base/video_renderer_sink.h"
+#include "arkweb/build/features/features.h"
 
 namespace base {
 class SingleThreadTaskRunner;
@@ -42,6 +43,9 @@ class MEDIA_EXPORT NullVideoSink : public VideoRendererSink {
   void Stop() override;
   void PaintSingleFrame(scoped_refptr<VideoFrame> frame,
                         bool repaint_duplicate_frame) override;
+#if BUILDFLAG(ARKWEB_MEDIA)
+  void SetFinishPaintCallback(base::RepeatingClosure callback) override;
+#endif
 
   void set_tick_clock_for_testing(const base::TickClock* tick_clock) {
     tick_clock_ = tick_clock;

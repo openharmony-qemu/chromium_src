@@ -1,0 +1,41 @@
+diff a/media/mojo/mojom/media_types_enum_mojom_traits.h b/media/mojo/mojom/media_types_enum_mojom_traits.h	(rejected hunks)
+@@ -488,10 +498,23 @@ struct EnumTraits<media::mojom::RendererType, ::media::RendererType> {
+         *output = ::media::RendererType::kContentEmbedderDefined;
+         return true;
+       case media::mojom::RendererType::kTest:
+         *output = ::media::RendererType::kTest;
+         return true;
++#if BUILDFLAG(ARKWEB_MEDIA)|| BUILDFLAG(ARKWEB_MEDIA_HLS)
++      case ::media::mojom::RendererType::kNative:
++        *output = ::media::RendererType::kNative;
++        return true;
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++      case media::mojom::RendererType::kOHOSCustomMediaPlayer:
++        *output = ::media::RendererType::kOHOSCustomMediaPlayer;
++        return true;
++#endif // BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++      case media::mojom::RendererType::kOHOSMediaPlayer:
++        *output = ::media::RendererType::kOHOSMediaPlayer;
++        return true;
++#endif
+     }
+ 
+     NOTREACHED();
+   }
+ };
+@@ -543,10 +570,15 @@ struct EnumTraits<media::mojom::DemuxerType, ::media::DemuxerType> {
+         *output = ::media::DemuxerType::kStreamProviderDemuxer;
+         return true;
+       case media::mojom::DemuxerType::kManifestDemuxer:
+         *output = ::media::DemuxerType::kManifestDemuxer;
+         return true;
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
++      case media::mojom::DemuxerType::kOhosMediaPlayerDemuxer:
++        *output = ::media::DemuxerType::kOhosMediaPlayerDemuxer;
++#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
++        return true;
+     }
+ 
+     NOTREACHED();
+   }
+ };

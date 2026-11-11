@@ -1,0 +1,16 @@
+diff a/media/gpu/chromeos/mock_native_pixmap_dmabuf.cc b/media/gpu/chromeos/mock_native_pixmap_dmabuf.cc	(rejected hunks)
+@@ -57,11 +57,13 @@ scoped_refptr<const gfx::NativePixmapDmaBuf> CreateMockNativePixmapDmaBuf(
+                     base::File::FLAG_OPEN | base::File::FLAG_READ);
+     if (!file.IsValid()) {
+       LOG(ERROR) << "Failed to open a file";
+       return nullptr;
+     }
+-    handle.planes.emplace_back(plane.stride, plane.offset, plane.size,
++    handle.planes.emplace_back(base::checked_cast<uint32_t>(plane.stride),
++                               base::strict_cast<uint64_t>(plane.offset),
++                               base::strict_cast<uint64_t>(plane.size),
+                                base::ScopedFD(file.TakePlatformFile()));
+   }
+   handle.modifier = modifier;
+ 
+   return base::MakeRefCounted<gfx::NativePixmapDmaBuf>(coded_size, *si_format,

@@ -1,0 +1,18 @@
+diff a/media/base/audio_decoder_config.cc b/media/base/audio_decoder_config.cc	(rejected hunks)
+@@ -109,11 +114,16 @@ std::string AudioDecoderConfig::AsHumanReadableString() const {
+     << ", discard decoder delay: "
+     << base::ToString(should_discard_decoder_delay())
+     << ", target_output_channel_layout: "
+     << ChannelLayoutToString(target_output_channel_layout())
+     << ", target_output_sample_format: "
++#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
++    << SampleFormatToString(target_output_sample_format())
++    << ", has aac extra data: " << base::ToString(!aac_extra_data().empty());
++#else
+     << SampleFormatToString(target_output_sample_format());
++#endif
+   return s.str();
+ }
+ 
+ void AudioDecoderConfig::SetChannelsForDiscrete(int channels) {
+   DCHECK(channel_layout_ == CHANNEL_LAYOUT_DISCRETE ||

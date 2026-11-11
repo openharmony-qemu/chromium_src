@@ -1,0 +1,30 @@
+diff a/media/gpu/chromeos/gl_image_processor_backend.cc b/media/gpu/chromeos/gl_image_processor_backend.cc	(rejected hunks)
+@@ -10,10 +10,11 @@
+ #include "base/task/sequenced_task_runner.h"
+ #include "base/task/thread_pool.h"
+ #include "base/trace_event/trace_event.h"
+ #include "components/viz/common/resources/shared_image_format.h"
+ #include "media/base/format_utils.h"
++#include "media/gpu/buffer_validation.h"
+ #include "media/gpu/chromeos/frame_resource.h"
+ #include "media/gpu/chromeos/platform_video_frame_utils.h"
+ #include "media/gpu/macros.h"
+ #include "ui/gfx/buffer_types.h"
+ #include "ui/gfx/geometry/size.h"
+@@ -99,10 +100,16 @@ std::unique_ptr<ui::NativePixmapGLBinding> CreateAndBindImage(
+       gpu_memory_buffer_handle.type != gfx::NATIVE_PIXMAP) {
+     LOG(ERROR) << "Failed to create native GpuMemoryBufferHandle";
+     return nullptr;
+   }
+ 
++  if (!VerifyGpuMemoryBufferHandle(frame->format(), frame->coded_size(),
++                                   gpu_memory_buffer_handle)) {
++    LOG(ERROR) << "Failed to validate GpuMemoryBufferHandle";
++    return nullptr;
++  }
++
+   if (!should_split_planes) {
+     auto native_pixmap = base::MakeRefCounted<gfx::NativePixmapDmaBuf>(
+         frame->coded_size(), viz::MultiPlaneFormat::kNV12,
+         std::move(gpu_memory_buffer_handle).native_pixmap_handle());
+     DCHECK(native_pixmap->AreDmaBufFdsValid());

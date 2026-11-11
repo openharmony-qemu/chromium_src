@@ -1,0 +1,44 @@
+diff a/media/base/media_switches.h b/media/base/media_switches.h	(rejected hunks)
+@@ -14,10 +14,11 @@
+ #include "build/build_config.h"
+ #include "media/base/media_export.h"
+ #include "media/gpu/buildflags.h"
+ #include "media/media_buildflags.h"
+ #include "ui/gl/angle_implementation.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace base {
+ class CommandLine;
+ }
+ 
+@@ -44,11 +45,15 @@ MEDIA_EXPORT extern const char kCastStreamingForceDisableHardwareVp9[];
+ MEDIA_EXPORT extern const char kCastStreamingForceEnableHardwareH264[];
+ MEDIA_EXPORT extern const char kCastStreamingForceEnableHardwareVp8[];
+ MEDIA_EXPORT extern const char kCastStreamingForceEnableHardwareVp9[];
+ MEDIA_EXPORT extern const char kClearKeyCdmPathForTesting[];
+ MEDIA_EXPORT extern const char kDisableAcceleratedMjpegDecode[];
++
++#if BUILDFLAG(ARKWEB_WEBRTC)
+ MEDIA_EXPORT extern const char kDisableAudioInput[];
++#endif // BUILDFLAG(ARKWEB_WEBRTC)
++
+ MEDIA_EXPORT extern const char kDisableAudioOutput[];
+ MEDIA_EXPORT extern const char kDisableBackgroundMediaSuspend[];
+ MEDIA_EXPORT extern const char kDisableRTCSmoothnessAlgorithm[];
+ MEDIA_EXPORT extern const char kEnableLiveCaptionPrefForTesting[];
+ MEDIA_EXPORT extern const char kFailAudioStreamCreation[];
+@@ -360,10 +365,14 @@ MEDIA_EXPORT BASE_DECLARE_FEATURE(kUseAudioLatencyFromHAL);
+ MEDIA_EXPORT BASE_DECLARE_FEATURE(kUseSecurityLevelWhenCheckingMediaDrmVersion);
+ MEDIA_EXPORT BASE_DECLARE_FEATURE(kAllowMediaCodecSoftwareDecoder);
+ MEDIA_EXPORT BASE_DECLARE_FEATURE(kUseAudioManagerMaxChannelLayout);
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
++#if BUILDFLAG(ARKWEB_MEDIA)
++MEDIA_EXPORT BASE_DECLARE_FEATURE(kCanPlayHls);
++#endif
++
+ #if BUILDFLAG(ENABLE_HLS_DEMUXER)
+ // This feature enables chrome's built-in HLS parser and demuxer instead of
+ // Android's MediaPlayer based implementation. When this feature is enabled,
+ // the media-player based HLS player will NOT be used. This will roll out first
+ // on android, but will eventually land in desktop chrome as well.

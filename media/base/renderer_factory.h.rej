@@ -1,0 +1,16 @@
+diff a/media/base/renderer_factory.h b/media/base/renderer_factory.h	(rejected hunks)
+@@ -12,11 +12,13 @@
+ #include "media/base/media_export.h"
+ #include "media/base/media_resource.h"
+ #include "media/base/overlay_info.h"
+ #include "media/base/renderer.h"
+ #include "ui/gfx/color_space.h"
+-
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++#include "arkweb/chromium_ext/media/base/media_player_url_params.h"
++#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+ namespace base {
+ class TaskRunner;
+ }
+ 
+ namespace media {

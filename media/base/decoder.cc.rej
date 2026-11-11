@@ -1,0 +1,44 @@
+diff a/media/base/decoder.cc b/media/base/decoder.cc	(rejected hunks)
+@@ -1,11 +1,11 @@
+ // Copyright 2020 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "media/base/decoder.h"
+-
++#include "arkweb/build/features/features.h"
+ #include "base/notreached.h"
+ 
+ namespace media {
+ 
+ Decoder::Decoder() = default;
+@@ -54,10 +54,14 @@ std::string GetDecoderName(VideoDecoderType type) {
+       return "Testing or Mock Video decoder";
+     case VideoDecoderType::kOutOfProcess:
+       return "OOPVideoDecoder";
+     case VideoDecoderType::kVideoToolbox:
+       return "VideoToolboxVideoDecoder";
++#if BUILDFLAG(ARKWEB_MEDIA_CODEC)
++    case VideoDecoderType::kOHOS:
++      return "OHOSVideoDecoder";
++#endif
+   }
+ }
+ 
+ std::string GetDecoderName(AudioDecoderType type) {
+   switch (type) {
+@@ -79,10 +83,14 @@ std::string GetDecoderName(AudioDecoderType type) {
+       return "Testing or Mock Audio decoder";
+     case AudioDecoderType::kAudioToolbox:
+       return "AudioToolboxAudioDecoder";
+     case AudioDecoderType::kMediaFoundation:
+       return "MediaFoundationAudioDecoder";
++#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
++    case AudioDecoderType::kOhos:
++      return "OHOSAudioDecoder";
++#endif
+     case AudioDecoderType::kSymphonia:
+       return "SymphoniaAudioDecoder";
+   }
+ }
+ 

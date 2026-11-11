@@ -36,6 +36,7 @@
 #include "media/capture/video_capture_types.h"
 #include "third_party/abseil-cpp/absl/cleanup/cleanup.h"
 #include "third_party/libyuv/include/libyuv.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_CHROMEOS)
 #include "media/capture/video/chromeos/video_capture_jpeg_decoder.h"

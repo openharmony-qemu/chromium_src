@@ -1,0 +1,81 @@
+diff a/media/base/media_switches.cc b/media/base/media_switches.cc	(rejected hunks)
+@@ -17,10 +17,11 @@
+ #include "components/system_media_controls/linux/buildflags/buildflags.h"
+ #include "gpu/config/gpu_finch_features.h"
+ #include "media/media_buildflags.h"
+ #include "ui/gl/gl_features.h"
+ #include "ui/gl/gl_utils.h"
++#include "arkweb/build/features/features.h"
+ 
+ #if BUILDFLAG(IS_LINUX)
+ #include "base/cpu.h"
+ #endif
+ 
+@@ -113,12 +114,14 @@ const char kClearKeyCdmPathForTesting[] = "clear-key-cdm-path-for-testing";
+ // available.
+ const char kDisableAcceleratedMjpegDecode[] =
+     "disable-accelerated-mjpeg-decode";
+ 
+ // Forces input and output stream creation to use fake audio streams.
+-const char kDisableAudioInput[] = "disable-audio-input";
+ const char kDisableAudioOutput[] = "disable-audio-output";
++#if BUILDFLAG(ARKWEB_WEBRTC)
++const char kDisableAudioInput[] = "disable-audio-input";
++#endif // BUILDFLAG(ARKWEB_WEBRTC)
+ 
+ // Do not immediately suspend media in background tabs.
+ const char kDisableBackgroundMediaSuspend[] =
+     "disable-background-media-suspend";
+ 
+@@ -675,10 +678,18 @@ BASE_FEATURE(kGlobalMediaControlsSeamlessTransfer,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // CanPlayThrough issued according to standard.
+ BASE_FEATURE(kSpecCompliantCanPlayThrough, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
++#if BUILDFLAG(ARKWEB_WEBRTC)
++// Disables the real audio output stream after silent audio has been delivered
++// for too long. Should save quite a bit of power in the muted video case.
++BASE_FEATURE(kSuspendMutedAudio,
++             "SuspendMutedAudio",
++             base::FEATURE_DISABLED_BY_DEFAULT);
++#endif
++
+ // Suspends WebMediaPlayerImpl instances when the containing RenderFrame is
+ // frozen. TODO(crbug.com/41161335): Remove in M143 after it goes stable.
+ BASE_FEATURE(kSuspendMediaForFrozenFrames, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // Enables the Unified Autoplay policy by overriding the platform's default
+@@ -944,11 +955,17 @@ BASE_FEATURE(kHardwareMediaKeyHandling,
+ // Enables a platform-specific resolution cutoff for prioritizing platform
+ // decoders over software decoders or vice-versa.
+ //
+ // Note: This feature is used by ChromeOS tests and shouldn't be removed even
+ // though it has long been enabled by default.
++#if BUILDFLAG(ARKWEB_MEDIA)
++// The arkweb disables the decoding priority function to ensure that H.264 videos
++// whose height is less than 360 pixels are still decoded by hardware.
++BASE_FEATURE(kResolutionBasedDecoderPriority, base::FEATURE_DISABLED_BY_DEFAULT);
++#else
+ BASE_FEATURE(kResolutionBasedDecoderPriority, base::FEATURE_ENABLED_BY_DEFAULT);
++#endif // ARKWEB_MEDIA
+ 
+ // Allows the AutoPictureInPictureTabHelper to automatically enter
+ // picture-in-picture for websites with video playback (instead of only websites
+ // using camera or microphone).
+ BASE_FEATURE(kAutoPictureInPictureForVideoPlayback,
+@@ -1078,10 +1095,14 @@ BASE_FEATURE(kAllowMediaCodecSoftwareDecoder,
+ BASE_FEATURE(kUseAudioManagerMaxChannelLayout,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
++#if BUILDFLAG(ARKWEB_MEDIA)
++BASE_FEATURE(kCanPlayHls, "CanPlayHls", base::FEATURE_ENABLED_BY_DEFAULT);
++#endif
++
+ #if BUILDFLAG(ENABLE_HLS_DEMUXER)
+ BASE_FEATURE(kBuiltInHlsPlayer, base::FEATURE_ENABLED_BY_DEFAULT);
+ #endif  // BUILDFLAG(ENABLE_HLS_DEMUXER)
+ 
+ // TODO(crbug.com/414430336): Consider restricting to IS_CHROMEOS.

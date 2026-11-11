@@ -59,6 +59,9 @@ MediaPlayerUkmId GetNextMediaPlayerUkmId() {
 }
 
 constexpr char kInvalidInitialize[] = "Initialize() was not called correctly.";
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+constexpr int DEFAULT_VIDEO_ERROR_CODE = 0;
+#endif
 
 
 MediaMetricsProvider::PipelineInfo::PipelineInfo(bool is_incognito)
@@ -316,6 +319,12 @@ void MediaMetricsProvider::OnStarted(const PipelineStatus& status) {
 
 void MediaMetricsProvider::OnError(const PipelineStatus& status) {
   DCHECK(IsInitialized());
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  std::string errorType = "video play error";
+  int errorCode = DEFAULT_VIDEO_ERROR_CODE;
+  std::string errorDesc = "media player start failed or network error";
+  ReportVideoPlayErrorInfo(errorType, errorCode, errorDesc);
+#endif
   if (is_shutting_down_cb_.Run()) {
     DVLOG(1) << __func__ << ": Error " << PipelineStatusToString(status)
              << " ignored since it is reported during shutdown.";

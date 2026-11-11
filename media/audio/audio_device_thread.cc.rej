@@ -1,0 +1,33 @@
+diff a/media/audio/audio_device_thread.cc b/media/audio/audio_device_thread.cc	(rejected hunks)
+@@ -85,10 +98,31 @@ base::TimeDelta AudioDeviceThread::GetRealtimePeriod() {
+ 
+ void AudioDeviceThread::ThreadMain() {
+   base::PlatformThread::SetName(thread_name_);
+   callback_->InitializeOnAudioThread();
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER) && !defined(COMPONENT_BUILD)
++  if (base::CommandLine::ForCurrentProcess()) {
++    auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
++        switches::kProcessType);
++    if (type == switches::kRendererProcess) {
++      blink::ResSchedReportClient report_client(base::GetCurrentRealPid());
++      report_client.SendAudioData(0, base::GetCurrentRealPid(), base::PlatformThread::CurrentRealId().raw());
++    } else {
++      OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
++          OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_START,
++          base::GetCurrentRealPid(), base::PlatformThread::CurrentRealId().raw());
++    }
++  }
++#else
++  OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
++      OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_START,
++      base::GetCurrentRealPid(), base::PlatformThread::CurrentRealId().raw());
++#endif  // defined(ARKWEB_RENDER_REMOVE_BINDER)
++#endif
++
+   uint32_t buffer_index = 0;
+   while (true) {
+     uint32_t pending_data = 0;
+     size_t bytes_read = socket_.Receive(base::byte_span_from_ref(pending_data));
+     if (bytes_read != sizeof(pending_data))

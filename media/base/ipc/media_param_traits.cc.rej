@@ -1,0 +1,100 @@
+diff a/media/base/ipc/media_param_traits.cc b/media/base/ipc/media_param_traits.cc	(rejected hunks)
+@@ -6,11 +6,10 @@
+ 
+ #include "base/strings/stringprintf.h"
+ #include "ipc/param_traits_utils.h"
+ #include "media/base/audio_parameters.h"
+ #include "media/base/audio_point.h"
+-#include "media/base/encryption_pattern.h"
+ #include "media/base/encryption_scheme.h"
+ #include "media/base/limits.h"
+ #include "media/base/media_switches.h"
+ #include "ui/gfx/ipc/geometry/gfx_param_traits.h"
+ #include "ui/gfx/ipc/gfx_param_traits.h"
+@@ -27,30 +26,41 @@ void ParamTraits<AudioParameters>::Write(base::Pickle* m,
+   WriteParam(m, p.channel_layout());
+   WriteParam(m, p.sample_rate());
+   WriteParam(m, p.frames_per_buffer());
+   WriteParam(m, p.channels());
+   WriteParam(m, p.effects());
++#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
++  WriteParam(m, p.render_process_id());
++  WriteParam(m, p.render_frame_id());
++#endif // defined(OHOS_MEDIA_POLICY)
+   WriteParam(m, p.mic_positions());
+   WriteParam(m, p.latency_tag());
+   WriteParam(m, p.hardware_capabilities());
+ }
+ 
+ bool ParamTraits<AudioParameters>::Read(const base::Pickle* m,
+                                         base::PickleIterator* iter,
+                                         AudioParameters* r) {
+   AudioParameters::Format format;
+   ChannelLayout channel_layout;
++#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
++  int sample_rate, frames_per_buffer, channels, effects, render_process_id, render_frame_id;
++#else
+   int sample_rate, frames_per_buffer, channels, effects;
++#endif // defined(OHOS_MEDIA_POLICY)
+   std::vector<media::Point> mic_positions;
+   AudioLatency::Type latency_tag;
+   std::optional<media::AudioParameters::HardwareCapabilities>
+       hardware_capabilities;
+ 
+   if (!ReadParam(m, iter, &format) || !ReadParam(m, iter, &channel_layout) ||
+       !ReadParam(m, iter, &sample_rate) ||
+       !ReadParam(m, iter, &frames_per_buffer) ||
+       !ReadParam(m, iter, &channels) || !ReadParam(m, iter, &effects) ||
++#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
++      !ReadParam(m, iter, &render_process_id) || !ReadParam(m, iter, &render_frame_id) ||
++#endif // defined(OHOS_MEDIA_POLICY)
+       !ReadParam(m, iter, &mic_positions) ||
+       !ReadParam(m, iter, &latency_tag) ||
+       !ReadParam(m, iter, &hardware_capabilities)) {
+     return false;
+   }
+@@ -62,10 +72,14 @@ bool ParamTraits<AudioParameters>::Read(const base::Pickle* m,
+     *r = AudioParameters(format, {channel_layout, channels}, sample_rate,
+                          frames_per_buffer);
+   }
+ 
+   r->set_effects(effects);
++#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
++  r->set_render_process_id(render_process_id);
++  r->set_render_frame_id(render_frame_id);
++#endif // defined(OHOS_MEDIA_POLICY)
+   r->set_mic_positions(mic_positions);
+   r->set_latency_tag(latency_tag);
+ 
+   return r->IsValid();
+ }
+@@ -108,29 +122,10 @@ bool ParamTraits<AudioParameters::HardwareCapabilities>::Read(
+   r->require_encapsulation = require_encapsulation;
+   r->require_audio_offload = require_audio_offload;
+   return true;
+ }
+ 
+-void ParamTraits<media::EncryptionPattern>::Write(base::Pickle* m,
+-                                                  const param_type& p) {
+-  WriteParam(m, p.crypt_byte_block());
+-  WriteParam(m, p.skip_byte_block());
+-}
+-
+-bool ParamTraits<media::EncryptionPattern>::Read(const base::Pickle* m,
+-                                                 base::PickleIterator* iter,
+-                                                 param_type* r) {
+-  uint32_t crypt_byte_block, skip_byte_block;
+-  if (!ReadParam(m, iter, &crypt_byte_block) ||
+-      !ReadParam(m, iter, &skip_byte_block)) {
+-    return false;
+-  }
+-
+-  *r = media::EncryptionPattern(crypt_byte_block, skip_byte_block);
+-  return true;
+-}
+-
+ }  // namespace IPC
+ 
+ // Generate param traits write methods.
+ #include "ipc/param_traits_write_macros.h"
+ namespace IPC {

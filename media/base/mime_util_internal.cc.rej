@@ -1,0 +1,32 @@
+diff a/media/base/mime_util_internal.cc b/media/base/mime_util_internal.cc	(rejected hunks)
+@@ -397,11 +397,16 @@ void MimeUtil::AddSupportedMediaFormats() {
+   CodecSet video_3gpp_codecs(aac);
+   video_3gpp_codecs.emplace(H264);
+   AddContainerWithCodecs("video/3gpp", video_3gpp_codecs);
+ 
+ #if BUILDFLAG(ENABLE_HLS_DEMUXER)
+-  if (base::FeatureList::IsEnabled(kBuiltInHlsPlayer)) {
++  bool can_play_hls = base::FeatureList::IsEnabled(kBuiltInHlsPlayer);
++#elif BUILDFLAG(ARKWEB_MEDIA_HLS)
++  bool can_play_hls = true;
++#endif
++#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
++  if (can_play_hls) {
+     // HTTP Live Streaming (HLS).
+     CodecSet hls_codecs{
+         H264,
+         MP3,
+         MPEG4_AAC,
+@@ -412,11 +417,11 @@ void MimeUtil::AddSupportedMediaFormats() {
+     // Not documented by Apple, but unfortunately used extensively by Apple and
+     // others for both audio-only and audio+video playlists. See
+     // https://crbug.com/675552 for details and examples.
+     AddContainerWithCodecs("audio/x-mpegurl", hls_codecs);
+   }
+-#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER)
++#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
+ #endif  // BUILDFLAG(USE_PROPRIETARY_CODECS)
+ }
+ 
+ void MimeUtil::AddContainerWithCodecs(std::string mime_type, CodecSet codecs) {
+   media_format_map_.insert_or_assign(std::move(mime_type), std::move(codecs));

@@ -1,0 +1,34 @@
+diff a/media/filters/decoder_stream.cc b/media/filters/decoder_stream.cc	(rejected hunks)
+@@ -24,10 +24,13 @@
+ #include "media/base/media_util.h"
+ #include "media/base/timestamp_constants.h"
+ #include "media/base/video_decoder.h"
+ #include "media/base/video_frame.h"
+ #include "media/filters/decrypting_demuxer_stream.h"
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/media/filters/decoder_stream_for_include.cc"
++#endif
+ #include "third_party/perfetto/include/perfetto/tracing/track.h"
+ 
+ namespace media {
+ 
+ #define FUNCTION_DVLOG(level) \
+@@ -125,12 +128,18 @@ template <DemuxerStream::Type StreamType>
+ DecoderStream<StreamType>::~DecoderStream() {
+   FUNCTION_DVLOG(1);
+   DCHECK(task_runner_->RunsTasksInCurrentSequence());
+ 
+   if (init_cb_) {
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++    task_runner_->PostTask(FROM_HERE,
++                           base::BindOnce(std::move(init_cb_),
++                                          false, false, "No Decoder"));
++#else
+     task_runner_->PostTask(FROM_HERE,
+                            base::BindOnce(std::move(init_cb_), false));
++#endif // ARKWEB_VIDEO_ASSISTANT
+   }
+   if (read_cb_) {
+     read_cb_ = base::BindPostTaskToCurrentDefault(std::move(read_cb_));
+     SatisfyRead(DecoderStatus::Codes::kAborted);
+   }

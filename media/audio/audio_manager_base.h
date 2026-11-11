@@ -107,6 +107,26 @@ class MEDIA_EXPORT AudioManagerBase : public AudioManager {
   }
   int output_stream_count() const { return num_output_streams_; }
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  absl::flat_hash_set<raw_ptr<AudioInputStream, CtnExperimental>>
+  GetInputStream() override {
+    if (input_streams_.size()) {
+      return input_streams_;
+    }
+    return {};
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  absl::flat_hash_map<raw_ptr<AudioOutputStream, CtnExperimental>, AudioParameters>
+  GetStreamParametersMap() override;
+
+  std::set<raw_ptr<AudioInputStream, CtnExperimental>> GetInputStreamsByNWebId(int nweb_id) override;
+  void AddInputStreamToNWebMap(int nweb_id, AudioInputStream* stream);
+  void RemoveInputStreamFromNWebMap(int nweb_id, AudioInputStream* stream);
+
+#endif // ARKWEB_MEDIA_CAPTURE
+
  protected:
   AudioManagerBase(std::unique_ptr<AudioThread> audio_thread,
                    AudioLogFactory* audio_log_factory);

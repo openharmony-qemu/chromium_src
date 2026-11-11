@@ -610,7 +610,14 @@ AudioOutputStream* AudioManagerBase::MakeAudioOutputStreamProxy(
         // Turn off effects that weren't requested.
         output_params.set_effects(params.effects() & output_params.effects());
       }
-
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+      if (params.render_process_id() != output_params.render_process_id()) {
+        output_params.set_render_process_id(params.render_process_id());
+      }
+      if (params.render_frame_id() != output_params.render_frame_id()) {
+        output_params.set_render_frame_id(params.render_frame_id());
+      }
+#endif // defined(OHOS_MEDIA_POLICY)
       uma_stream_format = STREAM_FORMAT_PCM_LOW_LATENCY;
     } else {
       // We've received invalid audio output parameters, so switch to a mock
@@ -717,8 +724,20 @@ void AudioManagerBase::ReleaseOutputStream(AudioOutputStream* stream) {
   // TODO(xians) : Have a clearer destruction path for the AudioOutputStream.
   // For example, pass the ownership to AudioManager so it can delete the
   // streams.
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+	{
+	  base::AutoLock lock(stream_parameters_map_lock_);
+	  auto it = stream_parameters_map_.find(stream);
+	  if (it != stream_parameters_map_.end()) {
+	    stream_parameters_map_.erase(it);
+	  }
+	}
+#endif // ARKWEB_MEDIA_CAPTURE
   --num_output_streams_;
   delete stream;
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  stream = nullptr;
+#endif // defined(OHOS_MEDIA_POLICY)
 }
 
 void AudioManagerBase::ReleaseInputStream(AudioInputStream* stream) {
@@ -763,7 +782,11 @@ AudioParameters AudioManagerBase::GetOutputStreamParameters(
 
 AudioParameters AudioManagerBase::GetInputStreamParameters(
     const std::string& device_id) {
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  return GetPreferredInputStreamParameters(device_id);
+#else
   NOTREACHED();
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
 }
 
 std::string AudioManagerBase::GetAssociatedOutputDeviceID(

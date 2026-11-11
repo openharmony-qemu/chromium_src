@@ -143,6 +143,10 @@ RendererImpl::~RendererImpl() {
 
 void RendererImpl::Initialize(MediaResource* media_resource,
                               RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                              RequestSurfaceCB request_surface_cb,
+                              VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                               PipelineStatusCallback init_cb) {
   DVLOG(1) << __func__;
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
@@ -480,6 +484,10 @@ void RendererImpl::InitializeVideoRenderer() {
       DemuxerStream::VIDEO, this, media_resource_);
   video_renderer_->Initialize(
       video_stream, cdm_context_, video_renderer_client_.get(),
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      std::move(request_surface_cb_),
+      std::move(decoder_changed_cb_),
+#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindRepeating(&RendererImpl::GetWallClockTimes,
                           base::Unretained(this)),
       base::BindOnce(&RendererImpl::OnVideoRendererInitializeDone, weak_this_));
@@ -644,6 +652,10 @@ void RendererImpl::ReinitializeVideoRenderer(
   video_renderer_->OnTimeStopped();
   video_renderer_->Initialize(
       stream, cdm_context_, video_renderer_client_.get(),
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      std::move(request_surface_cb_),
+      std::move(decoder_changed_cb_),
+#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindRepeating(&RendererImpl::GetWallClockTimes,
                           base::Unretained(this)),
       base::BindOnce(&RendererImpl::OnVideoRendererReinitialized, weak_this_,
@@ -1009,6 +1021,9 @@ void RendererImpl::OnTracksChanged(DemuxerStream::Type track_type,
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
   TRACE_EVENT1("media", "RendererImpl::OnTracksChanged", "track_type",
                track_type);
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  LOG(INFO) << "DMABUF::RendererImpl::OnTracksChanged";
+#endif
   // 'fixing' the stream -> restarting if its the same stream,
   //                        reinitializing if it is different.
   base::OnceClosure fix_stream_cb;

@@ -1,0 +1,16 @@
+diff a/media/audio/BUILD.gn b/media/audio/BUILD.gn	(rejected hunks)
+@@ -365,10 +383,14 @@ source_set("audio") {
+       "//media/fuchsia/common",
+       "//third_party/fuchsia-sdk/sdk/fidl/fuchsia.media:fuchsia.media_hlcpp",
+       "//third_party/fuchsia-sdk/sdk/pkg/sys_cpp",
+     ]
+   }
++
++  if (enable_arkweb) {
++    deps += [ "//arkweb/build/features" ]
++  }
+ }
+ 
+ if (use_cras) {
+   pkg_config("libcras") {
+     packages = [ "libcras" ]

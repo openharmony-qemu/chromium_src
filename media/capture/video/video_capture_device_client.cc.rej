@@ -1,0 +1,26 @@
+diff a/media/capture/video/video_capture_device_client.cc b/media/capture/video/video_capture_device_client.cc	(rejected hunks)
+@@ -446,15 +447,23 @@ void VideoCaptureDeviceClient::OnIncomingCapturedData(
+       return;
+     }
+   }
+ #endif  // BUILDFLAG(IS_CHROMEOS)
+ 
++#if BUILDFLAG(ARKWEB_WEBRTC)
++  int stride = format.stride > format.frame_size.width() ? format.stride : format.frame_size.width();
++#endif
+   // libyuv::ConvertToI420 uses Rec601 to convert RGB to YUV.
+   if (libyuv::ConvertToI420(
+           data, length, y_plane_data, yplane_stride, u_plane_data,
+           uv_plane_stride, v_plane_data, uv_plane_stride, /*crop_x=*/0,
+-          /*crop_y=*/0, format.frame_size.width(),
++          /*crop_y=*/0,
++#if BUILDFLAG(ARKWEB_WEBRTC)
++          stride,
++#else
++          format.frame_size.width(),
++#endif
+           (flip ? -1 : 1) * format.frame_size.height(), new_unrotated_width,
+           new_unrotated_height, rotation_mode, fourcc_format) != 0) {
+     DLOG(WARNING) << "Failed to convert buffer's pixel format to I420 from "
+                   << VideoPixelFormatToString(format.pixel_format);
+     receiver_->OnFrameDropped(

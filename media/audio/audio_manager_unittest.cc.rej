@@ -1,0 +1,23 @@
+diff a/media/audio/audio_manager_unittest.cc b/media/audio/audio_manager_unittest.cc	(rejected hunks)
+@@ -465,10 +466,21 @@ class TestAudioManager : public FakeAudioManager {
+         input_id == kRealDefaultInputDeviceID)
+       return "output2";
+     return std::string();
+   }
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++ protected:
++  AudioParameters GetPreferredOutputStreamParameters(
++      const std::string& output_device_id,
++      const AudioParameters& input_params) override {}
++#if BUILDFLAG(ARKWEB_WEBRTC)
++  AudioParameters GetPreferredInputStreamParameters(
++      const std::string& input_device_id) override {}
++#endif // BUILDFLAG(ARKWEB_WEBRTC)
++#endif
++
+  private:
+   void GetAudioInputDeviceNames(AudioDeviceNames* device_names) override {
+     DCHECK(device_names->empty());
+     device_names->emplace_back(AudioDeviceName::CreateDefault());
+     device_names->emplace_back("Input 1", "input1");

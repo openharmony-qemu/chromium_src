@@ -1,0 +1,16 @@
+diff a/media/filters/pipeline_controller.cc b/media/filters/pipeline_controller.cc	(rejected hunks)
+@@ -5,10 +5,14 @@
+ #include "media/filters/pipeline_controller.h"
+ 
+ #include "base/functional/bind.h"
+ #include "media/base/demuxer.h"
+ 
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++#include "arkweb/chromium_ext/media/filters/pipeline_controller_for_include.cc"
++#endif
++
+ namespace media {
+ 
+ PipelineController::PipelineController(std::unique_ptr<Pipeline> pipeline,
+                                        PipelineStatusCB started_cb,
+                                        SeekedCB seeked_cb,

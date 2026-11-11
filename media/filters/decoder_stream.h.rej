@@ -1,0 +1,17 @@
+diff a/media/filters/decoder_stream.h b/media/filters/decoder_stream.h	(rejected hunks)
+@@ -51,11 +51,15 @@ class MEDIA_EXPORT DecoderStream {
+   // Callback to create a list of decoders.
+   using CreateDecodersCB =
+       base::RepeatingCallback<std::vector<std::unique_ptr<Decoder>>()>;
+ 
+   // Indicates completion of a DecoderStream initialization.
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  using InitCB = base::OnceCallback<void(bool success, bool, std::string)>;
++#else
+   using InitCB = base::OnceCallback<void(bool success)>;
++#endif // ARKWEB_VIDEO_ASSISTANT
+ 
+   // Indicates completion of a DecoderStream read.
+   using ReadResult = DecoderStatus::Or<scoped_refptr<Output>>;
+   using ReadCB = base::OnceCallback<void(ReadResult)>;
+ 

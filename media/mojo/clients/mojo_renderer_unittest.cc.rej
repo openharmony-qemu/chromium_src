@@ -1,0 +1,33 @@
+diff a/media/mojo/clients/mojo_renderer_unittest.cc b/media/mojo/clients/mojo_renderer_unittest.cc	(rejected hunks)
+@@ -19,11 +19,10 @@
+ #include "media/base/cdm_context.h"
+ #include "media/base/mock_filters.h"
+ #include "media/base/test_helpers.h"
+ #include "media/cdm/clear_key_cdm_common.h"
+ #include "media/cdm/default_cdm_factory.h"
+-#include "media/mojo/clients/mojo_renderer.h"
+ #include "media/mojo/common/media_type_converters.h"
+ #include "media/mojo/mojom/content_decryption_module.mojom.h"
+ #include "media/mojo/mojom/renderer.mojom.h"
+ #include "media/mojo/services/mojo_cdm_service.h"
+ #include "media/mojo/services/mojo_cdm_service_context.h"
+@@ -33,10 +32,19 @@
+ #include "mojo/public/cpp/bindings/receiver.h"
+ #include "mojo/public/cpp/bindings/remote.h"
+ #include "mojo/public/cpp/bindings/self_owned_receiver.h"
+ #include "testing/gtest/include/gtest/gtest.h"
+ #include "url/gurl.h"
++#include "arkweb/build/features/features.h"
++
++#if BUILDFLAG(ARKWEB_TEST)
++#define private public
++#include "media/mojo/clients/mojo_renderer.h"
++#undef private
++#else
++#include "media/mojo/clients/mojo_renderer.h"
++#endif //ARKWEB_TEST
+ 
+ using ::base::test::RunCallback;
+ using ::base::test::RunOnceCallback;
+ using ::base::test::RunOnceClosure;
+ using ::testing::_;

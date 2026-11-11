@@ -25,6 +25,7 @@
 #include "media/base/audio_bus.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "arkweb/build/features/features.h"
 
 using ::testing::_;
 using ::testing::AllOf;

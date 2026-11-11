@@ -1,0 +1,17 @@
+diff a/media/audio/audio_output_proxy_unittest.cc b/media/audio/audio_output_proxy_unittest.cc	(rejected hunks)
+@@ -169,10 +170,15 @@ class MockAudioManager : public AudioManagerBase {
+   MOCK_METHOD1(GetAudioInputDeviceNames,
+                void(media::AudioDeviceNames* device_name));
+   MOCK_METHOD2(GetPreferredOutputStreamParameters, AudioParameters(
+       const std::string& device_id, const AudioParameters& params));
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_WEBRTC)
++  AudioParameters GetPreferredInputStreamParameters(
++      const std::string& input_device_id) override {}
++#endif // BUILDFLAG(ARKWEB_WEBRTC)
++
+  private:
+   media::FakeAudioLogFactory fake_audio_log_factory_;
+ };
+ 
+ class MockAudioSourceCallback : public AudioOutputStream::AudioSourceCallback {

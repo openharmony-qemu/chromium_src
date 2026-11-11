@@ -1,0 +1,102 @@
+diff a/media/base/pipeline_impl.cc b/media/base/pipeline_impl.cc	(rejected hunks)
+@@ -261,13 +290,21 @@ class PipelineImpl::RendererWrapper final : public DemuxerHost,
+   PipelineStatusCallback create_renderer_done_cb_;
+ 
+   // Called from non-media threads when an error occurs.
+   PipelineStatusCB error_cb_;
+ 
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  RequestSurfaceCB request_surface_cb_;
++  VideoDecoderChangedCB decoder_changed_cb_;
++  int64_t target_timestamp_ = -1;
++  bool is_set_precise_seek_ = false;
++#endif // ARKWEB_VIDEO_ASSISTANT
++
+   base::WeakPtrFactory<RendererWrapper> weak_factory_{this};
+ };
+ 
++#ifndef ARKWEB_TEST_INCLUDE
+ PipelineImpl::RendererWrapper::RendererWrapper(
+     scoped_refptr<base::SequencedTaskRunner> media_task_runner,
+     scoped_refptr<base::SingleThreadTaskRunner> main_task_runner,
+     MediaLog* media_log)
+     : media_task_runner_(std::move(media_task_runner)),
+@@ -293,10 +330,14 @@ PipelineImpl::RendererWrapper::~RendererWrapper() {
+ 
+ void PipelineImpl::RendererWrapper::Start(
+     StartType start_type,
+     Demuxer* demuxer,
+     std::unique_ptr<Renderer> default_renderer,
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++    RequestSurfaceCB request_surface_cb,
++    VideoDecoderChangedCB decoder_changed_cb,
++#endif // ARKWEB_VIDEO_ASSISTANT
+     base::WeakPtr<PipelineImpl> weak_pipeline) {
+   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
+   DCHECK(state_ == State::kCreated || state_ == State::kStopped)
+       << "Received start in unexpected state: " << GetStateString(state_);
+   DCHECK(!demuxer_);
+@@ -443,10 +489,14 @@ void PipelineImpl::RendererWrapper::Suspend() {
+       std::move(fns), base::BindOnce(&RendererWrapper::CompleteSuspend,
+                                      weak_factory_.GetWeakPtr()));
+ }
+ 
+ void PipelineImpl::RendererWrapper::Resume(
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++    RequestSurfaceCB request_surface_cb,
++    VideoDecoderChangedCB decoder_changed_cb,
++#endif // ARKWEB_VIDEO_ASSISTANT
+     std::unique_ptr<Renderer> default_renderer,
+     base::TimeDelta timestamp) {
+   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
+ 
+   // Suppress resuming if we're not suspended.
+@@ -473,10 +523,14 @@ void PipelineImpl::RendererWrapper::Resume(
+ 
+   default_renderer_ = std::move(default_renderer);
+   renderer_ended_ = false;
+   base::TimeDelta start_timestamp =
+       std::max(timestamp, demuxer_->GetStartTime());
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  request_surface_cb_ = std::move(request_surface_cb);
++  decoder_changed_cb_ = std::move(decoder_changed_cb);
++#endif // ARKWEB_VIDEO_ASSISTANT
+ 
+   // Queue the asynchronous actions required to start playback.
+   SerialRunner::Queue fns;
+ 
+   fns.Push(base::BindOnce(&Demuxer::Seek, base::Unretained(demuxer_),
+@@ -1051,10 +1105,18 @@ void PipelineImpl::RendererWrapper::CompleteSeek(base::TimeDelta seek_time,
+   {
+     base::AutoLock auto_lock(shared_state_lock_);
+     shared_state_.suspend_timestamp = kNoTimestamp;
+   }
+ 
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  if (is_set_precise_seek_) {
++    is_set_precise_seek_ = false;
++    shared_state_.renderer->SetPreciseSeekTarget(target_timestamp_);
++    target_timestamp_ = -1;
++  }
++#endif // ARKWEB_VIDEO_ASSISTANT
++
+   shared_state_.renderer->SetPlaybackRate(playback_rate_);
+ 
+   SetState(State::kPlaying);
+   main_task_runner_->PostTask(
+       FROM_HERE,
+@@ -1166,10 +1228,14 @@ void PipelineImpl::RendererWrapper::InitializeRenderer(
+   // Initialize Renderer and report timeout UMA.
+   std::string uma_name = "Media.InitializeRendererTimeout";
+   base::UmaHistogramEnumeration(uma_name, CallbackTimeoutStatus::kCreate);
+   shared_state_.renderer->Initialize(
+       demuxer_, this,
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++      std::move(request_surface_cb_),
++      std::move(decoder_changed_cb_),
++#endif // ARKWEB_VIDEO_ASSISTANT
+       WrapCallbackWithTimeoutHandler(
+           std::move(done_cb), /*timeout_delay=*/base::Seconds(10),
+           base::BindOnce(&OnCallbackTimeout, uma_name)));
+ }
+ 

@@ -249,6 +249,9 @@ class ChunkDemuxerTest : public ::testing::Test {
     EXPECT_MEDIA_LOG(ChunkDemuxerCtor());
     demuxer_ = std::make_unique<ChunkDemuxer>(std::move(open_cb), progress_cb,
                                               encrypted_media_init_data_cb,
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+                                              base::MakeRefCounted<MediaReportInfo>(),
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
                                               &media_log_);
   }
 

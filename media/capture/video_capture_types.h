@@ -14,6 +14,7 @@
 #include "media/base/video_types.h"
 #include "media/capture/capture_export.h"
 #include "ui/gfx/geometry/size.h"
+#include "arkweb/build/features/features.h"
 
 namespace media {
 
@@ -297,6 +298,9 @@ struct CAPTURE_EXPORT VideoCaptureFormat {
   }
 
   gfx::Size frame_size;
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  int stride = 0;
+#endif
   float frame_rate;
   VideoPixelFormat pixel_format;
 };

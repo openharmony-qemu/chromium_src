@@ -1,0 +1,27 @@
+diff a/media/video/video_encode_accelerator_adapter.cc b/media/video/video_encode_accelerator_adapter.cc	(rejected hunks)
+@@ -709,11 +709,11 @@ void VideoEncodeAcceleratorAdapter::FlushOnAcceleratorThread(
+   // If flush is not supported FlushCompleted() will be called by
+   // BitstreamBufferReady() when |active_encodes_| is empty.
+   if (state_ == State::kFlushing && flush_support_.value()) {
+     accelerator_->Flush(
+         base::BindOnce(&VideoEncodeAcceleratorAdapter::FlushCompleted,
+-                       base::Unretained(this)));
++                       weak_factory_.GetWeakPtr()));
+   }
+ }
+ 
+ void VideoEncodeAcceleratorAdapter::RequireBitstreamBuffers(
+     unsigned int input_count,
+@@ -986,11 +986,11 @@ void VideoEncodeAcceleratorAdapter::InitCompleted(EncoderStatus status) {
+   if (pending_flush_callback_) {
+     state_ = State::kFlushing;
+     if (flush_support_.value()) {
+       accelerator_->Flush(
+           base::BindOnce(&VideoEncodeAcceleratorAdapter::FlushCompleted,
+-                         base::Unretained(this)));
++                         weak_factory_.GetWeakPtr()));
+     }
+   }
+ }
+ 
+ void VideoEncodeAcceleratorAdapter::FlushCompleted(bool success) {

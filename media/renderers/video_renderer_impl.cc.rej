@@ -1,0 +1,16 @@
+diff a/media/renderers/video_renderer_impl.cc b/media/renderers/video_renderer_impl.cc	(rejected hunks)
+@@ -157,10 +160,14 @@ void VideoRendererImpl::StartPlayingFrom(base::TimeDelta timestamp) {
+ 
+ void VideoRendererImpl::Initialize(
+     DemuxerStream* stream,
+     CdmContext* cdm_context,
+     RendererClient* client,
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++    RequestSurfaceCB request_surface_cb,
++    VideoDecoderChangedCB decoder_changed_cb,
++#endif // ARKWEB_VIDEO_ASSISTANT
+     const TimeSource::WallClockTimeCB& wall_clock_time_cb,
+     PipelineStatusCallback init_cb) {
+   DCHECK(task_runner_->RunsTasksInCurrentSequence());
+   TRACE_EVENT_BEGIN("media", "VideoRendererImpl::Initialize",
+                     perfetto::Track::FromPointer(this));

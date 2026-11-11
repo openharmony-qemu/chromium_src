@@ -1,0 +1,48 @@
+diff a/media/base/decoder.h b/media/base/decoder.h	(rejected hunks)
+@@ -8,10 +8,11 @@
+ #include <ostream>
+ #include <string>
+ 
+ #include "media/base/media_export.h"
+ #include "media/base/status.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace media {
+ 
+ // List of known AudioDecoder implementations; recorded to UKM, always add new
+ // values to the end and do not reorder or delete values from this list.
+@@ -26,12 +27,17 @@ enum class AudioDecoderType : int {
+   kAudioToolbox = 7,     // AudioToolbox (macOS)
+   kMediaFoundation = 8,  // MediaFoundationAudioDecoder
+   kPassthroughDTS = 9,   // Passthrough DTS audio
+   kSymphonia = 10,       // Symphonia Rust-backed SymphoniaAudioDecoder.
+ 
++#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
++  kOhos = 11,
++  kMaxValue = kOhos,
++#else
+   // Keep this at the end and equal to the last entry.
+   kMaxValue = kSymphonia,
++#endif
+ };
+ 
+ // List of known VideoDecoder implementations; recorded to UKM, always add new
+ // values to the end and do not reorder or delete values from this list.
+ enum class VideoDecoderType : int {
+@@ -56,11 +62,16 @@ enum class VideoDecoderType : int {
+   kTesting = 17,       // Never send this to UKM, for tests only.
+   kOutOfProcess = 18,  // OOPVideoDecoder (Linux and ChromeOS)
+   kVideoToolbox = 19,  // VideoToolboxVideoDecoder (Mac)
+ 
+   // Keep this at the end and equal to the last entry.
++#if BUILDFLAG(ARKWEB_MEDIA_CODEC)
++  kOHOS = 20,
++  kMaxValue = kOHOS
++#else
+   kMaxValue = kVideoToolbox
++#endif
+ };
+ 
+ MEDIA_EXPORT std::string GetDecoderName(AudioDecoderType type);
+ MEDIA_EXPORT std::string GetDecoderName(VideoDecoderType type);
+ MEDIA_EXPORT std::ostream& operator<<(std::ostream& out, AudioDecoderType type);

@@ -244,6 +244,12 @@ std::unique_ptr<FFmpegDemuxerStream> FFmpegDemuxerStream::Create(
                                      "a valid/supported video decoder "
                                      "configuration from muxed stream, config:"
                                   << video_config->AsHumanReadableString();
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      LOG_FEEDBACK(WARNING)
+          << "OhMedia::FFmpegDemuxer unsupported video decoder type with codec "
+          << (int)video_config->codec()
+          << " config:" << video_config->AsHumanReadableString();
+#endif
       return nullptr;
     }
 
@@ -1265,7 +1271,7 @@ void FFmpegDemuxer::OnOpenContextDone(bool result) {
     return;
   }
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ENABLE_HLS_DEMUXER)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
   if (glue_->detected_hls()) {
     MEDIA_LOG(INFO, media_log_)
         << GetDisplayName() << ": detected HLS manifest";
@@ -1280,6 +1286,16 @@ void FFmpegDemuxer::OnOpenContextDone(bool result) {
     return;
   }
 
+#if BUILDFLAG(ARKWEB_MEDIA)
+  // Chromium defaults to disabling the ffmpeg H264 parser. For FLV and TS videos,
+  // length and width data needs to be obtained during the demuxering process, so
+  // the AVFM_SLAG-NOH264PARSE flag needs to be disabled.
+  if (glue_->format_context() && glue_->format_context()->iformat && glue_->format_context()->iformat->name &&
+      (strcmp(glue_->format_context()->iformat->name, "flv") == 0 ||
+       strcmp(glue_->format_context()->iformat->name, "mpegts") == 0)) {
+    glue_->format_context()->flags &= ~AVFMT_FLAG_NOH264PARSE;
+  }
+#endif
   // Fully initialize AVFormatContext by parsing the stream a little.
   blocking_task_runner_->PostTaskAndReplyWithResult(
       FROM_HERE,
@@ -1400,6 +1416,15 @@ void FFmpegDemuxer::OnFindStreamInfoDone(int result) {
     const AVCodecParameters* codec_parameters = stream->codecpar;
     const AVMediaType codec_type = codec_parameters->codec_type;
     const AVCodecID codec_id = codec_parameters->codec_id;
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+    if (media_info_) {
+      if (codec_type == AVMEDIA_TYPE_AUDIO) {
+        media_info_->audio_codecs_.push_back(GetCodecName(codec_id));
+      } else if (codec_type == AVMEDIA_TYPE_VIDEO) {
+        media_info_->video_codecs_.push_back(GetCodecName(codec_id));
+      }
+    }
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
     // Skip streams which are not properly detected.
     if (codec_id == AV_CODEC_ID_NONE) {
       stream->discard = AVDISCARD_ALL;
@@ -1608,6 +1633,15 @@ void FFmpegDemuxer::OnFindStreamInfoDone(int result) {
   if (start_time_ == kInfiniteDuration)
     start_time_ = base::TimeDelta();
 
+#if BUILDFLAG(ARKWEB_MEDIA)
+  // MPEG-4 B-frames cause grief for a simple container like AVI. Enable PTS
+  // generation so we always get timestamps, see http://crbug.com/169570
+  if (glue_->container() ==
+    container_names::MediaContainerName::kContainerAVI) {
+    format_context->flags |= AVFMT_FLAG_GENPTS;
+  }
+#endif
+
   // FFmpeg will incorrectly adjust the start time of MP3 files into the future
   // based on discard samples. We were unable to fix this upstream without
   // breaking ffmpeg functionality. https://crbug.com/1062037
@@ -1647,6 +1681,12 @@ void FFmpegDemuxer::OnFindStreamInfoDone(int result) {
   if (bitrate_ > 0)
     data_source_->SetBitrate(bitrate_);
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  if (media_info_) {
+    media_info_->byte_rate_ = bitrate_ / 8;
+    media_info_->file_size_ = filesize_in_bytes;
+  }
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
   LogMetadata(format_context, max_duration);
   media_tracks_updated_cb_.Run(std::move(media_tracks));
 

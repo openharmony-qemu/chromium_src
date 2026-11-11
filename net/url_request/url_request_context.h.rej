@@ -1,0 +1,37 @@
+diff a/net/url_request/url_request_context.h b/net/url_request/url_request_context.h	(rejected hunks)
+@@ -24,10 +24,13 @@
+ #include "net/base/request_priority.h"
+ #include "net/log/net_log_source.h"
+ #include "net/net_buildflags.h"
+ #include "net/traffic_annotation/network_traffic_annotation.h"
+ #include "net/url_request/url_request.h"
++#if BUILDFLAG(ENABLE_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ 
+ namespace unexportable_keys {
+ class UnexportableKeyService;
+ }
+ 
+@@ -125,10 +134,21 @@ class NET_EXPORT URLRequestContext final {
+       NetworkTrafficAnnotationTag traffic_annotation,
+       bool is_for_websockets = false,
+       const std::optional<net::NetLogSource> net_log_source =
+           std::nullopt) const;
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  std::shared_ptr<URLRequest> CreateRequestForPrpp(
++      const GURL& url,
++      RequestPriority priority,
++      URLRequest::Delegate* delegate,
++      NetworkTrafficAnnotationTag traffic_annotation,
++      bool is_for_websockets = false,
++      const absl::optional<net::NetLogSource> net_log_source =
++          absl::nullopt) const;
++#endif
++
+   NetLog* net_log() const { return net_log_; }
+ 
+   HostResolver* host_resolver() const { return host_resolver_.get(); }
+ 
+   CertVerifier* cert_verifier() const { return cert_verifier_.get(); }

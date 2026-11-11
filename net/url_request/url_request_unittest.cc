@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "net/url_request/url_request.h"
-
 #include <stdint.h>
 
 #include <algorithm>
@@ -13787,4 +13785,7 @@ TEST_F(StorageAccessHeaderURLRequestTest, SurvivesPostAuthRetries) {
   EXPECT_TRUE(d.auth_required_called());
 }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/net/url_request/url_request_for_include_unittest.cc"
+#endif  // ARKWEB_UNITTESTS
 }  // namespace net

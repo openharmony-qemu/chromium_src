@@ -1,0 +1,41 @@
+diff a/net/url_request/url_request_context.cc b/net/url_request/url_request_context.cc	(rejected hunks)
+@@ -5,10 +5,14 @@
+ #include "net/url_request/url_request_context.h"
+ 
+ #include <inttypes.h>
+ #include <stdint.h>
+ 
++#include "arkweb/chromium_ext/net/url_request/url_request_context_ext.h"
++#if BUILDFLAG(ENABLE_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/compiler_specific.h"
+ #include "base/debug/alias.h"
+ #include "base/memory/ptr_util.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "base/metrics/histogram_macros.h"
+@@ -149,10 +154,24 @@ std::unique_ptr<URLRequest> URLRequestContext::CreateRequest(
+   return std::make_unique<URLRequest>(
+       base::PassKey<URLRequestContext>(), url, priority, delegate, this,
+       traffic_annotation, is_for_websockets, net_log_source);
+ }
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++std::shared_ptr<URLRequest> URLRequestContext::CreateRequestForPrpp(
++    const GURL& url,
++    RequestPriority priority,
++    URLRequest::Delegate* delegate,
++    NetworkTrafficAnnotationTag traffic_annotation,
++    bool is_for_websockets,
++    const absl::optional<net::NetLogSource> net_log_source) const {
++  return std::make_shared<URLRequest>(
++      base::PassKey<URLRequestContext>(), url, priority, delegate, this,
++      traffic_annotation, is_for_websockets, net_log_source);
++}
++#endif
++
+ void URLRequestContext::AssertNoURLRequests() const {
+   int num_requests = url_requests_->size();
+   if (num_requests != 0) {
+     // We're leaking URLRequests :( Dump the URL of the first one and record how
+     // many we leaked so we have an idea of how bad it is.

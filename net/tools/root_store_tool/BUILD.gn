@@ -11,4 +11,5 @@ executable("root_store_tool") {
     "//net/cert:root_store_proto_full",
     "//third_party/boringssl",
   ]
+  ldflags = [ "-lgcc_s" ]
 }

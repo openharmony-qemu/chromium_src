@@ -25,8 +25,9 @@ bool VerifyBuildIsTimely() {
   base::Time build_time = base::GetBuildTime();
   base::Time now = base::Time::Now();
 
-  if ((now - build_time).magnitude() <= kMaxAge)
+  if ((now - build_time).magnitude() <= kMaxAge) {
     return true;
+  }
 
   std::cerr
       << "ERROR: This build is more than " << kMaxAge.InDays()

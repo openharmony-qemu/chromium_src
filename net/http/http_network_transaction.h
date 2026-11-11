@@ -380,7 +380,11 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
   // Returns true if this transaction is for a WebSocket handshake
   bool ForWebSocketHandshake() const;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  virtual void CopyConnectionAttemptsFromStreamRequest();
+#else
   void CopyConnectionAttemptsFromStreamRequest();
+#endif
 
   // Returns true if response "Content-Encoding" headers respect
   // "Accept-Encoding".

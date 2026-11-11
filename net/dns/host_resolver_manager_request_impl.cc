@@ -35,6 +35,21 @@
 #include "net/socket/client_socket_factory.h"
 #include "net/url_request/url_request_context.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/net/dns/host_resolver_manager_request_impl_for_include.cc"
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#include "net/base/features.h"
+#include "services/network/public/cpp/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#endif
+
 namespace net {
 
 HostResolverManager::RequestImpl::RequestImpl(
@@ -233,8 +248,24 @@ void HostResolverManager::RequestImpl::OnJobCancelled(const JobKey& job_key) {
 void HostResolverManager::RequestImpl::OnJobCompleted(
     const JobKey& job_key,
     int error,
-    bool is_secure_network_error) {
+    bool is_secure_network_error
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    ,
+    int dns_status,
+    const std::vector<TaskType>& finished_tasks,
+    const std::vector<IPEndPoint>& truncation_results,
+    bool secure_dns_fallback_resolved
+#endif
+) {
   set_error_info(error, is_secure_network_error);
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebEx)) {
+    set_resolve_info(error, dns_status, finished_tasks, truncation_results);
+    secure_dns_fallback_resolved_ = secure_dns_fallback_resolved;
+  }
+#endif
 
   CHECK(job_.has_value());
   CHECK(job_key == job_.value()->key());
@@ -315,6 +346,16 @@ int HostResolverManager::RequestImpl::DoGetParameters() {
   resolver_->InitializeJobKeyAndIPAddress(network_anonymization_key_,
                                           parameters_, source_net_log_,
                                           job_key_, ip_address_);
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  if (parameters_.only_use_secure_fallback) {
+    next_state_ = STATE_START_JOB;
+    if (resolver_->CanUseSecureDnsFallback(resolve_context())) {
+      tasks_.push_back(TaskType::SECURE_DNS_FALLBACK);
+    }
+    return OK;
+  }
+#endif
 
   // A reachability probe to determine if the network is only reachable on
   // IPv6 will be scheduled if the parameters are met for using NAT64 in place
@@ -422,6 +463,10 @@ void HostResolverManager::RequestImpl::LogStartRequest() {
                  network_anonymization_key_.ToDebugString());
         dict.Set("secure_dns_policy",
                  base::strict_cast<int>(parameters_.secure_dns_policy));
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+        dict.Set("only_use_secure_fallback",
+                 parameters_.only_use_secure_fallback);
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
         return dict;
       });
 }
@@ -459,5 +504,35 @@ HostResolverManager::RequestImpl::GetClientSocketFactory() {
     return ClientSocketFactory::GetDefaultFactory();
   }
 }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+void HostResolverManager::RequestImpl::set_resolve_info(
+    int error_code,
+    int dns_status,
+    const std::vector<TaskType> finished_tasks,
+    const std::vector<IPEndPoint>& truncation_results) {
+  resolve_info_.error_code = error_code;
+  resolve_info_.dns_status = dns_status;
+  if (results_) {
+    for (const auto& ip : results_->ip_endpoints()) {
+      resolve_info_.AppendAddress(ip);
+    }
+  }
+
+  for (const auto& ip : truncation_results) {
+    resolve_info_.truncation_ips.emplace_back(ip.ToStringWithoutPort());
+  }
+
+  for (auto task : finished_tasks) {
+    resolve_info_.AddTransitionType(
+        static_cast<int>(HostResolverManager::ConvertFromTaskType(task)));
+  }
+}
+
+net::ResolveInfo HostResolverManager::RequestImpl::GetResolveInfo() const {
+  DCHECK(complete_);
+  return resolve_info_;
+}
+#endif
 
 }  // namespace net

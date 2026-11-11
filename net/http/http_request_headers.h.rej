@@ -1,0 +1,28 @@
+diff a/net/http/http_request_headers.h b/net/http/http_request_headers.h	(rejected hunks)
+@@ -87,10 +87,11 @@ class NET_EXPORT HttpRequestHeaders {
+   static constexpr char kCacheControl[] = "Cache-Control";
+   static constexpr char kConnection[] = "Connection";
+   static constexpr char kContentLength[] = "Content-Length";
+   static constexpr char kContentType[] = "Content-Type";
+   static constexpr char kCookie[] = "Cookie";
++    static constexpr char kDNT[] = "DNT";
+   static constexpr char kHost[] = "Host";
+   static constexpr char kIfMatch[] = "If-Match";
+   static constexpr char kIfModifiedSince[] = "If-Modified-Since";
+   static constexpr char kIfNoneMatch[] = "If-None-Match";
+   static constexpr char kIfRange[] = "If-Range";
+@@ -100,11 +101,14 @@ class NET_EXPORT HttpRequestHeaders {
+   static constexpr char kPriority[] = "Priority";
+   static constexpr char kProxyAuthorization[] = "Proxy-Authorization";
+   static constexpr char kProxyConnection[] = "Proxy-Connection";
+   static constexpr char kRange[] = "Range";
+   static constexpr char kReferer[] = "Referer";
++  static constexpr char kSecPurpose[] = "Sec-Purpose";
+   static constexpr char kTransferEncoding[] = "Transfer-Encoding";
++  static constexpr char kUpgradeInsecureRequests[] =
++      "Upgrade-Insecure-Requests";
+   static constexpr char kUserAgent[] = "User-Agent";
+ 
+   HttpRequestHeaders();
+   HttpRequestHeaders(const HttpRequestHeaders& other);
+   HttpRequestHeaders(HttpRequestHeaders&& other);

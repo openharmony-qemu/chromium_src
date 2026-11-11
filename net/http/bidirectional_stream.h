@@ -203,7 +203,12 @@ class NET_EXPORT BidirectionalStream : public BidirectionalStreamImpl::Delegate,
 
   // HttpStreamRequest::Delegate implementation:
   void OnStreamReady(const ProxyInfo& used_proxy_info,
-                     std::unique_ptr<HttpStream> stream) override;
+                     std::unique_ptr<HttpStream> stream
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                     ,
+                     const ResolveInfo resolve_info = {}
+#endif
+                     ) override;
   void OnBidirectionalStreamImplReady(
       const ProxyInfo& used_proxy_info,
       std::unique_ptr<BidirectionalStreamImpl> stream) override;
@@ -213,8 +218,25 @@ class NET_EXPORT BidirectionalStream : public BidirectionalStreamImpl::Delegate,
   void OnStreamFailed(int status,
                       const NetErrorDetails& net_error_details,
                       const ProxyInfo& used_proxy_info,
-                      ResolveErrorInfo resolve_error_info) override;
-  void OnCertificateError(int status, const SSLInfo& ssl_info) override;
+                      ResolveErrorInfo resolve_error_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                      ,
+                      const ResolveInfo resolve_info,
+                      bool secure_dns_fallback_resolved
+#endif
+                      ) override;
+  void OnCertificateError(int status,
+                          const SSLInfo& ssl_info
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+                          ,
+                          bool used_fallback_proxy
+#endif
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                          ,
+                          const ResolveInfo resolve_info,
+                          bool secure_dns_fallback_resolved
+#endif
+                          ) override;
   void OnNeedsProxyAuth(const HttpResponseInfo& response_info,
                         const ProxyInfo& used_proxy_info,
                         HttpAuthController* auth_controller) override;

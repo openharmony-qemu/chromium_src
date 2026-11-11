@@ -113,8 +113,13 @@ void HttpRequestHeaders::SetHeader(std::string_view key,
 void HttpRequestHeaders::SetHeader(std::string_view key, std::string&& value) {
   // Invalid header names or values could mean clients can attach
   // browser-internal headers.
+#if BUILDFLAG(ARKWEB_DFX_LOGGING)
+  HttpUtil::EnsureValidHeaderKey(key, "SetHeader");
+  HttpUtil::EnsureValidHeaderValue(value, "SetHeader", key);
+#else
   CHECK(HttpUtil::IsValidHeaderName(key)) << key;
   CHECK(HttpUtil::IsValidHeaderValue(value)) << key << " has invalid value.";
+#endif
 
   SetHeaderInternal(key, std::move(value));
 }
@@ -129,8 +134,13 @@ void HttpRequestHeaders::SetHeaderIfMissing(std::string_view key,
                                             std::string_view value) {
   // Invalid header names or values could mean clients can attach
   // browser-internal headers.
+#if BUILDFLAG(ARKWEB_DFX_LOGGING)
+  HttpUtil::EnsureValidHeaderKey(key, "SetHeaderIfMissing");
+  HttpUtil::EnsureValidHeaderValue(value, "SetHeaderIfMissing", key);
+#else
   CHECK(HttpUtil::IsValidHeaderName(key));
   CHECK(HttpUtil::IsValidHeaderValue(value));
+#endif
   auto it = FindHeader(key);
   if (it == headers_.end()) {
     headers_.emplace_back(key, value);

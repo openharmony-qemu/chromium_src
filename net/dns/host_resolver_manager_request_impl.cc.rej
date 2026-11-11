@@ -1,0 +1,35 @@
+diff a/net/dns/host_resolver_manager_request_impl.cc b/net/dns/host_resolver_manager_request_impl.cc	(rejected hunks)
+@@ -321,15 +362,32 @@ int HostResolverManager::RequestImpl::DoGetParametersComplete(int rv) {
+   only_ipv6_reachable_ = (rv == ERR_FAILED);
+   return OK;
+ }
+ 
+ int HostResolverManager::RequestImpl::DoResolveLocally() {
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  int dns_status = kDnsResolvedUndefined;
++#endif
++
+   std::optional<HostCache::EntryStaleness> stale_info;
+   HostCache::Entry results = resolver_->ResolveLocally(
+       only_ipv6_reachable_, job_key_, ip_address_, parameters_.cache_usage,
+       parameters_.secure_dns_policy, parameters_.source, source_net_log_,
+-      host_cache(), &tasks_, &stale_info);
++      host_cache(), &tasks_, &stale_info
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++      ,
++      dns_status, resolve_info_, secure_dns_fallback_resolved_
++#endif
++  );
++
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  if (base::FeatureList::IsEnabled(
++          network::features::kEnableNwebExHttpDnsFallback)) {
++    MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(results, dns_status);
++  }
++#endif
++
+   if (results.error() != ERR_DNS_CACHE_MISS ||
+       parameters_.source == HostResolverSource::LOCAL_ONLY || tasks_.empty()) {
+     if (results.error() == OK && !parameters_.is_speculative) {
+       set_results(results.CopyWithDefaultPort(request_host_.GetPort()));
+     }

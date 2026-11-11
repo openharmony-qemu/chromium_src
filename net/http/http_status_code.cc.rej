@@ -1,0 +1,17 @@
+diff a/net/http/http_status_code.cc b/net/http/http_status_code.cc	(rejected hunks)
+@@ -13,11 +13,15 @@ namespace net {
+ const char* GetHttpReasonPhrase(HttpStatusCode code) {
+   if (const char* phrase = TryToGetHttpReasonPhrase(code)) {
+     return phrase;
+   }
+   DUMP_WILL_BE_NOTREACHED() << "unknown HTTP status code " << code;
++#if BUILDFLAG(IS_ARKWEB)
++  return "Unknown HTTP status code";
++#else
+   return nullptr;
++#endif
+ }
+ 
+ const char* TryToGetHttpReasonPhrase(HttpStatusCode code) {
+   switch (code) {
+ #define HTTP_STATUS_ENUM_VALUE(label, code, reason) \

@@ -1,0 +1,23 @@
+diff a/net/dns/host_resolver_manager_service_endpoint_request_impl.h b/net/dns/host_resolver_manager_service_endpoint_request_impl.h	(rejected hunks)
+@@ -59,11 +59,20 @@ class HostResolverManager::ServiceEndpointRequestImpl
+   void ChangeRequestPriority(RequestPriority priority) override;
+   std::string DebugString() const override;
+ 
+   // These should only be called from HostResolver::Job.
+   void AssignJob(base::SafeRef<Job> job);
+-  void OnJobCompleted(const HostCache::Entry& results, bool obtained_securely);
++  void OnJobCompleted(const HostCache::Entry& results,
++                      bool obtained_securely
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++                      ,
++                      int dns_status,
++                      const std::vector<TaskType>& finished_tasks,
++                      const std::vector<IPEndPoint>& truncation_results,
++                      bool secure_dns_fallback_resolved
++#endif
++  );
+   void OnJobCancelled();
+   void OnServiceEndpointsChanged();
+ 
+   const NetLogWithSource& net_log() const { return net_log_; }
+ 

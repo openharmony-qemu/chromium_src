@@ -53,6 +53,21 @@
 #include "net/ssl/ssl_cert_request_info.h"
 #include "url/gurl.h"
 #include "url/scheme_host_port.h"
+#include "arkweb/chromium_ext/net/socket/arkweb_transport_connect_job_ext.h"
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#include "net/base/proxy_delegate.h"
+#include "net/http/http_response_headers.h"
+#endif
+
+#if BUILDFLAG(ENABLE_ARKWEB_EXT) && BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/ohos_nweb_ex/overrides/net/proxy_resolution/fallback_proxy_utils.h"
+#endif
+
+#include "arkweb/chromium_ext/net/http/http_proxy_connect_job_for_include.cc"
 
 namespace net {
 
@@ -478,8 +493,18 @@ int HttpProxyConnectJob::DoLoop(int result) {
 
 int HttpProxyConnectJob::DoBeginConnect() {
   connect_start_time_ = base::TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebEx)) {
+    ResetTimerExInBeginConnect();
+  } else {
+    ResetTimer(AlternateNestedConnectionTimeout(
+      *params_, network_quality_estimator()));
+  }
+#else
   ResetTimer(
       AlternateNestedConnectionTimeout(*params_, network_quality_estimator()));
+#endif  // BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   switch (GetProxyServerScheme()) {
     case ProxyServer::SCHEME_QUIC:
       next_state_ = STATE_QUIC_PROXY_CREATE_SESSION;
@@ -529,8 +554,25 @@ int HttpProxyConnectJob::DoTransportConnect() {
 
 int HttpProxyConnectJob::DoTransportConnectComplete(int result) {
   resolve_error_info_ = nested_connect_job_->GetResolveErrorInfo();
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  extra_connection_attempts_ =
+      nested_connect_job_->GetExtraConnectionAttempts();
+  resolve_info_ = nested_connect_job_->GetResolveInfo();
+  secure_dns_fallback_resolved_ =
+      nested_connect_job_->SecureDnsFallbackResolved();
+#endif
+
   ProxyServer::Scheme scheme = GetProxyServerScheme();
   if (result != OK) {
+#if BUILDFLAG(ENABLE_ARKWEB_EXT) && BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            ::switches::kEnableNwebEx) &&
+        is_fallback_proxy_server_) {
+      ReportProxyTransportConnectResult(params_->endpoint().host(), result);
+    }
+#endif
+
     // Only record latency for connections to the first proxy in a chain.
     if (params_->proxy_chain_index() == 0) {
       EmitConnectLatency(NextProto::kProtoUnknown,
@@ -595,7 +637,18 @@ int HttpProxyConnectJob::DoTransportConnectComplete(int result) {
   }
   has_established_connection_ = true;
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool proxy_force_tunnel = false;
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebEx) &&
+      is_fallback_proxy_server_ && next_proto != NextProto::kProtoHTTP2) {
+    proxy_force_tunnel = true;
+  }
+
+  if (!params_->tunnel() && !proxy_force_tunnel) {
+#else
   if (!params_->tunnel()) {
+#endif  // BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
     // If not tunneling, this is an HTTP URL being fetched directly over the
     // proxy. Return the underlying socket directly. The caller will handle the
     // ALPN protocol, etc., from here. Clear the DNS aliases to match the other
@@ -623,7 +676,16 @@ int HttpProxyConnectJob::DoHttpProxyConnect() {
   // Reset the timer to just the length of time allowed for HttpProxy handshake
   // so that a fast TCP connection plus a slow HttpProxy failure doesn't take
   // longer to timeout than it should.
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebEx)) {
+    ResetTimerExInHttpProxyConnect();
+  } else {
+    ResetTimer(kHttpProxyConnectJobTunnelTimeout);
+  }
+#else
   ResetTimer(kHttpProxyConnectJobTunnelTimeout);
+#endif  // BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
 
   // Add a HttpProxy connection on top of the tcp socket.
   transport_socket_ = std::make_unique<HttpProxyClientSocket>(
@@ -637,6 +699,21 @@ int HttpProxyConnectJob::DoHttpProxyConnect() {
 }
 
 int HttpProxyConnectJob::DoHttpProxyConnectComplete(int result) {
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx) &&
+      is_fallback_proxy_server_ && transport_socket_ &&
+      transport_socket_->GetConnectResponseInfo() &&
+      transport_socket_->GetConnectResponseInfo()->headers) {
+    fallback_proxy_response_code_ =
+        transport_socket_->GetConnectResponseInfo()->headers->response_code();
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+    ReportProxyTunnelConnectResult(params_->endpoint().host(),
+                                   fallback_proxy_response_code_, result);
+#endif
+  }
+#endif
+
   // Always inform caller of auth requests asynchronously.
   if (result == ERR_PROXY_AUTH_REQUESTED) {
     TaskRunner(priority())

@@ -181,7 +181,12 @@ class NET_EXPORT HttpStreamFactory {
   // TransportClientSocketPool doesn't plumb errors correctly.
   void PreconnectStreams(int num_streams,
                          HttpRequestInfo& info,
-                         base::OnceClosure callback);
+                         base::OnceClosure callback
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+                         ,
+                         bool from_preload = false
+#endif
+);
 
  private:
   FRIEND_TEST_ALL_PREFIXES(HttpStreamRequestTest, SetPriority);

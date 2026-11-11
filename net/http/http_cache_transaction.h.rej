@@ -1,0 +1,42 @@
+diff a/net/http/http_cache_transaction.h b/net/http/http_cache_transaction.h	(rejected hunks)
+@@ -46,10 +46,11 @@ namespace net {
+ 
+ class PartialData;
+ struct HttpRequestInfo;
+ struct LoadTimingInfo;
+ class SSLPrivateKey;
++class HttpTransactionUtils;
+ 
+ // This is the transaction that is returned by the HttpCache transaction
+ // factory.
+ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
+  public:
+@@ -171,10 +183,14 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
+       base::RepeatingCallback<bool()> callback) override;
+   ConnectionAttempts GetConnectionAttempts() const override;
+   void CloseConnectionOnDestruction() override;
+   bool IsMdlMatchForMetrics() const override;
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  ConnectionAttempts GetExtraConnectionAttempts() const override;
++#endif
++
+   // Invoked when parallel validation cannot proceed due to response failure
+   // and this transaction needs to be restarted.
+   void SetValidatingCannotProceed();
+ 
+   // Invoked to remove the association between a transaction waiting to be
+@@ -211,10 +227,13 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
+     std::unique_ptr<LoadTimingInfo> old_network_trans_load_timing;
+     int64_t total_received_bytes = 0;
+     int64_t total_sent_bytes = 0;
+     int64_t received_body_bytes = 0;
+     ConnectionAttempts old_connection_attempts;
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++    ConnectionAttempts old_extra_connection_attempts;
++#endif
+     IPEndPoint old_remote_endpoint;
+     // For metrics. Can be removed when associated histograms are removed.
+     // Records whether any destroyed network transactions' ProxyInfo determined
+     // the request was to a Masked Domain List-covered domain.
+     bool previous_mdl_match_for_metrics = false;

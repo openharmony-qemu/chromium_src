@@ -21,7 +21,11 @@ HttpNetworkLayer::~HttpNetworkLayer() {
 
 std::unique_ptr<HttpTransaction> HttpNetworkLayer::CreateTransaction(
     RequestPriority priority) {
+#if defined(COMPONENT_BUILD) // FIXME
   return std::make_unique<HttpNetworkTransaction>(priority, GetSession());
+#else
+  return std::make_unique<ArkWebHttpNetworkTransactionExt>(priority, GetSession());
+#endif
 }
 
 HttpCache* HttpNetworkLayer::GetCache() {

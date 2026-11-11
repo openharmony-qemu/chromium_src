@@ -1,0 +1,81 @@
+diff a/net/http/http_stream_factory_job.cc b/net/http/http_stream_factory_job.cc	(rejected hunks)
+@@ -781,10 +781,17 @@ int HttpStreamFactory::Job::DoInitConnectionImpl() {
+       if (job_type_ == PRECONNECT) {
+         return OK;
+       }
+       negotiated_protocol_ = NextProto::kProtoHTTP2;
+       next_state_ = STATE_CREATE_STREAM;
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++      resolve_info_ = existing_spdy_session_->GetResolveInfo();
++      if (delegate_) {
++        delegate_->AddExtraConnectionAttemptsToRequest(
++            this, existing_spdy_session_->GetExtraConnectionAttempts());
++      }
++#endif
+       return OK;
+     }
+   }
+ 
+   establishing_tunnel_ = !UsingHttpProxyWithoutTunnel();
+@@ -805,11 +812,17 @@ int HttpStreamFactory::Job::DoInitConnectionImpl() {
+     return PreconnectSocketsForHttpRequest(
+         destination_, request_info_.load_flags, priority_, session_,
+         proxy_info_, allowed_bad_certs_, request_info_.privacy_mode,
+         request_info_.network_anonymization_key,
+         request_info_.secure_dns_policy, net_log_, num_streams_,
+-        /*fail_if_alias_requires_proxy_override_=*/false, std::move(callback));
++        /*fail_if_alias_requires_proxy_override_=*/false, 
++        std::move(callback)
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++,
++        from_preload_
++#endif
++        );
+   }
+ 
+   // TODO(crbug.com/383134117): Check proxy info for did try IPP proxy to
+   // populate `fail_if_alias_requires_proxy_override` and pass into
+   // `InitSocketHandleForWebSocketRequest` and `InitSocketHandleForHttpRequest`
+@@ -830,11 +843,20 @@ int HttpStreamFactory::Job::DoInitConnectionImpl() {
+   return InitSocketHandleForHttpRequest(
+       destination_, request_info_.load_flags, priority_, session_, proxy_info_,
+       allowed_bad_certs_, request_info_.privacy_mode,
+       request_info_.network_anonymization_key, request_info_.secure_dns_policy,
+       request_info_.socket_tag, net_log_, connection_.get(), io_callback_,
+-      proxy_auth_callback, /*fail_if_alias_requires_proxy_override_=*/false);
++      proxy_auth_callback, /*fail_if_alias_requires_proxy_override_=*/false
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      request_info_.secure_dns_only
++#endif
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++      ,
++      from_preload_
++#endif
++      );
+ }
+ 
+ int HttpStreamFactory::Job::DoInitConnectionImplQuic() {
+   url::SchemeHostPort destination;
+ 
+@@ -963,10 +985,20 @@ int HttpStreamFactory::Job::DoInitConnectionComplete(int result) {
+     return OK;
+   }
+ 
+   resolve_error_info_ = connection_->resolve_error_info();
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  if (using_quic_) {
++    resolve_info_ = quic_request_.GetDnsResolveInfo();
++  } else {
++    resolve_info_ = connection_->resolve_info();
++  }
++  secure_dns_fallback_resolved_ = connection_->SecureDnsFallbackResolved();
++  MaybeCopyExtraConnectionAttemptsFromHandle();
++#endif
++
+   // Determine the protocol (HTTP/1.1, HTTP/2, or HTTP/3). This covers both the
+   // origin and some proxy cases. First, if the URL is HTTPS (or WSS), we may
+   // negotiate HTTP/2 or HTTP/3 with the origin. Second, non-tunneled requests
+   // (i.e. HTTP URLs) through an HTTPS or QUIC proxy work by sending the request
+   // to the proxy directly. In that case, this logic also handles the proxy's

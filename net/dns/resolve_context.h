@@ -343,6 +343,10 @@ class NET_EXPORT_PRIVATE ResolveContext : public base::CheckedObserver {
 
   static bool ServerStatsToDohAvailability(const ServerStats& stats);
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  void NotifyDohStatsInit();
+#endif
+
   // Emit histograms indicating the current state of all configured DoH
   // providers (for use in determining whether DoH auto-upgrade was successful).
   void EmitDohAutoupgradeSuccessMetrics();

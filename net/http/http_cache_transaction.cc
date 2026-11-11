@@ -133,6 +133,11 @@ HttpCache::Transaction::Transaction(RequestPriority priority, HttpCache* cache)
       priority_(priority),
       cache_(cache->GetWeakPtr()),
       read_no_vary_search_cache_(cache->no_vary_search_cache_) {
+#if !defined(COMPONENT_BUILD) // FIXME
+#if BUILDFLAG(IS_ARKWEB)
+  http_transation_utils_ = std::make_unique<HttpTransactionUtils>(this);
+#endif
+#endif
   io_callback_ = base::BindRepeating(&Transaction::OnIOComplete,
                                      weak_factory_.GetWeakPtr());
   cache_io_callback_ = base::BindRepeating(&Transaction::OnCacheIOComplete,
@@ -210,6 +215,13 @@ int HttpCache::Transaction::Start(const HttpRequestInfo* request,
 
   // We have to wait until the backend is initialized so we start the SM.
   next_state_ = STATE_GET_BACKEND;
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  if (!update_res_request_info_callback_.is_null() && request_ && preload_info_) {
+    update_res_request_info_callback_.Run(request_->main_url.spec(), preload_info_);
+  }
+#endif
+
   int rv = DoLoop(OK);
 
   // Setting this here allows us to check for the existence of a callback_ to
@@ -220,6 +232,13 @@ int HttpCache::Transaction::Start(const HttpRequestInfo* request,
 
   return rv;
 }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+int HttpCache::Transaction::RestartWithSecureDnsOnly(
+    CompletionOnceCallback callback) {
+  return http_transation_utils_->RestartWithSecureDnsOnly(callback);
+}
+#endif
 
 int HttpCache::Transaction::RestartIgnoringLastError(
     CompletionOnceCallback callback) {
@@ -610,6 +629,22 @@ ConnectionAttempts HttpCache::Transaction::GetConnectionAttempts() const {
                   network_transaction_info_.old_connection_attempts.end());
   return attempts;
 }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+ConnectionAttempts HttpCache::Transaction::GetExtraConnectionAttempts() const {
+  ConnectionAttempts attempts;
+  const HttpTransaction* transaction = GetOwnedOrMovedNetworkTransaction();
+  if (transaction) {
+    attempts = transaction->GetExtraConnectionAttempts();
+  }
+
+  attempts.insert(
+      attempts.begin(),
+      network_transaction_info_.old_extra_connection_attempts.begin(),
+      network_transaction_info_.old_extra_connection_attempts.end());
+  return attempts;
+}
+#endif
 
 void HttpCache::Transaction::CloseConnectionOnDestruction() {
   if (network_trans_) {
@@ -1164,6 +1199,10 @@ int HttpCache::Transaction::DoOpenOrCreateEntry() {
   cache_pending_ = true;
   net_log_.BeginEvent(NetLogEventType::HTTP_CACHE_OPEN_OR_CREATE_ENTRY);
   first_cache_access_since_ = TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "requestStart", first_cache_access_since_);
+#endif
   const bool has_opened_or_created_entry = has_opened_or_created_entry_;
   has_opened_or_created_entry_ = true;
   record_entry_open_or_creation_time_ = false;
@@ -2049,6 +2088,21 @@ int HttpCache::Transaction::DoSendRequestComplete(int result) {
   response_.proxy_chain = response->proxy_chain;
   response_.restricted_prefetch = response->restricted_prefetch;
   response_.resolve_error_info = response->resolve_error_info;
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebEx)) {
+    response_.used_fallback_proxy = response->used_fallback_proxy;
+    response_.fallback_proxy_response_code =
+        response->fallback_proxy_response_code;
+    response_.is_accelerate_proxy = response->is_accelerate_proxy;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  response_.resolve_info = response->resolve_info;
+  response_.secure_dns_fallback_resolved =
+      response->secure_dns_fallback_resolved;
+#endif
 
   // Do not record requests that have network errors or restarts.
   UpdateCacheEntryStatusToOther(OtherStatusReason::kNetworkError);
@@ -2116,6 +2170,13 @@ int HttpCache::Transaction::DoSuccessfulSendRequest() {
     TransitionToState(STATE_FINISH_HEADERS);
     return ERR_CACHE_AUTH_FAILURE_AFTER_READ;
   }
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD) && BUILDFLAG(IS_OHOS)
+  if (request_ && request_->allow_preload_record && preload_info_ &&
+      !UpdateAndReportCacheability(*new_response->headers)) {
+    http_transation_utils_->UpdateCacheInfo(*new_response);
+  }
+#endif
 
   new_response_ = new_response;
   if (!ValidatePartialResponse() && !auth_response_.headers.get()) {
@@ -2635,6 +2696,11 @@ int HttpCache::Transaction::DoCacheReadData() {
     DCHECK(InWriters() || entry_->TransactionInReaders(this));
   }
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  TRACE_EVENT1("net", "HttpCache::Transaction::DoCacheReadData",
+               "url", request_ ? request_->url.spec() : "");
+#endif
+
   TRACE_EVENT_INSTANT(TRACE_DISABLED_BY_DEFAULT("net"), "DoCacheReadData",
                       track_for_state_change_, "read_offset", read_offset_,
                       "read_buf_len", read_buf_len_);
@@ -3010,6 +3076,12 @@ int HttpCache::Transaction::BeginCacheValidation() {
         NoVarySearchUseResult::kIncompleteBody);
   }
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD) && BUILDFLAG(IS_OHOS)
+  if (request_ && request_->allow_preload_record && preload_info_ && skip_validation) {
+    http_transation_utils_->UpdateCacheInfo(response_);
+  }
+#endif
+
   // Handle Stale-While-Revalidate if the client supports it.
   // This is not done for truncated entries since they need validation in order
   // to figure out how to deal with the missing part.
@@ -3253,6 +3325,26 @@ ValidationType HttpCache::Transaction::RequiresValidation() {
                           response_.request_time, response_.response_time,
                           cache_->clock_->Now());
 
+#if BUILDFLAG(IS_ARKWEB)
+  base::TimeDelta response_time_in_cache =
+      cache_->clock_->Now() - response_.response_time;
+
+  if (!base::FeatureList::IsEnabled(
+          features::kPrefetchFollowsNormalCacheSemantics) &&
+      !(effective_load_flags_ & LOAD_PREFETCH) &&
+      (response_time_in_cache >= base::TimeDelta())) {
+    bool reused_within_time_window =
+        response_time_in_cache < base::Minutes(kPrefetchReuseMins);
+    bool first_reuse = response_.unused_since_prefetch;
+
+    // The first use of a resource after prefetch within a short window skips
+    // validation.
+    if (first_reuse && reused_within_time_window) {
+      return VALIDATION_NONE;
+    }
+  }
+#endif
+  
   if (validate_flag) {
     return VALIDATION_SYNCHRONOUS;
   }

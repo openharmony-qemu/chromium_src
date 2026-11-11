@@ -382,6 +382,11 @@ class MockHostResolverBase::RequestImpl
     return resolve_error_info_;
   }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  net::ResolveInfo GetResolveInfo() const override { return {}; }
+  bool SecureDnsFallbackResolved() const override { return false; }
+#endif
+
   const std::optional<HostCache::EntryStaleness>& GetStaleInfo()
       const override {
     DCHECK(complete_);
@@ -1690,6 +1695,11 @@ class HangingHostResolver::RequestImpl
   }
 
   net::ResolveErrorInfo GetResolveErrorInfo() const override { NOTREACHED(); }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  net::ResolveInfo GetResolveInfo() const override { base::ImmediateCrash(); }
+  bool SecureDnsFallbackResolved() const override { base::ImmediateCrash(); }
+#endif
 
   const std::optional<HostCache::EntryStaleness>& GetStaleInfo()
       const override {

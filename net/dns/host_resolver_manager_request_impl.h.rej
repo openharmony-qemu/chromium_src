@@ -1,0 +1,21 @@
+diff a/net/dns/host_resolver_manager_request_impl.h b/net/dns/host_resolver_manager_request_impl.h	(rejected hunks)
+@@ -146,10 +166,19 @@ class HostResolverManager::RequestImpl
+   // Logs when a request has been cancelled.
+   void LogCancelRequest();
+ 
+   ClientSocketFactory* GetClientSocketFactory();
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  void MaybeModifyResolveLocallyResults(
++      HostCache::Entry& out_results,
++      std::vector<IPEndPoint>& truncation_results);
++  void MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
++      HostCache::Entry& out_results,
++      int dns_status);
++#endif
++
+   const NetLogWithSource source_net_log_;
+ 
+   const HostResolver::Host request_host_;
+   const NetworkAnonymizationKey network_anonymization_key_;
+   ResolveHostParameters parameters_;

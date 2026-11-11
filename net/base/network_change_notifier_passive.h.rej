@@ -1,0 +1,42 @@
+diff a/net/base/network_change_notifier_passive.h b/net/base/network_change_notifier_passive.h	(rejected hunks)
+@@ -77,14 +125,40 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
+ 
+ #if BUILDFLAG(IS_LINUX)
+   AddressMapCacheLinux address_map_cache_;
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_BASE)
++  std::unique_ptr<OHOS::NWeb::NetConnectAdapter> ohos_net_conn_adapter_;
++#endif
+   mutable base::Lock lock_;
+   NetworkChangeNotifier::ConnectionType
+       connection_type_;        // Guarded by |lock_|.
+   double max_bandwidth_mbps_;  // Guarded by |lock_|.
++
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  int32_t network_for_dns_ = -1;
++  mutable base::Lock dns_server_lock_;
++  std::vector<std::string> dns_servers_;
++#endif
++  std::atomic<bool> vpn_in_place_{false};
++#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
++  std::vector<std::string> addr_list_for_binded_network_;
++  std::vector<std::string> default_address_list_;
++#endif
++#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
++  void ResetNetworkCapability();
++
++  static constexpr uint8_t kNetworkCapCaptivePortal = 1 << 0;
++  static constexpr uint8_t kNetworkCapValidated = 1 << 1;
++  std::atomic<uint8_t> network_capability_{0};
++  std::string last_bearer_types_str_;
++
++  scoped_refptr<base::SequencedTaskRunner> ui_task_runner_;
++
++  base::WeakPtrFactory<NetworkChangeNotifierPassive> weak_ptr_factory_{this};
++#endif
+ };
+ 
+ }  // namespace net
+ 
+ #endif  // NET_BASE_NETWORK_CHANGE_NOTIFIER_PASSIVE_H_

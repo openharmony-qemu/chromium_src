@@ -1,0 +1,17 @@
+diff a/net/cookies/cookie_store.h b/net/cookies/cookie_store.h	(rejected hunks)
+@@ -193,10 +197,15 @@ class NET_EXPORT CookieStore {
+   // Will return nullopt if cookies have not finished loading.
+   virtual std::optional<bool> SiteHasCookieInOtherPartition(
+       const net::SchemefulSite& site,
+       const CookiePartitionKey& cookie_partition_key) const;
+ 
++#if BUILDFLAG(ARKWEB_COOKIE)
++  virtual void SetAllCookiesAsync(const CookieList& list,
++                                  SetCookiesCallback callback) {}
++#endif
++
+  private:
+   // Used to determine whether a particular cookie should be subject to legacy
+   // or non-legacy access semantics.
+   std::unique_ptr<CookieAccessDelegate> cookie_access_delegate_;
+ };

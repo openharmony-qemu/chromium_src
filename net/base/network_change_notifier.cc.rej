@@ -1,0 +1,14 @@
+diff a/net/base/network_change_notifier.cc b/net/base/network_change_notifier.cc	(rejected hunks)
+@@ -38,10 +38,12 @@
+ #include "net/base/network_change_notifier_linux.h"
+ #elif BUILDFLAG(IS_APPLE)
+ #include "net/base/network_change_notifier_apple.h"
+ #elif BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+ #include "net/base/network_change_notifier_passive.h"
++#elif BUILDFLAG(IS_ARKWEB)
++#include "net/base/network_change_notifier_passive.h"
+ #elif BUILDFLAG(IS_FUCHSIA)
+ #include "net/base/network_change_notifier_fuchsia.h"
+ #endif
+ 
+ namespace net {

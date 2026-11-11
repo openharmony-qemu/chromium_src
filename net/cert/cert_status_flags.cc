@@ -54,6 +54,17 @@ int MapCertStatusToNetError(CertStatus cert_status) {
   if (cert_status & CERT_STATUS_NO_REVOCATION_MECHANISM)
     return ERR_CERT_NO_REVOCATION_MECHANISM;
 
+#if BUILDFLAG(IS_OHOS)
+  if (cert_status & CERT_STATUS_DEPTH_ZERO_SELF_SIGNED_CERT)
+    return ERR_CERT_AUTHORITY_INVALID;
+  if (cert_status & CERT_STATUS_LEGACY_TLS)
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+    return ERR_SSL_OBSOLETE_VERSION_OR_CIPHER;
+#else
+    return ERR_SSL_VERSION_OR_CIPHER_MISMATCH;
+#endif
+#endif
+
   // Unknown status. The assumption is 0 (an OK status) won't be used here.
   NOTREACHED();
 }

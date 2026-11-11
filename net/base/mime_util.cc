@@ -13,6 +13,9 @@
 #include <type_traits>
 #include <unordered_set>
 
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/base64.h"
 #include "base/check_op.h"
 #include "base/containers/span.h"
@@ -242,6 +245,9 @@ static const MimeInfo kSecondaryMappings[] = {
     {"application/x-shockwave-flash", "swf,swl"},
     {"application/x-tar", "tar"},
     {"application/x-x509-ca-cert", "cer,crt"},
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+    {"application/x-zip-compressed", "zip"},
+#endif  // BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
     {"application/zip", "zip"},
     // This is the platform mapping on recent versions of Windows 10.
     {"audio/webm", "weba"},
@@ -260,6 +266,14 @@ static const MimeInfo kSecondaryMappings[] = {
     {"text/x-sh", "sh"},
     {"text/xml", "xsl,xbl,xslt"},
     {"video/mpeg", "mpeg,mpg,mpe"},
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+    {"video/quicktime", "mov"},
+#endif  // BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+    {"image/pjpeg", "jpg"},
+    {"video/avi", "avi"},
+    {"audio/wma", "wma"},
+#endif
 };
 
 // Finds mime type of |ext| from |mappings|.

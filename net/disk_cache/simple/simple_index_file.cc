@@ -158,6 +158,11 @@ void ProcessEntryFile(BackendFileOperations* file_operations,
   if (!simple_util::GetEntryHashKeyFromHexString(hash_string, &hash_key)) {
     LOG(WARNING) << "Invalid entry hash key filename while restoring index from"
                  << " disk: " << file_name;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING)
+        << "Invalid entry hash key filename while restoring index from"
+        << " disk: " << file_name;
+#endif
     return;
   }
 
@@ -563,6 +568,9 @@ void SimpleIndexFile::Deserialize(net::CacheType cache_type,
   SimpleIndexPickle pickle(data);
   if (!pickle.data() || !pickle.HeaderValid()) {
     LOG(WARNING) << "Corrupt Simple Index File.";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING) << "Corrupt Simple Index File.";
+#endif
     return;
   }
 
@@ -573,17 +581,26 @@ void SimpleIndexFile::Deserialize(net::CacheType cache_type,
 
   if (crc_read != crc_calculated) {
     LOG(WARNING) << "Invalid CRC in Simple Index file.";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING) << "Invalid CRC in Simple Index file.";
+#endif
     return;
   }
 
   SimpleIndexFile::IndexMetadata index_metadata;
   if (!index_metadata.Deserialize(&pickle_it)) {
     LOG(ERROR) << "Invalid index_metadata on Simple Cache Index.";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "Invalid index_metadata on Simple Cache Index.";
+#endif
     return;
   }
 
   if (!index_metadata.CheckIndexMetadata()) {
     LOG(ERROR) << "Invalid index_metadata on Simple Cache Index.";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "Invalid index_metadata on Simple Cache Index.";
+#endif
     return;
   }
 
@@ -596,6 +613,9 @@ void SimpleIndexFile::Deserialize(net::CacheType cache_type,
             cache_type, &pickle_it,
             index_metadata.app_cache_has_trailer_prefetch_size())) {
       LOG(WARNING) << "Invalid EntryMetadata in Simple Index file.";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      LOG_FEEDBACK(WARNING) << "Invalid EntryMetadata in Simple Index file.";
+#endif
       entries->clear();
       return;
     }
@@ -636,6 +656,9 @@ void SimpleIndexFile::SyncRestoreFromDisk(
   }
   if (enumerator->HasError()) {
     LOG(ERROR) << "Could not reconstruct index from disk";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "Could not reconstruct index from disk";
+#endif
     return;
   }
   out_result->did_load = true;

@@ -296,6 +296,9 @@ std::unique_ptr<NetworkChangeNotifier> NetworkChangeNotifier::CreateIfNeeded(
       std::make_unique<NetworkChangeNotifierWin>();
   network_change_notifier->WatchForAddressChange();
   return network_change_notifier;
+#elif BUILDFLAG(IS_ARKWEB)
+  return std::make_unique<NetworkChangeNotifierPassive>(initial_type,
+                                                        initial_subtype);
 #elif BUILDFLAG(IS_ANDROID)
   // Fallback to use NetworkChangeNotifierPassive if
   // NetworkChangeNotifierFactory is not set. Currently used for tests and when
@@ -525,7 +528,7 @@ base::cstring_view NetworkChangeNotifier::IPAddressChangeTypeToString(
   return kChangeTypeNames[type];
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_NETWORK_BASE)
 // static
 AddressMapOwnerLinux* NetworkChangeNotifier::GetAddressMapOwner() {
   return g_network_change_notifier
@@ -548,6 +551,30 @@ NetworkChangeNotifier::GetNetworkInterfaceCache() {
 bool NetworkChangeNotifier::IsOffline() {
   return GetConnectionType() == CONNECTION_NONE;
 }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+bool NetworkChangeNotifier::IsCaptivePortal() {
+  if (!g_network_change_notifier) {
+    return false;
+  }
+  return g_network_change_notifier->IsCaptivePortalInternal();
+}
+
+bool NetworkChangeNotifier::IsCaptivePortalInternal() {
+  return false;
+}
+
+bool NetworkChangeNotifier::IsNetworkValidated() {
+  if (!g_network_change_notifier) {
+    return false;
+  }
+  return g_network_change_notifier->IsNetworkValidatedInternal();
+}
+
+bool NetworkChangeNotifier::IsNetworkValidatedInternal() {
+  return false;
+}
+#endif
 
 // static
 bool NetworkChangeNotifier::IsConnectionCellular(ConnectionType type) {
@@ -906,7 +933,7 @@ NetworkChangeNotifier::NetworkChangeNotifier(
   }
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_NETWORK_BASE)
 AddressMapOwnerLinux* NetworkChangeNotifier::GetAddressMapOwnerInternal() {
   return nullptr;
 }
@@ -1172,4 +1199,7 @@ NetworkChangeNotifier::ObserverList& NetworkChangeNotifier::GetObserverList() {
   return *observers;
 }
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/net/base/network_change_notifier_for_include.cc"
+#endif
 }  // namespace net

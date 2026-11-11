@@ -123,6 +123,10 @@ struct NET_EXPORT LoadTimingInfo {
   // challenge was received.
   bool socket_reused = false;
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  bool socket_from_preload = false;
+#endif
+
   // Unique socket ID, can be used to identify requests served by the same
   // socket.  For connections tunnelled over SPDY proxies, this is the ID of
   // the virtual connection (The SpdyProxyClientSocket), not the ID of the
@@ -211,6 +215,11 @@ struct NET_EXPORT LoadTimingInfo {
   base::TimeTicks push_start;
   base::TimeTicks push_end;
 };
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+NET_EXPORT std::ostream& operator<<(std::ostream& out,
+                                    const LoadTimingInfo& timing_info);
+#endif
 
 }  // namespace net
 

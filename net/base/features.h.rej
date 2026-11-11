@@ -1,0 +1,37 @@
+diff a/net/base/features.h b/net/base/features.h	(rejected hunks)
+@@ -341,10 +341,16 @@ NET_EXPORT BASE_DECLARE_FEATURE(kTcpSocketIoCompletionPortWin);
+ // Avoid creating cache entries for transactions that are most likely no-store.
+ NET_EXPORT BASE_DECLARE_FEATURE(kAvoidEntryCreationForNoStore);
+ NET_EXPORT extern const base::FeatureParam<int>
+     kAvoidEntryCreationForNoStoreCacheSize;
+ 
++#if BUILDFLAG(IS_ARKWEB)
++// Prefetch to follow normal semantics instead of 5-minute rule
++// https://crbug.com/1345207
++NET_EXPORT BASE_DECLARE_FEATURE(kPrefetchFollowsNormalCacheSemantics);
++#endif
++
+ // A flag for new Kerberos feature, that suggests new UI
+ // when Kerberos authentication in browser fails on ChromeOS.
+ // b/260522530
+ #if BUILDFLAG(IS_CHROMEOS)
+ NET_EXPORT BASE_DECLARE_FEATURE(kKerberosInBrowserRedirect);
+@@ -549,10 +555,18 @@ NET_EXPORT BASE_DECLARE_FEATURE(kMigrateSessionsOnNetworkChangeV2);
+ // configuration, which will improve the Linux network service sandbox.
+ // TODO(crbug.com/40220507): remove this.
+ NET_EXPORT BASE_DECLARE_FEATURE(kAddressTrackerLinuxIsProxied);
+ #endif  // BUILDFLAG(IS_LINUX)
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++NET_EXPORT BASE_DECLARE_FEATURE(kEnableNetworkPreload);
++#endif
++
++#if BUILDFLAG(ARKWEB_NETWORK_IPV6_SLAAC_FILTER)
++NET_EXPORT BASE_DECLARE_FEATURE(kArkWebIPv6SlaacFilter);
++#endif
++
+ // Enables binding of cookies to the port that originally set them by default.
+ NET_EXPORT BASE_DECLARE_FEATURE(kEnablePortBoundCookies);
+ 
+ // Enables binding of cookies to the scheme that originally set them. Also
+ // enables domain cookie shadowing protection.

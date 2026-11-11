@@ -1,0 +1,14 @@
+diff a/net/cert/cert_verify_proc_unittest.cc b/net/cert/cert_verify_proc_unittest.cc	(rejected hunks)
+@@ -74,10 +74,12 @@
+ #include "third_party/boringssl/src/pki/signature_algorithm.h"
+ #include "third_party/boringssl/src/pki/trust_store.h"
+ 
+ #if BUILDFLAG(IS_ANDROID)
+ #include "net/cert/cert_verify_proc_android.h"
++#elif BUILDFLAG(IS_OHOS)
++#include "net/cert/cert_verify_proc_ohos.h"
+ #elif BUILDFLAG(IS_IOS)
+ #include "base/ios/ios_util.h"
+ #include "net/cert/cert_verify_proc_ios.h"
+ #endif
+ 

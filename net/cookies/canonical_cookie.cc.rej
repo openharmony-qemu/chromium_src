@@ -1,0 +1,17 @@
+diff a/net/cookies/canonical_cookie.cc b/net/cookies/canonical_cookie.cc	(rejected hunks)
+@@ -361,11 +366,15 @@ std::unique_ptr<CanonicalCookie> CanonicalCookie::Create(
+     status->AddExclusionReason(
+         CookieInclusionStatus::ExclusionReason::EXCLUDE_FAILURE_TO_STORE);
+     return nullptr;
+   }
+ 
++  #if BUILDFLAG(ARKWEB_COOKIE)
++  ParsedCookie parsed_cookie(cookie_line, block_truncated, status);
++#else // BUILDFLAG(ARKWEB_COOKIE)
+   ParsedCookie parsed_cookie(cookie_line, status);
++#endif // BUILDFLAG(ARKWEB_COOKIE)
+ 
+   static base::MetricsSubSampler metrics_subsampler;
+   bool collect_metrics =
+       metrics_subsampler.ShouldSample(kHistogramSampleProbability);
+ 

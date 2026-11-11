@@ -23,6 +23,8 @@
 
 namespace net {
 
+#include "arkweb/chromium_ext/net/base/test_proxy_delegate_for_include.cc"
+
 TestProxyDelegate::TestProxyDelegate() = default;
 
 TestProxyDelegate::~TestProxyDelegate() = default;

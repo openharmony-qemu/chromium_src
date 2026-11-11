@@ -1,0 +1,15 @@
+diff a/net/base/mime_util.cc b/net/base/mime_util.cc	(rejected hunks)
+@@ -180,10 +183,13 @@ static const MimeInfo kPrimaryMappings[] = {
+     {"audio/ogg", "ogg,oga,opus"},
+     {"audio/wav", "wav"},
+     {"audio/webm", "webm"},
+     {"audio/x-m4a", "m4a"},
+     {"image/avif", "avif"},
++#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++    {"image/heif", "heif,heic,hevc"},
++#endif
+     {"image/gif", "gif"},
+     {"image/jpeg", "jpeg,jpg,jpe"},
+     {"image/png", "png"},
+     {"image/apng", "png,apng"},
+     {"image/svg+xml", "svg,svgz"},

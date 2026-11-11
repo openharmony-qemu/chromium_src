@@ -1,0 +1,179 @@
+diff a/net/socket/transport_connect_job.cc b/net/socket/transport_connect_job.cc	(rejected hunks)
+@@ -30,15 +31,16 @@
+ #include "net/log/net_log_event_type.h"
+ #include "net/socket/socket_tag.h"
+ #include "net/socket/transport_connect_sub_job.h"
+ #include "url/scheme_host_port.h"
+ #include "url/url_constants.h"
++#if BUILDFLAG(ENABLE_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ 
+ namespace net {
+ 
+-namespace {
+-
+ // TODO(crbug.com/40181080): Delete once endpoint usage is converted to using
+ // url::SchemeHostPort when available.
+ HostPortPair ToLegacyDestinationEndpoint(
+     const TransportSocketParams::Endpoint& endpoint) {
+   if (std::holds_alternative<url::SchemeHostPort>(endpoint)) {
+@@ -48,23 +50,31 @@ HostPortPair ToLegacyDestinationEndpoint(
+ 
+   DCHECK(std::holds_alternative<HostPortPair>(endpoint));
+   return std::get<HostPortPair>(endpoint);
+ }
+ 
+-}  // namespace
+-
+ TransportSocketParams::TransportSocketParams(
+     Endpoint destination,
+     NetworkAnonymizationKey network_anonymization_key,
+     SecureDnsPolicy secure_dns_policy,
+     OnHostResolutionCallback host_resolution_callback,
+-    base::flat_set<std::string> supported_alpns)
++    base::flat_set<std::string> supported_alpns
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++    ,
++    bool secure_dns_only
++#endif
++    )
+     : destination_(std::move(destination)),
+       network_anonymization_key_(std::move(network_anonymization_key)),
+       secure_dns_policy_(secure_dns_policy),
+       host_resolution_callback_(std::move(host_resolution_callback)),
+-      supported_alpns_(std::move(supported_alpns)) {
++      supported_alpns_(std::move(supported_alpns))
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      secure_dns_only_(secure_dns_only)
++#endif
++{
+ #if DCHECK_IS_ON()
+   auto* scheme_host_port = std::get_if<url::SchemeHostPort>(&destination_);
+   if (scheme_host_port) {
+     if (scheme_host_port->scheme() == url::kHttpsScheme) {
+       // HTTPS destinations will, when passed to the DNS resolver, return
+@@ -96,11 +106,16 @@ std::unique_ptr<TransportConnectJob> TransportConnectJob::Factory::Create(
+     const SocketTag& socket_tag,
+     const CommonConnectJobParams* common_connect_job_params,
+     const scoped_refptr<TransportSocketParams>& params,
+     Delegate* delegate,
+     const NetLogWithSource* net_log) {
++#if (BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || BUILDFLAG(ARKWEB_PRP_PRELOAD) || BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)) && \
++    !defined(COMPONENT_BUILD) // FIXME
++  return std::make_unique<ArkWebTransportConnectJobExt>(priority, socket_tag,
++#else
+   return std::make_unique<TransportConnectJob>(priority, socket_tag,
++#endif
+                                                common_connect_job_params,
+                                                params, delegate, net_log);
+ }
+ 
+ TransportConnectJob::EndpointResultOverride::EndpointResultOverride(
+@@ -254,10 +287,15 @@ int TransportConnectJob::DoResolveHost() {
+   next_state_ = STATE_RESOLVE_HOST_COMPLETE;
+ 
+   HostResolver::ResolveHostParameters parameters;
+   parameters.initial_priority = priority();
+   parameters.secure_dns_policy = params_->secure_dns_policy();
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  if (host_resolver()->CanUseSecureDnsFallback()) {
++    parameters.only_use_secure_fallback = params_->secure_dns_only();
++  }
++#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+   if (std::holds_alternative<url::SchemeHostPort>(params_->destination())) {
+     request_ = host_resolver()->CreateRequest(
+         std::get<url::SchemeHostPort>(params_->destination()),
+         params_->network_anonymization_key(), net_log(), parameters);
+   } else {
+@@ -367,37 +416,60 @@ int TransportConnectJob::DoResolveHostCallbackComplete() {
+ }
+ 
+ int TransportConnectJob::DoTransportConnect() {
+   next_state_ = STATE_TRANSPORT_CONNECT_COMPLETE;
+ 
++#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
++  multi_connect_ip_addresses_.clear();
++  multi_connect_fallback_ip_addresses_.clear();
++  std::vector<IPEndPoint> ipv4_addresses_limit, ipv6_addresses_limit;
++  int ip_addresses_count = 0;
++#endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
++
+   const HostResolverEndpointResult& endpoint =
+       GetEndpointResultForCurrentSubJobs();
+   std::vector<IPEndPoint> ipv4_addresses, ipv6_addresses;
+   for (const auto& ip_endpoint : endpoint.ip_endpoints) {
+     switch (ip_endpoint.GetFamily()) {
+       case ADDRESS_FAMILY_IPV4:
+         ipv4_addresses.push_back(ip_endpoint);
++#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
++        AsArkWebTransportConnectJobExt()->AddIpv4AddressLimit(ip_addresses_count, ipv4_addresses_limit, ip_endpoint);
++#endif
+         break;
+ 
+       case ADDRESS_FAMILY_IPV6:
+         ipv6_addresses.push_back(ip_endpoint);
++#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
++        AsArkWebTransportConnectJobExt()->AddIpv6AddressLimit(ip_addresses_count, ipv6_addresses_limit, ip_endpoint);
++#endif
+         break;
+ 
+       default:
+         DVLOG(1) << "Unexpected ADDRESS_FAMILY: " << ip_endpoint.GetFamily();
+         break;
+     }
+   }
+ 
+   if (!ipv4_addresses.empty()) {
++#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
++    multi_connect_ip_addresses_ = ipv4_addresses_limit;
++    multi_connect_fallback_ip_addresses_ = std::move(ipv4_addresses_limit);
++#endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+     ipv4_job_ = std::make_unique<TransportConnectSubJob>(
+         std::move(ipv4_addresses), this, SUB_JOB_IPV4);
+   }
+ 
+   if (!ipv6_addresses.empty()) {
++#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
++    multi_connect_ip_addresses_ = std::move(ipv6_addresses_limit);
++#endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+     ipv6_job_ = std::make_unique<TransportConnectSubJob>(
+         std::move(ipv6_addresses), this, SUB_JOB_IPV6);
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++    ipv6_job_->SetFromPreload(IsFromPreload());
++#endif
+     int result = ipv6_job_->Start();
+     if (result != ERR_IO_PENDING)
+       return HandleSubJobComplete(result, ipv6_job_.get());
+     if (ipv4_job_) {
+       // This use of base::Unretained is safe because |fallback_timer_| is
+@@ -405,18 +477,28 @@ int TransportConnectJob::DoTransportConnect() {
+       fallback_timer_.Start(
+           FROM_HERE, kIPv6FallbackTime,
+           base::BindOnce(&TransportConnectJob::StartIPv4JobAsync,
+                          base::Unretained(this)));
+     }
++#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
++    // websocket和老版本保持一致
++    AsArkWebTransportConnectJobExt()->WillDoMultiConnect();
++#endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+     return ERR_IO_PENDING;
+   }
+ 
+   DCHECK(!ipv6_job_);
+   DCHECK(ipv4_job_);
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  ipv4_job_->SetFromPreload(IsFromPreload());
++#endif
+   int result = ipv4_job_->Start();
+   if (result != ERR_IO_PENDING)
+     return HandleSubJobComplete(result, ipv4_job_.get());
++#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
++  AsArkWebTransportConnectJobExt()->WillDoMultiConnect();
++#endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+   return ERR_IO_PENDING;
+ }
+ 
+ int TransportConnectJob::DoTransportConnectComplete(int result) {
+   // Make sure nothing else calls back into this object.

@@ -75,6 +75,10 @@ class TransportConnectSubJob {
   const SubJobType type_;
 
   std::unique_ptr<StreamSocket> transport_socket_;
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  bool from_preload_ = false;
+#endif
 };
 
 }  // namespace net

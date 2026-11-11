@@ -1,0 +1,289 @@
+diff a/net/socket/connect_job_params_factory_unittest.cc b/net/socket/connect_job_params_factory_unittest.cc	(rejected hunks)
+@@ -363,11 +363,16 @@ TEST_P(ConnectJobParamsFactoryTest, HttpEndpoint) {
+       kEndpoint, ProxyChain::Direct(),
+       /*proxy_annotation_tag=*/std::nullopt,
+       /*allowed_bad_certs=*/{}, alpn_mode(),
+       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
+       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
+-      &common_connect_job_params_, kProxyDnsNak);
++      &common_connect_job_params_, kProxyDnsNak
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      /*secure_dns_only=*/false
++#endif
++      );
+ 
+   scoped_refptr<TransportSocketParams> transport_socket_params =
+       ExpectTransportSocketParams(params);
+   VerifyTransportSocketParams(
+       transport_socket_params, "transport_socket_params", kEndpoint,
+@@ -383,11 +388,16 @@ TEST_P(ConnectJobParamsFactoryTest, UnencryptedEndpointWithoutScheme) {
+       kEndpoint, ProxyChain::Direct(),
+       /*proxy_annotation_tag=*/std::nullopt,
+       /*allowed_bad_certs=*/{}, alpn_mode(),
+       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
+       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
+-      &common_connect_job_params_, kProxyDnsNak);
++      &common_connect_job_params_, kProxyDnsNak
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      /*secure_dns_only=*/false
++#endif
++      );
+ 
+   scoped_refptr<TransportSocketParams> transport_socket_params =
+       ExpectTransportSocketParams(params);
+   VerifyTransportSocketParams(transport_socket_params,
+                               "transport_socket_params",
+@@ -407,11 +417,16 @@ TEST_P(ConnectJobParamsFactoryTest, HttpsEndpoint) {
+   ConnectJobParams params = ConstructConnectJobParams(
+       kEndpoint, ProxyChain::Direct(), TRAFFIC_ANNOTATION_FOR_TESTS,
+       /*allowed_bad_certs=*/{}, alpn_mode(),
+       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
+       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
+-      &common_connect_job_params_, kProxyDnsNak);
++      &common_connect_job_params_, kProxyDnsNak
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      /*secure_dns_only=*/false
++#endif
++      );
+ 
+   scoped_refptr<SSLSocketParams> ssl_socket_params =
+       ExpectSSLSocketParams(params);
+   SSLConfig ssl_config = SSLConfigForEndpoint();
+   VerifySSLSocketParams(ssl_socket_params, "ssl_socket_params",
+@@ -437,11 +452,16 @@ TEST_P(ConnectJobParamsFactoryTest, EncryptedEndpointWithoutScheme) {
+   ConnectJobParams params = ConstructConnectJobParams(
+       kEndpoint, ProxyChain::Direct(), TRAFFIC_ANNOTATION_FOR_TESTS,
+       /*allowed_bad_certs=*/{}, alpn_mode(),
+       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
+       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
+-      &common_connect_job_params_, kProxyDnsNak);
++      &common_connect_job_params_, kProxyDnsNak
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      /*secure_dns_only=*/false
++#endif
++      );
+ 
+   scoped_refptr<SSLSocketParams> ssl_socket_params =
+       ExpectSSLSocketParams(params);
+   SSLConfig ssl_config = SSLConfigForEndpoint();
+   VerifySSLSocketParams(ssl_socket_params, "ssl_socket_params",
+@@ -466,11 +486,16 @@ TEST_P(ConnectJobParamsFactoryTest, HttpEndpointViaHttpsProxy) {
+   ConnectJobParams params = ConstructConnectJobParams(
+       kEndpoint, proxy_chain, TRAFFIC_ANNOTATION_FOR_TESTS,
+       /*allowed_bad_certs=*/{}, alpn_mode(),
+       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
+       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
+-      &common_connect_job_params_, kProxyDnsNak);
++      &common_connect_job_params_, kProxyDnsNak
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      /*secure_dns_only=*/false
++#endif
++      );
+ 
+   scoped_refptr<HttpProxySocketParams> http_proxy_socket_params =
+       ExpectHttpProxySocketParams(params);
+   VerifyHttpProxySocketParams(
+       http_proxy_socket_params, "http_proxy_socket_params",
+@@ -507,11 +532,16 @@ TEST_P(ConnectJobParamsFactoryTest, HttpEndpointViaQuicProxy) {
+   ConnectJobParams params = ConstructConnectJobParams(
+       kEndpoint, proxy_chain, TRAFFIC_ANNOTATION_FOR_TESTS,
+       /*allowed_bad_certs=*/{}, alpn_mode(),
+       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
+       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
+-      &common_connect_job_params_, kProxyDnsNak);
++      &common_connect_job_params_, kProxyDnsNak
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      /*secure_dns_only=*/false
++#endif
++      );
+ 
+   auto http_proxy_socket_params = ExpectHttpProxySocketParams(params);
+   SSLConfig quic_ssl_config = SSLConfigForProxy(proxy_chain, 0);
+   // Traffic always tunnels over QUIC proxies.
+   const bool tunnel = true;
+@@ -536,11 +566,16 @@ TEST_P(ConnectJobParamsFactoryTest, HttpsEndpointViaHttpsProxy) {
+   ConnectJobParams params = ConstructConnectJobParams(
+       kEndpoint, proxy_chain, TRAFFIC_ANNOTATION_FOR_TESTS,
+       /*allowed_bad_certs=*/{}, alpn_mode(),
+       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
+       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
+-      &common_connect_job_params_, kProxyDnsNak);
++      &common_connect_job_params_, kProxyDnsNak
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      /*secure_dns_only=*/false
++#endif
++      );
+ 
+   scoped_refptr<SSLSocketParams> endpoint_ssl_socket_params =
+       ExpectSSLSocketParams(params);
+   SSLConfig endpoint_ssl_config = SSLConfigForEndpoint(proxy_chain, 1);
+   VerifySSLSocketParams(endpoint_ssl_socket_params,
+@@ -590,11 +625,16 @@ TEST_P(ConnectJobParamsFactoryTest, HttpsEndpointViaQuicProxy) {
+   ConnectJobParams params = ConstructConnectJobParams(
+       kEndpoint, proxy_chain, TRAFFIC_ANNOTATION_FOR_TESTS,
+       /*allowed_bad_certs=*/{}, alpn_mode(),
+       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
+       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
+-      &common_connect_job_params_, kProxyDnsNak);
++      &common_connect_job_params_, kProxyDnsNak
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      /*secure_dns_only=*/false
++#endif
++      );
+ 
+   auto endpoint_ssl_socket_params = ExpectSSLSocketParams(params);
+   SSLConfig endpoint_ssl_config = SSLConfigForEndpoint(proxy_chain, 1);
+   VerifySSLSocketParams(endpoint_ssl_socket_params,
+                         "endpoint_ssl_socket_params",
+@@ -625,11 +665,16 @@ TEST_P(ConnectJobParamsFactoryTest, HttpsEndpointViaHttpProxy) {
+   ConnectJobParams params = ConstructConnectJobParams(
+       kEndpoint, proxy_chain, TRAFFIC_ANNOTATION_FOR_TESTS,
+       /*allowed_bad_certs=*/{}, alpn_mode(),
+       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
+       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
+-      &common_connect_job_params_, kProxyDnsNak);
++      &common_connect_job_params_, kProxyDnsNak
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      /*secure_dns_only=*/false
++#endif
++      );
+ 
+   scoped_refptr<SSLSocketParams> endpoint_ssl_socket_params =
+       ExpectSSLSocketParams(params);
+   SSLConfig endpoint_ssl_config = SSLConfigForEndpoint(proxy_chain, 1);
+   VerifySSLSocketParams(endpoint_ssl_socket_params,
+@@ -664,11 +709,16 @@ TEST_P(ConnectJobParamsFactoryTest, HttpEndpointViaSOCKSProxy) {
+   ConnectJobParams params = ConstructConnectJobParams(
+       kEndpoint, proxy_chain, TRAFFIC_ANNOTATION_FOR_TESTS,
+       /*allowed_bad_certs=*/{}, alpn_mode(),
+       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
+       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
+-      &common_connect_job_params_, kProxyDnsNak);
++      &common_connect_job_params_, kProxyDnsNak
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      /*secure_dns_only=*/false
++#endif
++      );
+ 
+   scoped_refptr<SOCKSSocketParams> socks_socket_params =
+       ExpectSOCKSSocketParams(params);
+   VerifySOCKSSocketParams(socks_socket_params, "socks_socket_params",
+                           /*is_socks_v5=*/false,
+@@ -697,11 +747,16 @@ TEST_P(ConnectJobParamsFactoryTest, HttpsEndpointViaSOCKSProxy) {
+   ConnectJobParams params = ConstructConnectJobParams(
+       kEndpoint, proxy_chain, TRAFFIC_ANNOTATION_FOR_TESTS,
+       /*allowed_bad_certs=*/{}, alpn_mode(),
+       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
+       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
+-      &common_connect_job_params_, kProxyDnsNak);
++      &common_connect_job_params_, kProxyDnsNak
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      /*secure_dns_only=*/false
++#endif
++      );
+ 
+   scoped_refptr<SSLSocketParams> endpoint_ssl_socket_params =
+       ExpectSSLSocketParams(params);
+   SSLConfig endpoint_ssl_config = SSLConfigForEndpoint(proxy_chain, 1);
+   VerifySSLSocketParams(endpoint_ssl_socket_params,
+@@ -736,11 +791,16 @@ TEST_P(ConnectJobParamsFactoryTest, HttpEndpointViaHttpsProxyViaHttpsProxy) {
+   ConnectJobParams params = ConstructConnectJobParams(
+       kEndpoint, proxy_chain, TRAFFIC_ANNOTATION_FOR_TESTS,
+       /*allowed_bad_certs=*/{}, alpn_mode(),
+       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
+       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
+-      &common_connect_job_params_, kProxyDnsNak);
++      &common_connect_job_params_, kProxyDnsNak
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      /*secure_dns_only=*/false
++#endif
++      );
+ 
+   scoped_refptr<HttpProxySocketParams> http_proxy_socket_params_b =
+       ExpectHttpProxySocketParams(params);
+   VerifyHttpProxySocketParams(
+       http_proxy_socket_params_b, "http_proxy_socket_params_b",
+@@ -802,11 +862,16 @@ TEST_P(ConnectJobParamsFactoryTest, HttpsEndpointViaHttpsProxyViaHttpsProxy) {
+   ConnectJobParams params = ConstructConnectJobParams(
+       kEndpoint, proxy_chain, TRAFFIC_ANNOTATION_FOR_TESTS,
+       /*allowed_bad_certs=*/{}, alpn_mode(),
+       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
+       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
+-      &common_connect_job_params_, kProxyDnsNak);
++      &common_connect_job_params_, kProxyDnsNak
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      /*secure_dns_only=*/false
++#endif
++      );
+ 
+   scoped_refptr<SSLSocketParams> endpoint_ssl_socket_params =
+       ExpectSSLSocketParams(params);
+   SSLConfig endpoint_ssl_config = SSLConfigForEndpoint(proxy_chain, 2);
+   VerifySSLSocketParams(endpoint_ssl_socket_params,
+@@ -876,11 +941,16 @@ TEST_P(ConnectJobParamsFactoryTest, HttpsEndpointViaHttpsProxyViaQuicProxy) {
+   ConnectJobParams params = ConstructConnectJobParams(
+       kEndpoint, proxy_chain, TRAFFIC_ANNOTATION_FOR_TESTS,
+       /*allowed_bad_certs=*/{}, alpn_mode(),
+       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
+       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
+-      &common_connect_job_params_, kProxyDnsNak);
++      &common_connect_job_params_, kProxyDnsNak
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      /*secure_dns_only=*/false
++#endif
++      );
+ 
+   scoped_refptr<SSLSocketParams> endpoint_ssl_socket_params =
+       ExpectSSLSocketParams(params);
+   SSLConfig endpoint_ssl_config = SSLConfigForEndpoint(proxy_chain, 2);
+   VerifySSLSocketParams(endpoint_ssl_socket_params,
+@@ -934,11 +1004,16 @@ TEST_P(ConnectJobParamsFactoryTest, HttpsEndpointViaQuicProxyViaQuicProxy) {
+   ConnectJobParams params = ConstructConnectJobParams(
+       kEndpoint, proxy_chain, TRAFFIC_ANNOTATION_FOR_TESTS,
+       /*allowed_bad_certs=*/{}, alpn_mode(),
+       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
+       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
+-      &common_connect_job_params_, kProxyDnsNak);
++      &common_connect_job_params_, kProxyDnsNak
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      /*secure_dns_only=*/false
++#endif
++      );
+ 
+   auto endpoint_ssl_socket_params = ExpectSSLSocketParams(params);
+   SSLConfig endpoint_ssl_config = SSLConfigForEndpoint(proxy_chain, 2);
+   VerifySSLSocketParams(endpoint_ssl_socket_params,
+                         "endpoint_ssl_socket_params",
+@@ -978,11 +1053,16 @@ TEST_P(ConnectJobParamsFactoryTest, HttpsEndpointViaMixedProxyChain) {
+   ConnectJobParams params = ConstructConnectJobParams(
+       kEndpoint, proxy_chain, TRAFFIC_ANNOTATION_FOR_TESTS,
+       /*allowed_bad_certs=*/{}, alpn_mode(),
+       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
+       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
+-      &common_connect_job_params_, kProxyDnsNak);
++      &common_connect_job_params_, kProxyDnsNak
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++      ,
++      /*secure_dns_only=*/false
++#endif
++      );
+ 
+   auto endpoint_ssl_socket_params = ExpectSSLSocketParams(params);
+   SSLConfig endpoint_ssl_config = SSLConfigForEndpoint(proxy_chain, 4);
+   VerifySSLSocketParams(endpoint_ssl_socket_params,
+                         "endpoint_ssl_socket_params",

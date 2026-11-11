@@ -1,0 +1,63 @@
+diff a/net/socket/ssl_client_socket_impl.cc b/net/socket/ssl_client_socket_impl.cc	(rejected hunks)
+@@ -81,10 +85,15 @@ const int kSSLClientSocketNoPendingResult = 1;
+ const int kCertVerifyPending = 1;
+ 
+ // Default size of the internal BoringSSL buffers.
+ const int kDefaultOpenSSLBufferSize = 17 * 1024;
+ 
++#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
++constexpr uint16_t kDefaultSSLVersionMinWarn = SSL_PROTOCOL_VERSION_TLS1_2;
++constexpr uint16_t k3DESCipher = 0x000a;
++#endif
++
+ base::Value::Dict NetLogPrivateKeyOperationParams(uint16_t algorithm,
+                                                   SSLPrivateKey* key) {
+   return base::Value::Dict()
+       .Set("algorithm",
+            SSL_get_signature_algorithm_name(algorithm, 0 /* exclude curve */))
+@@ -761,27 +782,34 @@ int SSLClientSocketImpl::Init() {
+     }
+   }
+ 
+   if (!SSL_set_strict_cipher_list(ssl_.get(), command.c_str())) {
+     LOG(ERROR) << "SSL_set_cipher_list('" << command << "') failed";
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++    LOG_FEEDBACK(ERROR) << "SSL_set_cipher_list('" << command << "') failed";
++#endif
+     return ERR_UNEXPECTED;
+   }
+-
+   // Disable SHA-1 server signatures.
+   // TODO(crbug.com/boringssl/699): Once the default is flipped in BoringSSL, we
+   // no longer need to override it.
+-  static const uint16_t kVerifyPrefs[] = {
+-      SSL_SIGN_ECDSA_SECP256R1_SHA256, SSL_SIGN_RSA_PSS_RSAE_SHA256,
+-      SSL_SIGN_RSA_PKCS1_SHA256,       SSL_SIGN_ECDSA_SECP384R1_SHA384,
+-      SSL_SIGN_RSA_PSS_RSAE_SHA384,    SSL_SIGN_RSA_PKCS1_SHA384,
+-      SSL_SIGN_RSA_PSS_RSAE_SHA512,    SSL_SIGN_RSA_PKCS1_SHA512,
+-  };
+-  if (!SSL_set_verify_algorithm_prefs(ssl_.get(), kVerifyPrefs,
+-                                      std::size(kVerifyPrefs))) {
+-    return ERR_UNEXPECTED;
++#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
++  if (ssl_config_.disable_sha1_server_signatures) {
++#endif
++    static const uint16_t kVerifyPrefs[] = {
++        SSL_SIGN_ECDSA_SECP256R1_SHA256, SSL_SIGN_RSA_PSS_RSAE_SHA256,
++        SSL_SIGN_RSA_PKCS1_SHA256,       SSL_SIGN_ECDSA_SECP384R1_SHA384,
++        SSL_SIGN_RSA_PSS_RSAE_SHA384,    SSL_SIGN_RSA_PKCS1_SHA384,
++        SSL_SIGN_RSA_PSS_RSAE_SHA512,    SSL_SIGN_RSA_PKCS1_SHA512,
++    };
++    if (!SSL_set_verify_algorithm_prefs(ssl_.get(), kVerifyPrefs,
++                                        std::size(kVerifyPrefs))) {
++      return ERR_UNEXPECTED;
++    }
++#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+   }
+-
++#endif
+   SSL_set_alps_use_new_codepoint(
+       ssl_.get(),
+       base::FeatureList::IsEnabled(features::kUseNewAlpsCodepointHttp2));
+ 
+   if (!ssl_config_.alpn_protos.empty()) {

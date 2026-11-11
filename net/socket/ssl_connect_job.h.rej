@@ -1,0 +1,48 @@
+diff a/net/socket/ssl_connect_job.h b/net/socket/ssl_connect_job.h	(rejected hunks)
+@@ -135,14 +138,24 @@ class NET_EXPORT_PRIVATE SSLConnectJob : public ConnectJob,
+   ConnectionAttempts GetConnectionAttempts() const override;
+   ResolveErrorInfo GetResolveErrorInfo() const override;
+   bool IsSSLError() const override;
+   scoped_refptr<SSLCertRequestInfo> GetCertRequestInfo() override;
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  ResolveInfo GetResolveInfo() const override;
++  ConnectionAttempts GetExtraConnectionAttempts() const override;
++  bool SecureDnsFallbackResolved() const override;
++#endif
++
+   // Returns the timeout for the SSL handshake. This is the same for all
+   // connections regardless of whether or not there is a proxy in use.
+   static base::TimeDelta HandshakeTimeoutForTesting();
+ 
++#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
++  void SetConnectTimeout(int timeout_override) override;
++#endif
++
+  private:
+   enum State {
+     STATE_TRANSPORT_CONNECT,
+     STATE_TRANSPORT_CONNECT_COMPLETE,
+     STATE_SOCKS_CONNECT,
+@@ -219,10 +232,21 @@ class NET_EXPORT_PRIVATE SSLConnectJob : public ConnectJob,
+ 
+   // If not `std::nullopt`, the ECH retry configs to use in the ECH recovery
+   // flow. `endpoint_result_` will then contain the endpoint to reconnect to.
+   std::optional<std::vector<uint8_t>> ech_retry_configs_;
+ 
++#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
++  // Only for transport_connect_job
++  int timeout_override_for_nested_job_{0};
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  ResolveInfo resolve_info_;
++  ConnectionAttempts extra_connection_attempts_;
++  bool secure_dns_fallback_resolved_ = false;
++#endif
++
+   // If not empty, the intersection of the client's trusted TLS Trust Anchor IDs
+   // with those advertised by the server during the handshake, in wire format.
+   // This is the set of Trust Anchor IDs to advertise in the ClientHello when
+   // retrying the connection after receiving an error. When this is non-empty,
+   // `endpoint_result_` will contain the endpoint to reconnect to.

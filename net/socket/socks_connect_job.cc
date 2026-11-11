@@ -17,6 +17,7 @@
 #include "net/socket/socks5_client_socket.h"
 #include "net/socket/socks_client_socket.h"
 #include "net/socket/transport_connect_job.h"
+#include "arkweb/chromium_ext/net/socket/arkweb_transport_connect_job_ext.h"
 
 namespace net {
 
@@ -194,14 +195,28 @@ int SOCKSConnectJob::DoSOCKSConnect() {
 }
 
 int SOCKSConnectJob::DoSOCKSConnectComplete(int result) {
-  if (!socks_params_->is_socks_v5())
+  if (!socks_params_->is_socks_v5()) {
     resolve_error_info_ = socks_socket_ptr_->GetResolveErrorInfo();
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    resolve_info_ = socks_socket_ptr_->GetResolveInfo();
+    secure_dns_fallback_resolved_ =
+        socks_socket_ptr_->SecureDnsFallbackResolved();
+#endif
+  }
+
   if (result != OK) {
     socket_->Disconnect();
     return result;
   }
 
   SetSocket(std::move(socket_), std::nullopt /* dns_aliases */);
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  SetResolveInfoToSocket(resolve_info_);
+  SetExtraConnectionAttemptsToSocket(extra_connection_attempts_);
+#endif
+
   return result;
 }
 
@@ -215,5 +230,26 @@ void SOCKSConnectJob::ChangePriorityInternal(RequestPriority priority) {
   if (transport_connect_job_)
     transport_connect_job_->ChangePriority(priority);
 }
+
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+void SOCKSConnectJob::SetConnectTimeout(int timeout_override) {
+  timeout_override_for_nested_job_ = timeout_override;
+  timeout_override_ = base::TimeDelta();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+ResolveInfo SOCKSConnectJob::GetResolveInfo() const {
+  return resolve_info_;
+}
+
+ConnectionAttempts SOCKSConnectJob::GetExtraConnectionAttempts() const {
+  return extra_connection_attempts_;
+}
+
+bool SOCKSConnectJob::SecureDnsFallbackResolved() const {
+  return secure_dns_fallback_resolved_;
+}
+#endif
 
 }  // namespace net

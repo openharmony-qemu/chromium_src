@@ -1,0 +1,36 @@
+diff a/net/socket/socks_connect_job.cc b/net/socket/socks_connect_job.cc	(rejected hunks)
+@@ -161,18 +162,34 @@ int SOCKSConnectJob::DoLoop(int result) {
+ 
+ int SOCKSConnectJob::DoTransportConnect() {
+   DCHECK(!transport_connect_job_);
+ 
+   next_state_ = STATE_TRANSPORT_CONNECT_COMPLETE;
++#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
++  transport_connect_job_ = std::make_unique<ArkWebTransportConnectJobExt>(
++#else
+   transport_connect_job_ = std::make_unique<TransportConnectJob>(
++#endif
+       priority(), socket_tag(), common_connect_job_params(),
+       socks_params_->transport_params(), this, &net_log());
++#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
++  transport_connect_job_->SetConnectTimeout(timeout_override_for_nested_job_);
++#endif
+   return transport_connect_job_->Connect();
+ }
+ 
+ int SOCKSConnectJob::DoTransportConnectComplete(int result) {
+   resolve_error_info_ = transport_connect_job_->GetResolveErrorInfo();
++
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  resolve_info_ = transport_connect_job_->GetResolveInfo();
++  extra_connection_attempts_ =
++      transport_connect_job_->GetExtraConnectionAttempts();
++  secure_dns_fallback_resolved_ =
++      transport_connect_job_->SecureDnsFallbackResolved();
++#endif
++
+   if (result != OK)
+     return ERR_PROXY_CONNECTION_FAILED;
+ 
+   // Start the timer to time allowed for SOCKS handshake.
+   ResetTimer(kSOCKSConnectJobTimeout);

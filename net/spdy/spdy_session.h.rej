@@ -1,0 +1,80 @@
+diff a/net/spdy/spdy_session.h b/net/spdy/spdy_session.h	(rejected hunks)
+@@ -60,10 +60,11 @@
+ #include "url/scheme_host_port.h"
+ 
+ namespace net {
+ 
+ namespace test {
++class SpdyHttpStreamTest;
+ class SpdyStreamTest;
+ }
+ 
+ // TLS and other layers will chunk data at 16KB. Making the max frame size too
+ // small will lead to increased CPU/byte cost and overhead on both client/server
+@@ -100,10 +101,17 @@ const spdy::SpdyStreamId kLastStreamId = 0x7fffffff;
+ // 10^-8 of cases. Therefore we picked 10000 as a number that will
+ // virtually never be hit in practice, while still preventing an
+ // attacker from growing this queue unboundedly.
+ const int kSpdySessionMaxQueuedCappedFrames = 10000;
+ 
++// Default minimum time the connection must be idle before a "Preface Ping"
++// is sent upon subsequent write activity.
++// A "Preface Ping" is a PING frame proactively sent by the SPDY session
++// prior to enqueuing a DATA or HEADERS frame when the connection has been
++// idle, to verify that the network path is still alive.
++const int kSpdyDefaultConnectionAtRiskOfLossSeconds = 10;
++
+ // Default time to delay sending small receive window updates (can be
+ // configured through SetTimeToBufferSmallWindowUpdates()). Usually window
+ // updates are sent when half of the receive window has been processed by
+ // the client but in the case of a client that consumes the data slowly,
+ // this strategy alone would make servers consider the connection or stream
+@@ -614,10 +622,14 @@ class NET_EXPORT SpdySession
+   bool IsBrokenConnectionDetectionEnabled() const;
+ 
+   SpdySessionInitiator spdy_session_initiator() const {
+     return spdy_session_initiator_;
+   }
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  const ResolveInfo GetResolveInfo() const;
++  const ConnectionAttempts GetExtraConnectionAttempts() const;
++#endif
+ 
+  private:
+   friend class test::SpdyStreamTest;
+   friend class base::RefCounted<SpdySession>;
+   friend class HttpNetworkTransactionTest;
+@@ -626,10 +638,12 @@ class NET_EXPORT SpdySession
+   friend class SpdyNetworkTransactionTest;
+   friend class SpdyProxyClientSocketTest;
+   friend class SpdySessionPoolTest;
+   friend class SpdySessionTest;
+   friend class SpdyStreamRequest;
++  friend class test::SpdyHttpStreamTest;
++  friend class test::SpdyStreamTest;
+ 
+   using PendingStreamRequestQueue =
+       base::circular_deque<base::WeakPtr<SpdyStreamRequest>>;
+   using ActiveStreamMap = std::map<spdy::SpdyStreamId, SpdyStream*>;
+   using CreatedStreamSet = std::set<raw_ptr<SpdyStream>>;
+@@ -856,10 +870,20 @@ class NET_EXPORT SpdySession
+   // the session to the draining state.
+   void DoDrainSession(Error err,
+                       const std::string& description,
+                       bool force_send_go_away = false);
+ 
++
++  // Immediately marks a session as unavailable, to prevent reuse, and posts a
++  // task to call DoDrainSession (if the session is drained for some other
++  // reason in the meantime, that is fine). This should be used instead of
++  // DoDrainSession when there may be a consumer of the SpdySession on the
++  // stack, so as to avoid reentrancy.
++  void DoDrainSessionAsync(Error err,
++                           std::string description,
++                           bool force_send_go_away = false);
++
+   // Called right before closing a (possibly-inactive) stream for a
+   // reason other than being requested to by the stream.
+   void LogAbandonedStream(SpdyStream* stream, Error status);
+ 
+   // Called right before closing an active stream for a reason other

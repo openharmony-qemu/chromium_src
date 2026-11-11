@@ -3193,6 +3193,12 @@ void SpdySession::OnHeaders(spdy::SpdyStreamId stream_id,
   if (it == active_streams_.end()) {
     // NOTE:  it may just be that the stream was cancelled.
     LOG(WARNING) << "Received HEADERS for invalid stream " << stream_id;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING) << "Received HEADERS for invalid stream "
+                          << stream_id;
+#endif
+
     return;
   }
 
@@ -3517,5 +3523,23 @@ void SpdySession::MaybeDisableBrokenConnectionDetection() {
   NetworkChangeNotifier::RemoveDefaultNetworkActiveObserver(this);
   check_connection_on_radio_wakeup_ = false;
 }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+const ResolveInfo SpdySession::GetResolveInfo() const {
+  if (socket_) {
+    return socket_->GetDnsResolveInfo();
+  }
+
+  return ResolveInfo();
+}
+
+const ConnectionAttempts SpdySession::GetExtraConnectionAttempts() const {
+  if (socket_) {
+    return socket_->GetExtraConnectionAttempts();
+  }
+
+  return ConnectionAttempts();
+}
+#endif
 
 }  // namespace net

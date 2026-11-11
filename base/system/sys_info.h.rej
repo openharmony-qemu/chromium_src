@@ -1,0 +1,14 @@
+diff a/base/system/sys_info.h b/base/system/sys_info.h	(rejected hunks)
+@@ -364,11 +364,11 @@ class BASE_EXPORT SysInfo {
+   static ByteCount AmountOfAvailablePhysicalMemoryImpl();
+   static bool IsLowEndDeviceImpl();
+   static HardwareInfo GetHardwareInfoSync();
+ 
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+-    BUILDFLAG(IS_AIX)
++    BUILDFLAG(IS_AIX) || BUILDFLAG(IS_OHOS)
+   static ByteCount AmountOfAvailablePhysicalMemory(
+       const SystemMemoryInfo& meminfo);
+ #endif
+ 
+   // Sets the amount of physical memory for testing, thus allowing tests to run

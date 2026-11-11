@@ -553,7 +553,9 @@ void ThreadControllerWithMessagePumpImpl::DoIdleWork() {
   // Must be after `on_idle` as this trace event's scope must end before the END
   // of the "ThreadController active" trace event emitted from
   // `run_level_tracker_.OnIdle()`.
+#if !BUILDFLAG(ARKWEB_DFX_TRACING)
   TRACE_EVENT0("sequence_manager", "SequenceManager::DoIdleWork");
+#endif
 
 #if BUILDFLAG(IS_WIN)
   if (!power_monitor_.IsProcessInPowerSuspendState()) {
@@ -745,7 +747,7 @@ void ThreadControllerWithMessagePumpImpl::AttachToMessagePump() {
 void ThreadControllerWithMessagePumpImpl::DetachFromMessagePump() {
   static_cast<MessagePumpCFRunLoopBase*>(pump_.get())->Detach();
 }
-#elif BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
 void ThreadControllerWithMessagePumpImpl::AttachToMessagePump() {
   CHECK(main_thread_only().work_batch_size == 1);
   // Aborting the message pump currently relies on the batch size being 1.

@@ -1,0 +1,45 @@
+diff a/base/synchronization/waitable_event.cc b/base/synchronization/waitable_event.cc	(rejected hunks)
+@@ -22,23 +22,27 @@ WaitableEvent::~WaitableEvent() {
+     // Check the tracing state to avoid an unnecessary syscall on destruction
+     // (which can be performance sensitive, crbug.com/40275035).
+     static const uint8_t* flow_enabled =
+         TRACE_EVENT_API_GET_CATEGORY_GROUP_ENABLED("wakeup.flow,toplevel.flow");
+     if (*flow_enabled && IsSignaled()) {
++#if !BUILDFLAG(ARKWEB_DFX_TRACING)
+       TRACE_EVENT_INSTANT("wakeup.flow,toplevel.flow",
+                           "~WaitableEvent while Signaled",
+                           perfetto::TerminatingFlow::FromPointer(this));
++#endif
+     }
+   }
+ }
+ 
+ void WaitableEvent::Signal() {
+   // Must be ordered before SignalImpl() to guarantee it's emitted before the
+   // matching TerminatingFlow in TimedWait().
+   if (!only_used_while_idle_) {
++#if !BUILDFLAG(ARKWEB_DFX_TRACING)
+     TRACE_EVENT_INSTANT("wakeup.flow,toplevel.flow", "WaitableEvent::Signal",
+                         perfetto::Flow::FromPointer(this));
++#endif
+   }
+   SignalImpl();
+ }
+ 
+ void WaitableEvent::Wait() {
+@@ -76,13 +82,15 @@ size_t WaitableEvent::WaitMany(base::span<WaitableEvent*> events) {
+       FROM_HERE, BlockingType::MAY_BLOCK);
+ 
+   const size_t signaled_id = WaitManyImpl(events);
+   WaitableEvent* const signaled_event = events[signaled_id];
+   if (!signaled_event->only_used_while_idle_) {
++#if !BUILDFLAG(ARKWEB_DFX_TRACING)
+     TRACE_EVENT_INSTANT("wakeup.flow,toplevel.flow",
+                         "WaitableEvent::WaitMany Complete",
+                         perfetto::TerminatingFlow::FromPointer(signaled_event));
++#endif
+   }
+   return signaled_id;
+ }
+ 
+ }  // namespace base

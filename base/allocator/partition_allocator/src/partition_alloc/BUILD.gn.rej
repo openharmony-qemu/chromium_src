@@ -1,0 +1,52 @@
+diff a/base/allocator/partition_allocator/src/partition_alloc/BUILD.gn b/base/allocator/partition_allocator/src/partition_alloc/BUILD.gn	(rejected hunks)
+@@ -866,11 +876,11 @@ if (is_clang_or_gcc) {
+     }
+     if (enable_allocator_shim_partition_alloc_dispatch_with_advanced_checks_support) {
+       shim_sources += [ "shim/allocator_shim_default_dispatch_to_partition_alloc_with_advanced_checks.cc" ]
+       shim_headers += [ "shim/allocator_shim_default_dispatch_to_partition_alloc_with_advanced_checks.h" ]
+     }
+-    if (is_android) {
++    if (is_android || is_ohos) {
+       shim_headers += [
+         "shim/allocator_shim_override_cpp_symbols.h",
+         "shim/allocator_shim_override_linker_wrapped_symbols.h",
+       ]
+       shim_sources -= [ "shim/allocator_shim.cc" ]
+@@ -934,11 +944,11 @@ if (is_clang_or_gcc) {
+         no_default_deps = true
+       }
+     }
+ 
+     if (!use_partition_alloc_as_malloc) {
+-      if (is_android) {
++      if (is_android || is_component_build) {
+         shim_sources += [
+           "shim/allocator_shim_default_dispatch_to_linker_wrapped_symbols.cc",
+         ]
+       }
+       if (is_apple) {
+@@ -1011,10 +1021,12 @@ if (build_with_chromium) {
+       sources += [
+         "address_pool_manager_unittest.cc",
+         "address_space_randomization_unittest.cc",
+         "compressed_pointer_unittest.cc",
+         "memory_reclaimer_unittest.cc",
++        "partition_alloc_base/debug/proc_maps_linux.cc",
++        "partition_alloc_base/debug/proc_maps_linux.h",
+         "partition_alloc_base/bits_pa_unittest.cc",
+         "partition_alloc_base/component_export_pa_unittest.cc",
+         "partition_alloc_base/containers/flat_map_pa_unittest.cc",
+         "partition_alloc_base/cpu_pa_unittest.cc",
+         "partition_alloc_base/logging_pa_unittest.cc",
+@@ -1176,10 +1188,11 @@ source_set("test_support") {
+     "pointers/raw_ptr_counting_impl_for_test.cc",
+     "pointers/raw_ptr_counting_impl_for_test.h",
+   ]
+   if (is_posix) {
+     sources += [
++      "partition_alloc_base/threading/platform_thread_linux_for_testing.cc",
+       "partition_alloc_base/threading/platform_thread_posix_for_testing.cc",
+     ]
+   }
+   if (is_fuchsia) {
+     sources += [

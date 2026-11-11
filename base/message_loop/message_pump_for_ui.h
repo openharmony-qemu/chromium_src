@@ -14,13 +14,16 @@
 #include "base/message_loop/message_pump_win.h"
 #elif BUILDFLAG(IS_ANDROID)
 #include "base/message_loop/message_pump_android.h"
+#elif BUILDFLAG(IS_ARKWEB)
+#include "base/message_loop/message_pump_ohos.h"
 #elif BUILDFLAG(IS_APPLE)
 #include "base/message_loop/message_pump.h"
 #elif BUILDFLAG(IS_AIX)
 // No MessagePumpForUI, see below.
 #elif defined(USE_GLIB)
 #include "base/message_loop/message_pump_glib.h"
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_BSD)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_BSD) || \
+      BUILDFLAG(IS_OHOS)
 #include "base/message_loop/message_pump_epoll.h"
 #elif BUILDFLAG(IS_FUCHSIA)
 #include "base/message_loop/message_pump_fuchsia.h"
@@ -33,6 +36,8 @@ namespace base {
 using MessagePumpForUI = MessagePumpForUI;
 #elif BUILDFLAG(IS_ANDROID)
 using MessagePumpForUI = MessagePumpAndroid;
+#elif BUILDFLAG(IS_ARKWEB)
+using MessagePumpForUI = MessagePumpForUI;
 #elif BUILDFLAG(IS_APPLE)
 // MessagePumpForUI isn't bound to a specific impl on Mac. While each impl can
 // be represented by a plain MessagePump: message_pump_apple::Create() must be
@@ -43,7 +48,8 @@ using MessagePumpForUI = MessagePump;
 // TODO(abarth): Figure out if we need this.
 #elif defined(USE_GLIB)
 using MessagePumpForUI = MessagePumpGlib;
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_BSD)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_BSD) || \
+      BUILDFLAG(IS_OHOS)
 using MessagePumpForUI = MessagePumpEpoll;
 #elif BUILDFLAG(IS_FUCHSIA)
 using MessagePumpForUI = MessagePumpFuchsia;

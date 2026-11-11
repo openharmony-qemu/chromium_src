@@ -426,6 +426,16 @@ DictValue DictValue::Clone() const {
   storage.reserve(storage_.size());
 
   for (const auto& [key, value] : storage_) {
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+    if (!value) {
+      LOG(ERROR) << "Dict constructor, key:" << key << " value is nullptr";
+      continue;
+    }
+    if (value->type() > Value::Type::LIST) {
+      LOG(ERROR) << "Dict constructor, key:" << key << ", value->type:" << static_cast<int>(value->type());
+      continue;
+    }
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
     storage.emplace_back(key, std::make_unique<Value>(value->Clone()));
   }
 

@@ -1,0 +1,67 @@
+diff a/base/feature_list_unittest.cc b/base/feature_list_unittest.cc	(rejected hunks)
+@@ -23,16 +30,38 @@
+ #include "base/metrics/field_trial_param_associator.h"
+ #include "base/metrics/persistent_memory_allocator.h"
+ #include "base/strings/strcat.h"
+ #include "base/strings/string_util.h"
+ #include "base/strings/stringprintf.h"
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++#include "base/feature_list.cc"
++#include "testing/gmock/include/gmock/gmock.h"
++#else
+ #include "base/test/scoped_feature_list.h"
++#endif
+ #include "testing/gtest/include/gtest/gtest.h"
+ 
+ namespace base {
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++class MockSharedMemoryMapper : public SharedMemoryMapper {
++ public:
++  MOCK_METHOD(std::optional<span<uint8_t>>,
++              Map,
++              (subtle::PlatformSharedMemoryHandle handle,
++               bool write_allowed,
++               uint64_t offset,
++               size_t size),
++              (override));
++  MOCK_METHOD(void, Unmap, (span<uint8_t> mapping), (override));
++};
++#endif
++
+ namespace {
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++constexpr char kFeatureOverlayScrollbarName[] = "OverlayScrollbar";
++#endif
+ 
+ constexpr char kFeatureOnByDefaultName[] = "OnByDefault";
+ BASE_FEATURE(kFeatureOnByDefault,
+              kFeatureOnByDefaultName,
+              FEATURE_ENABLED_BY_DEFAULT);
+@@ -66,12 +95,26 @@ class FeatureListTest : public testing::Test {
+   }
+   FeatureListTest(const FeatureListTest&) = delete;
+   FeatureListTest& operator=(const FeatureListTest&) = delete;
+   ~FeatureListTest() override = default;
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  void SetUp() override {
++    auto feature_list = std::make_unique<FeatureList>();
++    test_feature_list_ = feature_list.get();
++    scoped_feature_list_.InitWithFeatureList(std::move(feature_list));
++  }
++
++  void TearDown() override { g_feature_list_instance = nullptr; }
++
++ protected:
++  test::ScopedFeatureList scoped_feature_list_;
++  FeatureList* test_feature_list_;
++#else
+  private:
+   test::ScopedFeatureList scoped_feature_list_;
++#endif
+ };
+ 
+ TEST_F(FeatureListTest, DefaultStates) {
+   EXPECT_TRUE(FeatureList::IsEnabled(kFeatureOnByDefault));
+   EXPECT_FALSE(FeatureList::IsEnabled(kFeatureOffByDefault));

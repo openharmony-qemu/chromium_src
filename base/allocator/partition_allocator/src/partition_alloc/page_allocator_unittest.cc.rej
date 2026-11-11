@@ -1,0 +1,15 @@
+diff a/base/allocator/partition_allocator/src/partition_alloc/page_allocator_unittest.cc b/base/allocator/partition_allocator/src/partition_alloc/page_allocator_unittest.cc	(rejected hunks)
+@@ -24,11 +24,12 @@
+ #include "partition_alloc/partition_alloc_base/logging.h"
+ #include "partition_alloc/partition_alloc_base/notreached.h"
+ #include "partition_alloc/partition_alloc_config.h"
+ #include "partition_alloc/tagging.h"
+ 
+-#if defined(LINUX_NAME_REGION)
++#include "arkweb/build/features/features.h"
++#if defined(LINUX_NAME_REGION) || BUILDFLAG(ARKWEB_UNITTESTS)
+ #include "partition_alloc/partition_alloc_base/debug/proc_maps_linux.h"  // nogncheck
+ #endif
+ 
+ #include "testing/gtest/include/gtest/gtest.h"
+ 

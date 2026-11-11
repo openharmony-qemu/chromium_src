@@ -1,0 +1,16 @@
+diff a/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/compiler_specific.h b/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/compiler_specific.h	(rejected hunks)
+@@ -3,12 +3,12 @@
+ // found in the LICENSE file.
+ 
+ #ifndef PARTITION_ALLOC_PARTITION_ALLOC_BASE_COMPILER_SPECIFIC_H_
+ #define PARTITION_ALLOC_PARTITION_ALLOC_BASE_COMPILER_SPECIFIC_H_
+ 
+-#include "partition_alloc/build_config.h"
+-#include "partition_alloc/buildflags.h"
++#include "base/allocator/partition_allocator/src/partition_alloc/build_config.h"
++#include "base/allocator/partition_allocator/src/partition_alloc/buildflags.h"
+ 
+ // A wrapper around `__has_cpp_attribute()`, which is in C++20 and thus not yet
+ // available for all targets PA supports (since PA's minimum C++ version is 17).
+ // This works similarly to `PA_HAS_ATTRIBUTE()` below, in that where it's
+ // unavailable it will map to `0`.

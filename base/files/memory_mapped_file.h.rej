@@ -1,0 +1,16 @@
+diff a/base/files/memory_mapped_file.h b/base/files/memory_mapped_file.h	(rejected hunks)
+@@ -118,10 +130,14 @@ class BASE_EXPORT MemoryMappedFile {
+   span<uint8_t> mutable_bytes() { return bytes_; }
+ 
+   // Is file_ a valid file handle that points to an open, memory mapped file?
+   bool IsValid() const;
+ 
++#if BUILDFLAG(IS_ARKWEB) && (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
++  void SetOhosFileMapper(std::shared_ptr<OHOS::NWeb::OhosFileMapper>& mapper);
++#endif
++
+  private:
+   // Given the arbitrarily aligned memory region [start, size], returns the
+   // boundaries of the region aligned to the granularity specified by the OS,
+   // (a page on Linux, ~32k on Windows) as follows:
+   // - |aligned_start| is page aligned and <= |start|.

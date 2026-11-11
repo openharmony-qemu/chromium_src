@@ -10,7 +10,11 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/base_export.h"
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#undef private
+#endif  // ARKWEB_UNITTESTS
 #include "base/containers/span.h"
 #include "base/files/file.h"
 #include "base/memory/raw_ptr_exclusion.h"
@@ -19,6 +23,14 @@
 #if BUILDFLAG(IS_WIN)
 #include "base/win/scoped_handle.h"
 #endif
+
+#if BUILDFLAG(IS_ARKWEB) && (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
+#include "arkweb/chromium_ext/base/files/memory_mapped_file_ext.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#define private public
+#endif  // ARKWEB_UNITTESTS
 
 namespace base {
 
@@ -154,11 +166,19 @@ class BASE_EXPORT MemoryMappedFile {
   // RAW_PTR_EXCLUSION: Never allocated by PartitionAlloc (always mmap'ed), so
   // there is no benefit to using a raw_span, only cost.
   RAW_PTR_EXCLUSION span<uint8_t> bytes_;
+#if BUILDFLAG(IS_ARKWEB) && \
+    (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
+  base::MemoryMappedFileExt mapper_file_ext_;
+#endif
 
 #if BUILDFLAG(IS_WIN)
   win::ScopedHandle file_mapping_;
 #endif
 };
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#undef private
+#endif  // ARKWEB_UNITTESTS
 
 }  // namespace base
 

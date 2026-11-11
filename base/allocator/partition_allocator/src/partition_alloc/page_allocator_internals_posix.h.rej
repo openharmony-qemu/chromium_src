@@ -1,0 +1,14 @@
+diff a/base/allocator/partition_allocator/src/partition_alloc/page_allocator_internals_posix.h b/base/allocator/partition_allocator/src/partition_alloc/page_allocator_internals_posix.h	(rejected hunks)
+@@ -26,11 +26,11 @@
+ #include "partition_alloc/page_allocator_constants.h"
+ #include "partition_alloc/partition_alloc_base/posix/eintr_wrapper.h"
+ #include "partition_alloc/partition_alloc_check.h"
+ #include "partition_alloc/thread_isolation/thread_isolation.h"
+ 
+-#if PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_LINUX)
++#if PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_LINUX) || PA_BUILDFLAG(IS_OHOS)
+ #include <sys/prctl.h>
+ #endif
+ 
+ #if PA_BUILDFLAG(IS_LINUX) || PA_BUILDFLAG(IS_CHROMEOS)
+ #include <sys/resource.h>

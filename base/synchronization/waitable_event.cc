@@ -71,9 +71,11 @@ bool WaitableEvent::TimedWait(TimeDelta wait_delta, const Location& location) {
   const bool result = TimedWaitImpl(wait_delta);
 
   if (result && !only_used_while_idle_) {
+#if !BUILDFLAG(ARKWEB_DFX_TRACING)
     TRACE_EVENT_INSTANT("wakeup.flow,toplevel.flow",
                         "WaitableEvent::Wait Complete",
                         perfetto::TerminatingFlow::FromPointer(this));
+#endif
   }
 
   return result;

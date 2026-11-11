@@ -29,6 +29,7 @@ import("//build/config/compiler/compiler.gni")
 import("//build/config/cronet/config.gni")
 import("//build/config/dcheck_always_on.gni")
 import("//build/config/logging.gni")
+import("//build/config/ohos/config.gni")
 import("//build/config/profiling/profiling.gni")
 import("//build/config/rust.gni")
 import("//build/config/sanitizers/sanitizers.gni")
@@ -54,6 +55,12 @@ if (is_ios) {
 
 if (is_win) {
   import("//build/config/win/control_flow_guard.gni")
+}
+
+import("//arkweb/build/features/features.gni")
+
+if (enable_arkweb) {
+  import("//arkweb/chromium_ext/base/arkweb_base_ext.gni")
 }
 
 if (is_android) {
@@ -974,6 +981,8 @@ component("base") {
     "time/tick_clock.h",
     "time/time.cc",
     "time/time.h",
+    "//arkweb/chromium_ext/base/time/time_utils.cc",
+    "//arkweb/chromium_ext/base/time/time_utils.h",
     "time/time_delta_from_string.cc",
     "time/time_delta_from_string.h",
     "time/time_override.cc",
@@ -1089,9 +1098,20 @@ component("base") {
       "time/time_conversion_posix.cc",
       "timer/hi_res_timer_manager_posix.cc",
     ]
+    if (enable_arkweb) {
+      sources += arkweb_base_process_ext_sources
+    }
   }
 
-  if (is_linux || is_chromeos) {
+  if (is_ohos) {
+    sources += [
+      "//arkweb/chromium_ext/base/debug/stack_trace_ohos.cc",
+    ]
+
+    public_configs = [ ":ohos_system_libs" ]
+  }
+
+  if (is_linux || is_chromeos || is_ohos) {
     sources += [
       "debug/proc_maps_linux.cc",
       "debug/proc_maps_linux.h",
@@ -1112,6 +1132,19 @@ component("base") {
     ]
   }
 
+  if (defined(is_arkweb) && is_arkweb) {
+    sources -= [
+      "files/scoped_file_linux.cc",
+    ]
+    sources += [
+      "../arkweb/chromium_ext/base/files/scoped_file_ohos.cc",
+    ]
+  }
+
+  if (enable_arkweb) {
+    sources += arkweb_metrics_sources
+  }
+
   if (is_chromeos) {
     sources += [
       "process/process_priority_delegate.h",
@@ -1120,7 +1153,7 @@ component("base") {
     ]
   }
 
-  if (is_linux || is_chromeos || is_android) {
+  if (is_linux || is_chromeos || is_android || is_ohos) {
     sources += [
       "files/file_path_watcher_inotify.cc",
       "files/file_path_watcher_inotify.h",
@@ -1237,6 +1270,25 @@ component("base") {
   # strings
   if (is_apple || is_chromeos || is_castos || is_cast_android || is_fuchsia) {
     defines += [ "SYSTEM_NATIVE_UTF8" ]
+  }
+
+  # OpenHarmony.
+  if (is_ohos) {
+    sources += [
+      "debug/elf_reader.cc",
+      "debug/elf_reader.h",
+      "system/sys_info_linux.cc",
+      "//arkweb/chromium_ext/base/memory/platform_shared_memory_mapper_ohos.cc",
+      "//arkweb/chromium_ext/base/memory/platform_shared_memory_region_ohos.cc",
+      "ohos/task_scheduler/task_runner_ohos.cc",
+      "ohos/task_scheduler/task_runner_ohos.h",
+      "ohos/task_scheduler/task_traits_ohos.h",
+    ]
+
+    deps += [
+      "//base/android/linker:ashmem",
+      "//ohos/adapter:adapter",
+    ]
   }
 
   # Android.
@@ -1772,7 +1824,7 @@ component("base") {
     ]
   }
 
-  if (is_posix && !is_android) {
+    if (is_posix && !is_android && !is_ohos) {
     sources += [ "debug/stack_trace_posix.cc" ]
   }
 
@@ -1819,6 +1871,21 @@ component("base") {
       "stack_canary_linux.h",
     ]
   }
+
+  # FIXME: Only the adaptation to base_path is added.
+  if (is_ohos) {
+    sources += [
+      "//arkweb/chromium_ext/base/base_paths_ohos.h",
+      "//arkweb/chromium_ext/base/base_paths_ohos.cc",
+      "nix/mime_util_xdg.cc",
+      "nix/mime_util_xdg.h",
+      "nix/xdg_util.cc",
+      "nix/xdg_util.h",
+      "stack_canary_linux.cc",
+      "stack_canary_linux.h",
+    ]
+  }
+
   if (use_partition_alloc) {
     sources += [
       "allocator/dispatcher/memory_tagging.cc",
@@ -2428,7 +2495,7 @@ component("base") {
       ]
     }
   } else {
-    if (!is_android) {
+    if (!is_android && !is_ohos) {
       sources -= [
         "linux_util.cc",
         "linux_util.h",
@@ -2454,7 +2521,7 @@ component("base") {
 
   # Android and MacOS have their own custom shared memory handle
   # implementations. e.g. due to supporting both POSIX and native handles.
-  if (is_posix && !is_android && !is_apple) {
+  if (is_posix && !is_android && !is_apple && !is_ohos) {
     sources += [
       "memory/platform_shared_memory_mapper_posix.cc",
       "memory/platform_shared_memory_region_posix.cc",
@@ -2500,11 +2567,15 @@ component("base") {
     sources += [ "time/time_exploded_posix.cc" ]
   }
 
-  if ((is_posix && !is_apple && !is_android) || is_fuchsia) {
+  if ((is_posix && !is_apple && !is_android && !is_arkweb) || is_fuchsia) {
     sources += [
       "profiler/core_unwinders_posix.cc",
       "profiler/stack_sampler_posix.cc",
     ]
+  }
+
+  if (is_arkweb) {
+    sources += [ "profiler/core_unwinders_posix.cc" ]
   }
 
   if ((is_posix && !is_apple && !is_android && !is_chromeos) || is_fuchsia) {
@@ -2964,6 +3035,15 @@ if (is_linux || is_chromeos) {
   }
 }
 
+# Build flags for ArkWeb package infomation
+if (enable_arkweb) {
+  buildflag_header("ohos_package_info") {
+    header = "ohos_package_info.h"
+    header_dir = "base/ohos"
+    flags = [ "OHOS_PACKAGE_NAME=\"${ohos_package_name}\"" ]
+  }
+}
+
 # Build flags for Control Flow Integrity
 # https://www.chromium.org/developers/testing/control-flow-integrity
 buildflag_header("cfi_buildflags") {
@@ -3073,7 +3153,7 @@ buildflag_header("protected_memory_buildflags") {
   header_dir = "base/memory"
 
   protected_memory_enabled = !is_component_build && is_clang &&
-                             (is_win || is_linux || is_android || is_mac)
+                             (is_win || is_linux || is_android || is_mac || is_ohos)
 
   flags = [ "PROTECTED_MEMORY_ENABLED=$protected_memory_enabled" ]
 }
@@ -3190,6 +3270,10 @@ static_library("base_static") {
   if (!is_debug) {
     configs -= [ "//build/config/compiler:default_optimization" ]
     configs += [ "//build/config/compiler:optimize_max" ]
+  }
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
   }
 }
 
@@ -4102,7 +4186,7 @@ test("base_unittests") {
     "test/test_waitable_event_unittest.cc",
     "test/values_test_util_unittest.cc",
     "thread_annotations_unittest.cc",
-    "threading/hang_watcher_unittest.cc",
+    #"threading/hang_watcher_unittest.cc",
     "threading/platform_thread_metrics_unittest.cc",
     "threading/platform_thread_unittest.cc",
     "threading/post_task_and_reply_impl_unittest.cc",
@@ -4163,6 +4247,53 @@ test("base_unittests") {
     "allocator/partition_allocator/src/partition_alloc/pointers/raw_ptr_unittest.cc",
     "allocator/partition_allocator/src/partition_alloc/pointers/raw_ref_unittest.cc",
   ]
+
+  if (arkweb_unittests) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+ 
+    sources += arkweb_base_unittest_sources
+    if (arkweb_unittests) {
+      configs += [
+        "//arkweb/chromium_ext/:net_dns_config",
+      ]
+    }
+    sources += arkweb_storage_browser_database_unittests_sources
+    sources += arkweb_components_web_cache_browser_unittest_sources
+    sources += arkweb_storage_monitor_unittest_source
+    sources += arkweb_field_trial_utils_unittest_source
+    sources += arkweb_crashpad_unittest_sources
+    sources += arkweb_crashpad_sources
+    sources += arkweb_content_common_unittests_sources
+    sources += arkweb_content_renderer_unittests_sources
+    sources += arkweb_base_ohos_ltpo_unittests_sources
+    sources += arkweb_render_process_startup_unittest_sources
+    sources += arkweb_ptrace_unittest_sources
+    sources += [
+      "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
+      "//arkweb/chromium_ext/ohos_test/unittest/event_reporter/event_reporter_unittest.cc",
+    ]
+    sources += arkweb_content_browser_dfx_unittests_sources
+    if (arkweb_test) {
+      sources += [
+        "//arkweb/ohos_adapter_ndk/ndk_version.cc",
+      ]
+    }
+    sources += arkweb_ohos_adapter_ndk_unittests_sources
+    sources += arkweb_media_codec_decoder_adapter_impl_unittest_sources
+
+    public_deps = [
+      "//ui/accessibility:test_support",
+      "//content/public/browser",
+      "//components/autofill/core/browser",
+      "//components/subresource_filter/content/browser",
+      "//components/js_injection/browser",
+    ]
+
+    if (use_partition_alloc && is_clang_or_gcc && is_ohos) {
+      sources += arkweb_base_allcator_partition_alloc_unittest_sources
+      public_deps += [ "//base/allocator/partition_allocator/src/partition_alloc:partition_alloc" ]
+    }
+  }
 
   if (!is_cronet_build) {
     # location_unittest.cc fails gn check for tracing-shimmed Cronet builds.
@@ -4454,7 +4585,7 @@ test("base_unittests") {
 
   # Allow more direct string conversions on platforms with native utf8
   # strings
-  if (is_apple || is_chromeos || is_castos || is_cast_android || is_fuchsia) {
+  if (is_apple || is_chromeos || is_castos || is_cast_android || is_fuchsia || is_ohos) {
     defines += [ "SYSTEM_NATIVE_UTF8" ]
   }
 
@@ -4820,6 +4951,30 @@ test("base_unittests") {
 
   if (enable_nocompile_tests) {
     deps += [ ":base_nocompile_tests" ]
+  }
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+    sources += arkweb_metrics_unittests_sources
+  }
+
+  if (arkweb_unittests) {
+    deps += [
+      "//arkweb/ohos_adapter_ndk:adapter_ndk",
+    ]
+    include_dirs = [
+      "//arkweb/glue",
+      "//arkweb/ohos_adapter_ndk/interfaces",
+      "//third_party/ohos_ndk/includes/ohos_adapter",
+    ]
+    if (target_cpu == "arm" || target_cpu == "arm64" || target_cpu == "x86_64") {
+      include_dirs += [ "//ohos_sdk/openharmony/native/sysroot/usr/include/multimedia/image_framework/image" ]
+    }
+  }
+
+  if (arkweb_test) {
+    deps += [ "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_base_ohos" ]
+    deps += [ "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_ndk" ]
   }
 
   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and

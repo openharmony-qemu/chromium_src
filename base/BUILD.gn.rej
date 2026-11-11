@@ -1,0 +1,297 @@
+diff a/base/BUILD.gn b/base/BUILD.gn	(rejected hunks)
+@@ -39,10 +40,12 @@ import("//build/rust/rust_bindgen.gni")
+ import("//build/rust/rust_static_library.gni")
+ import("//build/util/process_version.gni")
+ import("//build_overrides/build.gni")
+ import("//testing/libfuzzer/fuzzer_test.gni")
+ import("//testing/test.gni")
++import("//arkweb/ohos_nweb/src/nweb_sysevent.gni")
++import("//arkweb/build/features/features.gni")
+ import("//third_party/protobuf/proto_library.gni")
+ 
+ if (is_ios) {
+   # Used to access target_environment and target_platform.
+   import("//build/config/apple/mobile_config.gni")
+@@ -151,17 +160,26 @@ if (is_fuchsia) {
+       "sync",  # Used by spinning_mutex.h.
+     ]
+   }
+ }
+ 
++if (is_ohos) {
++  config("ohos_system_libs") {
++    libs = [
++      "hilog_ndk.z",
++      "qos"
++    ]
++  }
++}
++
+ buildflag_header("ios_cronet_buildflags") {
+   header = "ios_cronet_buildflags.h"
+   header_dir = "base/message_loop"
+   flags = [ "CRONET_BUILD=$is_cronet_build" ]
+ }
+ 
+-use_epoll = is_linux || is_chromeos || is_android
++use_epoll = is_linux || is_chromeos || is_android || is_ohos
+ 
+ # Base and everything it depends on should be a static library rather than
+ # a source set. Base is more of a "library" in the classic sense in that many
+ # small parts of it are used in many different contexts. This combined with a
+ # few static initializers floating around means that dead code stripping
+@@ -263,10 +281,11 @@ component("base") {
+     "containers/to_vector.h",
+     "containers/unique_ptr_adapters.h",
+     "containers/variant_map.cc",
+     "containers/variant_map.h",
+     "containers/vector_buffer.h",
++    "containers/weak_value_table.h",
+     "critical_closure.h",
+     "dcheck_is_on.h",
+     "debug/alias.cc",
+     "debug/alias.h",
+     "debug/asan_invalid_access.cc",
+@@ -1073,18 +1118,32 @@ component("base") {
+     "//build:ios_buildflags",
+     "//build/config/compiler:compiler_buildflags",
+     "//third_party/modp_b64",
+   ]
+ 
++  if (is_arkweb_ext && report_sys_event) {
++    defines += [ "REPORT_SYS_EVENT" ]
++  }
++
++  if (defined(is_arkweb) && is_arkweb) {
++    deps += [
++      "//base:base_static",
++    ]
++  }
++
+   # Used by metrics/crc32
+   deps += [ "//third_party/zlib" ]
+ 
+   deps += [
+     ":rust_logger",
+     "//third_party/rust/serde_json_lenient/v0_2/wrapper",
+   ]
+ 
++  if (enable_arkweb) {
++    deps += [ "//arkweb//build/features", "//third_party:huawei_securec" ]
++  }
++
+   # `raw_ptr` cannot be made a component due to CRT symbol issues.
+   # Its gateway to being a component is through `//base`, so we have
+   # to provide the appropriate `#define` here.
+   defines += [ "IS_RAW_PTR_IMPL" ]
+ 
+@@ -1112,10 +1171,27 @@ component("base") {
+     "//base/numerics:base_numerics",
+     "//base/third_party/icu",
+     "//build:chromecast_buildflags",
+     "//third_party/abseil-cpp:absl",
+   ]
++  if (is_ohos && enable_arkweb) {
++    sources += arkweb_base_ext_sources
++    deps += [ "//arkweb//build/features", "//base/third_party/xdg_user_dirs"]
++    if (is_component_build) {
++      deps += [ "//content/public/common:switches" ]
++    }
++    public_deps += [ "//arkweb//build/features" ]
++    public_deps += [ ":ohos_package_info" ]
++    if (is_ohos) {
++      if (!defined(public_deps)) {
++        public_deps = []
++      }
++      public_deps += [
++        "//ohos_glue:ohos_adapter_glue_source",
++      ]
++    }
++  }
+ 
+   sources += [
+     "containers/span_rust.h",
+     "strings/string_view_rust.h",
+   ]
+@@ -2511,11 +2625,27 @@ component("base") {
+       "trace_event/cpufreq_monitor_android.h",
+       "trace_event/java_heap_dump_provider_android.cc",
+       "trace_event/java_heap_dump_provider_android.h",
+     ]
+   }
+-
++  if (is_ohos && arkweb_dfx_tracing) {
++    include_dirs = [ "//third_party/ohos_ndk/includes/ohos_adapter" ]
++    sources += [ "//arkweb/chromium_ext/base/trace_event/trace_event_ohos.cc" ] 
++    sources += [ "//arkweb/chromium_ext/base/trace_event/trace_event_ohos.h" ]
++    # Add HiTrace Interceptor for Perfetto to HiTrace forwarding
++    sources += [
++      "//arkweb/chromium_ext/base/trace_event/hitrace_interceptor_oh.cc",
++      "//arkweb/chromium_ext/base/trace_event/hitrace_interceptor_oh.h",
++      "//arkweb/chromium_ext/base/trace_event/hitrace_export_oh.cc",
++      "//arkweb/chromium_ext/base/trace_event/hitrace_export_oh.h",
++      "//arkweb/chromium_ext/base/trace_event/oh_track_event_state_tracker.cc",
++      "//arkweb/chromium_ext/base/trace_event/oh_track_event_state_tracker.h",
++    ]
++    deps += [
++      "//arkweb/ohos_adapter_ndk:adapter_ndk",
++    ]
++  }
+   if (use_partition_alloc_as_malloc) {
+     sources += [
+       "trace_event/address_space_dump_provider.cc",
+       "trace_event/address_space_dump_provider.h",
+     ]
+@@ -2826,10 +2965,15 @@ static_library("base_static") {
+     "base_switches.h",
+     "immediate_crash.h",
+   ]
+ 
+   deps = [ ":fuzzing_buildflags" ]
++  if (defined(is_arkweb) && is_arkweb) {
++    deps += [
++      "//arkweb/build/features:features",
++    ]
++  }
+ 
+   if (is_win) {
+     sources += [
+       "win/static_constants.cc",
+       "win/static_constants.h",
+@@ -2945,10 +3093,17 @@ component("i18n") {
+   }
+ 
+   if (is_mac) {
+     frameworks = [ "CoreFoundation.framework" ]
+   }
++
++  if (is_arkweb) {
++    sources += arkweb_base_i18n_sources
++    deps += [
++      "//ohos_glue:ohos_adapter_glue_source",
++    ]
++  }
+ }
+ 
+ executable("containers_memory_benchmark") {
+   sources = [ "containers/containers_memory_benchmark.cc" ]
+   deps = [ ":base" ]
+@@ -3426,10 +3581,11 @@ test("base_unittests") {
+     "containers/to_value_list_unittest.cc",
+     "containers/to_vector_unittest.cc",
+     "containers/unique_ptr_adapters_unittest.cc",
+     "containers/variant_map_unittest.cc",
+     "containers/vector_buffer_unittest.cc",
++    "containers/weak_value_table_unittest.cc",
+     "cpu_unittest.cc",
+     "debug/alias_unittest.cc",
+     "debug/asan_service_unittest.cc",
+     "debug/crash_logging_unittest.cc",
+     "debug/debugger_unittest.cc",
+@@ -3825,18 +4028,44 @@ test("base_unittests") {
+     "//third_party/icu",
+     "//third_party/modp_b64",
+ 
+     # TODO(crbug.com/40158212): Move partition_alloc tests into its repository.
+     "allocator/partition_allocator/src/partition_alloc:test_support",
++    "//third_party/blink/public:blink",
+   ]
+ 
+   # TODO(crbug.com/40158212): Move partition_alloc tests into its repository.
+   #
+   # Note: This requires checking `build_with_chromium` because partition_alloc
+   # do not provide ":unittests" when built outside of chromium.
+   # "//base" is a dependency of WebRTC where `build_with_chromium` is false.
+   # TODO(42223878): Remove standalone WebRTC dependency on //base.
++  if (arkweb_unittests) {
++   if (is_arkweb_ext) {
++     import("//arkweb/ohos_nweb_ex/build/features/features.gni")
++   }
++   if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
++     deps += [ "//ohos_nweb_ex/overrides/cef" ]
++   }
++   deps += ["//storage/browser"]
++   deps += ["//chrome/common"]
++   deps += ["//components/web_cache/browser"]
++   deps += ["//components/storage_monitor"]
++   deps += ["//components/performance_manager"]
++   deps += ["//arkweb/chromium_ext/content/browser/dfx:memory_monitor_render"]
++   defines += [ "CRASHPAD_LSS_SOURCE_EXTERNAL" ]
++    deps +=[
++      "//third_party/crashpad/crashpad/client",
++      "//third_party/crashpad/crashpad/util",
++      "//third_party/crashpad/crashpad/minidump",
++      "//third_party/crashpad/crashpad/snapshot",
++      "//third_party:huawei_securec",
++    ]
++   deps += ["//third_party:huawei_securec"]
++   }
++
++
+   if (build_with_chromium) {
+     deps += [ "allocator/partition_allocator/src/partition_alloc:unittests" ]
+   }
+ 
+   deps += [ "//build/rust:cxx_cppdeps" ]
+@@ -3991,11 +4220,22 @@ test("base_unittests") {
+     ]
+ 
+     deps += [ ":stack_canary_linux_unittests" ]
+   }
+ 
+-  sources += [ "test/test_trace_processor_example_unittest.cc" ]
++  sources += [
++      "test/test_trace_processor.cc",
++      "test/test_trace_processor.h",
++      "test/test_trace_processor_export.h",
++      "test/test_trace_processor_impl.cc",
++      "test/test_trace_processor_impl.h",
++      "test/test_trace_processor_example_unittest.cc",
++    ]
++
++  deps += [
++    "//third_party/perfetto:libtrace_processor",
++  ]
+ 
+   if (is_posix) {
+     sources += [
+       "files/dir_reader_posix_unittest.cc",
+       "files/file_descriptor_watcher_posix_unittest.cc",
+@@ -4470,31 +4734,31 @@ if (enable_nocompile_tests) {
+       "containers/contains_nocompile.nc",
+       "containers/enum_set_nocompile.nc",
+       "containers/fixed_flat_map_nocompile.nc",
+       "containers/fixed_flat_set_nocompile.nc",
+       "containers/heap_array_nocompile.nc",
+-      "containers/span_nocompile.nc",
++      # "containers/span_nocompile.nc",
+       "containers/to_value_list_nocompile.nc",
+       "containers/to_vector_nocompile.nc",
+       "debug/crash_logging_nocompile.nc",
+-      "functional/bind_nocompile.nc",
+-      "functional/callback_nocompile.nc",
++      # "functional/bind_nocompile.nc",
++      # "functional/callback_nocompile.nc",
+       "functional/function_ref_nocompile.nc",
+-      "logging_nocompile.nc",
++      # "logging_nocompile.nc",
+       "memory/protected_memory_nocompile.nc",
+       "memory/ref_counted_nocompile.nc",
+       "memory/shared_memory_mapping_nocompile.nc",
+       "memory/structured_shared_memory_nocompile.nc",
+-      "memory/weak_ptr_nocompile.nc",
++      # "memory/weak_ptr_nocompile.nc",
+       "metrics/field_trial_params_nocompile.nc",
+       "metrics/histogram_nocompile.nc",
+       "no_destructor_nocompile.nc",
+       "observer_list_nocompile.nc",
+       "run_loop_nocompile.nc",
+       "safe_numerics_nocompile.nc",
+       "sequence_checker_nocompile.nc",
+-      "strings/cstring_view_nocompile.nc",
++      # "strings/cstring_view_nocompile.nc",
+       "strings/lazy_string_builder_nocompile.nc",
+       "strings/span_printf_nocompile.nc",
+       "strings/string_split_nocompile.nc",
+       "strings/string_view_util_nocompile.nc",
+       "synchronization/lock_nocompile.nc",

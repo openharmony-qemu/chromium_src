@@ -1,0 +1,28 @@
+diff a/base/not_fatal_until.h b/base/not_fatal_until.h	(rejected hunks)
+@@ -3,20 +3,26 @@
+ // found in the LICENSE file.
+ 
+ #ifndef BASE_NOT_FATAL_UNTIL_H_
+ #define BASE_NOT_FATAL_UNTIL_H_
+ 
++#include "arkweb/build/features/features.h"
++
+ namespace base {
+ 
+ // Add new entries a few milestones into the future whenever necessary.
+ // M here refers to milestones, see chrome/VERSION's MAJOR field that updates
+ // when chromium branches.
+ //
+ // To clean up old entries remove the already-fatal argument from CHECKs as well
+ // as from this list. This generates better-optimized CHECKs in official builds.
+ enum class NotFatalUntil {
+   NoSpecifiedMilestoneInternal = -1,
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  M114 = 114,
++  M115 = 115,
++#endif
+   M136 = 136,
+   M137 = 137,
+   M138 = 138,
+   M139 = 139,
+   M140 = 140,

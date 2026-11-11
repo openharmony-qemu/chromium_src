@@ -108,6 +108,7 @@
 #include <string_view>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
 #include "base/containers/span_forward_internal.h"
@@ -528,6 +529,16 @@ class BASE_EXPORT FilePath {
   // managed by Android's Storage Access Framework (SAF). See
   // //base/android/virtual_document_path.h for details.
   bool IsVirtualDocumentPath() const;
+#endif
+
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD) || BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  // Return true if the path is a datashare uri or dataability, or false
+  // otherwise
+  bool IsDataShareUri() const;
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  static bool IsDataShareUrl(const StringType& url);
 #endif
 
   // NOTE: When adding a new public method, consider adding it to

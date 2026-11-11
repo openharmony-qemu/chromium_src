@@ -1,0 +1,15 @@
+diff a/base/threading/thread_restrictions.cc b/base/threading/thread_restrictions.cc	(rejected hunks)
+@@ -240,10 +240,13 @@ ScopedAllowBlocking::ScopedAllowBlocking(const Location& from_here)
+   TRACE_EVENT_BEGIN(
+       "base", "ScopedAllowBlocking", [&](perfetto::EventContext ctx) {
+         ctx.event()->set_source_location_iid(
+             base::trace_event::InternedSourceLocation::Get(&ctx, from_here));
+       });
++#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_DFX_TRACING)
++    OHOS_TRACE_BEGIN("base", "ScopedAllowBlocking");
++#endif
+ }
+ 
+ ScopedAllowBlocking::~ScopedAllowBlocking() {
+   TRACE_EVENT_END0("base", "ScopedAllowBlocking");
+ 

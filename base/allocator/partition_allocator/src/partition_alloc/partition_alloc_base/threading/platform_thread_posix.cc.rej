@@ -1,0 +1,14 @@
+diff a/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/threading/platform_thread_posix.cc b/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/threading/platform_thread_posix.cc	(rejected hunks)
+@@ -109,11 +109,11 @@ PlatformThreadId PlatformThread::CurrentId() {
+           "through fork().");
+     }
+ #endif
+   }
+   return g_thread_id;
+-#elif PA_BUILDFLAG(IS_ANDROID)
++#elif PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_OHOS)
+   // Note: do not cache the return value inside a thread_local variable on
+   // Android (as above). The reasons are:
+   // - thread_local is slow on Android (goes through emutls)
+   // - gettid() is fast, since its return value is cached in pthread (in the
+   //   thread control block of pthread). See gettid.c in bionic.

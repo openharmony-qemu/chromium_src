@@ -1,0 +1,54 @@
+diff a/base/threading/hang_watcher.cc b/base/threading/hang_watcher.cc	(rejected hunks)
+@@ -239,11 +332,11 @@ bool ThreadTypeLoggingLevelGreaterOrEqual(HangWatcher::ThreadType thread_type,
+ // Enables the HangWatcher. When disabled, the HangWatcher thread should not be
+ // started. Enabled by default only on platforms where the generated data is
+ // used, to avoid unnecessary overhead.
+ BASE_FEATURE(kEnableHangWatcher,
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_CHROMEOS) || \
+-    BUILDFLAG(IS_LINUX)
++    BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
+              FEATURE_ENABLED_BY_DEFAULT
+ #else
+              FEATURE_DISABLED_BY_DEFAULT
+ #endif
+ );
+@@ -263,11 +356,18 @@ constexpr base::FeatureParam<int> kUIThreadLogLevel{
+     &kEnableHangWatcher, kBrowserProcessUiThreadLogLevelParam,
+     static_cast<int>(LoggingLevel::kUmaOnly)};
+ constexpr base::FeatureParam<int> kThreadPoolLogLevel{
+     &kEnableHangWatcher, kBrowserProcessThreadPoolLogLevelParam,
+     static_cast<int>(LoggingLevel::kUmaOnly)};
+-
++#if BUILDFLAG(IS_ARKWEB)
++constexpr base::FeatureParam<int> kCompositorGpuThreadLogLevel{
++    &kEnableHangWatcher, "compositor_gpu_thread_log_level",
++    static_cast<int>(LoggingLevel::kUmaOnly)};
++constexpr base::FeatureParam<int> kInProcessGpuThreadLogLevel{
++    &kEnableHangWatcher, "in_process_gpu_thread_log_level",
++    static_cast<int>(LoggingLevel::kUmaOnly)};
++#endif
+ // GPU process.
+ // Note: Do not use the prepared macro as of no need for a local cache.
+ const char kGpuProcessIoThreadLogLevelParam[] =
+     "gpu_process_io_thread_log_level";
+ const char kGpuProcessMainThreadLogLevelParam[] =
+@@ -484,11 +584,18 @@ void HangWatcher::InitializeOnMainThread(ProcessType process_type,
+           std::memory_order_relaxed);
+       g_main_thread_log_level.store(
+           static_cast<LoggingLevel>(kUIThreadLogLevel.Get()),
+           std::memory_order_relaxed);
+     }
+-
++#if BUILDFLAG(IS_ARKWEB)
++    g_compositor_gpu_thread_log_level.store(
++        static_cast<LoggingLevel>(kCompositorGpuThreadLogLevel.Get()),
++        std::memory_order_relaxed);
++    g_in_process_gpu_thread_log_level.store(
++        static_cast<LoggingLevel>(kInProcessGpuThreadLogLevel.Get()),
++        std::memory_order_relaxed);
++#endif
+     g_threadpool_log_level.store(
+         static_cast<LoggingLevel>(kThreadPoolLogLevel.Get()),
+         std::memory_order_relaxed);
+   } else if (process_type == HangWatcher::ProcessType::kGPUProcess) {
+     g_threadpool_log_level.store(

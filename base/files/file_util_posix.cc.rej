@@ -1,0 +1,47 @@
+diff a/base/files/file_util_posix.cc b/base/files/file_util_posix.cc	(rejected hunks)
+@@ -812,18 +833,29 @@ bool ExecutableExistsInPath(Environment* env,
+ #endif  // !BUILDFLAG(IS_FUCHSIA)
+ 
+ #if !BUILDFLAG(IS_APPLE)
+ // This is implemented in file_util_apple.mm for Mac.
+ bool GetTempDir(FilePath* path) {
++#if !BUILDFLAG(IS_ARKWEB)
+   const char* tmp = getenv("TMPDIR");
+   if (tmp) {
+     *path = FilePath(tmp);
+     return true;
+   }
++#endif  // BUILDFLAG(IS_ARKWEB)
+ 
+-#if BUILDFLAG(IS_ANDROID)
+-  return PathService::Get(DIR_CACHE, path);
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
++  if (PathService::Get(DIR_CACHE, path) && path != nullptr) {
++    *path = path->Append("Temp");
++    if (!base::PathExists(*path)) {
++      return base::CreateDirectory(*path);
++    }
++
++    return true;
++  } else {
++    return false;
++  }
+ #else
+   *path = FilePath("/tmp");
+   return true;
+ #endif
+ }
+@@ -1567,11 +1622,12 @@ bool CopyFileContentsWithSendfile(File& infile,
+ #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
+         // BUILDFLAG(IS_ANDROID)
+ 
+ }  // namespace internal
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX) || \
++    BUILDFLAG(IS_ARKWEB)
+ BASE_EXPORT bool IsPathExecutable(const FilePath& path) {
+   bool result = false;
+   FilePath tmp_file_path;
+ 
+   ScopedFD fd = CreateAndOpenFdForTemporaryFileInDir(path, &tmp_file_path);

@@ -13,6 +13,7 @@
 #include "third_party/blink/renderer/core/css_value_keywords.h"
 #include "third_party/blink/renderer/platform/bindings/exception_messages.h"
 #include "third_party/blink/renderer/platform/bindings/exception_state.h"
+#include "third_party/blink/renderer/platform/wtf/wtf.h"
 
 namespace blink {
 
@@ -138,7 +139,8 @@ IndexedPropertySetterResult CSSUnparsedValue::AnonymousIndexedSetter(
 }
 
 const CSSValue* CSSUnparsedValue::ToCSSValue() const {
-  String unparsed_string = ToUnparsedString();
+  CHECK(IsMainThread());
+  String unparsed_string = toString();
   CSSParserTokenStream stream(unparsed_string);
 
   if (stream.AtEnd()) {
@@ -178,6 +180,10 @@ const CSSValue* CSSUnparsedValue::ToCSSValue() const {
       CSSVariableData::Create(original_text, false /* is_animation_tainted */,
                               false /* is_attr_tainted */,
                               false /* needs_variable_resolution */));
+}
+
+String CSSUnparsedValue::toString() const {
+  return ToUnparsedString();
 }
 
 String CSSUnparsedValue::ToUnparsedString() const {

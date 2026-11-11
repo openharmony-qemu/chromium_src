@@ -44,7 +44,7 @@ using QualifiedNameCache = HashSet<QualifiedName::QualifiedNameImpl*>;
 
 static QualifiedNameCache& GetQualifiedNameCache() {
   // This code is lockless and thus assumes it all runs on one thread!
-  DCHECK(IsMainThread());
+  CHECK(IsMainThread());
   static QualifiedNameCache* g_name_cache = new QualifiedNameCache;
   return *g_name_cache;
 }

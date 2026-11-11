@@ -128,6 +128,8 @@ struct MEDIA_EXPORT H265StRefPicSet {
   // Calculated fields.
   int num_delta_pocs = 0;
   int rps_idx_num_delta_pocs = 0;
+
+  bool operator==(const H265StRefPicSet&) const = default;
 };
 
 struct MEDIA_EXPORT H265VUIParameters {

@@ -407,6 +407,8 @@ class GPU_IPC_CLIENT_EXPORT GpuChannelHost
   static constexpr base::TimeDelta kDelayForEnsuringFlush = base::Seconds(1);
 
   const bool sync_point_graph_validation_enabled_;
+
+  std::unique_ptr<GpuChannelHostUtils> gpu_channel_host_utils_;
 };
 
 }  // namespace gpu

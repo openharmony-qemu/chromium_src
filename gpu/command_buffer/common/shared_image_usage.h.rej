@@ -1,0 +1,16 @@
+diff a/gpu/command_buffer/common/shared_image_usage.h b/gpu/command_buffer/common/shared_image_usage.h	(rejected hunks)
+@@ -116,11 +116,13 @@ enum SharedImageUsage : uint32_t {
+   // `UploadFromMemory()` if it supports this usage. Clients should specify
+   // SHARED_IMAGE_USAGE_CPU_WRITE_ONLY if they need to write pixels to the
+   // image.
+   SHARED_IMAGE_USAGE_CPU_UPLOAD = 1u << 28,
+ 
+-  LAST_SHARED_IMAGE_USAGE = SHARED_IMAGE_USAGE_CPU_UPLOAD
++  LAST_SHARED_IMAGE_USAGE = SHARED_IMAGE_USAGE_CPU_UPLOAD,
++
++  SHARED_IMAGE_USAGE_OHOS_NATIVE_BUFFER = 1 << 29,
+ };
+ 
+ class GPU_COMMAND_BUFFER_COMMON_EXPORT SharedImageUsageSet {
+  public:
+   constexpr SharedImageUsageSet() = default;

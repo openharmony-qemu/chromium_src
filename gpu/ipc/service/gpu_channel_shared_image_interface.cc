@@ -24,6 +24,12 @@
 #include "gpu/command_buffer/service/stream_texture_shared_image_interface.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_CODEC)
+#include "arkweb/chromium_ext/gpu/command_buffer/service/ohos/ohos_video_image_backing.h"
+#include "gpu/command_buffer/service/ref_counted_lock.h"
+#include "gpu/command_buffer/service/stream_texture_shared_image_interface.h"
+#endif
+
 namespace gpu {
 
 namespace {

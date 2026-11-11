@@ -73,6 +73,7 @@
 #include "ui/ozone/public/gl_ozone.h"
 #include "ui/ozone/public/ozone_platform.h"
 #include "ui/ozone/public/surface_factory_ozone.h"
+#include "arkweb/chromium_ext/gpu/command_buffer/service/shared_image/ozone_image_backing_factory_ext.h"
 #endif
 
 #if BUILDFLAG(IS_APPLE)
@@ -130,7 +131,7 @@ const char* GmbTypeToString(gfx::GpuMemoryBufferType type) {
     case gfx::IO_SURFACE_BUFFER:
       return "platform";
 #endif
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || defined(OS_OHOS)
     case gfx::NATIVE_PIXMAP:
       return "platform";
 #endif
@@ -140,6 +141,10 @@ const char* GmbTypeToString(gfx::GpuMemoryBufferType type) {
 #endif
 #if BUILDFLAG(IS_ANDROID)
     case gfx::ANDROID_HARDWARE_BUFFER:
+      return "platform";
+#endif
+#if BUILDFLAG(ARKWEB_VULKAN)
+    case gfx::OHOS_NATIVE_BUFFER:
       return "platform";
 #endif
   }
@@ -372,7 +377,11 @@ SharedImageFactory::SharedImageFactory(
         gpu_preferences_, workarounds_, feature_info.get());
     factories_.push_back(std::move(egl_backing_factory));
   }
-
+#ifdef BUILDFLAG(ARKWEB_VULKAN)
+  auto ohos_factory = std::make_unique<OHOSNativeBufferImageBackingFactory>(
+      feature_info.get(), gpu_preferences);
+  factories_.push_back(std::move(ohos_factory));
+#endif
 #if BUILDFLAG(IS_ANDROID)
   bool is_ahb_supported = true;
   if (gr_context_type_ == GrContextType::kVulkan) {
@@ -395,8 +404,8 @@ SharedImageFactory::SharedImageFactory(
   if (ui::OzonePlatform::GetInstance()
           ->GetPlatformRuntimeProperties()
           .supports_native_pixmaps) {
-    auto ozone_factory = std::make_unique<OzoneImageBackingFactory>(
-        context_state_, workarounds_);
+    auto ozone_factory = std::make_unique<OzoneImageBackingFactoryExt>(
+        context_state_, workarounds_, gpu_preferences_);
     factories_.push_back(std::move(ozone_factory));
   }
 
@@ -512,6 +521,8 @@ bool SharedImageFactory::IsNativeBufferSupported(viz::SharedImageFormat format,
       return false;
   }
   NOTREACHED();
+#elif BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  return false;
 #elif BUILDFLAG(IS_ANDROID)
   switch (usage) {
     case gfx::BufferUsage::GPU_READ:

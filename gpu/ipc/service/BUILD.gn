@@ -148,6 +148,14 @@ component("service") {
   if (is_linux || is_chromeos) {
     sources += [ "image_transport_surface_linux.cc" ]
   }
+  if (is_arkweb) {
+    import("//arkweb/chromium_ext/gpu/ipc/service/arkweb_gpu_ipc_service_ext.gni")
+    sources += arkweb_gpu_ipc_service_sources
+    deps += [ "//arkweb/chromium_ext/content/common/hicollie_freeze_reporter:hicollie_freeze_reporter" ]
+  }
+  if (arkweb_bugfix_crash) {
+    deps += [ "//arkweb/build/features" ]
+  }
   if (is_chromeos) {
     sources += [
       "arc_shared_image_interface.cc",

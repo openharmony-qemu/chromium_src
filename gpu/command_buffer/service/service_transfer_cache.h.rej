@@ -1,0 +1,34 @@
+diff a/gpu/command_buffer/service/service_transfer_cache.h b/gpu/command_buffer/service/service_transfer_cache.h	(rejected hunks)
+@@ -26,15 +26,17 @@
+ #include "gpu/command_buffer/service/context_group.h"
+ #include "gpu/gpu_gles2_export.h"
+ #include "third_party/skia/include/core/SkImageInfo.h"
+ #include "third_party/skia/include/core/SkRefCnt.h"
+ #include "third_party/skia/include/core/SkYUVAInfo.h"
++#include "arkweb/build/features/features.h"
+ 
+ class GrDirectContext;
+ class SkImage;
+ 
+ namespace gpu {
++class ServiceTransferCacheExt;
+ 
+ // ServiceTransferCache is a GPU process interface for retrieving cached entries
+ // from the transfer cache. These entries are populated by client calls to the
+ // ClientTransferCache or by an image decode accelerator task in the GPU
+ // process.
+@@ -44,10 +46,14 @@ namespace gpu {
+ // cache limits. If the cache exceeds its specified limits, unlocked transfer
+ // cache entries may be deleted.
+ class GPU_GLES2_EXPORT ServiceTransferCache
+     : public base::trace_event::MemoryDumpProvider {
+  public:
++  friend class ServiceTransferCacheExt;
++  virtual raw_ptr<ServiceTransferCacheExt> AsServiceTransferCacheExt() {
++    return nullptr;
++  }
+   struct GPU_GLES2_EXPORT EntryKey {
+     EntryKey(int decoder_id,
+              cc::TransferCacheEntryType entry_type,
+              uint32_t entry_id);
+     int decoder_id;

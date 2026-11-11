@@ -325,6 +325,10 @@ class GPU_IPC_SERVICE_EXPORT GpuWatchdogThread
   // For gpu testing only.
   const bool is_test_mode_;
 
+#if BUILDFLAG(IS_ARKWEB)
+  bool hang_test_ = false;
+#endif
+
   // Set by the watchdog thread and Read by the test thread.
   base::AtomicFlag test_result_timeout_and_gpu_hang_;
 

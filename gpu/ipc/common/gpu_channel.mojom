@@ -274,6 +274,28 @@ interface CommandBufferClient {
   OnSignalAck(uint32 signal_id, CommandBufferState state);
 };
 
+[EnableIf=is_arkweb]
+interface StreamTexture {
+  // Tells the service-side instance to start sending frame available
+  // notifications.
+  StartListening(pending_associated_remote<StreamTextureClient> client);
+ 
+  // Updates the visible size from MediaPlayer. The size includes rotation of
+  // video.
+  UpdateRotatedVisibleSize(gfx.mojom.Size rotated_visible_size);
+};
+
+[EnableIf=is_arkweb]
+interface StreamTextureClient {
+  // Informs the client that a new frame is available.
+  OnFrameAvailable();
+ 
+  // Informs the client that a new frame with VulkanYcbcrInfo is available.
+  OnFrameWithInfoAvailable(Mailbox mailbox, gfx.mojom.Size coded_size,
+                           gfx.mojom.Rect visible_rect,
+                           VulkanYCbCrInfo? info);
+};
+
 // Interface to control a single DCOMPTexture instance. Implemented in the GPU
 // process and called by renderer clients.
 [EnableIf=is_win]
@@ -337,6 +359,11 @@ union DeferredRequestParams {
   // by this ID.
   [EnableIf=is_win]
   int32 destroy_dcomp_texture;
+
+  // Sent to indicate the client wants to destroy the NativeImageTexture identified
+  // by this ID.
+  [EnableIf=is_arkweb]
+  int32 destroy_native_texture;
 };
 
 // Details of a batched request targeting a specific command buffer.

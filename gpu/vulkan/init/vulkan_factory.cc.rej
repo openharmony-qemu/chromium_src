@@ -1,0 +1,24 @@
+diff a/gpu/vulkan/init/vulkan_factory.cc b/gpu/vulkan/init/vulkan_factory.cc	(rejected hunks)
+@@ -23,15 +24,22 @@
+ 
+ #if BUILDFLAG(IS_APPLE)
+ #include "gpu/vulkan/mac/vulkan_implementation_mac.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_VULKAN)
++#include "gpu/vulkan/ohos/vulkan_implementation_ohos.h"
++#endif
++
+ namespace gpu {
+ 
+ std::unique_ptr<VulkanImplementation> CreateVulkanImplementation(
+     bool use_swiftshader,
+     bool allow_protected_memory) {
++#if BUILDFLAG(ARKWEB_VULKAN)
++  return std::make_unique<gpu::VulkanImplementationOhos>();
++#else
+ #if BUILDFLAG(IS_OZONE)
+   return ui::OzonePlatform::GetInstance()
+       ->GetSurfaceFactoryOzone()
+       ->CreateVulkanImplementation(use_swiftshader, allow_protected_memory);
+ #else

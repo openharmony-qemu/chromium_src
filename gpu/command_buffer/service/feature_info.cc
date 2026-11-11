@@ -32,6 +32,10 @@
 #include "ui/gl/gl_fence_egl.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_WEBGL)
+#include "arkweb/chromium_ext/gpu/config/gpu_finch_features_ext.h"
+#endif
+
 namespace gpu::gles2 {
 
 namespace {

@@ -215,11 +215,15 @@ EGLImageBacking::EGLImageBacking(
   // When we have pixel data, we want to initialize the texture with pixel data
   // first before creating eglimage from it. Hence using GenEGLImageSibling()
   // call to do that.
+#if !BUILDFLAG(IS_ARKWEB)
   if (workarounds.dont_delete_source_texture_for_egl_image) {
     source_texture_holders_ = GenEGLImageSiblings(pixel_data);
   } else if (!pixel_data.empty()) {
     auto texture_holder = GenEGLImageSiblings(pixel_data);
   }
+#else
+  source_texture_holders_ = GenEGLImageSiblings(pixel_data);
+#endif
 }
 
 EGLImageBacking::~EGLImageBacking() {

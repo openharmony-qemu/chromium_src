@@ -45,15 +45,22 @@ class GpuChannelMessageFilter;
 class Scheduler;
 class SharedImageStub;
 class SyncPointManager;
+class GpuChannelExt;
 
 // Encapsulates an IPC channel between the GPU process and one renderer
 // process. On the renderer side there's a corresponding GpuChannelHost.
 class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
                                           public IsolationKeyProvider {
  public:
+  friend class GpuChannelExt;
+
   GpuChannel(const GpuChannel&) = delete;
   GpuChannel& operator=(const GpuChannel&) = delete;
   ~GpuChannel() override;
+
+  virtual gpu::GpuChannelExt* AsGpuChannelExt() {
+    return nullptr;
+  }
 
   static std::unique_ptr<GpuChannel> Create(
       GpuChannelManager* gpu_channel_manager,
@@ -205,6 +212,12 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
       mojom::GpuChannel::CreateCommandBufferCallback callback);
   void DestroyCommandBuffer(int32_t routing_id);
 
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  // Implement the DecodeHeif method of the GpuChannel interface
+  void DecodeHeif(mojo_base::BigBuffer heif_data,
+                  mojom::GpuChannel::DecodeHeifCallback callback);
+#endif
+
 #if BUILDFLAG(IS_FUCHSIA)
   void RegisterSysmemBufferCollection(mojo::PlatformHandle service_handle,
                                       mojo::PlatformHandle sysmem_token,
@@ -294,6 +307,9 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
   // and schedules tasks for them appropriately.
   const scoped_refptr<GpuChannelMessageFilter> filter_;
 
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  std::unique_ptr<HeifDecoderService> heif_decoder_;
+#endif
   // Member variables should appear before the WeakPtrFactory, to ensure that
   // any WeakPtrs to Controller are invalidated before its members variable's
   // destructors are executed, rendering them invalid.
@@ -301,5 +317,4 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
 };
 
 }  // namespace gpu
-
 #endif  // GPU_IPC_SERVICE_GPU_CHANNEL_H_

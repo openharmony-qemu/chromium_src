@@ -28,6 +28,10 @@
 #include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/gl/GrGLTypes.h"
 #include "ui/gl/trace_util.h"
+#if BUILDFLAG(IS_OHOS)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif // BUILDFLAG(IS_OHOS)
 
 namespace gpu {
 namespace {
@@ -46,6 +50,9 @@ size_t DiscardableCacheSizeLimit() {
 #if BUILDFLAG(IS_ANDROID)
   const size_t kLowEndCacheSizeBytes = 1024 * 1024;
   const size_t kNormalCacheSizeBytes = 128 * 1024 * 1024;
+#elif BUILDFLAG(IS_OHOS)
+  const size_t kLowEndCacheSizeBytes = 64 * 1024 * 1024;
+  const size_t kLargeCacheSizeBytes = 256 * 1024 * 1024;
 #else
   const size_t kNormalCacheSizeBytes = 192 * 1024 * 1024;
   const size_t kLargeCacheSizeBytes = 256 * 1024 * 1024;

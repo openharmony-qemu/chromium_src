@@ -672,8 +672,6 @@ test("gpu_unittests") {
     "//url",
   ]
 
-  deps += [ "//third_party/angle:translator" ]
-
   if (is_android) {
     deps += [ "//ui/android:ui_java" ]
   }

@@ -1,0 +1,23 @@
+diff a/gpu/ipc/common/BUILD.gn b/gpu/ipc/common/BUILD.gn	(rejected hunks)
+@@ -271,10 +283,21 @@ mojom("gpu_channel_mojom") {
+   disable_variants = true
+ 
+   export_class_attribute = "GPU_EXPORT"
+   export_header = "gpu/gpu_export.h"
+   cpp_configs = [ "//gpu:gpu_implementation" ]
++
++  enabled_features = []
++  if (arkweb_blank_optimize) {
++    enabled_features += [ "arkweb_blank_optimize" ]
++  }
++  if (arkweb_heif_support) {
++    enabled_features += [ "arkweb_heif_support" ]
++  }
++  if (arkweb_safebrowsing) {
++    enabled_features += [ "arkweb_safebrowsing" ]
++  }
+ }
+ 
+ mojom("shared_image_pool_client_interface") {
+   generate_java = true
+   visibility = [

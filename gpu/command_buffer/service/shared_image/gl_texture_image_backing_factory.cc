@@ -94,6 +94,12 @@ bool GLTextureImageBackingFactory::IsSupported(
     gfx::GpuMemoryBufferType gmb_type,
     GrContextType gr_context_type,
     base::span<const uint8_t> pixel_data) {
+#if BUILDFLAG(IS_ARKWEB)
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line && !command_line->HasSwitch(::switches::kOhosEnableDrDc)) {
+    return false;
+  }
+#endif
   if (format.is_multi_plane() && !use_passthrough_) {
     // With validating command decoder the clear rect tracking doesn't work with
     // multi-planar textures.

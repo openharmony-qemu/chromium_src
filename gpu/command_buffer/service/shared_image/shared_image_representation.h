@@ -983,6 +983,25 @@ class GPU_GLES2_EXPORT OverlayImageRepresentation
     GetAHardwareBufferFenceSync() {
       return representation()->GetAHardwareBufferFenceSync();
     }
+#elif BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+    OH_NativeBuffer* GetOHNativeBuffer() {
+      return representation()->GetOHNativeBuffer();
+    }
+    void InUseByWindowServerInc() {
+      representation()->InUseByWindowServerInc();
+    }
+    void InUseByWindowServerDec() {
+      representation()->InUseByWindowServerDec();
+    }
+    bool IsInUseByWindowServer() const {
+      return representation()->IsInUseByWindowServer();
+    }
+    scoped_refptr<gfx::NativePixmap> GetNativePixmap() {
+      return representation()->GetNativePixmap();
+    }
+    base::WeakPtr<ScopedReadAccess> GetWeakPtr() {
+      return weak_factory_.GetWeakPtr();
+    }
 #elif BUILDFLAG(IS_OZONE)
     scoped_refptr<gfx::NativePixmap> GetNativePixmap() {
       return representation()->GetNativePixmap();
@@ -1015,6 +1034,9 @@ class GPU_GLES2_EXPORT OverlayImageRepresentation
    private:
     gfx::GpuFenceHandle acquire_fence_;
     gfx::GpuFenceHandle release_fence_;
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+    base::WeakPtrFactory<ScopedReadAccess> weak_factory_{this};
+#endif
   };
 
   std::unique_ptr<ScopedReadAccess> BeginScopedReadAccess();
@@ -1039,6 +1061,12 @@ class GPU_GLES2_EXPORT OverlayImageRepresentation
   virtual AHardwareBuffer* GetAHardwareBuffer();
   virtual std::unique_ptr<base::android::ScopedHardwareBufferFenceSync>
   GetAHardwareBufferFenceSync();
+#elif BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  virtual OH_NativeBuffer* GetOHNativeBuffer();
+  virtual void InUseByWindowServerInc();
+  virtual void InUseByWindowServerDec();
+  virtual bool IsInUseByWindowServer() const;
+  scoped_refptr<gfx::NativePixmap> GetNativePixmap();
 #elif BUILDFLAG(IS_OZONE)
   scoped_refptr<gfx::NativePixmap> GetNativePixmap();
 #elif BUILDFLAG(IS_WIN)

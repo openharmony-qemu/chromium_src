@@ -1,0 +1,16 @@
+diff a/gpu/command_buffer/service/gles2_cmd_decoder_passthrough.cc b/gpu/command_buffer/service/gles2_cmd_decoder_passthrough.cc
+--- a/gpu/command_buffer/service/gles2_cmd_decoder_passthrough.cc
++++ b/gpu/command_buffer/service/gles2_cmd_decoder_passthrough.cc
+@@ -1591,11 +1591,11 @@ void GLES2DecoderPassthroughImpl::MarkContextLost(
+     // SECURITY: crbug.com/500187083 and crbug.com/517018374.
+     // Unconditionally clear per-context callbacks that hold a raw
+     // `this` pointer if the context IsCurrent before it gets lost, to
+     // prevent UAF when Destroy(have_context=false) skips them.
+     if (api()) {
+-      api()->glDebugMessageCallbackKHRFn(nullptr, nullptr);
++      api()->glDebugMessageCallbackFn(nullptr, nullptr);
+       if (feature_info_ && feature_info_->feature_flags().angle_blob_cache) {
+         api()->glBlobCacheCallbacksANGLEFn(nullptr, nullptr, nullptr);
+       }
+     }
+   }

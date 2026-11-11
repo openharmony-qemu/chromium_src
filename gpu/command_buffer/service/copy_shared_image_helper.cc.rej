@@ -1,0 +1,25 @@
+diff a/gpu/command_buffer/service/copy_shared_image_helper.cc b/gpu/command_buffer/service/copy_shared_image_helper.cc	(rejected hunks)
+@@ -10,10 +10,11 @@
+ 
+ #include "base/check.h"
+ #include "base/compiler_specific.h"
+ #include "base/types/expected.h"
+ #include "base/types/expected_macros.h"
++#include "base/trace_event/trace_event.h"
+ #include "gpu/command_buffer/common/mailbox.h"
+ #include "gpu/command_buffer/service/graphite_shared_context.h"
+ #include "gpu/command_buffer/service/shared_context_state.h"
+ #include "gpu/command_buffer/service/shared_image/shared_image_factory.h"
+ #include "gpu/command_buffer/service/shared_image/shared_image_format_service_utils.h"
+@@ -218,10 +219,11 @@ base::expected<void, GLError> CopySharedImageHelper::CopySharedImage(
+     GLsizei src_width,
+     GLsizei src_height,
+     GLsizei dst_width,
+     GLsizei dst_height,
+     const volatile GLbyte* mailboxes) {
++  TRACE_EVENT0("base", "CopySharedImageHelper::CopySharedImage");
+   Mailbox source_mailbox = Mailbox::FromVolatile(
+       reinterpret_cast<const volatile Mailbox*>(mailboxes)[0]);
+   DLOG_IF(ERROR, !source_mailbox.Verify())
+       << "CopySubTexture was passed an invalid mailbox";
+   Mailbox dest_mailbox = Mailbox::FromVolatile(

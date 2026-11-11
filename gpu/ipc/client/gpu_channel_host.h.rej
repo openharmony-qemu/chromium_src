@@ -1,0 +1,50 @@
+diff a/gpu/ipc/client/gpu_channel_host.h b/gpu/ipc/client/gpu_channel_host.h	(rejected hunks)
+@@ -28,18 +28,21 @@
+ #include "ipc/ipc_listener.h"
+ #include "mojo/public/cpp/base/shared_memory_version.h"
+ #include "mojo/public/cpp/bindings/shared_associated_remote.h"
+ #include "ui/gfx/gpu_memory_buffer_handle.h"
+ 
++#include "arkweb/chromium_ext/gpu/ipc/client/gpu_channel_host_utils.h"
++
+ namespace IPC {
+ class Channel;
+ }
+ 
+ namespace gpu {
+ class SharedImageInterface;
+ struct SyncToken;
+ class GpuChannelHost;
++class GpuChannelHostUtils;
+ 
+ using GpuChannelEstablishedCallback =
+     base::OnceCallback<void(scoped_refptr<GpuChannelHost>)>;
+ 
+ class GPU_IPC_CLIENT_EXPORT GpuChannelEstablishFactory {
+@@ -55,10 +58,11 @@ class GPU_IPC_CLIENT_EXPORT GpuChannelEstablishFactory {
+ // Every method can be called on any thread with a message loop, except for the
+ // IO thread.
+ class GPU_IPC_CLIENT_EXPORT GpuChannelHost
+     : public base::RefCountedThreadSafe<GpuChannelHost> {
+  public:
++  friend class GpuChannelHostUtils;
+   GpuChannelHost(
+       int channel_id,
+       const gpu::GPUInfo& gpu_info,
+       const gpu::GpuFeatureInfo& gpu_feature_info,
+       const gpu::SharedImageCapabilities& shared_image_capabilities,
+@@ -171,10 +175,14 @@ class GPU_IPC_CLIENT_EXPORT GpuChannelHost
+   [[nodiscard]] bool AddObserverIfNotAlreadyLost(GpuChannelLostObserver* obs);
+ 
+   // Calls ConnectionTracker::RemoveObserver() directly.
+   void RemoveObserver(GpuChannelLostObserver* obs);
+ 
++  GpuChannelHostUtils* gpu_channel_host_utils() {
++    return gpu_channel_host_utils_.get();
++  }
++
+  protected:
+   friend class base::RefCountedThreadSafe<GpuChannelHost>;
+   virtual ~GpuChannelHost();
+ 
+   // Clears its SharedAssociatedRemote.

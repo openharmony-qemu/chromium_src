@@ -1,0 +1,62 @@
+diff a/gpu/ipc/service/gpu_init.cc b/gpu/ipc/service/gpu_init.cc	(rejected hunks)
+@@ -7,10 +7,11 @@
+ #include <cstdlib>
+ #include <cstring>
+ #include <optional>
+ #include <string>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/base_paths.h"
+ #include "base/command_line.h"
+ #include "base/debug/dump_without_crashing.h"
+ #include "base/files/file_path.h"
+ #include "base/logging.h"
+@@ -980,10 +983,13 @@ bool GpuInit::InitializeAndStartSandbox(base::CommandLine* command_line,
+   return true;
+ }
+ 
+ void GpuInit::InitializeInProcess(base::CommandLine* command_line,
+                                   const GpuPreferences& gpu_preferences) {
++#if BUILDFLAG(ARKWEB_GL_INIT)
++  TRACE_EVENT0("startup", "GpuInit::InitializeInProcess");
++#endif
+   gpu_preferences_ = gpu_preferences;
+   init_successful_ = true;
+ 
+ #if BUILDFLAG(IS_ANDROID)
+   DCHECK(!EnableSwiftShaderIfNeeded(
+@@ -1153,11 +1159,18 @@ void GpuInit::InitializeInProcess(base::CommandLine* command_line,
+       std::move(supported_buffer_formats_for_texturing);
+   gpu_feature_info_.supported_formats_for_gl_native_pixmap_import =
+       std::move(supported_formats_for_gl_native_pixmap_import);
+ #endif  // BUILDFLAG(IS_OZONE)
+ 
++#if BUILDFLAG(ARKWEB_VULKAN)
++  CHECK_IS_USING_VULKAN_AND_INITIAL()
++#endif
+   DisableInProcessGpuVulkan(&gpu_feature_info_, &gpu_preferences_);
++
++#if BUILDFLAG(ARKWEB_VULKAN)
++  }
++#endif
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
+   InitializeDawnProcs();
+ #if !BUILDFLAG(IS_ANDROID)
+   if (gpu_preferences_.gr_context_type == GrContextType::kGraphiteDawn) {
+@@ -1333,10 +1346,15 @@ bool GpuInit::InitializeDawn() {
+   return false;
+ }
+ 
+ bool GpuInit::InitializeVulkan() {
+ #if BUILDFLAG(ENABLE_VULKAN)
++#if BUILDFLAG(ARKWEB_VULKAN)
++  if (!features::IsUsingVulkan()) {
++    return false;
++  }
++#endif
+   TRACE_EVENT("gpu,startup", "gpu::GpuInit::InitializeVulkan");
+   DCHECK(gpu_feature_info_.status_values[GPU_FEATURE_TYPE_VULKAN] ==
+              kGpuFeatureStatusEnabled ||
+          gpu_feature_info_
+                  .status_values[GPU_FEATURE_TYPE_WEBGPU_ON_VK_VIA_GL_INTEROP] ==

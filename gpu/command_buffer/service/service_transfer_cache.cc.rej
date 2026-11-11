@@ -1,0 +1,20 @@
+diff a/gpu/command_buffer/service/service_transfer_cache.cc b/gpu/command_buffer/service/service_transfer_cache.cc	(rejected hunks)
+@@ -55,10 +62,18 @@ size_t DiscardableCacheSizeLimit() {
+   if (base::SysInfo::IsLowEndDevice()) {
+     return kLowEndCacheSizeBytes;
+   } else {
+     return kNormalCacheSizeBytes;
+   }
++#elif BUILDFLAG(IS_OHOS)
++  static int memtest = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
++                     .GetIntParameter("web.debug.memtest", 0);
++  if (base::ohos::IsOhosLowEndDevice() && (memtest == 0 || memtest == 1)) {
++      return kLowEndCacheSizeBytes;
++  } else {
++      return kLargeCacheSizeBytes;
++  }
+ #else
+   if (base::SysInfo::AmountOfPhysicalMemory() <
+       kLargeCacheSizeMemoryThreshold) {
+     return kNormalCacheSizeBytes;
+   } else {

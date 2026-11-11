@@ -1,0 +1,34 @@
+diff a/gpu/command_buffer/service/buffer_manager.cc b/gpu/command_buffer/service/buffer_manager.cc	(rejected hunks)
+@@ -544,11 +544,15 @@ void BufferManager::DoBufferSubData(
+     Buffer* buffer, GLenum target, GLintptr offset, GLsizeiptr size,
+     const GLvoid* data) {
+   buffer->SetRange(offset, size, data);
+ 
+   if (!buffer->IsClientSideArray()) {
+-    glBufferSubData(target, offset, size, data);
++    const void* upload_data = buffer->GetRange(offset, size);
++    if (!upload_data) {
++      upload_data = data;
++    }
++    glBufferSubData(target, offset, size, upload_data); 
+   }
+ }
+ 
+ void BufferManager::ValidateAndDoCopyBufferSubData(ContextState* context_state,
+                                                    ErrorState* error_state,
+@@ -887,12 +891,13 @@ bool BufferManager::RequestBuffersAccess(
+     const IndexedBufferBindingHost* bindings,
+     const std::vector<GLsizeiptr>& variable_sizes,
+     GLsizei count,
+     const char* func_name,
+     const char* message_tag) {
+-  DCHECK(error_state);
+-  DCHECK(bindings);
++  CHECK(error_state);
++  CHECK(bindings);
++  CHECK_GE(count, 0);
+ 
+   for (size_t ii = 0; ii < variable_sizes.size(); ++ii) {
+     if (variable_sizes[ii] == 0)
+       continue;
+     Buffer* buffer = bindings->GetBufferBinding(ii);

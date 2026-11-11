@@ -1,0 +1,25 @@
+diff a/gpu/command_buffer/service/gles2_cmd_decoder_unittest_base.h b/gpu/command_buffer/service/gles2_cmd_decoder_unittest_base.h	(rejected hunks)
+@@ -541,10 +541,11 @@ class GLES2DecoderTestBase : public ::testing::TestWithParam<bool>,
+     EXPECT_EQ(GL_NO_ERROR, GetGLError());
+     return isObject;
+   }
+ 
+  protected:
++  virtual void SetupMockGLBehaviors();
+   static const int kBackBufferWidth = 128;
+   static const int kBackBufferHeight = 64;
+ 
+   static const GLint kMaxTextureSize = 2048;
+   static const GLint kMaxCubeMapTextureSize = 256;
+@@ -785,11 +786,10 @@ class GLES2DecoderTestBase : public ::testing::TestWithParam<bool>,
+    private:
+     GLuint bound_array_buffer_object_;
+     GLuint bound_vertex_array_object_;
+   };  // class MockGLStates
+ 
+-  void SetupMockGLBehaviors();
+ 
+   GpuPreferences gpu_preferences_;
+   ShaderTranslatorCache shader_translator_cache_;
+   FramebufferCompletenessCache framebuffer_completeness_cache_;
+   SharedImageManager shared_image_manager_;

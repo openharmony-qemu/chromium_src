@@ -1,0 +1,19 @@
+diff a/gpu/command_buffer/service/feature_info.cc b/gpu/command_buffer/service/feature_info.cc	(rejected hunks)
+@@ -214,10 +218,17 @@ FeatureInfo::FeatureInfo(
+       gpu_feature_info.supported_buffer_formats_for_allocation_and_texturing,
+       gfx::BufferFormat::P010);
+ #elif BUILDFLAG(IS_APPLE)
+   feature_flags_.chromium_image_ycbcr_p010 = true;
+ #endif
++
++#if BUILDFLAG(ARKWEB_WEBGL)
++  if (base::FeatureList::IsEnabled(features::kPreferDrawToCopy)) {
++    workarounds_.prefer_draw_to_copy = true;
++  }
++  LOG(DEBUG) << "workaround prefer_draw_to_copy property: " << workarounds_.prefer_draw_to_copy;
++#endif
+ }
+ 
+ void FeatureInfo::InitializeBasicState(const base::CommandLine* command_line) {
+   if (!command_line)
+     return;

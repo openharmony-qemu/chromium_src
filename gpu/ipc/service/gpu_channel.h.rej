@@ -1,0 +1,16 @@
+diff a/gpu/ipc/service/gpu_channel.h b/gpu/ipc/service/gpu_channel.h	(rejected hunks)
+@@ -34,10 +34,14 @@
+ #include "ui/gfx/geometry/size.h"
+ #include "ui/gfx/gpu_extra_info.h"
+ #include "ui/gfx/native_ui_types.h"
+ #include "ui/gl/gl_share_group.h"
+ #include "ui/gl/gpu_preference.h"
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++#include "arkweb/chromium_ext/gpu/ipc/service/heif_decoder_service.h"
++#endif
+ 
+ namespace base {
+ class WaitableEvent;
+ }
+ 

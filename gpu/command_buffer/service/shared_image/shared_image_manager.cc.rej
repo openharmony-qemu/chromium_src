@@ -1,0 +1,31 @@
+diff a/gpu/command_buffer/service/shared_image/shared_image_manager.cc b/gpu/command_buffer/service/shared_image/shared_image_manager.cc	(rejected hunks)
+@@ -8,10 +8,14 @@
+ 
+ #include <cstdint>
+ #include <memory>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
++#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
++#endif
+ #include "base/containers/contains.h"
+ #include "base/debug/crash_logging.h"
+ #include "base/debug/dump_without_crashing.h"
+ #include "base/logging.h"
+ #include "base/memory/stack_allocated.h"
+@@ -39,10 +43,14 @@
+ #include "components/viz/common/gpu/vulkan_context_provider.h"
+ #include "gpu/config/gpu_finch_features.h"
+ #include "ui/ozone/public/ozone_platform.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
++#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
++#endif
++
+ #if DCHECK_IS_ON()
+ #define CALLED_ON_VALID_THREAD()                      \
+   do {                                                \
+     if (!this->is_thread_safe())                      \
+       DCHECK_CALLED_ON_VALID_THREAD(thread_checker_); \

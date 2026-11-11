@@ -1097,7 +1097,7 @@ LocalPersistentMemoryAllocator::AllocateLocalMemory(size_t size,
   address = ::mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED,
                    -1, 0);
   if (address != MAP_FAILED) {
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
     // Allow the anonymous memory region allocated by mmap(MAP_ANON) to be
     // identified in /proc/$PID/smaps.  This helps improve visibility into
     // Chrome's memory usage on Android.

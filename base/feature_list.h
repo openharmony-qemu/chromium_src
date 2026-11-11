@@ -111,6 +111,12 @@ class BASE_EXPORT FeatureList {
   FeatureList& operator=(const FeatureList&) = delete;
   ~FeatureList();
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  friend class FeatureListUtils;
+  std::shared_ptr<FeatureListUtils> feature_list_utils_ = nullptr;
+  std::shared_ptr<FeatureListUtils> GetUtils() { return feature_list_utils_; }
+#endif
+
   // Used by common test fixture classes to prevent abuse of ScopedFeatureList
   // after multiple threads have started.
   class BASE_EXPORT ScopedDisallowOverrides {

@@ -56,6 +56,12 @@ void BindStateHolder::Reset() {
 
 bool BindStateHolder::IsCancelled() const {
   DCHECK(bind_state_);
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  if (bind_state_ == nullptr) {
+    LOG(WARNING) << "bind_state_ is nullptr";
+    return true;
+  }
+#endif
   return bind_state_->IsCancelled();
 }
 

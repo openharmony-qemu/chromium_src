@@ -46,6 +46,10 @@
 #include <windows.h>
 #endif
 
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/base/datashare_uri_utils.h"
+#endif
+
 namespace base {
 
 namespace {
@@ -381,7 +385,22 @@ bool ReadFileToStringWithMaxSize(const FilePath& path,
   if (path.ReferencesParent()) {
     return false;
   }
+
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  FILE* file_ptr = nullptr;
+
+  if (path.IsDataShareUri()) {
+    File infile = OpenDatashareUriForRead(path);
+    file_ptr = FileToFILE(std::move(infile), "rb");
+  } else {
+    file_ptr = OpenFile(path, "rb");
+  }
+
+  ScopedFILE file_stream(file_ptr);
+
+#else
   ScopedFILE file_stream(OpenFile(path, "rb"));
+#endif
   if (!file_stream) {
     return false;
   }

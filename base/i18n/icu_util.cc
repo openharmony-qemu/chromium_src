@@ -43,6 +43,8 @@
 #include "third_party/icu/source/common/unicode/udata.h"
 #include "third_party/icu/source/common/unicode/utrace.h"
 
+#include "arkweb/build/features/features.h"
+
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/apk_assets.h"
 #endif
@@ -189,6 +191,14 @@ void LazyInitIcuDataFile() {
     return;
   }
 #endif  // !BUILDFLAG(IS_APPLE)
+
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+  // If the hap package is not decompressed, the directory does not exist.
+  if (data_path.empty() || !base::PathExists(data_path)) {
+      LOG(ERROR) << data_path << " not exists.";
+      return;
+  }
+#endif
   File file(data_path,
             File::FLAG_OPEN | File::FLAG_READ | File::FLAG_WIN_SHARE_DELETE);
   if (file.IsValid()) {
@@ -272,7 +282,11 @@ bool InitializeICUWithFileDescriptorInternal(
 
   std::unique_ptr<MemoryMappedFile> mapped_file;
   UErrorCode err;
+#if BUILDFLAG(IS_ARKWEB) && (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
+  LOAD_ICU_DATA(data_fd, data_region, mapped_file, err);
+#else
   g_debug_icu_load = LoadIcuData(data_fd, data_region, &mapped_file, &err);
+#endif
   if (g_debug_icu_load == 1 || g_debug_icu_load == 2) {
     return false;
   }
@@ -324,7 +338,14 @@ bool InitializeICUFromDataFile() {
 // On some platforms, the time zone must be explicitly initialized zone rather
 // than relying on ICU's internal initialization.
 void InitializeIcuTimeZone() {
-#if BUILDFLAG(IS_FUCHSIA)
+#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_TIME_ZONE)
+    // On OHOS, we can't use the method of obtaining the timezone as Linux, because
+    // it detects from the system file which render process doesn't have enough
+    // permission. On OHOS, we can get from OH TimeService Subsystem.
+    CREATE_TIME_ZONE();
+#endif
+#elif BUILDFLAG(IS_FUCHSIA)
   // The platform-specific mechanisms used by ICU's detectHostTimeZone() to
   // determine the default time zone will not work on Fuchsia. Therefore,
   // proactively set the default system.

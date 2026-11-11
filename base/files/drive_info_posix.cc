@@ -26,6 +26,12 @@
 namespace base {
 
 std::optional<DriveInfo> GetFileDriveInfo(const FilePath& file_path) {
+#if BUILDFLAG(IS_ARKWEB)
+  if (file_path.empty()) {
+    return std::nullopt;
+  }
+#endif
+
   DriveInfo drive_info;
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
   drive_info.has_seek_penalty = false;

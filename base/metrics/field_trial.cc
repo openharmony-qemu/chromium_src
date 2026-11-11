@@ -54,6 +54,10 @@
 #include "base/fuchsia/fuchsia_logging.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+#include "arkweb/chromium_ext/base/feature_list_utils.h"
+#endif
+
 namespace base {
 
 namespace {
@@ -1071,6 +1075,9 @@ void FieldTrialList::InstantiateFieldTrialAllocatorIfNeeded() {
   AutoLock auto_lock(global_->lock_);
   // Create the allocator if not already created and add all existing trials.
   if (global_->field_trial_allocator_ != nullptr) {
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+    FeatureList::GetInstance()->GetUtils()->ModifyFeaturesToAllocator(global_->field_trial_allocator_.get());
+#endif
     return;
   }
 

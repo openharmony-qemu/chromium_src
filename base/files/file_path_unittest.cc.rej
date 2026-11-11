@@ -1,0 +1,13 @@
+diff a/base/files/file_path_unittest.cc b/base/files/file_path_unittest.cc	(rejected hunks)
+@@ -5,10 +5,11 @@
+ #ifdef UNSAFE_BUFFERS_BUILD
+ // TODO(crbug.com/40284755): Remove this and spanify to fix the errors.
+ #pragma allow_unsafe_buffers
+ #endif
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/files/file_path.h"
+ 
+ #include <stddef.h>
+ 
+ #include <array>

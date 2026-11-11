@@ -725,7 +725,6 @@ FilePath FilePath::Append(StringViewType component) const {
     // component.
     return FilePath(appended);
   }
-
   FilePath new_path(path_);
   new_path.StripTrailingSeparatorsInternal();
 
@@ -742,7 +741,6 @@ FilePath FilePath::Append(StringViewType component) const {
       }
     }
   }
-
   new_path.path_.append(appended);
   return new_path;
 }
@@ -770,6 +768,11 @@ FilePath FilePath::AppendUTF8(std::string_view component) const {
 }
 
 bool FilePath::IsAbsolute() const {
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD) || BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (IsDataShareUri()) {
+    return true;
+  }
+#endif
   return IsPathAbsolute(path_);
 }
 
@@ -1644,5 +1647,13 @@ bool FilePath::IsVirtualDocumentPath() const {
 }
 
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD) || BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/base/files/file_path_ext.cc"
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/base/files/file_path_sta_ext.cc"
+#endif
 
 }  // namespace base

@@ -1,0 +1,24 @@
+diff a/base/posix/unix_domain_socket.cc b/base/posix/unix_domain_socket.cc	(rejected hunks)
+@@ -73,18 +73,22 @@ bool UnixDomainSocket::SendMsg(int fd,
+ 
+     struct cmsghdr* cmsg;
+     msg.msg_control = control_buffer;
+ #if BUILDFLAG(IS_APPLE)
+     msg.msg_controllen = checked_cast<socklen_t>(control_len);
++#elif BUILDFLAG(IS_OHOS)
++    msg.msg_controllen = static_cast<socklen_t>(control_len);
+ #else
+     msg.msg_controllen = control_len;
+ #endif
+     cmsg = CMSG_FIRSTHDR(&msg);
+     cmsg->cmsg_level = SOL_SOCKET;
+     cmsg->cmsg_type = SCM_RIGHTS;
+ #if BUILDFLAG(IS_APPLE)
+     cmsg->cmsg_len = checked_cast<u_int>(CMSG_LEN(sizeof(int) * fds.size()));
++#elif BUILDFLAG(IS_OHOS)
++    cmsg->cmsg_len = static_cast<socklen_t>(CMSG_LEN(sizeof(int) * fds.size()));
+ #else
+     cmsg->cmsg_len = CMSG_LEN(sizeof(int) * fds.size());
+ #endif
+     memcpy(CMSG_DATA(cmsg), &fds[0], sizeof(int) * fds.size());
+     msg.msg_controllen = cmsg->cmsg_len;

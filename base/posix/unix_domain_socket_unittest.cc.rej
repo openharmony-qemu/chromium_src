@@ -1,0 +1,29 @@
+diff a/base/posix/unix_domain_socket_unittest.cc b/base/posix/unix_domain_socket_unittest.cc	(rejected hunks)
+@@ -5,10 +5,11 @@
+ #ifdef UNSAFE_BUFFERS_BUILD
+ // TODO(crbug.com/40284755): Remove this and spanify to fix the errors.
+ #pragma allow_unsafe_buffers
+ #endif
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/posix/unix_domain_socket.h"
+ 
+ #include <stddef.h>
+ #include <stdint.h>
+ #include <sys/socket.h>
+@@ -90,11 +91,15 @@ TEST(UnixDomainSocketTest, SendRecvMsgAvoidsSIGPIPE) {
+   // Have the thread send a synchronous message via the socket. Unless the
+   // message is sent with MSG_NOSIGNAL, this shall result in SIGPIPE.
+   Pickle request;
+   ASSERT_EQ(
+       -1, UnixDomainSocket::SendRecvMsg(fds[1], nullptr, 0U, nullptr, request));
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  ASSERT_EQ(ECONNREFUSED, errno);
++#else
+   ASSERT_EQ(EPIPE, errno);
++#endif
+   // Restore the SIGPIPE handler.
+   ASSERT_EQ(0, sigaction(SIGPIPE, &oldact, nullptr));
+ }
+ 
+ // Simple sanity check within a single process that receiving PIDs works.

@@ -1,0 +1,40 @@
+diff a/base/logging.cc b/base/logging.cc	(rejected hunks)
+@@ -186,20 +193,23 @@ void MaybeInitializeVlogInfo() {
+       }
+     }
+   }
+ }
+ 
+-const char* const log_severity_names[] = {"INFO", "WARNING", "ERROR", "FATAL"};
++#if !BUILDFLAG(ARKWEB_DFX_LOGGING)
++const char* const log_severity_names[] = {"INFO", "WARNING", "ERROR", "FATAL", "DEBUG"};
++
+ static_assert(LOGGING_NUM_SEVERITIES == std::size(log_severity_names),
+               "Incorrect number of log_severity_names");
+ 
+ const char* log_severity_name(int severity) {
+   if (severity >= 0 && severity < LOGGING_NUM_SEVERITIES) {
+     return UNSAFE_TODO(log_severity_names[severity]);
+   }
+   return "UNKNOWN";
+ }
++#endif
+ 
+ // Specifies the process' logging sink(s), represented as a combination of
+ // LoggingDestination values joined by bitwise OR.
+ uint32_t g_logging_destination = LOG_DEFAULT;
+ 
+@@ -1027,10 +1103,13 @@ void LogMessage::Init(const char* file, int line) {
+       stream_ << log_severity_name(severity_);
+     } else {
+       stream_ << "VERBOSE" << -severity_;
+     }
+     stream_ << ":" << filename << ":" << line << "] ";
++#else
++    stream_ << filename << ":" << line << "] ";
++#endif
+   }
+   message_start_ = stream_.str().length();
+ }
+ 
+ void LogMessage::HandleFatal(size_t stack_start,

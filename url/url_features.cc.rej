@@ -1,0 +1,22 @@
+diff a/url/url_features.cc b/url/url_features.cc	(rejected hunks)
+@@ -30,6 +31,20 @@ bool IsUsingIDNAContextJRules() {
+            base::FEATURE_ENABLED_BY_DEFAULT;
+   }
+   return base::FeatureList::IsEnabled(kUseIDNAContextJRules);
+ }
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++BASE_FEATURE(kStandardCompliantNonSpecialSchemeURLParsing,
++             base::FEATURE_DISABLED_BY_DEFAULT);
++
++bool IsUsingStandardCompliantNonSpecialSchemeURLParsing() {
++  if (!base::FeatureList::GetInstance()) {
++    return kStandardCompliantNonSpecialSchemeURLParsing.default_state ==
++           base::FEATURE_ENABLED_BY_DEFAULT;
++  }
++  return base::FeatureList::IsEnabled(
++      kStandardCompliantNonSpecialSchemeURLParsing);
++}
++#endif
++
+ }  // namespace url

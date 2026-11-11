@@ -61,6 +61,9 @@ struct SchemeRegistry {
        SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION},  // WebSocket secure.
       {kWsScheme, SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION},  // WebSocket.
       {kFileSystemScheme, SCHEME_WITHOUT_AUTHORITY},
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
+      {kResourcesScheme, SCHEME_WITH_HOST},
+#endif
   };
 
   // Schemes that are allowed for referrers.
@@ -87,6 +90,9 @@ struct SchemeRegistry {
   // security rules as those applied to "file" URLs).
   std::vector<std::string> local_schemes = {
       kFileScheme,
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
+      kResourcesScheme,
+#endif
   };
 
   // Schemes that cause pages loaded with them to not have access to pages
@@ -134,6 +140,16 @@ struct SchemeRegistry {
 
   // Schemes with a predefined default custom handler.
   std::vector<SchemeWithHandler> predefined_handler_schemes;
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  std::vector<std::string> custom_schemes = {};
+#endif  // BUILDFLAG(ARKWEB_NETWORK_LOAD)
+
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+  std::vector<std::string> code_cache_enabled_schemes = {
+    kFileScheme,
+  };
+#endif`
 
   bool allow_non_standard_schemes = false;
 };
@@ -303,9 +319,27 @@ bool DoCanonicalize(std::basic_string_view<CHAR> spec,
     success = CanonicalizeStandardUrl(spec, ParseStandardUrl(spec), scheme_type,
                                       charset_converter, output, output_parsed);
 
-  } else {
+  }
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  else if (!url::IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
+           DoCompareSchemeComponent(spec, scheme, url::kMailToScheme)) {
+    // Mailto URLs are treated like standard URLs, with only a scheme, path,
+    // and query.
+    //
+    // TODO(crbug.com/40063064): Remove the special handling of 'mailto:" scheme
+    // URLs. "mailto:" is simply one of non-special URLs.
+    success = CanonicalizeMailtoUrl(spec, ParseMailtoUrl(spec), output,
+                                    output_parsed);
+  }
+#endif
+  else {
     // Non-special scheme URLs like data:, mailto: and javascript:.
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
+        !DoIsOpaqueNonSpecial(spec, scheme)) {
+#else
     if (!DoIsOpaqueNonSpecial(spec, scheme)) {
+#endif
       success = CanonicalizeNonSpecialUrl(
           spec, ParseNonSpecialUrlInternal(spec, trim_path_end),
           charset_converter, *output, *output_parsed);
@@ -341,8 +375,22 @@ bool DoResolveRelative(std::string_view base_spec,
     base_is_hierarchical = num_slashes > 0;
   }
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  bool is_hierarchical_base;
+
+  if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
+    is_hierarchical_base =
+        base_parsed.scheme.is_nonempty() && !base_parsed.has_opaque_path;
+  } else {
+    SchemeType unused_scheme_type = SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION;
+    is_hierarchical_base =
+        base_parsed.scheme.is_nonempty() &&
+        DoIsStandard(base_parsed.scheme.MaybeAsViewOn(base_spec), &unused_scheme_type);
+  }
+#else
   bool is_hierarchical_base =
       base_parsed.scheme.is_nonempty() && !base_parsed.has_opaque_path;
+#endif
 
   bool is_relative;
   Component relative_component;
@@ -481,7 +529,17 @@ bool DoReplaceComponents(std::string_view spec,
                               charset_converter, output, out_parsed);
   }
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (!IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
+      DoCompareSchemeComponent(spec, parsed.scheme, url::kMailToScheme)) {
+    return ReplaceMailtoUrl(spec, parsed, replacements, output, out_parsed);
+  }
+
+  if (IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
+      !DoIsOpaqueNonSpecial(spec, parsed.scheme)) {
+#else
   if (!DoIsOpaqueNonSpecial(spec, parsed.scheme)) {
+#endif
     return ReplaceNonSpecialUrl(spec, parsed, replacements, charset_converter,
                                 *output, *out_parsed);
   }
@@ -584,7 +642,11 @@ void EnableNonStandardSchemesForAndroidWebView() {
 }
 
 bool AllowNonStandardSchemesForAndroidWebView() {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  return true;
+#else
   return GetSchemeRegistry().allow_non_standard_schemes;
+#endif
 }
 
 void AddStandardScheme(std::string_view new_scheme, SchemeType type) {
@@ -666,6 +728,36 @@ void AddEmptyDocumentScheme(std::string_view new_scheme) {
 const std::vector<std::string>& GetEmptyDocumentSchemes() {
   return GetSchemeRegistry().empty_document_schemes;
 }
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+void AddCustomScheme(const char* new_scheme) {
+  DoAddScheme(new_scheme, &GetSchemeRegistryWithoutLocking()->custom_schemes);
+}
+
+const std::vector<std::string>& GetCustomScheme() {
+  return GetSchemeRegistry().custom_schemes;
+}
+#endif  // BUILDFLAG(ARKWEB_NETWORK_LOAD)
+
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+void AddCodeCacheEnabledScheme(const char* new_scheme) {
+  DoAddScheme(new_scheme,
+              &GetSchemeRegistryWithoutLocking()->code_cache_enabled_schemes);
+}
+
+bool IsCodeCacheEnabledScheme(std::string_view scheme) {
+  for (const std::string& it : GetSchemeRegistry().code_cache_enabled_schemes) {
+    if (it == scheme) {
+      return true;
+    }
+  }
+  return false;
+}
+
+const std::vector<std::string>& GetCodeCacheEnabledSchemes() {
+    return GetSchemeRegistry().code_cache_enabled_schemes;
+}
+#endif
 
 void AddPredefinedHandlerScheme(std::string_view new_scheme,
                                 std::string_view handler) {

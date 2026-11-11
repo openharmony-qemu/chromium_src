@@ -1,0 +1,69 @@
+diff a/net/dns/dns_client.cc b/net/dns/dns_client.cc	(rejected hunks)
+@@ -157,10 +157,25 @@ class DnsClientImpl : public DnsClient {
+   bool CanUseSecureDnsTransactions() const override {
+     const DnsConfig* config = GetEffectiveConfig();
+     return config && !config->doh_config.servers().empty();
+   }
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  bool CanUseSecureDnsFallbackTransactions(
++      ResolveContext* context) const override {
++    if (NetworkChangeNotifier::GetConnectionType() ==
++        NetworkChangeNotifier::CONNECTION_NONE) {
++      return false;
++    }
++
++    if (context->IsHttpsDnsFallbackEnabled() && CanUseSecureDnsTransactions()) {
++      return context->NumAvailableDohServers(session_.get()) > 0;
++    }
++    return false;
++  }
++#endif
++
+   bool CanUseInsecureDnsTransactions() const override {
+     const DnsConfig* config = GetEffectiveConfig();
+     return config && config->nameservers.size() > 0 && insecure_enabled_ &&
+            !config->unhandled_options && !config->dns_over_tls_active;
+   }
+@@ -368,10 +383,41 @@ class DnsClientImpl : public DnsClient {
+             OptRecordRdata::EdeOpt::CreateStructuredErrorsRequest());
+       }
+     }
+   }
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  void GetLocalAddress(IPEndPoint* address) override {
++    if (session_) {
++      session_->udp_tracker()->GetLocalAddress(address);
++    }
++  }
++#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  std::string GetDnsServersString() override {
++    const DnsConfig* config = GetEffectiveConfig();
++    if (!config && system_config_) {
++      config = &system_config_.value();
++    }
++
++    if (!config) {
++      return "[]";
++    }
++
++    std::string nameservers_str = "";
++    for (const auto& server : config->nameservers) {
++      if (nameservers_str.size() != 0) {
++        nameservers_str = nameservers_str + ", " + server.ToString();
++      } else {
++        nameservers_str += server.ToString();
++      }
++    }
++    return "[" + nameservers_str + "]";
++  }
++#endif  // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++
+   bool insecure_enabled_ = false;
+   bool can_query_additional_types_via_insecure_ = false;
+   int insecure_fallback_failures_ = 0;
+ 
+   std::optional<DnsConfig> system_config_;

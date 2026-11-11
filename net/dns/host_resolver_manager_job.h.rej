@@ -1,0 +1,67 @@
+diff a/net/dns/host_resolver_manager_job.h b/net/dns/host_resolver_manager_job.h	(rejected hunks)
+@@ -34,10 +34,13 @@ namespace net {
+ 
+ class ResolveContext;
+ class HostResolverInternalResult;
+ class HostResolverMdnsTask;
+ class HostResolverNat64Task;
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++class ArkWebHostResolverManagerJobExt;
++#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+ 
+ // Key used to identify a HostResolverManager::Job.
+ struct HostResolverManager::JobKey {
+   JobKey(HostResolver::Host host, ResolveContext* resolve_context);
+   ~JobKey();
+@@ -251,11 +264,15 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
+                             int /*os_error*/,
+                             int net_error);
+ 
+   void InsecureCacheLookup();
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  void StartDnsTask(bool secure, bool secure_fallback = false);
++#else
+   void StartDnsTask(bool secure);
++#endif  // ARKWEB_EXT_HTTP_DNS_FALLBACK
+   void StartNextDnsTransaction();
+   // Called if DnsTask fails. It is posted from StartDnsTask, so Job may be
+   // deleted before this callback. In this case dns_task is deleted as well,
+   // so we use it as indicator whether Job is still valid.
+   void OnDnsTaskFailure(const base::WeakPtr<HostResolverDnsTask>& dns_task,
+@@ -265,11 +282,16 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
+                         bool secure);
+   // HostResolverDnsTask::Delegate implementation:
+   void OnDnsTaskComplete(base::TimeTicks start_time,
+                          bool allow_fallback,
+                          HostResolverDnsTask::Results results,
+-                         bool secure) override;
++                         bool secure
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++                         ,
++                         std::vector<IPEndPoint> truncation_result = {}
++#endif
++                         ) override;
+   void OnIntermediateTransactionsComplete(
+       std::optional<HostResolverDnsTask::SingleTransactionResults>
+           single_transaction_results) override;
+   bool IsHappyEyeballsV3Enabled() const override;
+   void AddTransactionTimeQueued(base::TimeDelta time_queued) override;
+@@ -300,11 +322,16 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
+   // which indicates whether or not the result was obtained securely.
+   void CompleteRequests(const HostCache::Entry& results,
+                         base::TimeDelta ttl,
+                         bool allow_cache,
+                         bool secure,
+-                        std::optional<TaskType> task_type);
++                        std::optional<TaskType> task_type
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++                        ,
++                        const std::vector<IPEndPoint>& truncation_results = {}
++#endif
++  );
+ 
+   void CompleteRequestsWithoutCache(
+       const HostCache::Entry& results,
+       std::optional<HostCache::EntryStaleness> stale_info,
+       TaskType task_type);

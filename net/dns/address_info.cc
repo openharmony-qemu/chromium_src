@@ -7,6 +7,9 @@
 #include <memory>
 #include <optional>
 
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/compiler_specific.h"
 #include "base/logging.h"
 #include "base/notreached.h"
@@ -19,6 +22,16 @@
 #if BUILDFLAG(IS_ANDROID)
 #include "net/android/network_library.h"
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#include <dlfcn.h>
+#include <netdb.h>
+
+#include "base/files/file.h"
+#include "base/native_library.h"
+#include "net/base/network_handle.h"
+#include "arkweb/chromium_ext/net/dns/arkweb_address_info_ext.h"
+#endif
 
 namespace net {
 
@@ -177,10 +190,20 @@ std::unique_ptr<addrinfo, FreeAddrInfoFunc> AddrInfoGetter::getaddrinfo(
     const addrinfo* hints,
     int* out_os_error,
     handles::NetworkHandle network) {
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+  addrinfo* ai = nullptr;
+#else
   addrinfo* ai;
+#endif
   // We wrap freeaddrinfo() in a lambda just in case some operating systems use
   // a different signature for it.
   FreeAddrInfoFunc deleter = [](addrinfo* ai) { ::freeaddrinfo(ai); };
+
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  if (network != handles::kInvalidNetworkHandle) {
+    deleter = [](addrinfo* ai) { ohos::FreeDnsResult(ai); };
+  }
+#endif
 
   std::unique_ptr<addrinfo, FreeAddrInfoFunc> rv = {nullptr, deleter};
 
@@ -192,6 +215,9 @@ std::unique_ptr<addrinfo, FreeAddrInfoFunc> AddrInfoGetter::getaddrinfo(
 #elif BUILDFLAG(IS_WIN)
     *out_os_error = WSAEOPNOTSUPP;
     return rv;
+#elif BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+    *out_os_error = ohos::GetAddrInfoForNetwork((char*)host.c_str(), nullptr,
+                                                (addrinfo*)hints, &ai, network);
 #else
     errno = ENOSYS;
     *out_os_error = EAI_SYSTEM;
@@ -205,6 +231,10 @@ std::unique_ptr<addrinfo, FreeAddrInfoFunc> AddrInfoGetter::getaddrinfo(
 #if BUILDFLAG(IS_WIN)
     *out_os_error = WSAGetLastError();
 #endif
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    LOG(ERROR) << "get address info failed, out_os_error is: " << *out_os_error
+               << " host: ***";
+#endif  // BUILDFLAG(ARKWEB_NETWORK_LOAD)
     return rv;
   }
 

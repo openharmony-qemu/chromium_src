@@ -474,6 +474,12 @@ class NET_EXPORT HostResolver {
 
     // Controls the resolver's Secure DNS behavior for this request.
     SecureDnsPolicy secure_dns_policy = SecureDnsPolicy::kAllow;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    // If /true/, the dns task type of the request is only secure dns fallback
+    // type.
+    bool only_use_secure_fallback = false;
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   };
 
   // Handler for an ongoing MDNS listening operation. Created by
@@ -583,6 +589,26 @@ class NET_EXPORT HostResolver {
   virtual HostResolverManager* GetManagerForTesting();
   virtual const URLRequestContext* GetContextForTesting() const;
   virtual handles::NetworkHandle GetTargetNetworkForTesting() const;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  virtual void GetLocalAddress(IPEndPoint* address) { *address = IPEndPoint(); }
+  virtual bool CanUseSecureDnsFallback() const { return false; }
+  virtual bool IsDomainInWhitelist(const std::string& domain) const {
+    return false;
+  }
+  virtual bool IsIframeFallbackEnabled() const { return false; }
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  virtual std::string GetDnsServersString() { return std::string(); }
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+  virtual bool NeedRetryDnsOnDnsHijack(const GURL& url,
+                                       const std::string& errorcode) const {
+    return false;
+  }
+#endif
 
   // Creates a new HostResolver. `manager` must outlive the returned resolver.
   //

@@ -1,0 +1,17 @@
+diff a/net/dns/dns_hosts.cc b/net/dns/dns_hosts.cc	(rejected hunks)
+@@ -18,10 +18,15 @@
+ #include "net/base/cronet_buildflags.h"
+ #include "net/base/url_util.h"
+ #include "net/dns/dns_util.h"
+ #include "url/url_canon.h"
+ 
++#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
++#include "base/command_line.h"
++#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
++#endif
++
+ namespace net {
+ 
+ namespace {
+ 
+ // Parses the contents of a hosts file.  Returns one token (IP or hostname) at

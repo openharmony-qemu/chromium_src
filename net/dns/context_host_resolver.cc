@@ -25,6 +25,8 @@
 #include "net/url_request/url_request_context.h"
 #include "url/scheme_host_port.h"
 
+#include "arkweb/chromium_ext/net/dns/context_host_resolver_for_include.cc"
+
 namespace net {
 
 ContextHostResolver::ContextHostResolver(

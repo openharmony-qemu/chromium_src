@@ -1,0 +1,161 @@
+diff a/net/dns/host_resolver_manager.cc b/net/dns/host_resolver_manager.cc	(rejected hunks)
+@@ -131,16 +131,27 @@
+ #endif
+ 
+ #if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
+ #include <net/if.h>
+ #include "net/base/sys_addrinfo.h"
+-#if BUILDFLAG(IS_ANDROID)
+-#else  // !BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
++#else  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
+ #include <ifaddrs.h>
+ #endif  // BUILDFLAG(IS_ANDROID)
+ #endif  // BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
++#include "base/command_line.h"
++#endif
++
++#include "arkweb/chromium_ext/net/dns/host_resolver_manager_for_include.cc"
++
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++#include "url/ohos/log_utils.h"
++#endif
++
+ namespace net {
+ 
+ namespace {
+ 
+ // Limit the size of hostnames that will be resolved to combat issues in
+@@ -815,11 +833,18 @@ HostCache::Entry HostResolverManager::ResolveLocally(
+     SecureDnsPolicy secure_dns_policy,
+     HostResolverSource source,
+     const NetLogWithSource& source_net_log,
+     HostCache* cache,
+     std::deque<TaskType>* out_tasks,
+-    std::optional<HostCache::EntryStaleness>* out_stale_info) {
++    std::optional<HostCache::EntryStaleness>* out_stale_info
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++    ,
++    int& dns_status,
++    ResolveInfo& resolve_info,
++    bool& secure_dns_fallback_resolved
++#endif
++) {
+   DCHECK(out_stale_info);
+   *out_stale_info = std::nullopt;
+ 
+   CreateTaskSequence(job_key, cache_usage, secure_dns_policy, out_tasks);
+   source_net_log.AddEvent(
+@@ -882,26 +907,54 @@ HostCache::Entry HostResolverManager::ResolveLocally(
+ 
+   // Do initial cache lookups.
+   while (!out_tasks->empty() && IsLocalTask(out_tasks->front())) {
+     TaskType task = out_tasks->front();
+     out_tasks->pop_front();
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++    resolve_info.AddTransitionType(
++        static_cast<int>(HostResolverManager::ConvertFromTaskType(task)));
++#endif
+     if (task == TaskType::SECURE_CACHE_LOOKUP ||
+         task == TaskType::INSECURE_CACHE_LOOKUP ||
+         task == TaskType::CACHE_LOOKUP) {
+       bool secure = task == TaskType::SECURE_CACHE_LOOKUP;
+       HostCache::Key key = job_key.ToCacheKey(secure);
+-
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++      dns_status = kDnsResolvedFromInsecureCache;
++      bool is_from_secure_cache = false;
++#endif
+       bool ignore_secure = task == TaskType::CACHE_LOOKUP;
+       resolved = MaybeServeFromCache(cache, key, cache_usage, ignore_secure,
+-                                     source_net_log, out_stale_info);
++                                     source_net_log, out_stale_info
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++                                     ,
++                                     &is_from_secure_cache
++#endif
++      );
+       if (resolved) {
+         // |MaybeServeFromCache()| will update |*out_stale_info| as needed.
+         DCHECK(out_stale_info->has_value());
+         source_net_log.AddEvent(
+             NetLogEventType::HOST_RESOLVER_MANAGER_CACHE_HIT,
+             [&] { return NetLogResults(resolved.value()); });
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++        if (is_from_secure_cache) {
++          dns_status = kDnsResolvedFromSecureCache;
++        } else {
++          dns_status = kDnsResolvedFromInsecureCache;
++        }
++#endif
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++        if (task == TaskType::SECURE_CACHE_LOOKUP &&
++            secure_dns_policy != SecureDnsPolicy::kBootstrap) {
++          if (dns_client_ && dns_client_->CanUseSecureDnsFallbackTransactions(
++                                 &*job_key.resolve_context)) {
++            secure_dns_fallback_resolved = true;
++          }
++        }
++#endif
+         // TODO(crbug.com/40178456): Call StartBootstrapFollowup() if the Secure
+         // DNS Policy is kBootstrap and the result is not secure.  Note: A naive
+         // implementation could cause an infinite loop if |resolved| always
+         // expires or is evicted before the followup runs.
+         return resolved.value();
+@@ -1024,11 +1085,16 @@ std::optional<HostCache::Entry> HostResolverManager::MaybeServeFromCache(
+     HostCache* cache,
+     const HostCache::Key& key,
+     ResolveHostParameters::CacheUsage cache_usage,
+     bool ignore_secure,
+     const NetLogWithSource& source_net_log,
+-    std::optional<HostCache::EntryStaleness>* out_stale_info) {
++    std::optional<HostCache::EntryStaleness>* out_stale_info
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++    ,
++    bool* out_is_from_secure_cache
++#endif
++) {
+   DCHECK(out_stale_info);
+   *out_stale_info = std::nullopt;
+ 
+   if (!cache)
+     return std::nullopt;
+@@ -1345,10 +1416,16 @@ void HostResolverManager::PushDnsTasks(bool system_task_allowed,
+   // The system resolver can be used as a fallback for a non-existent or
+   // failing DnsTask if allowed by the request parameters.
+   if (system_task_allowed &&
+       (no_dns_or_secure_tasks || allow_fallback_to_systemtask_))
+     out_tasks->push_back(TaskType::SYSTEM);
++
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  if (dns_client_->CanUseSecureDnsFallbackTransactions(resolve_context)) {
++    out_tasks->push_back(TaskType::SECURE_DNS_FALLBACK);
++  }
++#endif
+ }
+ 
+ void HostResolverManager::CreateTaskSequence(
+     const JobKey& job_key,
+     ResolveHostParameters::CacheUsage cache_usage,
+@@ -1443,10 +1520,17 @@ void HostResolverManager::CreateTaskSequence(
+     case HostResolverSource::LOCAL_ONLY:
+       // If no external source allowed, a job should not be created or started
+       break;
+   }
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++  if (secure_dns_policy == SecureDnsPolicy::kBootstrap &&
++      out_tasks->back() == TaskType::SECURE_DNS_FALLBACK) {
++    out_tasks->pop_back();
++  }
++#endif
++
+   // `HOST_RESOLVER_CANONNAME` is only supported through system resolution.
+   if (job_key.flags & HOST_RESOLVER_CANONNAME) {
+     DCHECK(std::ranges::find(*out_tasks, TaskType::DNS) == out_tasks->end());
+     DCHECK(std::ranges::find(*out_tasks, TaskType::MDNS) == out_tasks->end());
+   }

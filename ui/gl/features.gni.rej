@@ -1,0 +1,14 @@
+diff a/ui/gl/features.gni b/ui/gl/features.gni	(rejected hunks)
+@@ -5,11 +5,11 @@
+ import("//build/config/cast.gni")
+ import("//build/config/chrome_build.gni")
+ 
+ declare_args() {
+   # Should ANGLE be linked statically?
+-  use_static_angle = is_android || is_ios
++  use_static_angle = is_android || is_ios || is_ohos
+ 
+   # Should Dawn support be compiled to back the WebGPU implementation?
+   # Also controls linking Dawn dependencies in such as SPIRV-Tools or
+   # Vulkan Validation Layers.
+   use_dawn = is_apple || is_win || is_chromeos || (is_linux && !is_castos) ||

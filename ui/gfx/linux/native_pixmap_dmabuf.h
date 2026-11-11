@@ -19,7 +19,12 @@ class COMPONENT_EXPORT(GFX) NativePixmapDmaBuf : public gfx::NativePixmap {
  public:
   NativePixmapDmaBuf(const gfx::Size& size,
                      viz::SharedImageFormat format,
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+                     gfx::NativePixmapHandle handle,
+                     void* window_buffer = nullptr);
+#else
                      gfx::NativePixmapHandle handle);
+#endif
 
   NativePixmapDmaBuf(const NativePixmapDmaBuf&) = delete;
   NativePixmapDmaBuf& operator=(const NativePixmapDmaBuf&) = delete;

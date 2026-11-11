@@ -60,6 +60,7 @@
 #include "ui/gfx/geometry/vector2d.h"
 #include "ui/gfx/native_ui_types.h"
 #include "ui/gfx/overlay_transform.h"
+#include "arkweb/build/features/features.h"
 
 namespace base {
 class SingleThreadTaskRunner;
@@ -101,6 +102,7 @@ class Compositor;
 class Layer;
 class ScrollInputHandler;
 class CompositorMetricsTracker;
+class CompositorUtils;
 class CompositorPropertyTreeDelegate;
 
 constexpr int kCompositorLockTimeoutMs = 67;
@@ -136,6 +138,10 @@ class COMPOSITOR_EXPORT ContextFactory {
 
   // Gets the frame sink manager host instance.
   virtual viz::HostFrameSinkManager* GetHostFrameSinkManager() = 0;
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void SendInternalBeginFrame(const viz::FrameSinkId& id) {}
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 };
 
 // Factory object to create a ExternalBeginFrameControllerClient on demand.
@@ -153,6 +159,13 @@ class COMPOSITOR_EXPORT CompositorDelegate {
  public:
   virtual std::unique_ptr<viz::HostDisplayClient> CreateHostDisplayClient() = 0;
   virtual bool UseProxyOutputDevice() = 0;
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  virtual void RestoreRenderFit() = 0;
+#endif // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_ROTATE_RESIZE)
+  virtual void ModifyRenderFit(int32_t fitType) = 0;
+#endif // ARKWEB_ROTATE_RESIZE
 
  protected:
   virtual ~CompositorDelegate() {}
@@ -183,6 +196,8 @@ class COMPOSITOR_EXPORT Compositor
   Compositor& operator=(const Compositor&) = delete;
 
   ~Compositor() override;
+
+  friend class CompositorUtils;
 
   ui::ContextFactory* context_factory() { return context_factory_; }
 
@@ -539,6 +554,18 @@ class COMPOSITOR_EXPORT Compositor
   void OnSetPreferredRefreshRate(float refresh_rate);
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  void RestoreRenderFit() override;
+#endif // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_ROTATE_RESIZE)
+  void ModifyRenderFit(int32_t fitType) override;
+#endif // ARKWEB_ROTATE_RESIZE
+
+  CompositorUtils* Utils() {
+    return compositor_utils_.get();
+  }
+
   // While there are outstanding `ScopedKeepSurfaceAlive`, Compositor will
   // attempt to ensure any pending `viz::CopyOutputRequest` in any part of the
   // compositor surface tree are fulfilled in a timely manner. `surface_id`
@@ -741,6 +768,7 @@ class COMPOSITOR_EXPORT Compositor
   };
   using CompositorMetricsTrackerMap = base::flat_map<TrackerId, TrackerState>;
   CompositorMetricsTrackerMap compositor_metrics_tracker_map_;
+  std::unique_ptr<CompositorUtils> compositor_utils_;
 
   // TODO(crbug.com/389771428): This holds a transitional object that
   // will be used to migrate from using layer trees to property trees and

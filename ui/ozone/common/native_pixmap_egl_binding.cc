@@ -247,6 +247,7 @@ bool NativePixmapEGLBinding::InitializeFromNativePixmap(
   egl_image_ =
       gl::MakeScopedEGLImage(EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
                              static_cast<EGLClientBuffer>(nullptr), &attrs[0]);
+#endif
   if (!egl_image_.get()) {
     return false;
   }

@@ -1,0 +1,13 @@
+diff a/ui/base/BUILD.gn b/ui/base/BUILD.gn	(rejected hunks)
+@@ -1050,11 +1075,10 @@ test("ui_base_unittests") {
+     "//ui/base/clipboard:clipboard_types",
+     "//ui/base/clipboard:file_info",
+     "//ui/base/cursor:unittests",
+     "//ui/base/data_transfer_policy:unittests",
+     "//ui/base/interaction:unit_tests",
+-    "//ui/base/metadata:metadata_tests",
+     "//ui/base/prediction",
+     "//ui/color",
+     "//ui/display",
+     "//ui/gfx:test_support",
+     "//ui/resources",

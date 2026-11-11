@@ -1,0 +1,33 @@
+diff a/ui/accessibility/platform/browser_accessibility_manager.cc b/ui/accessibility/platform/browser_accessibility_manager.cc	(rejected hunks)
+@@ -252,11 +252,13 @@ void BrowserAccessibilityManager::FireGeneratedEvent(
+   // Currently, this method is only used to fire ARIA notification events.
+   if (event_type != AXEventGenerator::Event::ARIA_NOTIFICATIONS_POSTED) {
+     return;
+   }
+ 
+-  auto* wrapper = GetFromAXNode(node);
++  // Mitigation for b/498205735. Using raw_ptr on the stack as defense-in-depth
++  // to ensure memory is quarantined if freed during the loop below.
++  raw_ptr<BrowserAccessibility> wrapper = GetFromAXNode(node);
+   DCHECK(wrapper);
+ 
+   const auto& node_data = wrapper->GetData();
+ 
+   const auto& announcements = node_data.GetStringListAttribute(
+@@ -561,10 +563,16 @@ bool BrowserAccessibilityManager::OnAccessibilityEvents(
+     defer_load_complete_event_ = false;
+     FireBlinkEvent(ax::mojom::Event::kLoadComplete,
+                    GetBrowserAccessibilityRoot(), -1);
+   }
+ 
++#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
++  if (details.events.empty() && GetBrowserAccessibilityRoot()) {
++    FireGeneratedEvent(AXEventGenerator::Event::NONE,
++                       GetBrowserAccessibilityRoot()->node());
++  }
++#endif
+   // Fire any events related to changes to the tree that come from ancestors of
+   // the currently-focused node. We do this so that screen readers are made
+   // aware of changes in the tree which might be relevant to subsequent events
+   // on the focused node, such as the focused node being a descendant of a
+   // reparented node or a newly-shown dialog box.

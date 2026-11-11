@@ -126,7 +126,7 @@ BrowserAccessibilityFindInPageInfo::BrowserAccessibilityFindInPageInfo()
       end_offset(-1),
       active_request_id(-1) {}
 
-#if !BUILDFLAG(HAS_PLATFORM_ACCESSIBILITY_SUPPORT)
+#if !BUILDFLAG(HAS_PLATFORM_ACCESSIBILITY_SUPPORT) && !BUILDFLAG(ARKWEB_ACCESSIBILITY)
 // static
 BrowserAccessibilityManager* BrowserAccessibilityManager::Create(
     const AXTreeUpdate& initial_tree,
@@ -2270,10 +2270,14 @@ bool BrowserAccessibilityManager::ShouldFireEventForNode(
 
 std::unique_ptr<BrowserAccessibility>
 BrowserAccessibilityManager::CreateBrowserAccessibility(AXNode* node) {
+#if defined(COMPONENT_BUILD) // FIXME
+  return nullptr;
+#else
 #if !BUILDFLAG(IS_ANDROID)
   return BrowserAccessibility::Create(this, node);
 #else
   NOTREACHED();
+#endif
 #endif
 }
 

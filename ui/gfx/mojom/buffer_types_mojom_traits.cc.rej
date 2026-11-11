@@ -1,0 +1,14 @@
+diff a/ui/gfx/mojom/buffer_types_mojom_traits.cc b/ui/gfx/mojom/buffer_types_mojom_traits.cc	(rejected hunks)
+@@ -6,10 +6,12 @@
+ 
+ #include "build/blink_buildflags.h"
+ #include "build/build_config.h"
+ #include "ui/gfx/mojom/native_handle_types.mojom-shared.h"
+ 
++#include "arkweb/build/features/features.h"
++
+ namespace mojo {
+ 
+ // static
+ bool StructTraits<gfx::mojom::BufferUsageAndFormatDataView,
+                   gfx::BufferUsageAndFormat>::

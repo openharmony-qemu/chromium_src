@@ -14,11 +14,17 @@
 #include "ui/events/gesture_detection/gesture_detection_export.h"
 #include "ui/events/velocity_tracker/velocity_tracker_state.h"
 
+#include "arkweb/build/features/features.h"
+
 namespace ui {
 
 class DoubleTapListener;
 class GestureListener;
 class MotionEvent;
+#if BUILDFLAG(IS_ARKWEB)
+class GestureDetectorExt;
+class TimeoutGestureHandlerUtils;
+#endif
 
 // Port of GestureDetector.java from Android
 // * platform/frameworks/base/core/java/android/view/GestureDetector.java
@@ -41,6 +47,12 @@ class GESTURE_DETECTION_EXPORT GestureDetector {
 
     base::TimeDelta shortpress_timeout = base::Milliseconds(400);
     base::TimeDelta longpress_timeout = base::Milliseconds(500);
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    base::TimeDelta draglongpress_timeout = base::Milliseconds(1500);
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+    base::TimeDelta createoverlay_timeout = base::Milliseconds(50);
+#endif
     base::TimeDelta showpress_timeout = base::Milliseconds(180);
     base::TimeDelta double_tap_timeout = base::Milliseconds(300);
 
@@ -124,6 +136,12 @@ class GESTURE_DETECTION_EXPORT GestureDetector {
   GestureDetector(const GestureDetector&) = delete;
   GestureDetector& operator=(const GestureDetector&) = delete;
 
+#if BUILDFLAG(IS_ARKWEB)
+  friend class GestureDetectorExt;
+  friend class TimeoutGestureHandlerUtils;
+  virtual GestureDetectorExt* AsGestureDetectorExt() { return nullptr; }
+  virtual
+#endif
   ~GestureDetector();
 
   bool OnTouchEvent(const MotionEvent& ev, bool should_process_double_tap);
@@ -164,6 +182,12 @@ class GESTURE_DETECTION_EXPORT GestureDetector {
   void OnShowPressTimeout();
   void OnShortPressTimeout();
   void OnLongPressTimeout();
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  void OnDragLongPressTimeout();
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+  void OnCreateOverlayTimeout();
+#endif
   void OnTapTimeout();
   void ActivateShortPressGesture(const MotionEvent& ev);
   void ActivateLongPressGesture(const MotionEvent& ev);

@@ -1,0 +1,26 @@
+diff a/ui/gfx/mojom/native_handle_types_mojom_traits.h b/ui/gfx/mojom/native_handle_types_mojom_traits.h	(rejected hunks)
+@@ -47,20 +49,21 @@ struct COMPONENT_EXPORT(GFX_NATIVE_HANDLE_TYPES_SHARED_MOJOM_TRAITS)
+   static bool Read(gfx::mojom::AHardwareBufferHandleDataView data,
+                    ::base::android::ScopedHardwareBufferHandle* handle);
+ };
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OZONE)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OZONE) || \
++    BUILDFLAG(IS_OHOS)
+ template <>
+ struct COMPONENT_EXPORT(GFX_NATIVE_HANDLE_TYPES_SHARED_MOJOM_TRAITS)
+     StructTraits<gfx::mojom::NativePixmapPlaneDataView,
+                  gfx::NativePixmapPlane> {
+   static uint32_t stride(const gfx::NativePixmapPlane& plane) {
+     return plane.stride;
+   }
+-  static int32_t offset(const gfx::NativePixmapPlane& plane) {
+-    return base::saturated_cast<int32_t>(plane.offset);
++  static uint64_t offset(const gfx::NativePixmapPlane& plane) {
++    return plane.offset;
+   }
+   static uint64_t size(const gfx::NativePixmapPlane& plane) {
+     return plane.size;
+   }
+   static mojo::PlatformHandle buffer_handle(gfx::NativePixmapPlane& plane);

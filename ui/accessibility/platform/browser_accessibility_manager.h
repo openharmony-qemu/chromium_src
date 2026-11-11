@@ -42,6 +42,7 @@
 #include "ui/accessibility/platform/browser_accessibility.h"
 #include "ui/base/buildflags.h"
 #include "ui/gfx/native_ui_types.h"
+#include "arkweb/build/features/features.h"
 
 namespace ui {
 class AXNodeIdDelegate;

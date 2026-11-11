@@ -62,7 +62,12 @@ void GLFenceEGL::FlushBeforeCreateFence() {
 bool GLFenceEGL::InitializeInternal(EGLenum type, EGLint* attribs) {
   sync_ = EGL_NO_SYNC_KHR;
   display_ = eglGetCurrentDisplay();
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  EGLContext context = eglGetCurrentContext();
+  if (display_ != EGL_NO_DISPLAY && context != EGL_NO_CONTEXT) {
+#else
   if (display_ != EGL_NO_DISPLAY) {
+#endif
     if (g_flush_before_create_fence)
       glFlush();
     sync_ = eglCreateSyncKHR(display_, type, attribs);

@@ -81,6 +81,10 @@
 #undef LoadBitmap
 #endif
 
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+#include "arkweb/chromium_ext/ui/base/resource/resource_bundle_for_include.cc"
+#endif
+
 namespace ui {
 
 namespace {
@@ -446,6 +450,7 @@ bool ResourceBundle::LocaleDataPakExists(const base::i18n::LanguageTag& locale,
 #else
   return base::PathExists(path);
 #endif
+#endif
 }
 #endif  // !BUILDFLAG(IS_ANDROID)
 
@@ -483,7 +488,7 @@ void ResourceBundle::AddDataPackFromFileRegion(
   }
 }
 
-#if !BUILDFLAG(IS_APPLE)
+#if !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ARKWEB)
 // static
 base::FilePath ResourceBundle::GetLocaleFilePath(std::string_view app_locale) {
   if (app_locale.empty())
@@ -491,10 +496,19 @@ base::FilePath ResourceBundle::GetLocaleFilePath(std::string_view app_locale) {
 
   base::FilePath locale_file_path;
 
+  #if !BUILDFLAG(IS_ARKWEB)
   if (base::PathService::Get(ui::DIR_LOCALES, &locale_file_path)) {
     locale_file_path = locale_file_path.AppendASCII(
         base::StrCat({app_locale, kPakFileExtension}));
   }
+#else
+  if (base::PathService::Get(base::DIR_ASSETS, &locale_file_path)) {
+    std::string locale_path = "locales/";
+    locale_path += app_locale;
+    locale_path += kPakFileExtension;
+    locale_file_path = locale_file_path.AppendASCII(locale_path);
+  }
+#endif
 
   // Don't try to load from paths that are not absolute.
   return locale_file_path.IsAbsolute() ? locale_file_path : base::FilePath();
@@ -1309,6 +1323,7 @@ std::u16string ResourceBundle::GetLocalizedStringImpl(int resource_id) const {
     // Fall back on the main data pack (shouldn't be any strings here except
     // in unittests).
     data = GetRawDataResource(resource_id);
+    LOG(WARNING) << "Unable to find resource: " << resource_id;
     CHECK(!data->empty())
         << "Unable to find resource: " << resource_id
         << ". If this happens in a browser test running on Windows, it may "

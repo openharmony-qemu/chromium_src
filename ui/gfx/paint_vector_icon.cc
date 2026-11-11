@@ -236,7 +236,7 @@ void PaintPath(Canvas* canvas,
         break;
 
       case H_LINE_TO: {
-        const SkPoint last_point = path.getLastPt().value_or({0, 0});
+        const SkPoint last_point = path.getLastPt().value_or(SkPoint{0, 0});
         path.lineTo(arg(0), last_point.fY);
         break;
       }
@@ -246,7 +246,7 @@ void PaintPath(Canvas* canvas,
         break;
 
       case V_LINE_TO: {
-        const SkPoint last_point = path.getLastPt().value_or({0, 0});
+        const SkPoint last_point = path.getLastPt().value_or(SkPoint{0, 0});
         path.lineTo(last_point.fX, arg(0));
         break;
       }
@@ -274,7 +274,7 @@ void PaintPath(Canvas* canvas,
         // details.
         // Note that |x1| and |y1| will correspond to the sole control point if
         // calculating a quadratic curve.
-        const SkPoint last_point = path.getLastPt().value_or({0, 0});
+        const SkPoint last_point = path.getLastPt().value_or(SkPoint{0, 0});
         SkScalar delta_x = 0;
         SkScalar delta_y = 0;
         if (IsCommandTypeCurve(previous_command_type)) {

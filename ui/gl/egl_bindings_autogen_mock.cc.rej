@@ -1,0 +1,16 @@
+diff a/ui/gl/egl_bindings_autogen_mock.cc b/ui/gl/egl_bindings_autogen_mock.cc	(rejected hunks)
+@@ -1020,10 +1029,14 @@ MockEGLInterface::GetGLProcAddress(const char* name) {
+   if (strcmp(name, "eglReleaseThread") == 0)
+     return reinterpret_cast<GLFunctionPointerType>(Mock_eglReleaseThread);
+   if (strcmp(name, "eglSetBlobCacheFuncsANDROID") == 0)
+     return reinterpret_cast<GLFunctionPointerType>(
+         Mock_eglSetBlobCacheFuncsANDROID);
++#if BUILDFLAG(IS_ARKWEB)
++  if (strcmp(name, "eglSetDamageRegionKHR") == 0)
++    return reinterpret_cast<GLFunctionPointerType>(Mock_eglSetDamageRegionKHR);
++#endif
+   if (strcmp(name, "eglSetValidationEnabledANGLE") == 0)
+     return reinterpret_cast<GLFunctionPointerType>(
+         Mock_eglSetValidationEnabledANGLE);
+   if (strcmp(name, "eglStreamAttribKHR") == 0)
+     return reinterpret_cast<GLFunctionPointerType>(Mock_eglStreamAttribKHR);

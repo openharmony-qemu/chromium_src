@@ -1,0 +1,18 @@
+diff a/ui/compositor/presentation_time_recorder_unittest.cc b/ui/compositor/presentation_time_recorder_unittest.cc	(rejected hunks)
+@@ -33,12 +33,16 @@ class PresentationTimeRecorderTest : public testing::Test {
+   void TearDown() override {
+     host_.reset();
+     context_factories_.reset();
+   }
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  base::test::TaskEnvironment task_environment_{};
++#else
+   base::test::TaskEnvironment task_environment_{
+       base::test::TaskEnvironment::MainThreadType::UI};
++#endif
+ 
+   Layer root_;
+   std::unique_ptr<TestContextFactories> context_factories_;
+   std::unique_ptr<TestCompositorHost> host_;
+ };

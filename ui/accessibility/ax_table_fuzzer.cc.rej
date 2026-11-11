@@ -1,0 +1,15 @@
+diff a/ui/accessibility/ax_table_fuzzer.cc b/ui/accessibility/ax_table_fuzzer.cc	(rejected hunks)
+@@ -182,10 +182,13 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size) {
+     if (i < size) {
+       int attr_count = UNSAFE_TODO(data[i++]) % 6;
+       for (int j = 0; j < attr_count && i + 1 < size; j++) {
+         unsigned char attr = UNSAFE_TODO(data[i++]);
+         int32_t value = static_cast<int32_t>(UNSAFE_TODO(data[i++])) - 2;
++        if (value < 0) {
++          continue;
++        }
+         node.AddIntAttribute(GetInterestingTableAttribute(attr), value);
+       }
+     }
+     if (i < size) {
+       size_t child_count = UNSAFE_TODO(data[i++]) % 8;

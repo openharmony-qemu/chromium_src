@@ -1,0 +1,21 @@
+diff a/ui/events/gesture_detection/gesture_detector.h b/ui/events/gesture_detection/gesture_detector.h	(rejected hunks)
+@@ -228,13 +252,19 @@ class GESTURE_DETECTION_EXPORT GestureDetector {
+   bool deep_press_accelerated_longpress_enabled_ = false;
+   bool press_and_hold_enabled_ = true;
+   bool showpress_enabled_ = true;
+   bool swipe_enabled_ = false;
+   bool two_finger_tap_enabled_ = false;
++#if BUILDFLAG(ARKWEB_DRAG_DROP)
++  bool draglongpress_enabled_ = true;
++#endif
+ 
+   // Determines speed during touch scrolling.
+   VelocityTrackerState velocity_tracker_;
+ };
+ 
+ }  // namespace ui
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/ui/events/gesture_detection/gesture_detector_ext.h"
++#endif
+ #endif  // UI_EVENTS_GESTURE_DETECTION_GESTURE_DETECTOR_H_

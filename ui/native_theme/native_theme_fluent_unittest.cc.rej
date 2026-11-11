@@ -1,0 +1,18 @@
+diff a/ui/native_theme/native_theme_fluent_unittest.cc b/ui/native_theme/native_theme_fluent_unittest.cc	(rejected hunks)
+@@ -71,11 +71,15 @@ class NativeThemeFluentTest : public ::testing::Test,
+ 
+   void PaintScrollbarThumb(cc::PaintCanvas* canvas) const {
+     ColorProvider color_provider;
+     theme_.PaintScrollbarThumb(canvas, &color_provider,
+                                NativeTheme::kScrollbarVerticalThumb,
+-                               NativeTheme::kNormal, gfx::Rect(15, 100), {});
++                               NativeTheme::kNormal, gfx::Rect(15, 100), {}
++                            #if BUILDFLAG(ARKWEB_UNITTESTS)
++                               , SK_ColorLTGRAY
++                            #endif
++                              );
+   }
+ 
+  private:
+   static float ScaleFromDIP() { return GetParam(); }
+ 

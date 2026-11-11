@@ -1,0 +1,40 @@
+diff a/ui/gfx/linux/native_pixmap_dmabuf.h b/ui/gfx/linux/native_pixmap_dmabuf.h	(rejected hunks)
+@@ -7,11 +7,13 @@
+ 
+ #include <stdint.h>
+ 
+ #include <memory>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/files/scoped_file.h"
++#include "base/memory/raw_ptr.h"
+ #include "ui/gfx/client_native_pixmap.h"
+ #include "ui/gfx/geometry/size.h"
+ #include "ui/gfx/native_pixmap.h"
+ 
+ namespace gfx {
+@@ -42,17 +49,24 @@ class COMPONENT_EXPORT(GFX) NativePixmapDmaBuf : public gfx::NativePixmap {
+                             const gfx::OverlayPlaneData& overlay_plane_data,
+                             std::vector<gfx::GpuFence> acquire_fences,
+                             std::vector<gfx::GpuFence> release_fences) override;
+   gfx::NativePixmapHandle ExportHandle() const override;
+ 
++#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++  void* GetWindowBuffer() override { return native_window_buffer_; }
++#endif
++
+  protected:
+   ~NativePixmapDmaBuf() override;
+ 
+  private:
+   gfx::Size size_;
+   viz::SharedImageFormat format_;
+   gfx::NativePixmapHandle handle_;
++#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++  raw_ptr<void> native_window_buffer_;
++#endif
+ };
+ 
+ }  // namespace gfx
+ 
+ #endif  // UI_GFX_LINUX_NATIVE_PIXMAP_DMABUF_H_

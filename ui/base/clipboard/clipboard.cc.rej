@@ -1,0 +1,9 @@
+diff a/ui/base/clipboard/clipboard.cc b/ui/base/clipboard/clipboard.cc	(rejected hunks)
+@@ -481,7 +481,6 @@ void Clipboard::ReadData(const ClipboardFormatType& format,
+                          ReadDataCallback callback) const {
+   std::string result;
+   ReadData(format, data_dst, &result);
+   std::move(callback).Run(std::move(result));
+ }
+-
+ }  // namespace ui

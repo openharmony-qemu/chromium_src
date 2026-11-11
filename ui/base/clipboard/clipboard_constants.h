@@ -5,6 +5,7 @@
 #ifndef UI_BASE_CLIPBOARD_CLIPBOARD_CONSTANTS_H_
 #define UI_BASE_CLIPBOARD_CLIPBOARD_CONSTANTS_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "build/build_config.h"
 
@@ -186,6 +187,22 @@ inline constexpr int kMaxRegisteredClipboardFormats = 100;
 // Web prefix for web custom format types.
 inline constexpr char kWebClipboardFormatPrefix[] = "web ";
 inline constexpr char16_t kWebClipboardFormatPrefix16[] = u"web ";
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+inline constexpr char kMimeTypeOHOSCustomData[] = "ohos/custom-data";
+
+inline constexpr char kMiscServicesMimeTypePixelmap[] = "pixelMap";
+
+inline constexpr char kMiscServicesMimeTypeTextHtml[] = "text/html";
+
+inline constexpr char kMiscServicesMimeTypeTextPlain[] = "text/plain";
+
+inline constexpr char kMiscServicesMimeTypeTextUri[] = "text/uri";
+
+inline constexpr char kMiscServicesMimeTypeTextWant[] = "text/want";
+
+inline constexpr char kMiscServicesMimeTypeAutoFillSecure[] = "autofill/secure";
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
 }  // namespace ui
 

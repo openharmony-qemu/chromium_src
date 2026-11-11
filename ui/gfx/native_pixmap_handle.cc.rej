@@ -1,0 +1,31 @@
+diff a/ui/gfx/native_pixmap_handle.cc b/ui/gfx/native_pixmap_handle.cc	(rejected hunks)
+@@ -31,25 +37,25 @@ static_assert(NativePixmapHandle::kNoModifier == DRM_FORMAT_MOD_INVALID,
+               "DRM_FORMAT_MOD_INVALID");
+ #endif
+ 
+ NativePixmapPlane::NativePixmapPlane() : stride(0), offset(0), size(0) {}
+ 
+-NativePixmapPlane::NativePixmapPlane(int stride,
+-                                     int offset,
++NativePixmapPlane::NativePixmapPlane(uint32_t stride,
++                                     uint64_t offset,
+                                      uint64_t size
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+                                      ,
+                                      base::ScopedFD fd
+ #elif BUILDFLAG(IS_FUCHSIA)
+                                      ,
+                                      zx::vmo vmo
+ #endif
+                                      )
+     : stride(stride),
+       offset(offset),
+       size(size)
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+       ,
+       fd(std::move(fd))
+ #elif BUILDFLAG(IS_FUCHSIA)
+       ,
+       vmo(std::move(vmo))

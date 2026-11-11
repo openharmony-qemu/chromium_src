@@ -34,6 +34,10 @@
 #include "ui/base/ime/fuchsia/input_method_fuchsia.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "ui/ozone/platform/headless/headless_screen_ohos.h"
+#endif
+
 namespace ui {
 
 namespace {
@@ -98,7 +102,11 @@ class OzonePlatformHeadlessImpl : public OzonePlatformHeadless {
     return nullptr;
   }
   std::unique_ptr<PlatformScreen> CreateScreen() override {
+#if BUILDFLAG(IS_ARKWEB)
+    return std::make_unique<HeadlessScreenOhos>();
+#else
     return std::make_unique<HeadlessScreen>();
+#endif
   }
   void InitScreen(PlatformScreen* screen) override {}
   std::unique_ptr<InputMethod> CreateInputMethod(

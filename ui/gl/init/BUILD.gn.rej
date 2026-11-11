@@ -1,0 +1,27 @@
+diff a/ui/gl/init/BUILD.gn b/ui/gl/init/BUILD.gn	(rejected hunks)
+@@ -64,18 +64,23 @@ component("init") {
+     defines += [ "GL_SILENCE_DEPRECATION" ]
+   } else if (use_ozone) {
+     sources += [
+       "gl_display_egl_util_ozone.cc",
+       "gl_display_egl_util_ozone.h",
+-      "gl_factory_ozone.cc",
+-      "gl_initializer_ozone.cc",
++      #"gl_factory_ozone.cc",
++      #"gl_initializer_ozone.cc",
+       "ozone_util.h",
+     ]
+ 
+     deps += [ "//ui/ozone" ]
+   } else if (is_ios) {
+     sources += [
+       "gl_factory_ios.mm",
+       "gl_initializer_ios.cc",
+     ]
+   }
++
++  if (is_arkweb) {
++    import("//arkweb/chromium_ext/ui/gl/init/arkweb_ui_gl_init_ext.gni")
++    sources += arkweb_ui_gl_init_ext_sources
++  }
+ }

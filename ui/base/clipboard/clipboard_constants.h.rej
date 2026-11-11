@@ -1,0 +1,28 @@
+diff a/ui/base/clipboard/clipboard_constants.h b/ui/base/clipboard/clipboard_constants.h	(rejected hunks)
+@@ -42,22 +43,22 @@ inline constexpr char kMimeTypeOctetStream[] = "application/octet-stream";
+ // Used for window dragging on some platforms.
+ inline constexpr char kMimeTypeWindowDrag[] = "chromium/x-window-drag";
+ 
+ // ----- LINUX & CHROMEOS & FUCHSIA MIME TYPES -----
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+ inline constexpr char kMimeTypeLinuxUtf8String[] = "UTF8_STRING";
+ inline constexpr char kMimeTypeLinuxString[] = "STRING";
+ inline constexpr char kMimeTypeLinuxText[] = "TEXT";
+ #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
+-        // BUILDFLAG(IS_FUCHSIA)
++        // BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+ 
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || \
+-    BUILDFLAG(IS_ANDROID)
++    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+ inline constexpr char kMimeTypeSourceUrl[] = "chromium/x-source-url";
+ #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
+-        // BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_ANDROID)
++        // BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+ 
+ // ----- EVERYTHING EXCEPT FOR APPLE MIME TYPES -----
+ 
+ #if !BUILDFLAG(IS_APPLE)
+ 

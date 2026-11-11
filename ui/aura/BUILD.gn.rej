@@ -1,0 +1,16 @@
+diff a/ui/aura/BUILD.gn b/ui/aura/BUILD.gn	(rejected hunks)
+@@ -174,10 +174,14 @@ component("aura") {
+   if (use_ozone) {
+     deps += [ "//ui/ozone" ]
+     public += [ "screen_ozone.h" ]
+     sources += [ "screen_ozone.cc" ]
+   }
++
++  if (is_ohos) {
++    deps += [ "//services/viz/privileged/mojom" ]
++  }
+ }
+ 
+ static_library("test_support") {
+   testonly = true
+   sources = [

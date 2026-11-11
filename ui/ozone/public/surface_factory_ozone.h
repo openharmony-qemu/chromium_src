@@ -11,6 +11,7 @@
 #include <optional>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/functional/callback.h"
 #include "base/memory/scoped_refptr.h"
@@ -159,7 +160,12 @@ class COMPONENT_EXPORT(OZONE_BASE) SurfaceFactoryOzone {
       gfx::AcceleratedWidget widget,
       gfx::Size size,
       viz::SharedImageFormat format,
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      gfx::NativePixmapHandle handle,
+      void* window_buffer = nullptr);
+#else
       gfx::NativePixmapHandle handle);
+#endif
 
   // A temporary solution that allows protected NativePixmap management to be
   // handled outside the Ozone platform (crbug.com/771863).

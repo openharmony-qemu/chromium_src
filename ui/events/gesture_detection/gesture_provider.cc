@@ -144,6 +144,9 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
 
   GestureListenerImpl(const GestureListenerImpl&) = delete;
   GestureListenerImpl& operator=(const GestureListenerImpl&) = delete;
+#if BUILDFLAG(IS_ARKWEB)
+    GestureDetector& GetDetector() { return gesture_detector_; }
+#endif
 
   void OnTouchEvent(const MotionEvent& event) {
     const bool in_scale_gesture = IsScaleGestureDetectionInProgress();
@@ -198,9 +201,19 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
   void UpdateStateForEventPost(GestureEventData gesture) {
     switch (gesture.type()) {
       case EventType::kGestureLongPress:
+#if BUILDFLAG(ARKWEB_AI)
+      case EventType::kGestureCreateOverlay:
+#endif
         DCHECK(!IsScaleGestureDetectionInProgress());
         current_longpress_time_ = gesture.time;
         break;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      case EventType::kGestureDragLongPress:
+        DCHECK(!IsScaleGestureDetectionInProgress());
+        current_longpress_time_ = gesture.time;
+        LOG(DEBUG) << "DragDrop UpdateStateForEventPost";
+        break;
+#endif
       case EventType::kGestureLongTap:
         current_longpress_time_ = base::TimeTicks();
         break;
@@ -248,6 +261,12 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
            gesture.type() == EventType::kGestureShowPress ||
            gesture.type() == EventType::kGestureTapCancel ||
            gesture.type() == EventType::kGestureBegin ||
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+           gesture.type() == EventType::kGestureDragLongPress ||
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+           gesture.type() == EventType::kGestureCreateOverlay ||
+#endif
            gesture.type() == EventType::kGestureEnd);
 
     if (gesture.primary_tool_type == MotionEvent::ToolType::UNKNOWN ||
@@ -324,6 +343,7 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
 
   void OnScaleEnd(const ScaleGestureDetector& detector,
                   const MotionEvent& e) override {
+    last_scale_ = -1;
     if (!pinch_event_sent_)
       return;
     Send(CreateGesture(CreateTouchGestureDetails(EventType::kGesturePinchEnd),
@@ -354,9 +374,23 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
 
     float scale = detector.GetScaleFactor();
     float angle = detector.GetAngleChange();
+#ifdef BUILDFLAG(ARKWEB_PINCH_SMOOTH)
+    LOG(DEBUG) << "GestureProvider::OnScale before filtering: "  << scale;
+    if (std::abs(scale - 1) <= kPinchScaleEpsilon)
+        return true;
 
+    if (last_scale_ < 0) {
+        last_scale_ = scale;
+    } else {
+        scale = (last_scale_ + scale) /2;
+        last_scale_ = scale;
+    }
+    LOG(DEBUG) << "GestureProvider::OnScale after filtering " << scale << ", focus x = " << detector.GetFocusX()
+        << ", focus y = " << detector.GetFocusY() << ", pointer cnt = " << e.GetPointerCount();
+#else
     if (scale == 1)
       return true;
+#endif
 
     if (detector.InAnchoredScaleMode()) {
       // Relative changes in the double-tap scale factor computed by |detector|
@@ -548,6 +582,9 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
   }
 
   void OnTapCancel(const MotionEvent& e) override {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    LOG(INFO) << "DragDrop OnTapCancel";
+#endif
     GestureEventDetails tap_cancel_details =
         CreateTouchGestureDetails(EventType::kGestureTapCancel);
     Send(CreateGesture(tap_cancel_details, e));
@@ -637,6 +674,16 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
     Send(CreateGesture(long_press_details, e));
   }
 
+#if BUILDFLAG(ARKWEB_AI)
+  void OnCreateOverlay(const MotionEvent& e) override {
+    LOG(DEBUG) << "CreateOverlay GestureDetector::OnCreateOverlay";
+    DCHECK(!IsDoubleTapInProgress());
+    GestureEventDetails create_overlay_details =
+        CreateTouchGestureDetails(EventType::kGestureCreateOverlay);
+    Send(CreateGesture(create_overlay_details, e));
+  }
+#endif
+
   GestureEventDetails CreateTouchGestureDetails(EventType type) const {
     GestureEventDetails details(type);
     details.set_device_type(GestureDeviceType::DEVICE_TOUCHSCREEN);
@@ -654,6 +701,18 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
         current_down_action_unique_touch_event_id_);
     return details;
   }
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  void OnDragLongPress(const MotionEvent& e) override {
+    LOG(INFO) << "DragDrop GestureDetector::OnDragLongPress ";
+    DCHECK(!IsDoubleTapInProgress());
+    SetIgnoreSingleTap(true);
+    GestureEventDetails drag_long_press_details(EventType::kGestureDragLongPress);
+    drag_long_press_details.set_device_type(
+        GestureDeviceType::DEVICE_TOUCHSCREEN);
+    Send(CreateGesture(drag_long_press_details, e));
+  }
+#endif
 
   GestureEventData CreateGesture(const GestureEventDetails& details,
                                  int motion_event_id,
@@ -838,7 +897,11 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
   const raw_ptr<GestureProviderClient> client_;
   const raw_ptr<GestureProvider> gesture_provider_;
 
+#if BUILDFLAG(IS_ARKWEB)
+  GestureDetectorExt gesture_detector_;
+#else
   GestureDetector gesture_detector_;
+#endif
   ScaleGestureDetector scale_gesture_detector_;
   SnapScrollController snap_scroll_controller_;
 
@@ -881,6 +944,8 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
   // The scroll focus point is set to the first touch down point when scroll
   // begins and is later updated based on the delta of touch points.
   gfx::PointF scroll_focus_point_;
+
+  double last_scale_ = -1;
 };
 
 // GestureProvider
@@ -916,6 +981,11 @@ bool GestureProvider::OnTouchEvent(const MotionEvent& event) {
   // example, we want to see |MotionEvent::Action::UP| event even for a panning
   // gesture where the UP is not dispatched to content.
   uma_histogram_.RecordTouchEvent(event);
+
+#if BUILDFLAG(IS_ARKWEB)
+  if (event.GetAction() == MotionEvent::Action::UP)
+    AsGestureProviderExt()->StopArkwebGestures();
+#endif
 
   if (!CanHandle(event))
     return false;
@@ -1096,3 +1166,7 @@ void GestureProvider::UpdateDoubleTapDetectionSupport() {
 }
 
 }  //  namespace ui
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/ui/events/gesture_detection/gesture_provider_ext.cc"
+#endif

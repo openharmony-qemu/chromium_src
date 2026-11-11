@@ -1,0 +1,67 @@
+diff a/ui/compositor/compositor.cc b/ui/compositor/compositor.cc	(rejected hunks)
+@@ -10,10 +10,12 @@
+ #include <memory>
+ #include <string_view>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
++#include "arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils.h"
+ #include "base/check.h"
+ #include "base/command_line.h"
+ #include "base/containers/contains.h"
+ #include "base/dcheck_is_on.h"
+ #include "base/feature_list.h"
+@@ -70,15 +72,22 @@
+ #include "ui/gfx/geometry/skia_conversions.h"
+ #include "ui/gfx/icc_profile.h"
+ #include "ui/gfx/presentation_feedback.h"
+ #include "ui/gfx/switches.h"
+ #include "ui/gl/gl_switches.h"
++#include "arkweb/build/features/features.h"
+ 
+-#if BUILDFLAG(IS_WIN)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ARKWEB)
+ #include "mojo/public/cpp/bindings/sync_call_restrictions.h"
+ #endif
+ 
++#include "arkweb/chromium_ext/ui/compositor/compositor_utils.h"
++
++#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
++#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
++#endif
++
+ namespace ui {
+ 
+ #if !BUILDFLAG(IS_IOS)
+ Compositor::PendingBeginFrameArgs::PendingBeginFrameArgs(
+     const viz::BeginFrameArgs& args,
+@@ -350,10 +360,28 @@ void Compositor::RemoveChildFrameSink(const viz::FrameSinkId& frame_sink_id) {
+ void Compositor::SetLayerTreeFrameSink(
+     std::unique_ptr<cc::LayerTreeFrameSink> layer_tree_frame_sink,
+     mojo::AssociatedRemote<viz::mojom::DisplayPrivate> display_private) {
+   layer_tree_frame_sink_requested_ = false;
+   display_private_ = std::move(display_private);
++#if BUILDFLAG(ARKWEB_SYNC_RENDER)
++  compositor_utils_->SetDrawMode(compositor_utils_->drawMode_);
++#endif
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  compositor_utils_->SetNativeInnerWeb(compositor_utils_->isInnerWeb_);
++#endif
++#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
++  compositor_utils_->SetBypassVsyncCondition(compositor_utils_->condition_);
++#endif
++#if BUILDFLAG(ARKWEB_DFX_DUMP)
++  compositor_utils_->SetAsyncStackId(compositor_utils_->stackId_);
++#endif
++#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
++  if (base::ohos::IsDelegatedCompositingEnabledOhos()) {
++    compositor_utils_->UpdateFocusAndScreenStatus(
++        compositor_utils_->is_focused_, compositor_utils_->is_single_screen_);
++  }
++#endif
+   host_->SetLayerTreeFrameSink(std::move(layer_tree_frame_sink));
+   // Display properties are reset when the output surface is lost, so update it
+   // to match the Compositor's.
+   if (display_private_) {
+     disabled_swap_until_resize_ = false;

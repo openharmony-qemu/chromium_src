@@ -1,0 +1,13 @@
+diff a/ui/gl/gl_features.cc b/ui/gl/gl_features.cc	(rejected hunks)
+@@ -4,10 +4,11 @@
+ 
+ #include "ui/gl/gl_features.h"
+ 
+ #include "base/command_line.h"
+ #include "base/feature_list.h"
++#include "base/logging.h"
+ #include "base/strings/string_split.h"
+ #include "base/system/sys_info.h"
+ #include "build/build_config.h"
+ #include "ui/gl/gl_switches.h"
+ 

@@ -61,6 +61,9 @@ source_set("common") {
     ":*",
     "//ui/ozone/platform/*",
   ]
+  if (is_ohos) {
+    visibility += [ "//cef:libcef_static" ]
+  }
 
   # Out of tree platforms can depend on this.
   visibility += ozone_external_platform_visibility

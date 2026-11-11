@@ -1,0 +1,24 @@
+diff a/ui/events/gesture_detection/gesture_provider.cc b/ui/events/gesture_detection/gesture_provider.cc	(rejected hunks)
+@@ -21,15 +21,22 @@
+ #include "ui/events/velocity_tracker/motion_event.h"
+ #include "ui/events/velocity_tracker/motion_event_generic.h"
+ #include "ui/gfx/geometry/point_f.h"
+ #include "ui/gfx/geometry/vector2d_f.h"
+ 
++#if BUILDFLAG(ARKWEB_DRAG_DROP)
++#include "base/logging.h"
++#endif
++
+ namespace ui {
+ namespace {
+ 
+ // Double-tap drag zoom sensitivity (speed).
+ const float kDoubleTapDragZoomSpeed = 0.005f;
++#ifdef BUILDFLAG(ARKWEB_PINCH_SMOOTH)
++const float kPinchScaleEpsilon = 0.0005f;
++#endif
+ 
+ const char* GetMotionEventActionName(MotionEvent::Action action) {
+   switch (action) {
+     case MotionEvent::Action::NONE:
+       return "Action::NONE";

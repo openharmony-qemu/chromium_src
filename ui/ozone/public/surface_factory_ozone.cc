@@ -8,6 +8,7 @@
 
 #include <memory>
 
+#include "base/logging.h"
 #include "base/command_line.h"
 #include "base/notimplemented.h"
 #include "components/viz/common/resources/shared_image_format_utils.h"
@@ -100,7 +101,12 @@ SurfaceFactoryOzone::CreateNativePixmapFromHandle(
     gfx::AcceleratedWidget widget,
     gfx::Size size,
     viz::SharedImageFormat format,
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      gfx::NativePixmapHandle handle,
+      void* window_buffer) {
+#else
     gfx::NativePixmapHandle handle) {
+#endif
   return nullptr;
 }
 

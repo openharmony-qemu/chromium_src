@@ -6,6 +6,9 @@
 
 #include "base/trace_event/trace_event.h"
 
+#if BUILDFLAG(ARKWEB_FLING)
+#include "arkweb/chromium_ext/ui/events/blink/fling_booster_utils.h"
+#endif  // BUILDFLAG(ARKWEB_FLING)
 using blink::WebGestureEvent;
 using blink::WebInputEvent;
 
@@ -204,6 +207,17 @@ bool FlingBooster::ShouldBoostFling(const WebGestureEvent& fling_start_event) {
 
   return true;
 }
+
+#if BUILDFLAG(ARKWEB_FLING)
+void FlingBooster::UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) {
+  if (velocity == max_fling_velocity_)
+    return;
+ 
+  LOG(INFO) << "[flingTracker] update max fling velocity:"
+            << max_fling_velocity_.ToString() << " -> " << velocity.ToString();
+  max_fling_velocity_ = velocity;
+}
+#endif
 
 void FlingBooster::Reset() {
   TRACE_EVENT0("input", "FlingBooster::Reset");

@@ -1,0 +1,14 @@
+diff a/chrome/browser/ui/tab_contents/BUILD.gn b/chrome/browser/ui/tab_contents/BUILD.gn	(rejected hunks)
+@@ -46,11 +46,11 @@ source_set("impl") {
+ 
+   if (!is_android) {
+     sources += [ "tab_contents_iterator.cc" ]
+   }
+ 
+-  if (is_win || is_mac || is_linux || is_chromeos) {
++  if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {
+     sources += [
+       "chrome_web_contents_menu_helper.cc",
+       "chrome_web_contents_view_handle_drop.cc",
+     ]
+   }

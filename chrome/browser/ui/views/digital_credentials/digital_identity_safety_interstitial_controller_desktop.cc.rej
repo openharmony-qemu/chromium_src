@@ -1,0 +1,55 @@
+diff a/chrome/browser/ui/views/digital_credentials/digital_identity_safety_interstitial_controller_desktop.cc b/chrome/browser/ui/views/digital_credentials/digital_identity_safety_interstitial_controller_desktop.cc	(rejected hunks)
+@@ -71,11 +71,11 @@ DigitalIdentitySafetyInterstitialControllerDesktop::ShowInterstitial(
+   web_contents_ = web_contents.GetWeakPtr();
+   rp_origin_ = rp_origin;
+   interstitial_type_ = interstitial_type;
+   callback_ = std::move(callback);
+ 
+-  ShowInterstitialImpl(web_contents, /*was_request_aborted=*/false);
++  ShowInterstitialImpl(/*was_request_aborted=*/false);
+   return base::BindOnce(
+       &DigitalIdentitySafetyInterstitialControllerDesktop::Abort,
+       weak_ptr_factory_.GetWeakPtr());
+ }
+ 
+@@ -83,16 +83,18 @@ void DigitalIdentitySafetyInterstitialControllerDesktop::Abort() {
+   if (!web_contents_) {
+     return;
+   }
+ 
+   dialog_widget_->CloseWithReason(views::Widget::ClosedReason::kUnspecified);
+-  ShowInterstitialImpl(*web_contents_, /*was_request_aborted*/ true);
++  ShowInterstitialImpl(/*was_request_aborted=*/true);
+ }
+ 
+ void DigitalIdentitySafetyInterstitialControllerDesktop::ShowInterstitialImpl(
+-    content::WebContents& web_contents,
+     bool was_request_aborted) {
++  if (!web_contents_) {
++    return;
++  }
+   int body_resource_id = 0;
+   int negative_button_label_resource_id = 0;
+   switch (interstitial_type_) {
+     case InterstitialType::kHighRisk:
+       body_resource_id =
+@@ -165,14 +167,17 @@ void DigitalIdentitySafetyInterstitialControllerDesktop::ShowInterstitialImpl(
+         ui::DialogModelLabel(l10n_util::GetStringFUTF16(
+             IDS_WEB_DIGITAL_CREDENTIALS_INTERSTITIAL_REQUEST_ABORTED_DIALOG_TEXT,
+             formatted_origin)));
+   }
+   dialog_widget_ = constrained_window::ShowWebModal(
+-      dialog_model_builder.Build(), &web_contents);
++      dialog_model_builder.Build(), web_contents_.get());
+ 
++  if (!web_contents_) {
++    return;
++  }
+   close_on_navigation_observer_ = std::make_unique<CloseOnNavigationObserver>();
+-  close_on_navigation_observer_->Observe(web_contents);
++  close_on_navigation_observer_->Observe(*web_contents_);
+ }
+ 
+ void DigitalIdentitySafetyInterstitialControllerDesktop::OnDialogClosed(
+     DigitalIdentityInterstitialClosedReason closed_reason) {
+   if (!callback_) {

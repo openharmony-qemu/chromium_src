@@ -1,0 +1,13 @@
+diff a/chrome/browser/ui/tabs/alert/BUILD.gn b/chrome/browser/ui/tabs/alert/BUILD.gn	(rejected hunks)
+@@ -1,10 +1,10 @@
+ # Copyright 2025 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+-assert(is_win || is_mac || is_linux || is_chromeos || is_android)
++assert(is_win || is_mac || is_linux || is_chromeos || is_android || is_ohos)
+ 
+ import("//chrome/common/features.gni")
+ 
+ source_set("tab_alert_enum") {
+   public = [ "tab_alert.h" ]

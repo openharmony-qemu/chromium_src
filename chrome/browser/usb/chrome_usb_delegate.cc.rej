@@ -1,0 +1,53 @@
+diff a/chrome/browser/usb/chrome_usb_delegate.cc b/chrome/browser/usb/chrome_usb_delegate.cc	(rejected hunks)
+@@ -93,12 +93,15 @@ bool IsDevicePermissionAutoGranted(
+     const url::Origin& origin,
+     const device::mojom::UsbDeviceInfo& device_info) {
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
+   // Note: The `DeviceHasInterfaceWithClass()` call is made after checking the
+   // origin, since that method call is expensive.
+-  if (origin.scheme() == extensions::kExtensionScheme &&
+-      base::Contains(kSmartCardPrivilegedExtensionIds, origin.host()) &&
++  if ((origin.scheme() == extensions::kExtensionScheme
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      || origin.scheme() == extensions::kArkwebExtensionScheme
++#endif
++      ) && base::Contains(kSmartCardPrivilegedExtensionIds, origin.host()) &&
+       DeviceHasInterfaceWithClass(device_info,
+                                   device::mojom::kUsbSmartCardClass)) {
+     return true;
+   }
+ #endif  // BUILDFLAG(ENABLE_EXTENSIONS)
+@@ -185,11 +188,15 @@ void ChromeUsbDelegate::AdjustProtectedInterfaceClasses(
+     const url::Origin& origin,
+     content::RenderFrameHost* frame,
+     std::vector<uint8_t>& classes) {
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
+   // We only adjust interfaces for extensions here.
+-  if (origin.scheme() != extensions::kExtensionScheme) {
++  if (origin.scheme() != extensions::kExtensionScheme
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      && origin.scheme() != extensions::kArkwebExtensionScheme
++#endif
++    ) {
+     return;
+   }
+   // Don't enforce protected interface classes for Chrome Apps since the
+   // chrome.usb API has no such restriction.
+     auto* extension_registry =
+@@ -402,11 +409,15 @@ ChromeUsbDelegate::ContextObservation* ChromeUsbDelegate::GetContextObserver(
+ 
+ bool ChromeUsbDelegate::IsServiceWorkerAllowedForOrigin(
+     const url::Origin& origin) {
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
+   // WebUSB is only available on extension service workers for now.
+-  if (origin.scheme() == extensions::kExtensionScheme) {
++  if (origin.scheme() == extensions::kExtensionScheme
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      || origin.scheme() == extensions::kArkwebExtensionScheme
++#endif
++    ) {
+     return true;
+   }
+ #endif  // BUILDFLAG(ENABLE_EXTENSIONS)
+   return false;
+ }

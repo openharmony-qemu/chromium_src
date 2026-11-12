@@ -218,6 +218,16 @@ void DevToolsDataSource::StartDataRequest(
     }
   }
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  // fallback to CEF devtools url request.
+  scoped_refptr<base::RefCountedMemory> bytes =
+      content::DevToolsFrontendHost::GetFrontendResourceBytes(path);
+  if (bytes) {
+    std::move(callback).Run(bytes);
+    return;
+  }
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
+
   std::move(callback).Run(CreateNotFoundResponse());
 }
 

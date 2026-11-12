@@ -1,0 +1,14 @@
+diff a/chrome/browser/ui/web_applications/web_app_dialogs.h b/chrome/browser/ui/web_applications/web_app_dialogs.h	(rejected hunks)
+@@ -23,11 +23,11 @@
+ #include "third_party/skia/include/core/SkBitmap.h"
+ #include "ui/base/interaction/element_identifier.h"
+ #include "ui/gfx/native_ui_types.h"
+ 
+ static_assert(BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) ||
+-              BUILDFLAG(IS_CHROMEOS));
++              BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS));
+ 
+ class GURL;
+ class Profile;
+ class Browser;
+ 

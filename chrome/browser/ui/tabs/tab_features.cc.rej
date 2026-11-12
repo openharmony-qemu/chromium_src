@@ -1,0 +1,18 @@
+diff a/chrome/browser/ui/tabs/tab_features.cc b/chrome/browser/ui/tabs/tab_features.cc	(rejected hunks)
+@@ -450,14 +450,16 @@ void TabFeatures::Init(TabInterface& tab, Profile* profile) {
+     walletable_pass_client_ =
+         std::make_unique<wallet::ChromeWalletablePassClient>(&tab);
+   }
+ #endif
+ 
++#if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
+   if (base::FeatureList::IsEnabled(net::features::kVerifyQWACs)) {
+     qwac_web_contents_observer_ =
+         std::make_unique<QwacWebContentsObserver>(tab);
+   }
++#endif
+ 
+   if (base::FeatureList::IsEnabled(
+           security_interstitials::features::kHttpsFirstDialogUi)) {
+     ask_before_http_dialog_controller_ =
+         std::make_unique<AskBeforeHttpDialogController>(&tab);

@@ -1,0 +1,14 @@
+diff a/chrome/browser/ui/contextual_search/BUILD.gn b/chrome/browser/ui/contextual_search/BUILD.gn	(rejected hunks)
+@@ -2,11 +2,11 @@
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//pdf/features.gni")
+ 
+-assert(is_win || is_mac || is_linux || is_chromeos || is_android)
++assert(is_win || is_mac || is_linux || is_chromeos || is_android || is_ohos)
+ 
+ source_set("contextual_search") {
+   sources = [
+     "tab_contextualization_controller.cc",
+     "tab_contextualization_controller.h",

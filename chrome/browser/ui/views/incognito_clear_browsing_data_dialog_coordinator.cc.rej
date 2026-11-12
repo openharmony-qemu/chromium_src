@@ -1,0 +1,16 @@
+diff a/chrome/browser/ui/views/incognito_clear_browsing_data_dialog_coordinator.cc b/chrome/browser/ui/views/incognito_clear_browsing_data_dialog_coordinator.cc	(rejected hunks)
+@@ -21,12 +21,13 @@ IncognitoClearBrowsingDataDialogCoordinator::
+ 
+ void IncognitoClearBrowsingDataDialogCoordinator::Show(
+     IncognitoClearBrowsingDataDialogInterface::Type type,
+     views::View* anchor_view) {
+   // The full toolbar may not be visible.
+-  if (!anchor_view)
++  if (!anchor_view) {
+     return;
++  }
+ 
+   auto bubble = std::make_unique<IncognitoClearBrowsingDataDialog>(
+       anchor_view, profile_, type);
+   DCHECK_EQ(nullptr, bubble_tracker_.view());
+   bubble_tracker_.SetView(bubble.get());

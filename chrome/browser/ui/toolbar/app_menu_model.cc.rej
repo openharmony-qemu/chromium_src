@@ -1,0 +1,32 @@
+diff a/chrome/browser/ui/toolbar/app_menu_model.cc b/chrome/browser/ui/toolbar/app_menu_model.cc	(rejected hunks)
+@@ -258,11 +258,15 @@ std::u16string GetInstallPWALabel(const Browser* browser) {
+   }
+   if (!web_app::CanCreateWebApp(browser)) {
+     return std::u16string();
+   }
+   // Don't allow apps created from chrome-extension urls.
+-  if (web_contents->GetLastCommittedURL().SchemeIs("chrome-extension")) {
++  if (web_contents->GetLastCommittedURL().SchemeIs("chrome-extension")
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      || web_contents->GetLastCommittedURL().SchemeIs("arkweb-extension")
++#endif
++) {
+     return std::u16string();
+   }
+ 
+   // TODO(b/328077967): Support async nature of AppBannerManager pipeline runs
+   // with the menu model instead of needing this workaround to verify if an
+@@ -815,11 +819,12 @@ FindAndEditSubMenuModel::FindAndEditSubMenuModel(
+   AddItemWithStringIdAndVectorIcon(this, IDC_FIND, IDS_FIND, kSearchMenuIcon);
+   if (delegate->IsCommandIdVisible(IDC_EDIT_MENU)) {
+   AddSeparator(ui::NORMAL_SEPARATOR);
+   AddItemWithStringIdAndVectorIcon(this, IDC_CUT, IDS_CUT, kCutMenuIcon);
+   AddItemWithStringIdAndVectorIcon(this, IDC_COPY, IDS_COPY, kCopyMenuIcon);
+-  AddItemWithStringIdAndVectorIcon(this, IDC_PASTE, IDS_PASTE, kPasteMenuIcon);
++    AddItemWithStringIdAndVectorIcon(this, IDC_PASTE, IDS_PASTE,
++                                     kPasteMenuIcon);
+   }
+ }
+ 
+ class SaveAndShareSubMenuModel : public ui::SimpleMenuModel {
+  public:

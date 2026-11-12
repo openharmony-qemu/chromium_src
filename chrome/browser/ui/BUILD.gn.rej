@@ -1,0 +1,215 @@
+diff a/chrome/browser/ui/BUILD.gn b/chrome/browser/ui/BUILD.gn	(rejected hunks)
+@@ -1404,10 +1410,17 @@ static_library("ui") {
+       "webui/webui_js_error/webui_js_error_ui.h",
+       "webui/webui_util_desktop.cc",
+       "webui/webui_util_desktop.h",
+     ]
+ 
++    if (arkweb_arkweb_extensions) {
++      sources += [
++        "//arkweb/chromium_ext/chrome/browser/ui/webui/extensions/extensions_ui_ext.cc",
++        "//arkweb/chromium_ext/chrome/browser/ui/webui/extensions/extensions_ui_ext.h",
++      ]
++    }
++
+     if (is_chrome_branded) {
+       sources += [
+         "webui/media_router/cast_feedback_ui.cc",
+         "webui/media_router/cast_feedback_ui.h",
+         "webui/password_manager/promo_cards/access_on_any_device_promo.cc",
+@@ -2848,11 +2861,11 @@ static_library("ui") {
+     if (!is_official_build) {
+       deps += [ "//ash/webui/sample_system_web_app_ui" ]
+     }
+   }
+ 
+-  if (is_win || is_mac || is_linux || is_chromeos) {
++  if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {
+     sources += [
+       "frame/window_frame_util.cc",
+       "frame/window_frame_util.h",
+       "incognito_clear_browsing_data_dialog_interface.h",
+       "views/autofill/payments/webauthn_dialog_view.cc",
+@@ -2872,10 +2885,16 @@ static_library("ui") {
+       "views/profiles/profile_menu_view_base.cc",
+       "views/profiles/profile_menu_view_base.h",
+       "views/profiles/signin_view_controller_delegate_views.cc",
+       "views/profiles/signin_view_controller_delegate_views.h",
+     ]
++    if (is_ohos) {
++      sources -= [
++        "frame/window_frame_util.cc",
++        "frame/window_frame_util.h",
++      ]
++    }
+     deps += [
+       "//chrome/browser/contextual_tasks:ui",
+       "//chrome/browser/lifetime:termination_notification",
+       "//chrome/browser/search/background",
+       "//chrome/browser/themes",
+@@ -2890,22 +2909,22 @@ static_library("ui") {
+     ]
+ 
+     allow_circular_includes_from += [ "//chrome/browser/ui/wallet" ]
+   }
+ 
+-  if (is_win || is_mac || is_linux || is_chromeos || is_desktop_android) {
++  if (is_win || is_mac || is_linux || is_chromeos || is_desktop_android || is_ohos) {
+     sources += [
+       "webui/discards/discards_ui.cc",
+       "webui/discards/discards_ui.h",
+       "webui/discards/graph_dump_impl.cc",
+       "webui/discards/graph_dump_impl.h",
+       "webui/discards/site_data_provider_impl.cc",
+       "webui/discards/site_data_provider_impl.h",
+     ]
+   }
+ 
+-  if (is_win || is_mac || is_linux) {
++  if (is_win || is_mac || is_linux || is_ohos) {
+     sources += [
+       "views/media_preview/active_devices_media_coordinator.cc",
+       "views/media_preview/active_devices_media_coordinator.h",
+       "views/media_preview/camera_preview/camera_coordinator.cc",
+       "views/media_preview/camera_preview/camera_coordinator.h",
+@@ -2979,24 +2998,29 @@ static_library("ui") {
+       "webui/browser_switch/browser_switch_ui.h",
+       "webui/intro/intro_handler.cc",
+       "webui/intro/intro_handler.h",
+       "webui/intro/intro_ui.cc",
+       "webui/intro/intro_ui.h",
+-      "webui/on_device_translation_internals/on_device_translation_internals_page_handler_impl.cc",
+-      "webui/on_device_translation_internals/on_device_translation_internals_page_handler_impl.h",
+-      "webui/on_device_translation_internals/on_device_translation_internals_ui.cc",
+-      "webui/on_device_translation_internals/on_device_translation_internals_ui.h",
+       "webui/profile_helper.cc",
+       "webui/profile_helper.h",
+       "webui/settings/settings_default_browser_handler.cc",
+       "webui/settings/settings_default_browser_handler.h",
+       "webui/settings/settings_manage_profile_handler.cc",
+       "webui/settings/settings_manage_profile_handler.h",
+       "webui/settings/system_handler.cc",
+       "webui/settings/system_handler.h",
+     ]
+ 
++    if (enable_on_device_translation) {
++      sources += [
++        "webui/on_device_translation_internals/on_device_translation_internals_page_handler_impl.cc",
++        "webui/on_device_translation_internals/on_device_translation_internals_page_handler_impl.h",
++        "webui/on_device_translation_internals/on_device_translation_internals_ui.cc",
++        "webui/on_device_translation_internals/on_device_translation_internals_ui.h",
++      ]
++    }
++
+     deps += [
+       "//chrome/app:generated_resources",
+       "//chrome/browser/browser_switcher",
+       "//chrome/browser/on_device_translation",
+       "//chrome/browser/profiles",
+@@ -3361,11 +3385,11 @@ static_library("ui") {
+     } else {
+       sources += [ "webui/help/version_updater_basic.cc" ]
+     }
+   }
+ 
+-  if (is_linux || is_mac) {
++  if (is_linux || is_mac || is_ohos) {
+     sources += [
+       "views/first_run_dialog.cc",  # Dialog shows only on Linux and macOS.
+       "views/first_run_dialog.h",
+       "views/passwords/password_relaunch_chrome_view.cc",
+       "views/passwords/password_relaunch_chrome_view.h",
+@@ -3373,10 +3397,17 @@ static_library("ui") {
+       "webui/password_manager/promo_cards/relaunch_chrome_promo.h",
+     ]
+     deps += [ "//components/os_crypt/async/common" ]
+   }
+ 
++  if (is_ohos && !arkweb_asan) {
++    sources -= [
++      "webui/password_manager/promo_cards/relaunch_chrome_promo.cc",
++      "webui/password_manager/promo_cards/relaunch_chrome_promo.h",
++    ]
++  }
++
+   if (is_linux) {
+     sources += [
+       "views/apps/chrome_app_window_client_views_aura.cc",
+       "views/frame/browser_desktop_window_tree_host.h",
+       "views/frame/browser_desktop_window_tree_host_linux.cc",
+@@ -4922,11 +4953,28 @@ static_library("ui") {
+         "//chromeos/components/kiosk",
+         "//chromeos/components/mgs",
+       ]
+     }
+ 
+-    if (is_win || is_linux || is_chromeos) {
++    if (is_ohos) {
++      sources += [
++        "//arkweb/chromium_ext/chrome/browser/ui/views/chrome_views_delegate_ohos.cc",
++        "//arkweb/chromium_ext/chrome/browser/ui/views/frame/browser_native_widget_aura_ohos.cc",
++        "//arkweb/chromium_ext/chrome/browser/ui/views/frame/browser_native_widget_aura_ohos.h",
++        "//arkweb/chromium_ext/chrome/browser/ui/views/frame/browser_desktop_window_tree_host_ohos.cc",
++        "//arkweb/chromium_ext/chrome/browser/ui/views/frame/browser_desktop_window_tree_host_ohos.h",
++        "webui/help/version_updater_basic.cc",
++        "webui/help/version_updater_basic.h",
++        "//arkweb/chromium_ext/chrome/browser/ui/views/status_icons/status_tray_ohos.cc",
++        "webui/settings/settings_utils_linux.cc",
++      ]
++      deps += [ 
++        "//ohos/adapter:adapter",
++      ]
++    }
++
++    if (is_win || is_linux || is_chromeos || is_ohos) {
+       sources += [
+         "views/bluetooth_device_credentials_view.cc",
+         "views/bluetooth_device_credentials_view.h",
+         "views/bluetooth_device_pair_confirm_view.cc",
+         "views/bluetooth_device_pair_confirm_view.h",
+@@ -4980,10 +5028,17 @@ static_library("ui") {
+         "views/accessibility/accessibility_util.cc",
+         "views/chrome_views_delegate_win.cc",
+       ]
+     }
+ 
++    if (is_ohos) {
++      sources += [
++        "//arkweb/chromium_ext/chrome/browser/ui/views/chrome_browser_main_extra_parts_views_ohos.cc",
++        "//arkweb/chromium_ext/chrome/browser/ui/views/chrome_browser_main_extra_parts_views_ohos.h",
++      ]
++    }
++
+     if (use_aura && is_linux) {
+       # These files can do Gtk+-based theming for builds with gtk enabled.
+       sources += [
+         "views/chrome_browser_main_extra_parts_views_linux.cc",
+         "views/chrome_browser_main_extra_parts_views_linux.h",
+@@ -5218,10 +5273,14 @@ static_library("ui") {
+         "views/javascript_app_modal_event_blocker_aura.cc",
+         "views/javascript_app_modal_event_blocker_aura.h",
+       ]
+       deps += [ "//ui/wm/public" ]
+     }
++
++    if (arkweb_arkweb_extensions) {
++      sources += arkweb_chrome_browser_ui_extensions_info_bar
++    }
+   }
+ 
+   if (enable_pdf) {
+     deps += [
+       # TODO(crbug.com/372750819): Remove this dependency when the following
+@@ -5532,11 +5591,11 @@ static_library("ui_public_dependencies") {
+       "//build:branding_buildflags",
+       "//ui/views",
+       "//ui/views/controls/webview",
+     ]
+   }
+-  if (chrome_root_store_cert_management_ui) {
++  if (chrome_root_store_cert_management_ui || is_ohos) {
+     public_deps += [ "//chrome/browser/resources/certificate_manager:mojom" ]
+   }
+ }
+ 
+ source_set("layout_constants") {

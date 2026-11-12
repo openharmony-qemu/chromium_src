@@ -255,6 +255,9 @@ bool SiteGURLIsValid(const GURL& url) {
   // when this bug is fixed, so add it to the allowlist when that happens.
   return !site_origin.opaque() && (url.SchemeIsHTTPOrHTTPS() ||
                                    url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+                                   || url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
     BUILDFLAG(IS_CHROMEOS)
                                    || url.SchemeIs(webapps::kIsolatedAppScheme)

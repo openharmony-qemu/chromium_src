@@ -1,0 +1,39 @@
+diff a/chrome/browser/ui/tabs/BUILD.gn b/chrome/browser/ui/tabs/BUILD.gn	(rejected hunks)
+@@ -1,10 +1,10 @@
+ # Copyright 2021 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+-assert(is_win || is_mac || is_linux || is_chromeos || is_android)
++assert(is_win || is_mac || is_linux || is_chromeos || is_android || is_ohos)
+ 
+ import("//chrome/common/features.gni")
+ 
+ # This is the public interface for tabs in a desktop browser. Most features in
+ # //chrome/browser depend on this interface, and thus to prevent circular
+@@ -435,11 +435,11 @@ if (!is_android) {
+       "tab_utils.h",
+       "vertical_tab_strip_state.h",
+       "vertical_tab_strip_state_controller.h",
+     ]
+ 
+-    if (is_win || is_mac || is_linux || is_chromeos) {
++    if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {
+       sources += [ "inactive_window_mouse_event_controller.h" ]
+     }
+ 
+     public_deps = [
+       ":features",
+@@ -497,11 +497,11 @@ if (!is_android) {
+       "tab_style.cc",
+       "tab_utils.cc",
+       "vertical_tab_strip_state_controller.cc",
+     ]
+ 
+-    if (is_win || is_mac || is_linux || is_chromeos) {
++    if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {
+       sources += [ "inactive_window_mouse_event_controller.cc" ]
+     }
+ 
+     deps = [
+       ":tab_group",

@@ -1,0 +1,27 @@
+diff a/chrome/browser/ui/passwords/BUILD.gn b/chrome/browser/ui/passwords/BUILD.gn	(rejected hunks)
+@@ -48,11 +48,11 @@ source_set("passwords") {
+       "//ui/views",
+       "//url",
+     ]
+   }
+ 
+-  if (is_win || is_mac || is_linux || is_chromeos) {
++  if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {
+     sources += [
+       "password_cross_domain_confirmation_popup_controller_impl.h",
+       "password_cross_domain_confirmation_popup_controller_interface.h",
+       "password_cross_domain_confirmation_popup_view.h",
+     ]
+@@ -149,11 +149,11 @@ source_set("impl") {
+       "//components/desktop_to_mobile_promos",
+       "//components/password_manager/core/browser/features:password_features",
+     ]
+   }
+ 
+-  if (is_win || is_mac || is_linux || is_chromeos) {
++  if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {
+     sources += [ "password_cross_domain_confirmation_popup_controller_impl.cc" ]
+   }
+ 
+   public_deps = [ "//chrome/browser:browser_public_dependencies" ]
+ }

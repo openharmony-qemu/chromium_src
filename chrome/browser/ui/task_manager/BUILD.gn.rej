@@ -1,0 +1,18 @@
+diff a/chrome/browser/ui/task_manager/BUILD.gn b/chrome/browser/ui/task_manager/BUILD.gn	(rejected hunks)
+@@ -28,10 +28,16 @@ if (!is_android) {
+       "//content/public/common:result_codes",
+       "//third_party/icu:icui18n",
+       "//third_party/icu:icui18n_hidden_visibility",
+       "//third_party/icu:icuuc_public",
+     ]
++
++    if (is_ohos) {
++      deps -= [
++        "//third_party/icu:icui18n_hidden_visibility",
++      ]
++    }
+   }
+ 
+   source_set("unit_tests") {
+     testonly = true
+     sources = [ "task_manager_table_model_unittest.cc" ]

@@ -1,0 +1,38 @@
+diff a/chrome/browser/ui/webui/chrome_web_ui_configs.cc b/chrome/browser/ui/webui/chrome_web_ui_configs.cc	(rejected hunks)
+@@ -218,18 +218,36 @@
+ 
+ #if BUILDFLAG(ENTERPRISE_WATERMARK)
+ #include "chrome/browser/ui/webui/watermark/watermark_ui.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
++#endif
++
+ void RegisterChromeWebUIConfigs() {
+   // Don't add calls to `AddWebUIConfig()` for Ash-specific WebUIs here. Add
+   // them in chrome_web_ui_configs_chromeos.cc.
+ #if BUILDFLAG(IS_CHROMEOS)
+   ash::RegisterAshChromeWebUIConfigs();
+ #endif  // BUILDFLAG(IS_CHROMEOS)
+ 
+   auto& map = content::WebUIConfigMap::GetInstance();
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if (base::ohos::IsPcDevice()) {
++    map.AddWebUIConfig(std::make_unique<extensions::ExtensionsUIConfig>());
++  }
++#endif
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  map.AddWebUIConfig(std::make_unique<NetExportUIConfig>());
++#endif
++#if BUILDFLAG(ARKWEB_DEVTOOLS)
++  map.AddWebUIConfig(std::make_unique<InspectUIConfig>());
++#endif // ARKWEB_DEVTOOLS
++#if BUILDFLAG(IS_ARKWEB)
++  return;
++#endif // IS_ARKWEB
+   map.AddWebUIConfig(std::make_unique<AccessibilityUIConfig>());
+   map.AddWebUIConfig(std::make_unique<AutofillInternalsUIConfig>());
+   map.AddWebUIConfig(std::make_unique<BluetoothInternalsUIConfig>());
+   map.AddWebUIConfig(std::make_unique<BrowsingTopicsInternalsUIConfig>());
+   map.AddWebUIConfig(std::make_unique<chromeos::DeviceLogUIConfig>());

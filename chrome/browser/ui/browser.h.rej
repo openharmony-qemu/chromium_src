@@ -1,0 +1,69 @@
+diff a/chrome/browser/ui/browser.h b/chrome/browser/ui/browser.h	(rejected hunks)
+@@ -386,10 +386,15 @@ class Browser : public TabStripModelObserver,
+   Browser(const Browser&) = delete;
+   Browser& operator=(const Browser&) = delete;
+ 
+   ~Browser() override;
+ 
++#if BUILDFLAG(IS_OHOS)
++  void NewWindowTask(std::string url);
++  void NewWindow(std::string url);
++#endif
++
+   // Set overrides for the initial window bounds and maximized state.
+   void set_override_bounds(const gfx::Rect& bounds) {
+     override_bounds_ = bounds;
+   }
+   ui::mojom::WindowShowState initial_show_state() const {
+@@ -719,11 +724,15 @@ class Browser : public TabStripModelObserver,
+   // Overridden from content::WebContentsDelegate:
+   void ActivateContents(content::WebContents* contents) override;
+   bool IsContentsActive(content::WebContents* contents) override;
+   void SetTopControlsShownRatio(content::WebContents* web_contents,
+                                 float ratio) override;
++#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
++  float GetTopControlsHeight() override;
++#else
+   int GetTopControlsHeight() override;
++#endif
+   bool DoBrowserControlsShrinkRendererSize(
+       content::WebContents* contents) override;
+   int GetVirtualKeyboardHeight(content::WebContents* contents) override;
+   void SetTopControlsGestureScrollInProgress(bool in_progress) override;
+   bool CanOverscrollContent() override;
+@@ -960,10 +969,13 @@ class Browser : public TabStripModelObserver,
+   void CanDownload(const GURL& url,
+                    const std::string& request_method,
+                    base::OnceCallback<void(bool)> callback) override;
+   bool DidAddMessageToConsole(content::WebContents* source,
+                               blink::mojom::ConsoleMessageLevel log_level,
++#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
++                              blink::mojom::ConsoleMessageSource log_source,
++#endif 
+                               const std::u16string& message,
+                               int32_t line_no,
+                               const std::u16string& source_id) override;
+   void BeforeUnloadFired(content::WebContents* source,
+                          bool proceed,
+@@ -991,14 +1003,18 @@ class Browser : public TabStripModelObserver,
+                           int opener_render_process_id,
+                           int opener_render_frame_id,
+                           const std::string& frame_name,
+                           const GURL& target_url,
+                           content::WebContents* new_contents) override;
+-  void RendererUnresponsive(
+-      content::WebContents* source,
++  void RendererUnresponsive(content::WebContents* source,
+       content::RenderWidgetHost* render_widget_host,
+-      base::RepeatingClosure hang_monitor_restarter) override;
++                            base::RepeatingClosure hang_monitor_restarter
++#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
++                            ,
++                            content::RendererIsUnresponsiveReason
++#endif
++                            ) override;
+   void RendererResponsive(
+       content::WebContents* source,
+       content::RenderWidgetHost* render_widget_host) override;
+   content::JavaScriptDialogManager* GetJavaScriptDialogManager(
+       content::WebContents* source) override;

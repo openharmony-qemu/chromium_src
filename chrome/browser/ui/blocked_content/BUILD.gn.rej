@@ -1,0 +1,14 @@
+diff a/chrome/browser/ui/blocked_content/BUILD.gn b/chrome/browser/ui/blocked_content/BUILD.gn	(rejected hunks)
+@@ -3,11 +3,11 @@
+ # found in the LICENSE file.
+ 
+ import("//build/config/chromeos/args.gni")
+ import("//build/config/ozone.gni")
+ 
+-assert(is_win || is_mac || is_linux || is_chromeos || is_android)
++assert(is_win || is_mac || is_linux || is_chromeos || is_android || is_ohos)
+ 
+ source_set("blocked_content") {
+   sources = [
+     "blocked_window_params.h",
+     "chrome_popup_navigation_delegate.h",

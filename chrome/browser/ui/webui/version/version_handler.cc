@@ -41,7 +41,8 @@ void GetFilePaths(const base::FilePath& profile_path,
                   std::u16string* exec_path_out,
                   std::u16string* profile_path_out
 #if BUILDFLAG(ENABLE_CEF)
-                  , std::u16string* module_path_out,
+                  ,
+                  std::u16string* module_path_out,
                   std::u16string* user_data_path_out
 #endif
                   ) {

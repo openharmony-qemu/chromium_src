@@ -1,0 +1,15 @@
+diff a/chrome/browser/ui/views/frame/browser_window_property_manager_win.cc b/chrome/browser/ui/views/frame/browser_window_property_manager_win.cc	(rejected hunks)
+@@ -50,12 +50,11 @@ void BrowserWindowPropertyManager::UpdateWindowProperties() {
+   const Browser* browser = view_->browser();
+   Profile* profile = browser->profile();
+ 
+ #if BUILDFLAG(ENABLE_CEF)
+   if (browser->cef_delegate() &&
+-        (browser->is_type_picture_in_picture() ||
+-         browser->is_type_devtools()) &&
++      (browser->is_type_picture_in_picture() || browser->is_type_devtools()) &&
+         browser->cef_delegate()->HasViewsHostedOpener()) {
+     // Don't create a separate taskbar group.
+     return;
+   }
+ #endif

@@ -24,7 +24,7 @@ source_set("whats_new") {
     "//url",
   ]
 
-  if (is_win || is_mac || is_linux) {
+  if (is_win || is_mac || is_linux || arkweb_asan) {
     sources += [
       "whats_new_fetcher.h",
       "whats_new_handler.h",
@@ -71,7 +71,7 @@ source_set("impl") {
     "//url",
   ]
 
-  if (is_win || is_mac || is_linux) {
+  if (is_win || is_mac || is_linux || arkweb_asan || arkweb_test) {
     sources += [
       "whats_new_fetcher.cc",
       "whats_new_handler.cc",

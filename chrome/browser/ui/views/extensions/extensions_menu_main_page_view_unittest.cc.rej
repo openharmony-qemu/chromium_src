@@ -1,0 +1,18 @@
+diff a/chrome/browser/ui/views/extensions/extensions_menu_main_page_view_unittest.cc b/chrome/browser/ui/views/extensions/extensions_menu_main_page_view_unittest.cc
+--- a/chrome/browser/ui/views/extensions/extensions_menu_main_page_view_unittest.cc
++++ b/chrome/browser/ui/views/extensions/extensions_menu_main_page_view_unittest.cc
+@@ -798,11 +798,14 @@ TEST_F(ExtensionsMenuMainPageViewUnitTest, ActiveTabRequested_DynamicUpdates) {
+   //     access.
+   extensions::ActiveTabPermissionGranter* active_tab_permission_granter =
+       extensions::ActiveTabPermissionGranter::FromWebContents(
+           browser()->tab_strip_model()->GetActiveWebContents());
+   ASSERT_TRUE(active_tab_permission_granter);
++  PermissionsManagerWaiter waiter(
++      extensions::PermissionsManager::Get(browser()->profile()));
+   active_tab_permission_granter->GrantIfRequested(extension.get());
++  waiter.WaitForActiveTabPermissionGranted(extension->id());
+   EXPECT_TRUE(menu_item->site_permissions_button_for_testing()->GetVisible());
+   EXPECT_TRUE(menu_item->site_permissions_button_for_testing()->GetEnabled());
+   EXPECT_EQ(menu_item->site_permissions_button_for_testing()->GetText(),
+             l10n_util::GetStringUTF16(
+                 IDS_EXTENSIONS_MENU_MAIN_PAGE_EXTENSION_SITE_ACCESS_ON_CLICK));

@@ -1,0 +1,22 @@
+diff a/chrome/browser/ui/views/profiles/signin_view_controller_delegate_views.h b/chrome/browser/ui/views/profiles/signin_view_controller_delegate_views.h	(rejected hunks)
+@@ -56,18 +56,18 @@ class SigninViewControllerDelegateViews
+   static std::unique_ptr<views::WebView> CreateSyncConfirmationWebView(
+       Browser* browser,
+       SyncConfirmationStyle style,
+       bool is_sync_promo);
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+   static std::unique_ptr<views::WebView> CreateHistorySyncOptInWebView(
+       Browser* browser,
+       bool should_close_modal_dialog,
+       HistorySyncOptinLaunchContext launch_context,
+       HistorySyncOptinHelper::FlowCompletedCallback
+           history_optin_completed_callback);
+-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ 
+   static std::unique_ptr<views::WebView> CreateSigninErrorWebView(
+       Browser* browser);
+ 
+ #if BUILDFLAG(ENABLE_DICE_SUPPORT)

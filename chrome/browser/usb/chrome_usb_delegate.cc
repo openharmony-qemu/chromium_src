@@ -416,7 +416,11 @@ void ChromeUsbDelegate::IncrementConnectionCount(
 // Don't track connection when the feature isn't enabled or the connection
 // isn't made by an extension origin.
 #if !BUILDFLAG(IS_ANDROID)
-  if (origin.scheme() != extensions::kExtensionScheme) {
+  if (origin.scheme() != extensions::kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && origin.scheme() != extensions::kArkwebExtensionScheme
+#endif
+    ) {
     return;
   }
 
@@ -434,7 +438,11 @@ void ChromeUsbDelegate::DecrementConnectionCount(
   // Don't track connection when the feature isn't enabled or the connection
   // isn't made by an extension origin.
 #if !BUILDFLAG(IS_ANDROID)
-  if (origin.scheme() != extensions::kExtensionScheme) {
+  if (origin.scheme() != extensions::kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && origin.scheme() != extensions::kArkwebExtensionScheme
+#endif
+    ) {
     return;
   }
   auto* usb_connection_tracker =

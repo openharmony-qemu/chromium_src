@@ -1,0 +1,60 @@
+diff a/chrome/browser/ui/webauthn/authenticator_request_window.cc b/chrome/browser/ui/webauthn/authenticator_request_window.cc	(rejected hunks)
+@@ -36,17 +36,26 @@
+ #include "ui/gfx/geometry/point.h"
+ #include "ui/gfx/geometry/rect.h"
+ #include "url/origin.h"
+ 
+ namespace {
+-
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++// The URL for the YoutTube Music Premium signup page.
++const char kGpmPinResetReauthUrl[] =
++    "https://x.x.x.x/";
++const char kGpmPasskeyResetSuccessUrl[] =
++    "https://x.x.x.x/";
++const char kGpmPasskeyResetFailUrl[] =
++    "https://x.x.x.x/";
++#else
+ const char kGpmPinResetReauthUrl[] =
+     "https://passwords.google.com/encryption/pin/reset";
+ const char kGpmPasskeyResetSuccessUrl[] =
+     "https://passwords.google.com/embedded/passkeys/reset/done";
+ const char kGpmPasskeyResetFailUrl[] =
+     "https://passwords.google.com/embedded/passkeys/reset/error";
++#endif
+ 
+ GURL GetGpmResetPinUrl() {
+   std::string command_line_url =
+       base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+           webauthn::switches::kGpmPinResetReauthUrlSwitch);
+@@ -84,10 +93,11 @@ class ReauthWebContentsObserver : public content::WebContentsObserver {
+     if (!net::GetValueForKeyInQuery(url, "rapt", &rapt)) {
+       return;
+     }
+ 
+     std::move(callback_).Run(std::move(rapt));
++    // `this` may have been destroyed.
+   }
+ 
+  private:
+   static bool IsValidHttpStatus(int status) {
+     return status == net::HTTP_OK || status == net::HTTP_NO_CONTENT;
+@@ -147,12 +157,17 @@ class PasskeyResetWebContentsObserver : public content::WebContentsObserver {
+     if (status_ == Status::kStarted || ref.empty()) {
+       return;
+     }
+     if (status_ == Status::kSuccess && ref == "success") {
+       std::move(callback_).Run(true);
+-    } else if (status_ == Status::kFail && ref == "fail") {
++      // `this` may have been destroyed.
++      return;
++    }
++    if (status_ == Status::kFail && ref == "fail") {
+       std::move(callback_).Run(false);
++      // `this` may have been destroyed.
++      return;
+     }
+     status_ = Status::kNotStarted;
+   }
+ 
+   Status status_ = Status::kNotStarted;

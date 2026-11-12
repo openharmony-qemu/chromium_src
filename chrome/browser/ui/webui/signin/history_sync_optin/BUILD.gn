@@ -4,7 +4,7 @@
 
 import("//mojo/public/tools/bindings/mojom.gni")
 
-assert(is_win || is_mac || is_linux)
+assert(is_win || is_mac || is_linux || is_ohos)
 
 mojom("mojo_bindings") {
   sources = [ "history_sync_optin.mojom" ]

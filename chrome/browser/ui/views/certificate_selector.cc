@@ -333,6 +333,7 @@ views::View* CertificateSelector::GetInitiallyFocusedView() {
 }
 
 void CertificateSelector::ViewCertButtonPressed() {
+#if BUILDFLAG(ENABLE_WEBUI_CERTIFICATE_VIEWER)
   net::ClientCertIdentity* const cert = GetSelectedCert();
   if (!cert) {
     return;
@@ -345,6 +346,7 @@ void CertificateSelector::ViewCertButtonPressed() {
   ShowCertificateViewerForClientAuth(web_contents_,
                                      native_window,
                                      cert->certificate());
+#endif
 }
 
 void CertificateSelector::OnSelectionChanged() {

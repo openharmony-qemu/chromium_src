@@ -1,0 +1,14 @@
+diff a/ui/ozone/common/egl_util.cc b/ui/ozone/common/egl_util.cc	(rejected hunks)
+@@ -146,11 +151,11 @@ bool LoadDefaultEGLGLES2Bindings(
+ #if BUILDFLAG(USE_STATIC_ANGLE)
+     gl::SetGLGetProcAddressProc(&EGL_GetProcAddress);
+     return true;
+ #else
+     base::FilePath module_path;
+-#if !BUILDFLAG(IS_FUCHSIA)
++#if !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_OHOS)
+     if (!base::PathService::Get(base::DIR_ASSETS, &module_path))
+       return false;
+ #endif
+ 
+     glesv2_path = module_path.Append(kAngleGlesSoname);

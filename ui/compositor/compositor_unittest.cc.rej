@@ -1,0 +1,34 @@
+diff a/ui/compositor/compositor_unittest.cc b/ui/compositor/compositor_unittest.cc	(rejected hunks)
+@@ -20,20 +18,31 @@
+ #include "cc/metrics/frame_sequence_tracker.h"
+ #include "components/viz/common/surfaces/parent_local_surface_id_allocator.h"
+ #include "testing/gmock/include/gmock/gmock.h"
+ #include "testing/gtest/include/gtest/gtest.h"
+ #include "ui/base/ui_base_features.h"
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++#define private public
++#endif  // ARKWEB_UNITTESTS
++#include "ui/compositor/compositor.h"
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++#undef private
++#include "cc/test/fake_layer_tree_frame_sink.h"
++#endif  // ARKWEB_UNITTESTS
+ #include "ui/compositor/compositor_metrics_tracker.h"
+ #include "ui/compositor/layer.h"
+ #include "ui/compositor/layer_delegate.h"
+ #include "ui/compositor/test/draw_waiter_for_test.h"
+ #include "ui/compositor/test/in_process_context_factory.h"
+ #include "ui/compositor/test/test_context_factories.h"
+ #include "ui/display/types/display_constants.h"
++#include "arkweb/chromium_ext/ui/compositor/compositor_utils.h"
+ 
+-using testing::Mock;
+ using testing::_;
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++using testing::Mock;
++#endif  // ARKWEB_UNITTESTS
+ 
+ namespace ui {
+ namespace {
+ 
+ class MockCompositorObserver : public CompositorObserver {

@@ -1,0 +1,34 @@
+diff a/ui/base/ui_base_features.cc b/ui/base/ui_base_features.cc	(rejected hunks)
+@@ -185,16 +185,16 @@ BASE_FEATURE(kExperimentalFlingAnimation,
+ #else
+              base::FEATURE_DISABLED_BY_DEFAULT
+ #endif
+ );
+ 
+-#if !BUILDFLAG(IS_APPLE)
++#if !BUILDFLAG(IS_APPLE)|| BUILDFLAG(ARKWEB_INPUT_EVENTS)
+ // Cached in Java as well, make sure defaults are updated together.
+ BASE_FEATURE(kElasticOverscroll,
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_INPUT_EVENTS)
+              base::FEATURE_ENABLED_BY_DEFAULT
+-#else  // BUILDFLAG(IS_ANDROID)
++#else  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_INPUT_EVENTS)
+              base::FEATURE_DISABLED_BY_DEFAULT
+ #endif
+ );
+ #endif
+ 
+@@ -240,11 +240,11 @@ bool IsTouchTextEditingRedesignEnabled() {
+   return base::FeatureList::IsEnabled(kTouchTextEditingRedesign);
+ }
+ 
+ // This feature enables drag and drop using touch input devices.
+ BASE_FEATURE(kTouchDragAndDrop,
+-#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)
++#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN) || BUILDFLAG(ARKWEB_DRAG_DROP)
+              base::FEATURE_ENABLED_BY_DEFAULT
+ #else
+              base::FEATURE_DISABLED_BY_DEFAULT
+ #endif
+ );

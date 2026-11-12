@@ -1,0 +1,13 @@
+diff a/ui/compositor/compositor.h b/ui/compositor/compositor.h	(rejected hunks)
+@@ -251,11 +266,10 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
+   // Attempts to immediately swap a frame with the current size if possible,
+   // then disables swapping on this surface until it is resized.
+   void DisableSwapUntilResize();
+   void ReenableSwap();
+ #endif
+-
+   // Sets the compositor's device scale factor and size.
+   void SetScaleAndSize(float scale,
+                        const gfx::Size& size_in_pixel,
+                        const viz::LocalSurfaceId& local_surface_id);
+ 

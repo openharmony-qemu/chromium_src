@@ -66,7 +66,7 @@ HoverType GetPrimaryHoverType() {
 }
 #endif
 
-#if !BUILDFLAG(IS_WIN)
+#if !BUILDFLAG(IS_WIN) && !BUILDFLAG(IS_OHOS)
 std::optional<PointerDevice> GetPointerDevice(PointerDevice::Key key) {
   return std::nullopt;
 }

@@ -1,0 +1,13 @@
+diff a/ui/events/devices/device_data_manager.cc b/ui/events/devices/device_data_manager.cc	(rejected hunks)
+@@ -2,10 +2,11 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "ui/events/devices/device_data_manager.h"
+ 
++#include "arkweb/chromium_ext/ui/events/devices/arkweb_device_data_manager_utils.h"
+ #include <algorithm>
+ 
+ #include "base/at_exit.h"
+ #include "base/check_op.h"
+ #include "base/containers/contains.h"

@@ -261,6 +261,12 @@ enum KeyboardCode : uint16_t {
   // All applications - this also triggers the launcher in Chrome OS.
   VKEY_ALL_APPLICATIONS = 0xEF,
 
+#if BUILDFLAG(IS_OHOS)
+  VKEY_CODE_PASTE = 0x115,
+  VKEY_CODE_COPY = 0x116,
+  VKEY_CODE_CUT = 0x117,
+#endif
+
 #if BUILDFLAG(IS_CHROMEOS)
   VKEY_FUNCTION = 0xFF,
   VKEY_QUICK_INSERT = 0x100,

@@ -1,0 +1,29 @@
+diff a/ui/accessibility/platform/browser_accessibility.h b/ui/accessibility/platform/browser_accessibility.h
+--- a/ui/accessibility/platform/browser_accessibility.h
++++ b/ui/accessibility/platform/browser_accessibility.h
+@@ -13,10 +13,11 @@
+ #include <optional>
+ #include <string>
+ #include <vector>
+ 
+ #include "base/component_export.h"
++#include "base/memory/advanced_memory_safety_checks.h"
+ #include "base/memory/raw_ptr.h"
+ #include "build/build_config.h"
+ #include "ui/accessibility/ax_enums.mojom-forward.h"
+ #include "ui/accessibility/ax_node.h"
+ #include "ui/accessibility/platform/ax_platform_node_id.h"
+@@ -40,10 +41,13 @@ class BrowserAccessibilityManager;
+ // There are subclasses of BrowserAccessibility for each platform where we
+ // implement some of the native accessibility APIs that are only specific to the
+ // Web.
+ class COMPONENT_EXPORT(AX_PLATFORM) BrowserAccessibility
+     : public AXPlatformNodeDelegate {
++  // TODO(b/498205735): Remove once hardening protections are no longer needed.
++  ADVANCED_MEMORY_SAFETY_CHECKS();
++
+  public:
+   // Creates a platform specific BrowserAccessibility. Ownership passes to the
+   // caller.
+   static std::unique_ptr<BrowserAccessibility> Create(
+       BrowserAccessibilityManager* manager,

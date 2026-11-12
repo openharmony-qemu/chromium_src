@@ -1,0 +1,2011 @@
+diff a/ui/gl/gl_bindings_autogen_gl.cc b/ui/gl/gl_bindings_autogen_gl.cc	(rejected hunks)
+@@ -9699,23 +9699,24 @@ void LogGLApi::glAcquireTexturesANGLEFn(GLuint numTextures,
+                  << static_cast<const void*>(layouts) << ")");
+   gl_api_->glAcquireTexturesANGLEFn(numTextures, textures, layouts);
+ }
+ 
+ void LogGLApi::glActiveShaderProgramFn(GLuint pipeline, GLuint program) {
+-  GL_SERVICE_LOG("glActiveShaderProgram" << "(" << pipeline << ", " << program
+-                                         << ")");
++  GL_SERVICE_LOG("glActiveShaderProgram"
++                 << "(" << pipeline << ", " << program << ")");
+   gl_api_->glActiveShaderProgramFn(pipeline, program);
+ }
+ 
+ void LogGLApi::glActiveTextureFn(GLenum texture) {
+-  GL_SERVICE_LOG("glActiveTexture" << "(" << GLEnums::GetStringEnum(texture)
+-                                   << ")");
++  GL_SERVICE_LOG("glActiveTexture"
++                 << "(" << GLEnums::GetStringEnum(texture) << ")");
+   gl_api_->glActiveTextureFn(texture);
+ }
+ 
+ void LogGLApi::glAttachShaderFn(GLuint program, GLuint shader) {
+-  GL_SERVICE_LOG("glAttachShader" << "(" << program << ", " << shader << ")");
++  GL_SERVICE_LOG("glAttachShader"
++                 << "(" << program << ", " << shader << ")");
+   gl_api_->glAttachShaderFn(program, shader);
+ }
+ 
+ void LogGLApi::glBeginPixelLocalStorageANGLEFn(GLsizei n,
+                                                const GLenum* loadops) {
+@@ -9738,60 +9739,63 @@ void LogGLApi::glBeginTransformFeedbackFn(GLenum primitiveMode) {
+ }
+ 
+ void LogGLApi::glBindAttribLocationFn(GLuint program,
+                                       GLuint index,
+                                       const char* name) {
+-  GL_SERVICE_LOG("glBindAttribLocation" << "(" << program << ", " << index
+-                                        << ", " << name << ")");
++  GL_SERVICE_LOG("glBindAttribLocation"
++                 << "(" << program << ", " << index << ", " << name << ")");
+   gl_api_->glBindAttribLocationFn(program, index, name);
+ }
+ 
+ void LogGLApi::glBindBufferFn(GLenum target, GLuint buffer) {
+-  GL_SERVICE_LOG("glBindBuffer" << "(" << GLEnums::GetStringEnum(target) << ", "
+-                                << buffer << ")");
++  GL_SERVICE_LOG("glBindBuffer"
++                 << "(" << GLEnums::GetStringEnum(target) << ", " << buffer
++                 << ")");
+   gl_api_->glBindBufferFn(target, buffer);
+ }
+ 
+ void LogGLApi::glBindBufferBaseFn(GLenum target, GLuint index, GLuint buffer) {
+-  GL_SERVICE_LOG("glBindBufferBase" << "(" << GLEnums::GetStringEnum(target)
+-                                    << ", " << index << ", " << buffer << ")");
++  GL_SERVICE_LOG("glBindBufferBase"
++                 << "(" << GLEnums::GetStringEnum(target) << ", " << index
++                 << ", " << buffer << ")");
+   gl_api_->glBindBufferBaseFn(target, index, buffer);
+ }
+ 
+ void LogGLApi::glBindBufferRangeFn(GLenum target,
+                                    GLuint index,
+                                    GLuint buffer,
+                                    GLintptr offset,
+                                    GLsizeiptr size) {
+-  GL_SERVICE_LOG("glBindBufferRange" << "(" << GLEnums::GetStringEnum(target)
+-                                     << ", " << index << ", " << buffer << ", "
+-                                     << offset << ", " << size << ")");
++  GL_SERVICE_LOG("glBindBufferRange"
++                 << "(" << GLEnums::GetStringEnum(target) << ", " << index
++                 << ", " << buffer << ", " << offset << ", " << size << ")");
+   gl_api_->glBindBufferRangeFn(target, index, buffer, offset, size);
+ }
+ 
+ void LogGLApi::glBindFragDataLocationFn(GLuint program,
+                                         GLuint colorNumber,
+                                         const char* name) {
+-  GL_SERVICE_LOG("glBindFragDataLocation" << "(" << program << ", "
+-                                          << colorNumber << ", " << name
+-                                          << ")");
++  GL_SERVICE_LOG("glBindFragDataLocation"
++                 << "(" << program << ", " << colorNumber << ", " << name
++                 << ")");
+   gl_api_->glBindFragDataLocationFn(program, colorNumber, name);
+ }
+ 
+ void LogGLApi::glBindFragDataLocationIndexedFn(GLuint program,
+                                                GLuint colorNumber,
+                                                GLuint index,
+                                                const char* name) {
+-  GL_SERVICE_LOG("glBindFragDataLocationIndexed" << "(" << program << ", "
+-                                                 << colorNumber << ", " << index
+-                                                 << ", " << name << ")");
++  GL_SERVICE_LOG("glBindFragDataLocationIndexed"
++                 << "(" << program << ", " << colorNumber << ", " << index
++                 << ", " << name << ")");
+   gl_api_->glBindFragDataLocationIndexedFn(program, colorNumber, index, name);
+ }
+ 
+ void LogGLApi::glBindFramebufferEXTFn(GLenum target, GLuint framebuffer) {
+-  GL_SERVICE_LOG("glBindFramebufferEXT" << "(" << GLEnums::GetStringEnum(target)
+-                                        << ", " << framebuffer << ")");
++  GL_SERVICE_LOG("glBindFramebufferEXT"
++                 << "(" << GLEnums::GetStringEnum(target) << ", " << framebuffer
++                 << ")");
+   gl_api_->glBindFramebufferEXTFn(target, framebuffer);
+ }
+ 
+ void LogGLApi::glBindImageTextureEXTFn(GLuint index,
+                                        GLuint texture,
+@@ -9807,11 +9811,12 @@ void LogGLApi::glBindImageTextureEXTFn(GLuint index,
+   gl_api_->glBindImageTextureEXTFn(index, texture, level, layered, layer,
+                                    access, format);
+ }
+ 
+ void LogGLApi::glBindProgramPipelineFn(GLuint pipeline) {
+-  GL_SERVICE_LOG("glBindProgramPipeline" << "(" << pipeline << ")");
++  GL_SERVICE_LOG("glBindProgramPipeline"
++                 << "(" << pipeline << ")");
+   gl_api_->glBindProgramPipelineFn(pipeline);
+ }
+ 
+ void LogGLApi::glBindRenderbufferEXTFn(GLenum target, GLuint renderbuffer) {
+   GL_SERVICE_LOG("glBindRenderbufferEXT"
+@@ -9844,47 +9851,51 @@ void LogGLApi::glBindUniformLocationCHROMIUMFn(GLuint program,
+                  << "(" << program << ", " << location << ", " << name << ")");
+   gl_api_->glBindUniformLocationCHROMIUMFn(program, location, name);
+ }
+ 
+ void LogGLApi::glBindVertexArrayOESFn(GLuint array) {
+-  GL_SERVICE_LOG("glBindVertexArrayOES" << "(" << array << ")");
++  GL_SERVICE_LOG("glBindVertexArrayOES"
++                 << "(" << array << ")");
+   gl_api_->glBindVertexArrayOESFn(array);
+ }
+ 
+ void LogGLApi::glBindVertexBufferFn(GLuint bindingindex,
+                                     GLuint buffer,
+                                     GLintptr offset,
+                                     GLsizei stride) {
+-  GL_SERVICE_LOG("glBindVertexBuffer" << "(" << bindingindex << ", " << buffer
+-                                      << ", " << offset << ", " << stride
+-                                      << ")");
++  GL_SERVICE_LOG("glBindVertexBuffer"
++                 << "(" << bindingindex << ", " << buffer << ", " << offset
++                 << ", " << stride << ")");
+   gl_api_->glBindVertexBufferFn(bindingindex, buffer, offset, stride);
+ }
+ 
+ void LogGLApi::glBlendBarrierKHRFn(void) {
+-  GL_SERVICE_LOG("glBlendBarrierKHR" << "(" << ")");
++  GL_SERVICE_LOG("glBlendBarrierKHR"
++                 << "("
++                 << ")");
+   gl_api_->glBlendBarrierKHRFn();
+ }
+ 
+ void LogGLApi::glBlendColorFn(GLclampf red,
+                               GLclampf green,
+                               GLclampf blue,
+                               GLclampf alpha) {
+-  GL_SERVICE_LOG("glBlendColor" << "(" << red << ", " << green << ", " << blue
+-                                << ", " << alpha << ")");
++  GL_SERVICE_LOG("glBlendColor"
++                 << "(" << red << ", " << green << ", " << blue << ", " << alpha
++                 << ")");
+   gl_api_->glBlendColorFn(red, green, blue, alpha);
+ }
+ 
+ void LogGLApi::glBlendEquationFn(GLenum mode) {
+-  GL_SERVICE_LOG("glBlendEquation" << "(" << GLEnums::GetStringEnum(mode)
+-                                   << ")");
++  GL_SERVICE_LOG("glBlendEquation"
++                 << "(" << GLEnums::GetStringEnum(mode) << ")");
+   gl_api_->glBlendEquationFn(mode);
+ }
+ 
+ void LogGLApi::glBlendEquationiOESFn(GLuint buf, GLenum mode) {
+-  GL_SERVICE_LOG("glBlendEquationiOES" << "(" << buf << ", "
+-                                       << GLEnums::GetStringEnum(mode) << ")");
++  GL_SERVICE_LOG("glBlendEquationiOES"
++                 << "(" << buf << ", " << GLEnums::GetStringEnum(mode) << ")");
+   gl_api_->glBlendEquationiOESFn(buf, mode);
+ }
+ 
+ void LogGLApi::glBlendEquationSeparateFn(GLenum modeRGB, GLenum modeAlpha) {
+   GL_SERVICE_LOG("glBlendEquationSeparate"
+@@ -10454,11 +10477,12 @@ GLuint LogGLApi::glCreateShaderProgramvFn(GLenum type,
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ void LogGLApi::glCullFaceFn(GLenum mode) {
+-  GL_SERVICE_LOG("glCullFace" << "(" << GLEnums::GetStringEnum(mode) << ")");
++  GL_SERVICE_LOG("glCullFace"
++                 << "(" << GLEnums::GetStringEnum(mode) << ")");
+   gl_api_->glCullFaceFn(mode);
+ }
+ 
+ void LogGLApi::glDebugMessageCallbackFn(GLDEBUGPROC callback,
+                                         const void* userParam) {
+@@ -10496,19 +10520,20 @@ void LogGLApi::glDebugMessageInsertFn(GLenum source,
+                  << buf << ")");
+   gl_api_->glDebugMessageInsertFn(source, type, id, severity, length, buf);
+ }
+ 
+ void LogGLApi::glDeleteBuffersARBFn(GLsizei n, const GLuint* buffers) {
+-  GL_SERVICE_LOG("glDeleteBuffersARB" << "(" << n << ", "
+-                                      << static_cast<const void*>(buffers)
+-                                      << ")");
++  GL_SERVICE_LOG("glDeleteBuffersARB"
++                 << "(" << n << ", " << static_cast<const void*>(buffers)
++                 << ")");
+   gl_api_->glDeleteBuffersARBFn(n, buffers);
+ }
+ 
+ void LogGLApi::glDeleteFencesNVFn(GLsizei n, const GLuint* fences) {
+-  GL_SERVICE_LOG("glDeleteFencesNV" << "(" << n << ", "
+-                                    << static_cast<const void*>(fences) << ")");
++  GL_SERVICE_LOG("glDeleteFencesNV"
++                 << "(" << n << ", " << static_cast<const void*>(fences)
++                 << ")");
+   gl_api_->glDeleteFencesNVFn(n, fences);
+ }
+ 
+ void LogGLApi::glDeleteFramebuffersEXTFn(GLsizei n,
+                                          const GLuint* framebuffers) {
+@@ -10525,11 +10550,12 @@ void LogGLApi::glDeleteMemoryObjectsEXTFn(GLsizei n,
+                  << ")");
+   gl_api_->glDeleteMemoryObjectsEXTFn(n, memoryObjects);
+ }
+ 
+ void LogGLApi::glDeleteProgramFn(GLuint program) {
+-  GL_SERVICE_LOG("glDeleteProgram" << "(" << program << ")");
++  GL_SERVICE_LOG("glDeleteProgram"
++                 << "(" << program << ")");
+   gl_api_->glDeleteProgramFn(program);
+ }
+ 
+ void LogGLApi::glDeleteProgramPipelinesFn(GLsizei n, const GLuint* pipelines) {
+   GL_SERVICE_LOG("glDeleteProgramPipelines"
+@@ -10537,12 +10563,12 @@ void LogGLApi::glDeleteProgramPipelinesFn(GLsizei n, const GLuint* pipelines) {
+                  << ")");
+   gl_api_->glDeleteProgramPipelinesFn(n, pipelines);
+ }
+ 
+ void LogGLApi::glDeleteQueriesFn(GLsizei n, const GLuint* ids) {
+-  GL_SERVICE_LOG("glDeleteQueries" << "(" << n << ", "
+-                                   << static_cast<const void*>(ids) << ")");
++  GL_SERVICE_LOG("glDeleteQueries"
++                 << "(" << n << ", " << static_cast<const void*>(ids) << ")");
+   gl_api_->glDeleteQueriesFn(n, ids);
+ }
+ 
+ void LogGLApi::glDeleteRenderbuffersEXTFn(GLsizei n,
+                                           const GLuint* renderbuffers) {
+@@ -10551,96 +10577,107 @@ void LogGLApi::glDeleteRenderbuffersEXTFn(GLsizei n,
+                  << ")");
+   gl_api_->glDeleteRenderbuffersEXTFn(n, renderbuffers);
+ }
+ 
+ void LogGLApi::glDeleteSamplersFn(GLsizei n, const GLuint* samplers) {
+-  GL_SERVICE_LOG("glDeleteSamplers" << "(" << n << ", "
+-                                    << static_cast<const void*>(samplers)
+-                                    << ")");
++  GL_SERVICE_LOG("glDeleteSamplers"
++                 << "(" << n << ", " << static_cast<const void*>(samplers)
++                 << ")");
+   gl_api_->glDeleteSamplersFn(n, samplers);
+ }
+ 
+ void LogGLApi::glDeleteSemaphoresEXTFn(GLsizei n, const GLuint* semaphores) {
+-  GL_SERVICE_LOG("glDeleteSemaphoresEXT" << "(" << n << ", "
+-                                         << static_cast<const void*>(semaphores)
+-                                         << ")");
++  GL_SERVICE_LOG("glDeleteSemaphoresEXT"
++                 << "(" << n << ", " << static_cast<const void*>(semaphores)
++                 << ")");
+   gl_api_->glDeleteSemaphoresEXTFn(n, semaphores);
+ }
+ 
+ void LogGLApi::glDeleteShaderFn(GLuint shader) {
+-  GL_SERVICE_LOG("glDeleteShader" << "(" << shader << ")");
++  GL_SERVICE_LOG("glDeleteShader"
++                 << "(" << shader << ")");
+   gl_api_->glDeleteShaderFn(shader);
+ }
+ 
+ void LogGLApi::glDeleteSyncFn(GLsync sync) {
+-  GL_SERVICE_LOG("glDeleteSync" << "(" << sync << ")");
++  GL_SERVICE_LOG("glDeleteSync"
++                 << "(" << sync << ")");
+   gl_api_->glDeleteSyncFn(sync);
+ }
+ 
+ void LogGLApi::glDeleteTexturesFn(GLsizei n, const GLuint* textures) {
+-  GL_SERVICE_LOG("glDeleteTextures" << "(" << n << ", "
+-                                    << static_cast<const void*>(textures)
+-                                    << ")");
++  GL_SERVICE_LOG("glDeleteTextures"
++                 << "(" << n << ", " << static_cast<const void*>(textures)
++                 << ")");
+   gl_api_->glDeleteTexturesFn(n, textures);
+ }
+ 
+ void LogGLApi::glDeleteTransformFeedbacksFn(GLsizei n, const GLuint* ids) {
+   GL_SERVICE_LOG("glDeleteTransformFeedbacks"
+                  << "(" << n << ", " << static_cast<const void*>(ids) << ")");
+   gl_api_->glDeleteTransformFeedbacksFn(n, ids);
+ }
+ 
+ void LogGLApi::glDeleteVertexArraysOESFn(GLsizei n, const GLuint* arrays) {
+-  GL_SERVICE_LOG("glDeleteVertexArraysOES" << "(" << n << ", "
+-                                           << static_cast<const void*>(arrays)
+-                                           << ")");
++  GL_SERVICE_LOG("glDeleteVertexArraysOES"
++                 << "(" << n << ", " << static_cast<const void*>(arrays)
++                 << ")");
+   gl_api_->glDeleteVertexArraysOESFn(n, arrays);
+ }
+ 
+ void LogGLApi::glDepthFuncFn(GLenum func) {
+-  GL_SERVICE_LOG("glDepthFunc" << "(" << GLEnums::GetStringEnum(func) << ")");
++  GL_SERVICE_LOG("glDepthFunc"
++                 << "(" << GLEnums::GetStringEnum(func) << ")");
+   gl_api_->glDepthFuncFn(func);
+ }
+ 
+ void LogGLApi::glDepthMaskFn(GLboolean flag) {
+-  GL_SERVICE_LOG("glDepthMask" << "(" << GLEnums::GetStringBool(flag) << ")");
++  GL_SERVICE_LOG("glDepthMask"
++                 << "(" << GLEnums::GetStringBool(flag) << ")");
+   gl_api_->glDepthMaskFn(flag);
+ }
+ 
+ void LogGLApi::glDepthRangeFn(GLclampd zNear, GLclampd zFar) {
+-  GL_SERVICE_LOG("glDepthRange" << "(" << zNear << ", " << zFar << ")");
++  GL_SERVICE_LOG("glDepthRange"
++                 << "(" << zNear << ", " << zFar << ")");
+   gl_api_->glDepthRangeFn(zNear, zFar);
+ }
+ 
+ void LogGLApi::glDepthRangefFn(GLclampf zNear, GLclampf zFar) {
+-  GL_SERVICE_LOG("glDepthRangef" << "(" << zNear << ", " << zFar << ")");
++  GL_SERVICE_LOG("glDepthRangef"
++                 << "(" << zNear << ", " << zFar << ")");
+   gl_api_->glDepthRangefFn(zNear, zFar);
+ }
+ 
+ void LogGLApi::glDetachShaderFn(GLuint program, GLuint shader) {
+-  GL_SERVICE_LOG("glDetachShader" << "(" << program << ", " << shader << ")");
++  GL_SERVICE_LOG("glDetachShader"
++                 << "(" << program << ", " << shader << ")");
+   gl_api_->glDetachShaderFn(program, shader);
+ }
+ 
+ void LogGLApi::glDisableFn(GLenum cap) {
+-  GL_SERVICE_LOG("glDisable" << "(" << GLEnums::GetStringEnum(cap) << ")");
++  GL_SERVICE_LOG("glDisable"
++                 << "(" << GLEnums::GetStringEnum(cap) << ")");
+   gl_api_->glDisableFn(cap);
+ }
+ 
+ void LogGLApi::glDisableExtensionANGLEFn(const char* name) {
+-  GL_SERVICE_LOG("glDisableExtensionANGLE" << "(" << name << ")");
++  GL_SERVICE_LOG("glDisableExtensionANGLE"
++                 << "(" << name << ")");
+   gl_api_->glDisableExtensionANGLEFn(name);
+ }
+ 
+ void LogGLApi::glDisableiOESFn(GLenum target, GLuint index) {
+-  GL_SERVICE_LOG("glDisableiOES" << "(" << GLEnums::GetStringEnum(target)
+-                                 << ", " << index << ")");
++  GL_SERVICE_LOG("glDisableiOES"
++                 << "(" << GLEnums::GetStringEnum(target) << ", " << index
++                 << ")");
+   gl_api_->glDisableiOESFn(target, index);
+ }
+ 
+ void LogGLApi::glDisableVertexAttribArrayFn(GLuint index) {
+-  GL_SERVICE_LOG("glDisableVertexAttribArray" << "(" << index << ")");
++  GL_SERVICE_LOG("glDisableVertexAttribArray"
++                 << "(" << index << ")");
+   gl_api_->glDisableVertexAttribArrayFn(index);
+ }
+ 
+ void LogGLApi::glDiscardFramebufferEXTFn(GLenum target,
+                                          GLsizei numAttachments,
+@@ -10653,23 +10690,26 @@ void LogGLApi::glDiscardFramebufferEXTFn(GLenum target,
+ }
+ 
+ void LogGLApi::glDispatchComputeFn(GLuint numGroupsX,
+                                    GLuint numGroupsY,
+                                    GLuint numGroupsZ) {
+-  GL_SERVICE_LOG("glDispatchCompute" << "(" << numGroupsX << ", " << numGroupsY
+-                                     << ", " << numGroupsZ << ")");
++  GL_SERVICE_LOG("glDispatchCompute"
++                 << "(" << numGroupsX << ", " << numGroupsY << ", "
++                 << numGroupsZ << ")");
+   gl_api_->glDispatchComputeFn(numGroupsX, numGroupsY, numGroupsZ);
+ }
+ 
+ void LogGLApi::glDispatchComputeIndirectFn(GLintptr indirect) {
+-  GL_SERVICE_LOG("glDispatchComputeIndirect" << "(" << indirect << ")");
++  GL_SERVICE_LOG("glDispatchComputeIndirect"
++                 << "(" << indirect << ")");
+   gl_api_->glDispatchComputeIndirectFn(indirect);
+ }
+ 
+ void LogGLApi::glDrawArraysFn(GLenum mode, GLint first, GLsizei count) {
+-  GL_SERVICE_LOG("glDrawArrays" << "(" << GLEnums::GetStringEnum(mode) << ", "
+-                                << first << ", " << count << ")");
++  GL_SERVICE_LOG("glDrawArrays"
++                 << "(" << GLEnums::GetStringEnum(mode) << ", " << first << ", "
++                 << count << ")");
+   gl_api_->glDrawArraysFn(mode, first, count);
+ }
+ 
+ void LogGLApi::glDrawArraysIndirectFn(GLenum mode, const void* indirect) {
+   GL_SERVICE_LOG("glDrawArraysIndirect"
+@@ -10699,28 +10739,29 @@ void LogGLApi::glDrawArraysInstancedBaseInstanceANGLEFn(GLenum mode,
+   gl_api_->glDrawArraysInstancedBaseInstanceANGLEFn(mode, first, count,
+                                                     primcount, baseinstance);
+ }
+ 
+ void LogGLApi::glDrawBufferFn(GLenum mode) {
+-  GL_SERVICE_LOG("glDrawBuffer" << "(" << GLEnums::GetStringEnum(mode) << ")");
++  GL_SERVICE_LOG("glDrawBuffer"
++                 << "(" << GLEnums::GetStringEnum(mode) << ")");
+   gl_api_->glDrawBufferFn(mode);
+ }
+ 
+ void LogGLApi::glDrawBuffersARBFn(GLsizei n, const GLenum* bufs) {
+-  GL_SERVICE_LOG("glDrawBuffersARB" << "(" << n << ", "
+-                                    << static_cast<const void*>(bufs) << ")");
++  GL_SERVICE_LOG("glDrawBuffersARB"
++                 << "(" << n << ", " << static_cast<const void*>(bufs) << ")");
+   gl_api_->glDrawBuffersARBFn(n, bufs);
+ }
+ 
+ void LogGLApi::glDrawElementsFn(GLenum mode,
+                                 GLsizei count,
+                                 GLenum type,
+                                 const void* indices) {
+-  GL_SERVICE_LOG("glDrawElements" << "(" << GLEnums::GetStringEnum(mode) << ", "
+-                                  << count << ", "
+-                                  << GLEnums::GetStringEnum(type) << ", "
+-                                  << static_cast<const void*>(indices) << ")");
++  GL_SERVICE_LOG("glDrawElements"
++                 << "(" << GLEnums::GetStringEnum(mode) << ", " << count << ", "
++                 << GLEnums::GetStringEnum(type) << ", "
++                 << static_cast<const void*>(indices) << ")");
+   gl_api_->glDrawElementsFn(mode, count, type, indices);
+ }
+ 
+ void LogGLApi::glDrawElementsIndirectFn(GLenum mode,
+                                         GLenum type,
+@@ -10815,44 +10859,54 @@ void LogGLApi::glEndPixelLocalStorageANGLEFn(GLsizei n,
+                  << ")");
+   gl_api_->glEndPixelLocalStorageANGLEFn(n, storeops);
+ }
+ 
+ void LogGLApi::glEndQueryFn(GLenum target) {
+-  GL_SERVICE_LOG("glEndQuery" << "(" << GLEnums::GetStringEnum(target) << ")");
++  GL_SERVICE_LOG("glEndQuery"
++                 << "(" << GLEnums::GetStringEnum(target) << ")");
+   gl_api_->glEndQueryFn(target);
+ }
+ 
+ void LogGLApi::glEndTilingQCOMFn(GLbitfield preserveMask) {
+-  GL_SERVICE_LOG("glEndTilingQCOM" << "(" << preserveMask << ")");
++  GL_SERVICE_LOG("glEndTilingQCOM"
++                 << "(" << preserveMask << ")");
+   gl_api_->glEndTilingQCOMFn(preserveMask);
+ }
+ 
+ void LogGLApi::glEndTransformFeedbackFn(void) {
+-  GL_SERVICE_LOG("glEndTransformFeedback" << "(" << ")");
++  GL_SERVICE_LOG("glEndTransformFeedback"
++                 << "("
++                 << ")");
+   gl_api_->glEndTransformFeedbackFn();
+ }
+ 
+ GLsync LogGLApi::glFenceSyncFn(GLenum condition, GLbitfield flags) {
+-  GL_SERVICE_LOG("glFenceSync" << "(" << GLEnums::GetStringEnum(condition)
+-                               << ", " << flags << ")");
++  GL_SERVICE_LOG("glFenceSync"
++                 << "(" << GLEnums::GetStringEnum(condition) << ", " << flags
++                 << ")");
+   GLsync result = gl_api_->glFenceSyncFn(condition, flags);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ void LogGLApi::glFinishFn(void) {
+-  GL_SERVICE_LOG("glFinish" << "(" << ")");
++  GL_SERVICE_LOG("glFinish"
++                 << "("
++                 << ")");
+   gl_api_->glFinishFn();
+ }
+ 
+ void LogGLApi::glFinishFenceNVFn(GLuint fence) {
+-  GL_SERVICE_LOG("glFinishFenceNV" << "(" << fence << ")");
++  GL_SERVICE_LOG("glFinishFenceNV"
++                 << "(" << fence << ")");
+   gl_api_->glFinishFenceNVFn(fence);
+ }
+ 
+ void LogGLApi::glFlushFn(void) {
+-  GL_SERVICE_LOG("glFlush" << "(" << ")");
++  GL_SERVICE_LOG("glFlush"
++                 << "("
++                 << ")");
+   gl_api_->glFlushFn();
+ }
+ 
+ void LogGLApi::glFlushMappedBufferRangeFn(GLenum target,
+                                           GLintptr offset,
+@@ -10999,29 +11057,32 @@ void LogGLApi::glFramebufferTexturePixelLocalStorageANGLEFn(
+   gl_api_->glFramebufferTexturePixelLocalStorageANGLEFn(plane, backingtexture,
+                                                         level, layer);
+ }
+ 
+ void LogGLApi::glFrontFaceFn(GLenum mode) {
+-  GL_SERVICE_LOG("glFrontFace" << "(" << GLEnums::GetStringEnum(mode) << ")");
++  GL_SERVICE_LOG("glFrontFace"
++                 << "(" << GLEnums::GetStringEnum(mode) << ")");
+   gl_api_->glFrontFaceFn(mode);
+ }
+ 
+ void LogGLApi::glGenBuffersARBFn(GLsizei n, GLuint* buffers) {
+-  GL_SERVICE_LOG("glGenBuffersARB" << "(" << n << ", "
+-                                   << static_cast<const void*>(buffers) << ")");
++  GL_SERVICE_LOG("glGenBuffersARB"
++                 << "(" << n << ", " << static_cast<const void*>(buffers)
++                 << ")");
+   gl_api_->glGenBuffersARBFn(n, buffers);
+ }
+ 
+ void LogGLApi::glGenerateMipmapEXTFn(GLenum target) {
+-  GL_SERVICE_LOG("glGenerateMipmapEXT" << "(" << GLEnums::GetStringEnum(target)
+-                                       << ")");
++  GL_SERVICE_LOG("glGenerateMipmapEXT"
++                 << "(" << GLEnums::GetStringEnum(target) << ")");
+   gl_api_->glGenerateMipmapEXTFn(target);
+ }
+ 
+ void LogGLApi::glGenFencesNVFn(GLsizei n, GLuint* fences) {
+-  GL_SERVICE_LOG("glGenFencesNV" << "(" << n << ", "
+-                                 << static_cast<const void*>(fences) << ")");
++  GL_SERVICE_LOG("glGenFencesNV"
++                 << "(" << n << ", " << static_cast<const void*>(fences)
++                 << ")");
+   gl_api_->glGenFencesNVFn(n, fences);
+ }
+ 
+ void LogGLApi::glGenFramebuffersEXTFn(GLsizei n, GLuint* framebuffers) {
+   GL_SERVICE_LOG("glGenFramebuffersEXT"
+@@ -11029,21 +11090,21 @@ void LogGLApi::glGenFramebuffersEXTFn(GLsizei n, GLuint* framebuffers) {
+                  << ")");
+   gl_api_->glGenFramebuffersEXTFn(n, framebuffers);
+ }
+ 
+ GLuint LogGLApi::glGenProgramPipelinesFn(GLsizei n, GLuint* pipelines) {
+-  GL_SERVICE_LOG("glGenProgramPipelines" << "(" << n << ", "
+-                                         << static_cast<const void*>(pipelines)
+-                                         << ")");
++  GL_SERVICE_LOG("glGenProgramPipelines"
++                 << "(" << n << ", " << static_cast<const void*>(pipelines)
++                 << ")");
+   GLuint result = gl_api_->glGenProgramPipelinesFn(n, pipelines);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ void LogGLApi::glGenQueriesFn(GLsizei n, GLuint* ids) {
+-  GL_SERVICE_LOG("glGenQueries" << "(" << n << ", "
+-                                << static_cast<const void*>(ids) << ")");
++  GL_SERVICE_LOG("glGenQueries"
++                 << "(" << n << ", " << static_cast<const void*>(ids) << ")");
+   gl_api_->glGenQueriesFn(n, ids);
+ }
+ 
+ void LogGLApi::glGenRenderbuffersEXTFn(GLsizei n, GLuint* renderbuffers) {
+   GL_SERVICE_LOG("glGenRenderbuffersEXT"
+@@ -11182,21 +11245,21 @@ void LogGLApi::glGetAttachedShadersFn(GLuint program,
+                  << static_cast<const void*>(shaders) << ")");
+   gl_api_->glGetAttachedShadersFn(program, maxcount, count, shaders);
+ }
+ 
+ GLint LogGLApi::glGetAttribLocationFn(GLuint program, const char* name) {
+-  GL_SERVICE_LOG("glGetAttribLocation" << "(" << program << ", " << name
+-                                       << ")");
++  GL_SERVICE_LOG("glGetAttribLocation"
++                 << "(" << program << ", " << name << ")");
+   GLint result = gl_api_->glGetAttribLocationFn(program, name);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ void LogGLApi::glGetBooleani_vFn(GLenum target, GLuint index, GLboolean* data) {
+-  GL_SERVICE_LOG("glGetBooleani_v" << "(" << GLEnums::GetStringEnum(target)
+-                                   << ", " << index << ", "
+-                                   << static_cast<const void*>(data) << ")");
++  GL_SERVICE_LOG("glGetBooleani_v"
++                 << "(" << GLEnums::GetStringEnum(target) << ", " << index
++                 << ", " << static_cast<const void*>(data) << ")");
+   gl_api_->glGetBooleani_vFn(target, index, data);
+ }
+ 
+ void LogGLApi::glGetBooleani_vRobustANGLEFn(GLenum target,
+                                             GLuint index,
+@@ -11209,12 +11272,13 @@ void LogGLApi::glGetBooleani_vRobustANGLEFn(GLenum target,
+                  << ", " << static_cast<const void*>(data) << ")");
+   gl_api_->glGetBooleani_vRobustANGLEFn(target, index, bufSize, length, data);
+ }
+ 
+ void LogGLApi::glGetBooleanvFn(GLenum pname, GLboolean* params) {
+-  GL_SERVICE_LOG("glGetBooleanv" << "(" << GLEnums::GetStringEnum(pname) << ", "
+-                                 << static_cast<const void*>(params) << ")");
++  GL_SERVICE_LOG("glGetBooleanv"
++                 << "(" << GLEnums::GetStringEnum(pname) << ", "
++                 << static_cast<const void*>(params) << ")");
+   gl_api_->glGetBooleanvFn(pname, params);
+ }
+ 
+ void LogGLApi::glGetBooleanvRobustANGLEFn(GLenum pname,
+                                           GLsizei bufSize,
+@@ -11451,20 +11519,22 @@ void LogGLApi::glGetFramebufferPixelLocalStorageParameterivRobustANGLEFn(
+   gl_api_->glGetFramebufferPixelLocalStorageParameterivRobustANGLEFn(
+       plane, pname, bufSize, length, params);
+ }
+ 
+ GLenum LogGLApi::glGetGraphicsResetStatusARBFn(void) {
+-  GL_SERVICE_LOG("glGetGraphicsResetStatusARB" << "(" << ")");
++  GL_SERVICE_LOG("glGetGraphicsResetStatusARB"
++                 << "("
++                 << ")");
+   GLenum result = gl_api_->glGetGraphicsResetStatusARBFn();
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ void LogGLApi::glGetInteger64i_vFn(GLenum target, GLuint index, GLint64* data) {
+-  GL_SERVICE_LOG("glGetInteger64i_v" << "(" << GLEnums::GetStringEnum(target)
+-                                     << ", " << index << ", "
+-                                     << static_cast<const void*>(data) << ")");
++  GL_SERVICE_LOG("glGetInteger64i_v"
++                 << "(" << GLEnums::GetStringEnum(target) << ", " << index
++                 << ", " << static_cast<const void*>(data) << ")");
+   gl_api_->glGetInteger64i_vFn(target, index, data);
+ }
+ 
+ void LogGLApi::glGetInteger64i_vRobustANGLEFn(GLenum target,
+                                               GLuint index,
+@@ -11576,13 +11647,13 @@ void LogGLApi::glGetInternalformatSampleivNVFn(GLenum target,
+   gl_api_->glGetInternalformatSampleivNVFn(target, internalformat, samples,
+                                            pname, bufSize, params);
+ }
+ 
+ void LogGLApi::glGetMultisamplefvFn(GLenum pname, GLuint index, GLfloat* val) {
+-  GL_SERVICE_LOG("glGetMultisamplefv" << "(" << GLEnums::GetStringEnum(pname)
+-                                      << ", " << index << ", "
+-                                      << static_cast<const void*>(val) << ")");
++  GL_SERVICE_LOG("glGetMultisamplefv"
++                 << "(" << GLEnums::GetStringEnum(pname) << ", " << index
++                 << ", " << static_cast<const void*>(val) << ")");
+   gl_api_->glGetMultisamplefvFn(pname, index, val);
+ }
+ 
+ void LogGLApi::glGetMultisamplefvRobustANGLEFn(GLenum pname,
+                                                GLuint index,
+@@ -11638,14 +11709,14 @@ void LogGLApi::glGetnUniformuivRobustANGLEFn(GLuint program,
+ void LogGLApi::glGetObjectLabelFn(GLenum identifier,
+                                   GLuint name,
+                                   GLsizei bufSize,
+                                   GLsizei* length,
+                                   char* label) {
+-  GL_SERVICE_LOG("glGetObjectLabel" << "(" << GLEnums::GetStringEnum(identifier)
+-                                    << ", " << name << ", " << bufSize << ", "
+-                                    << static_cast<const void*>(length) << ", "
+-                                    << static_cast<const void*>(label) << ")");
++  GL_SERVICE_LOG("glGetObjectLabel"
++                 << "(" << GLEnums::GetStringEnum(identifier) << ", " << name
++                 << ", " << bufSize << ", " << static_cast<const void*>(length)
++                 << ", " << static_cast<const void*>(label) << ")");
+   gl_api_->glGetObjectLabelFn(identifier, name, bufSize, length, label);
+ }
+ 
+ void LogGLApi::glGetObjectPtrLabelFn(void* ptr,
+                                      GLsizei bufSize,
+@@ -11657,12 +11728,13 @@ void LogGLApi::glGetObjectPtrLabelFn(void* ptr,
+                  << static_cast<const void*>(label) << ")");
+   gl_api_->glGetObjectPtrLabelFn(ptr, bufSize, length, label);
+ }
+ 
+ void LogGLApi::glGetPointervFn(GLenum pname, void** params) {
+-  GL_SERVICE_LOG("glGetPointerv" << "(" << GLEnums::GetStringEnum(pname) << ", "
+-                                 << params << ")");
++  GL_SERVICE_LOG("glGetPointerv"
++                 << "(" << GLEnums::GetStringEnum(pname) << ", " << params
++                 << ")");
+   gl_api_->glGetPointervFn(pname, params);
+ }
+ 
+ void LogGLApi::glGetPointervRobustANGLERobustANGLEFn(GLenum pname,
+                                                      GLsizei bufSize,
+@@ -11727,13 +11799,13 @@ void LogGLApi::glGetProgramInterfaceivRobustANGLEFn(GLuint program,
+   gl_api_->glGetProgramInterfaceivRobustANGLEFn(program, programInterface,
+                                                 pname, bufSize, length, params);
+ }
+ 
+ void LogGLApi::glGetProgramivFn(GLuint program, GLenum pname, GLint* params) {
+-  GL_SERVICE_LOG("glGetProgramiv" << "(" << program << ", "
+-                                  << GLEnums::GetStringEnum(pname) << ", "
+-                                  << static_cast<const void*>(params) << ")");
++  GL_SERVICE_LOG("glGetProgramiv"
++                 << "(" << program << ", " << GLEnums::GetStringEnum(pname)
++                 << ", " << static_cast<const void*>(params) << ")");
+   gl_api_->glGetProgramivFn(program, pname, params);
+ }
+ 
+ void LogGLApi::glGetProgramivRobustANGLEFn(GLuint program,
+                                            GLenum pname,
+@@ -11825,13 +11897,14 @@ void LogGLApi::glGetProgramResourceNameFn(GLuint program,
+   gl_api_->glGetProgramResourceNameFn(program, programInterface, index, bufSize,
+                                       length, name);
+ }
+ 
+ void LogGLApi::glGetQueryivFn(GLenum target, GLenum pname, GLint* params) {
+-  GL_SERVICE_LOG("glGetQueryiv" << "(" << GLEnums::GetStringEnum(target) << ", "
+-                                << GLEnums::GetStringEnum(pname) << ", "
+-                                << static_cast<const void*>(params) << ")");
++  GL_SERVICE_LOG("glGetQueryiv"
++                 << "(" << GLEnums::GetStringEnum(target) << ", "
++                 << GLEnums::GetStringEnum(pname) << ", "
++                 << static_cast<const void*>(params) << ")");
+   gl_api_->glGetQueryivFn(target, pname, params);
+ }
+ 
+ void LogGLApi::glGetQueryivRobustANGLEFn(GLenum target,
+                                          GLenum pname,
+@@ -12545,157 +12624,178 @@ void LogGLApi::glInvalidateTextureANGLEFn(GLenum target) {
+                  << "(" << GLEnums::GetStringEnum(target) << ")");
+   gl_api_->glInvalidateTextureANGLEFn(target);
+ }
+ 
+ GLboolean LogGLApi::glIsBufferFn(GLuint buffer) {
+-  GL_SERVICE_LOG("glIsBuffer" << "(" << buffer << ")");
++  GL_SERVICE_LOG("glIsBuffer"
++                 << "(" << buffer << ")");
+   GLboolean result = gl_api_->glIsBufferFn(buffer);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ GLboolean LogGLApi::glIsEnabledFn(GLenum cap) {
+-  GL_SERVICE_LOG("glIsEnabled" << "(" << GLEnums::GetStringEnum(cap) << ")");
++  GL_SERVICE_LOG("glIsEnabled"
++                 << "(" << GLEnums::GetStringEnum(cap) << ")");
+   GLboolean result = gl_api_->glIsEnabledFn(cap);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ GLboolean LogGLApi::glIsEnablediOESFn(GLenum target, GLuint index) {
+-  GL_SERVICE_LOG("glIsEnablediOES" << "(" << GLEnums::GetStringEnum(target)
+-                                   << ", " << index << ")");
++  GL_SERVICE_LOG("glIsEnablediOES"
++                 << "(" << GLEnums::GetStringEnum(target) << ", " << index
++                 << ")");
+   GLboolean result = gl_api_->glIsEnablediOESFn(target, index);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ GLboolean LogGLApi::glIsFenceNVFn(GLuint fence) {
+-  GL_SERVICE_LOG("glIsFenceNV" << "(" << fence << ")");
++  GL_SERVICE_LOG("glIsFenceNV"
++                 << "(" << fence << ")");
+   GLboolean result = gl_api_->glIsFenceNVFn(fence);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ GLboolean LogGLApi::glIsFramebufferEXTFn(GLuint framebuffer) {
+-  GL_SERVICE_LOG("glIsFramebufferEXT" << "(" << framebuffer << ")");
++  GL_SERVICE_LOG("glIsFramebufferEXT"
++                 << "(" << framebuffer << ")");
+   GLboolean result = gl_api_->glIsFramebufferEXTFn(framebuffer);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ GLboolean LogGLApi::glIsProgramFn(GLuint program) {
+-  GL_SERVICE_LOG("glIsProgram" << "(" << program << ")");
++  GL_SERVICE_LOG("glIsProgram"
++                 << "(" << program << ")");
+   GLboolean result = gl_api_->glIsProgramFn(program);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ GLboolean LogGLApi::glIsProgramPipelineFn(GLuint pipeline) {
+-  GL_SERVICE_LOG("glIsProgramPipeline" << "(" << pipeline << ")");
++  GL_SERVICE_LOG("glIsProgramPipeline"
++                 << "(" << pipeline << ")");
+   GLboolean result = gl_api_->glIsProgramPipelineFn(pipeline);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ GLboolean LogGLApi::glIsQueryFn(GLuint query) {
+-  GL_SERVICE_LOG("glIsQuery" << "(" << query << ")");
++  GL_SERVICE_LOG("glIsQuery"
++                 << "(" << query << ")");
+   GLboolean result = gl_api_->glIsQueryFn(query);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ GLboolean LogGLApi::glIsRenderbufferEXTFn(GLuint renderbuffer) {
+-  GL_SERVICE_LOG("glIsRenderbufferEXT" << "(" << renderbuffer << ")");
++  GL_SERVICE_LOG("glIsRenderbufferEXT"
++                 << "(" << renderbuffer << ")");
+   GLboolean result = gl_api_->glIsRenderbufferEXTFn(renderbuffer);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ GLboolean LogGLApi::glIsSamplerFn(GLuint sampler) {
+-  GL_SERVICE_LOG("glIsSampler" << "(" << sampler << ")");
++  GL_SERVICE_LOG("glIsSampler"
++                 << "(" << sampler << ")");
+   GLboolean result = gl_api_->glIsSamplerFn(sampler);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ GLboolean LogGLApi::glIsShaderFn(GLuint shader) {
+-  GL_SERVICE_LOG("glIsShader" << "(" << shader << ")");
++  GL_SERVICE_LOG("glIsShader"
++                 << "(" << shader << ")");
+   GLboolean result = gl_api_->glIsShaderFn(shader);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ GLboolean LogGLApi::glIsSyncFn(GLsync sync) {
+-  GL_SERVICE_LOG("glIsSync" << "(" << sync << ")");
++  GL_SERVICE_LOG("glIsSync"
++                 << "(" << sync << ")");
+   GLboolean result = gl_api_->glIsSyncFn(sync);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ GLboolean LogGLApi::glIsTextureFn(GLuint texture) {
+-  GL_SERVICE_LOG("glIsTexture" << "(" << texture << ")");
++  GL_SERVICE_LOG("glIsTexture"
++                 << "(" << texture << ")");
+   GLboolean result = gl_api_->glIsTextureFn(texture);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ GLboolean LogGLApi::glIsTransformFeedbackFn(GLuint id) {
+-  GL_SERVICE_LOG("glIsTransformFeedback" << "(" << id << ")");
++  GL_SERVICE_LOG("glIsTransformFeedback"
++                 << "(" << id << ")");
+   GLboolean result = gl_api_->glIsTransformFeedbackFn(id);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ GLboolean LogGLApi::glIsVertexArrayOESFn(GLuint array) {
+-  GL_SERVICE_LOG("glIsVertexArrayOES" << "(" << array << ")");
++  GL_SERVICE_LOG("glIsVertexArrayOES"
++                 << "(" << array << ")");
+   GLboolean result = gl_api_->glIsVertexArrayOESFn(array);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ void LogGLApi::glLineWidthFn(GLfloat width) {
+-  GL_SERVICE_LOG("glLineWidth" << "(" << width << ")");
++  GL_SERVICE_LOG("glLineWidth"
++                 << "(" << width << ")");
+   gl_api_->glLineWidthFn(width);
+ }
+ 
+ void LogGLApi::glLinkProgramFn(GLuint program) {
+-  GL_SERVICE_LOG("glLinkProgram" << "(" << program << ")");
++  GL_SERVICE_LOG("glLinkProgram"
++                 << "(" << program << ")");
+   gl_api_->glLinkProgramFn(program);
+ }
+ 
+ void* LogGLApi::glMapBufferFn(GLenum target, GLenum access) {
+-  GL_SERVICE_LOG("glMapBuffer" << "(" << GLEnums::GetStringEnum(target) << ", "
+-                               << GLEnums::GetStringEnum(access) << ")");
++  GL_SERVICE_LOG("glMapBuffer"
++                 << "(" << GLEnums::GetStringEnum(target) << ", "
++                 << GLEnums::GetStringEnum(access) << ")");
+   void* result = gl_api_->glMapBufferFn(target, access);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ void* LogGLApi::glMapBufferRangeFn(GLenum target,
+                                    GLintptr offset,
+                                    GLsizeiptr length,
+                                    GLbitfield access) {
+-  GL_SERVICE_LOG("glMapBufferRange" << "(" << GLEnums::GetStringEnum(target)
+-                                    << ", " << offset << ", " << length << ", "
+-                                    << access << ")");
++  GL_SERVICE_LOG("glMapBufferRange"
++                 << "(" << GLEnums::GetStringEnum(target) << ", " << offset
++                 << ", " << length << ", " << access << ")");
+   void* result = gl_api_->glMapBufferRangeFn(target, offset, length, access);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ void LogGLApi::glMaxShaderCompilerThreadsKHRFn(GLuint count) {
+-  GL_SERVICE_LOG("glMaxShaderCompilerThreadsKHR" << "(" << count << ")");
++  GL_SERVICE_LOG("glMaxShaderCompilerThreadsKHR"
++                 << "(" << count << ")");
+   gl_api_->glMaxShaderCompilerThreadsKHRFn(count);
+ }
+ 
+ void LogGLApi::glMemoryBarrierByRegionFn(GLbitfield barriers) {
+-  GL_SERVICE_LOG("glMemoryBarrierByRegion" << "(" << barriers << ")");
++  GL_SERVICE_LOG("glMemoryBarrierByRegion"
++                 << "(" << barriers << ")");
+   gl_api_->glMemoryBarrierByRegionFn(barriers);
+ }
+ 
+ void LogGLApi::glMemoryBarrierEXTFn(GLbitfield barriers) {
+-  GL_SERVICE_LOG("glMemoryBarrierEXT" << "(" << barriers << ")");
++  GL_SERVICE_LOG("glMemoryBarrierEXT"
++                 << "(" << barriers << ")");
+   gl_api_->glMemoryBarrierEXTFn(barriers);
+ }
+ 
+ void LogGLApi::glMemoryObjectParameterivEXTFn(GLuint memoryObject,
+                                               GLenum pname,
+@@ -12705,11 +12805,12 @@ void LogGLApi::glMemoryObjectParameterivEXTFn(GLuint memoryObject,
+                  << ", " << static_cast<const void*>(param) << ")");
+   gl_api_->glMemoryObjectParameterivEXTFn(memoryObject, pname, param);
+ }
+ 
+ void LogGLApi::glMinSampleShadingFn(GLfloat value) {
+-  GL_SERVICE_LOG("glMinSampleShading" << "(" << value << ")");
++  GL_SERVICE_LOG("glMinSampleShading"
++                 << "(" << value << ")");
+   gl_api_->glMinSampleShadingFn(value);
+ }
+ 
+ void LogGLApi::glMultiDrawArraysANGLEFn(GLenum mode,
+                                         const GLint* firsts,
+@@ -12810,118 +12911,133 @@ void LogGLApi::glMultiDrawElementsInstancedBaseVertexBaseInstanceANGLEFn(
+ 
+ void LogGLApi::glObjectLabelFn(GLenum identifier,
+                                GLuint name,
+                                GLsizei length,
+                                const char* label) {
+-  GL_SERVICE_LOG("glObjectLabel" << "(" << GLEnums::GetStringEnum(identifier)
+-                                 << ", " << name << ", " << length << ", "
+-                                 << label << ")");
++  GL_SERVICE_LOG("glObjectLabel"
++                 << "(" << GLEnums::GetStringEnum(identifier) << ", " << name
++                 << ", " << length << ", " << label << ")");
+   gl_api_->glObjectLabelFn(identifier, name, length, label);
+ }
+ 
+ void LogGLApi::glObjectPtrLabelFn(void* ptr,
+                                   GLsizei length,
+                                   const char* label) {
+-  GL_SERVICE_LOG("glObjectPtrLabel" << "(" << static_cast<const void*>(ptr)
+-                                    << ", " << length << ", " << label << ")");
++  GL_SERVICE_LOG("glObjectPtrLabel"
++                 << "(" << static_cast<const void*>(ptr) << ", " << length
++                 << ", " << label << ")");
+   gl_api_->glObjectPtrLabelFn(ptr, length, label);
+ }
+ 
+ void LogGLApi::glPatchParameteriFn(GLenum pname, GLint value) {
+-  GL_SERVICE_LOG("glPatchParameteri" << "(" << GLEnums::GetStringEnum(pname)
+-                                     << ", " << value << ")");
++  GL_SERVICE_LOG("glPatchParameteri"
++                 << "(" << GLEnums::GetStringEnum(pname) << ", " << value
++                 << ")");
+   gl_api_->glPatchParameteriFn(pname, value);
+ }
+ 
+ void LogGLApi::glPauseTransformFeedbackFn(void) {
+-  GL_SERVICE_LOG("glPauseTransformFeedback" << "(" << ")");
++  GL_SERVICE_LOG("glPauseTransformFeedback"
++                 << "("
++                 << ")");
+   gl_api_->glPauseTransformFeedbackFn();
+ }
+ 
+ void LogGLApi::glPixelLocalStorageBarrierANGLEFn() {
+-  GL_SERVICE_LOG("glPixelLocalStorageBarrierANGLE" << "(" << ")");
++  GL_SERVICE_LOG("glPixelLocalStorageBarrierANGLE"
++                 << "("
++                 << ")");
+   gl_api_->glPixelLocalStorageBarrierANGLEFn();
+ }
+ 
+ void LogGLApi::glPixelStoreiFn(GLenum pname, GLint param) {
+-  GL_SERVICE_LOG("glPixelStorei" << "(" << GLEnums::GetStringEnum(pname) << ", "
+-                                 << param << ")");
++  GL_SERVICE_LOG("glPixelStorei"
++                 << "(" << GLEnums::GetStringEnum(pname) << ", " << param
++                 << ")");
+   gl_api_->glPixelStoreiFn(pname, param);
+ }
+ 
+ void LogGLApi::glPointParameteriFn(GLenum pname, GLint param) {
+-  GL_SERVICE_LOG("glPointParameteri" << "(" << GLEnums::GetStringEnum(pname)
+-                                     << ", " << param << ")");
++  GL_SERVICE_LOG("glPointParameteri"
++                 << "(" << GLEnums::GetStringEnum(pname) << ", " << param
++                 << ")");
+   gl_api_->glPointParameteriFn(pname, param);
+ }
+ 
+ void LogGLApi::glPolygonModeFn(GLenum face, GLenum mode) {
+-  GL_SERVICE_LOG("glPolygonMode" << "(" << GLEnums::GetStringEnum(face) << ", "
+-                                 << GLEnums::GetStringEnum(mode) << ")");
++  GL_SERVICE_LOG("glPolygonMode"
++                 << "(" << GLEnums::GetStringEnum(face) << ", "
++                 << GLEnums::GetStringEnum(mode) << ")");
+   gl_api_->glPolygonModeFn(face, mode);
+ }
+ 
+ void LogGLApi::glPolygonModeANGLEFn(GLenum face, GLenum mode) {
+-  GL_SERVICE_LOG("glPolygonModeANGLE" << "(" << GLEnums::GetStringEnum(face)
+-                                      << ", " << GLEnums::GetStringEnum(mode)
+-                                      << ")");
++  GL_SERVICE_LOG("glPolygonModeANGLE"
++                 << "(" << GLEnums::GetStringEnum(face) << ", "
++                 << GLEnums::GetStringEnum(mode) << ")");
+   gl_api_->glPolygonModeANGLEFn(face, mode);
+ }
+ 
+ void LogGLApi::glPolygonOffsetFn(GLfloat factor, GLfloat units) {
+-  GL_SERVICE_LOG("glPolygonOffset" << "(" << factor << ", " << units << ")");
++  GL_SERVICE_LOG("glPolygonOffset"
++                 << "(" << factor << ", " << units << ")");
+   gl_api_->glPolygonOffsetFn(factor, units);
+ }
+ 
+ void LogGLApi::glPolygonOffsetClampEXTFn(GLfloat factor,
+                                          GLfloat units,
+                                          GLfloat clamp) {
+-  GL_SERVICE_LOG("glPolygonOffsetClampEXT" << "(" << factor << ", " << units
+-                                           << ", " << clamp << ")");
++  GL_SERVICE_LOG("glPolygonOffsetClampEXT"
++                 << "(" << factor << ", " << units << ", " << clamp << ")");
+   gl_api_->glPolygonOffsetClampEXTFn(factor, units, clamp);
+ }
+ 
+ void LogGLApi::glPopDebugGroupFn() {
+-  GL_SERVICE_LOG("glPopDebugGroup" << "(" << ")");
++  GL_SERVICE_LOG("glPopDebugGroup"
++                 << "("
++                 << ")");
+   gl_api_->glPopDebugGroupFn();
+ }
+ 
+ void LogGLApi::glPopGroupMarkerEXTFn(void) {
+-  GL_SERVICE_LOG("glPopGroupMarkerEXT" << "(" << ")");
++  GL_SERVICE_LOG("glPopGroupMarkerEXT"
++                 << "("
++                 << ")");
+   gl_api_->glPopGroupMarkerEXTFn();
+ }
+ 
+ void LogGLApi::glPrimitiveRestartIndexFn(GLuint index) {
+-  GL_SERVICE_LOG("glPrimitiveRestartIndex" << "(" << index << ")");
++  GL_SERVICE_LOG("glPrimitiveRestartIndex"
++                 << "(" << index << ")");
+   gl_api_->glPrimitiveRestartIndexFn(index);
+ }
+ 
+ void LogGLApi::glProgramBinaryFn(GLuint program,
+                                  GLenum binaryFormat,
+                                  const GLvoid* binary,
+                                  GLsizei length) {
+-  GL_SERVICE_LOG("glProgramBinary" << "(" << program << ", "
+-                                   << GLEnums::GetStringEnum(binaryFormat)
+-                                   << ", " << static_cast<const void*>(binary)
+-                                   << ", " << length << ")");
++  GL_SERVICE_LOG("glProgramBinary"
++                 << "(" << program << ", "
++                 << GLEnums::GetStringEnum(binaryFormat) << ", "
++                 << static_cast<const void*>(binary) << ", " << length << ")");
+   gl_api_->glProgramBinaryFn(program, binaryFormat, binary, length);
+ }
+ 
+ void LogGLApi::glProgramParameteriFn(GLuint program,
+                                      GLenum pname,
+                                      GLint value) {
+-  GL_SERVICE_LOG("glProgramParameteri" << "(" << program << ", "
+-                                       << GLEnums::GetStringEnum(pname) << ", "
+-                                       << value << ")");
++  GL_SERVICE_LOG("glProgramParameteri"
++                 << "(" << program << ", " << GLEnums::GetStringEnum(pname)
++                 << ", " << value << ")");
+   gl_api_->glProgramParameteriFn(program, pname, value);
+ }
+ 
+ void LogGLApi::glProgramUniform1fFn(GLuint program,
+                                     GLint location,
+                                     GLfloat v0) {
+-  GL_SERVICE_LOG("glProgramUniform1f" << "(" << program << ", " << location
+-                                      << ", " << v0 << ")");
++  GL_SERVICE_LOG("glProgramUniform1f"
++                 << "(" << program << ", " << location << ", " << v0 << ")");
+   gl_api_->glProgramUniform1fFn(program, location, v0);
+ }
+ 
+ void LogGLApi::glProgramUniform1fvFn(GLuint program,
+                                      GLint location,
+@@ -12932,12 +13048,12 @@ void LogGLApi::glProgramUniform1fvFn(GLuint program,
+                  << static_cast<const void*>(value) << ")");
+   gl_api_->glProgramUniform1fvFn(program, location, count, value);
+ }
+ 
+ void LogGLApi::glProgramUniform1iFn(GLuint program, GLint location, GLint v0) {
+-  GL_SERVICE_LOG("glProgramUniform1i" << "(" << program << ", " << location
+-                                      << ", " << v0 << ")");
++  GL_SERVICE_LOG("glProgramUniform1i"
++                 << "(" << program << ", " << location << ", " << v0 << ")");
+   gl_api_->glProgramUniform1iFn(program, location, v0);
+ }
+ 
+ void LogGLApi::glProgramUniform1ivFn(GLuint program,
+                                      GLint location,
+@@ -12950,12 +13066,12 @@ void LogGLApi::glProgramUniform1ivFn(GLuint program,
+ }
+ 
+ void LogGLApi::glProgramUniform1uiFn(GLuint program,
+                                      GLint location,
+                                      GLuint v0) {
+-  GL_SERVICE_LOG("glProgramUniform1ui" << "(" << program << ", " << location
+-                                       << ", " << v0 << ")");
++  GL_SERVICE_LOG("glProgramUniform1ui"
++                 << "(" << program << ", " << location << ", " << v0 << ")");
+   gl_api_->glProgramUniform1uiFn(program, location, v0);
+ }
+ 
+ void LogGLApi::glProgramUniform1uivFn(GLuint program,
+                                       GLint location,
+@@ -12969,12 +13085,13 @@ void LogGLApi::glProgramUniform1uivFn(GLuint program,
+ 
+ void LogGLApi::glProgramUniform2fFn(GLuint program,
+                                     GLint location,
+                                     GLfloat v0,
+                                     GLfloat v1) {
+-  GL_SERVICE_LOG("glProgramUniform2f" << "(" << program << ", " << location
+-                                      << ", " << v0 << ", " << v1 << ")");
++  GL_SERVICE_LOG("glProgramUniform2f"
++                 << "(" << program << ", " << location << ", " << v0 << ", "
++                 << v1 << ")");
+   gl_api_->glProgramUniform2fFn(program, location, v0, v1);
+ }
+ 
+ void LogGLApi::glProgramUniform2fvFn(GLuint program,
+                                      GLint location,
+@@ -12988,12 +13105,13 @@ void LogGLApi::glProgramUniform2fvFn(GLuint program,
+ 
+ void LogGLApi::glProgramUniform2iFn(GLuint program,
+                                     GLint location,
+                                     GLint v0,
+                                     GLint v1) {
+-  GL_SERVICE_LOG("glProgramUniform2i" << "(" << program << ", " << location
+-                                      << ", " << v0 << ", " << v1 << ")");
++  GL_SERVICE_LOG("glProgramUniform2i"
++                 << "(" << program << ", " << location << ", " << v0 << ", "
++                 << v1 << ")");
+   gl_api_->glProgramUniform2iFn(program, location, v0, v1);
+ }
+ 
+ void LogGLApi::glProgramUniform2ivFn(GLuint program,
+                                      GLint location,
+@@ -13007,12 +13125,13 @@ void LogGLApi::glProgramUniform2ivFn(GLuint program,
+ 
+ void LogGLApi::glProgramUniform2uiFn(GLuint program,
+                                      GLint location,
+                                      GLuint v0,
+                                      GLuint v1) {
+-  GL_SERVICE_LOG("glProgramUniform2ui" << "(" << program << ", " << location
+-                                       << ", " << v0 << ", " << v1 << ")");
++  GL_SERVICE_LOG("glProgramUniform2ui"
++                 << "(" << program << ", " << location << ", " << v0 << ", "
++                 << v1 << ")");
+   gl_api_->glProgramUniform2uiFn(program, location, v0, v1);
+ }
+ 
+ void LogGLApi::glProgramUniform2uivFn(GLuint program,
+                                       GLint location,
+@@ -13027,13 +13146,13 @@ void LogGLApi::glProgramUniform2uivFn(GLuint program,
+ void LogGLApi::glProgramUniform3fFn(GLuint program,
+                                     GLint location,
+                                     GLfloat v0,
+                                     GLfloat v1,
+                                     GLfloat v2) {
+-  GL_SERVICE_LOG("glProgramUniform3f" << "(" << program << ", " << location
+-                                      << ", " << v0 << ", " << v1 << ", " << v2
+-                                      << ")");
++  GL_SERVICE_LOG("glProgramUniform3f"
++                 << "(" << program << ", " << location << ", " << v0 << ", "
++                 << v1 << ", " << v2 << ")");
+   gl_api_->glProgramUniform3fFn(program, location, v0, v1, v2);
+ }
+ 
+ void LogGLApi::glProgramUniform3fvFn(GLuint program,
+                                      GLint location,
+@@ -13048,13 +13167,13 @@ void LogGLApi::glProgramUniform3fvFn(GLuint program,
+ void LogGLApi::glProgramUniform3iFn(GLuint program,
+                                     GLint location,
+                                     GLint v0,
+                                     GLint v1,
+                                     GLint v2) {
+-  GL_SERVICE_LOG("glProgramUniform3i" << "(" << program << ", " << location
+-                                      << ", " << v0 << ", " << v1 << ", " << v2
+-                                      << ")");
++  GL_SERVICE_LOG("glProgramUniform3i"
++                 << "(" << program << ", " << location << ", " << v0 << ", "
++                 << v1 << ", " << v2 << ")");
+   gl_api_->glProgramUniform3iFn(program, location, v0, v1, v2);
+ }
+ 
+ void LogGLApi::glProgramUniform3ivFn(GLuint program,
+                                      GLint location,
+@@ -13069,13 +13188,13 @@ void LogGLApi::glProgramUniform3ivFn(GLuint program,
+ void LogGLApi::glProgramUniform3uiFn(GLuint program,
+                                      GLint location,
+                                      GLuint v0,
+                                      GLuint v1,
+                                      GLuint v2) {
+-  GL_SERVICE_LOG("glProgramUniform3ui" << "(" << program << ", " << location
+-                                       << ", " << v0 << ", " << v1 << ", " << v2
+-                                       << ")");
++  GL_SERVICE_LOG("glProgramUniform3ui"
++                 << "(" << program << ", " << location << ", " << v0 << ", "
++                 << v1 << ", " << v2 << ")");
+   gl_api_->glProgramUniform3uiFn(program, location, v0, v1, v2);
+ }
+ 
+ void LogGLApi::glProgramUniform3uivFn(GLuint program,
+                                       GLint location,
+@@ -13091,13 +13210,13 @@ void LogGLApi::glProgramUniform4fFn(GLuint program,
+                                     GLint location,
+                                     GLfloat v0,
+                                     GLfloat v1,
+                                     GLfloat v2,
+                                     GLfloat v3) {
+-  GL_SERVICE_LOG("glProgramUniform4f" << "(" << program << ", " << location
+-                                      << ", " << v0 << ", " << v1 << ", " << v2
+-                                      << ", " << v3 << ")");
++  GL_SERVICE_LOG("glProgramUniform4f"
++                 << "(" << program << ", " << location << ", " << v0 << ", "
++                 << v1 << ", " << v2 << ", " << v3 << ")");
+   gl_api_->glProgramUniform4fFn(program, location, v0, v1, v2, v3);
+ }
+ 
+ void LogGLApi::glProgramUniform4fvFn(GLuint program,
+                                      GLint location,
+@@ -13113,13 +13232,13 @@ void LogGLApi::glProgramUniform4iFn(GLuint program,
+                                     GLint location,
+                                     GLint v0,
+                                     GLint v1,
+                                     GLint v2,
+                                     GLint v3) {
+-  GL_SERVICE_LOG("glProgramUniform4i" << "(" << program << ", " << location
+-                                      << ", " << v0 << ", " << v1 << ", " << v2
+-                                      << ", " << v3 << ")");
++  GL_SERVICE_LOG("glProgramUniform4i"
++                 << "(" << program << ", " << location << ", " << v0 << ", "
++                 << v1 << ", " << v2 << ", " << v3 << ")");
+   gl_api_->glProgramUniform4iFn(program, location, v0, v1, v2, v3);
+ }
+ 
+ void LogGLApi::glProgramUniform4ivFn(GLuint program,
+                                      GLint location,
+@@ -13135,13 +13254,13 @@ void LogGLApi::glProgramUniform4uiFn(GLuint program,
+                                      GLint location,
+                                      GLuint v0,
+                                      GLuint v1,
+                                      GLuint v2,
+                                      GLuint v3) {
+-  GL_SERVICE_LOG("glProgramUniform4ui" << "(" << program << ", " << location
+-                                       << ", " << v0 << ", " << v1 << ", " << v2
+-                                       << ", " << v3 << ")");
++  GL_SERVICE_LOG("glProgramUniform4ui"
++                 << "(" << program << ", " << location << ", " << v0 << ", "
++                 << v1 << ", " << v2 << ", " << v3 << ")");
+   gl_api_->glProgramUniform4uiFn(program, location, v0, v1, v2, v3);
+ }
+ 
+ void LogGLApi::glProgramUniform4uivFn(GLuint program,
+                                       GLint location,
+@@ -13278,30 +13397,31 @@ void LogGLApi::glProvokingVertexANGLEFn(GLenum provokeMode) {
+ 
+ void LogGLApi::glPushDebugGroupFn(GLenum source,
+                                   GLuint id,
+                                   GLsizei length,
+                                   const char* message) {
+-  GL_SERVICE_LOG("glPushDebugGroup" << "(" << GLEnums::GetStringEnum(source)
+-                                    << ", " << id << ", " << length << ", "
+-                                    << message << ")");
++  GL_SERVICE_LOG("glPushDebugGroup"
++                 << "(" << GLEnums::GetStringEnum(source) << ", " << id << ", "
++                 << length << ", " << message << ")");
+   gl_api_->glPushDebugGroupFn(source, id, length, message);
+ }
+ 
+ void LogGLApi::glPushGroupMarkerEXTFn(GLsizei length, const char* marker) {
+-  GL_SERVICE_LOG("glPushGroupMarkerEXT" << "(" << length << ", " << marker
+-                                        << ")");
++  GL_SERVICE_LOG("glPushGroupMarkerEXT"
++                 << "(" << length << ", " << marker << ")");
+   gl_api_->glPushGroupMarkerEXTFn(length, marker);
+ }
+ 
+ void LogGLApi::glQueryCounterFn(GLuint id, GLenum target) {
+-  GL_SERVICE_LOG("glQueryCounter" << "(" << id << ", "
+-                                  << GLEnums::GetStringEnum(target) << ")");
++  GL_SERVICE_LOG("glQueryCounter"
++                 << "(" << id << ", " << GLEnums::GetStringEnum(target) << ")");
+   gl_api_->glQueryCounterFn(id, target);
+ }
+ 
+ void LogGLApi::glReadBufferFn(GLenum src) {
+-  GL_SERVICE_LOG("glReadBuffer" << "(" << GLEnums::GetStringEnum(src) << ")");
++  GL_SERVICE_LOG("glReadBuffer"
++                 << "(" << GLEnums::GetStringEnum(src) << ")");
+   gl_api_->glReadBufferFn(src);
+ }
+ 
+ void LogGLApi::glReadnPixelsRobustANGLEFn(GLint x,
+                                           GLint y,
+@@ -13431,36 +13553,41 @@ void LogGLApi::glRenderbufferStorageMultisampleEXTFn(GLenum target,
+   gl_api_->glRenderbufferStorageMultisampleEXTFn(target, samples,
+                                                  internalformat, width, height);
+ }
+ 
+ void LogGLApi::glRequestExtensionANGLEFn(const char* name) {
+-  GL_SERVICE_LOG("glRequestExtensionANGLE" << "(" << name << ")");
++  GL_SERVICE_LOG("glRequestExtensionANGLE"
++                 << "(" << name << ")");
+   gl_api_->glRequestExtensionANGLEFn(name);
+ }
+ 
+ void LogGLApi::glResumeTransformFeedbackFn(void) {
+-  GL_SERVICE_LOG("glResumeTransformFeedback" << "(" << ")");
++  GL_SERVICE_LOG("glResumeTransformFeedback"
++                 << "("
++                 << ")");
+   gl_api_->glResumeTransformFeedbackFn();
+ }
+ 
+ void LogGLApi::glSampleCoverageFn(GLclampf value, GLboolean invert) {
+-  GL_SERVICE_LOG("glSampleCoverage" << "(" << value << ", "
+-                                    << GLEnums::GetStringBool(invert) << ")");
++  GL_SERVICE_LOG("glSampleCoverage"
++                 << "(" << value << ", " << GLEnums::GetStringBool(invert)
++                 << ")");
+   gl_api_->glSampleCoverageFn(value, invert);
+ }
+ 
+ void LogGLApi::glSampleMaskiFn(GLuint maskNumber, GLbitfield mask) {
+-  GL_SERVICE_LOG("glSampleMaski" << "(" << maskNumber << ", " << mask << ")");
++  GL_SERVICE_LOG("glSampleMaski"
++                 << "(" << maskNumber << ", " << mask << ")");
+   gl_api_->glSampleMaskiFn(maskNumber, mask);
+ }
+ 
+ void LogGLApi::glSamplerParameterfFn(GLuint sampler,
+                                      GLenum pname,
+                                      GLfloat param) {
+-  GL_SERVICE_LOG("glSamplerParameterf" << "(" << sampler << ", "
+-                                       << GLEnums::GetStringEnum(pname) << ", "
+-                                       << param << ")");
++  GL_SERVICE_LOG("glSamplerParameterf"
++                 << "(" << sampler << ", " << GLEnums::GetStringEnum(pname)
++                 << ", " << param << ")");
+   gl_api_->glSamplerParameterfFn(sampler, pname, param);
+ }
+ 
+ void LogGLApi::glSamplerParameterfvFn(GLuint sampler,
+                                       GLenum pname,
+@@ -13483,13 +13610,13 @@ void LogGLApi::glSamplerParameterfvRobustANGLEFn(GLuint sampler,
+ }
+ 
+ void LogGLApi::glSamplerParameteriFn(GLuint sampler,
+                                      GLenum pname,
+                                      GLint param) {
+-  GL_SERVICE_LOG("glSamplerParameteri" << "(" << sampler << ", "
+-                                       << GLEnums::GetStringEnum(pname) << ", "
+-                                       << param << ")");
++  GL_SERVICE_LOG("glSamplerParameteri"
++                 << "(" << sampler << ", " << GLEnums::GetStringEnum(pname)
++                 << ", " << param << ")");
+   gl_api_->glSamplerParameteriFn(sampler, pname, param);
+ }
+ 
+ void LogGLApi::glSamplerParameterIivRobustANGLEFn(GLuint sampler,
+                                                   GLenum pname,
+@@ -13586,75 +13716,81 @@ void LogGLApi::glSignalSemaphoreEXTFn(GLuint semaphore,
+ void LogGLApi::glStartTilingQCOMFn(GLuint x,
+                                    GLuint y,
+                                    GLuint width,
+                                    GLuint height,
+                                    GLbitfield preserveMask) {
+-  GL_SERVICE_LOG("glStartTilingQCOM" << "(" << x << ", " << y << ", " << width
+-                                     << ", " << height << ", " << preserveMask
+-                                     << ")");
++  GL_SERVICE_LOG("glStartTilingQCOM"
++                 << "(" << x << ", " << y << ", " << width << ", " << height
++                 << ", " << preserveMask << ")");
+   gl_api_->glStartTilingQCOMFn(x, y, width, height, preserveMask);
+ }
+ 
+ void LogGLApi::glStencilFuncFn(GLenum func, GLint ref, GLuint mask) {
+-  GL_SERVICE_LOG("glStencilFunc" << "(" << GLEnums::GetStringEnum(func) << ", "
+-                                 << ref << ", " << mask << ")");
++  GL_SERVICE_LOG("glStencilFunc"
++                 << "(" << GLEnums::GetStringEnum(func) << ", " << ref << ", "
++                 << mask << ")");
+   gl_api_->glStencilFuncFn(func, ref, mask);
+ }
+ 
+ void LogGLApi::glStencilFuncSeparateFn(GLenum face,
+                                        GLenum func,
+                                        GLint ref,
+                                        GLuint mask) {
+-  GL_SERVICE_LOG("glStencilFuncSeparate" << "(" << GLEnums::GetStringEnum(face)
+-                                         << ", " << GLEnums::GetStringEnum(func)
+-                                         << ", " << ref << ", " << mask << ")");
++  GL_SERVICE_LOG("glStencilFuncSeparate"
++                 << "(" << GLEnums::GetStringEnum(face) << ", "
++                 << GLEnums::GetStringEnum(func) << ", " << ref << ", " << mask
++                 << ")");
+   gl_api_->glStencilFuncSeparateFn(face, func, ref, mask);
+ }
+ 
+ void LogGLApi::glStencilMaskFn(GLuint mask) {
+-  GL_SERVICE_LOG("glStencilMask" << "(" << mask << ")");
++  GL_SERVICE_LOG("glStencilMask"
++                 << "(" << mask << ")");
+   gl_api_->glStencilMaskFn(mask);
+ }
+ 
+ void LogGLApi::glStencilMaskSeparateFn(GLenum face, GLuint mask) {
+-  GL_SERVICE_LOG("glStencilMaskSeparate" << "(" << GLEnums::GetStringEnum(face)
+-                                         << ", " << mask << ")");
++  GL_SERVICE_LOG("glStencilMaskSeparate"
++                 << "(" << GLEnums::GetStringEnum(face) << ", " << mask << ")");
+   gl_api_->glStencilMaskSeparateFn(face, mask);
+ }
+ 
+ void LogGLApi::glStencilOpFn(GLenum fail, GLenum zfail, GLenum zpass) {
+-  GL_SERVICE_LOG("glStencilOp" << "(" << GLEnums::GetStringEnum(fail) << ", "
+-                               << GLEnums::GetStringEnum(zfail) << ", "
+-                               << GLEnums::GetStringEnum(zpass) << ")");
++  GL_SERVICE_LOG("glStencilOp"
++                 << "(" << GLEnums::GetStringEnum(fail) << ", "
++                 << GLEnums::GetStringEnum(zfail) << ", "
++                 << GLEnums::GetStringEnum(zpass) << ")");
+   gl_api_->glStencilOpFn(fail, zfail, zpass);
+ }
+ 
+ void LogGLApi::glStencilOpSeparateFn(GLenum face,
+                                      GLenum fail,
+                                      GLenum zfail,
+                                      GLenum zpass) {
+-  GL_SERVICE_LOG("glStencilOpSeparate" << "(" << GLEnums::GetStringEnum(face)
+-                                       << ", " << GLEnums::GetStringEnum(fail)
+-                                       << ", " << GLEnums::GetStringEnum(zfail)
+-                                       << ", " << GLEnums::GetStringEnum(zpass)
+-                                       << ")");
++  GL_SERVICE_LOG("glStencilOpSeparate"
++                 << "(" << GLEnums::GetStringEnum(face) << ", "
++                 << GLEnums::GetStringEnum(fail) << ", "
++                 << GLEnums::GetStringEnum(zfail) << ", "
++                 << GLEnums::GetStringEnum(zpass) << ")");
+   gl_api_->glStencilOpSeparateFn(face, fail, zfail, zpass);
+ }
+ 
+ GLboolean LogGLApi::glTestFenceNVFn(GLuint fence) {
+-  GL_SERVICE_LOG("glTestFenceNV" << "(" << fence << ")");
++  GL_SERVICE_LOG("glTestFenceNV"
++                 << "(" << fence << ")");
+   GLboolean result = gl_api_->glTestFenceNVFn(fence);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ void LogGLApi::glTexBufferFn(GLenum target,
+                              GLenum internalformat,
+                              GLuint buffer) {
+-  GL_SERVICE_LOG("glTexBuffer" << "(" << GLEnums::GetStringEnum(target) << ", "
+-                               << GLEnums::GetStringEnum(internalformat) << ", "
+-                               << buffer << ")");
++  GL_SERVICE_LOG("glTexBuffer"
++                 << "(" << GLEnums::GetStringEnum(target) << ", "
++                 << GLEnums::GetStringEnum(internalformat) << ", " << buffer
++                 << ")");
+   gl_api_->glTexBufferFn(target, internalformat, buffer);
+ }
+ 
+ void LogGLApi::glTexBufferRangeFn(GLenum target,
+                                   GLenum internalformat,
+@@ -13796,13 +13932,13 @@ void LogGLApi::glTexParameterfvRobustANGLEFn(GLenum target,
+                  << static_cast<const void*>(params) << ")");
+   gl_api_->glTexParameterfvRobustANGLEFn(target, pname, bufSize, params);
+ }
+ 
+ void LogGLApi::glTexParameteriFn(GLenum target, GLenum pname, GLint param) {
+-  GL_SERVICE_LOG("glTexParameteri" << "(" << GLEnums::GetStringEnum(target)
+-                                   << ", " << GLEnums::GetStringEnum(pname)
+-                                   << ", " << param << ")");
++  GL_SERVICE_LOG("glTexParameteri"
++                 << "(" << GLEnums::GetStringEnum(target) << ", "
++                 << GLEnums::GetStringEnum(pname) << ", " << param << ")");
+   gl_api_->glTexParameteriFn(target, pname, param);
+ }
+ 
+ void LogGLApi::glTexParameterIivRobustANGLEFn(GLenum target,
+                                               GLenum pname,
+@@ -14020,168 +14156,189 @@ void LogGLApi::glTransformFeedbackVaryingsFn(GLuint program,
+                  << GLEnums::GetStringEnum(bufferMode) << ")");
+   gl_api_->glTransformFeedbackVaryingsFn(program, count, varyings, bufferMode);
+ }
+ 
+ void LogGLApi::glUniform1fFn(GLint location, GLfloat x) {
+-  GL_SERVICE_LOG("glUniform1f" << "(" << location << ", " << x << ")");
++  GL_SERVICE_LOG("glUniform1f"
++                 << "(" << location << ", " << x << ")");
+   gl_api_->glUniform1fFn(location, x);
+ }
+ 
+ void LogGLApi::glUniform1fvFn(GLint location, GLsizei count, const GLfloat* v) {
+-  GL_SERVICE_LOG("glUniform1fv" << "(" << location << ", " << count << ", "
+-                                << static_cast<const void*>(v) << ")");
++  GL_SERVICE_LOG("glUniform1fv"
++                 << "(" << location << ", " << count << ", "
++                 << static_cast<const void*>(v) << ")");
+   gl_api_->glUniform1fvFn(location, count, v);
+ }
+ 
+ void LogGLApi::glUniform1iFn(GLint location, GLint x) {
+-  GL_SERVICE_LOG("glUniform1i" << "(" << location << ", " << x << ")");
++  GL_SERVICE_LOG("glUniform1i"
++                 << "(" << location << ", " << x << ")");
+   gl_api_->glUniform1iFn(location, x);
+ }
+ 
+ void LogGLApi::glUniform1ivFn(GLint location, GLsizei count, const GLint* v) {
+-  GL_SERVICE_LOG("glUniform1iv" << "(" << location << ", " << count << ", "
+-                                << static_cast<const void*>(v) << ")");
++  GL_SERVICE_LOG("glUniform1iv"
++                 << "(" << location << ", " << count << ", "
++                 << static_cast<const void*>(v) << ")");
+   gl_api_->glUniform1ivFn(location, count, v);
+ }
+ 
+ void LogGLApi::glUniform1uiFn(GLint location, GLuint v0) {
+-  GL_SERVICE_LOG("glUniform1ui" << "(" << location << ", " << v0 << ")");
++  GL_SERVICE_LOG("glUniform1ui"
++                 << "(" << location << ", " << v0 << ")");
+   gl_api_->glUniform1uiFn(location, v0);
+ }
+ 
+ void LogGLApi::glUniform1uivFn(GLint location, GLsizei count, const GLuint* v) {
+-  GL_SERVICE_LOG("glUniform1uiv" << "(" << location << ", " << count << ", "
+-                                 << static_cast<const void*>(v) << ")");
++  GL_SERVICE_LOG("glUniform1uiv"
++                 << "(" << location << ", " << count << ", "
++                 << static_cast<const void*>(v) << ")");
+   gl_api_->glUniform1uivFn(location, count, v);
+ }
+ 
+ void LogGLApi::glUniform2fFn(GLint location, GLfloat x, GLfloat y) {
+-  GL_SERVICE_LOG("glUniform2f" << "(" << location << ", " << x << ", " << y
+-                               << ")");
++  GL_SERVICE_LOG("glUniform2f"
++                 << "(" << location << ", " << x << ", " << y << ")");
+   gl_api_->glUniform2fFn(location, x, y);
+ }
+ 
+ void LogGLApi::glUniform2fvFn(GLint location, GLsizei count, const GLfloat* v) {
+-  GL_SERVICE_LOG("glUniform2fv" << "(" << location << ", " << count << ", "
+-                                << static_cast<const void*>(v) << ")");
++  GL_SERVICE_LOG("glUniform2fv"
++                 << "(" << location << ", " << count << ", "
++                 << static_cast<const void*>(v) << ")");
+   gl_api_->glUniform2fvFn(location, count, v);
+ }
+ 
+ void LogGLApi::glUniform2iFn(GLint location, GLint x, GLint y) {
+-  GL_SERVICE_LOG("glUniform2i" << "(" << location << ", " << x << ", " << y
+-                               << ")");
++  GL_SERVICE_LOG("glUniform2i"
++                 << "(" << location << ", " << x << ", " << y << ")");
+   gl_api_->glUniform2iFn(location, x, y);
+ }
+ 
+ void LogGLApi::glUniform2ivFn(GLint location, GLsizei count, const GLint* v) {
+-  GL_SERVICE_LOG("glUniform2iv" << "(" << location << ", " << count << ", "
+-                                << static_cast<const void*>(v) << ")");
++  GL_SERVICE_LOG("glUniform2iv"
++                 << "(" << location << ", " << count << ", "
++                 << static_cast<const void*>(v) << ")");
+   gl_api_->glUniform2ivFn(location, count, v);
+ }
+ 
+ void LogGLApi::glUniform2uiFn(GLint location, GLuint v0, GLuint v1) {
+-  GL_SERVICE_LOG("glUniform2ui" << "(" << location << ", " << v0 << ", " << v1
+-                                << ")");
++  GL_SERVICE_LOG("glUniform2ui"
++                 << "(" << location << ", " << v0 << ", " << v1 << ")");
+   gl_api_->glUniform2uiFn(location, v0, v1);
+ }
+ 
+ void LogGLApi::glUniform2uivFn(GLint location, GLsizei count, const GLuint* v) {
+-  GL_SERVICE_LOG("glUniform2uiv" << "(" << location << ", " << count << ", "
+-                                 << static_cast<const void*>(v) << ")");
++  GL_SERVICE_LOG("glUniform2uiv"
++                 << "(" << location << ", " << count << ", "
++                 << static_cast<const void*>(v) << ")");
+   gl_api_->glUniform2uivFn(location, count, v);
+ }
+ 
+ void LogGLApi::glUniform3fFn(GLint location, GLfloat x, GLfloat y, GLfloat z) {
+-  GL_SERVICE_LOG("glUniform3f" << "(" << location << ", " << x << ", " << y
+-                               << ", " << z << ")");
++  GL_SERVICE_LOG("glUniform3f"
++                 << "(" << location << ", " << x << ", " << y << ", " << z
++                 << ")");
+   gl_api_->glUniform3fFn(location, x, y, z);
+ }
+ 
+ void LogGLApi::glUniform3fvFn(GLint location, GLsizei count, const GLfloat* v) {
+-  GL_SERVICE_LOG("glUniform3fv" << "(" << location << ", " << count << ", "
+-                                << static_cast<const void*>(v) << ")");
++  GL_SERVICE_LOG("glUniform3fv"
++                 << "(" << location << ", " << count << ", "
++                 << static_cast<const void*>(v) << ")");
+   gl_api_->glUniform3fvFn(location, count, v);
+ }
+ 
+ void LogGLApi::glUniform3iFn(GLint location, GLint x, GLint y, GLint z) {
+-  GL_SERVICE_LOG("glUniform3i" << "(" << location << ", " << x << ", " << y
+-                               << ", " << z << ")");
++  GL_SERVICE_LOG("glUniform3i"
++                 << "(" << location << ", " << x << ", " << y << ", " << z
++                 << ")");
+   gl_api_->glUniform3iFn(location, x, y, z);
+ }
+ 
+ void LogGLApi::glUniform3ivFn(GLint location, GLsizei count, const GLint* v) {
+-  GL_SERVICE_LOG("glUniform3iv" << "(" << location << ", " << count << ", "
+-                                << static_cast<const void*>(v) << ")");
++  GL_SERVICE_LOG("glUniform3iv"
++                 << "(" << location << ", " << count << ", "
++                 << static_cast<const void*>(v) << ")");
+   gl_api_->glUniform3ivFn(location, count, v);
+ }
+ 
+ void LogGLApi::glUniform3uiFn(GLint location, GLuint v0, GLuint v1, GLuint v2) {
+-  GL_SERVICE_LOG("glUniform3ui" << "(" << location << ", " << v0 << ", " << v1
+-                                << ", " << v2 << ")");
++  GL_SERVICE_LOG("glUniform3ui"
++                 << "(" << location << ", " << v0 << ", " << v1 << ", " << v2
++                 << ")");
+   gl_api_->glUniform3uiFn(location, v0, v1, v2);
+ }
+ 
+ void LogGLApi::glUniform3uivFn(GLint location, GLsizei count, const GLuint* v) {
+-  GL_SERVICE_LOG("glUniform3uiv" << "(" << location << ", " << count << ", "
+-                                 << static_cast<const void*>(v) << ")");
++  GL_SERVICE_LOG("glUniform3uiv"
++                 << "(" << location << ", " << count << ", "
++                 << static_cast<const void*>(v) << ")");
+   gl_api_->glUniform3uivFn(location, count, v);
+ }
+ 
+ void LogGLApi::glUniform4fFn(GLint location,
+                              GLfloat x,
+                              GLfloat y,
+                              GLfloat z,
+                              GLfloat w) {
+-  GL_SERVICE_LOG("glUniform4f" << "(" << location << ", " << x << ", " << y
+-                               << ", " << z << ", " << w << ")");
++  GL_SERVICE_LOG("glUniform4f"
++                 << "(" << location << ", " << x << ", " << y << ", " << z
++                 << ", " << w << ")");
+   gl_api_->glUniform4fFn(location, x, y, z, w);
+ }
+ 
+ void LogGLApi::glUniform4fvFn(GLint location, GLsizei count, const GLfloat* v) {
+-  GL_SERVICE_LOG("glUniform4fv" << "(" << location << ", " << count << ", "
+-                                << static_cast<const void*>(v) << ")");
++  GL_SERVICE_LOG("glUniform4fv"
++                 << "(" << location << ", " << count << ", "
++                 << static_cast<const void*>(v) << ")");
+   gl_api_->glUniform4fvFn(location, count, v);
+ }
+ 
+ void LogGLApi::glUniform4iFn(GLint location,
+                              GLint x,
+                              GLint y,
+                              GLint z,
+                              GLint w) {
+-  GL_SERVICE_LOG("glUniform4i" << "(" << location << ", " << x << ", " << y
+-                               << ", " << z << ", " << w << ")");
++  GL_SERVICE_LOG("glUniform4i"
++                 << "(" << location << ", " << x << ", " << y << ", " << z
++                 << ", " << w << ")");
+   gl_api_->glUniform4iFn(location, x, y, z, w);
+ }
+ 
+ void LogGLApi::glUniform4ivFn(GLint location, GLsizei count, const GLint* v) {
+-  GL_SERVICE_LOG("glUniform4iv" << "(" << location << ", " << count << ", "
+-                                << static_cast<const void*>(v) << ")");
++  GL_SERVICE_LOG("glUniform4iv"
++                 << "(" << location << ", " << count << ", "
++                 << static_cast<const void*>(v) << ")");
+   gl_api_->glUniform4ivFn(location, count, v);
+ }
+ 
+ void LogGLApi::glUniform4uiFn(GLint location,
+                               GLuint v0,
+                               GLuint v1,
+                               GLuint v2,
+                               GLuint v3) {
+-  GL_SERVICE_LOG("glUniform4ui" << "(" << location << ", " << v0 << ", " << v1
+-                                << ", " << v2 << ", " << v3 << ")");
++  GL_SERVICE_LOG("glUniform4ui"
++                 << "(" << location << ", " << v0 << ", " << v1 << ", " << v2
++                 << ", " << v3 << ")");
+   gl_api_->glUniform4uiFn(location, v0, v1, v2, v3);
+ }
+ 
+ void LogGLApi::glUniform4uivFn(GLint location, GLsizei count, const GLuint* v) {
+-  GL_SERVICE_LOG("glUniform4uiv" << "(" << location << ", " << count << ", "
+-                                 << static_cast<const void*>(v) << ")");
++  GL_SERVICE_LOG("glUniform4uiv"
++                 << "(" << location << ", " << count << ", "
++                 << static_cast<const void*>(v) << ")");
+   gl_api_->glUniform4uivFn(location, count, v);
+ }
+ 
+ void LogGLApi::glUniformBlockBindingFn(GLuint program,
+                                        GLuint uniformBlockIndex,
+                                        GLuint uniformBlockBinding) {
+-  GL_SERVICE_LOG("glUniformBlockBinding" << "(" << program << ", "
+-                                         << uniformBlockIndex << ", "
+-                                         << uniformBlockBinding << ")");
++  GL_SERVICE_LOG("glUniformBlockBinding"
++                 << "(" << program << ", " << uniformBlockIndex << ", "
++                 << uniformBlockBinding << ")");
+   gl_api_->glUniformBlockBindingFn(program, uniformBlockIndex,
+                                    uniformBlockBinding);
+ }
+ 
+ void LogGLApi::glUniformMatrix2fvFn(GLint location,
+@@ -14282,108 +14439,114 @@ void LogGLApi::glUniformMatrix4x3fvFn(GLint location,
+                  << static_cast<const void*>(value) << ")");
+   gl_api_->glUniformMatrix4x3fvFn(location, count, transpose, value);
+ }
+ 
+ GLboolean LogGLApi::glUnmapBufferFn(GLenum target) {
+-  GL_SERVICE_LOG("glUnmapBuffer" << "(" << GLEnums::GetStringEnum(target)
+-                                 << ")");
++  GL_SERVICE_LOG("glUnmapBuffer"
++                 << "(" << GLEnums::GetStringEnum(target) << ")");
+   GLboolean result = gl_api_->glUnmapBufferFn(target);
+   GL_SERVICE_LOG("GL_RESULT: " << result);
+   return result;
+ }
+ 
+ void LogGLApi::glUseProgramFn(GLuint program) {
+-  GL_SERVICE_LOG("glUseProgram" << "(" << program << ")");
++  GL_SERVICE_LOG("glUseProgram"
++                 << "(" << program << ")");
+   gl_api_->glUseProgramFn(program);
+ }
+ 
+ void LogGLApi::glUseProgramStagesFn(GLuint pipeline,
+                                     GLbitfield stages,
+                                     GLuint program) {
+-  GL_SERVICE_LOG("glUseProgramStages" << "(" << pipeline << ", " << stages
+-                                      << ", " << program << ")");
++  GL_SERVICE_LOG("glUseProgramStages"
++                 << "(" << pipeline << ", " << stages << ", " << program
++                 << ")");
+   gl_api_->glUseProgramStagesFn(pipeline, stages, program);
+ }
+ 
+ void LogGLApi::glValidateProgramFn(GLuint program) {
+-  GL_SERVICE_LOG("glValidateProgram" << "(" << program << ")");
++  GL_SERVICE_LOG("glValidateProgram"
++                 << "(" << program << ")");
+   gl_api_->glValidateProgramFn(program);
+ }
+ 
+ void LogGLApi::glValidateProgramPipelineFn(GLuint pipeline) {
+-  GL_SERVICE_LOG("glValidateProgramPipeline" << "(" << pipeline << ")");
++  GL_SERVICE_LOG("glValidateProgramPipeline"
++                 << "(" << pipeline << ")");
+   gl_api_->glValidateProgramPipelineFn(pipeline);
+ }
+ 
+ void LogGLApi::glVertexAttrib1fFn(GLuint indx, GLfloat x) {
+-  GL_SERVICE_LOG("glVertexAttrib1f" << "(" << indx << ", " << x << ")");
++  GL_SERVICE_LOG("glVertexAttrib1f"
++                 << "(" << indx << ", " << x << ")");
+   gl_api_->glVertexAttrib1fFn(indx, x);
+ }
+ 
+ void LogGLApi::glVertexAttrib1fvFn(GLuint indx, const GLfloat* values) {
+-  GL_SERVICE_LOG("glVertexAttrib1fv" << "(" << indx << ", "
+-                                     << static_cast<const void*>(values)
+-                                     << ")");
++  GL_SERVICE_LOG("glVertexAttrib1fv"
++                 << "(" << indx << ", " << static_cast<const void*>(values)
++                 << ")");
+   gl_api_->glVertexAttrib1fvFn(indx, values);
+ }
+ 
+ void LogGLApi::glVertexAttrib2fFn(GLuint indx, GLfloat x, GLfloat y) {
+-  GL_SERVICE_LOG("glVertexAttrib2f" << "(" << indx << ", " << x << ", " << y
+-                                    << ")");
++  GL_SERVICE_LOG("glVertexAttrib2f"
++                 << "(" << indx << ", " << x << ", " << y << ")");
+   gl_api_->glVertexAttrib2fFn(indx, x, y);
+ }
+ 
+ void LogGLApi::glVertexAttrib2fvFn(GLuint indx, const GLfloat* values) {
+-  GL_SERVICE_LOG("glVertexAttrib2fv" << "(" << indx << ", "
+-                                     << static_cast<const void*>(values)
+-                                     << ")");
++  GL_SERVICE_LOG("glVertexAttrib2fv"
++                 << "(" << indx << ", " << static_cast<const void*>(values)
++                 << ")");
+   gl_api_->glVertexAttrib2fvFn(indx, values);
+ }
+ 
+ void LogGLApi::glVertexAttrib3fFn(GLuint indx,
+                                   GLfloat x,
+                                   GLfloat y,
+                                   GLfloat z) {
+-  GL_SERVICE_LOG("glVertexAttrib3f" << "(" << indx << ", " << x << ", " << y
+-                                    << ", " << z << ")");
++  GL_SERVICE_LOG("glVertexAttrib3f"
++                 << "(" << indx << ", " << x << ", " << y << ", " << z << ")");
+   gl_api_->glVertexAttrib3fFn(indx, x, y, z);
+ }
+ 
+ void LogGLApi::glVertexAttrib3fvFn(GLuint indx, const GLfloat* values) {
+-  GL_SERVICE_LOG("glVertexAttrib3fv" << "(" << indx << ", "
+-                                     << static_cast<const void*>(values)
+-                                     << ")");
++  GL_SERVICE_LOG("glVertexAttrib3fv"
++                 << "(" << indx << ", " << static_cast<const void*>(values)
++                 << ")");
+   gl_api_->glVertexAttrib3fvFn(indx, values);
+ }
+ 
+ void LogGLApi::glVertexAttrib4fFn(GLuint indx,
+                                   GLfloat x,
+                                   GLfloat y,
+                                   GLfloat z,
+                                   GLfloat w) {
+-  GL_SERVICE_LOG("glVertexAttrib4f" << "(" << indx << ", " << x << ", " << y
+-                                    << ", " << z << ", " << w << ")");
++  GL_SERVICE_LOG("glVertexAttrib4f"
++                 << "(" << indx << ", " << x << ", " << y << ", " << z << ", "
++                 << w << ")");
+   gl_api_->glVertexAttrib4fFn(indx, x, y, z, w);
+ }
+ 
+ void LogGLApi::glVertexAttrib4fvFn(GLuint indx, const GLfloat* values) {
+-  GL_SERVICE_LOG("glVertexAttrib4fv" << "(" << indx << ", "
+-                                     << static_cast<const void*>(values)
+-                                     << ")");
++  GL_SERVICE_LOG("glVertexAttrib4fv"
++                 << "(" << indx << ", " << static_cast<const void*>(values)
++                 << ")");
+   gl_api_->glVertexAttrib4fvFn(indx, values);
+ }
+ 
+ void LogGLApi::glVertexAttribBindingFn(GLuint attribindex,
+                                        GLuint bindingindex) {
+-  GL_SERVICE_LOG("glVertexAttribBinding" << "(" << attribindex << ", "
+-                                         << bindingindex << ")");
++  GL_SERVICE_LOG("glVertexAttribBinding"
++                 << "(" << attribindex << ", " << bindingindex << ")");
+   gl_api_->glVertexAttribBindingFn(attribindex, bindingindex);
+ }
+ 
+ void LogGLApi::glVertexAttribDivisorANGLEFn(GLuint index, GLuint divisor) {
+-  GL_SERVICE_LOG("glVertexAttribDivisorANGLE" << "(" << index << ", " << divisor
+-                                              << ")");
++  GL_SERVICE_LOG("glVertexAttribDivisorANGLE"
++                 << "(" << index << ", " << divisor << ")");
+   gl_api_->glVertexAttribDivisorANGLEFn(index, divisor);
+ }
+ 
+ void LogGLApi::glVertexAttribFormatFn(GLuint attribindex,
+                                       GLint size,
+@@ -14402,46 +14565,49 @@ void LogGLApi::glVertexAttribFormatFn(GLuint attribindex,
+ void LogGLApi::glVertexAttribI4iFn(GLuint indx,
+                                    GLint x,
+                                    GLint y,
+                                    GLint z,
+                                    GLint w) {
+-  GL_SERVICE_LOG("glVertexAttribI4i" << "(" << indx << ", " << x << ", " << y
+-                                     << ", " << z << ", " << w << ")");
++  GL_SERVICE_LOG("glVertexAttribI4i"
++                 << "(" << indx << ", " << x << ", " << y << ", " << z << ", "
++                 << w << ")");
+   gl_api_->glVertexAttribI4iFn(indx, x, y, z, w);
+ }
+ 
+ void LogGLApi::glVertexAttribI4ivFn(GLuint indx, const GLint* values) {
+-  GL_SERVICE_LOG("glVertexAttribI4iv" << "(" << indx << ", "
+-                                      << static_cast<const void*>(values)
+-                                      << ")");
++  GL_SERVICE_LOG("glVertexAttribI4iv"
++                 << "(" << indx << ", " << static_cast<const void*>(values)
++                 << ")");
+   gl_api_->glVertexAttribI4ivFn(indx, values);
+ }
+ 
+ void LogGLApi::glVertexAttribI4uiFn(GLuint indx,
+                                     GLuint x,
+                                     GLuint y,
+                                     GLuint z,
+                                     GLuint w) {
+-  GL_SERVICE_LOG("glVertexAttribI4ui" << "(" << indx << ", " << x << ", " << y
+-                                      << ", " << z << ", " << w << ")");
++  GL_SERVICE_LOG("glVertexAttribI4ui"
++                 << "(" << indx << ", " << x << ", " << y << ", " << z << ", "
++                 << w << ")");
+   gl_api_->glVertexAttribI4uiFn(indx, x, y, z, w);
+ }
+ 
+ void LogGLApi::glVertexAttribI4uivFn(GLuint indx, const GLuint* values) {
+-  GL_SERVICE_LOG("glVertexAttribI4uiv" << "(" << indx << ", "
+-                                       << static_cast<const void*>(values)
+-                                       << ")");
++  GL_SERVICE_LOG("glVertexAttribI4uiv"
++                 << "(" << indx << ", " << static_cast<const void*>(values)
++                 << ")");
+   gl_api_->glVertexAttribI4uivFn(indx, values);
+ }
+ 
+ void LogGLApi::glVertexAttribIFormatFn(GLuint attribindex,
+                                        GLint size,
+                                        GLenum type,
+                                        GLuint relativeoffset) {
+-  GL_SERVICE_LOG("glVertexAttribIFormat" << "(" << attribindex << ", " << size
+-                                         << ", " << GLEnums::GetStringEnum(type)
+-                                         << ", " << relativeoffset << ")");
++  GL_SERVICE_LOG("glVertexAttribIFormat"
++                 << "(" << attribindex << ", " << size << ", "
++                 << GLEnums::GetStringEnum(type) << ", " << relativeoffset
++                 << ")");
+   gl_api_->glVertexAttribIFormatFn(attribindex, size, type, relativeoffset);
+ }
+ 
+ void LogGLApi::glVertexAttribIPointerFn(GLuint indx,
+                                         GLint size,
+@@ -14468,18 +14634,19 @@ void LogGLApi::glVertexAttribPointerFn(GLuint indx,
+                  << static_cast<const void*>(ptr) << ")");
+   gl_api_->glVertexAttribPointerFn(indx, size, type, normalized, stride, ptr);
+ }
+ 
+ void LogGLApi::glVertexBindingDivisorFn(GLuint bindingindex, GLuint divisor) {
+-  GL_SERVICE_LOG("glVertexBindingDivisor" << "(" << bindingindex << ", "
+-                                          << divisor << ")");
++  GL_SERVICE_LOG("glVertexBindingDivisor"
++                 << "(" << bindingindex << ", " << divisor << ")");
+   gl_api_->glVertexBindingDivisorFn(bindingindex, divisor);
+ }
+ 
+ void LogGLApi::glViewportFn(GLint x, GLint y, GLsizei width, GLsizei height) {
+-  GL_SERVICE_LOG("glViewport" << "(" << x << ", " << y << ", " << width << ", "
+-                              << height << ")");
++  GL_SERVICE_LOG("glViewport"
++                 << "(" << x << ", " << y << ", " << width << ", " << height
++                 << ")");
+   gl_api_->glViewportFn(x, y, width, height);
+ }
+ 
+ void LogGLApi::glWaitSemaphoreEXTFn(GLuint semaphore,
+                                     GLuint numBufferBarriers,

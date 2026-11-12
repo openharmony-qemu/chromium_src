@@ -182,8 +182,10 @@ bool UsePassthroughCommandDecoder() {
   return true;
 #else
 
-  if (!base::FeatureList::IsEnabled(kDefaultPassthroughCommandDecoder))
+  if (!base::FeatureList::IsEnabled(kDefaultPassthroughCommandDecoder)) {
+    LOG(INFO) << "hmz1106, kDefaultPassthroughCommandDecoder, DISABLE";
     return false;
+  }
 
 #if BUILDFLAG(IS_ANDROID)
   // Check block list against build info.

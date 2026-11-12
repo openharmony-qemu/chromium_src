@@ -8,7 +8,11 @@
 #include <map>
 
 #include "base/component_export.h"
+#if !BUILDFLAG(IS_ARKWEB)
 #include "ui/gfx/x/xproto.h"
+#else
+#include "ui/gfx/x/generated_protos/xproto.h"
+#endif
 
 namespace x11 {
 

@@ -1,0 +1,33 @@
+diff a/ui/events/gestures/blink/web_gesture_curve_impl.cc b/ui/events/gestures/blink/web_gesture_curve_impl.cc	(rejected hunks)
+@@ -3,20 +3,31 @@
+ // found in the LICENSE file.
+ 
+ #include "ui/events/gestures/blink/web_gesture_curve_impl.h"
+ 
+ #include <limits.h>
++#include <list>
++#include <tuple>
++#include <sstream>
+ 
+ #include <utility>
+ 
+ #include "base/metrics/histogram_macros.h"
+ #include "build/build_config.h"
+ #include "ui/base/ui_base_features.h"
+ #include "ui/events/gestures/fixed_velocity_curve.h"
+ #include "ui/events/gestures/fling_curve.h"
+ #include "ui/events/gestures/physics_based_fling_curve.h"
+ #include "ui/events/mobile_scroller.h"
++#include "arkweb/chromium_ext/ui/gl/events/native_scroller_ohos.h"
++#include "arkweb/build/features/features.h"
++
++#if BUILDFLAG(ARKWEB_FLING)
++#include "base/system/sys_info.h"
++#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
++#include "arkweb/chromium_ext/ui/events/gestures/blink/native_scroller_ohos_device_source_util.h"
++#endif  // BUILDFLAG(ARKWEB_FLING)
+ 
+ using blink::WebGestureCurve;
+ 
+ namespace ui {
+ namespace {

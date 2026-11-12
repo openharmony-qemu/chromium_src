@@ -1,0 +1,35 @@
+diff a/ui/accessibility/platform/ax_platform_node_id.h b/ui/accessibility/platform/ax_platform_node_id.h	(rejected hunks)
+@@ -7,10 +7,11 @@
+ 
+ #include <stdint.h>
+ 
+ #include "base/types/pass_key.h"
+ #include "base/types/strong_alias.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace ui {
+ 
+ class AXNodeIdDelegate;
+ 
+@@ -44,13 +45,21 @@ class AXPlatformNodeId
+       : base::StrongAlias<class AXPlatformNodeIdTag, int32_t>::StrongAlias(v) {}
+ 
+   // Allow implicit conversion to the platform's node id type.
+   constexpr operator const int32_t&() const { return value_; }
+ 
++#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
++  int32_t Get() const { return id_; }
++#endif
++
+  private:
+   friend class AXUniqueId;
+ 
++#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
++  int32_t id_ = 0;
++#endif
++
+   constexpr explicit AXPlatformNodeId(int32_t v)
+       : base::StrongAlias<class AXPlatformNodeIdTag, int32_t>::StrongAlias(v) {}
+ };
+ 
+ }  // namespace ui

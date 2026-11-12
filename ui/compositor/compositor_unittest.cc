@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/compositor/compositor.h"
-
 #include <stdint.h>
 
 #include "base/memory/raw_ptr.h"
@@ -103,16 +101,24 @@ class CompositorTestWithMockedTime : public CompositorTest {
   base::test::ScopedPowerMonitorTestSource test_power_monitor_source_;
 
  private:
+ #if BUILDFLAG(ARKWEB_UNITTESTS)
+  base::test::TaskEnvironment task_environment_{};
+#else
   base::test::TaskEnvironment task_environment_{
       base::test::TaskEnvironment::MainThreadType::UI,
       base::test::TaskEnvironment::TimeSource::MOCK_TIME};
+#endif
 };
 
 // For tests that run on a real MessageLoop with real time.
 class CompositorTestWithMessageLoop : public CompositorTest {
  public:
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  CompositorTestWithMessageLoop() : task_environment_() {}
+#else
   CompositorTestWithMessageLoop()
       : task_environment_(base::test::TaskEnvironment::MainThreadType::UI) {}
+#endif
   ~CompositorTestWithMessageLoop() override = default;
 
  protected:
@@ -124,7 +130,11 @@ class CompositorTestWithMessageLoop : public CompositorTest {
   base::SequencedTaskRunner* task_runner() { return task_runner_.get(); }
 
  private:
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  base::test::TaskEnvironment task_environment_{};
+#else
   base::test::TaskEnvironment task_environment_;
+#endif
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
 };
 
@@ -617,6 +627,57 @@ TEST_F(CompositorTestWithMessageLoop, CompositorVisibilityChanges) {
 
   compositor()->RemoveObserver(&observer);
 }
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+TEST_F(CompositorTestWithMessageLoop, SetCurrentFrameSinkId1) {
+  testing::internal::CaptureStderr();
+  const viz::FrameSinkId id;
+  auto frame_sink = cc::FakeLayerTreeFrameSink::Create3d();
+  mojo::AssociatedRemote<viz::mojom::DisplayPrivate> display_private;
+  mojo::PendingAssociatedReceiver<viz::mojom::DisplayPrivate> remote =
+      display_private.BindNewEndpointAndPassDedicatedReceiver();
+  compositor()->SetLayerTreeFrameSink(std::move(frame_sink),
+                                      std::move(display_private));
+  compositor()->compositor_utils_->SetCurrentFrameSinkId(id);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(
+      log_output.find("Compositor::SetCurrentDisplay display_private error"),
+      std::string::npos);
+}
+
+TEST_F(CompositorTestWithMessageLoop, SetCurrentFrameSinkId2) {
+  testing::internal::CaptureStderr();
+  const viz::FrameSinkId id;
+  compositor()->compositor_utils_->SetCurrentFrameSinkId(id);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(
+      log_output.find("Compositor::SetCurrentDisplay display_private error"),
+      std::string::npos);
+}
+
+TEST_F(CompositorTestWithMessageLoop, SetShouldFrameSubmissionBeforeDraw1) {
+  compositor()->compositor_utils_->SetShouldFrameSubmissionBeforeDraw(true);
+  EXPECT_FALSE(compositor()->display_private_);
+}
+
+TEST_F(CompositorTestWithMessageLoop, SetDrawRect1) {
+  auto frame_sink = cc::FakeLayerTreeFrameSink::Create3d();
+  mojo::AssociatedRemote<viz::mojom::DisplayPrivate> display_private;
+  mojo::PendingAssociatedReceiver<viz::mojom::DisplayPrivate> remote =
+      display_private.BindNewEndpointAndPassDedicatedReceiver();
+  compositor()->SetLayerTreeFrameSink(std::move(frame_sink),
+                                      std::move(display_private));
+  gfx::Rect rect = gfx::Rect(0, 0, 256, 256);
+  compositor()->compositor_utils_->SetDrawRect(rect);
+  EXPECT_TRUE(compositor()->display_private_);
+}
+
+TEST_F(CompositorTestWithMessageLoop, SetDrawRect2) {
+  gfx::Rect rect = gfx::Rect(0, 0, 256, 256);
+  compositor()->compositor_utils_->SetDrawRect(rect);
+  EXPECT_FALSE(compositor()->display_private_);
+}
+#endif  // ARKWEB_UNITTESTS
 
 class CompositorPropertyTreeDelegateTest
     : public CompositorTestWithMessageLoop {

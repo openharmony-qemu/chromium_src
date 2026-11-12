@@ -254,6 +254,12 @@ EGLBoolean eglReleaseThreadFn(void) override;
 void eglSetBlobCacheFuncsANDROIDFn(EGLDisplay dpy,
                                    EGLSetBlobFuncANDROID set,
                                    EGLGetBlobFuncANDROID get) override;
+#if BUILDFLAG(IS_ARKWEB)
+EGLBoolean eglSetDamageRegionKHRFn(EGLDisplay dpy,
+                                   EGLSurface surface,
+                                   EGLint* rects,
+                                   EGLint n_rects) override;
+#endif
 void eglSetValidationEnabledANGLEFn(EGLBoolean validationState) override;
 EGLBoolean eglStreamAttribKHRFn(EGLDisplay dpy,
                                 EGLStreamKHR stream,

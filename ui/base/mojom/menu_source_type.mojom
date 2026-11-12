@@ -26,4 +26,5 @@ enum MenuSourceType {
   kStylus = 8,
   kAdjustSelection = 9,
   kAdjustSelectionReset = 10,
+  kSelectAndCopy = 11
 };

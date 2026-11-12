@@ -1,0 +1,43 @@
+diff a/ui/events/gesture_detection/gesture_detector.cc b/ui/events/gesture_detection/gesture_detector.cc	(rejected hunks)
+@@ -511,12 +584,30 @@ void GestureDetector::OnShowPressTimeout() {
+ void GestureDetector::OnShortPressTimeout() {
+   ActivateShortPressGesture(*current_down_event_);
+ }
+ 
+ void GestureDetector::OnLongPressTimeout() {
++#if BUILDFLAG(ARKWEB_DRAG_DROP)
++  AsGestureDetectorExt()->ActivateLongPressKeepDragTimeout(*current_down_event_);
++#else
+   ActivateLongPressGesture(*current_down_event_);
++#endif
++}
++
++#if BUILDFLAG(ARKWEB_DRAG_DROP)
++void GestureDetector::OnDragLongPressTimeout() {
++  LOG(INFO) << "DragDrop GestureDetector::OnDragLongPressTimeout";
++  listener_->OnDragLongPress(*current_down_event_);
++}
++#endif
++
++#if BUILDFLAG(ARKWEB_AI)
++void GestureDetector::OnCreateOverlayTimeout() {
++  LOG(INFO) << "GestureDetector::OnCreateOverlayTimeout";
++  listener_->OnCreateOverlay(*current_down_event_);
+ }
++#endif
+ 
+ void GestureDetector::OnTapTimeout() {
+   if (!double_tap_listener_)
+     return;
+   if (!still_down_) {
+@@ -681,5 +772,10 @@ void GestureDetector::OnUnconfirmedTapConvertedToTap() {
+ bool GestureDetector::HasPendingTapTimeoutForTesting() const {
+   return timeout_handler_->HasTimeout(TAP);
+ }
+ 
+ }  // namespace ui
++
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/ui/events/gesture_detection/gesture_detector_ext.cc"
++#include "arkweb/chromium_ext/ui/events/gesture_detection/gesture_detector_utils.cc"
++#endif

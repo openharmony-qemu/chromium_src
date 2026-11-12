@@ -5,6 +5,8 @@
 import("//build/config/locales.gni")
 import("//tools/grit/grit_rule.gni")
 
+import("//arkweb/build/features/features.gni")
+
 # Meta target that includes all ui strings. Most
 # targets want them all. You can depend on the individually if you need to.
 group("strings") {
@@ -19,19 +21,46 @@ group("strings") {
 grit_strings("ax_strings") {
   source = "ax_strings.grd"
   outputs = [ "grit/ax_strings.h" ]
+
+#ifdef arkweb_i18n
+  if (arkweb_i18n) {
+    locales = all_chrome_locales + extra_locales
+  }
+
+#endif
 }
 
 grit_strings("auto_image_annotation_strings") {
   source = "auto_image_annotation_strings.grd"
   outputs = [ "grit/auto_image_annotation_strings.h" ]
+#ifdef arkweb_i18n
+  if (arkweb_i18n) {
+    locales = all_chrome_locales + extra_locales
+  }
+
+#endif
 }
 
 grit_strings("ui_strings") {
   source = "ui_strings.grd"
   outputs = [ "grit/ui_strings.h" ]
+
+#ifdef arkweb_i18n
+  if (arkweb_i18n) {
+    locales = all_chrome_locales + extra_locales
+  }
+
+#endif
 }
 
 grit_strings("app_locale_settings") {
   source = "app_locale_settings.grd"
   outputs = [ "grit/app_locale_settings.h" ]
+
+#ifdef arkweb_i18n
+  if (arkweb_i18n) {
+    locales = all_chrome_locales + extra_locales
+  }
+
+#endif
 }

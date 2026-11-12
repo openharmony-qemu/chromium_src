@@ -83,6 +83,12 @@ void FilteredGestureProvider::SendSynthesizedEndEvents() {
   gesture_provider_->SendSynthesizedEndEvents();
 }
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+void FilteredGestureProvider::ResetDetection(bool is_lost_focus) {
+  gesture_provider_->AsGestureProviderExt()->ResetDetection(is_lost_focus);
+}
+#endif
+
 void FilteredGestureProvider::ResetDetection() {
   gesture_provider_->ResetDetection();
 }

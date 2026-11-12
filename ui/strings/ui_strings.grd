@@ -115,6 +115,10 @@ need to be translated for each locale.-->
     <!-- Pseudolocales -->
     <output filename="ui_strings_ar-XB.pak" type="data_package" lang="ar-XB" />
     <output filename="ui_strings_en-XA.pak" type="data_package" lang="en-XA" />
+    <!-- <if expr="pp_ifdef('arkweb_i18n')"> -->
+      <output filename="ui_strings_bo-CN.pak" type="data_package" lang="bo-CN" />
+      <output filename="ui_strings_ug.pak" type="data_package" lang="ug" />
+    <!-- </if>  -->
   </outputs>
   <translations>
     <file path="translations/ui_strings_af.xtb" lang="af" />
@@ -199,6 +203,10 @@ need to be translated for each locale.-->
     <file path="translations/ui_strings_zh-HK.xtb" lang="zh-HK" />
     <file path="translations/ui_strings_zh-TW.xtb" lang="zh-TW" />
     <file path="translations/ui_strings_zu.xtb" lang="zu" />
+    <!-- <if expr="pp_ifdef('arkweb_i18n')"> -->
+       <file path="translations/ui_strings_bo-CN.xtb" lang="bo-CN" />
+      <file path="translations/ui_strings_ug.xtb" lang="ug" />
+    <!-- </if> -->
   </translations>
   <release seq="1">
     <messages fallback_to_english="true">

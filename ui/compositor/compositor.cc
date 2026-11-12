@@ -109,6 +109,7 @@ Compositor::Compositor(const viz::FrameSinkId& frame_sink_id,
       frame_sink_id_, this, viz::ReportFirstSurfaceActivation::kYes);
   host_frame_sink_manager->SetFrameSinkDebugLabel(frame_sink_id_, "Compositor");
   root_cc_layer_ = cc::Layer::Create();
+  compositor_utils_ = std::make_unique<CompositorUtils>(this);
 
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
 
@@ -1136,5 +1137,21 @@ void Compositor::CheckPropertyTrees() const {
   }
 #endif
 }
+
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+void Compositor::RestoreRenderFit() {
+  if (delegate_) {
+    delegate_->RestoreRenderFit();
+  }
+}
+#endif // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_ROTATE_RESIZE)
+void Compositor::ModifyRenderFit(int32_t fitType) {
+  if (delegate_) {
+    delegate_->ModifyRenderFit(fitType);
+  }
+}
+#endif // ARKWEB_ROTATE_RESIZE
 
 }  // namespace ui

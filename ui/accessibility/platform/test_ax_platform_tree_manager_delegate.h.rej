@@ -1,0 +1,15 @@
+diff a/ui/accessibility/platform/test_ax_platform_tree_manager_delegate.h b/ui/accessibility/platform/test_ax_platform_tree_manager_delegate.h	(rejected hunks)
+@@ -39,10 +39,13 @@ class TestAXPlatformTreeManagerDelegate : public AXPlatformTreeManagerDelegate {
+   bool CanFireAccessibilityEvents() const override;
+   bool AccessibilityIsRootFrame() const override;
+   bool ShouldSuppressAXLoadComplete() override;
+   content::WebContentsAccessibility*
+     AccessibilityGetWebContentsAccessibility() override;
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  content::RenderFrameHostImpl* AccessibilityRenderFrameHost() override;
++#endif
+   bool AccessibilityIsWebContentSource() override;
+ 
+   bool is_root_frame_;
+   gfx::AcceleratedWidget accelerated_widget_;
+   raw_ptr<content::WebContentsAccessibility> web_contents_accessibility_ =

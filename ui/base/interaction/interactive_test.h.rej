@@ -1,0 +1,33 @@
+diff a/ui/base/interaction/interactive_test.h b/ui/base/interaction/interactive_test.h	(rejected hunks)
+@@ -1107,11 +1107,15 @@ InteractionSequence::StepBuilder InteractiveTestApi::ObserveState(
+ template <typename T, typename C>
+ InteractionSequence::StepBuilder InteractiveTestApi::PollState(
+     StateIdentifier<PollingStateObserver<T>> id,
+     C&& callback,
+     base::TimeDelta polling_interval) {
++#if defined(__clang__) && (__clang_major__ < 17)
++  using Cb = typename PollingStateObserver<T>::PollCallback;
++#else
+   using Cb = PollingStateObserver<T>::PollCallback;
++#endif
+   auto step = CheckElement(
+       internal::kInteractiveTestPivotElementId,
+       base::BindOnce(
+           [](InteractiveTestApi* api, ElementIdentifier id, Cb callback,
+              base::TimeDelta polling_interval, TrackedElement* el) {
+@@ -1131,11 +1135,15 @@ template <typename T, typename C>
+ InteractionSequence::StepBuilder InteractiveTestApi::PollElement(
+     StateIdentifier<PollingElementStateObserver<T>> id,
+     ui::ElementIdentifier element_identifier,
+     C&& callback,
+     base::TimeDelta polling_interval) {
++#if defined(__clang__) && (__clang_major__ < 17)
++  using Cb = typename PollingElementStateObserver<T>::PollElementCallback;
++#else
+   using Cb = PollingElementStateObserver<T>::PollElementCallback;
++#endif
+   auto step = WithElement(
+       internal::kInteractiveTestPivotElementId,
+       base::BindOnce(
+           [](InteractiveTestApi* api, ElementIdentifier id,
+              ElementIdentifier element_id, Cb callback,

@@ -6,10 +6,17 @@
 #define UI_NATIVE_THEME_NATIVE_THEME_AURA_H_
 
 #include "base/component_export.h"
+#include "base/memory/raw_ptr.h"
 #include "base/no_destructor.h"
 #include "ui/native_theme/native_theme_base.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/ui/native_theme/native_theme_aura_utils.h"
+#endif
 
 namespace ui {
+#if BUILDFLAG(IS_ARKWEB)
+  class NativeThemeAuraUtils;
+#endif
 
 // Aura implementation of native theme support.
 class COMPONENT_EXPORT(NATIVE_THEME) NativeThemeAura : public NativeThemeBase {
@@ -24,6 +31,9 @@ class COMPONENT_EXPORT(NATIVE_THEME) NativeThemeAura : public NativeThemeBase {
   gfx::Rect GetNinePatchAperture(Part part) const override;
 
  protected:
+#if BUILDFLAG(IS_ARKWEB)
+  friend class NativeThemeAuraUtils;
+#endif
   explicit NativeThemeAura(bool use_overlay_scrollbar = false);
   explicit NativeThemeAura(SystemTheme system_theme);
   ~NativeThemeAura() override;
@@ -56,7 +66,19 @@ class COMPONENT_EXPORT(NATIVE_THEME) NativeThemeAura : public NativeThemeBase {
       Part part,
       State state,
       const gfx::Rect& rect,
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+      const ScrollbarThumbExtraParams& extra_params,
+      SkColor scrollbar_color) const override;
+#else
       const ScrollbarThumbExtraParams& extra_params) const override;
+#endif
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  gfx::Size GetPartSize(Part part,
+                        State state,
+                        const ExtraParams& extra) const override;
+#endif
+
   void PaintScrollbarTrack(cc::PaintCanvas* canvas,
                            const ColorProvider* color_provider,
                            Part part,
@@ -74,6 +96,10 @@ class COMPONENT_EXPORT(NATIVE_THEME) NativeThemeAura : public NativeThemeBase {
 
  private:
   friend class base::NoDestructor<NativeThemeAura>;
+
+#if BUILDFLAG(IS_ARKWEB)
+  raw_ptr<NativeThemeAuraUtils> native_theme_aura_utils_;
+#endif
 };
 
 }  // namespace ui

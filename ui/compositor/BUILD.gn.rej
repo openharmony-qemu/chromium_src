@@ -1,0 +1,38 @@
+diff a/ui/compositor/BUILD.gn b/ui/compositor/BUILD.gn	(rejected hunks)
+@@ -119,10 +121,14 @@ component("compositor") {
+   if (is_win && use_aura) {
+     # TODO(sky): before we make this real need to remove
+     # IDR_BITMAP_BRUSH_IMAGE.
+     deps += [ "//ui/resources" ]
+   }
++
++  if (is_arkweb) {
++    sources += arkweb_ui_compositor_sources
++  }
+ }
+ 
+ static_library("test_support") {
+   testonly = true
+   sources = [
+@@ -240,10 +249,21 @@ test("compositor_unittests") {
+     "presentation_time_recorder_unittest.cc",
+     "run_all_unittests.cc",
+     "transform_animation_curve_adapter_unittest.cc",
+   ]
+ 
++  if (arkweb_unittests) {
++    include_dirs = ohos_src_includes
++    sources += arkweb_ui_compositor_test_sources
++    sources += [
++      "//arkweb/chromium_ext/content/renderer/host_proxy.cc",
++      "//arkweb/chromium_ext/content/renderer/host_proxy.h",
++      "//arkweb/chromium_ext/content/renderer/render_remote_proxy_ohos.cc",
++      "//arkweb/chromium_ext/content/renderer/render_remote_proxy_ohos.h",
++    ]
++  }
++
+   data = [ "//ui/gfx/test/data/compositor/" ]
+ 
+   deps = [
+     ":compositor",
+     ":test_support",

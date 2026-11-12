@@ -1,0 +1,64 @@
+diff a/ui/compositor/layer.h b/ui/compositor/layer.h	(rejected hunks)
+@@ -10,10 +10,15 @@
+ #include <array>
+ #include <memory>
+ #include <string>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
++#include "base/auto_reset.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/safety_checks.h"
+ #include "base/memory/scoped_refptr.h"
+ #include "base/memory/weak_ptr.h"
+ #include "base/observer_list.h"
+@@ -27,11 +32,10 @@
+ #include "third_party/skia/include/core/SkColor.h"
+ #include "ui/compositor/layer_animation_delegate.h"
+ #include "ui/compositor/layer_type.h"
+ #include "ui/gfx/geometry/rect.h"
+ #include "ui/gfx/image/image_skia.h"
+-
+ namespace cc {
+ class Layer;
+ class MirrorLayer;
+ class NinePatchLayer;
+ class SolidColorLayer;
+@@ -610,10 +614,14 @@ class COMPOSITOR_EXPORT Layer : public LayerAnimationDelegate,
+   // If |surface_layer_| exists, update the size. The updated size is necessary
+   // for proper scaling if the embedder is resized and the |surface_layer_| is
+   // set to stretch to fill bounds.
+   void SetSurfaceSize(gfx::Size surface_size_in_dip);
+ 
++#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
++  void SetTopControlsHeight(float height) { top_controls_height_ = height; }
++#endif
++
+   base::WeakPtr<Layer> AsWeakPtr();
+ 
+   bool ContainsMirrorForTest(Layer* mirror) const;
+ 
+   void SetCompositorForTesting(Compositor* compositor) {
+@@ -885,10 +893,19 @@ class COMPOSITOR_EXPORT Layer : public LayerAnimationDelegate,
+   // the value > 0, means we need to perform trilinear filtering on the layer.
+   // If the value == 0, means we should not perform trilinear filtering on the
+   // layer.
+   unsigned trilinear_filtering_request_;
+ 
++  // TODO(crbug.com/40786876): temporary while tracking down crash.
++  bool in_send_damaged_rects_ = false;
++  bool sending_damaged_rects_for_descendants_ = false;
++  bool no_mutation_ = false;  // CHECK on Add/SetMakeLayer if true.
++
++#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
++  float top_controls_height_ = 0;
++#endif
++
+   base::WeakPtrFactory<Layer> weak_ptr_factory_{this};
+ };
+ 
+ }  // namespace ui
+ 

@@ -79,6 +79,22 @@ class CONTENT_EXPORT MediaInterfaceProxy final
           client_extension,
       mojo::PendingReceiver<media::mojom::Renderer> receiver) final;
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+  void CreateMediaPlayerRenderer(
+      mojo::PendingRemote<media::mojom::MediaPlayerRendererClientExtension>
+          client_extension_remote,
+      mojo::PendingReceiver<media::mojom::Renderer> receiver,
+      int player_id,
+      const media::MediaPlayerUrlParams& params) final;
+#endif  // BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  void CreateCustomMediaPlayerRenderer(
+      mojo::PendingRemote<media::mojom::CustomMediaPlayerRendererClientExtension>
+          client_extension_remote,
+      mojo::PendingReceiver<media::mojom::Renderer> receiver,
+      int player_id,
+      const media::MediaPlayerUrlParams& params) final;
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 #if BUILDFLAG(IS_WIN)
   void CreateMediaFoundationRenderer(
       mojo::PendingRemote<media::mojom::MediaLog> media_log_remote,

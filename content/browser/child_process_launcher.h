@@ -183,6 +183,10 @@ struct RenderProcessPriority {
   ChildProcessImportance importance;
 #endif
 
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  base::TimeTicks background_time;
+#endif
+
 #if !BUILDFLAG(IS_ANDROID)
   // If this is set then the built-in process priority calculation system is
   // ignored, and an externally computed process priority is used.
@@ -336,6 +340,9 @@ class CONTENT_EXPORT ChildProcessLauncher
 
   // Dumps the stack of the child process without crashing it.
   void DumpProcessStack();
+#endif
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  base::TimeTicks GetProcessStartTime() const { return process_start_time_; }
 #endif
  private:
   friend class internal::ChildProcessLauncherHelper;

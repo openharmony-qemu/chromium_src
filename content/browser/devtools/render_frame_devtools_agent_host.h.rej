@@ -1,0 +1,16 @@
+diff a/content/browser/devtools/render_frame_devtools_agent_host.h b/content/browser/devtools/render_frame_devtools_agent_host.h	(rejected hunks)
+@@ -135,11 +135,13 @@ class CONTENT_EXPORT RenderFrameDevToolsAgentHost
+ 
+  private:
+   friend class DevToolsAgentHost;
+   friend class RenderFrameDevToolsAgentHostFencedFrameBrowserTest;
+ 
+-  static void UpdateRawHeadersAccess(RenderFrameHostImpl* rfh);
++  static void UpdateRawHeadersAccess(
++      RenderFrameHostImpl* rfh,
++      RenderFrameDevToolsAgentHost* force_include_host);
+ 
+   RenderFrameDevToolsAgentHost(FrameTreeNode*, RenderFrameHostImpl*);
+   ~RenderFrameDevToolsAgentHost() override;
+ 
+   // DevToolsAgentHostImpl overrides.

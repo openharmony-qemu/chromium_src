@@ -1,0 +1,15 @@
+diff a/content/browser/file_system_access/file_system_chooser.cc b/content/browser/file_system_access/file_system_chooser.cc	(rejected hunks)
+@@ -47,10 +47,13 @@ constexpr int kMaxDescriptionLength = 64;
+ // The maximum number of unicode code points the extension of a file is
+ // allowed to be. Any longer extensions will be stripped. This value should be
+ // kept in sync with the extension length checks in the renderer.
+ constexpr int kMaxExtensionLength = 16;
+ 
++#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
++using AcceptFileType = ui::SelectFileDialog::FileTypeInfo::AcceptFileType;
++#endif
+ // Similar to base::FilePath::FinalExtension, but operates with the
+ // understanding that the StringType passed in is an extension, not a path.
+ // Returns the last extension without a leading ".".
+ base::FilePath::StringType GetLastExtension(
+     const base::FilePath::StringType& extension) {

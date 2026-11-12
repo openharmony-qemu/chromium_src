@@ -1,0 +1,40 @@
+diff a/content/browser/file_system_access/file_system_access_file_modification_host_impl.cc b/content/browser/file_system_access/file_system_access_file_modification_host_impl.cc	(rejected hunks)
+@@ -6,10 +6,12 @@
+ 
+ #include "base/memory/weak_ptr.h"
+ #include "base/task/sequenced_task_runner.h"
+ #include "base/time/time.h"
+ #include "base/types/pass_key.h"
++#include "content/public/browser/browser_task_traits.h"
++#include "content/public/browser/browser_thread.h"
+ #include "mojo/public/cpp/bindings/pending_receiver.h"
+ #include "storage/browser/file_system/file_observers.h"
+ #include "storage/browser/file_system/task_runner_bound_observer_list.h"
+ #include "storage/browser/quota/quota_client_type.h"
+ #include "storage/browser/quota/quota_manager_proxy.h"
+@@ -121,12 +123,21 @@ void FileSystemAccessFileModificationHostImpl::DidGetUsageAndQuota(
+ }
+ 
+ void FileSystemAccessFileModificationHostImpl::OnContentsModified() {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+ 
+-  if (const storage::ChangeObserverList* change_observers =
+-          manager_->context()->GetChangeObservers(url_.type())) {
+-    change_observers->Notify(&storage::FileChangeObserver::OnModifyFile, url_);
+-  }
++  scoped_refptr<storage::FileSystemContext> context =
++      base::WrapRefCounted(manager_->context());
++  GetIOThreadTaskRunner({})->PostTask(
++      FROM_HERE, base::BindOnce(
++                     [](scoped_refptr<storage::FileSystemContext> context,
++                        storage::FileSystemURL url) {
++                       if (const storage::ChangeObserverList* change_observers =
++                               context->GetChangeObservers(url.type())) {
++                         change_observers->Notify(
++                             &storage::FileChangeObserver::OnModifyFile, url);
++                       }
++                     },
++                     std::move(context), url_));
+ }
+ 
+ }  // namespace content

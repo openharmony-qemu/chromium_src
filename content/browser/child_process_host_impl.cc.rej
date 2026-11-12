@@ -1,0 +1,21 @@
+diff a/content/browser/child_process_host_impl.cc b/content/browser/child_process_host_impl.cc	(rejected hunks)
+@@ -251,10 +251,19 @@ void ChildProcessHostImpl::Ping(PingCallback callback) {
+ void ChildProcessHostImpl::BindHostReceiver(
+     mojo::GenericPendingReceiver receiver) {
+   delegate_->BindHostReceiver(std::move(receiver));
+ }
+ 
++#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
++void ChildProcessHostImpl::ReportKeyThread(
++  int32_t status, int32_t process_id, int32_t thread_id, int32_t role) {}
++
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++void ChildProcessHostImpl::ReportHisyevent(int64_t block_time, const std::string& mode) {}
++#endif
++#endif
++
+ void ChildProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
+   // Propagate the pseudonymization salt to all the child processes.
+   //
+   // Doing this as the first step in this method helps to minimize scenarios
+   // where child process runs code that depends on the pseudonymization salt

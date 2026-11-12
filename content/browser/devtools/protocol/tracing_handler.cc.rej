@@ -1,0 +1,33 @@
+diff a/content/browser/devtools/protocol/tracing_handler.cc b/content/browser/devtools/protocol/tracing_handler.cc	(rejected hunks)
+@@ -174,19 +174,15 @@ class DevToolsStreamEndpoint : public TracingController::TraceDataEndpoint {
+ 
+   scoped_refptr<DevToolsStreamFile> stream_;
+   base::WeakPtr<TracingHandler> tracing_handler_;
+ };
+ 
+-std::string GetProcessHostHex(RenderProcessHost* host) {
+-  return base::StringPrintf("0x%" PRIxPTR, reinterpret_cast<uintptr_t>(host));
+-}
+ 
+ void SendProcessReadyInBrowserEvent(const base::UnguessableToken& frame_token,
+                                     RenderProcessHost* host) {
+   auto data = std::make_unique<base::trace_event::TracedValue>();
+   data->SetString("frame", frame_token.ToString());
+-  data->SetString("processPseudoId", GetProcessHostHex(host));
+   data->SetInteger("processId", static_cast<int>(host->GetProcess().Pid()));
+   TRACE_EVENT_INSTANT1(TRACE_DISABLED_BY_DEFAULT("devtools.timeline"),
+                        "ProcessReadyInBrowser", TRACE_EVENT_SCOPE_THREAD,
+                        "data", std::move(data));
+ }
+@@ -213,11 +209,10 @@ void FillFrameData(base::trace_event::TracedValue* data,
+         "parent", frame_host->GetParent()->GetDevToolsFrameToken().ToString());
+   }
+   RenderProcessHost* process_host = frame_host->GetProcess();
+   const base::Process& process_handle = process_host->GetProcess();
+   if (!process_handle.IsValid()) {
+-    data->SetString("processPseudoId", GetProcessHostHex(process_host));
+     frame_host->GetProcess()->PostTaskWhenProcessIsReady(
+         base::BindOnce(&SendProcessReadyInBrowserEvent,
+                        frame_host->devtools_frame_token(), process_host));
+   } else {
+     // Cast process id to int to be compatible with tracing.

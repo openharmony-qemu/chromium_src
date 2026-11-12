@@ -1,0 +1,17 @@
+diff a/content/browser/media/audio_output_stream_broker.h b/content/browser/media/audio_output_stream_broker.h	(rejected hunks)
+@@ -78,11 +78,15 @@ class CONTENT_EXPORT AudioOutputStreamBroker final
+ 
+   SEQUENCE_CHECKER(owning_sequence_);
+ 
+   const GlobalRenderFrameHostToken main_frame_token_;
+   std::string output_device_id_;
++#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
++  media::AudioParameters params_;
++#else
+   const media::AudioParameters params_;
++#endif // defined(OHOS_MEDIA_POLICY)
+   const base::UnguessableToken group_id_;
+ 
+   // Set while CreateStream() has been called, but not StreamCreated().
+   base::TimeTicks stream_creation_start_time_;
+ 

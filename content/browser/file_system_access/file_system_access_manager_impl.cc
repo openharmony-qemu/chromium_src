@@ -540,6 +540,17 @@ void DidCheckIfDefaultDirectoryExists(
   }
 }
 
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+const std::unordered_map<blink::mojom::WellKnownDirectory, std::u16string> wellKnownDirectoryConverter = {
+    {blink::mojom::WellKnownDirectory::kDirDesktop, u"desktop"},
+    {blink::mojom::WellKnownDirectory::kDirDocuments, u"documents"},
+    {blink::mojom::WellKnownDirectory::kDirDownloads, u"downloads"},
+    {blink::mojom::WellKnownDirectory::kDirMusic, u"music"},
+    {blink::mojom::WellKnownDirectory::kDirPictures, u"pictures"},
+    {blink::mojom::WellKnownDirectory::kDirVideos, u"videos"},
+};
+#endif
+
 }  // namespace
 
 FileSystemAccessManagerImpl::SharedHandleState::SharedHandleState(

@@ -1,0 +1,60 @@
+diff a/content/browser/media/media_web_contents_observer.cc b/content/browser/media/media_web_contents_observer.cc	(rejected hunks)
+@@ -565,11 +597,18 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+     NotifyAudioStreamMonitorIfNeeded() {
+   PlayerInfo* player_info = GetPlayerInfo();
+   if (!player_info)
+     return;
+ 
+-  bool should_add_client = player_info->IsAudible() && !uses_audio_service_;
++  // Register as an audible client if the player is audible and bypasses the
++  // standard audio service (currently only for `MediaFoundationRenderer`).
++  // This requires explicit browser-side authorization to prevent spoofing.
++  bool should_add_client =
++      player_info->IsAudible() && !uses_audio_service_ &&
++      AudibilityBypassAuthorization::IsAuthorized(
++          RenderFrameHost::FromID(media_player_id_.frame_routing_id));
++
+   auto* audio_stream_monitor =
+       media_web_contents_observer_->web_contents_impl()->audio_stream_monitor();
+ 
+   if (should_add_client && !audio_client_registration_) {
+     audio_client_registration_ =
+@@ -680,10 +719,13 @@ MediaWebContentsObserver::GetMediaPlayerRemote(const MediaPlayerId& player_id) {
+ 
+ void MediaWebContentsObserver::OnMediaPlayerObserverDisconnected(
+     const MediaPlayerId& player_id) {
+   DCHECK(media_player_observer_hosts_.contains(player_id));
+   media_player_observer_hosts_.erase(player_id);
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  web_contents_impl()->AsWebContentsImplExt()->OnVideoDestroyed(player_id);
++#endif  // ARKWEB_VIDEO_ASSISTANT
+ }
+ 
+ device::mojom::WakeLock* MediaWebContentsObserver::GetAudioWakeLock() {
+   // Here is a lazy binding, and will not reconnect after connection error.
+   if (!audio_wake_lock_) {
+@@ -805,6 +851,23 @@ MediaWebContentsObserver::GetWeakPtrForFrame(
+       render_frame_host,
+       std::make_unique<base::WeakPtrFactory<MediaWebContentsObserver>>(this)));
+   return result.first->second->GetWeakPtr();
+ }
+ 
++AudibilityBypassAuthorization::AudibilityBypassAuthorization(
++    RenderFrameHost* rfh)
++    : DocumentUserData<AudibilityBypassAuthorization>(rfh) {}
++
++AudibilityBypassAuthorization::~AudibilityBypassAuthorization() = default;
++
++// static
++bool AudibilityBypassAuthorization::IsAuthorized(RenderFrameHost* rfh) {
++  return rfh && GetForCurrentDocument(rfh) != nullptr;
++}
++
++DOCUMENT_USER_DATA_KEY_IMPL(AudibilityBypassAuthorization);
++
+ }  // namespace content
++
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/content/browser/media/media_web_contents_observer_for_include.cc"
++#endif
+\ No newline at end of file

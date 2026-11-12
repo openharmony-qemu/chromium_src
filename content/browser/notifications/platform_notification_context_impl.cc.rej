@@ -1,0 +1,17 @@
+diff a/content/browser/notifications/platform_notification_context_impl.cc b/content/browser/notifications/platform_notification_context_impl.cc	(rejected hunks)
+@@ -290,11 +294,15 @@ void PlatformNotificationContextImpl::CreateService(
+     const GURL& document_url,
+     const WeakDocumentPtr& weak_document_ptr,
+     RenderProcessHost::NotificationServiceCreatorType creator_type,
+     mojo::PendingReceiver<blink::mojom::NotificationService> receiver) {
+   DCHECK_CURRENTLY_ON(BrowserThread::UI);
++#if BUILDFLAG(ARKWEB_NOTIFICATION)
++  services_.push_back(std::make_unique<BlinkNotificationServiceImplExt>(
++#else
+   services_.push_back(std::make_unique<BlinkNotificationServiceImpl>(
++#endif
+       this, browser_context_, service_worker_context_, render_process_host,
+       storage_key, document_url, weak_document_ptr, creator_type,
+       std::move(receiver)));
+ }
+ 

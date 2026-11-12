@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/strings/utf_string_conversions.h"
@@ -163,20 +165,38 @@ IN_PROC_BROWSER_TEST_F(ReloadCacheControlBrowserTest, NavigateToSame) {
   EXPECT_TRUE(NavigateToURL(shell(), url));
   CheckCacheControl(kExpectedCacheControlForNormalLoad);
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // The second navigation is the same page navigation. This should be handled
+  // as a reload, revalidating the main resource, but following cache protocols
+  // for others.
+#else
   // The second navigation is the same page navigation from address bar. This
   // should be handled as a replacement navigation, with normal load cache
   // protocols. See https://github.com/whatwg/html/issues/10597 for spec
   // discussion.
+#endif
   EXPECT_TRUE(NavigateToURL(shell(), url));
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  CheckCacheControl(kExpectedCacheControlForReload);
+#else
   CheckCacheControl(kExpectedCacheControlForNormalLoad);
+#endif
 
   shell()->ShowDevTools();
   EXPECT_TRUE(NavigateToURL(shell(), url));
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  CheckCacheControl(kExpectedCacheControlForReload);
+#else
   CheckCacheControl(kExpectedCacheControlForNormalLoad);
+#endif
 
   shell()->CloseDevTools();
   EXPECT_TRUE(NavigateToURL(shell(), url));
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  CheckCacheControl(kExpectedCacheControlForReload);
+#else
   CheckCacheControl(kExpectedCacheControlForNormalLoad);
+#endif
 }
 
 // Reloading with ReloadType::NORMAL should respect service workers.

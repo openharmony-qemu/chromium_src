@@ -1,0 +1,41 @@
+diff a/content/browser/file_system_access/file_system_access_watcher_manager_unittest.cc b/content/browser/file_system_access/file_system_access_watcher_manager_unittest.cc	(rejected hunks)
+@@ -307,11 +307,14 @@ class FileSystemAccessWatcherManagerTest : public testing::Test {
+     manager_ = base::MakeRefCounted<FileSystemAccessManagerImpl>(
+         file_system_context_, chrome_blob_context_,
+         /*permission_context=*/nullptr,
+         /*off_the_record=*/false);
+ 
+-    manager_->BindReceiver(kBindingContext,
++    binding_context_ = {kTestStorageKey, kTestUrl,
++                        web_contents_->GetPrimaryMainFrame()->GetGlobalId()};
++
++    manager_->BindReceiver(binding_context_,
+                            manager_remote_.BindNewPipeAndPassReceiver());
+   }
+ 
+   void TearDown() override {
+     storage::ExternalMountPoints::GetSystemInstance()->RevokeFileSystem(
+@@ -453,18 +456,16 @@ class FileSystemAccessWatcherManagerTest : public testing::Test {
+ 
+     CHECK(watcher_manager().HasObservationGroupForTesting(observation_group));
+   }
+ 
+  protected:
+-  const GURL kTestUrl = GURL("http://example.com/foo");
++  const GURL kTestUrl = GURL("https://example.com/foo");
+   const blink::StorageKey kTestStorageKey =
+-      blink::StorageKey::CreateFromStringForTesting("https://example.com/test");
+-  const int kProcessId = 1;
+-  const int kFrameRoutingId = 2;
+-  const GlobalRenderFrameHostId kFrameId{kProcessId, kFrameRoutingId};
+-  const FileSystemAccessManagerImpl::BindingContext kBindingContext = {
+-      kTestStorageKey, kTestUrl, kFrameId};
++      blink::StorageKey::CreateFromStringForTesting(kTestUrl.spec());
++  // An initial value is required but this is overwritten by `SetUp`.
++  FileSystemAccessManagerImpl::BindingContext binding_context_ = {
++      kTestStorageKey, kTestUrl, GlobalRenderFrameHostId()};
+ 
+   BrowserTaskEnvironment task_environment_;
+ 
+   base::ScopedTempDir dir_;
+ 

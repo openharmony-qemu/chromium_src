@@ -1,0 +1,18 @@
+diff a/content/browser/generic_sensor/web_contents_sensor_provider_proxy.h b/content/browser/generic_sensor/web_contents_sensor_provider_proxy.h	(rejected hunks)
+@@ -63,10 +65,16 @@ class CONTENT_EXPORT WebContentsSensorProviderProxy final
+       SensorProviderBinder binder);
+ 
+   void AddObserver(Observer*);
+   void RemoveObserver(Observer*);
+ 
++#if BUILDFLAG(ARKWEB_DEVTOOLS)
++  // Returns true if a virtual sensor override of |type| has been created
++  // for DevTools for this WebContents.
++  bool HasVirtualSensorOverrideForDevTools(device::mojom::SensorType type) const;
++#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
++
+  private:
+   friend class ScopedVirtualSensorForDevTools;
+ 
+   explicit WebContentsSensorProviderProxy(content::WebContents* web_contents);
+ 

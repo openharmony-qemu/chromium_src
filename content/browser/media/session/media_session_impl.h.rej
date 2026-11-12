@@ -1,0 +1,16 @@
+diff a/content/browser/media/session/media_session_impl.h b/content/browser/media/session/media_session_impl.h	(rejected hunks)
+@@ -389,10 +480,14 @@ class MediaSessionImpl : public MediaSession,
+   friend class content::MediaSessionServiceImplBrowserTest;
+   friend class MediaSessionImplTest;
+   friend class MediaSessionImplDurationThrottleTest;
+   friend class MediaInternalsAudioFocusTest;
+   friend class WebAppSystemMediaControlsBrowserTest;
++#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
++  friend class MediaSessionOHOS;
++#endif  // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
++  raw_ptr<MediaSessionImplUtils> implUtils_;
+ 
+   CONTENT_EXPORT void RemoveAllPlayersForTest();
+   CONTENT_EXPORT MediaSessionUmaHelper* uma_helper_for_test();
+ 
+   // Representation of a player for the MediaSessionImpl.

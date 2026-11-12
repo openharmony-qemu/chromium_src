@@ -6,6 +6,8 @@
 
 #include <optional>
 #include <string>
+
+#include "arkweb/build/features/features.h"
 #include <utility>
 #include <vector>
 
@@ -120,7 +122,12 @@ bool PermissionAllowedByPermissionsPolicy(PermissionType permission_type,
 
 PermissionResult VerifyContextOfCurrentDocument(
     PermissionType permission,
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+    RenderFrameHost* render_frame_host,
+    bool permissions_policy_verification = true) {
+#else
     RenderFrameHost* render_frame_host) {
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
   WebContents* web_contents =
       WebContents::FromRenderFrameHost(render_frame_host);
 
@@ -133,8 +140,13 @@ PermissionResult VerifyContextOfCurrentDocument(
   }
 
 #if !BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  if (permissions_policy_verification &&
+      base::FeatureList::IsEnabled(features::kPermissionsPolicyVerificationInContent)) {
+#else
   if (base::FeatureList::IsEnabled(
           features::kPermissionsPolicyVerificationInContent)) {
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
     // Check whether the feature is enabled for the frame by permissions policy.
     if (!PermissionAllowedByPermissionsPolicy(permission, render_frame_host)) {
       return PermissionResult(PermissionStatus::DENIED,
@@ -149,7 +161,12 @@ PermissionResult VerifyContextOfCurrentDocument(
 bool IsRequestAllowed(
     const std::vector<blink::mojom::PermissionDescriptorPtr>& permissions,
     RenderFrameHost* render_frame_host,
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+    base::OnceCallback<void(const std::vector<PermissionResult>&)>& callback,
+    bool permissions_policy_verification = true) {
+#else    
     base::OnceCallback<void(const std::vector<PermissionResult>&)>& callback) {
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
   if (!render_frame_host) {
     // Permission request is not allowed without a valid RenderFrameHost.
     std::move(callback).Run(std::vector<PermissionResult>(
@@ -174,7 +191,11 @@ bool IsRequestAllowed(
     PermissionType permission_type =
         blink::PermissionDescriptorToPermissionType(permission);
     PermissionResult result =
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+        VerifyContextOfCurrentDocument(permission_type, render_frame_host, permissions_policy_verification);
+#else    
         VerifyContextOfCurrentDocument(permission_type, render_frame_host);
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)        
     permission_results.push_back(result);
 
     if (result.status == PermissionStatus::DENIED) {
@@ -464,9 +485,20 @@ void PermissionControllerImpl::SetPermissionOverride(
   permission_overrides_.Set(requesting_origin, embedding_origin, permission,
                             status);
   NotifyChangedSubscriptions(old_statuses);
+#if BUILDFLAG(ARKWEB_PERMISSION)
+  if (status == PermissionStatus::GRANTED) {
+    GrantPermissionOverridesToDelegate(requesting_origin, {permission},
+                                       std::move(callback));
+  } else {
+    UpdateCookieManagerContentSettings(
+        permission,
+        base::BindOnce(std::move(callback), OverrideStatus::kOverrideSet));
+  }
+#else
   UpdateCookieManagerContentSettings(
       permission,
       base::BindOnce(std::move(callback), OverrideStatus::kOverrideSet));
+#endif
 }
 
 void PermissionControllerImpl::GrantPermissionOverrides(

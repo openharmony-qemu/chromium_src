@@ -1,0 +1,40 @@
+diff a/content/browser/media/session/media_session_controller.h b/content/browser/media/session/media_session_controller.h	(rejected hunks)
+@@ -18,15 +18,17 @@
+ #include "media/audio/audio_device_description.h"
+ #include "media/base/media_content_type.h"
+ #include "media/base/picture_in_picture_events_info.h"
+ #include "services/media_session/public/cpp/media_position.h"
+ #include "services/media_session/public/mojom/media_session.mojom.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace content {
+ 
+ class MediaSessionImpl;
+ class WebContentsImpl;
++class MediaSessionControllerExt;
+ 
+ // Helper class for controlling a single player's MediaSession instance.  Sends
+ // browser side MediaSession commands back to a player hosted in the renderer
+ // process.
+ // MediaSessionController registers itself with MediaSessionImpl as the
+@@ -118,11 +121,20 @@ class CONTENT_EXPORT MediaSessionController
+       media_session::mojom::RemotePlaybackMetadataPtr metadata);
+ 
+   // Called when video visibility changes for the given media player.
+   void OnVideoVisibilityChanged(bool meets_visibility_threshold);
+ 
++  virtual MediaSessionControllerExt* AsMediaSessionControllerExt() {
++    return nullptr;
++  }
++
++#if BUILDFLAG(ARKWEB_TEST)
++ public:
++#else
+  private:
++#endif  // ARKWEB_TEST
++
+   bool IsMediaSessionNeeded() const;
+ 
+   // Determines whether a session is needed and adds or removes the player
+   // accordingly.
+   bool AddOrRemovePlayer();

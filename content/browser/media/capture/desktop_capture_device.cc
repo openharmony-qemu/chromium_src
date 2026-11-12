@@ -881,6 +881,9 @@ void DesktopCaptureDevice::Core::OnCaptureResultLegacy(
   webrtc::DesktopSize output_size(
       resolution_chooser_.capture_size().width() & ~1,
       resolution_chooser_.capture_size().height() & ~1);
+  LOG(DEBUG) << "screen capture output_size: " << output_size.width() << ", "
+             << output_size.height();
+
   if (output_size.is_empty()) {
     // Even RESOLUTION_POLICY_ANY_WITHIN_LIMIT is used, a non-empty size should
     // be guaranteed.
@@ -1328,9 +1331,15 @@ base::TimeTicks DesktopCaptureDevice::Core::NowTicks() const {
 }
 
 // static
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+std::unique_ptr<media::VideoCaptureDevice> DesktopCaptureDevice::Create(
+    const DesktopMediaID& source, bool is_picker_show, int nweb_id) {
+  Client* device_client = nullptr;
+#else
 std::unique_ptr<media::VideoCaptureDevice> DesktopCaptureDevice::Create(
     const DesktopMediaID& source,
     Client* device_client) {
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
   ScopedWebrtcDebugLogging enable_webrtc_logging(device_client);
   CHECK(source.type == DesktopMediaID::TYPE_WINDOW ||
         source.type == DesktopMediaID::TYPE_SCREEN);
@@ -1416,6 +1425,10 @@ std::unique_ptr<media::VideoCaptureDevice> DesktopCaptureDevice::Create(
 
   switch (source.type) {
     case DesktopMediaID::TYPE_SCREEN: {
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+      options.set_picker_show(is_picker_show);
+      options.set_nweb_id(nweb_id);
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
       std::unique_ptr<webrtc::DesktopCapturer> screen_capturer(
           desktop_capture::CreateScreenCapturer(options,
                                                 /*for_snapshot=*/false));
@@ -1554,3 +1567,6 @@ void DesktopCaptureDevice::SetMockTimeForTesting(
 }
 
 }  // namespace content
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/media/capture/desktop_capture_device_for_include.cc"
+#endif

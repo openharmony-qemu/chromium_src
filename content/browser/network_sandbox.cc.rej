@@ -1,0 +1,68 @@
+diff a/content/browser/network_sandbox.cc b/content/browser/network_sandbox.cc	(rejected hunks)
+@@ -17,10 +17,11 @@
+ #include "content/public/browser/browser_thread.h"
+ #include "content/public/browser/content_browser_client.h"
+ #include "content/public/browser/network_service_util.h"
+ #include "content/public/common/content_client.h"
+ #include "sql/database.h"
++#include "arkweb/build/features/features.h"
+ 
+ #if BUILDFLAG(IS_WIN)
+ #include <windows.h>
+ 
+ #include "base/win/security_util.h"
+@@ -351,11 +352,13 @@ void CreateAndGrantAccessLoggingError(
+ // 10. Delete all the original files (if they exist) from
+ // `unsandboxed_data_path`.
+ SandboxGrantResult MaybeGrantSandboxAccessToNetworkContextData(
+     const SandboxParameters& sandbox_params,
+     network::mojom::NetworkContextParams* params) {
++#if !BUILDFLAG(ARKWEB_COOKIE)
+   DCHECK(!BrowserThread::CurrentlyOn(BrowserThread::UI));
++#endif
+ #if BUILDFLAG(IS_WIN)
+ #if DCHECK_IS_ON()
+   params->win_permissions_set = true;
+ #endif
+ #endif  // BUILDFLAG(IS_WIN)
+@@ -382,10 +385,16 @@ SandboxGrantResult MaybeGrantSandboxAccessToNetworkContextData(
+       if (!MaybeGrantAccessToDataPath(
+               sandbox_params, &*params->file_paths->http_cache_directory)) {
+         PLOG(ERROR) << "Failed to grant sandbox access to cache directory "
+                     << params->file_paths->http_cache_directory->path();
+       }
++#if BUILDFLAG(ARKWEB_PRECOMPILE)
++      if (params->file_paths->shared_dictionary_directory) {
++        oh_code_cache::ResponseCache::InitCacheDirectory(
++            params->file_paths->shared_dictionary_directory->path());
++      }
++#endif
+     }
+ 
+     // This is only used if disk caching is enabled.
+     if (params->file_paths->no_vary_search_directory) {
+       SCOPED_UMA_HISTOGRAM_TIMER(
+@@ -607,15 +616,23 @@ void GrantSandboxAccessOnThreadPool(
+ #if DCHECK_IS_ON()
+   sandbox_params.sandbox_enabled =
+       GetContentClient()->browser()->ShouldSandboxNetworkService();
+ #endif  // DCHECK_IS_ON()
+ #endif  // BUILDFLAG(IS_WIN)
++
++#if BUILDFLAG(ARKWEB_COOKIE)
++  // Execute sync on ohos.
++  SandboxGrantResult grant_result = MaybeGrantSandboxAccessToNetworkContextData(
++    sandbox_params, params.get());
++  std::move(result_callback).Run(std::move(params), grant_result);
++#else
+   base::OnceCallback<SandboxGrantResult()> worker_task =
+       base::BindOnce(&MaybeGrantSandboxAccessToNetworkContextData,
+                      sandbox_params, params.get());
+   base::ThreadPool::PostTaskAndReplyWithResult(
+       FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_BLOCKING},
+       std::move(worker_task),
+       base::BindOnce(std::move(result_callback), std::move(params)));
++#endif
+ }
+ 
+ }  // namespace content

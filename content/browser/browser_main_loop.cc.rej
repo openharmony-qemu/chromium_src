@@ -1,0 +1,65 @@
+diff a/content/browser/browser_main_loop.cc b/content/browser/browser_main_loop.cc	(rejected hunks)
+@@ -147,10 +150,11 @@
+ #include "net/base/network_change_notifier.h"
+ #include "net/log/net_log.h"
+ #include "net/socket/client_socket_factory.h"
+ #include "net/ssl/ssl_config_service.h"
+ #include "services/audio/service.h"
++#include "services/data_decoder/data_decoder_service.h"
+ #include "services/data_decoder/public/cpp/service_provider.h"
+ #include "services/data_decoder/public/mojom/data_decoder_service.mojom.h"
+ #include "services/network/public/cpp/network_switches.h"
+ #include "services/network/public/mojom/network_service.mojom.h"
+ #include "services/network/transitional_url_loader_factory_owner.h"
+@@ -381,11 +393,11 @@ std::unique_ptr<base::MemoryPressureMonitor> CreateMemoryPressureMonitor(
+     return nullptr;
+ 
+   std::unique_ptr<memory_pressure::MultiSourceMemoryPressureMonitor> monitor;
+ 
+ #if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_FUCHSIA) || \
+-    BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++    BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+   monitor =
+       std::make_unique<memory_pressure::MultiSourceMemoryPressureMonitor>();
+ #endif
+   // No memory monitor on other platforms...
+ 
+@@ -1484,10 +1504,21 @@ void BrowserMainLoop::PostCreateThreadsImpl() {
+   if (base::FeatureList::IsEnabled(features::kFontSrcLocalMatching)) {
+     FontUniqueNameLookup::GetInstance();
+   }
+ #endif
+ 
++#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
++  media::SetMediaDrmBridgeClient(GetContentClient()->GetMediaDrmBridgeClient());
++  CdmRegistry::GetInstance()->Init();
++#endif
++
++#if BUILDFLAG(ARKWEB_WPT)
++  if (base::FeatureList::IsEnabled(features::kFontSrcLocalMatching)) {
++    FontUniqueNameLookup::GetInstance();
++  }
++#endif  // BUILDFLAG(ARKWEB_WPT)
++
+ #if defined(ENABLE_IPC_FUZZER)
+   SetFileUrlPathAliasForIpcFuzzer();
+ #endif
+ }
+ 
+@@ -1549,10 +1580,16 @@ void BrowserMainLoop::InitializeMojo() {
+   // need to start tracing for all other tracing agents, which require threads.
+   // We can only do this after starting the main message loop to avoid calling
+   // MessagePumpForUI::ScheduleWork() before MessagePumpForUI::Start().
+   StartupTracingController::GetInstance().StartIfNeeded();
+ 
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  // Start browser-side consumer session to enable service-side
++  // periodic incremental-state clears for the HiTrace interceptor.
++  base::hitrace::StartHiTraceConsumerSession();
++#endif  // BUILDFLAG(ARKWEB_DFX_TRACING)
++
+ #if BUILDFLAG(MOJO_RANDOM_DELAYS_ENABLED)
+   mojo::BeginRandomMojoDelays();
+ #endif
+ }
+ 

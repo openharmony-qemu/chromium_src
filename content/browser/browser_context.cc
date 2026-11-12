@@ -71,6 +71,10 @@
 #include "third_party/perfetto/include/perfetto/tracing/traced_value.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+#include "content/public/browser/render_process_host.h"
+#endif
+
 namespace content {
 
 class PrefetchService;
@@ -99,12 +103,19 @@ BrowserContext::BrowserContext() {
 }
 
 BrowserContext::~BrowserContext() {
+#if BUILDFLAG(IS_ARKWEB) || BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT("shutdown", "BrowserContext::~BrowserContext",
+              "kChromeBrowserContext", "BrowserContext");
+  TRACE_EVENT_END("shutdown", perfetto::Track::FromPointer(this),
+                  "kChromeBrowserContext", "BrowserContext");
+#else
   TRACE_EVENT("shutdown", "BrowserContext::~BrowserContext",
               ChromeTrackEvent::kChromeBrowserContext, *this);
 
   // End for ASYNC event "Browser.BrowserContext".
   TRACE_EVENT_END("shutdown", perfetto::Track::FromPointer(this),
                   ChromeTrackEvent::kChromeBrowserContext, *this);
+#endif
 
   impl_.reset();
 }
@@ -144,7 +155,12 @@ StoragePartition* BrowserContext::GetStoragePartition(
 StoragePartition* BrowserContext::GetStoragePartition(
     const StoragePartitionConfig& storage_partition_config,
     bool can_create) {
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  if (IsOffTheRecord() && RenderProcessHost::render_process_mode() !=
+                              RenderProcessMode::SINGLE_MODE) {
+#else
   if (IsOffTheRecord()) {
+#endif
     // An off the record profile MUST only use in memory storage partitions.
     CHECK(storage_partition_config.in_memory());
   }

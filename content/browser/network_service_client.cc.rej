@@ -1,0 +1,13 @@
+diff a/content/browser/network_service_client.cc b/content/browser/network_service_client.cc	(rejected hunks)
+@@ -38,10 +38,11 @@
+ #include "services/network/public/cpp/network_switches.h"
+ #include "services/network/public/mojom/network_change_manager.mojom-forward.h"
+ #include "services/network/public/mojom/network_context.mojom.h"
+ #include "services/network/public/mojom/shared_storage.mojom.h"
+ #include "third_party/blink/public/mojom/use_counter/metrics/web_feature.mojom.h"
++#include "arkweb/build/features/features.h"
+ 
+ #if BUILDFLAG(IS_ANDROID)
+ #include "base/android/content_uri_utils.h"
+ #endif
+ 

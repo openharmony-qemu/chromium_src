@@ -1,0 +1,22 @@
+diff a/content/browser/fenced_frame/fenced_frame.h b/content/browser/fenced_frame/fenced_frame.h
+--- a/content/browser/fenced_frame/fenced_frame.h
++++ b/content/browser/fenced_frame/fenced_frame.h
+@@ -92,10 +92,18 @@ class CONTENT_EXPORT FencedFrame : public blink::mojom::FencedFrameOwnerHost,
+   void NotifyNavigationListPruned(const PrunedDetails& pruned_details) override;
+   void NotifyNavigationEntriesDeleted() override;
+   void ActivateAndShowRepostFormWarningDialog() override;
+   bool ShouldPreserveAbortedURLs() override;
+   void UpdateOverridingUserAgent() override;
++
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  std::string NotifyNavigationRewriteUrl(
++        const std::string& original_url,
++        const std::string& referrer,
++        int transition_type,
++        bool is_key_request) override;
++#endif
+ #if BUILDFLAG(IS_ANDROID)
+   scoped_refptr<viz::RasterContextProvider> GetRasterContextProvider() override;
+   gfx::ColorSpace GetOutputColorSpace(gfx::ContentColorUsage color_usage,
+                                       bool needs_alpha) override;
+ #endif  // BUILDFLAG(IS_ANDROID)

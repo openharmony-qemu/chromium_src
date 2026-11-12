@@ -1,0 +1,15 @@
+diff a/content/browser/browser_child_process_host_impl.cc b/content/browser/browser_child_process_host_impl.cc	(rejected hunks)
+@@ -289,10 +289,13 @@ void BrowserChildProcessHostImpl::LaunchWithoutExtraCommandLineSwitches(
+       switches::kDisableInProcessStackTraces,
+       switches::kDisableBestEffortTasks,
+       switches::kIPCConnectionTimeout,
+       switches::kLogBestEffortTasks,
+       switches::kPerfettoDisableInterning,
++#if BUILDFLAG(IS_OHOS)
++      switches::kBundleInstallationDir,
++#endif
+   };
+   cmd_line->CopySwitchesFrom(browser_command_line, kForwardSwitches);
+ 
+   // All processes should have a non-empty metrics name.
+   if (data_.metrics_name.empty())

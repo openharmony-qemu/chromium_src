@@ -1440,6 +1440,11 @@ void PopulateBinderMapWithContext(
       &EmptyBinderForFrame<blink::mojom::TextSuggestionHost>);
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
+  map->Add<blink::mojom::DateTimeChooser>(
+      base::BindRepeating(&BindDateTimeChooserForFrame));
+#endif
+
   map->Add<blink::mojom::Authenticator>(
       &BindRenderFrameHostImpl<
           &RenderFrameHostImpl::GetWebAuthenticationService>);

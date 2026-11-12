@@ -4,6 +4,7 @@
 
 #include "content/browser/network_context_client_base_impl.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/task_runner.h"
@@ -56,7 +57,15 @@ void HandleFileUploadRequest(
                                     std::vector<base::File>()));
       return;
     }
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+    if (file_path.IsDataShareUri()) {
+      files.push_back(base::OpenDatashareUriForRead(file_path));
+    } else {
+      files.emplace_back(file_path, file_flags);
+    }
+#else
     files.emplace_back(file_path, file_flags);
+#endif  // BUILDFLAG(ARKWEB_FILE_UPLOAD)
     if (!files.back().IsValid()) {
       task_runner->PostTask(
           FROM_HERE,

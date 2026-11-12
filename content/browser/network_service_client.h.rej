@@ -1,0 +1,13 @@
+diff a/content/browser/network_service_client.h b/content/browser/network_service_client.h	(rejected hunks)
+@@ -20,10 +20,11 @@
+ #include "net/cert/cert_database.h"
+ #include "services/network/public/mojom/network_change_manager.mojom.h"
+ #include "services/network/public/mojom/network_service.mojom.h"
+ #include "services/network/public/mojom/url_loader_network_service_observer.mojom.h"
+ #include "url/gurl.h"
++#include "arkweb/build/features/features.h"
+ 
+ #if BUILDFLAG(IS_ANDROID)
+ #include "base/android/application_status_listener.h"
+ #endif
+ 

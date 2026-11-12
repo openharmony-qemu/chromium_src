@@ -1,0 +1,127 @@
+diff a/content/browser/loader/navigation_url_loader_impl.cc b/content/browser/loader/navigation_url_loader_impl.cc	(rejected hunks)
+@@ -339,14 +350,35 @@ std::unique_ptr<network::ResourceRequest> CreateResourceRequest(
+   new_request->attribution_reporting_eligibility =
+       request_info.begin_params->impression.has_value()
+           ? network::mojom::AttributionReportingEligibility::kNavigationSource
+           : network::mojom::AttributionReportingEligibility::kUnset;
+ 
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
++          switches::kEnableLoggerReport)) {
++    new_request->usage_scenario_ =
++        WebContents::FromFrameTreeNodeId(frame_tree_node->frame_tree_node_id())
++            ->GetOrCreateWebPreferences()
++            .usage_scenario;
++  } else {
++    new_request->usage_scenario_ = 1;
++  }
++#endif
++
+   new_request->shared_storage_writable_eligible =
+       request_info.shared_storage_writable_eligible;
+   new_request->is_ad_tagged = request_info.is_ad_tagged;
+ 
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
++          ::switches::kEnableNwebEx)) {
++    new_request->retry_with_fallback_proxy =
++        request_info.retry_with_fallback_proxy;
++    new_request->original_error_code = request_info.original_error_code;
++  }
++#endif  
++
+   new_request->skip_service_worker =
+       request_info.begin_params->skip_service_worker;
+ 
+   // TODO(crbug.com/382291442): Remove feature guarding once launched.
+   if (base::FeatureList::IsEnabled(
+@@ -1546,10 +1584,16 @@ void NavigationURLLoaderImpl::CheckPluginAndCallOnReceiveResponse(
+   PluginService::GetInstance()->GetPlugins();
+   bool has_plugin = PluginService::GetInstance()->HasPlugin(
+       browser_context_, resource_request_->url, head->mime_type);
+ 
+   bool is_download = !has_plugin;
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  LOG_FEEDBACK(INFO, kNavigation)
++      << "OnReceiveResponse isDownload:" << is_download
++      << " mimeType:" << head->mime_type
++      << " url:" << url::LogUtils::ConvertUrlWithMask(url_.spec());
++#endif
+   CallOnReceivedResponse(std::move(head),
+                          std::move(url_loader_client_endpoints), is_download);
+ }
+ #endif
+ 
+@@ -1614,11 +1658,21 @@ void NavigationURLLoaderImpl::OnReceiveRedirect(
+       // TODO(https://crbug.com/434182226): Turn this to `CHECK()`.
+       DUMP_WILL_BE_CHECK_EQ(loader_holder_.state(),
+                             LoaderHolder::State::kLoadingViaReceiver);
+       // TODO(crbug.com/40118809): Make sure ResetWithReason() is called
+       // on the original `url_loader_`.
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++      network::URLLoaderCompletionStatus status =
++          network::URLLoaderCompletionStatus(error);
++      if (head && head->status.has_value() &&
++          head->status->navigation_info.has_value()) {
++        status.navigation_info = head->status->navigation_info.value();
++      }
++      OnComplete(status);
++#else
+       OnComplete(network::URLLoaderCompletionStatus(error));
++#endif
+     }
+     return;
+   }
+ 
+   // Store the redirect_info for later use in FollowRedirect where we give
+@@ -1967,14 +2021,30 @@ std::vector<std::unique_ptr<blink::URLLoaderThrottle>>
+ NavigationURLLoaderImpl::CreateURLLoaderThrottles() {
+   TRACE_EVENT_WITH_FLOW0("navigation",
+                          "NavigationURLLoaderImpl::CreateURLLoaderThrottles",
+                          TRACE_ID_LOCAL(this),
+                          TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT);
++
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  bool is_prerendering = false;
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
++      ::switches::kEnableNwebEx) &&
++      request_info_) {
++    is_prerendering =
++        request_info_->is_main_frame && !request_info_->is_primary_main_frame;
++  }
++#endif
++
+   auto throttles = CreateContentBrowserURLLoaderThrottles(
+       *resource_request_, browser_context_, web_contents_getter_,
+       navigation_ui_data_.get(), frame_tree_node_id_,
+-      request_info_->navigation_id);
++      request_info_->navigation_id
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++,
++      is_prerendering
++#endif
++      );
+   throttles.push_back(std::make_unique<NavigationTimingThrottle>(
+       resource_request_->is_outermost_main_frame, loader_creation_time_));
+   return throttles;
+ }
+ 
+@@ -2385,10 +2459,18 @@ void NavigationURLLoaderImpl::FollowRedirect(
+   // `resource_request_` during redirect.
+   loader_holder_.SetModifiedHeadersOnRedirect(
+       std::move(removed_headers), std::move(modified_headers),
+       std::move(modified_cors_exempt_headers));
+ 
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
++          ::switches::kEnableNwebEx)) {
++    resource_request_->retry_with_fallback_proxy = false;
++    resource_request_->original_error_code = net::OK;
++  }
++#endif
++
+   Restart();
+ }
+ 
+ bool NavigationURLLoaderImpl::SetNavigationTimeout(base::TimeDelta timeout) {
+   // If the timer has already been started, don't change it.

@@ -1,0 +1,14 @@
+diff a/content/browser/message_port_provider.cc b/content/browser/message_port_provider.cc	(rejected hunks)
+@@ -75,10 +75,12 @@ void MessagePortProvider::PostMessageToFrame(
+     const blink::WebMessagePayload& data) {
+   PostMessageToFrameInternal(page, source_origin, target_origin, data,
+                              std::vector<blink::MessagePortDescriptor>());
+ }
+ 
++#include "arkweb/chromium_ext/content/browser/message_port_provider_for_include.cc"
++
+ #if BUILDFLAG(IS_ANDROID)
+ void MessagePortProvider::PostMessageToFrame(
+     Page& page,
+     JNIEnv* env,
+     const base::android::JavaParamRef<jstring>& source_origin,

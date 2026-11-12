@@ -1,0 +1,29 @@
+diff a/content/browser/file_system/file_system_manager_impl.h b/content/browser/file_system/file_system_manager_impl.h	(rejected hunks)
+@@ -68,12 +68,11 @@ class CONTENT_EXPORT FileSystemManagerImpl
+   void BindReceiver(
+       const blink::StorageKey& storage_key,
+       mojo::PendingReceiver<blink::mojom::FileSystemManager> receiver);
+ 
+   // blink::mojom::FileSystem
+-  void Open(const url::Origin& origin,
+-            blink::mojom::FileSystemType file_system_type,
++  void Open(blink::mojom::FileSystemType file_system_type,
+             OpenCallback callback) override;
+   void ResolveURL(const GURL& filesystem_url,
+                   ResolveURLCallback callback) override;
+   void Move(const GURL& src_path,
+             const GURL& dest_path,
+@@ -135,12 +134,11 @@ class CONTENT_EXPORT FileSystemManagerImpl
+   using OperationID = storage::FileSystemOperationRunner::OperationID;
+   using OperationListenerID = int;
+   struct WriteSyncCallbackEntry;
+   struct ReadDirectorySyncCallbackEntry;
+ 
+-  void ContinueOpen(const url::Origin& origin,
+-                    blink::mojom::FileSystemType file_system_type,
++  void ContinueOpen(blink::mojom::FileSystemType file_system_type,
+                     mojo::ReportBadMessageCallback bad_message_callback,
+                     OpenCallback callback,
+                     const blink::StorageKey& storage_key,
+                     bool security_check_success);
+   void ContinueResolveURL(const storage::FileSystemURL& url,

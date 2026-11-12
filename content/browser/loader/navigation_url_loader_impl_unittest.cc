@@ -78,6 +78,10 @@ namespace content {
 
 using testing::Optional;
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+const std::string& TEST_STRING_URL = "https:www.example.com";
+#endif
+
 class NavigationURLLoaderImplTest : public testing::Test {
  public:
   NavigationURLLoaderImplTest()

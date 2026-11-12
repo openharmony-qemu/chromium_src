@@ -1,0 +1,17 @@
+diff a/content/browser/devtools/protocol/page_handler.h b/content/browser/devtools/protocol/page_handler.h	(rejected hunks)
+@@ -196,10 +196,15 @@ class PageHandler : public DevToolsDomainHandler,
+   Response SetPrerenderingAllowed(bool is_allowed) override;
+   void GetAnnotatedPageContent(
+       std::optional<bool> include_actionable_information,
+       std::unique_ptr<GetAnnotatedPageContentCallback> callback) override;
+ 
++// do not turn off ARKWEB_AUTOLAYOUT or build will fail here
++#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
++  Response GetPageVisibility(bool* is_visible) override;
++#endif // ARKWEB_AUTOLAYOUT
++
+   Response AssureTopLevelActiveFrame();
+ 
+  private:
+   struct PendingScreenshotRequest;
+ 

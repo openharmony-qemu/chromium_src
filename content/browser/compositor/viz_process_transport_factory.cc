@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils.h"
 #include "base/command_line.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/functional/bind.h"
@@ -16,6 +17,7 @@
 #include "base/task/single_thread_task_runner.h"
 #include "base/threading/platform_thread.h"
 #include "base/time/time.h"
+#include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
 #include "cc/mojo_embedder/async_layer_tree_frame_sink.h"
 #include "cc/raster/single_thread_task_graph_runner.h"
@@ -185,6 +187,13 @@ void VizProcessTransportFactory::ConnectHostFrameSinkManager() {
         GetHostFrameSinkManager()->debug_renderer_settings());
   }
 }
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+void VizProcessTransportFactory::SendInternalBeginFrame(
+    const viz::FrameSinkId& id) {
+  GetHostFrameSinkManager()->managerUtils->SendInternalBeginFrame(id);
+}
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 void VizProcessTransportFactory::CreateLayerTreeFrameSink(
     base::WeakPtr<ui::Compositor> compositor) {
@@ -468,6 +477,11 @@ void VizProcessTransportFactory::OnEstablishedGpuChannel(
   GetHostFrameSinkManager()->CreateRootCompositorFrameSink(
       std::move(root_params), !using_direct_composition);
 #else
+
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  root_params->send_swap_size_notifications = true;
+#endif  // BUILDFLAG(ARKWEb_COMPOSITE_RENDER)
+
   GetHostFrameSinkManager()->CreateRootCompositorFrameSink(
       std::move(root_params));
 #endif  // BUILDFLAG(IS_WIN)

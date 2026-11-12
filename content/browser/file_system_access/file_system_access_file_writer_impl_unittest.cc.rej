@@ -1,0 +1,60 @@
+diff a/content/browser/file_system_access/file_system_access_file_writer_impl_unittest.cc b/content/browser/file_system_access/file_system_access_file_writer_impl_unittest.cc	(rejected hunks)
+@@ -24,15 +24,17 @@
+ #include "base/test/test_future.h"
+ #include "base/types/expected.h"
+ #include "components/services/storage/public/cpp/buckets/bucket_info.h"
+ #include "components/services/storage/public/cpp/buckets/bucket_locator.h"
+ #include "content/browser/blob_storage/chrome_blob_storage_context.h"
++#include "content/browser/child_process_security_policy_impl.h"
+ #include "content/browser/file_system_access/file_system_access_lock_manager.h"
+ #include "content/browser/file_system_access/fixed_file_system_access_permission_grant.h"
+ #include "content/browser/file_system_access/mock_file_system_access_permission_context.h"
+ #include "content/browser/file_system_access/mock_file_system_access_permission_grant.h"
+ #include "content/public/test/browser_task_environment.h"
++#include "content/public/test/test_browser_context.h"
+ #include "mojo/public/cpp/system/data_pipe_producer.h"
+ #include "mojo/public/cpp/system/string_data_source.h"
+ #include "net/base/io_buffer.h"
+ #include "net/base/net_errors.h"
+ #include "net/base/test_completion_callback.h"
+@@ -130,10 +132,13 @@ class FileSystemAccessFileWriterImplTestBase : public testing::Test {
+   }
+ 
+   void TearDown() override {
+     manager_.reset();
+ 
++    ChildProcessSecurityPolicyImpl::GetInstance()->Remove(
++        kProcessId);
++
+     task_environment_.RunUntilIdle();
+     // TODO(crbug.com/40266589): Figure out what code is leaking open
+     // files, and uncomment this to prevent further regressions.
+     // ASSERT_TRUE(dir_.Delete());
+   }
+@@ -291,10 +296,14 @@ class FileSystemAccessFileWriterImplTestBase : public testing::Test {
+ 
+     manager_ = base::MakeRefCounted<FileSystemAccessManagerImpl>(
+         file_system_context_, chrome_blob_context_,
+         /*permission_context=*/permission_context(),
+         /*off_the_record=*/false);
++    ChildProcessSecurityPolicyImpl::GetInstance()->AddForTesting(
++        kProcessId, &browser_context_);
++    ChildProcessSecurityPolicyImpl::GetInstance()->AddCommittedOrigin(
++        kProcessId, url::Origin::Create(kTestURL));
+     manager_->BindReceiver(kBindingContext,
+                            manager_remote_.BindNewPipeAndPassReceiver());
+ 
+     // Use an absolute path for local files, or a relative path otherwise,
+     auto test_file_path = type == storage::kFileSystemTypeLocal
+@@ -386,10 +395,11 @@ class FileSystemAccessFileWriterImplTestBase : public testing::Test {
+   raw_ptr<TestFileSystemBackend> test_file_system_backend_ = nullptr;
+   scoped_refptr<ChromeBlobStorageContext> chrome_blob_context_;
+   raw_ptr<storage::BlobStorageContext> blob_context_ = nullptr;
+   scoped_refptr<FileSystemAccessManagerImpl> manager_;
+   mojo::Remote<blink::mojom::FileSystemAccessManager> manager_remote_;
++  TestBrowserContext browser_context_;
+ 
+   FileSystemURL test_file_url_;
+   FileSystemURL test_swap_url_;
+ 
+   MockQuarantine quarantine_;

@@ -1,0 +1,44 @@
+diff a/content/browser/media/media_interface_proxy.cc b/content/browser/media/media_interface_proxy.cc	(rejected hunks)
+@@ -17,10 +17,11 @@
+ #include "base/strings/string_util.h"
+ #include "base/time/time.h"
+ #include "base/unguessable_token.h"
+ #include "build/build_config.h"
+ #include "content/browser/media/cdm_storage_common.h"
++#include "content/browser/media/media_web_contents_observer.h"
+ #include "content/browser/renderer_host/render_frame_host_delegate.h"
+ #include "content/browser/renderer_host/render_frame_host_impl.h"
+ #include "content/public/browser/media_service.h"
+ #include "content/public/browser/render_frame_host.h"
+ #include "content/public/browser/service_process_host.h"
+@@ -74,10 +75,14 @@
+ #if BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+ #include "media/base/media_switches.h"
+ #include "mojo/public/cpp/bindings/message.h"
+ #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/content/browser/media/media_interface_proxy_for_include.cc"
++#endif
++
+ namespace content {
+ 
+ namespace {
+ 
+ #if BUILDFLAG(ENABLE_LIBRARY_CDMS)
+@@ -371,10 +376,15 @@ void MediaInterfaceProxy::CreateMediaFoundationRenderer(
+   auto* factory = GetMediaFoundationServiceInterfaceFactory(base::FilePath());
+   if (factory) {
+     factory->CreateMediaFoundationRenderer(
+         std::move(media_log_remote), std::move(receiver),
+         std::move(renderer_extension_receiver));
++
++    // `MediaFoundationRenderer` bypasses the browser's audio service.
++    // Authorize the frame for audibility bypass claims.
++    AudibilityBypassAuthorization::GetOrCreateForCurrentDocument(
++        &render_frame_host());
+   }
+ }
+ #endif  // BUILDFLAG(IS_WIN)
+ 
+ void MediaInterfaceProxy::CreateCdm(const media::CdmConfig& cdm_config,

@@ -1,0 +1,18 @@
+diff a/content/browser/notifications/blink_notification_service_impl.cc b/content/browser/notifications/blink_notification_service_impl.cc	(rejected hunks)
+@@ -128,11 +132,16 @@ void BlinkNotificationServiceImpl::GetPermissionStatus(
+       !browser_context_->GetPlatformNotificationService()) {
+     std::move(callback).Run(blink::mojom::PermissionStatus::DENIED);
+     return;
+   }
+ 
++#if BUILDFLAG(ARKWEB_NOTIFICATION)
++  AsBlinkNotificationServiceImplExt()->GetPermissionStatusExt(
++      std::move(callback));
++#else
+   std::move(callback).Run(CheckPermissionStatus());
++#endif // ARKWEB_NOTIFICATION
+ }
+ 
+ void BlinkNotificationServiceImpl::OnConnectionError() {
+   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+   notification_context_->RemoveService(this);

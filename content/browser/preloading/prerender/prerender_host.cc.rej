@@ -1,0 +1,15 @@
+diff a/content/browser/preloading/prerender/prerender_host.cc b/content/browser/preloading/prerender/prerender_host.cc	(rejected hunks)
+@@ -40,10 +40,13 @@
+ #include "content/browser/web_contents/web_contents_impl.h"
+ #include "content/public/browser/browser_context.h"
+ #include "content/public/browser/navigation_controller.h"
+ #include "content/public/browser/preloading_trigger_type.h"
+ #include "content/public/browser/web_contents_delegate.h"
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++#include "content/public/common/content_switches.h"
++#endif
+ #include "content/public/common/referrer.h"
+ #include "net/base/load_flags.h"
+ #include "net/http/http_request_headers.h"
+ #include "services/network/public/mojom/supports_loading_mode.mojom.h"
+ #include "third_party/blink/public/common/client_hints/enabled_client_hints.h"

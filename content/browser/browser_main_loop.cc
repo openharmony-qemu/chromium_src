@@ -13,6 +13,9 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#include "base/allocator/partition_alloc_features.h"
+
 #include "base/base_switches.h"
 #include "base/callback_list.h"
 #include "base/command_line.h"
@@ -262,6 +265,14 @@
 
 #if BUILDFLAG(MOJO_RANDOM_DELAYS_ENABLED)
 #include "mojo/public/cpp/bindings/lib/test_random_mojo_delays.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/browser_main_loop_ext.cc"
+#endif
+
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+#include "arkweb/chromium_ext/base/trace_event/hitrace_export_oh.h"
 #endif
 
 // One of the linux specific headers defines this as a macro.
@@ -1381,7 +1392,11 @@ void BrowserMainLoop::PostCreateThreadsImpl() {
   // so this cannot happen any earlier than now.
   InitializeMojo();
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  data_decoder_service_provider_ = std::make_unique<InProcessDataDecoder>();
+#else
   data_decoder_service_provider_ = std::make_unique<OopDataDecoder>();
+#endif
 
   HistogramSynchronizer::GetInstance();
 
@@ -1409,7 +1424,11 @@ void BrowserMainLoop::PostCreateThreadsImpl() {
 #if BUILDFLAG(IS_ANDROID)
   // TODO(crbug.com/40396955): This should be set to |true|.
   establish_gpu_channel = false;
+#if !BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   always_uses_gpu = ShouldStartGpuProcessOnBrowserStartup();
+#else
+  always_uses_gpu = true; // TODO: temp enable use gpu for ohos, not from jni
+#endif
   BrowserGpuChannelHostFactory::Initialize(establish_gpu_channel);
 #else
   establish_gpu_channel = true;
@@ -1483,7 +1502,7 @@ void BrowserMainLoop::PostCreateThreadsImpl() {
                  "BrowserMainLoop::PostCreateThreads:InitMediaStreamManager");
 
     media_stream_manager_ =
-        std::make_unique<MediaStreamManager>(audio_system_.get());
+        std::make_unique<MediaStreamManagerExt>(audio_system_.get());
   }
 
   {

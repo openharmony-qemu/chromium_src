@@ -1,0 +1,28 @@
+diff a/content/browser/child_process_launcher_helper.h b/content/browser/child_process_launcher_helper.h	(rejected hunks)
+@@ -7,10 +7,11 @@
+ 
+ #include <map>
+ #include <memory>
+ #include <optional>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/read_only_shared_memory_region.h"
+ #include "base/memory/ref_counted.h"
+ #include "base/memory/unsafe_shared_memory_region.h"
+ #include "base/memory/weak_ptr.h"
+@@ -269,11 +280,13 @@ class ChildProcessLauncherHelper
+   void SetProcessPriorityOnLauncherThread(base::Process process,
+                                           base::Process::Priority priority);
+ #endif  // !BUILDFLAG(IS_ANDROID)
+ 
+   std::string GetProcessType();
+-
++#if BUILDFLAG(ARKWEB_TEST)
++#define private public
++#endif
+  private:
+   friend class base::RefCountedThreadSafe<ChildProcessLauncherHelper>;
+ 
+   ~ChildProcessLauncherHelper();
+ 

@@ -1,0 +1,59 @@
+diff a/content/browser/digital_credentials/digital_identity_request_impl.cc b/content/browser/digital_credentials/digital_identity_request_impl.cc	(rejected hunks)
+@@ -552,17 +552,29 @@ void DigitalIdentityRequestImpl::Get(
+     OnInterstitialDone(std::move(protocol), std::move(request_to_send),
+                        RequestStatusForMetrics::kSuccess);
+     return;
+   }
+ 
+-  update_interstitial_on_abort_callback_ =
+-      provider_->ShowDigitalIdentityInterstitial(
+-          *WebContents::FromRenderFrameHost(&render_frame_host()), origin(),
+-          *interstitial_type,
+-          base::BindOnce(&DigitalIdentityRequestImpl::OnInterstitialDone,
+-                         weak_ptr_factory_.GetWeakPtr(), std::move(protocol),
+-                         std::move(request_to_send)));
++  // ShowDigitalIdentityInterstitial can synchronously exit fullscreen on
++  // Windows, which can spin the message loop and destroy the WebContents and
++  // `this`. We use a WeakPtr to guard against this potential UAF.
++  base::WeakPtr<DigitalIdentityRequestImpl> weak_this =
++      weak_ptr_factory_.GetWeakPtr();
++
++  auto abort_callback = provider_->ShowDigitalIdentityInterstitial(
++      *WebContents::FromRenderFrameHost(&render_frame_host()), origin(),
++      *interstitial_type,
++      base::BindOnce(&DigitalIdentityRequestImpl::OnInterstitialDone,
++                     weak_ptr_factory_.GetWeakPtr(),
++                     std::move(protocol),
++                     std::move(request_to_send)));
++
++  if (!weak_this) {
++    return;
++  }
++
++  update_interstitial_on_abort_callback_ = std::move(abort_callback);
+ }
+ 
+ void DigitalIdentityRequestImpl::Create(
+     std::vector<blink::mojom::DigitalCredentialCreateRequestPtr>
+         digital_credential_requests,
+@@ -654,14 +666,20 @@ void DigitalIdentityRequestImpl::Abort() {
+     // Renderer sent abort request after the browser sent the callback but
+     // before the renderer received it.
+     return;
+   }
+ 
++  base::WeakPtr<DigitalIdentityRequestImpl> weak_this =
++      weak_ptr_factory_.GetWeakPtr();
+   if (update_interstitial_on_abort_callback_) {
+     std::move(update_interstitial_on_abort_callback_).Run();
+   }
+ 
++  if (!weak_this) {
++    return;
++  }
++
+   CompleteRequestWithStatus(
+       /*protocol=*/std::nullopt, RequestDigitalIdentityStatus::kErrorCanceled,
+       base::unexpected(RequestStatusForMetrics::kErrorAborted));
+ }
+ 

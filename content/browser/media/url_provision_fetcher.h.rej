@@ -1,0 +1,18 @@
+diff a/content/browser/media/url_provision_fetcher.h b/content/browser/media/url_provision_fetcher.h	(rejected hunks)
+@@ -28,11 +28,15 @@ class URLProvisionFetcher : public media::ProvisionFetcher {
+ 
+   // media::ProvisionFetcher implementation.
+   void Retrieve(const GURL& default_url,
+                 const std::string& request_data,
+                 ProvisionFetcher::ResponseCB response_cb) override;
+-
++#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
++  void RetrieveWiseplayLicense(const GURL& default_url,
++                const std::string& request_data,
++                ProvisionFetcher::ResponseCB response_cb) override;
++#endif
+  private:
+   void OnSimpleLoaderComplete(std::unique_ptr<std::string> response_body);
+ 
+   scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory_;
+   std::unique_ptr<network::SimpleURLLoader> simple_url_loader_;

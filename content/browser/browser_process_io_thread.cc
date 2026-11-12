@@ -81,6 +81,12 @@ void BrowserProcessIOThread::Run(base::RunLoop* run_loop) {
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+  ResSchedClientAdapter::ReportKeyThread(
+      ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
+      GetThreadId().raw(), ResSchedRoleAdapter::USER_INTERACT);
+#endif
+
   IOThreadRun(run_loop);
 }
 

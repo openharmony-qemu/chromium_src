@@ -1,0 +1,16 @@
+diff a/content/browser/devtools/protocol/devtools_download_manager_delegate.h b/content/browser/devtools/protocol/devtools_download_manager_delegate.h	(rejected hunks)
+@@ -22,10 +22,14 @@ namespace content {
+ 
+ class DownloadManager;
+ 
+ namespace protocol {
+ 
++#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
++extern const char kArkWebAllowAndNameKey[];
++#endif
++
+ class DevToolsDownloadManagerDelegate
+     : public base::SupportsUserData::Data,
+       public content::DownloadManagerDelegate {
+  public:
+   enum class DownloadBehavior {

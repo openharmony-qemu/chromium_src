@@ -1,0 +1,20 @@
+diff a/content/browser/interest_group/ad_auction_url_loader_interceptor_unittest.cc b/content/browser/interest_group/ad_auction_url_loader_interceptor_unittest.cc
+--- a/content/browser/interest_group/ad_auction_url_loader_interceptor_unittest.cc
++++ b/content/browser/interest_group/ad_auction_url_loader_interceptor_unittest.cc
+@@ -125,10 +125,16 @@ class TestURLLoaderClient : public network::mojom::URLLoaderClient {
+                         int64_t total_size,
+                         base::OnceCallback<void()> callback) override {}
+   void OnTransferSizeUpdated(int32_t transfer_size_diff) override {}
+   void OnComplete(const network::URLLoaderCompletionStatus& status) override {}
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  void OnTransferDataWithSharedMemory(
++    ::base::ReadOnlySharedMemoryRegion region,
++    uint64_t buffer_size) override {}
++#endif
++
+   bool received_response() const { return received_response_; }
+ 
+   bool received_ad_auction_signals_header() const {
+     return received_ad_auction_signals_header_;
+   }

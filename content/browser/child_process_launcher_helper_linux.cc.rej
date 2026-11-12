@@ -1,0 +1,50 @@
+diff a/content/browser/child_process_launcher_helper_linux.cc b/content/browser/child_process_launcher_helper_linux.cc	(rejected hunks)
+@@ -1,9 +1,10 @@
+ // Copyright 2017 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
++#include "arkweb/chromium_ext/content/browser/arkweb_child_process_launcher_helper_utils.h"
+ #include "base/command_line.h"
+ #include "base/path_service.h"
+ #include "base/posix/global_descriptors.h"
+ #include "base/trace_event/trace_event.h"
+ #include "build/build_config.h"
+@@ -150,28 +159,37 @@ ChildProcessTerminationInfo ChildProcessLauncherHelper::GetTerminationInfo(
+ // static
+ bool ChildProcessLauncherHelper::TerminateProcess(const base::Process& process,
+                                                   int exit_code) {
+   // TODO(crbug.com/40565504): Determine whether we should also call
+   // EnsureProcessTerminated() to make sure of process-exit, and reap it.
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
++  return ArkwebChildProcessLauncherHelperUtils::TerminateProcessByAppMgr(process);
++#else
+   return process.Terminate(exit_code, false);
++#endif
+ }
+ 
+ // static
+ void ChildProcessLauncherHelper::ForceNormalProcessTerminationSync(
+     ChildProcessLauncherHelper::Process process) {
+   TRACE_EVENT0("chromeos",
+                "ChildProcessLauncherHelper::ForceNormalProcessTerminationSync");
+   DCHECK(CurrentlyOnProcessLauncherTaskRunner());
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
++  ArkwebChildProcessLauncherHelperUtils::TerminateProcessByAppMgr(process.process);
++  return;
++#else
+   process.process.Terminate(RESULT_CODE_NORMAL_EXIT, false);
+   // On POSIX, we must additionally reap the child.
+   if (process.zygote) {
+     // If the renderer was created via a zygote, we have to proxy the reaping
+     // through the zygote process.
+     process.zygote->EnsureProcessTerminated(process.process.Handle());
+   } else {
+     base::EnsureProcessTerminated(std::move(process.process));
+   }
++#endif
+ }
+ 
+ void ChildProcessLauncherHelper::SetProcessPriorityOnLauncherThread(
+     base::Process process,
+     base::Process::Priority priority) {

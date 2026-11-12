@@ -1,0 +1,35 @@
+diff a/content/browser/permissions/permission_util.cc b/content/browser/permissions/permission_util.cc	(rejected hunks)
+@@ -27,11 +27,11 @@ constexpr const char* kIsFileURLHistogram =
+ 
+ // Due to dependency issues, this method is duplicated from
+ // components/permissions/permission_util.cc.
+ GURL PermissionUtil::GetLastCommittedOriginAsURL(
+     content::RenderFrameHost* render_frame_host) {
+-  DCHECK(render_frame_host);
++  CHECK(render_frame_host);
+ 
+   content::WebContents* web_contents =
+       content::WebContents::FromRenderFrameHost(render_frame_host);
+ #if BUILDFLAG(IS_ANDROID)
+   // If `allow_universal_access_from_file_urls` flag is enabled, a file:/// can
+@@ -46,16 +46,17 @@ GURL PermissionUtil::GetLastCommittedOriginAsURL(
+   } else {
+     base::UmaHistogramBoolean(kIsFileURLHistogram, false);
+   }
+ #endif
+ 
+-  if (render_frame_host->GetLastCommittedOrigin().GetURL().is_empty()) {
++  GURL origin = render_frame_host->GetLastCommittedOrigin().GetURL();
++  if (origin.is_empty() && render_frame_host->IsInPrimaryMainFrame()) {
+     if (!web_contents->GetVisibleURL().is_empty()) {
+-      return web_contents->GetVisibleURL();
++      origin = web_contents->GetVisibleURL();
+     }
+   }
+-  return render_frame_host->GetLastCommittedOrigin().GetURL();
++  return origin;
+ }
+ 
+ bool PermissionUtil::IsDomainOverride(
+     const PermissionDescriptorPtr& descriptor) {
+   return descriptor->extension &&

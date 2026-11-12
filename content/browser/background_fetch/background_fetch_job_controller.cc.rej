@@ -1,0 +1,17 @@
+diff a/content/browser/background_fetch/background_fetch_job_controller.cc b/content/browser/background_fetch/background_fetch_job_controller.cc	(rejected hunks)
+@@ -144,10 +144,15 @@ void BackgroundFetchJobController::StartRequest(
+   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+   DCHECK_LT(completed_downloads_, total_downloads_);
+   DCHECK(request_finished_callback);
+   DCHECK(request);
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_BASE)
++  if (!request) {
++    return;
++  }
++#endif
+   active_request_finished_callbacks_.emplace(
+       request->download_guid(), std::move(request_finished_callback));
+ 
+   if (IsMixedContent(*request.get()) ||
+       RequiresCorsPreflight(*request.get(),

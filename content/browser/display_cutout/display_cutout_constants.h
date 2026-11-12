@@ -12,7 +12,7 @@ namespace content {
 // be changed.
 enum DisplayCutoutIgnoredReason {
   // The frame was not ignored.
-  kAllowed = 0,
+  kCutoutAllowed = 0,
 
   // The frame was ignored because it was not the current active fullscreen
   // frame.

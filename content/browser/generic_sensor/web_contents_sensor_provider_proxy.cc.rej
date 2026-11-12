@@ -1,0 +1,19 @@
+diff a/content/browser/generic_sensor/web_contents_sensor_provider_proxy.cc b/content/browser/generic_sensor/web_contents_sensor_provider_proxy.cc	(rejected hunks)
+@@ -111,10 +112,17 @@ void WebContentsSensorProviderProxy::AddObserver(Observer* observer) {
+ 
+ void WebContentsSensorProviderProxy::RemoveObserver(Observer* observer) {
+   observers_.RemoveObserver(observer);
+ }
+ 
++#if BUILDFLAG(ARKWEB_DEVTOOLS)
++bool WebContentsSensorProviderProxy::HasVirtualSensorOverrideForDevTools(
++    device::mojom::SensorType type) const {
++  return base::Contains(virtual_sensor_types_for_devtools_, type);
++}
++#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
++
+ void WebContentsSensorProviderProxy::GetSensor(
+     SensorType type,
+     device::mojom::SensorProvider::GetSensorCallback callback) {
+   EnsureDeviceServiceConnection();
+   sensor_provider_->GetSensor(type, std::move(callback));

@@ -1,0 +1,14 @@
+diff a/content/browser/media/session/media_session_impl_unittest.cc b/content/browser/media/session/media_session_impl_unittest.cc	(rejected hunks)
+@@ -21,10 +21,12 @@
+ #include "content/public/test/test_media_session_client.h"
+ #include "content/public/test/test_renderer_host.h"
+ #include "content/test/test_content_browser_client.h"
+ #include "content/test/test_web_contents.h"
+ #include "media/base/media_content_type.h"
++#include "media/base/media_switches.h"
++#include "media/base/picture_in_picture_events_info.h"
+ #include "services/media_session/public/cpp/features.h"
+ #include "services/media_session/public/cpp/test/audio_focus_test_util.h"
+ #include "services/media_session/public/cpp/test/mock_media_session.h"
+ #include "services/media_session/public/mojom/audio_focus.mojom.h"
+ #include "services/media_session/public/mojom/media_session.mojom.h"

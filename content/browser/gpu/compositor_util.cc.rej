@@ -1,0 +1,13 @@
+diff a/content/browser/gpu/compositor_util.cc b/content/browser/gpu/compositor_util.cc	(rejected hunks)
+@@ -214,10 +302,11 @@ std::vector<GpuFeatureData> GetGpuFeatureData(
+       SafeGetFeatureStatus(gpu_feature_info, gpu::GPU_FEATURE_TYPE_WEBNN));
+   features.emplace_back("trees_in_viz",
+                         base::FeatureList::IsEnabled(::features::kTreesInViz)
+                             ? gpu::kGpuFeatureStatusEnabled
+                             : gpu::kGpuFeatureStatusDisabled);
++#endif
+   return features;
+ }
+ 
+ base::Value GetFeatureStatusImpl(GpuFeatureInfoType type) {
+   GpuDataManagerImpl* manager = GpuDataManagerImpl::GetInstance();

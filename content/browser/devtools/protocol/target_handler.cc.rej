@@ -1,0 +1,14 @@
+diff a/content/browser/devtools/protocol/target_handler.cc b/content/browser/devtools/protocol/target_handler.cc	(rejected hunks)
+@@ -956,11 +956,11 @@ void TargetHandler::TargetInfoChanged(DevToolsAgentHost* host) {
+   frontend_->TargetInfoChanged(BuildTargetInfo(host));
+ }
+ 
+ void TargetHandler::AutoAttacherDestroyed(TargetAutoAttacher* auto_attacher) {
+   auto throttles = throttles_;
+-  for (Throttle* throttle : throttles_) {
++  for (Throttle* throttle : throttles) {
+     if (throttle->auto_attacher() == auto_attacher) {
+       throttle->Clear();
+     }
+   }
+   for (auto& entry : auto_attached_sessions_) {

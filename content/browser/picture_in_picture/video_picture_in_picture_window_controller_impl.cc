@@ -107,12 +107,16 @@ void VideoPictureInPictureWindowControllerImpl::FocusInitiator() {
 }
 
 void VideoPictureInPictureWindowControllerImpl::Close(bool should_pause_video) {
+#if BUILDFLAG(ARKWEB_PIP)
+  CloseExt(should_pause_video);
+#else
   if (!window_ || !window_->IsVisible())
     return;
 
   window_->Hide();
   // The call to `Hide()` may cause `window_` to be cleared.
   CloseInternal(should_pause_video);
+#endif
 }
 
 void VideoPictureInPictureWindowControllerImpl::CloseAndFocusInitiator() {
@@ -645,7 +649,14 @@ void VideoPictureInPictureWindowControllerImpl::MediaStartedPlaying(
 
   if (!active_session_ || active_session_->player_id() != media_player_id)
     return;
-
+#if BUILDFLAG(ARKWEB_PIP)
+  if (GetWebContentsImpl() && GetWebContentsImpl()->AsWebContentsImplExt()) {
+    GetWebContentsImpl()->AsWebContentsImplExt()->OnPip(PIP_STATE_PLAY,
+      media_player_id.player_id,
+      media_player_id.frame_routing_id.child_id,
+      media_player_id.frame_routing_id.frame_routing_id, 0, 0);
+  }
+#endif
   UpdatePlaybackState();
 }
 

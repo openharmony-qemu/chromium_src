@@ -1,0 +1,19 @@
+diff a/content/browser/idle/idle_manager_impl.cc b/content/browser/idle/idle_manager_impl.cc	(rejected hunks)
+@@ -92,10 +96,17 @@ void IdleManagerImpl::AddMonitor(
+ 
+   std::move(callback).Run(IdleManagerError::kSuccess, last_state_->Clone());
+ }
+ 
+ bool IdleManagerImpl::HasPermission() {
++#if BUILDFLAG(ARKWEB_DEVTOOLS)
++  // When DevTools has set an idle override, bypass the permission check
++  // so that the override can take effect without requiring user grant.
++  if (state_override_) {
++    return true;
++  }
++#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
+   PermissionController* permission_controller =
+       render_frame_host_->GetBrowserContext()->GetPermissionController();
+   DCHECK(permission_controller);
+   PermissionStatus status =
+       permission_controller->GetPermissionStatusForCurrentDocument(

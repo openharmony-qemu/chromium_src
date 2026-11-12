@@ -62,6 +62,10 @@ class ScopedTempDir;
 #endif
 }
 
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
+class AafwkAppMgrClientAdapter;
+#endif
+
 namespace content {
 
 class ChildProcessLauncher;
@@ -76,6 +80,9 @@ class PosixFileDescriptorInfo;
 
 namespace internal {
 
+#if BUILDFLAG(IS_ARKWEB)
+class ArkwebChildProcessLauncherHelperUtils;
+#endif
 #if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 using FileMappedForLaunch = PosixFileDescriptorInfo;
 #else
@@ -99,6 +106,9 @@ class ProcessStorageBase {
 class ChildProcessLauncherHelper
     : public base::RefCountedThreadSafe<ChildProcessLauncherHelper> {
  public:
+#if BUILDFLAG(IS_ARKWEB)
+  friend class ArkwebChildProcessLauncherHelperUtils;
+#endif
   // Abstraction around a process required to deal in a platform independent way
   // between Linux (which can use zygotes) and the other platforms.
   struct Process {
@@ -383,6 +393,10 @@ class ChildProcessLauncherHelper
   std::unique_ptr<sandbox::policy::SandboxPolicyFuchsia> sandbox_policy_;
 #endif
 
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
+  std::unique_ptr<OHOS::NWeb::AafwkAppMgrClientAdapter> app_mgr_client_adapter_{
+      nullptr};
+#endif
 #if BUILDFLAG(IS_WIN)
   // Only valid if the host process has logging enabled.
   base::win::ScopedHandle log_handle_;
@@ -413,7 +427,13 @@ class ChildProcessLauncherHelper
   // Creation time of the helper, used for metrics.
   // TODO(crbug.com/40287847): Remove when parallel launching is finished.
   base::TimeTicks init_start_time_;
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
+  std::unique_ptr<ArkwebChildProcessLauncherHelperUtils> arkweb_child_process_launcher_helper_utils_;
+#endif
 };
+#if BUILDFLAG(ARKWEB_TEST)
+#undef private
+#endif
 
 }  // namespace internal
 

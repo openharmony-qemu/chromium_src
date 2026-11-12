@@ -369,6 +369,14 @@ class MetricsWebContentsObserver
   void OnCookiesAccessedImpl(PageLoadTracker& tracker,
                              const content::CookieAccessDetails& details);
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void DidStartNavigationExt(content::NavigationHandle* navigation_handle);
+  void OnResourceLoadComplete(
+      content::RenderFrameHost* render_frame_host,
+      const content::GlobalRequestID& request_id,
+      const blink::mojom::ResourceLoadInfo& resource_load_info);
+#endif
+
   // True if the web contents is currently in the foreground.
   bool in_foreground_;
 
@@ -419,6 +427,16 @@ class MetricsWebContentsObserver
   bool web_contents_will_soon_be_destroyed_ = false;
 
   base::TimeTicks created_;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  base::Value::Dict load_resource_failed_metrics_;
+  int64_t navigation_handle_id_ = 0;
+  int64_t total_resource_count_ = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  std::string current_page_trace_id_;
+#endif
 
   base::WeakPtrFactory<MetricsWebContentsObserver> weak_ptr_factory_{this};
 

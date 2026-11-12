@@ -278,6 +278,10 @@ void MetricsWebContentsObserver::MediaStartedPlaying(
 
 void MetricsWebContentsObserver::DidStartNavigation(
     content::NavigationHandle* navigation_handle) {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  DidStartNavigationExt(navigation_handle);
+#endif
+
   if (navigation_handle->IsSameDocument() ||
       !navigation_handle->NeedsUrlLoader() ||
       !navigation_handle->IsInMainFrame()) {
@@ -650,6 +654,13 @@ void MetricsWebContentsObserver::DidFinishNavigation(
     }
     return;
   }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (navigation_handle && !navigation_handle->IsSameDocument() &&
+      !current_page_trace_id_.empty()) {
+    navigation_handle->OnReportNewNavigationInfo(current_page_trace_id_);
+  }
+#endif
 
   CHECK(navigation_handle->IsInMainFrame());
   // Not all navigations trigger the WillStartNavigationRequest callback (for

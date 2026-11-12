@@ -1,0 +1,22 @@
+diff a/components/history/core/browser/history_backend.cc b/components/history/core/browser/history_backend.cc	(rejected hunks)
+@@ -958,12 +958,19 @@ void HistoryBackend::AddPage(const HistoryAddPageArgs& request) {
+   DCHECK(request.url.is_valid());
+   if (request.response_code_category == VisitResponseCodeCategory::k404) {
+     CHECK(request.hidden);
+   }
+ 
+-  if (!db_)
++  if (!db_) {
++#if BUILDFLAG(IS_ARKWEB)
++    if (base::FeatureList::IsEnabled(network::features::kDeleteHistoryServiceDB)) {
++      // Even without DB, notify visited link system so links get marked as visited.
++      delegate_->NotifyVisitedLinksAdded(request);
++    }
++#endif
+     return;
++  }
+ 
+   // Will be filled with the visit ID of the last addition.
+   VisitID last_visit_id = tracker_.GetLastVisit(
+       request.context_id, request.nav_entry_id, request.referrer);
+ 

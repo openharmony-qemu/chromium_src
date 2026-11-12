@@ -1,0 +1,19 @@
+diff a/components/no_state_prefetch/common/no_state_prefetch_url_loader_throttle.cc b/components/no_state_prefetch/common/no_state_prefetch_url_loader_throttle.cc	(rejected hunks)
+@@ -58,15 +67,17 @@ void NoStatePrefetchURLLoaderThrottle::DetachFromCurrentSequence() {
+ 
+ void NoStatePrefetchURLLoaderThrottle::WillStartRequest(
+     network::ResourceRequest* request,
+     bool* defer) {
+   request->load_flags |= net::LOAD_PREFETCH;
++#if !BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+   if (!base::FeatureList::IsEnabled(
+           blink::features::kRemovePurposeHeaderForPrefetch)) {
+     request->cors_exempt_headers.SetHeader(
+         blink::kPurposeHeaderName, blink::kSecPurposePrefetchHeaderValue);
+   }
++#endif
+ 
+   if (base::FeatureList::IsEnabled(
+           blink::features::kSecPurposePrefetchHeaderNoStatePrefetch)) {
+     request->headers.SetHeader(blink::kSecPurposeHeaderName,
+                                blink::kSecPurposePrefetchHeaderValue);

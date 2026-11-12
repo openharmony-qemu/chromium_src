@@ -1,0 +1,51 @@
+diff a/components/media_router/common/providers/cast/channel/cast_message_handler_unittest.cc b/components/media_router/common/providers/cast/channel/cast_message_handler_unittest.cc	(rejected hunks)
+@@ -333,11 +333,11 @@ TEST_F(CastMessageHandlerTest, RequestAppAvailability) {
+   ASSERT_TRUE(request_id_value);
+   int request_id = *request_id_value;
+   EXPECT_GT(request_id, 0);
+ 
+   CastMessage response;
+-  response.set_namespace_("urn:x-cast:com.google.cast.receiver");
++  response.set_namespace_(kReceiverNamespace);
+   response.set_source_id("receiver-0");
+   response.set_destination_id(handler_.source_id());
+   response.set_payload_type(
+       CastMessage::PayloadType::CastMessage_PayloadType_STRING);
+   response.set_payload_utf8(
+@@ -468,11 +468,11 @@ TEST_F(CastMessageHandlerTest, LaunchSession) {
+   EXPECT_GT(request_id, 0);
+   const base::Value* app_params = dict->Find("appParams");
+   EXPECT_EQ(*json, *app_params);
+ 
+   CastMessage response;
+-  response.set_namespace_("urn:x-cast:com.google.cast.receiver");
++  response.set_namespace_(kReceiverNamespace);
+   response.set_source_id("receiver-0");
+   response.set_destination_id(handler_.source_id());
+   response.set_payload_type(
+       CastMessage::PayloadType::CastMessage_PayloadType_STRING);
+   response.set_payload_utf8(
+@@ -536,10 +536,23 @@ TEST_F(CastMessageHandlerTest, SendAppMessage) {
+   }
+ 
+   EXPECT_EQ(Result::kOk, handler_.SendAppMessage(channel_id_, message));
+ }
+ 
++TEST_F(CastMessageHandlerTest, SendAppMessageWithReservedNamespace) {
++  base::DictValue body;
++  body.Set("foo", "bar");
++  CastMessage message =
++      CreateCastMessage(kReceiverNamespace, base::Value(std::move(body)),
++                        kSourceId, kDestinationId);
++
++  // Expect no message to be sent.
++  EXPECT_CALL(*transport_, SendMessage_(_, _)).Times(0);
++
++  EXPECT_EQ(Result::kFailed, handler_.SendAppMessage(channel_id_, message));
++}
++
+ TEST_F(CastMessageHandlerTest, SendMessageOnInvisibleConnection) {
+   // For destinations other than receiver-0, we should default to an invisible
+   // connection.
+   SendMessageAndExpectConnection("non-platform-receiver-id",
+                                  VirtualConnectionType::kInvisible);

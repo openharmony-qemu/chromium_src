@@ -21,9 +21,9 @@
 #include "content/public/browser/web_contents.h"
 #include "mojo/public/cpp/bindings/pending_associated_remote.h"
 #include "third_party/blink/public/common/associated_interfaces/associated_interface_provider.h"
+#include "arkweb/chromium_ext/components/js_injection/js_communication_host_utils.h"
 
 namespace js_injection {
-namespace {
 
 std::string ConvertToNativeAllowedOriginRulesWithSanityCheck(
     const std::vector<std::string>& allowed_origin_rules_strings,

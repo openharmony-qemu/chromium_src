@@ -45,6 +45,9 @@ class MockDelegate final : public media::AudioInputIPCDelegate {
   MOCK_METHOD1(OnError, void(AudioSourceErrorCode code));
   MOCK_METHOD1(OnMuted, void(bool muted));
   MOCK_METHOD0(OnIPCClosed, void());
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  MOCK_METHOD1(OnPaused, void(bool is_paused));
+#endif // ARKWEB_MEDIA_CAPTURE
 
   void OnStreamCreated(base::UnsafeSharedMemoryRegion shared_memory_region,
                        base::SyncSocket::ScopedHandle socket_handle,

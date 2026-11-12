@@ -1,0 +1,33 @@
+diff a/components/invalidation/impl/per_user_topic_subscription_manager.cc b/components/invalidation/impl/per_user_topic_subscription_manager.cc
+--- a/components/invalidation/impl/per_user_topic_subscription_manager.cc
++++ b/components/invalidation/impl/per_user_topic_subscription_manager.cc
+@@ -11,10 +11,11 @@
+ #include <iterator>
+ #include <memory>
+ #include <string>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/functional/bind.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "base/observer_list.h"
+ #include "base/rand_util.h"
+@@ -35,12 +36,17 @@ const char kTypeSubscribedForInvalidations[] =
+     "invalidation.per_sender_registered_for_invalidation";
+ 
+ const char kActiveRegistrationTokens[] =
+     "invalidation.per_sender_active_registration_tokens";
+ 
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++const char kInvalidationRegistrationScope[] =
++    "https://x.x.x";
++#else
+ const char kInvalidationRegistrationScope[] =
+     "https://firebaseperusertopics-pa.googleapis.com";
++#endif
+ 
+ // Note: Taking |topic| and |private_topic_name| by value (rather than const
+ // ref) because the caller (in practice, SubscriptionEntry) may be destroyed by
+ // the callback.
+ // This is a RepeatingCallback because in case of failure, the request will get

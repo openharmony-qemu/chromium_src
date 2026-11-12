@@ -1,0 +1,39 @@
+diff a/components/optimization_guide/core/optimization_guide_constants.cc b/components/optimization_guide/core/optimization_guide_constants.cc
+--- a/components/optimization_guide/core/optimization_guide_constants.cc
++++ b/components/optimization_guide/core/optimization_guide_constants.cc
+@@ -8,11 +8,23 @@ namespace optimization_guide {
+ 
+ const base::FilePath::CharType kUnindexedHintsFileName[] =
+     FILE_PATH_LITERAL("optimization-hints.pb");
+ 
+ const char kRulesetFormatVersionString[] = "1.0.0";
++#if BUILDFLAG(IS_ARKWEB)
++const char kOptimizationGuideServiceGetHintsDefaultURL[] =
++    "https://***/";
++
++const char kOptimizationGuideServiceGetModelsDefaultURL[] =
++    "https://***/";
+ 
++const char kOptimizationGuideServiceModelExecutionDefaultURL[] =
++    "https://***/";
++
++const char kOptimizationGuideServiceModelQualtiyDefaultURL[] =
++    "https://***/";
++#else
+ const char kOptimizationGuideServiceGetHintsDefaultURL[] =
+     "https://optimizationguide-pa.googleapis.com/v1:GetHints";
+ 
+ const char kOptimizationGuideServiceGetModelsDefaultURL[] =
+     "https://optimizationguide-pa.googleapis.com/v1:GetModels";
+@@ -20,10 +32,11 @@ const char kOptimizationGuideServiceGetModelsDefaultURL[] =
+ const char kOptimizationGuideServiceModelExecutionDefaultURL[] =
+     "https://chromemodelexecution-pa.googleapis.com/v1:Execute";
+ 
+ const char kOptimizationGuideServiceModelQualtiyDefaultURL[] =
+     "https://chromemodelquality-pa.googleapis.com/v1:LogAiData";
++#endif
+ 
+ const char kLoadedHintLocalHistogramString[] =
+     "OptimizationGuide.LoadedHint.Result";
+ 
+ const char kOptimizationGuideLanguageOverrideHeaderKey[] =

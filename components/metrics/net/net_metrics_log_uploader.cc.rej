@@ -1,0 +1,12 @@
+diff a/components/metrics/net/net_metrics_log_uploader.cc b/components/metrics/net/net_metrics_log_uploader.cc	(rejected hunks)
+@@ -1,9 +1,10 @@
+ // Copyright 2014 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
++#include "arkweb/build/features/features.h"
+ #include "components/metrics/net/net_metrics_log_uploader.h"
+ 
+ #include <optional>
+ #include <sstream>
+ #include <string>

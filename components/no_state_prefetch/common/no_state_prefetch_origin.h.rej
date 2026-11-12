@@ -1,0 +1,14 @@
+diff a/components/no_state_prefetch/common/no_state_prefetch_origin.h b/components/no_state_prefetch/common/no_state_prefetch_origin.h	(rejected hunks)
+@@ -18,11 +18,11 @@ enum Origin {
+   // Obsolete: ORIGIN_LINK_REL_PRERENDER = 0,
+   // Obsolete: ORIGIN_OMNIBOX_ORIGINAL = 1,
+   ORIGIN_GWS_PRERENDER = 2,
+   // Obsolete: ORIGIN_OMNIBOX_CONSERVATIVE = 3,
+   // Obsolete: ORIGIN_OMNIBOX_EXACT = 4,
+-  // Obsolete: ORIGIN_OMNIBOX = 5,
++  ORIGIN_OMNIBOX = 5,
+   ORIGIN_NONE = 6,
+   ORIGIN_LINK_REL_PRERENDER_SAMEDOMAIN = 7,
+   ORIGIN_LINK_REL_PRERENDER_CROSSDOMAIN = 8,
+   // Obsolete: ORIGIN_LOCAL_PREDICTOR = 9,
+   // Obsolete: ORIGIN_EXTERNAL_REQUEST = 10,

@@ -33,6 +33,9 @@
 #include "third_party/zlib/google/compression_utils.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_HISTOGRAM_DFX)
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
+#endif
 namespace {
 
 // Constants used for encrypting logs that are sent over HTTP. The
@@ -522,6 +525,12 @@ void NetMetricsLogUploader::UploadLog(const std::string& compressed_log_data,
                                       const std::string& log_hash,
                                       const std::string& log_signature,
                                       const ReportingInfo& reporting_info) {
+#if BUILDFLAG(ARKWEB_HISTOGRAM_DFX)
+  ReportMetricsLogData(compressed_log_data, server_url_.possibly_invalid_spec());
+  if (!on_upload_complete_.is_null()) {
+    std::move(on_upload_complete_).Run(200, 0, true, false, std::string());
+  }
+#else
   // If this attempt is a retry, there was a network error, the last attempt was
   // over HTTPS, and there is an insecure URL set, then attempt this upload over
   // HTTP.
@@ -535,6 +544,7 @@ void NetMetricsLogUploader::UploadLog(const std::string& compressed_log_data,
   }
   UploadLogToURL(compressed_log_data, log_metadata, log_hash, log_signature,
                  reporting_info, server_url_);
+#endif
 }
 
 void NetMetricsLogUploader::UploadLogToURL(

@@ -38,6 +38,15 @@ NoStatePrefetchURLLoaderThrottle::NoStatePrefetchURLLoaderThrottle(
   DCHECK(canceler_);
 }
 
+NoStatePrefetchURLLoaderThrottle::NoStatePrefetchURLLoaderThrottle(
+    const std::string& histogram_prefix,
+    mojo::PendingRemote<prerender::mojom::NoStatePrefetchCanceler> canceler)
+    // todo:check
+    //: histogram_prefix_(histogram_prefix), canceler_(std::move(canceler)) {
+    : histogram_prefix_(histogram_prefix) {
+  DCHECK(canceler_);
+}
+
 NoStatePrefetchURLLoaderThrottle::~NoStatePrefetchURLLoaderThrottle() {
   if (destruction_closure_) {
     std::move(destruction_closure_).Run();

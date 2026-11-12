@@ -1,0 +1,14 @@
+diff a/components/no_state_prefetch/common/no_state_prefetch_url_loader_throttle.h b/components/no_state_prefetch/common/no_state_prefetch_url_loader_throttle.h	(rejected hunks)
+@@ -38,10 +46,12 @@ class NoStatePrefetchURLLoaderThrottle : public blink::URLLoaderThrottle {
+       net::HttpRequestHeaders* modified_headers,
+       net::HttpRequestHeaders* modified_cors_exempt_headers) override;
+ 
+   void OnTimedOut();
+ 
++  std::string histogram_prefix_;
++
+   bool deferred_ = false;
+   network::mojom::RequestDestination request_destination_;
+ 
+   mojo::PendingRemote<prerender::mojom::NoStatePrefetchCanceler> canceler_;
+ 

@@ -1,0 +1,28 @@
+diff a/components/openscreen_platform/udp_socket.cc b/components/openscreen_platform/udp_socket.cc	(rejected hunks)
+@@ -150,10 +150,11 @@ void UdpSocket::SetDscp(openscreen::UdpSocket::DscpMode state) {}
+ 
+ void UdpSocket::OnReceived(
+     int32_t net_result,
+     const std::optional<net::IPEndPoint>& source_endpoint,
+     std::optional<base::span<const uint8_t>> data) {
++  base::WeakPtr<UdpSocket> weak_this = weak_ptr_factory_.GetWeakPtr();
+   if (net_result != net::OK) {
+     client_->OnRead(this, Error::Code::kSocketReadFailure);
+   } else if (data) {
+     UdpPacket packet(data->begin(), data->end());
+     if (source_endpoint) {
+@@ -161,11 +162,13 @@ void UdpSocket::OnReceived(
+           openscreen_platform::ToOpenScreenEndPoint(source_endpoint.value()));
+     }
+     client_->OnRead(this, std::move(packet));
+   }
+ 
+-  udp_socket_->ReceiveMore(1);
++  if (weak_this) {
++    udp_socket_->ReceiveMore(1);
++  }
+ }
+ 
+ void UdpSocket::BindCallback(int32_t result,
+                              const std::optional<net::IPEndPoint>& address) {
+   if (result != net::OK) {

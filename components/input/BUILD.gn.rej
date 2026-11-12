@@ -1,0 +1,34 @@
+diff a/components/input/BUILD.gn b/components/input/BUILD.gn	(rejected hunks)
+@@ -82,25 +87,32 @@ component("input") {
+     "utils.cc",
+     "utils.h",
+     "web_touch_event_traits.cc",
+     "web_touch_event_traits.h",
+   ]
++  if (arkweb_input_events) {
++    sources += arkweb_input_router_impl_sources
++  }
+   public_deps = [ "//ui/base/mojom:ui_base_types" ]
+   deps = [
+     ":mojom",
+     "//base",
+     "//cc",
+     "//services/viz/public/mojom",
+     "//third_party/blink/public/common:headers",
++    "//services/viz/privileged/mojom/compositing",
+     "//ui/base",
+     "//ui/base/cursor",
+     "//ui/events",
+     "//ui/events:events_base",
+     "//ui/events:gesture_detection",
+     "//ui/events/blink",
+     "//ui/events/gestures/blink",
+   ]
++  if (arkweb_input_events) {
++    deps += [ "//ohos_glue:ohos_adapter_glue_source", "//base" ]
++  }
+   if (use_aura) {
+     sources += [ "native_web_keyboard_event_aura.cc" ]
+   }
+   if (is_android) {
+     sources += [

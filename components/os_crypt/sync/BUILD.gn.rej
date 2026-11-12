@@ -1,0 +1,92 @@
+diff a/components/os_crypt/sync/BUILD.gn b/components/os_crypt/sync/BUILD.gn
+--- a/components/os_crypt/sync/BUILD.gn
++++ b/components/os_crypt/sync/BUILD.gn
+@@ -4,10 +4,12 @@
+ 
+ import("//build/config/cast.gni")
+ import("//build/config/features.gni")
+ import("//build/config/ui.gni")
+ import("//components/os_crypt/sync/features.gni")
++import("//arkweb/build/features/features.gni")
++import("//arkweb/chromium_ext/chromium_ext.gni")
+ 
+ component("sync") {
+   # New code should use os_crypt async.
+   visibility = [
+     "//chrome/browser",
+@@ -23,10 +25,11 @@ component("sync") {
+     "//components/os_crypt/sync:unit_tests",
+     "//components/signin/core/browser",
+     "//components/sync:unit_tests",
+     "//components/sync/nigori",
+     "//components/sync/service",
++    "//crypto:crypto_unittests",
+     "//headless:headless_non_renderer",
+     "//ios/chrome/browser/web/model:web_internal",
+     "//services/network:network_service",
+     "//services/test/echo:lib",
+   ]
+@@ -42,18 +45,26 @@ component("sync") {
+ 
+   deps = [
+     "//base",
+     "//build:branding_buildflags",
+     "//build:chromecast_buildflags",
++    "//chrome/common:buildflags",
+     "//components/os_crypt/common:switches",
+     "//components/prefs",
+     "//crypto",
+   ]
++  deps += [
++    "//arkweb/build/features",
++  ]
+ 
+   configs += [ "//build/config/compiler:wexit_time_destructors" ]
+   defines = [ "IS_OS_CRYPT_IMPL" ]
+ 
++  if (arkweb_encrypt) {
++    sources += arkweb_components_os_crpty_sync_source
++  }
++
+   if (allow_runtime_configurable_key_storage) {
+     defines += [ "ALLOW_RUNTIME_CONFIGURABLE_KEY_STORAGE" ]
+   }
+ 
+   if (is_apple) {
+@@ -96,13 +107,35 @@ component("sync") {
+         "kwallet_dbus.h",
+       ]
+       deps += [ "//dbus" ]
+       defines += [ "USE_KWALLET" ]
+     }
+-  } else if (is_posix || is_fuchsia) {
++  } else if ((is_posix && !is_arkweb) || is_fuchsia) {
+     sources += [ "os_crypt_posix.cc" ]
+   }
++
++  if (is_arkweb) {
++    sources += [
++      "key_storage_config_linux.cc",
++      "key_storage_config_linux.h",
++      "key_storage_linux.cc",
++      "key_storage_linux.h",
++      "key_storage_util_linux.cc",
++      "key_storage_util_linux.h",
++      "os_crypt_linux.cc",
++    ]
++    deps += [ "//chrome/browser:browser_process" ]
++
++    libs = [
++      "huks_ndk.z"
++    ]
++
++    deps += [
++      "//ohos_glue:ohos_adapter_glue_source",
++      "//third_party:huawei_securec"
++    ]
++  }
+ }
+ 
+ static_library("test_support") {
+   testonly = true
+   sources = [

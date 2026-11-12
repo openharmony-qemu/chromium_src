@@ -4,6 +4,7 @@
 
 #include "components/manta/base_provider.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/fixed_flat_map.h"
 #include "base/version_info/channel.h"
 #include "components/manta/proto/manta.pb.h"
@@ -15,9 +16,14 @@ namespace {
 constexpr endpoint_fetcher::HttpMethod kHttpMethod =
     endpoint_fetcher::HttpMethod::kPost;
 constexpr char kHttpContentType[] = "application/x-protobuf";
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr char kAutopushEndpointUrl[] = "https://x.x.x";
+constexpr char kProdEndpointUrl[] = "https://x.x.x";
+#else
 constexpr char kAutopushEndpointUrl[] =
     "https://autopush-aratea-pa.sandbox.googleapis.com/generate";
 constexpr char kProdEndpointUrl[] = "https://aratea-pa.googleapis.com/generate";
+#endif
 
 using manta::proto::ChromeClientInfo;
 

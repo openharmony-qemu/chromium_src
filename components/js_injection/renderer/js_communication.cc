@@ -88,6 +88,7 @@ JsCommunication::JsCommunication(content::RenderFrame* render_frame)
   render_frame->GetAssociatedInterfaceRegistry()
       ->AddInterface<mojom::JsCommunication>(base::BindRepeating(
           &JsCommunication::BindPendingReceiver, base::Unretained(this)));
+  implUtils_ = std::make_unique<JsCommunicationUtils>(this);
 }
 
 JsCommunication::~JsCommunication() = default;
@@ -124,6 +125,63 @@ void JsCommunication::RemovePersistentJavaScript(int32_t script_id) {
     }
   }
 }
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+void JsCommunication::AddDocumentEndScript(
+    mojom::DocumentEndJavaScriptPtr script_ptr) {
+  implUtils_->AddDocumentEndScript(script_ptr);
+}
+
+void JsCommunication::RemoveDocumentEndScript(int32_t script_id) {
+  implUtils_->RemoveDocumentEndScript(script_id);
+}
+
+void JsCommunication::AddDocumentEndScriptRegexRules(
+    mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) {
+  implUtils_->AddDocumentEndScriptRegexRules(script_regex_rules_ptr);
+}
+
+void JsCommunication::CommitPendingJavascriptsAtDocumentEnd() {
+  implUtils_->CommitPendingJavascriptsAtDocumentEnd();
+}
+
+void JsCommunication::AddPendingJavascriptAtDocumentEnd(
+    mojom::DocumentEndJavaScriptPtr script_ptr,
+    mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) {
+  implUtils_->AddPendingJavascriptAtDocumentEnd(script_ptr, script_regex_rules_ptr);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_JSPROXY)
+void JsCommunication::AddHeadReadyScript(
+    mojom::DocumentStartJavaScriptPtr script_ptr) {
+  implUtils_->AddHeadReadyScript(script_ptr);
+}
+
+void JsCommunication::RemoveHeadReadyScript(int32_t script_id) {
+  implUtils_->RemoveHeadReadyScript(script_id);
+}
+
+void JsCommunication::AddHeadReadyScriptRegexRules(
+      mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) {
+  implUtils_->AddHeadReadyScriptRegexRules(script_regex_rules_ptr);
+}
+ 
+void JsCommunication::AddDocumentStartScriptRegexRules(
+      mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) {
+  implUtils_->AddDocumentStartScriptRegexRules(script_regex_rules_ptr);
+}
+
+void JsCommunication::CommitPendingJavascriptsAtHeadReady() {
+  implUtils_->CommitPendingJavascriptsAtHeadReady();
+}
+
+void JsCommunication::AddPendingJavascriptAtHeadReady(
+    mojom::DocumentStartJavaScriptPtr script_ptr,
+    mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) {
+  implUtils_->AddPendingJavascriptAtHeadReady(script_ptr, script_regex_rules_ptr);
+}
+#endif
 
 void JsCommunication::DidClearWindowObject() {
   if (inside_did_clear_window_object_)

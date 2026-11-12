@@ -1,0 +1,19 @@
+diff a/components/page_load_metrics/browser/page_load_tracker.cc b/components/page_load_metrics/browser/page_load_tracker.cc	(rejected hunks)
+@@ -620,10 +657,17 @@ void PageLoadTracker::DidActivatePrerenderedPage(
+   }
+ 
+   base::UmaHistogramEnumeration(
+       internal::kPageLoadPrerender2Event,
+       internal::PageLoadPrerenderEvent::kPrerenderActivationNavigation);
++
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
++      ::switches::kEnableNwebEx)) {
++    is_prerendered_page_activation_ = true;
++  }
++#endif
+ }
+ 
+ void PageLoadTracker::DidActivatePreviewedPage(
+     base::TimeTicks activation_time) {
+   CHECK_EQ(prerendering_state_, PrerenderingState::kInPreview);

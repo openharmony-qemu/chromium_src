@@ -1,0 +1,14 @@
+diff a/components/gwp_asan/client/extreme_lightweight_detector_malloc_shims_unittest.cc b/components/gwp_asan/client/extreme_lightweight_detector_malloc_shims_unittest.cc	(rejected hunks)
+@@ -4,10 +4,12 @@
+ 
+ #include "components/gwp_asan/client/extreme_lightweight_detector_malloc_shims.h"
+ 
+ #include "partition_alloc/shim/allocator_shim.h"
+ 
++#include "partition_alloc/shim/allocator_shim.h"
++
+ #if PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
+ 
+ #include "base/test/multiprocess_test.h"
+ #include "base/test/test_timeouts.h"
+ #include "partition_alloc/buildflags.h"

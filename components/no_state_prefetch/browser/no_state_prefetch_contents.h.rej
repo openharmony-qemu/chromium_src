@@ -1,0 +1,23 @@
+diff a/components/no_state_prefetch/browser/no_state_prefetch_contents.h b/components/no_state_prefetch/browser/no_state_prefetch_contents.h	(rejected hunks)
+@@ -138,10 +138,21 @@ class NoStatePrefetchContents
+ 
+   Origin origin() const { return origin_; }
+ 
+   base::TimeTicks load_start_time() const { return load_start_time_; }
+ 
++#if BUILDFLAG(IS_ARKWEB)
++  void SetOhStartPrerenderingExtraHeaders(const std::string& extra_headers) {
++    start_prerendering_extra_headers_ = extra_headers;
++  }
++#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
++  void SetIgnoreCacheControlNoStore(bool flag) {
++    ignore_cache_control_no_store_ = flag;
++  }
++#endif
++#endif
++
+   // Indicates whether this prerendered page can be used for the provided
+   // |url| and |session_storage_namespace|.
+   bool Matches(
+       const GURL& url,
+       content::SessionStorageNamespace* session_storage_namespace) const;

@@ -1,0 +1,78 @@
+diff a/components/js_injection/renderer/js_communication.cc b/components/js_injection/renderer/js_communication.cc	(rejected hunks)
+@@ -1,10 +1,11 @@
+ // Copyright 2019 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "components/js_injection/renderer/js_communication.h"
++#include "arkweb/chromium_ext/components/js_injection/renderer/js_communication_utils.h"
+ 
+ #include "base/feature_list.h"
+ #include "components/js_injection/renderer/js_binding.h"
+ #include "components/origin_matcher/origin_matcher.h"
+ #include "content/public/common/isolated_world_ids.h"
+@@ -188,20 +247,34 @@ void JsCommunication::WillReleaseScriptContext(v8::Local<v8::Context> context,
+     if (js_binding)
+       js_binding->ReleaseV8GlobalObjects();
+   }
+ }
+ 
+-void JsCommunication::OnDestruct() {
++void JsCommunication::OnDestruct()
++{
+   delete this;
+ }
+ 
+ void JsCommunication::RunScriptsAtDocumentStart() {
+   url::Origin frame_origin =
+       url::Origin(render_frame()->GetWebFrame()->GetSecurityOrigin());
+   for (const auto& script : scripts_) {
++#if BUILDFLAG(ARKWEB_JSPROXY)
++    if (!script->origin_matcher.rules().empty()) {
++      if (!script->origin_matcher.Matches(frame_origin)) {
++        continue;
++      }
++    } else {
++      if (!implUtils_->RunScriptsAtDocumentStartRegexRules(script->script)) {
++        continue;
++      }
++    }
++#else
+     if (!script->origin_matcher.Matches(frame_origin))
+       continue;
++#endif
++
+     render_frame()->GetWebFrame()->ExecuteScript(
+         blink::WebScriptSource(script->script));
+   }
+ }
+ 
+@@ -219,6 +292,28 @@ mojom::JsToBrowserMessaging* JsCommunication::GetJsToJavaMessage(
+   if (iterator == js_objects_.end())
+     return nullptr;
+   return iterator->second->js_to_java_messaging();
+ }
+ 
++#if BUILDFLAG(ARKWEB_JSPROXY)
++void JsCommunication::AddPendingJavascriptAtDocumentStart(
++    mojom::DocumentStartJavaScriptPtr script_ptr,
++    mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) {
++  DocumentStartJavaScript* script = new DocumentStartJavaScript{
++      script_ptr->origin_matcher,
++      blink::WebString::FromUTF16(script_ptr->script), script_ptr->script_id};
++  swap_scripts_.push_back(std::unique_ptr<DocumentStartJavaScript>(script));
++
++  implUtils_->AddPendingJavascriptAtDocumentStartRegexRules(script_regex_rules_ptr);
++}
++
++void JsCommunication::CommitPendingJavascriptsAtDocumentStart() {
++  scripts_.clear();
++  for (auto& item : swap_scripts_) {
++    scripts_.push_back(std::move(item));
++  }
++  swap_scripts_.clear();
++
++  implUtils_->CommitPendingJavascriptsAtDocumentStartRegexRules();
++}
++#endif
+ }  // namespace js_injection

@@ -1,0 +1,285 @@
+diff a/components/os_crypt/sync/os_crypt.h b/components/os_crypt/sync/os_crypt.h
+--- a/components/os_crypt/sync/os_crypt.h
++++ b/components/os_crypt/sync/os_crypt.h
+@@ -9,16 +9,84 @@
+ #include <memory>
+ #include <optional>
+ #include <string>
+ #include <variant>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/component_export.h"
+ #include "base/functional/callback.h"
+ #include "base/task/single_thread_task_runner.h"
+ #include "build/build_config.h"
+ #include "build/chromecast_buildflags.h"
+ #include "crypto/subtle_passkey.h"
++#include "components/os_crypt/sync/key_storage_config_linux.h"
++
++// Compatibility layer for Chromium 141 migration
++// crypto/symmetric_key.h was completely removed in Chromium 141
++#if BUILDFLAG(ARKWEB_ENCRYPT)
++namespace crypto {
++class SymmetricKey {
++ public:
++  enum Algorithm { AES, HMAC_SHA1 };
++
++  SymmetricKey() = delete;
++
++  // Wrap the given span of bytes as a SymmetricKey.
++  explicit SymmetricKey(base::span<const uint8_t> key_bytes);
++  virtual ~SymmetricKey();
++
++  SymmetricKey(const SymmetricKey&);
++  SymmetricKey& operator=(const SymmetricKey&);
++
++  static std::unique_ptr<SymmetricKey> Import(Algorithm algorithm,
++                                              const std::string& raw_key);
++
++  const std::string& key() const { return key_; }
++
++ private:
++  explicit SymmetricKey(const std::string& key) : key_(key) {}
++  std::string key_;
++};
++
++class Encryptor {
++ public:
++  enum Mode { CBC, CTR, GCM };
++
++  Encryptor();
++  ~Encryptor();
++
++  bool Init(const SymmetricKey* key, Mode mode, std::string_view iv);
++  bool Init(const SymmetricKey* key, Mode mode, base::span<const uint8_t> iv);
++
++  // Decrypts |ciphertext| into |plaintext|.  |ciphertext| must not be empty.
++  bool Decrypt(std::string_view ciphertext, std::string* plaintext);
++  bool Encrypt(std::string_view plaintext, std::string* ciphertext);
++
++ private:
++  raw_ptr<const SymmetricKey, DanglingUntriaged> key_;
++  Mode mode_;
++
++  bool CryptString(bool do_encrypt,
++                   std::string_view input,
++                   std::string* output);
++
++  size_t MaxOutput(bool do_encrypt, size_t length);
++  std::optional<size_t> DecryptGCM(const std::string& input,
++                                    base::span<uint8_t> output,
++                                    std::string* tag);
++
++  std::optional<size_t> EncryptGCM(base::span<const uint8_t> input,
++                                   base::span<uint8_t> output,
++                                   std::string* tag);
++
++  std::vector<uint8_t> iv_;
++};
++}
++#endif
+ 
+ #if BUILDFLAG(IS_APPLE)
+ #include "crypto/apple/mock_keychain.h"
+ #endif
+ 
+@@ -26,13 +94,13 @@
+ namespace crypto::apple {
+ class Keychain;
+ }
+ #endif
+ 
+-#if BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
+ class KeyStorageLinux;
+-#endif  // BUILDFLAG(IS_LINUX)
++#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
+ 
+ #if BUILDFLAG(IS_WIN)
+ class PrefRegistrySimple;
+ class PrefService;
+ #endif  // BUILDFLAG(IS_WIN)
+@@ -42,21 +110,29 @@ struct Config;
+ }
+ 
+ // Temporary interface due to OSCrypt refactor. See OSCryptImpl for descriptions
+ // of what each function does.
+ namespace OSCrypt {
+-#if BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
+ COMPONENT_EXPORT(OS_CRYPT)
+ void SetConfig(std::unique_ptr<os_crypt::Config> config);
+ #endif  // BUILDFLAG(IS_LINUX)
+ COMPONENT_EXPORT(OS_CRYPT) bool IsEncryptionAvailable();
+ COMPONENT_EXPORT(OS_CRYPT)
+ bool EncryptString16(const std::u16string& plaintext, std::string* ciphertext);
++#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
++COMPONENT_EXPORT(OS_CRYPT)
++bool DecryptString16ForMigrate(const std::string& ciphertext, std::u16string* plaintext);
++#endif
+ COMPONENT_EXPORT(OS_CRYPT)
+ bool DecryptString16(const std::string& ciphertext, std::u16string* plaintext);
+ COMPONENT_EXPORT(OS_CRYPT)
+ bool EncryptString(const std::string& plaintext, std::string* ciphertext);
++#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
++COMPONENT_EXPORT(OS_CRYPT)
++bool DecryptStringForMigrate(const std::string& ciphertext, std::string* plaintext);
++#endif
+ COMPONENT_EXPORT(OS_CRYPT)
+ bool DecryptString(const std::string& ciphertext, std::string* plaintext);
+ #if BUILDFLAG(IS_WIN)
+ COMPONENT_EXPORT(OS_CRYPT)
+ void RegisterLocalPrefs(PrefRegistrySimple* registry);
+@@ -98,11 +174,11 @@ void UseMockKeyStorageForTesting(
+         storage_provider_factory);
+ COMPONENT_EXPORT(OS_CRYPT) void ClearCacheForTesting();
+ COMPONENT_EXPORT(OS_CRYPT)
+ void SetEncryptionPasswordForTesting(const std::string& password);
+ #endif  // (BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CASTOS))
+-#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) &&         \
++#if (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_OHOS)) && !BUILDFLAG(IS_APPLE) &&         \
+         !(BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CASTOS)) || \
+     BUILDFLAG(IS_FUCHSIA)
+ COMPONENT_EXPORT(OS_CRYPT)
+ void SetEncryptionAvailableForTesting(std::optional<bool> available);
+ #endif  // BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !(BUILDFLAG(IS_LINUX)
+@@ -123,16 +199,16 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
+   OSCryptImpl& operator=(OSCryptImpl&&) = delete;
+ 
+   // Returns singleton instance of OSCryptImpl.
+   static OSCryptImpl* GetInstance();
+ 
+-#if BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
+   // Set the configuration of OSCryptImpl.
+   // This method, or SetRawEncryptionKey(), must be called before using
+   // EncryptString() and DecryptString().
+   void SetConfig(std::unique_ptr<os_crypt::Config> config);
+-#endif  // BUILDFLAG(IS_LINUX)
++#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
+ 
+   // In production code:
+   // - On Linux, returns true iff the real secret key (not hardcoded one) is
+   //   available.
+   // - On MacOS, returns true if Keychain is available (for mock Keychain it
+@@ -153,18 +229,29 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
+   // string16. Note that the input (first argument) is a std::string, so you
+   // need to first get your (binary) data into a string.
+   bool DecryptString16(const std::string& ciphertext,
+                        std::u16string* plaintext);
+ 
++#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
++  // Decrypt string16 for migrating passwords to password vault.
++  bool DecryptString16ForMigrate(const std::string& ciphertext, std::u16string* plaintext);
++#endif
++
+   // Encrypt a string.
+   bool EncryptString(const std::string& plaintext, std::string* ciphertext);
+ 
+   // Decrypt an array of bytes obtained with EnctryptString back into a string.
+   // Note that the input (first argument) is a std::string, so you need to first
+   // get your (binary) data into a string.
+   bool DecryptString(const std::string& ciphertext, std::string* plaintext);
+ 
++#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
++  // Decrypt string for migrating passwords to password vault.
++  bool DecryptStringForMigrate(const std::string& ciphertext, std::string* plaintext);
++  void SetMigrationCountCurrent(const int& count);
++#endif
++
+ #if BUILDFLAG(IS_WIN)
+   // Registers preferences used by OSCryptImpl.
+   static void RegisterLocalPrefs(PrefRegistrySimple* registry);
+ 
+   // Initialises OSCryptImpl.
+@@ -242,17 +329,17 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
+   // Derives an encryption key from data stored in the keychain if necessary.
+   // Returns true if there is an encryption key available and false otherwise.
+   bool DeriveKey();
+ #endif  // BUILDFLAG(IS_APPLE)
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_APPLE)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_ARKWEB)
+   // This lock is used to make the GetEncryptionKey and
+   // GetRawEncryptionKey methods thread-safe.
+   static base::Lock& GetLock();
+-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_APPLE)
++#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_ARKWEB)
+ 
+-#if BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
+   static constexpr size_t kDerivedKeyBytes = 16;
+ 
+   crypto::SubtlePassKey MakeCryptoPassKey();
+ 
+   // Derive a new key of `kDerivedKeyBytes` from a given input key using
+@@ -263,25 +350,65 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
+   // key is now present in `v11_key_` (which may have just been cached
+   // previously) and false if one is not present. If `try_v11_` is false, and
+   // there is no cached v11 key, this method just returns false.
+   bool DeriveV11Key();
+ 
++#if BUILDFLAG(ARKWEB_ENCRYPT)
++  // Returns a cached string of "peanuts". Is thread-safe.
++  crypto::SymmetricKey* GetPasswordV10();
++
++  // Caches and returns the password from the KeyStorage or null if there is no
++  // service. Is thread-safe. Set `probe` to true if caller wishes to get
++  // nullptr back rather than crashing due to no config being set.
++  crypto::SymmetricKey* GetPasswordV11(bool probe);
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
++  crypto::SymmetricKey* GetPasswordV10ForMigrate();
++#endif
++
++  // For ota password loss, nullptr means to backend.
++  std::unique_ptr<crypto::SymmetricKey> password_ota_cache_;
++
++#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
++  std::unique_ptr<crypto::SymmetricKey> password_migrate_cache_;
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
++  bool is_password_migrate_cached_ = false;
++  int migration_count_ = 0;
++  int migration_count_current_ = 0;
++#endif
++
++  // Returns a cached. Is thread-safe for ota password loss.
++  crypto::SymmetricKey*  GetPasswordForOtaFail();
++
+   // The cached V1.1 derived key. If this is nullopt, no V1.1 key is available
+   // yet, but `DeriveV11Key()` may be able to generate one.
+   std::optional<std::array<uint8_t, kDerivedKeyBytes>> v11_key_;
+ 
++#if BUILDFLAG(ARKWEB_ENCRYPT)
++  // For password_v10, nullptr means uninitialised.
++  std::unique_ptr<crypto::SymmetricKey> password_v10_cache_;
++
++  // For password_v11, nullptr means no backend.
++  std::unique_ptr<crypto::SymmetricKey> password_v11_cache_;
++
++  bool is_password_v11_cached_ = false;
++#endif
++
+   // Whether to try V1.1 key generation at all. When OSCrypt is used in the
+   // network service, V1.1 key generation can't succeed (it is blocked by the
+   // sandbox) so it should never be attempted.
+   bool try_v11_ = true;
+ 
+   // |config_| is used to initialise |password_v11_cache_| and then cleared.
+   std::unique_ptr<os_crypt::Config> config_;
+ 
+   base::OnceCallback<std::unique_ptr<KeyStorageLinux>()>
+       storage_provider_factory_for_testing_;
+-#endif  // BUILDFLAG(IS_LINUX)
++#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
+ 
+ #if BUILDFLAG(IS_WIN)
+   // Use mock key instead of a real encryption key. Used for testing.
+   bool use_mock_key_ = false;
+ 

@@ -1,0 +1,14 @@
+diff a/components/os_crypt/async/common/encryptor_unittest.cc b/components/os_crypt/async/common/encryptor_unittest.cc	(rejected hunks)
+@@ -147,11 +147,11 @@ class EncryptorTestBase : public ::testing::Test {
+     }));
+ #elif BUILDFLAG(IS_APPLE)
+     OSCrypt::SetKeychainForTesting(OSCrypt::MockLockedKeychain());
+     return base::ScopedClosureRunner(
+         base::BindOnce([]() { OSCrypt::SetKeychainForTesting(nullptr); }));
+-#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
++#elif (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_OHOS)) || BUILDFLAG(IS_FUCHSIA)
+     OSCrypt::SetEncryptionAvailableForTesting(/*available=*/false);
+     return base::ScopedClosureRunner(base::BindOnce([]() {
+       OSCrypt::SetEncryptionAvailableForTesting(/*available=*/std::nullopt);
+     }));
+ #else

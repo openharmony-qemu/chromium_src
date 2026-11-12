@@ -56,8 +56,6 @@ FlingController::FlingController(
   DCHECK(scheduler_client);
 }
 
-FlingController::~FlingController() = default;
-
 bool FlingController::ObserveAndFilterForTapSuppression(
     const GestureEventWithLatencyInfo& gesture_event) {
   switch (gesture_event.event.GetType()) {
@@ -81,6 +79,9 @@ bool FlingController::ObserveAndFilterForTapSuppression(
     case WebInputEvent::Type::kGestureTap:
     case WebInputEvent::Type::kGestureDoubleTap:
     case WebInputEvent::Type::kGestureLongPress:
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    case WebInputEvent::Type::kGestureDragLongPress:
+#endif
     case WebInputEvent::Type::kGestureLongTap:
     case WebInputEvent::Type::kGestureTwoFingerTap:
       if (gesture_event.event.SourceDevice() ==
@@ -134,6 +135,9 @@ bool FlingController::ObserveAndMaybeConsumeGestureEvent(
   if (gesture_event.event.GetType() ==
       WebInputEvent::Type::kGestureFlingStart) {
     ProcessGestureFlingStart(gesture_event);
+#if BUILDFLAG(IS_ARKWEB)
+  StartWebPageFling();
+#endif
     return true;
   }
 
@@ -186,7 +190,6 @@ void FlingController::ScheduleFlingProgress() {
 void FlingController::ProcessGestureFlingCancel(
     const GestureEventWithLatencyInfo& gesture_event) {
   DCHECK(fling_curve_);
-
   // Note: We don't want to reset the fling booster here because a FlingCancel
   // will be received when the user puts their finger down for a potential
   // boost. FlingBooster will process the event stream after the current fling
@@ -385,6 +388,9 @@ void FlingController::EndCurrentFling(base::TimeTicks current_time) {
   last_progress_time_ = base::TimeTicks();
 
   GenerateAndSendFlingEndEvents(current_time);
+#if BUILDFLAG(IS_ARKWEB)
+  StopWebPageFling();
+#endif
   current_fling_parameters_ = ActiveFlingParameters();
 
   if (fling_curve_) {

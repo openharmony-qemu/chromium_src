@@ -1,0 +1,16 @@
+diff a/components/history/content/browser/content_visit_delegate.cc b/components/history/content/browser/content_visit_delegate.cc	(rejected hunks)
+@@ -17,10 +17,14 @@
+ #include "components/visitedlink/core/visited_link.h"
+ #include "net/base/schemeful_site.h"
+ #include "third_party/blink/public/common/features.h"
+ #include "url/gurl.h"
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "services/network/public/cpp/features.h"
++#endif
++
+ namespace history {
+ namespace {
+ 
+ // URLIterator from std::vector<GURL>
+ class URLIteratorFromURLs : public visitedlink::VisitedLinkWriter::URLIterator {

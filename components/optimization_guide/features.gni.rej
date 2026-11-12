@@ -1,0 +1,14 @@
+diff a/components/optimization_guide/features.gni b/components/optimization_guide/features.gni	(rejected hunks)
+@@ -14,11 +14,11 @@ if (is_fuchsia) {
+ declare_args() {
+   # This enables build with TFLite library.
+   # TODO(b/269198471): Make sure the internal archive files for opt guide get
+   #   updated when win arm64 gets added as a supported platform for TFLite.
+   build_with_tflite_lib = is_android || is_win || is_linux || is_mac ||
+-                          is_chromeos || is_fuchsia || is_ios
++                          is_chromeos || is_fuchsia || is_ios || is_ohos
+ }
+ 
+ if (is_ios) {
+   declare_args() {
+     # iOS is bring-your-own-model. ios_on_device_llm_files should include 3 paths:

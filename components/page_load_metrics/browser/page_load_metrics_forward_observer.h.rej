@@ -1,0 +1,17 @@
+diff a/components/page_load_metrics/browser/page_load_metrics_forward_observer.h b/components/page_load_metrics/browser/page_load_metrics_forward_observer.h	(rejected hunks)
+@@ -191,10 +192,15 @@ class PageLoadMetricsForwardObserver final
+       const std::vector<mojom::CustomUserTimingMarkPtr>& timings) override;
+   void OnAdAuctionComplete(bool is_server_auction,
+                            bool is_on_device_auction,
+                            content::AuctionResult result) override;
+   void OnPrimaryPageRenderProcessGone() override;
++#if BUILDFLAG(ARKWEB_BFCACHE)
++  void OnFirstContentfulPaintAfterBackForwardCacheRestoreInPage(
++      const mojom::BackForwardCacheTiming& timing,
++      size_t index) override;
++#endif
+ 
+   // Holds the forward target observer running in the parent PageLoadTracker.
+   base::WeakPtr<PageLoadMetricsObserverInterface> parent_observer_;
+ };
+ 

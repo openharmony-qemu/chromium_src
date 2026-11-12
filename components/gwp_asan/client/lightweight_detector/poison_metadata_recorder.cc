@@ -13,7 +13,7 @@
 #include "components/gwp_asan/common/allocation_info.h"
 #include "components/gwp_asan/common/pack_stack_trace.h"
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || BUILDFLAG(ARKWEB_GWP_ASAN)
 #include "components/crash/core/app/crashpad.h"  // nogncheck
 #endif
 
@@ -32,7 +32,7 @@ PoisonMetadataRecorder::PoisonMetadataRecorder(LightweightDetectorMode mode,
       std::make_unique<LightweightDetectorState::SlotMetadata[]>(num_metadata);
   state_.metadata_addr = reinterpret_cast<uintptr_t>(metadata_.get());
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_GWP_ASAN)
   // Explicitly allow memory ranges the crash_handler needs to read. This is
   // required for WebView because it has a stricter set of privacy constraints
   // on what it reads from the crashing process.

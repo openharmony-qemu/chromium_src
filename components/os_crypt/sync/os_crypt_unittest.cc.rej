@@ -1,0 +1,15 @@
+diff a/components/os_crypt/sync/os_crypt_unittest.cc b/components/os_crypt/sync/os_crypt_unittest.cc
+--- a/components/os_crypt/sync/os_crypt_unittest.cc
++++ b/components/os_crypt/sync/os_crypt_unittest.cc
+@@ -144,11 +144,10 @@ TEST_F(OSCryptTest, DecryptError) {
+ 
+   // Test a simple string, messing with ciphertext prior to decrypting.
+   plaintext = "hello";
+   ASSERT_TRUE(OSCrypt::EncryptString(plaintext, &ciphertext));
+   EXPECT_NE(plaintext, ciphertext);
+-  ASSERT_LT(4UL, ciphertext.size());
+   ciphertext[3] = ciphertext[3] + 1;
+   EXPECT_FALSE(OSCrypt::DecryptString(ciphertext, &result));
+   EXPECT_NE(plaintext, result);
+   EXPECT_TRUE(result.empty());
+ }

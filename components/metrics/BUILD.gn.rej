@@ -1,0 +1,23 @@
+diff a/components/metrics/BUILD.gn b/components/metrics/BUILD.gn	(rejected hunks)
+@@ -298,10 +299,21 @@ if (!is_cronet_build || is_ios) {
+       "//third_party/icu",
+       "//ui/base",
+       "//url",
+     ]
+ 
++    if (is_arkweb) {
++      deps += [ "//arkweb/build/features" ]
++    }
++
++    if (arkweb_histogram_dfx) {
++      sources += [
++        "//arkweb/chromium_ext/components/metrics/arkweb_histogram_filter.h",
++        "//arkweb/chromium_ext/components/metrics/arkweb_histogram_filter.cc"
++      ]
++    }
++
+     if (is_android) {
+       sources += [
+         "android_metrics_provider.cc",
+         "android_metrics_provider.h",
+         "gms_metrics_provider.cc",

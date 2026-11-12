@@ -1,0 +1,16 @@
+diff a/components/page_load_metrics/browser/page_load_tracker.h b/components/page_load_metrics/browser/page_load_tracker.h	(rejected hunks)
+@@ -598,10 +598,14 @@ class PageLoadTracker : public PageLoadMetricsUpdateDispatcher::Client,
+   const IsFirstNavigationInWebContentsBool is_first_navigation_in_web_contents_;
+   const IsReloadAfterDiscardBool is_reload_after_discard_;
+   const bool is_origin_visit_;
+   bool is_terminal_visit_ = true;
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  bool is_prerendered_page_activation_ = false;
++#endif
++
+   page_load_metrics::LargestContentfulPaintHandler
+       largest_contentful_paint_handler_;
+   page_load_metrics::LargestContentfulPaintHandler
+       experimental_largest_contentful_paint_handler_;
+ 

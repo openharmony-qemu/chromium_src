@@ -1,0 +1,14 @@
+diff a/components/no_state_prefetch/browser/no_state_prefetch_histograms.cc b/components/no_state_prefetch/browser/no_state_prefetch_histograms.cc	(rejected hunks)
+@@ -24,10 +24,12 @@ std::string GetHistogramName(Origin origin, const std::string& name) {
+ 
+ }  // namespace
+ 
+ std::string NoStatePrefetchHistograms::GetHistogramPrefix(Origin origin) {
+   switch (origin) {
++    case ORIGIN_OMNIBOX:
++      return "omnibox";
+     case ORIGIN_NONE:
+       return "none";
+     case ORIGIN_LINK_REL_PRERENDER_SAMEDOMAIN:
+       return "websame";
+     case ORIGIN_LINK_REL_PRERENDER_CROSSDOMAIN:

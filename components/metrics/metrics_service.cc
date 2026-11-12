@@ -118,6 +118,7 @@
 //
 //------------------------------------------------------------------------------
 
+#include "arkweb/build/features/features.h"
 #include "components/metrics/metrics_service.h"
 
 #include <stddef.h>

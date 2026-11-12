@@ -6,6 +6,7 @@
 
 #include <string_view>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/strings/escape.h"
 #include "base/strings/string_util.h"
@@ -20,10 +21,17 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/common/extension_urls_ext.cc"
+#endif
+
 namespace extensions {
 
 bool IsSourceFromAnExtension(const std::u16string& source) {
   return GURL(source).SchemeIs(kExtensionScheme) ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         GURL(source).SchemeIs(kArkwebExtensionScheme) ||
+#endif
          base::StartsWith(source, u"extensions::",
                           base::CompareCase::SENSITIVE);
 }
@@ -105,9 +113,15 @@ GURL GetWebstoreItemSnippetURL(const extensions::ExtensionId& extension_id) {
   }
 
   // Return `<base URL><extension_id><suffix>`.
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  return GURL(base::StringPrintf("%s/v2/items/%s:fetchItemSnippet",
+                                 GetDefaultWebstoreApiUrl().spec().c_str(),
+                                 extension_id.c_str()));
+#else
   return GURL(kChromeWebstoreApiURL)
       .Resolve(base::StringPrintf("v2/items/%s:fetchItemSnippet",
                                   extension_id.c_str()));
+#endif
 }
 
 GURL GetWebstoreBlockStatusURL() {
@@ -120,9 +134,11 @@ base::AutoReset<const GURL*> SetItemSnippetURLForTesting(const GURL* test_url) {
   return base::AutoReset<const GURL*>(&g_item_snippet_url_for_test_, test_url);
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 GURL GetDefaultWebstoreUpdateUrl() {
   return GURL(kChromeWebstoreUpdateURL);
 }
+#endif
 
 GURL GetWebstoreUpdateUrl() {
   extensions::ExtensionsClient* client = extensions::ExtensionsClient::Get();
@@ -163,7 +179,11 @@ bool IsWebstoreUpdateUrl(const GURL& update_url) {
 
 bool IsWebstoreApiUrl(const GURL& url) {
   url::Origin origin = url::Origin::Create(url);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  return origin.IsSameOriginWith(GetDefaultWebstoreApiUrl());
+#else
   return origin.IsSameOriginWith(GURL(kChromeWebstoreApiURL));
+#endif
 }
 
 bool IsBlocklistUpdateUrl(const GURL& url) {

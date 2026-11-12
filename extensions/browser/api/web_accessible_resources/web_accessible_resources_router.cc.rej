@@ -1,0 +1,21 @@
+diff a/extensions/browser/api/web_accessible_resources/web_accessible_resources_router.cc b/extensions/browser/api/web_accessible_resources/web_accessible_resources_router.cc	(rejected hunks)
+@@ -19,12 +19,17 @@ namespace extensions {
+ 
+ std::optional<GURL> TransformToDynamicURLIfNecessary(
+     const GURL& url,
+     content::BrowserContext* browser_context) {
+   // Verify that the feature is enabled and the host is a valid extension id.
+-  if (!url.SchemeIs(kExtensionScheme) ||
+-      !crx_file::id_util::IdIsValid(url.GetHost())) {
++  if ((!url.SchemeIs(kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++       && !url.SchemeIs(kArkwebExtensionScheme)
++#endif
++           )
++
++      || !crx_file::id_util::IdIsValid(url.GetHost())) {
+     return std::nullopt;
+   }
+ 
+   // Verify that the url's path should use a dynamic url.
+   auto* registry = ExtensionRegistry::Get(browser_context);

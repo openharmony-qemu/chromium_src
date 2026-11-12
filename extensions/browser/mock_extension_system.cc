@@ -35,7 +35,8 @@ ExtensionService* MockExtensionSystem::extension_service() {
 }
 
 ManagementPolicy* MockExtensionSystem::management_policy() {
-  return nullptr;
+  management_policy_ =  std::make_unique<ManagementPolicy>();
+  return management_policy_.get();
 }
 
 ServiceWorkerManager* MockExtensionSystem::service_worker_manager() {

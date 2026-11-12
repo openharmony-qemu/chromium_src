@@ -75,7 +75,11 @@ bool RenderFrameMatches(const ExtensionFrameHelper* frame_helper,
   blink::WebSecurityOrigin origin =
       frame_helper->render_frame()->GetWebFrame()->GetSecurityOrigin();
   if (origin.IsOpaque() ||
-      !base::EqualsASCII(origin.Protocol().Utf16(), kExtensionScheme) ||
+      (!base::EqualsASCII(origin.Protocol().Utf16(), kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       && !base::EqualsASCII(origin.Protocol().Utf16(), kArkwebExtensionScheme)
+#endif
+           ) ||
       !base::EqualsASCII(origin.Host().Utf16(), match_extension_id.c_str()))
     return false;
 
@@ -456,7 +460,9 @@ void ExtensionFrameHelper::WillReleaseScriptContext(
 }
 
 void ExtensionFrameHelper::SetTabId(int32_t tab_id) {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   CHECK_EQ(tab_id_, -1);
+#endif
   CHECK_GE(tab_id, 0);
   tab_id_ = tab_id;
 }

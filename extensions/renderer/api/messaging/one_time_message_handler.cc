@@ -481,6 +481,11 @@ v8::Local<v8::Promise> OneTimeMessageHandler::SendMessage(
     case mojom::ChannelType::kNative:
       // Native messaging doesn't use channel names.
       break;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+    case mojom::ChannelType::kBrowser:
+      // Browser messaging doesn't use channel names.
+      break;
+#endif
     case mojom::ChannelType::kConnect:
       // connect() calls aren't handled by the OneTimeMessageHandler.
       NOTREACHED();
@@ -497,7 +502,11 @@ v8::Local<v8::Promise> OneTimeMessageHandler::SendMessage(
   // TODO(devlin): This is because of some subtle ordering in the browser side,
   // where closing the channel after sending the message causes things to be
   // destroyed in the wrong order. That would be nice to fix.
-  if (!wants_response && target.type != MessageTarget::NATIVE_APP) {
+  if (!wants_response && target.type != MessageTarget::NATIVE_APP
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+      && target.type != MessageTarget::BROWSER
+#endif
+  ) {
     message_port_host->ClosePort(/*close_channel=*/true,
                                  /*error_message=*/std::nullopt);
   }

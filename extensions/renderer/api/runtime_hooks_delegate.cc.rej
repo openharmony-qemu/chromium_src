@@ -1,0 +1,41 @@
+diff a/extensions/renderer/api/runtime_hooks_delegate.cc b/extensions/renderer/api/runtime_hooks_delegate.cc	(rejected hunks)
+@@ -4,10 +4,11 @@
+ 
+ #include "extensions/renderer/api/runtime_hooks_delegate.h"
+ 
+ #include <string_view>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/check.h"
+ #include "base/containers/span.h"
+ #include "base/strings/strcat.h"
+ #include "base/strings/stringprintf.h"
+ #include "content/public/renderer/render_frame.h"
+@@ -90,10 +91,13 @@ constexpr char kGetVersion[] = "runtime.getVersion";
+ constexpr char kGetURL[] = "runtime.getURL";
+ constexpr char kConnect[] = "runtime.connect";
+ constexpr char kConnectNative[] = "runtime.connectNative";
+ constexpr char kSendMessage[] = "runtime.sendMessage";
+ constexpr char kSendNativeMessage[] = "runtime.sendNativeMessage";
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
++constexpr char kSendBrowserMessage[] = "runtime.sendBrowserMessage";
++#endif
+ constexpr char kGetBackgroundPage[] = "runtime.getBackgroundPage";
+ constexpr char kGetPackageDirectoryEntry[] = "runtime.getPackageDirectoryEntry";
+ constexpr char kRequestUpdateCheck[] = "runtime.requestUpdateCheck";
+ 
+ // The custom callback supplied to runtime.getBackgroundPage to find and return
+@@ -226,10 +230,13 @@ RequestResult RuntimeHooksDelegate::HandleRequest(
+       {&RuntimeHooksDelegate::HandleGetURL, kGetURL},
+       {&RuntimeHooksDelegate::HandleGetManifest, kGetManifest},
+       {&RuntimeHooksDelegate::HandleGetVersion, kGetVersion},
+       {&RuntimeHooksDelegate::HandleConnectNative, kConnectNative},
+       {&RuntimeHooksDelegate::HandleSendNativeMessage, kSendNativeMessage},
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
++      {&RuntimeHooksDelegate::HandleSendBrowserMessage, kSendBrowserMessage},
++#endif
+       {&RuntimeHooksDelegate::HandleGetBackgroundPage, kGetBackgroundPage},
+       {&RuntimeHooksDelegate::HandleGetPackageDirectoryEntryCallback,
+        kGetPackageDirectoryEntry},
+       {&RuntimeHooksDelegate::HandleRequestUpdateCheck, kRequestUpdateCheck},
+   };

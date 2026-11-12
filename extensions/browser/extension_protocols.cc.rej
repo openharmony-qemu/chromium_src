@@ -1,0 +1,18 @@
+diff a/extensions/browser/extension_protocols.cc b/extensions/browser/extension_protocols.cc	(rejected hunks)
+@@ -961,11 +972,15 @@ class ExtensionURLLoaderFactory : public network::SelfDeletingURLLoaderFactory {
+       const network::ResourceRequest& request,
+       mojo::PendingRemote<network::mojom::URLLoaderClient> client,
+       const net::MutableNetworkTrafficAnnotationTag& traffic_annotation)
+       override {
+     DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+-    DCHECK_EQ(kExtensionScheme, request.url.GetScheme());
++    DCHECK(kExtensionScheme == request.url.GetScheme()
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++           || kArkwebExtensionScheme == request.url.GetScheme()
++#endif
++    );
+     ExtensionURLLoader::CreateAndStart(std::move(loader), std::move(client),
+                                        request, is_web_view_request_,
+                                        render_process_id_, browser_context_);
+   }
+ 

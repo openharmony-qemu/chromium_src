@@ -1,0 +1,39 @@
+diff a/extensions/browser/script_executor.cc b/extensions/browser/script_executor.cc	(rejected hunks)
+@@ -182,11 +182,15 @@ class Handler : public content::WebContentsObserver {
+       // Don't expose any child frames of the PDF extension frame, such as the
+       // PDF content frame.
+       content::RenderFrameHost* parent = frame->GetParent();
+       if (parent) {
+         const url::Origin& origin = parent->GetLastCommittedOrigin();
+-        if (origin.scheme() == extensions::kExtensionScheme &&
++        if ((origin.scheme() == extensions::kExtensionScheme
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++             || origin.scheme() == extensions::kArkwebExtensionScheme
++#endif
++        ) &&
+             origin.host() == extension_misc::kPdfExtensionId) {
+           return content::RenderFrameHost::FrameIterationAction::kSkipChildren;
+         }
+       }
+     }
+@@ -195,10 +199,20 @@ class Handler : public content::WebContentsObserver {
+     if (!frame->IsRenderFrameLive() ||
+         base::Contains(pending_render_frames_, frame)) {
+       return content::RenderFrameHost::FrameIterationAction::kContinue;
+     }
+ 
++    // Avoid injecting into error documents (e.g. frames blocked by CSP) and
++    // their subtrees, matching the explicit-frameId execution path validation.
++    // This prevents compromised renderers from tricking ScriptInjectionTracker
++    // into believing an extension is executing scripts inside an
++    // attacker-controlled process.
++    // See https://crbug.com/517153117.
++    if (frame->IsErrorDocument()) {
++      return content::RenderFrameHost::FrameIterationAction::kSkipChildren;
++    }
++
+     PushPendingRenderFrame(frame, ExtensionApiFrameIdMap::GetFrameId(frame));
+     return content::RenderFrameHost::FrameIterationAction::kContinue;
+   }
+ 
+   void PushPendingRenderFrame(content::RenderFrameHost* frame, int frame_id) {

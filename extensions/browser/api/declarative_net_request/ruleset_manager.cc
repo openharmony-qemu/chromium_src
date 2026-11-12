@@ -633,7 +633,11 @@ bool RulesetManager::ShouldEvaluateRulesetForRequest(
     // originate from an extension.
     auto initiator_precursor =
         request.initiator->GetTupleOrPrecursorTupleIfOpaque();
-    if (initiator_precursor.scheme() == kExtensionScheme &&
+    if ((initiator_precursor.scheme() == kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         || initiator_precursor.scheme() == extensions::kArkwebExtensionScheme
+#endif
+         ) &&
         initiator_precursor.host() != ruleset.extension_id) {
       return false;
     }

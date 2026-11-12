@@ -1,0 +1,16 @@
+diff a/extensions/common/constants.h b/extensions/common/constants.h	(rejected hunks)
+@@ -22,10 +22,14 @@ inline constexpr char kExtensionScheme[] = "chrome-extension";
+ 
+ // URL used to indicate that an extension resource load request was invalid.
+ inline constexpr char kExtensionInvalidRequestURL[] =
+     "chrome-extension://invalid/";
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++inline constexpr char kArkwebExtensionScheme[] = "arkweb-extension";
++#endif
++
+ // The name of the manifest inside an extension.
+ inline constexpr base::FilePath::CharType kManifestFilename[] =
+     FILE_PATH_LITERAL("manifest.json");
+ 
+ // The name of the differential fingerprint file inside an extension.

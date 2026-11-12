@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//extensions/buildflags/buildflags.gni")
 
 assert(enable_extensions_core,
@@ -43,6 +44,22 @@ source_set("messaging") {
     "//extensions/common:mojom_shared",
     "//extensions/common:mojom_shared_cpp_sources",
   ]
+}
+
+if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
+  source_set("browser_message_port_unittests") {
+    testonly = true
+
+    sources = [ "//arkweb/chromium_ext/extensions/browser/api/messaging/browser_message_port_unittest.cc" ]
+
+    deps = [
+      ":messaging",
+      "//base",
+      "//extensions/common",
+      "//extensions/common:mojom",
+      "//testing/gtest",
+    ]
+  }
 }
 
 # Split up from messaging to avoid circular dependency.

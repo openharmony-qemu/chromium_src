@@ -1,0 +1,26 @@
+diff a/extensions/renderer/BUILD.gn b/extensions/renderer/BUILD.gn	(rejected hunks)
+@@ -444,10 +445,24 @@ source_set("unit_tests") {
+       "api/feedback_private_hooks_delegate_unittest.cc",
+     ]
+   }
+ }
+ 
++if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
++  source_set("messaging_unit_tests") {
++    testonly = true
++
++    sources = [ "//arkweb/chromium_ext/extensions/renderer/api/messaging/message_target_unittest.cc" ]
++
++    deps = [
++      ":renderer",
++      "//extensions/common",
++      "//testing/gtest",
++    ]
++  }
++}
++
+ if (enable_extensions) {
+   # Browser tests are not currently supported in desktop-android builds.
+   source_set("browser_tests") {
+     testonly = true
+     sources = [ "script_context_browsertest.cc" ]

@@ -348,6 +348,17 @@ TEST_F(RuntimeHooksDelegateTest, SendMessageErrors) {
   send_message("'some id', 'some message', {}, {}");
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+TEST_F(RuntimeHooksDelegateTest, SendBrowserMessage) {
+  v8::HandleScope handle_scope(isolate());
+
+  SendMessageTester tester(ipc_message_sender(), script_context(), 0,
+                           "runtime");
+
+  tester.TestSendBrowserMessage("{hi:'bye'}, function() {}", R"({"hi":"bye"})");
+}
+#endif
+
 TEST_F(RuntimeHooksDelegateTest, ConnectWithTrickyOptions) {
   v8::HandleScope handle_scope(isolate());
   v8::Local<v8::Context> context = MainContext();

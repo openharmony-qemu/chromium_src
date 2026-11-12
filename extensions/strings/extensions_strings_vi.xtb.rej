@@ -1,0 +1,13 @@
+diff a/extensions/strings/extensions_strings_vi.xtb b/extensions/strings/extensions_strings_vi.xtb	(rejected hunks)
+@@ -53,10 +53,11 @@
+ <translation id="7972881773422714442">Tùy chọn: <ph name="EXTENSIONOPTIONS_TAG_NAME" /></translation>
+ <translation id="8035920974645200807">Máy ảnh mặt trước</translation>
+ <translation id="8047248493720652249">Tiện ích này không thể đặt tên cho bản tải xuống "<ph name="ATTEMPTED_FILENAME" />" vì một tiện ích khác (<ph name="EXTENSION_NAME" />) đã xác định tên tệp khác "<ph name="ACTUAL_FILENAME" />".</translation>
+ <translation id="8284835137979141223"><ph name="PRODUCT_NAME" /> từ <ph name="VENDOR_NAME" /></translation>
+ <translation id="8517576857589387417">Tệp kê khai bị thiếu hoặc không thể đọc được</translation>
++<translation id="8602184400052594090">Tệp tin kê khai bị thiếu hoặc không thể đọc được.</translation>
+ <translation id="8621383749470166852">Không thể tải tệp "<ph name="RELATIVE_PATH" />" cho tập lệnh nội dung. Tập lệnh nội dung chỉ có thể được tải từ các tệp JavaScript được hỗ trợ, chẳng hạn như tệp .js.</translation>
+ <translation id="8636666366616799973">Gói không hợp lệ. Chi tiết: '<ph name="ERROR_MESSAGE" />'.</translation>
+ <translation id="8761756413268424715">"<ph name="APP_NAME" />" đang yêu cầu quyền truy cập vào một trong các thiết bị của bạn:</translation>
+ <translation id="8885905466771744233">Khoá cá nhân cho tiện ích chỉ định đã tồn tại. Hãy sử dụng lại hoặc xóa khóa đó trước tiên.</translation>
+ <translation id="9039223174332979184">Quản trị viên của máy này yêu cầu <ph name="EXTENSION_NAME" /> có phiên bản tệp kê khai tối thiểu là 3.</translation>

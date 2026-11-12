@@ -1,0 +1,74 @@
+diff a/extensions/browser/BUILD.gn b/extensions/browser/BUILD.gn	(rejected hunks)
+@@ -7,10 +7,11 @@ import("//components/guest_view/buildflags/buildflags.gni")
+ import("//components/safe_browsing/buildflags.gni")
+ import("//extensions/buildflags/buildflags.gni")
+ import("//pdf/features.gni")
+ import("//rlz/buildflags/buildflags.gni")
+ import("//testing/libfuzzer/fuzzer_test.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ if (enable_desktop_android_extensions) {
+   import("//build/config/android/rules.gni")
+ }
+ 
+@@ -569,10 +570,26 @@ source_set("browser_sources") {
+     "warning_set.h",
+     "zipfile_installer.cc",
+     "zipfile_installer.h",
+   ]
+ 
++  #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
++    sources += [
++      "//arkweb/chromium_ext/extensions/browser/custom_handler.cc",
++      "//arkweb/chromium_ext/extensions/browser/custom_handler.h",
++      "//arkweb/chromium_ext/extensions/browser/extension_icon_aggregator.h",
++      "//arkweb/chromium_ext/extensions/browser/extension_icon_aggregator.cc",
++      "//arkweb/chromium_ext/extensions/browser/extension_log_reporter.cc",
++      "//arkweb/chromium_ext/extensions/browser/extension_log_reporter.h",
++      "//arkweb/chromium_ext/extensions/browser/extension_registry_info_manager.h",
++      "//arkweb/chromium_ext/extensions/browser/extension_registry_info_manager.cc",
++      "//arkweb/chromium_ext/extensions/browser/ui_util_ext.cc",
++    ]
++  }
++  #endif
++
+   deps = [
+     "//base",
+     "//base:i18n",
+     "//build:android_buildflags",
+     "//build:chromeos_buildflags",
+@@ -1039,10 +1056,11 @@ source_set("unit_tests") {
+     "//components/safe_browsing/core/common",
+     "//components/safe_browsing/core/common/hashprefix_realtime:hash_realtime_utils",
+     "//components/safe_browsing/core/common/proto:crx_info_proto_gen",
+     "//components/services/unzip:in_process",
+     "//components/services/unzip/content",
++    "//components/signin/public/identity_manager:test_support",
+     "//components/sync_preferences:test_support",
+     "//components/update_client",
+     "//components/url_matcher",
+     "//components/user_prefs",
+     "//components/value_store:test_support",
+@@ -1072,11 +1090,20 @@ source_set("unit_tests") {
+     "//storage/browser:test_support",
+     "//third_party/leveldatabase",
+     "//third_party/zlib/google:zip",
+     "//ui/display:test_support",
+   ]
+-
++  #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
++    sources += [
++      "//arkweb/chromium_ext/extensions/browser/extension_icon_aggregator_unittest.cc",
++      "//arkweb/chromium_ext/extensions/browser/extension_prefs_for_include_unittest.cc",
++      "//arkweb/chromium_ext/extensions/browser/extension_registry_info_manager_unittest.cc",
++      "//arkweb/chromium_ext/extensions/browser/ui_util_ext_unittest.cc",
++    ]
++  }
++  #endif
+   # TODO(https://crbug.com/356905053): Gradually include more of these sources
+   # in the desktop-android build when the related APIs are enabled.
+   if (enable_extensions) {
+     sources += [
+       "api/bluetooth/bluetooth_event_router_unittest.cc",

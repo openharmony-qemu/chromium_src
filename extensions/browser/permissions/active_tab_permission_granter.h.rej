@@ -1,0 +1,80 @@
+diff a/extensions/browser/permissions/active_tab_permission_granter.h b/extensions/browser/permissions/active_tab_permission_granter.h	(rejected hunks)
+@@ -40,17 +43,24 @@ class ActiveTabPermissionGranter
+ 
+   // If `extension` has the activeTab or tabCapture permission, grants
+   // tab-specific permissions to it until the next page navigation or refresh.
+   void GrantIfRequested(const Extension* extension);
+ 
++  // Returns true if `extension` has been granted tab-specific permissions.
++  bool IsGranted(const Extension* extension) const;
++
+   // Clears any tab-specific permissions for an extension with `id` if it has
+   // been granted (otherwise does nothing) on `tab_id_` and notifies renderers.
+   void ClearActiveExtensionAndNotify(const ExtensionId& id);
+ 
+   // Clears tab-specific permissions for all extensions. Used only for testing.
+   void RevokeForTesting();
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  void SetTabId(int id) { tab_id_ = id; }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
++
+  private:
+   friend class content::WebContentsUserData<ActiveTabPermissionGranter>;
+ 
+   FRIEND_TEST_ALL_PREFIXES(ExtensionActionRunnerFencedFrameBrowserTest,
+                            FencedFrameDoesNotClearActiveExtensions);
+@@ -76,21 +86,32 @@ class ActiveTabPermissionGranter
+   // Clears any tab-specific permissions for all extensions in
+   // `granted_extensions_to_remove` on `tab_id_` and notifies renderers.
+   void ClearGrantedExtensionsAndNotify(
+       const ExtensionSet& granted_extensions_to_remove);
+ 
++  // Notifies the renderer and other observers that the permission has been
++  // granted.
++  void NotifyGranted(scoped_refptr<const Extension> extension,
++                     URLPatternSet new_hosts);
++
+   // The tab ID for this tab.
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  int tab_id_;
++#else
+   const int tab_id_;
++#endif
+ 
+   // Extensions with the activeTab permission that have been granted
+   // tab-specific permissions until the next navigation/refresh.
+   ExtensionSet granted_extensions_;
+ 
+   // Listen to extension unloaded notifications.
+   base::ScopedObservation<ExtensionRegistry, ExtensionRegistryObserver>
+       extension_registry_observation_{this};
+ 
++  base::WeakPtrFactory<ActiveTabPermissionGranter> weak_factory_{this};
++
+   WEB_CONTENTS_USER_DATA_KEY_DECL();
+ };
+ 
+ }  // namespace extensions
+ 
+@@ -4,17 +4,20 @@
+ 
+ #ifndef EXTENSIONS_BROWSER_PERMISSIONS_ACTIVE_TAB_PERMISSION_GRANTER_H_
+ #define EXTENSIONS_BROWSER_PERMISSIONS_ACTIVE_TAB_PERMISSION_GRANTER_H_
+ 
+ #include "base/gtest_prod_util.h"
++#include "base/memory/weak_ptr.h"
+ #include "base/scoped_observation.h"
+ #include "content/public/browser/web_contents_observer.h"
+ #include "content/public/browser/web_contents_user_data.h"
+ #include "extensions/browser/extension_registry.h"
+ #include "extensions/browser/extension_registry_observer.h"
+ #include "extensions/buildflags/buildflags.h"
++#include "extensions/common/extension.h"
+ #include "extensions/common/extension_set.h"
++#include "extensions/common/url_pattern_set.h"
+ 
+ static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
+ 
+ namespace content {
+ class BrowserContext;

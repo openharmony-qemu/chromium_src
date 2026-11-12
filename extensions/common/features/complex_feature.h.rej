@@ -1,0 +1,16 @@
+diff a/extensions/common/features/complex_feature.h b/extensions/common/features/complex_feature.h	(rejected hunks)
+@@ -31,10 +31,14 @@ class ComplexFeature : public Feature {
+   ComplexFeature(const ComplexFeature&) = delete;
+   ComplexFeature& operator=(const ComplexFeature&) = delete;
+ 
+   ~ComplexFeature() override;
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  void add_matches(const GURL& url, std::string_view pattern) override;
++#endif
++
+   // extensions::Feature:
+   Availability IsAvailableToManifest(const HashedExtensionId& hashed_id,
+                                      Manifest::Type type,
+                                      mojom::ManifestLocation location,
+                                      int manifest_version,

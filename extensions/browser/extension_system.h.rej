@@ -1,0 +1,16 @@
+diff a/extensions/browser/extension_system.h b/extensions/browser/extension_system.h	(rejected hunks)
+@@ -131,10 +135,14 @@ class ExtensionSystem : public KeyedService {
+ 
+   // Perform various actions depending on the Omaga attributes on the extension.
+   virtual void PerformActionBasedOnOmahaAttributes(
+       const ExtensionId& extension_id,
+       const base::Value::Dict& attributes) = 0;
++
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  virtual ExtensionRegistryInfoManager* GetExtensionRegistryInfoManager() {return nullptr;}
++#endif
+ };
+ 
+ }  // namespace extensions
+ 
+ #endif  // EXTENSIONS_BROWSER_EXTENSION_SYSTEM_H_

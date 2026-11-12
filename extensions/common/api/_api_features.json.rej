@@ -1,0 +1,85 @@
+diff a/extensions/common/api/_api_features.json b/extensions/common/api/_api_features.json	(rejected hunks)
+@@ -252,21 +252,23 @@
+   },
+   "guestViewInternal": [
+     {
+       "internal": true,
+       "channel": "stable",
+-      "contexts": ["privileged_extension"],
++      "contexts": ["privileged_extension"]
+       // "desktop_android" is not supported.
+-      "platforms": ["chromeos", "linux", "mac", "win"]
++      // "platforms": ["chromeos", "linux", "mac", "win"]
+     }, {
+       "internal": true,
+       "channel": "stable",
+       "contexts": ["webui"],
+       "matches": [
+         "chrome://add-supervision/*",
+         "chrome://contextual-tasks/*",
+         "chrome://extensions/*",
++        // ARKWEB_ARKWEB_EXTENSIONS
++        "arkweb://extensions/*",        
+         "chrome://glic/*",
+         "chrome://glic-fre/*",
+         "chrome://graduation/*",
+         "chrome://home/*",
+         "chrome://chrome-signin/*",
+@@ -274,25 +276,25 @@
+         "chrome://oobe/*",
+         "chrome://os-settings/*",
+         "chrome://parent-access/*",
+         "chrome://password-change/*",
+         "chrome://lock-reauth/*"
+-      ],
++      ]
+       // "desktop_android" is not supported.
+-      "platforms": ["chromeos", "linux", "mac", "win"]
++      // "platforms": ["chromeos", "linux", "mac", "win"]
+     }, {
+       "internal": true,
+       "channel": "stable",
+       "contexts": [
+         "webui_untrusted"
+       ],
+       "matches": [
+         "chrome-untrusted://boca-app/*",
+         "chrome-untrusted://lens/*"
+-      ],
++      ]
+       // "desktop_android" is not supported.
+-      "platforms": ["chromeos", "linux", "mac", "win"]
++      // "platforms": ["chromeos", "linux", "mac", "win"]
+     }, {
+       // This feature is used by the Controlled Frame API and is specifically
+       // enabled by //chrome.
+       "internal": true,
+       "channel": "stable",
+@@ -498,11 +504,11 @@
+   },
+   "mimeHandlerPrivate": {
+     "dependencies": ["manifest:mime_types_handler"],
+     "contexts": ["privileged_extension"],
+     // "desktop_android" is not supported.
+-    "platforms": ["chromeos", "linux", "mac", "win"]
++    "platforms": ["chromeos", "linux", "mac", "win", "ohos"]
+   },
+   "mojoPrivate": {
+     "contexts": ["privileged_extension"],
+     "dependencies": ["behavior:imprivata_in_session_extension"],
+     "extension_types": ["extension"],
+@@ -713,10 +719,14 @@
+   }],
+   "runtime.sendNativeMessage": {
+     "dependencies": ["permission:nativeMessaging"],
+     "contexts": ["privileged_extension"]
+   },
++  "runtime.sendBrowserMessage": {
++    "contexts": ["privileged_extension"],
++    "platforms": ["ohos"]
++  },
+   "serial": {
+     "dependencies": ["permission:serial"],
+     "contexts": ["privileged_extension"]
+   },
+   "socket": {

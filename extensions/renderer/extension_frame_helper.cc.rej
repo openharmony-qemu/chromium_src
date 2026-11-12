@@ -1,0 +1,18 @@
+diff a/extensions/renderer/extension_frame_helper.cc b/extensions/renderer/extension_frame_helper.cc	(rejected hunks)
+@@ -375,11 +379,15 @@ void ExtensionFrameHelper::ReadyToCommitNavigation(
+   // document immediately. The chrome.app.window.create() callback (if any)
+   // needs to be called prior to the new window's 'load' event. The parser will
+   // be resumed when it happens. It doesn't apply to sandboxed pages.
+   if (view_type_ == mojom::ViewType::kAppWindow &&
+       web_frame->IsOutermostMainFrame() && !has_started_first_navigation_ &&
+-      GURL(document_loader->GetUrl()).SchemeIs(kExtensionScheme) &&
++      (GURL(document_loader->GetUrl()).SchemeIs(kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++       || GURL(document_loader->GetUrl()).SchemeIs(kArkwebExtensionScheme)
++#endif
++           ) &&
+       !ScriptContext::IsSandboxedPage(document_loader->GetUrl())) {
+     document_loader->BlockParser();
+   }
+ 
+   has_started_first_navigation_ = true;

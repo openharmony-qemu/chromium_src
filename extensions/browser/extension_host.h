@@ -39,6 +39,9 @@ class Extension;
 class ExtensionHostDelegate;
 class ExtensionHostObserver;
 class ExtensionHostQueue;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+class OffscreenContentsDelegate;
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 enum class EventDispatchSource;
 
@@ -166,6 +169,17 @@ class ExtensionHost : public DeferredStartRenderHost,
   void ExitPictureInPicture() override;
   std::string GetTitleForMediaControls(
       content::WebContents* web_contents) override;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  bool DidAddMessageToConsole(
+      content::WebContents* source,
+      blink::mojom::ConsoleMessageLevel log_level,
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+      blink::mojom::ConsoleMessageSource log_source,
+#endif
+      const std::u16string& message,
+      int32_t line_no,
+      const std::u16string& source_id) override;
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
   // ExtensionRegistryObserver:
   void OnExtensionReady(content::BrowserContext* browser_context,
@@ -240,6 +254,10 @@ class ExtensionHost : public DeferredStartRenderHost,
 
   // The host for our HTML content.
   std::unique_ptr<content::WebContents> host_contents_;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  std::unique_ptr<OffscreenContentsDelegate> offscreen_delegate_;
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
   // A pointer to the current or speculative main frame in `host_contents_`. We
   // can't access this frame through the `host_contents_` directly as it does

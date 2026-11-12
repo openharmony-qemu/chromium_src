@@ -65,6 +65,10 @@
 #include "extensions/common/url_pattern.h"
 #include "extensions/common/user_script.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/browser/extension_prefs_for_include.cc"
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
 using extensions::mojom::ManifestLocation;
 
 namespace extensions {
@@ -105,7 +109,9 @@ constexpr const char kPrefExternalAcknowledged[] = "ack_external";
 // run of this profile.
 constexpr const char kPrefExternalInstallFirstRun[] = "external_first_run";
 
-// A list of all the reasons an extension is disabled.
+// A list of all the reasons an extension is disabled. This used to be a
+// bitflag, but `MaybeMigrateDisableReasonsBitflagToList()` will convert it to a
+// list if it's still a bitflag.
 constexpr const char kPrefDisableReasons[] = "disable_reasons";
 
 // The key for a serialized Time value indicating the start of the day (from the
@@ -1472,6 +1478,9 @@ ExtensionIdList ExtensionPrefs::GetPinnedExtensions() const {
 
 void ExtensionPrefs::SetPinnedExtensions(const ExtensionIdList& extension_ids) {
   SetExtensionPrefFromContainer(pref_names::kPinnedExtensions, extension_ids);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  prefs_->CommitPendingWrite();
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void ExtensionPrefs::OnExtensionInstalled(
@@ -2072,6 +2081,11 @@ void ExtensionPrefs::WriteDisableReasonsToPrefs(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LOG_FEEDBACK(INFO) << "disable reasons is " << to_write.DebugString()
+                     << ",id is " << extension_id;
+#endif
+
   UpdateExtensionPref(extension_id, kPrefDisableReasons,
                       base::Value(std::move(to_write)));
 }
@@ -2206,6 +2220,11 @@ ExtensionPrefs::ExtensionPrefs(
       clock_(clock),
       extensions_disabled_(extensions_disabled) {
   MakePathsRelative();
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  // Migrate before observers and the pref value map read extension state.
+  MaybeMigrateDisableReasonsBitflagToList();
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
   // Ensure that any early observers are watching before prefs are initialized.
   for (auto* observer : early_observers)

@@ -4,6 +4,8 @@
 
 #include "extensions/renderer/api/messaging/message_target.h"
 
+#include "arkweb/build/features/features.h"
+
 namespace extensions {
 
 MessageTarget MessageTarget::ForTab(int tab_id, int frame_id) {

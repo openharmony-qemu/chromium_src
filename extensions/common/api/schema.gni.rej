@@ -1,0 +1,43 @@
+diff a/extensions/common/api/schema.gni b/extensions/common/api/schema.gni	(rejected hunks)
+@@ -32,10 +32,12 @@ extensions_api_schema_files_ = [
+   "types.json",
+   "user_scripts.idl",
+   "web_request.json",
+ ]
+ 
++extensions_api_schema_files_ext_ = []
++
+ # Schemas that should be used only to auto-generate the C++ types.
+ # In many cases, this includes schemas used to generate types used in manifest
+ # parsing.
+ extensions_types_only_schema_files_ = [
+   "chrome_url_overrides.idl",
+@@ -89,10 +91,28 @@ if (enable_extensions) {
+     "virtual_keyboard_private.json",
+     "virtual_keyboard.webidl",
+     "web_view_internal.json",
+   ]
+ 
++  extensions_api_schema_files_ext_ = [
++    "app_runtime.webidl",
++    "app_window.idl",
++    "bluetooth_low_energy.webidl",
++    "bluetooth_socket.webidl",
++    "clipboard.idl",
++    "file_system.idl",
++    "hid.idl",
++    "serial.idl",
++    "socket.idl",
++    "sockets_tcp.idl",
++    "sockets_tcp_server.idl",
++    "sockets_udp.idl",
++    "system_network.webidl",
++    "system_storage.webidl",
++    "usb.idl",
++    "virtual_keyboard.webidl",
++  ]
+   if (is_chromeos) {
+     extensions_api_schema_files_ += [
+       "diagnostics.webidl",
+       "media_perception_private.idl",
+       "webcam_private.webidl",

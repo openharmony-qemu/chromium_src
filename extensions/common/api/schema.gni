@@ -140,6 +140,9 @@ if (enable_desktop_android_extensions) {
 extensions_api_schema_files =
     get_path_info(extensions_api_schema_files_, "abspath")
 
+extensions_api_schema_files_ext =
+    get_path_info(extensions_api_schema_files_ext_, "abspath")
+
 extensions_types_only_schema_files =
     get_path_info(extensions_types_only_schema_files_, "abspath")
 

@@ -1,0 +1,16 @@
+diff a/extensions/browser/api/content_settings/content_settings_store.cc b/extensions/browser/api/content_settings/content_settings_store.cc	(rejected hunks)
+@@ -109,10 +109,14 @@ std::unique_ptr<content_settings::Rule> ContentSettingsStore::GetRule(
+     bool off_the_record) const {
+   base::AutoLock entries_lock(lock_);
+   std::unique_ptr<content_settings::Rule> result;
+ 
+   for (const auto& entry : entries_) {
++    if (!entry->enabled) {
++      continue;
++    }
++
+     if (off_the_record) {
+       {
+         base::AutoLock lock(entry->incognito_session_only_settings.GetLock());
+         result = entry->incognito_session_only_settings.GetRule(
+             primary_url, secondary_url, content_type);

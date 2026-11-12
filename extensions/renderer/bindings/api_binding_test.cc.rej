@@ -1,0 +1,38 @@
+diff a/extensions/renderer/bindings/api_binding_test.cc b/extensions/renderer/bindings/api_binding_test.cc	(rejected hunks)
+@@ -5,10 +5,11 @@
+ #include "extensions/renderer/bindings/api_binding_test.h"
+ 
+ #include <algorithm>
+ 
+ #include "base/task/single_thread_task_runner.h"
++#include "extensions/renderer/bindings/api_binding_util.h"
+ #include "gin/array_buffer.h"
+ #include "gin/public/context_holder.h"
+ #include "gin/public/isolate_holder.h"
+ #include "gin/v8_initializer.h"
+ 
+@@ -42,10 +43,12 @@ void APIBindingTest::SetUp() {
+   v8::Local<v8::Context> context =
+       v8::Context::New(isolate(), GetV8ExtensionConfiguration());
+   context->Enter();
+   main_context_holder_ = std::make_unique<gin::ContextHolder>(isolate());
+   main_context_holder_->SetContext(context);
++
++  binding::InitializeContext(context);
+ }
+ 
+ void APIBindingTest::TearDown() {
+   if (main_context_holder_ || !additional_context_holders_.empty()) {
+     DisposeAllContexts();
+@@ -100,10 +103,11 @@ v8::Local<v8::Context> APIBindingTest::AddContext() {
+   auto holder = std::make_unique<gin::ContextHolder>(isolate());
+   v8::Local<v8::Context> context =
+       v8::Context::New(isolate(), GetV8ExtensionConfiguration());
+   holder->SetContext(context);
+   additional_context_holders_.push_back(std::move(holder));
++  binding::InitializeContext(context);
+   return context;
+ }
+ 
+ v8::Local<v8::Context> APIBindingTest::MainContext() {
+   return main_context_holder_->context();

@@ -1,0 +1,115 @@
+diff a/extensions/browser/updater/extension_downloader.cc b/extensions/browser/updater/extension_downloader.cc	(rejected hunks)
+@@ -7,10 +7,11 @@
+ #include <stddef.h>
+ 
+ #include <string_view>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/command_line.h"
+ #include "base/files/file_path.h"
+ #include "base/functional/bind.h"
+ #include "base/location.h"
+ #include "base/logging.h"
+@@ -857,50 +864,50 @@ ExtensionDownloader::GetUpdateAvailability(
+   if (!is_extension_pending) {
+     // If we're not installing pending extension, we can only update
+     // extensions that have already existed in the system.
+     if (!delegate_->GetExtensionExistingVersion(extension_id,
+                                                 &extension_version)) {
+-      VLOG(2) << extension_id << " is not installed";
++      LOG(INFO) << extension_id << " is not installed";
+       return UpdateAvailability::kBadUpdateSpecification;
+     }
+-    VLOG(2) << extension_id << " is at '" << extension_version << "'";
++    LOG(INFO) << extension_id << " is at '" << extension_version << "'";
+   }
+ 
+   bool has_noupdate = false;
+   for (const UpdateManifestResult* update : possible_candidates) {
+     const std::string& update_version_str = update->version;
+     if (VLOG_IS_ON(2)) {
+       if (update_version_str.empty())
+-        VLOG(2) << "Manifest indicates " << extension_id
++        LOG(INFO) << "Manifest indicates " << extension_id
+                 << " has no update (info: " << update->info.value_or("no info")
+                 << ")";
+       else
+-        VLOG(2) << "Manifest indicates " << extension_id
++        LOG(INFO) << "Manifest indicates " << extension_id
+                 << " latest version is '" << update_version_str << "'";
+     }
+ 
+     if (!is_extension_pending) {
+       // If we're not installing pending extension, and the update
+       // version is the same or older than what's already installed,
+       // we don't want it.
+       if (update_version_str.empty()) {
+         // If update manifest doesn't have version number => no update.
+-        VLOG(2) << extension_id << " has empty version";
++        LOG(INFO) << extension_id << " has empty version";
+         has_noupdate = true;
+         continue;
+       }
+ 
+       const base::Version update_version(update_version_str);
+       if (!update_version.IsValid()) {
+-        VLOG(2) << extension_id << " has invalid version '"
++        LOG(INFO) << extension_id << " has invalid version '"
+                 << update_version_str << "'";
+         continue;
+       }
+ 
+       const base::Version existing_version(extension_version);
+       if (update_version.CompareTo(existing_version) <= 0) {
+-        VLOG(2) << extension_id << " version is not older than '"
++        LOG(INFO) << extension_id << " version is not older than '"
+                 << update_version_str << "'";
+         bool can_rollback =
+             update_version.CompareTo(existing_version) < 0 &&
+             (delegate_->RequestRollback(extension_id) ==
+              ExtensionDownloaderDelegate::RequestRollbackResult::kAllowed);
+@@ -955,20 +962,20 @@ void ExtensionDownloader::DetermineUpdates(
+   // |possible_updates|.
+   for (ExtensionDownloaderTask& task : tasks) {
+     const ExtensionId& extension_id = task.id;
+     const auto it = update_groups.find(extension_id);
+     if (it == update_groups.end()) {
+-      VLOG(2) << "Manifest doesn't have an update entry for " << extension_id;
++      LOG(INFO) << "Manifest doesn't have an update entry for " << extension_id;
+       extension_errors.emplace(extension_id, std::move(task));
+       continue;
+     }
+ 
+     const std::vector<const UpdateManifestResult*>& possible_candidates =
+         it->second;
+     DCHECK(!possible_candidates.empty());
+ 
+-    VLOG(2) << "Manifest has " << possible_candidates.size()
++    LOG(INFO) << "Manifest has " << possible_candidates.size()
+             << " update entries for " << extension_id;
+ 
+     UpdateManifestResult* update_result = nullptr;
+     UpdateAvailability update_availability = GetUpdateAvailability(
+         extension_id, possible_candidates, &update_result);
+@@ -1250,10 +1264,20 @@ void ExtensionDownloader::StartExtensionLoader() {
+ 
+   network::mojom::URLLoaderFactory* url_loader_factory_to_use =
+       GetURLLoaderFactoryToUse(extension_loader_resource_request_->url);
+   extension_loader_ = network::SimpleURLLoader::Create(
+       std::move(extension_loader_resource_request_), traffic_annotation);
++
++  // Remove Authorization headers on redirect to avoid open redirect attacks.
++  extension_loader_->SetOnRedirectCallback(
++      base::BindRepeating([](const GURL& url, const net::RedirectInfo& redirect,
++                             const network::mojom::URLResponseHead& head,
++                             std::vector<std::string>* to_be_removed_headers) {
++        CHECK(to_be_removed_headers);
++        to_be_removed_headers->emplace_back(
++            net::HttpRequestHeaders::kAuthorization);
++      }));
+   // Retry up to 3 times.
+   extension_loader_->SetRetryOptions(
+       3, network::SimpleURLLoader::RetryMode::RETRY_ON_NETWORK_CHANGE);
+ 
+   extension_loader_->DownloadToTempFile(

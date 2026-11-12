@@ -1,0 +1,53 @@
+diff a/extensions/browser/extension_prefs.cc b/extensions/browser/extension_prefs.cc	(rejected hunks)
+@@ -2024,10 +2033,14 @@ void ExtensionPrefs::OnDisableReasonsChanged(
+   // TODO(crbug.com/40554334): Remove this and migrate consumers to
+   // OnExtensionDisableReasonsChanged.
+   for (auto& observer : observer_list_) {
+     observer.OnExtensionStateChanged(extension_id, new_enabled);
+   }
++
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  prefs_->CommitPendingWrite();
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ }
+ 
+ base::flat_set<int> ExtensionPrefs::ReadDisableReasonsFromPrefs(
+     const ExtensionId& extension_id) const {
+   const base::Value::List* disable_reasons_list =
+@@ -2275,10 +2298,13 @@ void ExtensionPrefs::RegisterProfilePrefs(
+       kMV2DeprecationWarningAcknowledgedGloballyPref.name, false);
+   registry->RegisterBooleanPref(
+       kMV2DeprecationDisabledAcknowledgedGloballyPref.name, false);
+   registry->RegisterBooleanPref(
+       kMV2DeprecationUnsupportedAcknowledgedGloballyPref.name, false);
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  registry->RegisterBooleanPref(kPrefNotDisplayInSettings, false);
++#endif  // ARKWEB_ARKWEB_EXTENSIONS
+   registry->RegisterStringPref(pref_names::kGlobalShortcutsUuid, std::string());
+ 
+   registry->RegisterBooleanPref(
+       UserScriptManager::kUserScriptsToggleMigratedPref.name,
+       /*default_value=*/false);
+@@ -2341,10 +2367,22 @@ void ExtensionPrefs::PopulateExtensionInfoPrefs(
+     int install_flags,
+     const std::string& install_parameter,
+     base::Value::Dict ruleset_install_prefs,
+     prefs::DictionaryValueUpdate* extension_dict,
+     base::Value::List& removed_prefs) {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  base::Value::List to_write;
++  for (int value : disable_reasons) {
++    to_write.Append(value);
++  }
++
++  if (!to_write.empty()) {
++    LOG_FEEDBACK(INFO) << "disable reasons is " << to_write.DebugString()
++                       << ",id is " << extension->id();
++  }
++#endif
++
+   extension_dict->Set(kPrefDisableReasons,
+                       base::Value(IntegerSetToList(disable_reasons)));
+   extension_dict->SetInteger(kPrefLocation,
+                              static_cast<int>(extension->location()));
+   extension_dict->SetInteger(kPrefCreationFlags, extension->creation_flags());

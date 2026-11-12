@@ -213,6 +213,10 @@ class ExtensionLocalizationURLLoader : public network::mojom::URLLoaderClient,
         extension_id_, &data_, ipc_target);
   }
 
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+    void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
+#endif
+
   const std::optional<blink::LocalFrameToken> frame_token_;
   const ExtensionId extension_id_;
   std::unique_ptr<mojo::DataPipeDrainer> data_drainer_;
@@ -236,7 +240,11 @@ std::unique_ptr<ExtensionLocalizationThrottle>
 ExtensionLocalizationThrottle::MaybeCreate(
     base::optional_ref<const blink::LocalFrameToken> local_frame_token,
     const GURL& request_url) {
-  if (!request_url.SchemeIs(extensions::kExtensionScheme)) {
+  if (!request_url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !request_url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     return nullptr;
   }
   return base::WrapUnique(new ExtensionLocalizationThrottle(local_frame_token));
@@ -254,7 +262,11 @@ void ExtensionLocalizationThrottle::WillProcessResponse(
     const GURL& response_url,
     network::mojom::URLResponseHead* response_head,
     bool* defer) {
-  if (!response_url.SchemeIs(extensions::kExtensionScheme)) {
+  if (!response_url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !response_url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     // The chrome-extension:// URL resource request was redirected by
     // webRequest API. In that case, we don't process the response.
     return;

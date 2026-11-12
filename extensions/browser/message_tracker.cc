@@ -74,6 +74,10 @@ const char* GetChannelTypeMetricSuffix(const mojom::ChannelType channel_type) {
       return "ConnectChannel";
     case mojom::ChannelType::kNative:
       return "NativeChannel";
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+    case mojom::ChannelType::kBrowser:
+      return "BrowserChannel";
+#endif
     case mojom::ChannelType::kSendRequest:
       return "SendRequestChannel";
   }

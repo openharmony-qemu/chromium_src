@@ -79,6 +79,10 @@
 #include "v8/include/v8-primitive.h"
 #include "v8/include/v8-template.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/renderer/native_extension_bindings_system_for_include.cc"
+#endif
+
 using perfetto::protos::pbzero::ChromeTrackEvent;
 
 namespace extensions {
@@ -170,6 +174,16 @@ v8::Local<v8::Object> GetOrCreateGlobalObjectProperty(
     if (obj->GetCreationContextChecked() == context)
       requested_object = obj;
   }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line != nullptr &&
+      command_line->HasSwitch(::switches::kSetExtensionName)) {
+    CreateAliasName(
+        context, requested_object,
+        command_line->GetSwitchValueASCII(::switches::kSetExtensionName));
+  }
+#endif
 
   return requested_object;
 }

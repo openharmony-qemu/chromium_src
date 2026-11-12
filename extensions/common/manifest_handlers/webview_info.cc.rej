@@ -1,0 +1,18 @@
+diff a/extensions/common/manifest_handlers/webview_info.cc b/extensions/common/manifest_handlers/webview_info.cc	(rejected hunks)
+@@ -180,11 +180,15 @@ bool WebviewHandler::Parse(Extension* extension, std::u16string* error) {
+             errors::kInvalidWebviewAccessibleResource, base::NumberToString(i));
+         extension->AddInstallWarning(
+             InstallWarning(std::move(warning), keys::kWebview));
+         continue;
+       }
+-      URLPattern pattern(URLPattern::SCHEME_EXTENSION);
++      URLPattern pattern(URLPattern::SCHEME_EXTENSION
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++                         | URLPattern::SCHEME_ARKWEB_EXTENSION
++#endif
++      );
+       if (pattern.Parse(pattern_url.spec()) !=
+           URLPattern::ParseResult::kSuccess) {
+         // NOTE: Warning instead of error because there are existing apps that
+         // have this bug, and we don't want to hard-error on them.
+         // https://crbug.com/856948.

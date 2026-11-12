@@ -1,0 +1,13 @@
+diff a/extensions/browser/mock_extension_system.h b/extensions/browser/mock_extension_system.h	(rejected hunks)
+@@ -61,10 +61,11 @@ class MockExtensionSystem : public ExtensionSystem {
+       const ExtensionId& extension_id,
+       const base::Value::Dict& attributes) override;
+ 
+  private:
+   raw_ptr<content::BrowserContext> browser_context_;
++  std::unique_ptr<ManagementPolicy> management_policy_;
+   base::OneShotEvent ready_;
+ };
+ 
+ // A factory to create a MockExtensionSystem. Sample use:
+ //

@@ -97,6 +97,9 @@ void DoTaskQueueFunction(content::BrowserContext* browser_context,
 
   // This is only necessary for service worker-based extensions.
   if (!BackgroundInfo::IsServiceWorkerBased(extension)) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    LOG(INFO) << "extension is not service worker-based";
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
     return;
   }
 

@@ -19,6 +19,11 @@
 #include "extensions/buildflags/buildflags.h"
 #include "extensions/common/extension_id.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include <list>
+#include "extensions/common/manifest_handlers/shared_module_info.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace content {
@@ -85,6 +90,12 @@ class InstallVerifier : public KeyedService,
   // Call this to add a set of ids that will immediately be considered allowed,
   // and kick off an asynchronous request to Add.
   void AddProvisional(const ExtensionIdSet& ids);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void AddProvisional(
+      const std::list<SharedModuleInfo::ImportInfo>& pending_modules);
+  void VerifyExtension(int webstore_type, const std::string& extension_id);
+#endif
 
   // Removes an id or set of ids from the verified list.
   void Remove(const std::string& id);
@@ -176,6 +187,11 @@ class InstallVerifier : public KeyedService,
   // A set of ids that have been provisionally added, which we're willing to
   // consider allowed until we hear back from the server signature request.
   ExtensionIdSet provisional_;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  bool check_all_extensions_ = false;
+  std::map<ExtensionId, int> webstore_types_;
+#endif
 
   base::WeakPtrFactory<InstallVerifier> weak_factory_{this};
 };

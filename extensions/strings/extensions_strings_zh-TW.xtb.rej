@@ -1,0 +1,13 @@
+diff a/extensions/strings/extensions_strings_zh-TW.xtb b/extensions/strings/extensions_strings_zh-TW.xtb	(rejected hunks)
+@@ -53,10 +53,11 @@
+ <translation id="7972881773422714442">選項：<ph name="EXTENSIONOPTIONS_TAG_NAME" /></translation>
+ <translation id="8035920974645200807">前置鏡頭</translation>
+ <translation id="8047248493720652249">擴充功能無法將下載的檔案命名為「<ph name="ATTEMPTED_FILENAME" />」，因為其他擴充功能 (<ph name="EXTENSION_NAME" />) 已為將此檔案命名為「<ph name="ACTUAL_FILENAME" />」。</translation>
+ <translation id="8284835137979141223"><ph name="PRODUCT_NAME" /> (供應商：<ph name="VENDOR_NAME" />)</translation>
+ <translation id="8517576857589387417">資訊清單檔案遺失或無法讀取</translation>
++<translation id="8602184400052594090">清單檔案缺失或不可讀取</translation>
+ <translation id="8621383749470166852">無法載入「<ph name="RELATIVE_PATH" />」檔案的內容指令碼，內容指令碼只能從支援的 JavaScript 檔案 (例如 .js 檔案) 載入。</translation>
+ <translation id="8636666366616799973">套件無效，詳細資料：<ph name="ERROR_MESSAGE" />。</translation>
+ <translation id="8761756413268424715">「<ph name="APP_NAME" />」要求存取你的其中一個裝置：</translation>
+ <translation id="8885905466771744233">所指定的擴充功能已有私密金鑰，請使用該金鑰，或先將它刪除。</translation>
+ <translation id="9039223174332979184">這部電腦的管理員要求「<ph name="EXTENSION_NAME" />」至少要使用版本 3 的資訊清單。</translation>

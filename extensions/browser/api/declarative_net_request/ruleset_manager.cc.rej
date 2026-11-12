@@ -1,0 +1,87 @@
+diff a/extensions/browser/api/declarative_net_request/ruleset_manager.cc b/extensions/browser/api/declarative_net_request/ruleset_manager.cc	(rejected hunks)
+@@ -49,10 +49,15 @@ void NotifyRequestWithheld(const ExtensionId& extension_id,
+   DCHECK(ExtensionsAPIClient::Get());
+   ExtensionsAPIClient::Get()->NotifyWebRequestWithheld(
+       request.render_process_id, request.frame_routing_id, extension_id);
+ }
+ 
++bool IsRedirectToFileUrl(const std::optional<RequestAction>& action) {
++  return action && action->IsRedirectOrUpgrade() && action->redirect_url &&
++         action->redirect_url->SchemeIsFile();
++}
++
+ // Helper to log the time taken in RulesetManager::EvaluateRequestInternal.
+ class ScopedEvaluateRequestTimer {
+  public:
+   ScopedEvaluateRequestTimer() = default;
+   ~ScopedEvaluateRequestTimer() {
+@@ -358,10 +363,19 @@ std::optional<RequestAction> RulesetManager::GetAction(
+     const ExtensionRulesetData* ruleset = ruleset_and_access.first;
+ 
+     CompositeMatcher::ActionInfo action_info =
+         ruleset->matcher->GetAction(params, stage, ruleset_and_access.second);
+ 
++    // Extensions may not redirect to a file:// URL without explicit local file
++    // access. Drop the action if it does not have file access. Like matched
++    // redirect rules that do not have host access to the request's URL, It will
++    // still mask lower priority rules from the same ruleset.
++    if (IsRedirectToFileUrl(action_info.action) &&
++        !util::AllowFileAccess(ruleset->extension_id, browser_context_)) {
++      action_info.action.reset();
++    }
++
+     DCHECK(!(action_info.action && action_info.notify_request_withheld));
+     if (action_info.notify_request_withheld) {
+       NotifyRequestWithheld(ruleset->extension_id, request);
+       continue;
+     }
+@@ -515,20 +529,31 @@ bool RulesetManager::ShouldEvaluateRequest(
+ 
+   // Prevent extensions from modifying any resources on the chrome-extension
+   // scheme. Practically, this has the effect of not allowing an extension to
+   // modify its own resources (The extension wouldn't have the permission to
+   // other extension origins anyway).
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if (request.url.SchemeIs(kArkwebExtensionScheme)) {
++    return false;
++  }
++#endif
+   if (request.url.SchemeIs(kExtensionScheme)) {
+     return false;
+   }
+ 
+   // Declarative Net Request rules should not be matched against requests
+   // originating from WebViews.
+   if (request.is_web_view) {
+     return false;
+   }
+ 
++  // Declarative Net Request rules should not be matched against requests
++  // originating from WebViews.
++  if (request.is_web_view) {
++    return false;
++  }
++
+   return true;
+ }
+ 
+ bool RulesetManager::ShouldEvaluateRulesetForRequest(
+     const ExtensionRulesetData& ruleset,
+@@ -558,10 +587,17 @@ bool RulesetManager::ShouldEvaluateRulesetForRequest(
+   if (is_incognito_context &&
+       !util::IsIncognitoEnabled(ruleset.extension_id, browser_context_)) {
+     return false;
+   }
+ 
++  // Extensions may not intercept file:// URLs without explicit local file
++  // access.
++  if (request.url.SchemeIsFile() &&
++      !util::AllowFileAccess(ruleset.extension_id, browser_context_)) {
++    return false;
++  }
++
+   const int tab_id = request.frame_data.tab_id;
+ 
+   // `crosses_incognito` is used to ensure that a split mode extension process
+   // can't intercept requests from a cross browser context. Since declarative
+   // net request API doesn't use event listeners in a background process, it

@@ -1,0 +1,16 @@
+diff a/extensions/browser/sandboxed_unpacker.cc b/extensions/browser/sandboxed_unpacker.cc	(rejected hunks)
+@@ -1001,10 +1018,14 @@ std::optional<base::Value::Dict> SandboxedUnpacker::RewriteManifestFile(
+   // exploitable bug that could be used to compromise the browser.
+   DCHECK(!public_key_.empty());
+   base::Value::Dict final_manifest = manifest.Clone();
+   final_manifest.Set(manifest_keys::kPublicKey, public_key_);
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  CustomData::SetStoreType(webstore_type_, &final_manifest);
++#endif
++
+   {
+     std::string differential_fingerprint;
+     if (base::ReadFileToStringWithMaxSize(
+             extension_root_.Append(kDifferentialFingerprintFilename),
+             &differential_fingerprint, kMaxFingerprintSize)) {

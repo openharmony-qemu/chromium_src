@@ -1,0 +1,21 @@
+diff a/extensions/browser/api/declarative_net_request/utils.cc b/extensions/browser/api/declarative_net_request/utils.cc	(rejected hunks)
+@@ -58,10 +60,19 @@ constexpr int kIndexedRulesetFormatVersion = 36;
+ // updating kIndexedRulesetFormatVersion.
+ static_assert(url_pattern_index::kUrlPatternIndexFormatVersion == 16,
+               "kUrlPatternIndexFormatVersion has changed, make sure you've "
+               "also updated kIndexedRulesetFormatVersion above.");
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++// This static assert is meant to catch cases where
++// url pattern_index: : kCssPatternIndexFormatVersion is incremented without
++// updating kIndexedRulesetFormatVersion.
++static_assert(url_pattern_index::kCssPatternIndexFormatVersion == 1,
++              "kCssPatternIndexFormatVersion has changed, make sure you've "
++              "also updated kIndexedRulesetFormatVersion above.");
++#endif
++
+ constexpr int kInvalidIndexedRulesetFormatVersion = -1;
+ int g_indexed_ruleset_format_version_for_testing =
+     kInvalidIndexedRulesetFormatVersion;
+ 
+ constexpr int kInvalidOverrideChecksumForTest = -1;

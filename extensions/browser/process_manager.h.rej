@@ -1,0 +1,31 @@
+diff a/extensions/browser/process_manager.h b/extensions/browser/process_manager.h	(rejected hunks)
+@@ -170,11 +170,15 @@ class ProcessManager : public KeyedService,
+   // for more details regarding the extra data.
+   int GetLazyKeepaliveCount(const Extension* extension);
+   void IncrementLazyKeepaliveCount(const Extension* extension,
+                                    Activity::Type activity_type,
+                                    const std::string& extra_data);
+-  void DecrementLazyKeepaliveCount(const Extension* extension,
++
++  // Decrements the keepalive count. Returns true if the specified activity was
++  // successfully matched and decremented; returns false if the activity was
++  // not found or if the keepalive count was already zero.
++  bool DecrementLazyKeepaliveCount(const Extension* extension,
+                                    Activity::Type activity_type,
+                                    const std::string& extra_data);
+ 
+   // Sends out notification to observers when the extension process is gone.
+   void NotifyExtensionProcessTerminated(const Extension* extension);
+@@ -328,11 +332,11 @@ class ProcessManager : public KeyedService,
+       content::RenderFrameHost* render_frame_host);
+ 
+   // Internal implementation of DecrementLazyKeepaliveCount with an
+   // `extension_id` known to have a lazy background page.
+   void DecrementLazyKeepaliveCount(const ExtensionId& extension_id);
+-  void DecrementLazyKeepaliveCount(const ExtensionId& extension_id,
++  bool DecrementLazyKeepaliveCount(const ExtensionId& extension_id,
+                                    Activity::Type activity_type,
+                                    const std::string& extra_data);
+ 
+   // These are called when the extension transitions between idle and active.
+   // They control the process of closing the background page when idle.

@@ -5,6 +5,7 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback_helpers.h"
 #include "base/test/task_environment.h"
 #include "extensions/common/extension_id.h"

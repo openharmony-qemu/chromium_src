@@ -4,6 +4,7 @@
 
 #include "extensions/browser/api/messaging/messaging_delegate.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/notimplemented.h"
 #include "extensions/common/extension_id.h"
@@ -44,6 +45,18 @@ std::unique_ptr<MessagePort> MessagingDelegate::CreateReceiverForNativeApp(
   NOTIMPLEMENTED();
   return nullptr;
 }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+std::unique_ptr<MessagePort> MessagingDelegate::CreateReceiverForBrowserMessage(
+    content::BrowserContext* browser_context,
+    base::WeakPtr<MessagePort::ChannelDelegate> channel_delegate,
+    content::RenderFrameHost* source,
+    const ExtensionId& extension_id,
+    const PortId& receiver_port_id) {
+  NOTIMPLEMENTED();
+  return nullptr;
+}
+#endif
 
 void MessagingDelegate::QueryIncognitoConnectability(
     content::BrowserContext* context,

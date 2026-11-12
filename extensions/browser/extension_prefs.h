@@ -835,6 +835,24 @@ class ExtensionPrefs : public KeyedService {
 
   static const char kFakeObsoletePrefForTesting[];
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void SetNotDisplayInSettings(const ExtensionId& extension_id,
+                               bool not_display);
+  bool IsNotDisplayInSettings(const ExtensionId& extension_id) const;
+
+  std::unique_ptr<PermissionSet> GetRuntimeUserBlockedPermissions(
+      const ExtensionId& extension_id) const;
+
+  void AddRuntimeUserBlockedPermissions(const ExtensionId& extension_id,
+                                        const PermissionSet& permissions);
+
+  void RemoveRuntimeUserBlockedPermissions(const ExtensionId& extension_id,
+                                           const PermissionSet& permissions);
+  // Performs a one-time migration of the legacy disable reasons bitflag to a
+  // list of disable reasons before extension state is initialized.
+  void MaybeMigrateDisableReasonsBitflagToList();
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
  private:
   friend class ExtensionPrefsBlocklistedExtensions;  // Unit test.
   friend class ExtensionPrefsComponentExtension;     // Unit test.

@@ -1,0 +1,19 @@
+diff a/extensions/browser/script_injection_tracker.cc b/extensions/browser/script_injection_tracker.cc	(rejected hunks)
+@@ -92,12 +92,17 @@ class RenderProcessHostUserData : public base::SupportsUserData::Data {
+     return *self;
+   }
+ 
+   // base::SupportsUserData::Data override:
+   ~RenderProcessHostUserData() override {
++#if BUILDFLAG(IS_ARKWEB) || BUILDFLAG(ARKWEB_DFX_TRACING)
++    TRACE_EVENT_END("extensions", perfetto::Track::FromPointer(this),
++                    "kRenderProcessHost", "RenderProcessHost");
++#else
+     TRACE_EVENT_END("extensions", perfetto::Track::FromPointer(this),
+                     ChromeTrackEvent::kRenderProcessHost, *process_);
++#endif
+   }
+ 
+   bool HasScript(ScriptInjectionTracker::ScriptType script_type,
+                  const ExtensionId& extension_id) const {
+     return base::Contains(GetScripts(script_type), extension_id);

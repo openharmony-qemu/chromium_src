@@ -1,0 +1,15 @@
+diff a/extensions/common/mojom/renderer_mojom_unittest.cc b/extensions/common/mojom/renderer_mojom_unittest.cc	(rejected hunks)
+@@ -60,10 +60,13 @@ class TestRendererImpl : public mojom::Renderer {
+   void SetActivityLoggingEnabled(bool enabled) override {}
+   void LoadExtensions(
+       std::vector<mojom::ExtensionLoadedParamsPtr> loaded_extensions) override {
+   }
+   void SetDeveloperMode(bool current_developer_mode) override {}
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  void SetWebStoreConfig(mojom::WebStoreConfigPtr config) override {}
++#endif
+   void SetSessionInfo(version_info::Channel channel,
+                       mojom::FeatureSessionType session_type) override {}
+   void SetSystemFont(const std::string& font_family,
+                      const std::string& font_size) override {}
+   void SetWebViewPartitionID(const std::string& partition_id) override {}

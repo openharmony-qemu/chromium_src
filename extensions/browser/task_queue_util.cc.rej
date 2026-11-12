@@ -1,0 +1,21 @@
+diff a/extensions/browser/task_queue_util.cc b/extensions/browser/task_queue_util.cc	(rejected hunks)
+@@ -107,10 +110,19 @@ void DoTaskQueueFunction(content::BrowserContext* browser_context,
+       !ExtensionsBrowserClient::Get()->HasOffTheRecordContext(
+           browser_context) ||
+       !IncognitoInfo::IsSplitMode(extension) ||
+       !ExtensionsBrowserClient::Get()->IsExtensionIncognitoEnabled(
+           extension->id(), browser_context)) {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++    bool is_split_mode = IncognitoInfo::IsSplitMode(extension);
++    bool is_off_the_record = ExtensionsBrowserClient::Get()->HasOffTheRecordContext(
++        browser_context);
++    bool is_incognito_enabled = ExtensionsBrowserClient::Get()->IsExtensionIncognitoEnabled(
++        extension->id(), browser_context);
++    LOG(INFO) << "split mode is " << is_split_mode << ",off the record flag is " <<
++        is_off_the_record << ",incognite enabled is " << is_incognito_enabled;
++#endif  // ARKWEB_ARKWEB_EXTENSIONS
+     return;
+   }
+ 
+   content::BrowserContext* off_the_record_context =
+       ExtensionsBrowserClient::Get()->GetOffTheRecordContext(browser_context);

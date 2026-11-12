@@ -1,0 +1,47 @@
+diff a/extensions/renderer/api/messaging/message_target.h b/extensions/renderer/api/messaging/message_target.h	(rejected hunks)
+@@ -6,10 +6,11 @@
+ #define EXTENSIONS_RENDERER_API_MESSAGING_MESSAGE_TARGET_H_
+ 
+ #include <optional>
+ #include <string>
+ 
++#include "arkweb/build/features/features.h"
+ #include "extensions/common/extension_id.h"
+ 
+ namespace extensions {
+ 
+ // Represents a target of an extension message. This could be:
+@@ -22,23 +23,33 @@ namespace extensions {
+ //    chrome.tabs.connect() or chrome.tabs.sendMessage() target tabs.
+ // 3. A native application. An extension is using native messaging to
+ //    communicate with a third-party application. Any calls to
+ //    chrome.runtime.connectNative() or chrome.runtime.sendNativeMessage()
+ //    target native applications.
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++// 4. The host browser application. Any calls to
++//    chrome.runtime.sendBrowserMessage() target the embedding browser.
++#endif
+ struct MessageTarget {
+   enum Type {
+     TAB,
+     EXTENSION,
+     NATIVE_APP,
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
++    BROWSER,
++#endif
+   };
+ 
+   static MessageTarget ForTab(int tab_id, int frame_id);
+   static MessageTarget ForTab(int tab_id,
+                               int frame_id,
+                               const std::string& document_id);
+   static MessageTarget ForExtension(const ExtensionId& extension_id);
+   static MessageTarget ForNativeApp(const std::string& native_app_name);
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
++  static MessageTarget ForBrowser();
++#endif
+ 
+   MessageTarget(MessageTarget&& other);
+   MessageTarget(const MessageTarget& other);
+   ~MessageTarget();
+ 

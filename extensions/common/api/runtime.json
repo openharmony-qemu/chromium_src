@@ -104,7 +104,9 @@
             {"name": "android", "description": "Specifies the Android operating system."},
             {"name": "cros", "description": "Specifies the Chrome operating system."},
             {"name": "linux", "description": "Specifies the Linux operating system."},
-            {"name": "openbsd", "description": "Specifies the OpenBSD operating system."}
+            {"name": "openbsd", "description": "Specifies the OpenBSD operating system."},
+            {"name": "fuchsia", "description": "Specifies the Fuchsia operating system."},            
+            {"name": "ohos", "description": "Specifies the Ohos operating system."}
         ]
       },
       {
@@ -624,6 +626,36 @@
               "name": "response",
               "type": "any",
               "description": "The response message sent by the native messaging host. If an error occurs while connecting to the native messaging host, the callback will be called with no arguments and $(ref:runtime.lastError) will be set to the error message.",
+              "additionalProperties": {
+                "type": "any"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "sendBrowserMessage",
+        "type": "function",
+        "nocompile": true,
+        "description": "Send a single message to the host browser application.",
+        "parameters": [
+          {
+            "name": "message",
+            "description": "The message that will be passed to the host browser application.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any"
+            }
+          }
+        ],
+        "returns_async": {
+          "name": "callback",
+          "optional": true,
+          "parameters": [
+            {
+              "name": "response",
+              "type": "any",
+              "description": "The response message sent by the host browser application. If an error occurs while connecting to the host browser application, the callback will be called with no arguments and $(ref:runtime.lastError) will be set to the error message.",
               "additionalProperties": {
                 "type": "any"
               }

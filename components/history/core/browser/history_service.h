@@ -49,6 +49,10 @@
 #include "sql/init_status.h"
 #include "ui/base/page_transition_types.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "services/network/public/cpp/features.h"
+#endif
+
 class GURL;
 class HistoryQuickProviderTest;
 class InMemoryURLIndexTest;

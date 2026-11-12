@@ -1,0 +1,13 @@
+diff a/components/no_state_prefetch/browser/no_state_prefetch_contents.cc b/components/no_state_prefetch/browser/no_state_prefetch_contents.cc	(rejected hunks)
+@@ -176,10 +176,11 @@ NoStatePrefetchContents::NoStatePrefetchContents(
+       browser_context_(browser_context),
+       final_status_(FINAL_STATUS_UNKNOWN),
+       process_pid_(base::kNullProcessId),
+       origin_(origin) {
+   switch (origin) {
++    case ORIGIN_OMNIBOX:
+     case ORIGIN_NAVIGATION_PREDICTOR:
+       DCHECK(!initiator_origin_.has_value());
+       break;
+ 
+     case ORIGIN_GWS_PRERENDER:

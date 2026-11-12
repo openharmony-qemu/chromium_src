@@ -1,0 +1,76 @@
+diff a/components/js_injection/renderer/js_communication.h b/components/js_injection/renderer/js_communication.h	(rejected hunks)
+@@ -41,12 +45,29 @@ class JsCommunication
+   void SetJsObjects(
+       std::vector<mojom::JsObjectPtr> js_object_ptrs,
+       mojo::PendingAssociatedRemote<mojom::JsObjectsClient> client) override;
+   void AddDocumentStartScript(
+       mojom::DocumentStartJavaScriptPtr script_ptr) override;
++#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
++  void AddDocumentEndScript(
++      mojom::DocumentEndJavaScriptPtr script_ptr) override;
++  void AddDocumentEndScriptRegexRules(
++      mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) override;
++#endif
++#if BUILDFLAG(ARKWEB_JSPROXY)
++  void AddHeadReadyScript(
++      mojom::DocumentStartJavaScriptPtr script_ptr) override;
++  void RemoveHeadReadyScript(int32_t script_id) override;
++  void AddHeadReadyScriptRegexRules(
++      mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) override;
++  void AddDocumentStartScriptRegexRules(
++      mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) override;
++#endif
+   void RemoveDocumentStartScript(int32_t script_id) override;
+-
++#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
++  void RemoveDocumentEndScript(int32_t script_id) override;
++#endif
+   // RenderFrameObserver implementation
+   void DidClearWindowObject() override;
+   void WillReleaseScriptContext(v8::Local<v8::Context> context,
+                                 int32_t world_id) override;
+   void OnDestruct() override;
+@@ -54,10 +75,29 @@ class JsCommunication
+   void RunScriptsAtDocumentStart();
+ 
+   mojom::JsToBrowserMessaging* GetJsToJavaMessage(
+       const std::u16string& js_object_name);
+ 
++#if BUILDFLAG(ARKWEB_JSPROXY)
++  void AddPendingJavascriptAtDocumentStart(
++      mojom::DocumentStartJavaScriptPtr script_ptr,
++      mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) override;
++
++  void AddPendingJavascriptAtDocumentEnd(
++      mojom::DocumentEndJavaScriptPtr script_ptr,
++      mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) override;
++
++  void AddPendingJavascriptAtHeadReady(
++      mojom::DocumentStartJavaScriptPtr script_ptr,
++      mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) override;
++
++  void CommitPendingJavascriptsAtDocumentStart() override;
++
++  void CommitPendingJavascriptsAtDocumentEnd() override;
++
++  void CommitPendingJavascriptsAtHeadReady() override;
++#endif
+  private:
+   class JsObjectInfo;
+   struct DocumentStartJavaScript;
+ 
+   void BindPendingReceiver(
+@@ -68,10 +108,13 @@ class JsCommunication
+ 
+   // In some cases DidClearWindowObject will be called twice in a row, we need
+   // to prevent doing multiple injection in that case.
+   bool inside_did_clear_window_object_ = false;
+ 
++#if BUILDFLAG(ARKWEB_JSPROXY)
++  std::vector<std::unique_ptr<DocumentStartJavaScript>> swap_scripts_;
++#endif
+   std::vector<std::unique_ptr<DocumentStartJavaScript>> scripts_;
+   std::vector<cppgc::WeakPersistent<JsBinding>> js_bindings_;
+ 
+   // Associated with legacy IPC channel.
+   mojo::AssociatedReceiver<mojom::JsCommunication> receiver_{this};

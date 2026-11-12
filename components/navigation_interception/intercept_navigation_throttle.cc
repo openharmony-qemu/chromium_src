@@ -36,7 +36,11 @@ InterceptNavigationThrottle::~InterceptNavigationThrottle() {
   // Clients should not synchronously cause the navigation to be deleted.
   // Putting the check here allows us to get a stack for what's causing the
   // deletion.
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  DCHECK(!in_sync_check_);
+#else
   CHECK(!in_sync_check_);
+#endif
 }
 
 content::NavigationThrottle::ThrottleCheckResult
@@ -86,9 +90,16 @@ InterceptNavigationThrottle::Defer() {
 
 content::NavigationThrottle::ThrottleCheckResult
 InterceptNavigationThrottle::CheckIfShouldIgnoreNavigation() {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // If called while deferring, could lead to crashes where the OnCheckComplete
+  // callback cancels the deferred navigation and deletes |this| synchronously.
+  // Match v132 behavior: use DCHECK instead of CHECK.
+  DCHECK(!deferring_);
+#else
   // If called while deferring, could lead to crashes where the OnCheckComplete
   // callback cancels the deferred navigation and deletes |this| synchronously.
   CHECK(!deferring_);
+#endif
 
   bool async = ShouldCheckAsynchronously();
   pending_check_ = true;
@@ -98,7 +109,17 @@ InterceptNavigationThrottle::CheckIfShouldIgnoreNavigation() {
       navigation_handle(), async,
       base::BindOnce(&InterceptNavigationThrottle::OnCheckComplete, weak_this));
   // Clients should not synchronously cause the navigation to be deleted.
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  // |this| may have been deleted synchronously during the callback if the
+  // navigation was deleted (e.g. by a re-entrant SetUserAgentOverride -> Reload
+  // in the OnBeforeBrowse handler). In that case the NavigationRequest and its
+  // throttle registry/runner have been destroyed, and ProcessInternal's
+  // weak_ref check will discard this result. Return early to avoid UAF.
+  if (!weak_this)
+    return content::NavigationThrottle::PROCEED;
+#else
   CHECK(weak_this);
+#endif
   in_sync_check_ = false;
   if (pending_check_) {
     if (async) {

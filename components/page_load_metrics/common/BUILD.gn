@@ -48,6 +48,10 @@ source_set("test_support") {
 mojom("page_load_metrics_mojom") {
   sources = [ "page_load_metrics.mojom" ]
 
+  enabled_features = []
+  if (arkweb_network_dfx) {
+    enabled_features += [ "arkweb_network_dfx" ]
+  }
   cpp_typemaps = [
     {
       types = [

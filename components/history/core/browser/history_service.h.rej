@@ -1,0 +1,17 @@
+diff a/components/history/core/browser/history_service.h b/components/history/core/browser/history_service.h	(rejected hunks)
+@@ -110,10 +114,15 @@ class HistoryService : public KeyedService,
+ 
+   // Initializes the history service, returning true on success. On false, do
+   // not call any other functions. The given directory will be used for storing
+   // the history files.
+   bool Init(const HistoryDatabaseParams& history_database_params) {
++#if BUILDFLAG(IS_ARKWEB)
++    if (base::FeatureList::IsEnabled(network::features::kDeleteHistoryServiceDB)) {
++      return Init(true, history_database_params);
++    }
++#endif // IS_ARKWEB
+     return Init(false, history_database_params);
+   }
+ 
+   // Returns the directory containing the History databases.
+   const base::FilePath& history_dir() const { return history_dir_; }

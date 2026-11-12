@@ -43,6 +43,13 @@ source_set("memory_pressure") {
       "system_memory_pressure_evaluator_fuchsia.h",
     ]
   }
+
+  if (is_ohos) {
+    sources += [
+      "//arkweb/chromium_ext/components/memory_pressure/system_memory_pressure_evaluator_ohos.cc",
+      "//arkweb/chromium_ext/components/memory_pressure/system_memory_pressure_evaluator_ohos.h",
+    ]
+  }
 }
 
 source_set("unit_tests") {

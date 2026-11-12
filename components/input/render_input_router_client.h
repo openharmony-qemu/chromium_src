@@ -52,6 +52,10 @@ class COMPONENT_EXPORT(INPUT) RenderInputRouterClient {
       ) = 0;
 
   virtual void OnUnconfirmedTapConvertedToTap() = 0;
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  virtual void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) = 0;
+#endif
 };
 
 }  // namespace input

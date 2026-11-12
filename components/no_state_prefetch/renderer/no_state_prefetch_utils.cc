@@ -78,7 +78,12 @@ class MediaLoadDeferrer : public blink::WebViewObserver {
   // blink::WebViewObserver implementation:
   void OnDestruct() override { delete this; }
   void OnPageVisibilityChanged(
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
       content::PageVisibilityState visibility_state) override {
+#else
+      content::PageVisibilityState visibility_state,
+      bool storing_in_bfcache) override {
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
     if (visibility_state != content::PageVisibilityState::kVisible) {
       return;
     }

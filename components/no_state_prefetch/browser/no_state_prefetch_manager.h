@@ -12,6 +12,7 @@
 #include <set>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/time/clock.h"
@@ -302,6 +303,7 @@ class NoStatePrefetchManager : public content::RenderProcessHostObserver,
   friend class NoStatePrefetchContents;
   friend class NoStatePrefetchHandle;
   friend class UnitTestNoStatePrefetchManager;
+  friend class MockNoStatePrefetchManager;
 
   class OnCloseWebContentsDeleter;
   struct NavigationRecord;
@@ -468,6 +470,15 @@ class NoStatePrefetchManager : public content::RenderProcessHostObserver,
   raw_ptr<const base::TickClock> tick_clock_;
 
   std::vector<std::unique_ptr<NoStatePrefetchManagerObserver>> observers_;
+
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+  bool MayHitOmniboxUrl(const GURL&,
+                        Origin origin,
+                        base::WeakPtr<content::PreloadingAttempt> attempt);
+  std::set<GURL> oh_prefetch_urls_;
+  int min_time_between_prefetches_ = kMinTimeBetweenPrefetchesMs;
+  bool ignore_cache_control_no_store_ = false;
+#endif
 
   base::WeakPtrFactory<NoStatePrefetchManager> weak_factory_{this};
 };

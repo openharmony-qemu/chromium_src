@@ -1,0 +1,48 @@
+diff a/components/no_state_prefetch/browser/no_state_prefetch_manager.h b/components/no_state_prefetch/browser/no_state_prefetch_manager.h	(rejected hunks)
+@@ -109,10 +110,28 @@ class NoStatePrefetchManager : public content::RenderProcessHostObserver,
+       blink::mojom::PrerenderTriggerType trigger_type,
+       const content::Referrer& referrer,
+       const url::Origin& initiator_origin,
+       const gfx::Size& size);
+ 
++#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
++  std::unique_ptr<NoStatePrefetchHandle> StartOhPrefetchingFromOmnibox(
++      const GURL& url,
++      content::SessionStorageNamespace* session_storage_namespace,
++      const gfx::Size& size,
++      content::PreloadingAttempt* attempt,
++      const std::string& extra_headers);
++  void SetMinTimeBetweenPrefetchesMs(int time) {
++    if (time >= kMinTimeBetweenPrefetchesMs) {
++      min_time_between_prefetches_ = kMinTimeBetweenPrefetchesMs;
++      return;
++    }
++    min_time_between_prefetches_ = time <= 0 ? 0 : time;
++  }
++  void SetIgnoreCacheControlNoStore(bool flag) {
++    ignore_cache_control_no_store_ = flag;
++  }
++#endif  // ARKWEB_NO_STATE_PREFETCH
+   // Adds a NoStatePrefetch that only allows for same origin requests (i.e.,
+   // requests that only redirect to the same origin).
+   std::unique_ptr<NoStatePrefetchHandle> AddSameOriginSpeculation(
+       const GURL& url,
+       content::SessionStorageNamespace* session_storage_namespace,
+@@ -335,11 +355,16 @@ class NoStatePrefetchManager : public content::RenderProcessHostObserver,
+       const GURL& url,
+       const content::Referrer& referrer,
+       const std::optional<url::Origin>& initiator_origin,
+       const gfx::Rect& bounds,
+       content::SessionStorageNamespace* session_storage_namespace,
+-      base::WeakPtr<content::PreloadingAttempt> attempt = nullptr);
++      base::WeakPtr<content::PreloadingAttempt> attempt = nullptr
++#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
++      ,
++      const std::string& extra_headers = std::string()
++#endif  // ARKWEB_NO_STATE_PREFETCH
++  );
+ 
+   void StartSchedulingPeriodicCleanups();
+   void StopSchedulingPeriodicCleanups();
+ 
+   // Deletes stale and cancelled prerendered NoStatePrefetchContents, as well as

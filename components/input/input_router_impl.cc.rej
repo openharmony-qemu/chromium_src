@@ -1,0 +1,117 @@
+diff a/components/input/input_router_impl.cc b/components/input/input_router_impl.cc	(rejected hunks)
+@@ -6,10 +6,11 @@
+ 
+ #include <math.h>
+ 
+ #include <utility>
+ 
++#include "arkweb/chromium_ext/components/input/arkweb_input_router_impl_utils.h"
+ #include "base/command_line.h"
+ #include "base/functional/bind.h"
+ #include "base/metrics/histogram_macros.h"
+ #include "base/strings/string_number_conversions.h"
+ #include "base/task/common/task_annotator.h"
+@@ -153,12 +159,18 @@ void InputRouterImpl::SendGestureEvent(
+   TRACE_EVENT0("input", "InputRouterImpl::SendGestureEvent");
+   input_stream_validator_.Validate(original_gesture_event.event);
+ 
+   GestureEventWithLatencyInfo gesture_event(original_gesture_event);
+ 
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  arkweb_input_router_impl_utils_->SendGestureEventEx(gesture_event);
++#endif
+   if (gesture_event_queue_.PassToFlingController(gesture_event)) {
+     TRACE_EVENT_INSTANT0("input", "FilteredForFling", TRACE_EVENT_SCOPE_THREAD);
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++    { OHOS_TRACE_EVENT0("input", "FilteredForFling"); }
++#endif
+     // See the comment in `FilterAndSendWebInputEvent` about the order of the
+     // callbacks here.
+     std::move(dispatch_callback)
+         .Run(original_gesture_event.event,
+              DispatchToRendererResult::kNotDispatched);
+@@ -171,10 +183,13 @@ void InputRouterImpl::SendGestureEvent(
+   FilterGestureEventResult result =
+       touch_action_filter_.FilterGestureEvent(&gesture_event.event);
+   if (result == FilterGestureEventResult::kDelayed) {
+     TRACE_EVENT_INSTANT0("input", "DeferredForTouchAction",
+                          TRACE_EVENT_SCOPE_THREAD);
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++    { OHOS_TRACE_EVENT0("input", "DeferredForTouchAction"); }
++#endif
+     gesture_event_queue_.QueueDeferredEvents(gesture_event, dispatch_callback);
+     return;
+   }
+   SendGestureEventWithoutQueueing(gesture_event, result, dispatch_callback);
+ }
+@@ -186,10 +201,13 @@ void InputRouterImpl::SendGestureEventWithoutQueueing(
+   TRACE_EVENT0("input", "InputRouterImpl::SendGestureEventWithoutQueueing");
+   DCHECK_NE(existing_result, FilterGestureEventResult::kDelayed);
+   if (existing_result == FilterGestureEventResult::kFiltered) {
+     TRACE_EVENT_INSTANT0("input", "FilteredForTouchAction",
+                          TRACE_EVENT_SCOPE_THREAD);
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++    { OHOS_TRACE_EVENT0("input", "FilteredForTouchAction"); }
++#endif
+     // See the comment in `FilterAndSendWebInputEvent` about the order of the
+     // callbacks here.
+     std::move(dispatch_callback)
+         .Run(gesture_event.event, DispatchToRendererResult::kNotDispatched);
+     disposition_handler_->OnGestureEventAck(
+@@ -237,10 +255,13 @@ void InputRouterImpl::SendGestureEventWithoutQueueing(
+ 
+   if (!gesture_event_queue_.DebounceOrForwardEvent(gesture_event,
+                                                    dispatch_callback)) {
+     TRACE_EVENT_INSTANT0("input", "FilteredForDebounce",
+                          TRACE_EVENT_SCOPE_THREAD);
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++    { OHOS_TRACE_EVENT0("input", "FilteredForDebounce"); }
++#endif
+     // Notify about input event before running the ack below.
+     std::move(client_->GetDispatchToRendererCallback())
+         .Run(gesture_event.event, DispatchToRendererResult::kNotDispatched);
+     disposition_handler_->OnGestureEventAck(
+         gesture_event, blink::mojom::InputEventResultSource::kBrowser,
+@@ -627,29 +648,42 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
+   // We need to run DispatchToRendererCallback before the event ack callback,
+   // since running the event ack callback before this might result in
+   // UseAfterFree bug as the RenderInputRouter might be destroyed synchronously
+   // in case of Ctrl+W callback.
+ 
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  arkweb_input_router_impl_utils_->TracingAndSceneReport(input_event, latency_info);
++#else
+   TRACE_EVENT1("input", "InputRouterImpl::FilterAndSendWebInputEvent", "type",
+                WebInputEvent::GetName(input_event.GetType()));
+ 
++#endif
+   output_stream_validator_.Validate(input_event);
+   blink::mojom::InputEventResultState filtered_state =
+       client_->FilterInputEvent(input_event, latency_info);
+ 
+   if (WasHandled(filtered_state)) {
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++    LOG(INFO) << "event was filtered for " << InputEventResultStateToString(filtered_state);
++    TRACE_EVENT1("input", "InputEventFiltered", "filtered_state",
++                 InputEventResultStateToString(filtered_state));
++#else
+     TRACE_EVENT_INSTANT0("input", "InputEventFiltered",
+                          TRACE_EVENT_SCOPE_THREAD);
++#endif
+     std::move(dispatch_callback)
+         .Run(input_event, DispatchToRendererResult::kNotDispatched);
+     if (filtered_state != blink::mojom::InputEventResultState::kUnknown) {
+       std::move(callback).Run(blink::mojom::InputEventResultSource::kBrowser,
+                               latency_info, filtered_state, nullptr, nullptr);
+     }
+     return;
+   }
+ 
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  arkweb_input_router_impl_utils_->ProcessFilteredEvent(input_event);
++#endif
+   std::move(dispatch_callback)
+       .Run(input_event, DispatchToRendererResult::kDispatched);
+ 
+   std::unique_ptr<blink::WebCoalescedInputEvent> event =
+       ScaleEvent(input_event, device_scale_factor_, latency_info);

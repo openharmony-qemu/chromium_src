@@ -1,0 +1,11 @@
+diff a/components/input/tap_suppression_controller_unittest.cc b/components/input/tap_suppression_controller_unittest.cc	(rejected hunks)
+@@ -224,5 +224,8 @@ TEST_F(TapSuppressionControllerTest, NoSuppressionIfDisabled) {
+   EXPECT_EQ(MockTapSuppressionController::DISABLED,
+             tap_suppression_controller_->state());
+ }
+ 
+ }  // namespace input
++#if BUILDFLAG(ARKWEB_TEST)
++#include "arkweb/chromium_ext/components/input/tap_suppression_controller_for_include_unittest.cc"
++#endif
+\ No newline at end of file

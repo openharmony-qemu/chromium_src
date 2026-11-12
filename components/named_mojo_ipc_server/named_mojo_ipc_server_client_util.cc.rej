@@ -1,0 +1,14 @@
+diff a/components/named_mojo_ipc_server/named_mojo_ipc_server_client_util.cc b/components/named_mojo_ipc_server/named_mojo_ipc_server_client_util.cc	(rejected hunks)
+@@ -55,9 +55,11 @@ mojo::PlatformChannelEndpoint ConnectToServer(
+ }
+ 
+ // static
+ mojo::PlatformChannelEndpoint ConnectToServer(
+     const mojo::NamedPlatformChannel::ServerName& server_name) {
+-  return ConnectToServer({.server_name = server_name});
++  mojo::NamedPlatformChannel::Options options;
++  options.server_name = server_name;
++  return ConnectToServer(options);
+ }
+ 
+ }  // namespace named_mojo_ipc_server

@@ -5,6 +5,9 @@
 #ifndef COMPONENTS_KEYED_SERVICE_CORE_KEYED_SERVICE_BASE_FACTORY_H_
 #define COMPONENTS_KEYED_SERVICE_CORE_KEYED_SERVICE_BASE_FACTORY_H_
 
+#include <unordered_set>
+
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/sequence_checker.h"
 #include "components/keyed_service/core/dependency_node.h"
@@ -139,6 +142,11 @@ class KEYED_SERVICE_EXPORT KeyedServiceBaseFactory : public DependencyNode {
   // TODO(crbug.com/40619682): Remove once there are no dependencies between
   // factories with different type of context, or dependencies are safe to have.
   Type type_;
+
+#if BUILDFLAG(ARKWEB_DISABLE_SERVICES)
+  bool KeyedServiceDisabled(const char* service_name);
+  const std::unordered_set<std::string>& GetDisableServices();
+#endif
 };
 
 #endif  // COMPONENTS_KEYED_SERVICE_CORE_KEYED_SERVICE_BASE_FACTORY_H_

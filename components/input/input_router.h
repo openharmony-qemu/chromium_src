@@ -7,6 +7,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/functional/callback_forward.h"
 #include "base/task/sequenced_task_runner.h"
@@ -60,6 +61,10 @@ class InputRouter {
   virtual void SendWheelEvent(
       const MouseWheelEventWithLatencyInfo& wheel_event,
       DispatchToRendererCallback& dispatch_callback) = 0;
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  virtual void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) = 0;
+#endif
 
   using KeyboardEventCallback = base::OnceCallback<void(
       const NativeWebKeyboardEventWithLatencyInfo& event,

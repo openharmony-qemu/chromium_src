@@ -230,6 +230,18 @@ const base::FeatureParam<bool> kLensOverlayEnableShimmer{
     &kLensOverlay, "enable-shimmer", true};
 const base::FeatureParam<bool> kLensOverlayEnableShimmerSparkles{
     &kLensOverlay, "enable-shimmer-sparkles", true};
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const base::FeatureParam<std::string> kResultsSearchLoadingUrl{
+    &kLensOverlay, "results-search-loading-url",
+    "https://x.x.x.x/"
+    "lens_overlay_sidepanel_results_ghostloader_light-"
+    "71af0ff0f00a1a03d3fe8abad71a2665.svg"};
+const base::FeatureParam<std::string> kResultsSearchLoadingDarkModeUrl{
+    &kLensOverlay, "results-search-loading-dark-mode-url",
+    "https://x.x.x.x/"
+    "lens_overlay_sidepanel_results_ghostloader_dark-"
+    "b7b5c4f8c8891c881b7a20344f5298b0.svg"};
+#else
 const base::FeatureParam<std::string> kResultsSearchLoadingUrl{
     &kLensOverlay, "results-search-loading-url",
     "https://www.gstatic.com/lens/chrome/"
@@ -240,6 +252,7 @@ const base::FeatureParam<std::string> kResultsSearchLoadingDarkModeUrl{
     "https://www.gstatic.com/lens/chrome/"
     "lens_overlay_sidepanel_results_ghostloader_dark-"
     "b7b5c4f8c8891c881b7a20344f5298b0.svg"};
+#endif
 
 const base::FeatureParam<bool> kLensOverlayGoogleDseRequired{
     &kLensOverlay, "google-dse-required", true};
@@ -264,9 +277,19 @@ const base::FeatureParam<bool>
     kSendVisualSearchInteractionParamForLensTextQueries{
         &kLensOverlay, "send-vsint-for-text-selections", true};
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
 constexpr base::FeatureParam<std::string> kLensOverlayEndpointUrl{
     &kLensOverlay, "endpoint-url",
+    "https://x.x.x.x"};
+#else
+constexpr base::FeatureParam<std::string> kLensOverlayEndpointUrl{
+    &kLensOverlay, "endpoint-url",
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://***"};
+#else
     "https://lensfrontend-pa.googleapis.com/v1/crupload"};
+#endif
+#endif
 
 constexpr base::FeatureParam<bool> kUseOauthForLensOverlayRequests{
     &kLensOverlay, "use-oauth-for-requests", true};
@@ -349,9 +372,15 @@ constexpr base::FeatureParam<bool> kUseApcAsContext{
 constexpr base::FeatureParam<int> kLensOverlayPageContentRequestTimeoutMs{
     &kLensOverlayContextualSearchbox, "page-content-request-timeout-ms", 60000};
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr base::FeatureParam<std::string> kLensOverlayClusterInfoEndpointUrl{
+    &kLensOverlayContextualSearchbox, "cluster-info-endpoint-url",
+    "https://x.x.x.x"};
+#else
 constexpr base::FeatureParam<std::string> kLensOverlayClusterInfoEndpointUrl{
     &kLensOverlayContextualSearchbox, "cluster-info-endpoint-url",
     "https://lensfrontend-pa.googleapis.com/v1/gsessionid"};
+#endif
 
 constexpr base::FeatureParam<bool> kLensOverlaySendLensInputsForLensSuggest{
     &kLensOverlaySuggestionsMigration, "send-lens-inputs-for-lens-suggest",
@@ -429,9 +458,15 @@ constexpr base::FeatureParam<bool>
         &kLensOverlayContextualSearchbox,
         "enable-summarize-hint-for-contextual-suggest", false};
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr base::FeatureParam<std::string> kTranslateEndpointUrl{
+    &kLensOverlayTranslateLanguages, "translate-endpoint-url",
+    "https://x.x.x.x"};
+#else
 constexpr base::FeatureParam<std::string> kTranslateEndpointUrl{
     &kLensOverlayTranslateLanguages, "translate-endpoint-url",
     "https://translate-pa.googleapis.com/v1/supportedLanguages"};
+#endif
 constexpr base::FeatureParam<std::string> kSupportedSourceTranslateLanguages{
     &kLensOverlayTranslateLanguages, "supported-source-languages",
     "aa,ab,ace,ach,af,ak,alz,am,ar,as,av,awa,ay,az,ba,ban,bbc,bci,be,bem,ber-"
@@ -503,8 +538,15 @@ constexpr base::FeatureParam<bool>
         &kLensOverlayVisualSelectionUpdates, "enable-close-button-tweaks",
         true};
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr base::FeatureParam<std::string> kHomepageURLForLens{
+    &kLensStandalone, "lens-homepage-url", "https://x.x.x"};
+#else
+// The URL for providing more information about Google nameservers.
 constexpr base::FeatureParam<std::string> kHomepageURLForLens{
     &kLensStandalone, "lens-homepage-url", "https://lens.google.com/v3/"};
+#endif
+
 
 constexpr base::FeatureParam<bool> kEnableLensHtmlRedirectFix{
     &kLensStandalone, "lens-html-redirect-fix", false};

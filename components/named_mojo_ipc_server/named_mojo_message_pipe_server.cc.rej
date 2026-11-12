@@ -1,0 +1,15 @@
+diff a/components/named_mojo_ipc_server/named_mojo_message_pipe_server.cc b/components/named_mojo_ipc_server/named_mojo_message_pipe_server.cc	(rejected hunks)
+@@ -145,11 +145,12 @@ void NamedMojoMessagePipeServer::OnClientConnected(
+ 
+   if (is_isolated) {
+     // Create isolated connection.
+     auto connection = std::make_unique<mojo::IsolatedConnection>();
+     mojo::ScopedMessagePipeHandle message_pipe =
+-        connection->Connect(std::move(endpoint), std::move(peer_process));
++        connection->Connect(std::move(endpoint), std::move(peer_process),
++                            options_.extra_send_invitation_flags);
+     on_message_pipe_ready_.Run(std::move(message_pipe), std::move(info),
+                                result.context, std::move(connection));
+     return;
+   }
+ 

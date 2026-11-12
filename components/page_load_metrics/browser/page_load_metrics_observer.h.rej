@@ -1,0 +1,18 @@
+diff a/components/page_load_metrics/browser/page_load_metrics_observer.h b/components/page_load_metrics/browser/page_load_metrics_observer.h	(rejected hunks)
+@@ -272,10 +273,16 @@ class PageLoadMetricsObserver : public PageLoadMetricsObserverInterface {
+   void OnAdAuctionComplete(bool is_server_auction,
+                            bool is_on_device_auction,
+                            content::AuctionResult result) override {}
+   void OnPrimaryPageRenderProcessGone() override {}
+ 
++#if BUILDFLAG(ARKWEB_BFCACHE)
++  void OnFirstContentfulPaintAfterBackForwardCacheRestoreInPage(
++      const mojom::BackForwardCacheTiming& timing,
++      size_t index) override {}
++#endif
++
+  private:
+   raw_ptr<PageLoadMetricsObserverDelegate> delegate_ = nullptr;
+ };
+ 
+ }  // namespace page_load_metrics

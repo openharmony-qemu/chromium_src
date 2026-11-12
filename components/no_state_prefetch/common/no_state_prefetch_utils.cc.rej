@@ -1,0 +1,15 @@
+diff a/components/no_state_prefetch/common/no_state_prefetch_utils.cc b/components/no_state_prefetch/common/no_state_prefetch_utils.cc	(rejected hunks)
+@@ -34,10 +34,13 @@ const char kFollowOnlyWhenPrerenderShown[] = "follow-only-when-prerender-shown";
+ 
+ bool DoesURLHaveValidScheme(const GURL& url) {
+   return (url.SchemeIsHTTPOrHTTPS() ||
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
+           url.SchemeIs(extensions::kExtensionScheme) ||
++#endif
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++          url.SchemeIs(extensions::kArkwebExtensionScheme) ||
+ #endif
+           url.SchemeIs(url::kDataScheme));
+ }
+ 
+ bool DoesSubresourceURLHaveValidScheme(const GURL& url) {

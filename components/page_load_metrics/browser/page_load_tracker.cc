@@ -40,6 +40,11 @@
 #include "services/metrics/public/cpp/ukm_source_id.h"
 #include "third_party/blink/public/mojom/input/input_event.mojom-shared.h"
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+
 namespace page_load_metrics {
 
 namespace internal {
@@ -123,6 +128,10 @@ void DispatchEventsAfterBackForwardCacheRestore(
              ->first_paint_after_back_forward_cache_restore.is_zero())) {
       observer->OnFirstPaintAfterBackForwardCacheRestoreInPage(*new_timings[i],
                                                                i);
+#if BUILDFLAG(ARKWEB_BFCACHE)
+      observer->OnFirstContentfulPaintAfterBackForwardCacheRestoreInPage(
+          *new_timings[i], i);
+#endif
     }
 
     auto request_animation_frames =
@@ -152,7 +161,12 @@ void DispatchEventsAfterBackForwardCacheRestore(
 
 void DispatchObserverTimingCallbacks(PageLoadMetricsObserverInterface* observer,
                                      const mojom::PageLoadTiming& last_timing,
-                                     const mojom::PageLoadTiming& new_timing) {
+                                     const mojom::PageLoadTiming& new_timing
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+                                     bool is_prerendered_page_activation
+#endif
+                                     ) {
   if (!last_timing.Equals(new_timing)) {
     observer->OnTimingUpdate(nullptr, new_timing);
   }
@@ -164,6 +178,12 @@ void DispatchObserverTimingCallbacks(PageLoadMetricsObserverInterface* observer,
       !last_timing.document_timing->load_event_start) {
     observer->OnLoadEventStart(new_timing);
   }
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  if (new_timing.document_timing->load_event_end &&
+      !last_timing.document_timing->load_event_end) {
+    observer->OnLoadEventEnd(new_timing);
+  }
+#endif
   if (new_timing.interactive_timing->first_input_delay &&
       !last_timing.interactive_timing->first_input_delay) {
     observer->OnFirstInputInPage(new_timing);
@@ -182,6 +202,18 @@ void DispatchObserverTimingCallbacks(PageLoadMetricsObserverInterface* observer,
   if (new_timing.paint_timing->first_contentful_paint &&
       !last_timing.paint_timing->first_contentful_paint) {
     observer->OnFirstContentfulPaintInPage(new_timing);
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    // OnFirstMeaningfulPaint will not be trigger by renderer message,
+    // so it needs to be triggered actively after OnFirstContentfulPaintInPage.
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+        ::switches::kEnableNwebEx) && is_prerendered_page_activation) {
+      new_timing.paint_timing->first_meaningful_paint =
+        new_timing.paint_timing->first_contentful_paint;
+      observer->OnFirstMeaningfulPaintInMainFrameDocument(new_timing);
+      new_timing.paint_timing->first_meaningful_paint = std::nullopt;
+    }
+#endif
   }
   if (HasMonotonicFirstPaint(new_timing) &&
       !HasMonotonicFirstPaint(last_timing)) {
@@ -525,6 +557,11 @@ void PageLoadTracker::WillProcessNavigationResponse(
     content::NavigationHandle* navigation_handle) {
   DCHECK(!navigation_request_id_.has_value());
   navigation_request_id_ = navigation_handle->GetGlobalRequestID();
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO, kLoadTracker)
+      << "WillProcessNavigationResponse navigationId:" << navigation_id_
+      << " currentNavigationId:" << navigation_handle->GetNavigationId();
+#endif
 }
 
 void PageLoadTracker::Commit(content::NavigationHandle* navigation_handle) {
@@ -1034,7 +1071,12 @@ void PageLoadTracker::OnTimingChanged() {
 
   for (const auto& observer : observers_) {
     DispatchObserverTimingCallbacks(
-        observer.get(), *last_dispatched_merged_page_timing_, new_timing);
+        observer.get(), *last_dispatched_merged_page_timing_, new_timing
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+        is_prerendered_page_activation_
+#endif
+        );
   }
   last_dispatched_merged_page_timing_ =
       metrics_update_dispatcher_.timing().Clone();

@@ -93,6 +93,7 @@ class PageLoadMetricsForwardObserver final
   void OnDomContentLoadedEventStart(
       const mojom::PageLoadTiming& timing) override;
   void OnLoadEventStart(const mojom::PageLoadTiming& timing) override;
+  void OnLoadEventEnd(const mojom::PageLoadTiming& timing) override {}
   void OnParseStart(const mojom::PageLoadTiming& timing) override;
   void OnParseStop(const mojom::PageLoadTiming& timing) override;
   void OnConnectStart(const mojom::PageLoadTiming& timing) override;

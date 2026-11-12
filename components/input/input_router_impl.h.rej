@@ -1,0 +1,46 @@
+diff a/components/input/input_router_impl.h b/components/input/input_router_impl.h	(rejected hunks)
+@@ -7,10 +7,11 @@
+ 
+ #include <stdint.h>
+ 
+ #include <memory>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/component_export.h"
+ #include "base/containers/flat_map.h"
+ #include "base/gtest_prod_util.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/safety_checks.h"
+@@ -57,10 +60,15 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
+       public blink::mojom::WidgetInputHandlerHost {
+   // TODO(crbug.com/422044720): Remove this macro once the bug gets fixed.
+   ADVANCED_MEMORY_SAFETY_CHECKS();
+ 
+  public:
++  friend class ArkwebInputRouterImplUtils;
++  friend class ArkwebInputRouterImplExt;
++  virtual ArkwebInputRouterImplExt* AsArkwebInputRouterImplExt() {
++    return nullptr;
++  }
+   InputRouterImpl(InputRouterClient* client,
+                   InputDispositionHandler* disposition_handler,
+                   FlingControllerSchedulerClient* fling_scheduler_client,
+                   const Config& config);
+ 
+@@ -253,10 +296,16 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
+       const FilterGestureEventResult& existing_result,
+       DispatchToRendererCallback& dispatch_callback);
+   void ProcessDeferredGestureEventQueue();
+   void OnSetCompositorAllowedTouchAction(cc::TouchAction touch_action);
+ 
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  bool native_result_ = false;
++  bool mouse_native_result_ = false;
++  std::unique_ptr<ArkwebInputRouterImplUtils> arkweb_input_router_impl_utils_;
++#endif
++
+   raw_ptr<InputRouterClient> client_;
+   raw_ptr<InputDispositionHandler> disposition_handler_;
+ 
+   // Whether the TouchScrollStarted event has been sent for the current
+   // gesture scroll yet.

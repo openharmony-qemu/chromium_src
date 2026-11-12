@@ -1,0 +1,14 @@
+diff a/components/metrics/debug/metrics_internals_utils.cc b/components/metrics/debug/metrics_internals_utils.cc	(rejected hunks)
+@@ -57,10 +57,12 @@ std::string PlatformToString(variations::Study::Platform platform) {
+       return "Fuchsia";
+     case variations::Study::PLATFORM_ANDROID_WEBLAYER:
+       return "WebLayer";
+     case variations::Study::PLATFORM_CHROMEOS_LACROS:
+       return "ChromeOS Lacros";
++    case variations::Study::PLATFORM_OHOS:
++      return "OhOS";
+   }
+   NOTREACHED();
+ }
+ 
+ std::string CpuArchitectureToString(

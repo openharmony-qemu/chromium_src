@@ -1,0 +1,29 @@
+diff a/components/page_load_metrics/common/page_load_metrics.mojom b/components/page_load_metrics/common/page_load_metrics.mojom	(rejected hunks)
+@@ -13,15 +13,27 @@ import "third_party/blink/public/mojom/use_counter/use_counter_feature.mojom";
+ import "ui/gfx/geometry/mojom/geometry.mojom";
+ import "mojo/public/mojom/base/unguessable_token.mojom";
+ 
+ // TimeDeltas below relative to navigation start.
+ struct DocumentTiming {
++  // Time to finish parsing the DOM tree.
++  [EnableIf=arkweb_network_dfx]
++  mojo_base.mojom.TimeDelta? dom_interactive;
++
+   // Time immediately before the DOMContentLoaded event is fired.
+   mojo_base.mojom.TimeDelta? dom_content_loaded_event_start;
+ 
++  // Time when the DOMContentLoaded event is finished.
++  [EnableIf=arkweb_network_dfx]
++  mojo_base.mojom.TimeDelta? dom_content_loaded_event_end;
++
+   // Time immediately before the load event is fired.
+   mojo_base.mojom.TimeDelta? load_event_start;
++
++  // Time when the load event is finished.
++  [EnableIf=arkweb_network_dfx]
++  mojo_base.mojom.TimeDelta? load_event_end;
+ };
+ 
+ struct LcpResourceLoadTimings {
+   // Time when the underlying LCP resource is requested.
+   mojo_base.mojom.TimeDelta? discovery_time;

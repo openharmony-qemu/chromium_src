@@ -1,0 +1,17 @@
+diff a/components/named_mojo_ipc_server/named_mojo_server_endpoint_connector_linux.cc b/components/named_mojo_ipc_server/named_mojo_server_endpoint_connector_linux.cc	(rejected hunks)
+@@ -102,12 +102,14 @@ void NamedMojoServerEndpointConnectorLinux::OnSocketReady() {
+ }
+ 
+ bool NamedMojoServerEndpointConnectorLinux::TryStart() {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+ 
++  mojo::NamedPlatformChannel::Options options;
++  options.server_name = options_.server_name;
+   mojo::PlatformChannelServerEndpoint server_endpoint =
+-      mojo::NamedPlatformChannel({options_.server_name}).TakeServerEndpoint();
++      mojo::NamedPlatformChannel(options).TakeServerEndpoint();
+   if (!server_endpoint.is_valid()) {
+     return false;
+   }
+ 
+   server_endpoint_ = std::move(server_endpoint);

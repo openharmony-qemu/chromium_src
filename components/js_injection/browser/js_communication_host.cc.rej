@@ -1,0 +1,67 @@
+diff a/components/js_injection/browser/js_communication_host.cc b/components/js_injection/browser/js_communication_host.cc	(rejected hunks)
+@@ -52,12 +52,10 @@ void ForEachRenderFrameHostWithinSameWebContents(
+         func_ref(rfh);
+         return content::RenderFrameHost::FrameIterationAction::kContinue;
+       });
+ }
+ 
+-}  // namespace
+-
+ struct JsObject {
+   JsObject(const std::u16string& name,
+            origin_matcher::OriginMatcher allowed_origin_rules,
+            std::unique_ptr<WebMessageHostFactory> factory)
+       : name(std::move(name)),
+@@ -118,11 +116,13 @@ class JsCommunicationHost::JsToBrowserMessagingList
+       js_to_browser_messagings_;
+   mojo::AssociatedReceiver<mojom::JsObjectsClient> receiver_;
+ };
+ 
+ JsCommunicationHost::JsCommunicationHost(content::WebContents* web_contents)
+-    : content::WebContentsObserver(web_contents) {}
++    : content::WebContentsObserver(web_contents) {
++      js_communication_host_utils_ = std::make_unique<JsCommunicationHostUtils>(this);
++    }
+ 
+ JsCommunicationHost::~JsCommunicationHost() = default;
+ 
+ JsCommunicationHost::AddScriptResult
+ JsCommunicationHost::AddDocumentStartJavaScript(
+@@ -254,10 +254,13 @@ JsCommunicationHost::GetWebMessageHostFactories() {
+ void JsCommunicationHost::RenderFrameCreated(
+     content::RenderFrameHost* render_frame_host) {
+   base::ElapsedTimer timer;
+   NotifyFrameForWebMessageListener(render_frame_host);
+   NotifyFrameForAllDocumentStartJavaScripts(render_frame_host);
++#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
++  js_communication_host_utils_->NotifyFrameForAllDocumentEndsJavaScripts(render_frame_host);
++#endif
+   base::UmaHistogramTimes("Android.WebView.JsInjection.RenderFrameCreatedTime",
+                           timer.Elapsed());
+ }
+ 
+ void JsCommunicationHost::RenderFrameDeleted(
+@@ -286,10 +289,23 @@ void JsCommunicationHost::RenderFrameHostStateChanged(
+ void JsCommunicationHost::NotifyFrameForAllDocumentStartJavaScripts(
+     content::RenderFrameHost* render_frame_host) {
+   for (const auto& script : scripts_) {
+     NotifyFrameForAddDocumentStartJavaScript(&script, render_frame_host);
+   }
++#if BUILDFLAG(ARKWEB_JSPROXY)
++  for (const auto& regex_rules : js_communication_host_utils_->start_scripts_regex_rules_) {
++    js_communication_host_utils_->NotifyFrameForAddDocumentStartJavaScriptRegexRules(
++      &regex_rules, render_frame_host);
++  }
++  for (const auto& script : js_communication_host_utils_->head_ready_scripts_) {
++    js_communication_host_utils_->NotifyFrameForAddHeadReadyJavaScript(&script, render_frame_host);
++  }
++  for (const auto& regex_rules : js_communication_host_utils_->head_ready_regex_rules_) {
++    js_communication_host_utils_->NotifyFrameForAddHeadReadyJavaScriptRegexRules(
++      &regex_rules, render_frame_host);
++  }
++#endif
+ }
+ 
+ void JsCommunicationHost::NotifyFrameForWebMessageListener(
+     content::RenderFrameHost* render_frame_host) {
+   // AddWebMessageHostFactory() uses this method with ForEachFrame() from JNI.

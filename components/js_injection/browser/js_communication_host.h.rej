@@ -1,0 +1,23 @@
+diff a/components/js_injection/browser/js_communication_host.h b/components/js_injection/browser/js_communication_host.h	(rejected hunks)
+@@ -12,19 +12,21 @@
+ 
+ #include "base/memory/raw_ptr.h"
+ #include "components/origin_matcher/origin_matcher.h"
+ #include "content/public/browser/global_routing_id.h"
+ #include "content/public/browser/web_contents_observer.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace content {
+ class RenderFrameHost;
+ }  // namespace content
+ 
+ namespace js_injection {
+ 
+ struct JsObject;
+ class WebMessageHostFactory;
++class JsCommunicationHostUtils;
+ 
+ struct DocumentStartJavaScript {
+   DocumentStartJavaScript(std::u16string script,
+                           origin_matcher::OriginMatcher allowed_origin_rules,
+                           int32_t script_id);

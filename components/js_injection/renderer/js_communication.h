@@ -16,6 +16,7 @@
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "mojo/public/cpp/bindings/associated_remote.h"
 #include "third_party/blink/public/platform/web_string.h"
+#include "arkweb/build/features/features.h"
 #include "v8/include/cppgc/persistent.h"
 
 namespace content {
@@ -25,12 +26,15 @@ class RenderFrame;
 namespace js_injection {
 
 class JsBinding;
+class JsCommunicationUtils;
 
 class JsCommunication
     : public mojom::JsCommunication,
       public content::RenderFrameObserver,
       public content::RenderFrameObserverTracker<JsCommunication> {
  public:
+  friend class JsCommunicationUtils;
+  std::unique_ptr<JsCommunicationUtils> implUtils_;
   explicit JsCommunication(content::RenderFrame* render_frame);
 
   JsCommunication(const JsCommunication&) = delete;

@@ -1,0 +1,13 @@
+diff a/components/url_pattern_index/url_pattern_index.h b/components/url_pattern_index/url_pattern_index.h	(rejected hunks)
+@@ -11,10 +11,11 @@
+ #include <map>
+ #include <optional>
+ #include <string_view>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/flat_set.h"
+ #include "base/functional/callback_forward.h"
+ #include "base/memory/raw_ptr.h"
+ #include "components/url_pattern_index/closed_hash_map.h"
+ #include "components/url_pattern_index/flat/url_pattern_index_generated.h"

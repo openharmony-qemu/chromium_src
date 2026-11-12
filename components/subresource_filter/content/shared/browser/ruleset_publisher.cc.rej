@@ -1,0 +1,18 @@
+diff a/components/subresource_filter/content/shared/browser/ruleset_publisher.cc b/components/subresource_filter/content/shared/browser/ruleset_publisher.cc
+--- a/components/subresource_filter/content/shared/browser/ruleset_publisher.cc
++++ b/components/subresource_filter/content/shared/browser/ruleset_publisher.cc
+@@ -62,11 +62,13 @@ void RulesetPublisher::PublishNewRulesetVersion(RulesetFilePtr ruleset_data) {
+   if (base::FeatureList::IsEnabled(kAdTagging)) {
+     // Even though the handle will immediately be destroyed, it will still
+     // validate the ruleset on its task runner.
+     VerifiedRuleset::Handle ruleset_handle(GetRulesetDealer());
+   }
+-
++  if (!ruleset_data->IsValid()) {
++    LOG(INFO) << "initialize PublishNewRulesetVersion not valid";
++  }
+   ruleset_data_ = std::move(ruleset_data);
+   for (auto it = content::RenderProcessHost::AllHostsIterator(); !it.IsAtEnd();
+        it.Advance()) {
+     SendRulesetToRenderProcess(ruleset_data_.get(), it.GetCurrentValue());
+   }

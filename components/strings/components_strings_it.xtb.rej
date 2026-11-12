@@ -1,0 +1,13 @@
+diff a/components/strings/components_strings_it.xtb b/components/strings/components_strings_it.xtb	(rejected hunks)
+@@ -2147,10 +2147,11 @@ In caso contrario l'uso sarà bloccato dalle impostazioni sulla privacy. I conte
+ <translation id="4432792777822557199">Le pagine in <ph name="SOURCE_LANGUAGE" /> verranno tradotte in <ph name="TARGET_LANGUAGE" /> d'ora in poi</translation>
+ <translation id="4433642172056592619">Policy ignorata perché l'utente non è affiliato alla gestione delle macchine oppure perché la macchina non è gestita.</translation>
+ <translation id="4434017585895599560">Affitti residenziali</translation>
+ <translation id="4434045419905280838">Popup e reindirizzamenti</translation>
+ <translation id="443673843213245140">L'utilizzo di un proxy è stato disattivato ma è stata specificata una configurazione proxy esplicita.</translation>
++<translation id="4437124607000705911">Annulla</translation>
+ <translation id="4438821706955556403">Prezzo tipico</translation>
+ <translation id="444116852243722675">Apri tutte (<ph name="ITEMS" />)</translation>
+ <translation id="4441832193888514600">Ignorata perché la policy può essere impostata solo da un utente cloud.</translation>
+ <translation id="4445133368066241428">Argomenti popolari</translation>
+ <translation id="4445694043187340808"><ph name="STARTER_PACK_TABS_FOCUSED_FRIENDLY_MATCH_TEXT" />, premi Invio per cercare nelle schede</translation>

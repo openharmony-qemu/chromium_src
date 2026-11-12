@@ -1,0 +1,16 @@
+diff a/components/subresource_filter/core/common/unindexed_ruleset.h b/components/subresource_filter/core/common/unindexed_ruleset.h	(rejected hunks)
+@@ -80,10 +81,14 @@ class UnindexedRulesetWriter {
+   // Places the |rule| to the current chunk, and serializes the chunk if it has
+   // grown up to |max_rules_per_chunk|.
+   bool AddUrlRule(const url_pattern_index::proto::UrlRule& rule);
+   // TODO(pkalinnikov): Implement AddCssRule when needed.
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  bool AddCssRule(const url_pattern_index::proto::CssRule& rule);
++#endif
++
+   // Finalizes the serialization of the unindexed ruleset, i.e., writes the
+   // final chunk of rules, if there are any still pending. This method *should*
+   // be called exactly once when interaction with |this| instance ends, unless
+   // some of the writing operations returned false, which indicates an error.
+   // After calling Finish write operations should not be used any more.

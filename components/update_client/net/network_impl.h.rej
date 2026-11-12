@@ -1,0 +1,16 @@
+diff a/components/update_client/net/network_impl.h b/components/update_client/net/network_impl.h	(rejected hunks)
+@@ -16,10 +16,14 @@
+ #include "components/update_client/net/network_chromium.h"
+ #include "components/update_client/network.h"
+ #include "services/network/public/mojom/url_response_head.mojom-forward.h"
+ 
+ namespace network {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++struct ResourceRequest;
++#endif
++
+ class SharedURLLoaderFactory;
+ }  // namespace network
+ 
+ namespace update_client {
+ 

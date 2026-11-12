@@ -1,0 +1,13 @@
+diff a/components/strings/components_strings_es.xtb b/components/strings/components_strings_es.xtb	(rejected hunks)
+@@ -2150,10 +2150,11 @@ De lo contrario, lo impedirá tu configuración de privacidad. Permitirá que el
+ <translation id="4432792777822557199">Las páginas en <ph name="SOURCE_LANGUAGE" /> se traducirán al <ph name="TARGET_LANGUAGE" /> a partir de ahora</translation>
+ <translation id="4433642172056592619">Se ha ignorado porque el usuario no está afiliado con la gestión de dispositivos o porque el dispositivo no está gestionado.</translation>
+ <translation id="4434017585895599560">Alquiler de viviendas</translation>
+ <translation id="4434045419905280838">Ventanas emergentes y redirecciones</translation>
+ <translation id="443673843213245140">Se ha inhabilitado el uso de un servidor proxy, pero se han especificado ajustes de proxy explícitos.</translation>
++<translation id="4437124607000705911">Cancelar</translation>
+ <translation id="4438821706955556403">Precio habitual</translation>
+ <translation id="444116852243722675">Abrir todas (<ph name="ITEMS" />)</translation>
+ <translation id="4441832193888514600">Se ignora porque la política solo se puede establecer como una política de usuarios basada en la nube.</translation>
+ <translation id="4445133368066241428">Temas populares</translation>
+ <translation id="4445694043187340808"><ph name="STARTER_PACK_TABS_FOCUSED_FRIENDLY_MATCH_TEXT" />, pulsa Intro para buscar pestañas</translation>

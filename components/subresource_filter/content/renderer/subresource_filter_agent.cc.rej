@@ -1,0 +1,9 @@
+diff a/components/subresource_filter/content/renderer/subresource_filter_agent.cc b/components/subresource_filter/content/renderer/subresource_filter_agent.cc	(rejected hunks)
+@@ -412,7 +438,6 @@ void SubresourceFilterAgent::DidCreateFencedFrame(
+     const blink::RemoteFrameToken& placeholder_token) {
+   if (render_frame()->GetWebFrame()->IsAdScriptInStack()) {
+     GetSubresourceFilterHost()->AdScriptDidCreateFencedFrame(placeholder_token);
+   }
+ }
+-
+ }  // namespace subresource_filter

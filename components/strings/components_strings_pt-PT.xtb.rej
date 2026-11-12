@@ -1,0 +1,13 @@
+diff a/components/strings/components_strings_pt-PT.xtb b/components/strings/components_strings_pt-PT.xtb	(rejected hunks)
+@@ -2150,10 +2150,11 @@ Se não permitir, isto será bloqueado pelas suas definições de privacidade. I
+ <translation id="4432792777822557199">As páginas em <ph name="SOURCE_LANGUAGE" /> serão traduzidas para <ph name="TARGET_LANGUAGE" /> a partir de agora</translation>
+ <translation id="4433642172056592619">Política ignorada porque o utilizador não está afiliado à gestão da máquina ou a máquina não é gerida.</translation>
+ <translation id="4434017585895599560">Arrendamentos residenciais</translation>
+ <translation id="4434045419905280838">Pop-ups e redirecionamentos</translation>
+ <translation id="443673843213245140">A utilização de um proxy está desativada, mas existe uma configuração de proxy explícita especificada.</translation>
++<translation id="4437124607000705911">Cancelar</translation>
+ <translation id="4438821706955556403">Preço habitual</translation>
+ <translation id="444116852243722675">Abrir tudo (<ph name="ITEMS" />)</translation>
+ <translation id="4441832193888514600">Ignorado porque a política só pode ser definida como uma Política do Utilizador da nuvem.</translation>
+ <translation id="4445133368066241428">Tópicos populares</translation>
+ <translation id="4445694043187340808"><ph name="STARTER_PACK_TABS_FOCUSED_FRIENDLY_MATCH_TEXT" />, prima Enter para pesquisar separadores</translation>

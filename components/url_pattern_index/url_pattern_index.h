@@ -23,6 +23,7 @@
 #include "third_party/flatbuffers/src/include/flatbuffers/flatbuffers.h"
 
 class GURL;
+class ArkWebUrlPatternIndexBuilderExt;
 
 namespace url {
 class Origin;
@@ -88,12 +89,23 @@ int CompareDomains(std::string_view lhs_domain, std::string_view rhs_domain);
 // clients can use this as a signal to rebuild rulesets.
 constexpr int kUrlPatternIndexFormatVersion = 16;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+size_t GetLongestMatchingSubdomain(std::string_view host,
+                                   const FlatDomains& domains);
+
+std::string_view ToStringView(const flatbuffers::String* string);
+
+bool HasNoUpperAscii(std::string_view string);
+#endif
+
 // The class used to construct an index over the URL patterns of a set of URL
 // rules. The rules themselves need to be converted to FlatBuffers format by the
 // client of this class, as well as persisted into the |flat_builder| that is
 // supplied in the constructor.
 class UrlPatternIndexBuilder {
  public:
+  friend class ArkWebUrlPatternIndexBuilderExt;
+
   explicit UrlPatternIndexBuilder(flatbuffers::FlatBufferBuilder* flat_builder);
 
   UrlPatternIndexBuilder(const UrlPatternIndexBuilder&) = delete;

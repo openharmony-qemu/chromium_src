@@ -1,0 +1,67 @@
+diff a/components/strings/BUILD.gn b/components/strings/BUILD.gn	(rejected hunks)
+@@ -38,10 +38,16 @@ grit_strings("components_strings") {
+     "enable_vr=$enable_vr",
+     "use_blink=$use_blink",
+   ]
+ 
+   outputs = [ "grit/components_strings.h" ]
++#ifdef arkweb_i18n
++  if (arkweb_i18n) {
++    locales = all_chrome_locales + extra_locales
++  }
++
++  #endif
+   if (is_android) {
+     create_android_resources = true
+   }
+ }
+ 
+@@ -50,18 +56,31 @@ if (is_android) {
+     generating_target = ":components_strings"
+   }
+ }
+ 
+ grit_strings("components_branded_strings") {
++#ifdef arkweb_i18n
++  if (arkweb_i18n) {
++    locales = all_chrome_locales + extra_locales
++  }
++
++  #endif
+   source = "../components_${branding_path_product}_strings.grd"
+   outputs = [ "grit/components_branded_strings.h" ]
+ }
+ 
+ grit_strings("components_locale_settings") {
+   source = "../components_locale_settings.grd"
+   outputs = [ "grit/components_locale_settings.h" ]
+ 
++#ifdef arkweb_i18n
++  if (arkweb_i18n) {
++    locales = all_chrome_locales + extra_locales
++  }
++
++  #endif
++
+   if (is_android) {
+     create_android_resources = true
+   }
+ }
+ 
+@@ -72,10 +91,16 @@ if (is_android) {
+ }
+ 
+ grit_strings("privacy_sandbox_strings") {
+   source = "../privacy_sandbox_strings.grd"
+   outputs = [ "grit/privacy_sandbox_strings.h" ]
++#ifdef arkweb_i18n
++  if (arkweb_i18n) {
++    locales = all_chrome_locales + extra_locales
++  }
++
++  #endif
+ 
+   if (is_android) {
+     create_android_resources = true
+   }
+ }

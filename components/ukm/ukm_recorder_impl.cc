@@ -133,7 +133,11 @@ GURL SanitizeURL(const GURL& url) {
   if (url.SchemeIs(url::kAboutScheme) || url.SchemeIs("chrome")) {
     remove_params.ClearQuery();
   }
-  if (url.SchemeIs(kExtensionScheme)) {
+  if (url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  ) {
     remove_params.ClearPath();
     remove_params.ClearQuery();
     remove_params.ClearRef();
@@ -970,7 +974,11 @@ bool UkmRecorderImpl::ShouldDropExtensionUrl(
 
   // If the URL scheme is not extension scheme, drop the record with
   // `EXTENSION_URL_INVALID`.
-  if (!sanitized_extension_url.SchemeIs(kExtensionScheme)) {
+  if (!sanitized_extension_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !sanitized_extension_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  ) {
     RecordDroppedSource(has_recorded_reason,
                         DroppedDataReason::EXTENSION_URL_INVALID);
     return true;
@@ -1046,7 +1054,11 @@ bool UkmRecorderImpl::ShouldRecordUrl(SourceId source_id,
   // the UKMs recorded without `EXTENSION_ID` type are also properly checked.
   // TODO(crbug.com/40248219): clean up all the UKM metrics with
   // extension URL to use the dedicated source ID type, and remove this check.
-  if (sanitized_url.SchemeIs(kExtensionScheme)) {
+  if (sanitized_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || sanitized_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  ) {
     if (ShouldDropExtensionUrl(sanitized_url, has_recorded_reason)) {
       return false;
     }

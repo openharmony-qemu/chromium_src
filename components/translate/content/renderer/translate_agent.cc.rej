@@ -1,0 +1,18 @@
+diff a/components/translate/content/renderer/translate_agent.cc b/components/translate/content/renderer/translate_agent.cc	(rejected hunks)
+@@ -151,11 +151,15 @@ void TranslateAgent::PageCaptured(
+   // due to layering they cannot be identical. Critically, this list should
+   // never filter anything that is eligible for translation. Under filtering is
+   // ok as the translate service will make the final call and only results in a
+   // slight overhead in running the model when unnecessary.
+   if (url.is_empty() || url.SchemeIs(content::kChromeUIScheme) ||
+-      url.SchemeIs(content::kChromeDevToolsScheme) || url.IsAboutBlank()) {
++      url.SchemeIs(content::kChromeDevToolsScheme)
++#if !BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
++      || url.IsAboutBlank()
++#endif
++      ) {
+     return;
+   }
+ 
+   page_contents_length_ = contents->as_string().size();
+ 

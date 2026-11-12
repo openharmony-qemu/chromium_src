@@ -1,0 +1,31 @@
+diff a/components/variations/service/variations_service.cc b/components/variations/service/variations_service.cc	(rejected hunks)
+@@ -17,10 +17,13 @@
+ #include "base/command_line.h"
+ #include "base/debug/crash_logging.h"
+ #include "base/feature_list.h"
+ #include "base/functional/bind.h"
+ #include "base/functional/callback.h"
++#if BUILDFLAG(IS_OHOS)
++#include "base/logging.h"
++#endif
+ #include "base/functional/callback_helpers.h"
+ #include "base/memory/ptr_util.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "base/observer_list.h"
+@@ -1015,11 +1030,15 @@ bool VariationsService::SetUpFieldTrials(
+ 
+   return field_trial_creator_.SetUpFieldTrials(
+       variation_ids, command_line_variation_ids, extra_overrides,
+       std::move(feature_list), state_manager_, platform_field_trials,
+       &safe_seed_manager_,
++#if BUILDFLAG(ARKWEB_NETWORK_BASE)
++      /*add_entropy_source_to_variations_ids=*/false, *entropy_providers_);
++#else
+       /*add_entropy_source_to_variations_ids=*/true, *entropy_providers_);
++#endif
+ }
+ 
+ void VariationsService::GetStudiesAvailableToForce(
+     base::OnceCallback<void(std::vector<StudyGroupNames>)> done_callback) {
+   field_trial_creator_.seed_store()->LoadSeed(

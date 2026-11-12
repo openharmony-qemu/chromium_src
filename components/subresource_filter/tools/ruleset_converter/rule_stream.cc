@@ -449,10 +449,19 @@ bool DeleteUrlRuleOrAmend(url_pattern_index::proto::UrlRule* rule,
                           ~url_pattern_index::proto::ELEMENT_TYPE_POPUP);
 
   // Only the following activation types are supported in Chrome.
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  rule->set_activation_types(
+      rule->activation_types() &
+      (url_pattern_index::proto::ACTIVATION_TYPE_DOCUMENT |
+      url_pattern_index::proto::ACTIVATION_TYPE_ELEMHIDE |
+      url_pattern_index::proto::ACTIVATION_TYPE_GENERICHIDE |
+      url_pattern_index::proto::ACTIVATION_TYPE_GENERICBLOCK));
+#else
   rule->set_activation_types(
       rule->activation_types() &
       (url_pattern_index::proto::ACTIVATION_TYPE_DOCUMENT |
        url_pattern_index::proto::ACTIVATION_TYPE_GENERICBLOCK));
+#endif
   if (!rule->activation_types()) {
     rule->clear_activation_types();
   }

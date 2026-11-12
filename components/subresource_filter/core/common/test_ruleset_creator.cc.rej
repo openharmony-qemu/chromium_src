@@ -1,0 +1,17 @@
+diff a/components/subresource_filter/core/common/test_ruleset_creator.cc b/components/subresource_filter/core/common/test_ruleset_creator.cc	(rejected hunks)
+@@ -49,11 +52,15 @@ std::vector<uint8_t> SerializeUnindexedRulesetWithMultipleRules(
+   return base::ToVector(base::as_byte_span(ruleset_contents));
+ }
+ 
+ std::vector<uint8_t> SerializeIndexedRulesetWithMultipleRules(
+     const std::vector<proto::UrlRule>& rules) {
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  ArkWebRulesetIndexerExt indexer;
++#else
+   RulesetIndexer indexer;
++#endif
+   for (const auto& rule : rules) {
+     EXPECT_TRUE(indexer.AddUrlRule(rule));
+   }
+   indexer.Finish();
+   return std::vector<uint8_t>(indexer.data().begin(), indexer.data().end());

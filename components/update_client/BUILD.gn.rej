@@ -1,0 +1,16 @@
+diff a/components/update_client/BUILD.gn b/components/update_client/BUILD.gn	(rejected hunks)
+@@ -18,10 +19,14 @@ source_set("network_impl") {
+     "//base",
+     "//net",
+     "//services/network/public/cpp",
+     "//url",
+   ]
++
++  if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
++    deps += [ "//components/embedder_support:user_agent" ]
++  }
+ }
+ 
+ source_set("in_process_unzipper") {
+   sources = [
+     "unzip/in_process_unzipper.cc",

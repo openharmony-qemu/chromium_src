@@ -1,0 +1,15 @@
+diff a/components/ukm/scheme_constants.h b/components/ukm/scheme_constants.h	(rejected hunks)
+@@ -18,9 +19,12 @@ extern const char kAppScheme[];
+ COMPONENT_EXPORT(UKM_RECORDER)
+ extern const char kChromeUIScheme[];
+ // kExtensionScheme is defined in extensions which also isn't available here.
+ COMPONENT_EXPORT(UKM_RECORDER)
+ extern const char kExtensionScheme[];
+-
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++COMPONENT_EXPORT(UKM_RECORDER)
++extern const char kArkwebExtensionScheme[];
++#endif
+ }  // namespace ukm
+ 
+ #endif  // COMPONENTS_UKM_SCHEME_CONSTANTS_H_

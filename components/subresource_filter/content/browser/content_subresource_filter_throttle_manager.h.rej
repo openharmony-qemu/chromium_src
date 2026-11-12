@@ -1,0 +1,17 @@
+diff a/components/subresource_filter/content/browser/content_subresource_filter_throttle_manager.h b/components/subresource_filter/content/browser/content_subresource_filter_throttle_manager.h	(rejected hunks)
+@@ -389,10 +400,15 @@ class ContentSubresourceFilterThrottleManager
+   std::map<content::FrameTreeNodeId, LoadPolicy> navigation_load_policies_;
+ 
+   // Receiver set for all RenderFrames in this throttle manager's page.
+   content::RenderFrameHostReceiverSet<mojom::SubresourceFilterHost> receiver_;
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  content::RenderFrameHostReceiverSet<mojom::UserSubresourceFilterHost>
++      user_receiver_;
++#endif
++
+   // Lazily instantiated in EnsureRulesetHandle when the first page level
+   // activation is triggered. Will go away when there are no more activated
+   // RenderFrameHosts (i.e. activated_frame_hosts_ is empty).
+   std::unique_ptr<VerifiedRuleset::Handle> ruleset_handle_;
+ 

@@ -1,0 +1,15 @@
+diff a/components/url_formatter/BUILD.gn b/components/url_formatter/BUILD.gn	(rejected hunks)
+@@ -29,10 +33,13 @@ static_library("url_formatter") {
+     "url_fixer.cc",
+     "url_fixer.h",
+     "url_formatter.cc",
+     "url_formatter.h",
+   ]
++  if (is_arkweb) {
++    sources += arkweb_components_url_formatter_contexts_sources
++  }
+ 
+   deps = [
+     "//base",
+     "//base:i18n",
+     "//build:robolectric_buildflags",

@@ -1,0 +1,16 @@
+diff a/components/variations/service/variations_field_trial_creator.cc b/components/variations/service/variations_field_trial_creator.cc	(rejected hunks)
+@@ -59,10 +59,14 @@
+ #include "components/version_info/version_info.h"
+ #include "ui/base/device_form_factor.h"
+ #include "ui/base/l10n/l10n_util.h"
+ #include "ui/base/resource/resource_bundle.h"
+ 
++#if BUILDFLAG(ARKWEB_SAFEBROWSING)
++#include "content/public/common/content_switches.h"
++#endif
++
+ namespace variations {
+ namespace {
+ 
+ // Records the loaded seed's expiry status.
+ void RecordSeedExpiry(bool is_safe_seed, VariationsSeedExpiry seed_expiry) {

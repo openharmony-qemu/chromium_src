@@ -1,0 +1,12 @@
+diff a/components/ukm/scheme_constants.cc b/components/ukm/scheme_constants.cc	(rejected hunks)
+@@ -7,7 +7,9 @@
+ namespace ukm {
+ 
+ const char kAppScheme[] = "app";
+ const char kChromeUIScheme[] = "chrome";
+ const char kExtensionScheme[] = "chrome-extension";
+-
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++const char kArkwebExtensionScheme[] = "arkweb-extension";
++#endif
+ }  // namespace ukm

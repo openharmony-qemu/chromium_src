@@ -1,0 +1,16 @@
+diff a/components/update_client/update_client_internal.h b/components/update_client/update_client_internal.h	(rejected hunks)
+@@ -71,10 +78,14 @@ class UpdateClientImpl : public UpdateClient {
+   void NotifyObservers(const CrxUpdateItem& item);
+   void RunOrEnqueueTask(scoped_refptr<Task> task);
+ 
+   SEQUENCE_CHECKER(sequence_checker_);
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  bool is_enabled_ = true;
++#endif
++
+   // True if `Stop()` has been called.
+   bool is_stopped_ = false;
+ 
+   scoped_refptr<Configurator> config_;
+ 

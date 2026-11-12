@@ -1,0 +1,30 @@
+diff a/components/subresource_filter/tools/ruleset_converter/ruleset_converter.cc b/components/subresource_filter/tools/ruleset_converter/ruleset_converter.cc	(rejected hunks)
+@@ -72,14 +73,28 @@ bool RulesetConverter::Convert() {
+     CHECK(TransferRules(input_stream.get(), primary_output.get(),
+                         css_rules_output, chrome_version_));
+   }
+ 
+   if (primary_output) {
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++    if (!primary_output->Finish()) {
++        LOG(ERROR) << "[AdBLock] Failed to finish primary output";
++        return false;
++    }
++#else
+     CHECK(primary_output->Finish());
++#endif
+   }
+   if (secondary_output) {
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++    if (!secondary_output->Finish()) {
++        LOG(ERROR) << "[AdBLock] Failed to finish secondary output";
++        return false;
++    }
++#else
+     CHECK(secondary_output->Finish());
++#endif
+   }
+   return true;
+ }
+ 
+ bool RulesetConverter::SetInputFiles(

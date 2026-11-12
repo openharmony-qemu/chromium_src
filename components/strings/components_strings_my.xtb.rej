@@ -1,0 +1,13 @@
+diff a/components/strings/components_strings_my.xtb b/components/strings/components_strings_my.xtb	(rejected hunks)
+@@ -2151,10 +2151,11 @@
+ <translation id="4432792777822557199"><ph name="SOURCE_LANGUAGE" /> ဘာသာဖြင့် စာမျက်နှာများကို ယခုမှစ၍ <ph name="TARGET_LANGUAGE" /> ဘာသာသို့ ဘာသာပြန်သွားပါမည်</translation>
+ <translation id="4433642172056592619">အသုံးပြုသူကို စက်စီမံခန့်ခွဲမှုစနစ်နှင့် ချိတ်ဆက်မထားသောကြောင့် (သို့) စက်ကို စီမံထားခြင်း မရှိသောကြောင့် လျစ်လျူရှုလိုက်သည်။</translation>
+ <translation id="4434017585895599560">ရပ်ကွက်တွင် အခန်းငှားခြင်း</translation>
+ <translation id="4434045419905280838">ပေါ့ပ်အပ်နှင့် တစ်ဆင့်ညွှန်ချက်</translation>
+ <translation id="443673843213245140">ပရောက်စီ သုံးရန်ပိတ်ထားသော်လည်း တိကျသည့် ပရောက်စီ စီစဉ်ဖွဲ့စည်းမှုကို သတ်မှတ်ထားသည်။</translation>
++<translation id="4437124607000705911">မလုပ်ပါ</translation>
+ <translation id="4438821706955556403">ပုံမှန်ဈေးနှုန်း</translation>
+ <translation id="444116852243722675">အားလုံးဖွင့်ရန် (<ph name="ITEMS" />)</translation>
+ <translation id="4441832193888514600">မူဝါဒကို cloud အသုံးပြုသူလိုက်နာရမည့် မူဝါဒအဖြစ်သာ သတ်မှတ်နိုင်သောကြောင့် လျစ်လျူရှုထားသည်။</translation>
+ <translation id="4445133368066241428">ရေပန်းစားသော အကြောင်းအရာများ</translation>
+ <translation id="4445694043187340808"><ph name="STARTER_PACK_TABS_FOCUSED_FRIENDLY_MATCH_TEXT" />၊ တဘ်များကို ရှာရန် Enter ခလုတ် နှိပ်ပါ</translation>

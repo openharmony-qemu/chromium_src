@@ -1,0 +1,13 @@
+diff a/components/strings/components_strings_ms.xtb b/components/strings/components_strings_ms.xtb	(rejected hunks)
+@@ -2151,10 +2151,11 @@ Jika tidak, ini akan disekat oleh tetapan privasi anda. Kebenaran ini akan membo
+ <translation id="4432792777822557199">Halaman dalam <ph name="SOURCE_LANGUAGE" /> akan diterjemahkan kepada <ph name="TARGET_LANGUAGE" /> bermula dari sekarang</translation>
+ <translation id="4433642172056592619">Diabaikan kerana pengguna tidak bergabung dengan pengurusan mesin atau mesin tidak diurus.</translation>
+ <translation id="4434017585895599560">Sewaan Kediaman</translation>
+ <translation id="4434045419905280838">Tetingkap timbul dan ubah hala</translation>
+ <translation id="443673843213245140">Penggunaan proksi dilumpuhkan tetapi konfigurasi proksi yang jelas dinyatakan.</translation>
++<translation id="4437124607000705911">Batalkan</translation>
+ <translation id="4438821706955556403">Harga biasa</translation>
+ <translation id="444116852243722675">Buka semua (<ph name="ITEMS" />)</translation>
+ <translation id="4441832193888514600">Diabaikan kerana dasar itu hanya boleh ditetapkan sebagai dasar pengguna awan.</translation>
+ <translation id="4445133368066241428">Topik popular</translation>
+ <translation id="4445694043187340808"><ph name="STARTER_PACK_TABS_FOCUSED_FRIENDLY_MATCH_TEXT" />, tekan Enter untuk mencari tab</translation>

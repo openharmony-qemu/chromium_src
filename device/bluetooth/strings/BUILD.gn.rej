@@ -1,0 +1,19 @@
+diff a/device/bluetooth/strings/BUILD.gn b/device/bluetooth/strings/BUILD.gn	(rejected hunks)
+@@ -6,10 +6,17 @@ import("//build/config/locales.gni")
+ import("//tools/grit/grit_rule.gni")
+ import("//tools/grit/repack.gni")
+ 
+ grit_strings("strings") {
+   source = "../bluetooth_strings.grd"
++
++  #ifdef arkweb_i18n
++  if (arkweb_i18n) {
++    locales = all_chrome_locales + extra_locales
++  }
++
++  #endif
+   outputs = [ "grit/bluetooth_strings.h" ]
+   output_prefix = "bluetooth_strings_"
+ }
+ 
+ repack("bluetooth_test_strings") {

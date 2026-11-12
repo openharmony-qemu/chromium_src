@@ -155,6 +155,10 @@ struct COMPONENT_EXPORT(DEVICE_FIDO) CtapMakeCredentialRequest {
   // cred_blob contains an optional credBlob extension.
   // https://fidoalliance.org/specs/fido-v2.1-rd-20201208/fido-client-to-authenticator-protocol-v2.1-rd-20201208.html#sctn-credBlob-extension
   std::optional<std::vector<uint8_t>> cred_blob;
+
+#if BUILDFLAG(ARKWEB_FIDO)
+  std::optional<CtapMakeCredentialRequestExtra> extra;
+#endif // BUILDFLAG(ARKWEB_FIDO)
 };
 
 // MakeCredentialOptions contains higher-level request parameters that aren't

@@ -38,6 +38,10 @@
 #include "device/fido/cros/discovery.h"
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
+#if BUILDFLAG(ARKWEB_FIDO)
+#include "device/fido/ohos/ohos_fido_discovery.h"
+#endif  // BUILDFLAG(ARKWEB_FIDO)
+
 namespace device {
 
 FidoDiscoveryFactory::FidoDiscoveryFactory() = default;
@@ -199,6 +203,12 @@ FidoDiscoveryFactory::MaybeCreateWinWebAuthnApiDiscovery() {
              : nullptr;
 }
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(ARKWEB_FIDO)
+std::unique_ptr<FidoDiscoveryBase> FidoDiscoveryFactory::CreateOhosFidoDiscovery() {
+  return std::make_unique<OhosFidoDiscovery>();
+}
+#endif  // BUILDFLAG(ARKWEB_FIDO)
 
 #if BUILDFLAG(IS_MAC)
 std::vector<std::unique_ptr<FidoDiscoveryBase>>

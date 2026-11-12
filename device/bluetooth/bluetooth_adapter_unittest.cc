@@ -844,6 +844,9 @@ TEST_P(BluetoothTestWinrt, ConstructFakeAdapterWithoutPowerControl) {
 // Starts and Stops a discovery session.
 TEST_F(BluetoothTest, MAYBE_DiscoverySession) {
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   EXPECT_FALSE(adapter_->IsDiscovering());
 
   StartLowEnergyDiscoverySession();
@@ -925,6 +928,9 @@ TEST_F(BluetoothTest, NoLocationServices) {
                     "Bluetooth scanning, skipping unit test.";
   }
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   SimulateLocationServicesOff();
@@ -1353,6 +1359,9 @@ TEST_F(BluetoothTest, MAYBE_TogglePowerFakeAdapter_DestroyWithPending) {
 #endif
 TEST_F(BluetoothTest, MAYBE_TogglePowerBeforeScan) {
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   ASSERT_TRUE(adapter_->IsPresent());
@@ -1447,6 +1456,9 @@ TEST_P(BluetoothTestWinrt, RegisterAdvertisement) {
       BluetoothAdvertisement::ManufacturerData());
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   adapter_->RegisterAdvertisement(
       std::move(advertisement_data),
       GetCreateAdvertisementCallback(Call::EXPECTED),
@@ -1465,6 +1477,9 @@ TEST_P(BluetoothTestWinrt, FailRegisterAdvertisement) {
       BluetoothAdvertisement::ManufacturerData());
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   adapter_->RegisterAdvertisement(
       std::move(advertisement_data),
       GetCreateAdvertisementCallback(Call::NOT_EXPECTED),
@@ -1486,6 +1501,9 @@ TEST_P(BluetoothTestWinrt, RegisterAndUnregisterAdvertisement) {
       BluetoothAdvertisement::ManufacturerData());
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   adapter_->RegisterAdvertisement(
       std::move(advertisement_data),
       GetCreateAdvertisementCallback(Call::EXPECTED),
@@ -1513,6 +1531,9 @@ TEST_P(BluetoothTestWinrt, FailUnregisterAdvertisement) {
       BluetoothAdvertisement::ManufacturerData());
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   adapter_->RegisterAdvertisement(
       std::move(advertisement_data),
       GetCreateAdvertisementCallback(Call::EXPECTED),
@@ -1546,6 +1567,9 @@ TEST_P(BluetoothTestWinrt, RegisterAdvertisementWithInvalidData) {
   advertisement_data->set_service_data(BluetoothAdvertisement::ServiceData());
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   adapter_->RegisterAdvertisement(
       std::move(advertisement_data),
       GetCreateAdvertisementCallback(Call::NOT_EXPECTED),
@@ -1710,6 +1734,9 @@ TEST_P(BluetoothTestWinrt, SimulateAdvertisementStoppedByOS) {
 #endif
 TEST_F(BluetoothTest, MAYBE_RegisterLocalGattServices) {
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   base::WeakPtr<BluetoothLocalGattService> service =
       adapter_->CreateLocalGattService(BluetoothUUID(kTestUUIDGenericAttribute),
                                        true, nullptr);
@@ -1748,6 +1775,9 @@ TEST_F(BluetoothTest, MAYBE_RegisterLocalGattServices) {
 #endif
 TEST_F(BluetoothTest, MAYBE_RegisterMultipleServices) {
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   base::WeakPtr<BluetoothLocalGattService> service2 =
       adapter_->CreateLocalGattService(BluetoothUUID(kTestUUIDGenericAttribute),
                                        true, nullptr);
@@ -1797,6 +1827,9 @@ TEST_F(BluetoothTest, MAYBE_RegisterMultipleServices) {
 #endif
 TEST_F(BluetoothTest, MAYBE_DeleteServices) {
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   base::WeakPtr<BluetoothLocalGattService> service2 =
       adapter_->CreateLocalGattService(BluetoothUUID(kTestUUIDGenericAttribute),
                                        true, nullptr);

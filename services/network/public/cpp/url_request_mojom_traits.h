@@ -9,6 +9,7 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/memory/scoped_refptr.h"
 #include "mojo/public/cpp/base/big_buffer_mojom_traits.h"
@@ -309,6 +310,11 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
   static bool skip_service_worker(const network::ResourceRequest& request) {
     return request.skip_service_worker;
   }
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  static bool corb_detachable(const network::ResourceRequest& request) {
+    return request.corb_detachable;
+  }
+#endif
   static network::mojom::RequestMode mode(
       const network::ResourceRequest& request) {
     return request.mode;
@@ -477,6 +483,17 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
 
   static bool Read(network::mojom::URLRequestDataView data,
                    network::ResourceRequest* out);
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  static bool usage_scenario_(const network::ResourceRequest& request) {
+    return request.usage_scenario_;
+  }
+#endif
+#if BUILDFLAG(ARKWEB_COOKIE)
+  static bool disable_web_security_(const network::ResourceRequest& request) {
+    return request.disable_web_security;
+  }
+#endif
 };
 
 template <>

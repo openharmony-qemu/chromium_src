@@ -1,0 +1,29 @@
+diff a/services/network/public/cpp/no_vary_search_header_parser.cc b/services/network/public/cpp/no_vary_search_header_parser.cc	(rejected hunks)
+@@ -4,10 +4,11 @@
+ 
+ #include "services/network/public/cpp/no_vary_search_header_parser.h"
+ 
+ #include <optional>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/strings/stringprintf.h"
+ #include "base/types/expected_macros.h"
+ #include "net/http/http_no_vary_search_data.h"
+ #include "services/network/public/mojom/no_vary_search.mojom.h"
+ 
+@@ -15,11 +16,15 @@ namespace network {
+ namespace {
+ const char kNoVarySearchSpecProposalUrl[] =
+     "https://wicg.github.io/nav-speculation/no-vary-search.html";
+ 
+ const char kRFC8941DictionaryDefinitionUrl[] =
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++    "https://x.x.x";
++#else
+     "https://www.rfc-editor.org/rfc/rfc8941.html#name-dictionaries";
++#endif
+ }  // namespace
+ 
+ mojom::NoVarySearchWithParseErrorPtr ParseNoVarySearch(
+     const net::HttpResponseHeaders& headers) {
+   // See No-Vary-Search header structure at

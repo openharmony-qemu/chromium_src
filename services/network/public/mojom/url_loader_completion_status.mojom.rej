@@ -1,0 +1,15 @@
+diff a/services/network/public/mojom/url_loader_completion_status.mojom b/services/network/public/mojom/url_loader_completion_status.mojom	(rejected hunks)
+@@ -8,10 +8,13 @@ import "mojo/public/mojom/base/time.mojom";
+ import "services/network/public/mojom/network_param.mojom";
+ import "services/network/public/mojom/blocked_by_response_reason.mojom";
+ import "services/network/public/mojom/cors.mojom";
+ import "services/network/public/mojom/trust_tokens.mojom";
+ 
++[EnableIf=arkweb_ext_navigation]
++import "arkweb/chromium_ext/services/network/public/mojom/navigation_info.mojom";
++
+ // Unlike structs, enums are not nullable, so we wrap this enum in a struct.
+ struct BlockedByResponseReasonWrapper {
+   // More detailed reason for failing the response with
+   // net::ERR_BLOCKED_BY_RESPONSE |error_code|.
+   BlockedByResponseReason reason;

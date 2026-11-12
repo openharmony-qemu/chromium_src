@@ -1,0 +1,16 @@
+diff a/services/network/public/cpp/url_util.h b/services/network/public/cpp/url_util.h	(rejected hunks)
+@@ -22,8 +22,14 @@ namespace network {
+ // as handled by the network stack (e.g. returning true for "file:", "blob:",
+ // "chrome:", etc.).
+ COMPONENT_EXPORT(NETWORK_CPP)
+ bool IsURLHandledByNetworkService(const GURL& url);
+ 
++// https://fetch.spec.whatwg.org/#serialize-a-response-url-for-reporting
++// This function serializes a URL for reporting, stripping fragments,
++// usernames, and passwords.
++COMPONENT_EXPORT(NETWORK_CPP)
++GURL SerializeResponseUrlForReporting(const GURL& url);
++
+ }  // namespace network
+ 
+ #endif  // SERVICES_NETWORK_PUBLIC_CPP_URL_UTIL_H_

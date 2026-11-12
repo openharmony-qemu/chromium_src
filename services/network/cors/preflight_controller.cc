@@ -130,6 +130,11 @@ std::unique_ptr<ResourceRequest> CreatePreflightRequest(
   preflight_request->load_flags = RetrieveCacheFlags(request.load_flags);
   preflight_request->resource_type = request.resource_type;
   preflight_request->fetch_window_id = request.fetch_window_id;
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  preflight_request->allow_preload_record = request.allow_preload_record;
+  preflight_request->main_url = request.main_url;
+  preflight_request->is_preflight = true;
+#endif
 
   preflight_request->headers.SetHeader(net::HttpRequestHeaders::kAccept,
                                        kDefaultAcceptHeaderValue);
@@ -381,7 +386,11 @@ class PreflightController::PreflightLoader final {
     }
     loader_ =
         SimpleURLLoader::Create(std::move(preflight_request), annotation_tag);
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+    loader_->SetRequestID(GenerateRequestId());
+#else
     loader_->SetRequestID(request_id);
+#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
     uint32_t options = mojom::kURLLoadOptionAsCorsPreflight;
     if (with_trusted_header_client) {
       options |= mojom::kURLLoadOptionUseHeaderClient;

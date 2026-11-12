@@ -138,6 +138,22 @@
 #include "third_party/abseil-cpp/absl/container/inlined_vector.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+#include "arkweb/chromium_ext/services/network/prp_preload/include/page_res_parallel_preload_mgr.h"
+#include "base/functional/callback.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#include "url/ohos/log_utils.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/command_line.h"
+#endif
+
 namespace network {
 
 namespace {
@@ -554,12 +570,29 @@ URLLoader::URLLoader(
         request.net_log_reference_info.value());
   }
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx) &&
+      request.retry_with_fallback_proxy) {
+    url_request_->SetRetryWithFallbackProxy(true);
+  }
+#endif
+
   // Resolve elements from request_body and prepare upload data.
   if (request.request_body.get()) {
     OpenFilesForUpload(request);
     return;
   }
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  url_loader_utils_->SetUrlRequestForPRPP(request, url_request_, org_main_url, preload_info);
+#endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  if (url_request_) {
+    TRACE_EVENT2("loading", "URLLoader::URLLoader", "url", url_request_->url().spec(), "id", request_id_);
+  }
+#endif
   ProcessOutboundTrustTokenInterceptor(request);
 }
 
@@ -751,10 +784,16 @@ void URLLoader::ScheduleStart() {
         base::BindOnce(&URLLoader::ResumeStart, base::Unretained(this)));
     resource_scheduler_request_handle_->WillStartRequest(&defer);
   }
-  if (defer)
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  if (defer) {
     url_request_->LogBlockedBy("ResourceScheduler");
-  else
+  }
+  else {
+    TRACE_EVENT1("net", "URLLoader::ScheduleStart", "id", request_id_);
     url_request_->Start();
+  }
+#endif
 }
 
 URLLoader::~URLLoader() {
@@ -1114,6 +1153,9 @@ void URLLoader::OnCertificateRequested(net::URLRequest* unused,
   // Set up mojo endpoints for ClientCertificateResponder and bind to the
   // Receiver. This enables us to receive messages regarding the client
   // certificate selection.
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  url_loader_utils_->SetPreloadFlagUnSupport();
+#endif
   url_loader_network_observer_->OnCertificateRequested(
       fetch_window_id_, cert_info,
       client_cert_responder_receiver_.BindNewPipeAndPassRemote());
@@ -1280,6 +1322,23 @@ void URLLoader::ContinueOnResponseStarted() {
               coep_reporter_, document_isolation_policy, dip_reporter_)) {
     CompleteBlockedResponse(net::ERR_BLOCKED_BY_RESPONSE, false,
                             blocked_reason);
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO, kNetwork)
+        << "ContinueOnResponseStartedBlocked blockedReason:"
+        << static_cast<int>(*blocked_reason)
+        << " isStrictLogMode:" << is_strict_log_mode_ << " url:"
+        << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            ::switches::kEnableLoggerReport)) {
+      if (!is_strict_log_mode_) {
+        LOG(URL)
+            << "ContinueOnResponseStarted blocked by response, blocked_reason "
+            << static_cast<int>(*blocked_reason) << ", url: "
+            << url_request_->url().spec();
+      }
+    }
+#endif
     // Close the socket associated with the request, to prevent leaking
     // information.
     url_request_->AbortAndCloseConnection();
@@ -1645,9 +1704,13 @@ void URLLoader::ReadMore() {
   auto buf = base::MakeRefCounted<NetToMojoIOBuffer>(
       pending_write_, pending_write_buffer_offset_);
   url_read_state_ = URLReadState::kURLReadInProgress;
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  int bytes_read = url_loader_utils_->ReadDataFromLoaderOrRequest(buf);
+#else
   int bytes_read = url_request_->Read(
       buf.get(), static_cast<int>(pending_write_buffer_size_ -
                                   pending_write_buffer_offset_));
+#endif
   if (bytes_read != net::ERR_IO_PENDING) {
     DidRead(bytes_read, /*completed_synchronously=*/true,
             /*into_slop_bucket=*/false);
@@ -1752,6 +1815,20 @@ void URLLoader::DidRead(int num_bytes,
         }
 
         if (MaybeBlockResponseForOrb(orb_decision)) {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+          LOG_FEEDBACK(INFO, kNetwork)
+              << "DidReadBlockedForOrb isStrictLogMode:" << is_strict_log_mode_
+              << " url:"
+              << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
+          if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+                  ::switches::kEnableLoggerReport)) {
+            if (!is_strict_log_mode_) {
+              LOG(URL) << "DidRead blocked the request for Cross-Origin Read "
+                          "Blocking (CORB) blocked cross-origin response, url: "
+                       << url_request_->url().spec();
+            }
+          }
+#endif
           return;
         }
       }
@@ -2117,6 +2194,15 @@ void URLLoader::SendResponseToClient() {
   DCHECK_EQ(emitted_devtools_raw_request_, emitted_devtools_raw_response_);
   response_->emitted_extra_info = emitted_devtools_raw_request_;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (url_loader_utils_) {
+    auto status = url_loader_utils_->CreateURLLoaderCompletionStatus();
+    if (status) {
+      response_->status = std::move(*status);
+    }
+  }
+#endif
+
   url_loader_client_.Get()->OnReceiveResponse(
       response_->Clone(), std::move(consumer_handle_), std::nullopt);
 }
@@ -2247,7 +2333,11 @@ void URLLoader::DispatchOnRawRequest(
   DCHECK(devtools_observer_ && devtools_request_id());
 
   net::LoadTimingInfo load_timing_info;
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  url_loader_utils_->GetLoadTimeInfo(&load_timing_info);
+#else
   url_request_->GetLoadTimingInfo(&load_timing_info);
+#endif
 
   emitted_devtools_raw_request_ = true;
 
@@ -2379,6 +2469,7 @@ bool URLLoader::HasDataPipe() const {
 
 void URLLoader::ResumeStart() {
   url_request_->LogUnblocked();
+  TRACE_EVENT1("net", "URLLoader::ResumeStart", "id", request_id_);
   url_request_->Start();
 }
 
@@ -2474,6 +2565,18 @@ URLLoader::BlockResponseForOrbResult URLLoader::BlockResponseForOrb() {
        orb::ResponseAnalyzer::BlockedResponseHandling::kEmptyResponse)
           ? net::OK
           : net::ERR_BLOCKED_BY_ORB;
+
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  // This preserves compatibility with current implementations, which use
+  // net::ERR_ABORTED when the resource is detachable.
+  if (url_loader_utils_->corb_detachable_ && blocked_error_code == net::OK) {
+    CHECK(!base::FeatureList::IsEnabled(
+      features::kOpaqueResponseBlockingErrorsForAllFetches));
+    if (!base::FeatureList::IsEnabled(features::kOpaqueResponseBlockingV02)) {
+      blocked_error_code = net::ERR_ABORTED;
+    }
+  }
+#endif
 
   // Send empty body to the real URLLoaderClient. This preserves "ORB v0.1"
   // behaviour and will also go away once

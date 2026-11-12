@@ -1,0 +1,33 @@
+diff a/services/audio/input_controller.h b/services/audio/input_controller.h	(rejected hunks)
+@@ -158,10 +158,15 @@ class InputController final {
+     virtual void OnError(ErrorCode error_code) = 0;
+     virtual void OnLog(std::string_view) = 0;
+     // Called whenever the muted state of the underlying stream changes.
+     virtual void OnMuted(bool is_muted) = 0;
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
++    // Called when the underlying stream is paused or resumed by the capturer.
++    virtual void OnPaused(bool is_paused) = 0;
++#endif // ARKWEB_MEDIA_CAPTURE
++
+    protected:
+     virtual ~EventHandler() {}
+   };
+ 
+   // A synchronous writer interface used by InputController for
+@@ -295,10 +300,15 @@ class InputController final {
+                        float* average_power_dbfs,
+                        int* mic_volume_percent);
+ 
+   void CheckMutedState();
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
++  // Called when the underlying stream is paused or resumed.
++  void OnStreamPaused(bool is_paused);
++#endif // ARKWEB_MEDIA_CAPTURE
++
+   // Called once at first audio callback.
+   void ReportIsAlive();
+ 
+   // Receives new input data on the hw callback thread.
+   void OnData(const media::AudioBus* source,

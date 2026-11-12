@@ -538,6 +538,10 @@ void ConfigureUrlRequest(const ResourceRequest& request,
   url_request.set_client_side_content_decoding_enabled(
       request.client_side_content_decoding_enabled);
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  url_request.set_usage_scenario(request.usage_scenario_);
+#endif
+
   auto isolation_info = GetIsolationInfo(
       factory_params.isolation_info,
       factory_params.automatically_assign_isolation_info, request);
@@ -707,14 +711,32 @@ mojom::URLResponseHeadPtr BuildResponseHead(
     bool include_load_timing_internal_info_with_response,
     base::TimeTicks response_start,
     const raw_ptr<mojom::DevToolsObserver> devtools_observer,
-    const std::string& devtools_request_id) {
+    const std::string& devtools_request_id
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD) || BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+    , URLLoaderUtils* url_loader_utils
+#endif
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+    , int32_t request_id
+#endif
+    ) {
   auto response = mojom::URLResponseHead::New();
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  net::LoadTimingInfo load_timing_info = net::LoadTimingInfo();
+  url_loader_utils->UpdateResponseTimes(response, load_timing_info);
+#else
   response->request_time = url_request.request_time();
   response->response_time = url_request.response_time();
   response->original_response_time = url_request.original_response_time();
+#endif
   response->headers = url_request.response_headers();
   response->parsed_headers =
       PopulateParsedHeaders(response->headers.get(), url_request.url());
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  std::string http_version = url_loader_utils->GetRequestHttpVersion();
+  TRACE_EVENT2("net", "URLLoader::BuildResponseHead", "http", http_version,
+               "id", request_id);
+#endif
 
   url_request.GetCharset(&response->charset);
   response->content_length = url_request.GetExpectedContentSize();
@@ -754,9 +776,12 @@ mojom::URLResponseHeadPtr BuildResponseHead(
         return cookie_with_access_result.access_result.status.IsInclude();
       });
 
-  if (is_load_timing_enabled) {
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  url_loader_utils->GetResponseLoadingTime(response);
+#else
+  if (is_load_timing_enabled)
     url_request.GetLoadTimingInfo(&response->load_timing);
-  }
+#endif
 
   if (include_load_timing_internal_info_with_response) {
     response->load_timing_internal_info =

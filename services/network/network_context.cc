@@ -872,11 +872,11 @@ NetworkContext::NetworkContext(
   sct_auditing_handler()->SetMode(params_->sct_auditing_mode);
 #endif  // BUILDFLAG(IS_CT_SUPPORTED)
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_COOKIE)
   if (params_->cookie_manager) {
     GetCookieManager(std::move(params_->cookie_manager));
   }
-#endif  // BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_COOKIE)
 
   CreateURLLoaderFactoryForCertNetFetcher(
       std::move(url_loader_factory_for_cert_net_fetcher_receiver));
@@ -1068,7 +1068,11 @@ std::unique_ptr<NetworkContext> NetworkContext::CreateForTesting(
     mojom::NetworkContextParamsPtr params,
     OnURLRequestContextBuilderConfiguredCallback
         on_url_request_context_builder_configured) {
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  return std::make_unique<ArkWebNetworkContextExt>(
+#else
   return std::make_unique<NetworkContext>(
+#endif
       base::PassKey<NetworkContext>(), network_service, std::move(receiver),
       std::move(params), OnConnectionCloseCallback(),
       std::move(on_url_request_context_builder_configured));
@@ -1084,6 +1088,15 @@ void NetworkContext::CreateURLLoaderFactory(
     mojo::PendingReceiver<mojom::URLLoaderFactory> receiver,
     mojom::URLLoaderFactoryParamsPtr params,
     scoped_refptr<ResourceSchedulerClient> resource_scheduler_client) {
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  if (ohos_prp_preload::PRParallelPreloadMgr::GetInstance().GetPRParallelPreloadMode() ==
+      ohos_prp_preload::PRPPreloadMode::PRELOAD && params) {
+    AsArkWebNetworkContextExt()->PRPPreloadCreateURLLoaderFactory(
+        std::move(receiver), std::move(params),
+        std::move(resource_scheduler_client), this);
+    return;
+  }
+#endif
   url_loader_factories_.emplace(
       std::make_unique<PrefetchMatchingURLLoaderFactory>(
           this, std::move(params), std::move(resource_scheduler_client),
@@ -2913,7 +2926,7 @@ URLRequestContextOwner NetworkContext::MakeURLRequestContext(
 #endif  // BUILDFLAG(IS_CT_SUPPORTED)
 
   std::unique_ptr<NetworkServiceNetworkDelegate> network_delegate =
-      std::make_unique<NetworkServiceNetworkDelegate>(
+      std::make_unique<NetworkServiceNetworkDelegateExt>(
           params_->enable_referrers,
           params_->validate_referrer_policy_on_initial_request,
           std::move(params_->proxy_error_client), this);

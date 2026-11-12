@@ -1,0 +1,65 @@
+diff a/services/network/public/cpp/url_request_mojom_traits.cc b/services/network/public/cpp/url_request_mojom_traits.cc	(rejected hunks)
+@@ -4,10 +4,11 @@
+ 
+ #include "services/network/public/cpp/url_request_mojom_traits.h"
+ 
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/debug/dump_without_crashing.h"
+ #include "base/metrics/histogram_macros.h"
+ #include "base/notreached.h"
+ #include "base/time/time.h"
+ #include "mojo/public/cpp/base/file_mojom_traits.h"
+@@ -179,10 +186,13 @@ bool StructTraits<
+   out->load_flags = data.load_flags();
+   out->resource_type = data.resource_type();
+   out->priority_incremental = data.priority_incremental();
+   out->originated_from_service_worker = data.originated_from_service_worker();
+   out->skip_service_worker = data.skip_service_worker();
++#if BUILDFLAG(ARKWEB_NETWORK_BASE)
++  out->corb_detachable = data.corb_detachable();
++#endif
+   out->destination = data.destination();
+   out->keepalive = data.keepalive();
+   out->browsing_topics = data.browsing_topics();
+   out->ad_auction_headers = data.ad_auction_headers();
+   out->shared_storage_writable_eligible =
+@@ -201,16 +211,37 @@ bool StructTraits<
+   out->is_favicon = data.is_favicon();
+   out->original_destination = data.original_destination();
+   out->attribution_reporting_support = data.attribution_reporting_support();
+   out->attribution_reporting_eligibility =
+       data.attribution_reporting_eligibility();
++#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
++  out->is_sync_mode = data.is_sync_mode();
++#endif
+   out->is_ad_tagged = data.is_ad_tagged();
+   out->shared_dictionary_writer_enabled =
+       data.shared_dictionary_writer_enabled();
+   out->client_side_content_decoding_enabled =
+       data.client_side_content_decoding_enabled();
+   out->required_ip_address_space = data.required_ip_address_space();
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  out->allow_preload_record = data.allow_preload_record();
++  out->is_preflight = data.is_preflight();
++#endif  //  ARKWEB_PRP_PRELOAD
++#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
++  out->is_download_request = data.is_download_request();
++  out->is_triggered_by_download = data.is_triggered_by_download();
++#endif  //  ARKWEB_EX_DOWNLOAD
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++  out->usage_scenario_ = data.usage_scenario_();
++#endif
++#if BUILDFLAG(ARKWEB_COOKIE)
++  out->disable_web_security = data.disable_web_security_();
++#endif
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++  out->retry_with_fallback_proxy = data.retry_with_fallback_proxy();
++  out->original_error_code = data.original_error_code();
++#endif
+   out->allows_device_bound_session_registration =
+       data.allows_device_bound_session_registration();
+   return true;
+ }
+ 

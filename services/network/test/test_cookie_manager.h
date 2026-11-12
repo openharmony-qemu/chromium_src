@@ -13,6 +13,7 @@
 #include "components/content_settings/core/common/content_settings_types.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/network/public/mojom/cookie_manager.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace network {
 

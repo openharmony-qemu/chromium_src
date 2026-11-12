@@ -281,6 +281,13 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
                    const GURL& url,
                    const net::SiteForCookies& site_for_cookies) const;
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void SetStrictLogMode(bool value) { is_strict_log_mode_ = value; }
+  void SetUsageScenario(int32_t usage_scenario) {
+    usage_scenario_ = usage_scenario;
+  }
+#endif  // ARKWEB_LOGGER_REPORT
+
   const std::optional<GURL>& new_redirect_url() const {
     return new_redirect_url_;
   }
@@ -308,6 +315,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   }
 
  private:
+  std::unique_ptr<URLLoaderUtils> url_loader_utils_;
   // This class is used to set the URLLoader as user data on a URLRequest. This
   // is used instead of URLLoader directly because SetUserData requires a
   // std::unique_ptr. This is safe because URLLoader owns the URLRequest, so is
@@ -505,7 +513,11 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   // to the value from the URLLoaderFactory.
   const mojom::ClientSecurityStatePtr client_security_state_;
   const bool do_not_prompt_for_login_;
+  #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  std::shared_ptr<net::URLRequest> url_request_;
+#else
   std::unique_ptr<net::URLRequest> url_request_;
+#endif
   mojo::Receiver<mojom::URLLoader> receiver_;
   mojo::Receiver<mojom::AuthChallengeResponder>
       auth_challenge_responder_receiver_{this};
@@ -642,6 +654,11 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   // Indicates |url_request_| is fetch upload request and that has streaming
   // body.
   const bool has_fetch_streaming_upload_body_;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  bool is_strict_log_mode_ = false;
+  int32_t usage_scenario_ = 99;
+#endif  // ARKWEB_LOGGER_REPORT
 
   // Whether DevToolsObserver::OnRaw{Request,Response} should be emitted
   // (i.e. the request being loaded is monitored by DevTools).

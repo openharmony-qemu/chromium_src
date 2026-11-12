@@ -1,0 +1,17 @@
+diff a/services/data_decoder/BUILD.gn b/services/data_decoder/BUILD.gn	(rejected hunks)
+@@ -29,10 +30,15 @@ source_set("lib") {
+     "xml_parser.h",
+   ]
+ 
+   configs += [ "//build/config/compiler:wexit_time_destructors" ]
+ 
++  if (use_libfuzzer) {
++    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
++    configs += [ "//build/config/gcc:symbol_visibility_default" ]
++  }
++
+   deps = [
+     "//base",
+     "//build:blink_buildflags",
+     "//components/cbor",
+     "//components/facilitated_payments/core/mojom:pix_code_validator_mojom",

@@ -1,0 +1,15 @@
+diff a/services/viz/public/mojom/compositing/compositor_frame_metadata.mojom b/services/viz/public/mojom/compositing/compositor_frame_metadata.mojom	(rejected hunks)
+@@ -25,10 +25,13 @@ import "ui/latency/mojom/latency_info.mojom";
+ // See cc/trees/render_frame_metadata.h
+ // This is sent from viz clients such as the browser and renderer to the viz
+ // compositor in the GPU process.
+ struct CompositorFrameMetadata {
+   float device_scale_factor;
++  [EnableIf=arkweb_same_layer]
++  float stretch_content_none_device_scale_factor;
++  
+   gfx.mojom.PointF root_scroll_offset;
+   float page_scale_factor;
+   gfx.mojom.SizeF scrollable_viewport_size;
+   gfx.mojom.Size visible_viewport_size;
+   gfx.mojom.ContentColorUsage content_color_usage;

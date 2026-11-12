@@ -1,0 +1,51 @@
+diff a/services/viz/privileged/mojom/gl/gpu_service.mojom b/services/viz/privileged/mojom/gl/gpu_service.mojom	(rejected hunks)
+@@ -212,6 +221,49 @@ interface GpuService {
+   Crash();
+ 
+   Hang();
+ 
+   ThrowJavaException();
++  // notify web ltpo to update frame rate when visibility changed
++  [EnableIf=arkweb_slide_ltpo]
++  SetVisible(int32 nweb_id, bool visible);
++
++  // start frame loss monitor during page sliding scene
++  [EnableIf=arkweb_report_loss_frame]
++  StartMonitor(int32 nweb_id);
++
++  // start frame loss monitor during page sliding scene
++  [EnableIf=arkweb_report_loss_frame]
++  StopMonitor();
++
++  // notify web ltpo to update frame rate when touch status changed
++  [EnableIf=arkweb_slide_ltpo]
++  SetHasTouchPoint(bool has_touch_point);
++
++  // Send vsync callback to host client
++  [EnableIf=arkweb_slide_ltpo]
++  ReportSlidingFrameRate(int32 frame_rate);
++
++  // Set ltpo strategy to gpu process
++  [EnableIf=arkweb_slide_ltpo]
++  SetLTPOStrategy(int32 strategy);
++
++  // Set web component visibility for LTPO invisible render throttling to gpu process
++  [EnableIf=arkweb_invisible_render_throttle]
++  SetWebComponentVisible(int32 nweb_id, bool visible);
++
++  // Initialize invisible render throttle with configuration from browser process
++  [EnableIf=arkweb_invisible_render_throttle]
++  InitInvisibleThrottle(int32 strategy, int32 timeout, int32 ratio);
++
++  // get gpu total size
++  [EnableIf=arkweb_dfx_dump]
++  DumpGpuInfo() => (float totalSize);
++
++  // Set fling state to gpu process
++  [EnableIf=arkweb_d_vsync]
++  SetIsFling(bool is_fling_enabled);
++
++  // send anti-fraud snapshot to browser
++  [EnableIf=arkweb_safebrowsing]
++  RequestSnapshotOnce();
+ };

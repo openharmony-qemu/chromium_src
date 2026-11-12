@@ -1,0 +1,94 @@
+diff a/services/network/public/mojom/BUILD.gn b/services/network/public/mojom/BUILD.gn	(rejected hunks)
+@@ -1,9 +1,13 @@
+ # Copyright 2017 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
++import("//arkweb/build/features/features.gni")
++if (is_arkweb_ext) {
++  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
++}
+ import("//build/config/dcheck_always_on.gni")
+ import("//mojo/public/tools/bindings/mojom.gni")
+ import("//net/features.gni")
+ import("//services/network/public/cpp/features.gni")
+ 
+@@ -34,10 +38,14 @@ mojom("mojom_ad_auction") {
+       traits_public_deps = [ "//net" ]
+     },
+   ]
+ }
+ 
++if (is_arkweb) {
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++}
++
+ # These interfaces are put in their own target to avoid a circular dependency,
+ # which comes from the fact that proxy_resolver service uses these interfaces,
+ # and the network service uses the proxy_resolver service.
+ mojom("mojom_ip_address") {
+   generate_java = true
+@@ -1813,10 +1832,47 @@ mojom("mojom") {
+   if (is_ct_supported) {
+     enabled_features += [ "is_ct_supported" ]
+     sources += [ "ct_log_info.mojom" ]
+   }
+ 
++  if (arkweb_ext_http_dns_fallback) {
++    public_deps += [ "//arkweb/chromium_ext/servieces/network/public/mojom" ]
++    enabled_features += [ "arkweb_ext_http_dns_fallback" ]
++  }
++
++  if (arkweb_media) {
++    enabled_features += [ "arkweb_media" ]
++  }
++
++  if (arkweb_ext_http_dns_fallback_on_dns_hijacking) {
++    enabled_features += [ "arkweb_ext_http_dns_fallback_on_dns_hijacking" ]
++  }
++
++  if (arkweb_ex_fallback_proxy) {
++    public_deps += [ "//arkweb/chromium_ext/servieces/network/public/mojom" ]
++    enabled_features += [ "arkweb_ex_fallback_proxy" ]
++  }
++
++  if (arkweb_resource_interception) {
++    enabled_features += [ "arkweb_resource_interception" ]
++  }
++
++  if (arkweb_scheme_handler) {
++    enabled_features += [ "arkweb_scheme_handler" ]
++  }
++
++  if (arkweb_ext_network_connection) {
++    enabled_features += [ "arkweb_ext_network_connection" ]
++  }
++
++  if (defined(arkweb_ext_navigation) && arkweb_ext_navigation) {
++    public_deps += [
++      "//arkweb/chromium_ext/services/network/public/mojom:mojom_navigation_info"
++    ]
++    enabled_features += [ "arkweb_ext_navigation" ]
++  }
++
+   if (is_p2p_enabled) {
+     enabled_features += [ "is_p2p_enabled" ]
+     sources += [
+       "p2p.mojom",
+       "p2p_trusted.mojom",
+@@ -1841,10 +1897,15 @@ mojom("mojom") {
+     # TODO(crbug.com/40263697): Remove this once is_linux in the mojom IDL does
+     # not include lacros.
+     enabled_features += [ "use_network_interface_change_listener" ]
+   }
+ 
++  if (arkweb_ssl_auth_algo) { 
++    # enable arkweb_ssl_auth_algo to add tlsv1 and tlsv1.1 
++    enabled_features += [ "arkweb_ssl_auth_algo" ] 
++  }
++
+   # Typemaps which apply to both Blink and non-Blink bindings.
+   shared_cpp_typemaps = []
+ 
+   if (is_p2p_enabled) {
+     shared_cpp_typemaps += [

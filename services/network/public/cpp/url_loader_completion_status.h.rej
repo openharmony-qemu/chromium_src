@@ -1,0 +1,31 @@
+diff a/services/network/public/cpp/url_loader_completion_status.h b/services/network/public/cpp/url_loader_completion_status.h	(rejected hunks)
+@@ -7,20 +7,29 @@
+ 
+ #include <stdint.h>
+ 
+ #include <optional>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/component_export.h"
+ #include "base/time/time.h"
+ #include "net/dns/public/resolve_error_info.h"
+ #include "net/ssl/ssl_info.h"
+ #include "services/network/public/cpp/cors/cors_error_status.h"
+ #include "services/network/public/mojom/blocked_by_response_reason.mojom-shared.h"
+ #include "services/network/public/mojom/cors.mojom-shared.h"
+ #include "services/network/public/mojom/trust_tokens.mojom-shared.h"
+ #include "third_party/perfetto/include/perfetto/tracing/traced_value_forward.h"
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++#include "arkweb/chromium_ext/net/base/navigation_info.h"
++#endif
++
+ namespace network {
+ 
+ // NOTE: When adding/removing fields to this struct, don't forget to update
+ // services/network/public/cpp/network_ipc_param_traits.h and the equals (==)
+ // operator below.

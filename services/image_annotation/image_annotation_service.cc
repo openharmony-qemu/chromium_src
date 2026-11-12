@@ -14,10 +14,16 @@ namespace image_annotation {
 
 namespace {
 
+#if BUILDFLAG(IS_ARKWEB)
+constexpr char kPixelsServerUrl[] = "https://x.x.x.x";
+constexpr char kLangsServerUrl[] = "https://x.x.x.x";
+#else
 constexpr char kPixelsServerUrl[] =
     "https://ckintersect-pa.googleapis.com/v1/intersect/pixels";
 constexpr char kLangsServerUrl[] =
     "https://ckintersect-pa.googleapis.com/v1/intersect/langs";
+#endif // BUILDFLAG(IS_ARKWEB)
+
 constexpr int kThrottleMs = 300;
 constexpr int kBatchSize = 10;
 constexpr double kMinOcrConfidence = 0.7;

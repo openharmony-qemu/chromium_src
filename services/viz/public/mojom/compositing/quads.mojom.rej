@@ -1,0 +1,14 @@
+diff a/services/viz/public/mojom/compositing/quads.mojom b/services/viz/public/mojom/compositing/quads.mojom	(rejected hunks)
+@@ -92,10 +92,12 @@ struct TextureQuadState {
+   skia.mojom.SkColor4f background_color;
+   cc.mojom.DynamicRangeLimit dynamic_range_limit;
+   bool nearest_neighbor;
+   bool secure_output_only;
+   bool is_video_frame;
++  [EnableIf=arkweb_render_video_view]
++  bool render_video_view;
+   bool force_rgbx;
+   ProtectedVideoState protected_video_type;
+   gfx.mojom.Rect? damage_rect;
+   OverlayPriority overlay_priority_hint;
+   RoundedDisplayMasksInfo rounded_display_masks_info;

@@ -1,0 +1,50 @@
+diff a/services/network/public/cpp/BUILD.gn b/services/network/public/cpp/BUILD.gn	(rejected hunks)
+@@ -8,10 +8,18 @@ import("//net/features.gni")
+ import("//services/network/public/cpp/features.gni")
+ import("//testing/libfuzzer/fuzzer_test.gni")
+ import("//testing/test.gni")
+ import("//third_party/blink/renderer/build/scripts/scripts.gni")  # TODO(crbug.com/397934758)
+ 
++if (is_arkweb_ext) {
++  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
++}
++
++if (is_arkweb) {
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++}
++
+ _is_directory_transfer_required = is_fuchsia
+ buildflag_header("buildflags") {
+   header = "network_service_buildflags.h"
+   flags = [
+     "IS_CT_SUPPORTED=$is_ct_supported",
+@@ -705,10 +713,14 @@ component("cpp_base") {
+     "//services/network/public/mojom:mojom_storage_access_api",
+     "//services/network/public/mojom:url_loader_base",
+   ]
+   defines = [ "IS_NETWORK_CPP_BASE_IMPL" ]
+ 
++  if (defined(arkweb_ext_navigation) && arkweb_ext_navigation) {
++    public_deps += [ "//arkweb/chromium_ext/services/network/public/cpp:navigation_info_mojom_support" ]
++  }
++
+   if (is_p2p_enabled) {
+     sources += [
+       "p2p_param_traits.cc",
+       "p2p_param_traits.h",
+       "p2p_socket_type.h",
+@@ -874,10 +886,14 @@ source_set("tests") {
+     "//testing/gtest",
+   ]
+ 
+   public_deps = [ ":buildflags" ]
+ 
++  if (defined(arkweb_ext_navigation) && arkweb_ext_navigation) {
++    sources += [ "//arkweb/chromium_ext/services/network/public/cpp/navigation_info_mojom_traits_unittest.cc" ]
++  }
++
+   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and
+   # enable the diagnostic by removing this line.
+   configs += [ "//build/config/compiler:no_exit_time_destructors" ]
+ }
+ 

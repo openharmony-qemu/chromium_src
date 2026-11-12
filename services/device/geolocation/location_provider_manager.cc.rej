@@ -1,0 +1,27 @@
+diff a/services/device/geolocation/location_provider_manager.cc b/services/device/geolocation/location_provider_manager.cc	(rejected hunks)
+@@ -92,10 +92,12 @@ LocationProviderManager::LocationProviderManager(
+   // On Android and iOS, default to using the platform location provider.
+   provider_manager_mode_ = kPlatformOnly;
+ #elif BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
+   // On Ash / Lacros / Linux, default to using the network location provider.
+   provider_manager_mode_ = kNetworkOnly;
++#elif BUILDFLAG(IS_ARKWEB)
++  provider_manager_mode_ = kPlatformOnly;
+ #else
+   // On macOS / Windows platforms, use the mode specified by the feature flag.
+   provider_manager_mode_ = features::kLocationProviderManagerParam.Get();
+ #endif
+   GEOLOCATION_LOG(DEBUG) << "LocationProviderManager::LocationProviderManager: "
+@@ -383,11 +394,11 @@ std::unique_ptr<LocationProvider>
+ LocationProviderManager::NewSystemLocationProvider() {
+ #if BUILDFLAG(IS_APPLE)
+   CHECK(geolocation_system_permission_manager_);
+   return device::NewSystemLocationProvider(
+       geolocation_system_permission_manager_->GetSystemGeolocationSource());
+-#elif BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
++#elif BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
+   return device::NewSystemLocationProvider();
+ #else
+   return nullptr;
+ #endif
+ }

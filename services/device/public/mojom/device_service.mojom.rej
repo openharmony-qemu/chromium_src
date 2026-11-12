@@ -1,0 +1,17 @@
+diff a/services/device/public/mojom/device_service.mojom b/services/device/public/mojom/device_service.mojom	(rejected hunks)
+@@ -9,13 +9,15 @@ import "services/device/public/mojom/fingerprint.mojom";
+ import "services/device/public/mojom/geolocation_context.mojom";
+ import "services/device/public/mojom/geolocation_control.mojom";
+ import "services/device/public/mojom/geolocation_internals.mojom";
+ import "services/device/public/mojom/power_monitor.mojom";
+ import "services/device/public/mojom/public_ip_address_geolocation_provider.mojom";
++import "arkweb/chromium_ext/services/device/public/mojom/res_sched_report.mojom";
+ import "services/device/public/mojom/screen_orientation.mojom";
+ import "services/device/public/mojom/sensor_provider.mojom";
+ import "services/device/public/mojom/serial.mojom";
++import "arkweb/chromium_ext/services/device/public/mojom/sysprop_render_observer.mojom";
+ import "services/device/public/mojom/time_zone_monitor.mojom";
+ import "services/device/public/mojom/usb_manager.mojom";
+ import "services/device/public/mojom/usb_manager_test.mojom";
+ import "services/device/public/mojom/vibration_manager.mojom";
+ import "services/device/public/mojom/wake_lock_provider.mojom";

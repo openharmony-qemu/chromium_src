@@ -1,0 +1,55 @@
+diff a/services/network/public/cpp/url_loader_completion_status_mojom_traits.cc b/services/network/public/cpp/url_loader_completion_status_mojom_traits.cc	(rejected hunks)
+@@ -2,13 +2,18 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "services/network/public/cpp/url_loader_completion_status_mojom_traits.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "mojo/public/cpp/base/time_mojom_traits.h"
+ #include "services/network/public/cpp/network_param_mojom_traits.h"
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++#include "arkweb/chromium_ext/services/network/public/cpp/navigation_info_mojom_traits.h"
++#endif
++
+ namespace mojo {
+ 
+ bool StructTraits<network::mojom::BlockedByResponseReasonWrapperDataView,
+                   network::mojom::BlockedByResponseReason>::
+     Read(network::mojom::BlockedByResponseReasonWrapperDataView data,
+@@ -28,17 +33,34 @@ bool StructTraits<network::mojom::URLLoaderCompletionStatusDataView,
+       !data.ReadBlockedByResponseReason(&out->blocked_by_response_reason) ||
+       !data.ReadResolveErrorInfo(&out->resolve_error_info)) {
+     return false;
+   }
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  if (!data.ReadNavigationInfo(&out->navigation_info)) {
++    return false;
++  }
++#endif
++
+   out->error_code = data.error_code();
+   out->extended_error_code = data.extended_error_code();
+   out->exists_in_cache = data.exists_in_cache();
+   out->encoded_data_length = data.encoded_data_length();
+   out->encoded_body_length = data.encoded_body_length();
+   out->decoded_body_length = data.decoded_body_length();
+   out->should_report_orb_blocking = data.should_report_orb_blocking();
+   out->should_collapse_initiator = data.should_collapse_initiator();
++#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
++  out->abort_due_to_cef_browser_destroyed = data.abort_due_to_cef_browser_destroyed();
++#endif  //  ARKWEB_EX_DOWNLOAD
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++  out->used_fallback_proxy = data.used_fallback_proxy();
++  out->needs_reload_with_fallback_proxy =
++      data.needs_reload_with_fallback_proxy();
++#endif
++#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
++  out->custom_error_code = data.custom_error_code();
++#endif
+   return true;
+ }
+ 
+ }  // namespace mojo

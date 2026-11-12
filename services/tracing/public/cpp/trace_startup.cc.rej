@@ -1,0 +1,16 @@
+diff a/services/tracing/public/cpp/trace_startup.cc b/services/tracing/public/cpp/trace_startup.cc	(rejected hunks)
+@@ -19,10 +19,14 @@
+ #include "services/tracing/public/cpp/trace_event_args_allowlist.h"
+ #include "services/tracing/public/cpp/trace_startup_config.h"
+ #include "services/tracing/public/cpp/tracing_features.h"
+ #include "third_party/perfetto/include/perfetto/tracing/track.h"
+ 
++#if BUILDFLAG(IS_ARKWEB) || BUILDFLAG(ARKWEB_DFX_TRACING)
++#include "arkweb/chromium_ext/base/trace_event/hitrace_export_oh.h"
++#endif
++
+ #if BUILDFLAG(IS_WIN)
+ #include "components/tracing/common/etw_export_win.h"
+ #endif
+ 
+ #if BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_IOS_TVOS)

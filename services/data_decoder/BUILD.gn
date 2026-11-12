@@ -4,6 +4,7 @@
 
 import("//build/config/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
+import("//arkweb/build/features/features.gni")
 
 source_set("lib") {
   # This target should only be depended upon by components that host a
@@ -103,6 +104,9 @@ source_set("xml_parser_fuzzer_deps") {
     "//third_party/libxml:libxml_utils",
     "//third_party/libxml:xml_reader",
   ]
+  if (arkweb_fuzz_compile_error_fix) {
+    public_deps += [ "//content/public/renderer:renderer" ]
+  }
 }
 
 fuzzer_test("xml_parser_fuzzer") {

@@ -1,0 +1,13 @@
+diff a/services/viz/public/cpp/compositing/compositor_frame_metadata_mojom_traits.h b/services/viz/public/cpp/compositing/compositor_frame_metadata_mojom_traits.h	(rejected hunks)
+@@ -22,10 +22,11 @@
+ #include "services/viz/public/cpp/compositing/surface_range_mojom_traits.h"
+ #include "services/viz/public/mojom/compositing/compositor_frame_metadata.mojom-shared.h"
+ #include "ui/gfx/mojom/delegated_ink_metadata_mojom_traits.h"
+ #include "ui/gfx/mojom/display_color_spaces_mojom_traits.h"
+ #include "ui/gfx/mojom/overlay_transform_mojom_traits.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace mojo {
+ 
+ template <>
+ struct StructTraits<viz::mojom::CompositorFrameMetadataDataView,

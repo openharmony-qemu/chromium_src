@@ -1,0 +1,22 @@
+diff a/services/viz/privileged/mojom/compositing/frame_sink_manager.mojom b/services/viz/privileged/mojom/compositing/frame_sink_manager.mojom	(rejected hunks)
+@@ -279,13 +321,20 @@ interface FrameSinkManagerClient {
+   // in the renderer process.
+   OnScreenshotCaptured(
+       blink.mojom.SameDocNavigationScreenshotDestinationToken destination_token,
+       CopyOutputResult copy_output_result);
+ 
++  // Send restore render fit callback to host client
++  [EnableIf=arkweb_maximize_resize]
++  RestoreRenderFit(uint32 client_id, uint32 sink_id);
++
+   // Called by Viz when the connection is established and the shared memory for
+   // touch state is available.
+   OnVizTouchStateAvailable(mojo_base.mojom.ReadOnlySharedMemoryRegion region);
++
++  [EnableIf=arkweb_rotate_resize]
++  ModifyRenderFit(int32 fitType, uint32 client_id, uint32 sink_id);
+ };
+ 
+ // Implemented by the GPU process (VizCompositorThread) and called from the
+ // browser process (CrBrowserMain thread). This allows the
+ // RenderInputRouterDelegate[Client] interface to use the same mojo pipe to

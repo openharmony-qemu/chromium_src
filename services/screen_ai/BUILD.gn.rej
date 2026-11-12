@@ -1,0 +1,14 @@
+diff a/services/screen_ai/BUILD.gn b/services/screen_ai/BUILD.gn	(rejected hunks)
+@@ -74,11 +74,11 @@ if (is_chromeos) {
+     # enable the diagnostic by removing this line.
+     configs += [ "//build/config/compiler:no_exit_time_destructors" ]
+   }
+ }
+ 
+-if (is_linux || is_chromeos) {
++if ((is_linux || is_chromeos || is_ohos) && !is_component_build) { # FIXME is_component_build
+   source_set("screen_ai_sandbox_hook") {
+     sources = [
+       "sandbox/screen_ai_sandbox_hook_linux.cc",
+       "sandbox/screen_ai_sandbox_hook_linux.h",
+     ]

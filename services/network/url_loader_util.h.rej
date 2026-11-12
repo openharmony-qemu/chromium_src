@@ -1,0 +1,21 @@
+diff a/services/network/url_loader_util.h b/services/network/url_loader_util.h	(rejected hunks)
+@@ -147,11 +150,18 @@ mojom::URLResponseHeadPtr BuildResponseHead(
+     bool load_with_storage_access,
+     bool is_load_timing_enabled,
+     bool include_load_timing_internal_info_with_response,
+     base::TimeTicks response_start,
+     const raw_ptr<mojom::DevToolsObserver> devtools_observer,
+-    const std::string& devtools_request_id);
++    const std::string& devtools_request_id
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD) || BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
++    , URLLoaderUtils* url_loader_utils
++#endif
++#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
++    , int32_t request_id
++#endif
++    );
+ 
+ }  // namespace url_loader_util
+ }  // namespace network
+ 
+ #endif  // SERVICES_NETWORK_URL_LOADER_UTIL_H_

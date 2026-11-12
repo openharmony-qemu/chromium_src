@@ -1,0 +1,13 @@
+diff a/services/device/public/cpp/generic_sensor/sensor_traits.cc b/services/device/public/cpp/generic_sensor/sensor_traits.cc	(rejected hunks)
+@@ -65,8 +84,11 @@ double GetSensorDefaultFrequency(mojom::SensorType type) {
+     case SensorType::RELATIVE_ORIENTATION_QUATERNION:
+       return SensorTraits<
+           SensorType::RELATIVE_ORIENTATION_QUATERNION>::kDefaultFrequency;
+     // No default so the compiler will warn us if a new type is added.
+   }
++#if BUILDFLAG(ARKWEB_SENSOR)
++  NOTREACHED() << "Unknown sensor type " << type;
++#endif
+ }
+ 
+ }  // namespace device

@@ -1,0 +1,69 @@
+diff a/content/browser/generic_sensor/frame_sensor_provider_proxy.cc b/content/browser/generic_sensor/frame_sensor_provider_proxy.cc	(rejected hunks)
+@@ -5,10 +5,11 @@
+ #include "content/browser/generic_sensor/frame_sensor_provider_proxy.h"
+ 
+ #include <vector>
+ 
+ #include "base/notreached.h"
++#include "arkweb/build/features/features.h"
+ #include "content/browser/renderer_host/render_frame_host_impl.h"
+ #include "content/public/browser/browser_context.h"
+ #include "content/public/browser/permission_controller.h"
+ #include "content/public/browser/permission_descriptor_util.h"
+ #include "content/public/browser/permission_request_description.h"
+@@ -76,10 +81,55 @@ void FrameSensorProviderProxy::GetSensor(device::mojom::SensorType type,
+     std::move(callback).Run(
+         device::mojom::SensorCreationResult::ERROR_NOT_ALLOWED, nullptr);
+     return;
+   }
+ 
++#if BUILDFLAG(ARKWEB_DEVTOOLS)
++  // If DevTools has created a virtual sensor override for the requested type
++  // (or a related type, e.g. QUATERNION for EULER_ANGLES requests), skip the
++  // SENSORS permission check. DevTools overrides are developer-initiated and
++  // should not be blocked by platform permission restrictions.
++  auto* web_contents_sensor_provider =
++      WebContentsSensorProviderProxy::GetOrCreate(
++          WebContents::FromRenderFrameHost(&render_frame_host()));
++
++  bool has_virtual_override = false;
++  if (web_contents_sensor_provider) {
++    has_virtual_override =
++        web_contents_sensor_provider->HasVirtualSensorOverrideForDevTools(type);
++    // EULER_ANGLES sensors are derived from QUATERNION sensors via
++    // PlatformSensorFusion. If the QUATERNION type has a virtual override,
++    // the EULER_ANGLES request should also bypass permission checks.
++    if (!has_virtual_override) {
++      switch (type) {
++        case SensorType::RELATIVE_ORIENTATION_EULER_ANGLES:
++          has_virtual_override =
++              web_contents_sensor_provider
++                  ->HasVirtualSensorOverrideForDevTools(
++                      SensorType::RELATIVE_ORIENTATION_QUATERNION);
++          break;
++        case SensorType::ABSOLUTE_ORIENTATION_EULER_ANGLES:
++          has_virtual_override =
++              web_contents_sensor_provider
++                  ->HasVirtualSensorOverrideForDevTools(
++                      SensorType::ABSOLUTE_ORIENTATION_QUATERNION);
++          break;
++        default:
++          break;
++      }
++    }
++  }
++
++  if (has_virtual_override) {
++    if (!scoped_observation_.IsObserving()) {
++      scoped_observation_.Observe(web_contents_sensor_provider);
++    }
++    web_contents_sensor_provider->GetSensor(type, std::move(callback));
++    return;
++  }
++#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
++
+   render_frame_host()
+       .GetBrowserContext()
+       ->GetPermissionController()
+       ->RequestPermissionFromCurrentDocument(
+           &render_frame_host(),

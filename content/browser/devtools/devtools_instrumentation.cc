@@ -2922,7 +2922,11 @@ void LogWorkletMessage(RenderFrameHostImpl& frame_host,
   // Manually trigger RenderFrameHostImpl::DidAddMessageToConsole, so that the
   // observer behavior aligns more with the observer behavior for the regular
   // devtools logging path from the renderer.
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+  frame_host.DidAddMessageToConsoleV2(log_level, blink::mojom::ConsoleMessageSource::kOther, base::UTF8ToUTF16(message),
+#else
   frame_host.DidAddMessageToConsole(log_level, base::UTF8ToUTF16(message),
+#endif
                                     /*line_no=*/0, /*source_id=*/{},
                                     /*untrusted_stack_trace=*/{});
 }
@@ -3124,3 +3128,7 @@ void DidStartNavigating(FrameTreeNode& ftn,
 }  // namespace devtools_instrumentation
 
 }  // namespace content
+
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+#include "arkweb/chromium_ext/content/browser/devtools/devtools_instrumentation_for_include.cc"
+#endif // ARKWEB_MEDIA_HLS

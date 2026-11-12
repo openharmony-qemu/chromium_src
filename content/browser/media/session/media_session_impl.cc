@@ -281,6 +281,9 @@ void MediaSessionImpl::WebContentsDestroyed() {
   normal_players_.clear();
   one_shot_players_.clear();
   ambient_players_.clear();
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  players_mute_state_.clear();
+#endif
 
   AbandonSystemAudioFocusIfNeeded();
 
@@ -532,6 +535,9 @@ bool MediaSessionImpl::AddPlayer(MediaSessionPlayerObserver* observer,
     // are suspended.
     if (old_audio_focus_state != State::ACTIVE) {
       normal_players_.clear();
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+      players_mute_state_.clear();
+#endif
     }
   } else if (audio_focus_state_ == State::INACTIVE) {
     // We switch from `INACTIVE` to `SUSPENDED` to indicate that we want to have
@@ -557,11 +563,26 @@ bool MediaSessionImpl::AddPlayer(MediaSessionPlayerObserver* observer,
 
 void MediaSessionImpl::RemovePlayer(MediaSessionPlayerObserver* observer,
                                     int player_id) {
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  bool has_normal_player = normal_players_.size() > 0;
+#endif // ARKWEB_MEDIA_AVSESSION
   const PlayerIdentifier identifier(observer, player_id);
   normal_players_.erase(identifier);
   one_shot_players_.erase(identifier);
   ambient_players_.erase(identifier);
   hidden_players_.erase(identifier);
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  players_mute_state_.erase(player_id);
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  if (has_normal_player && (normal_players_.size() == 0)) {
+    if (session_ohos_) {
+      session_ohos_->SetAvCast(false);
+    }
+    SetWebviewShow(false, false);
+  }
+#endif // ARKWEB_MEDIA_AVSESSION
 
   if (guarding_player_id_ && *guarding_player_id_ == identifier)
     ResetDurationUpdateGuard();
@@ -575,6 +596,9 @@ void MediaSessionImpl::RemovePlayer(MediaSessionPlayerObserver* observer,
 }
 
 void MediaSessionImpl::RemovePlayers(MediaSessionPlayerObserver* observer) {
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  bool has_normal_player = normal_players_.size() > 0;
+#endif // ARKWEB_MEDIA_AVSESSION
   std::erase_if(normal_players_, [observer](const auto& player) {
     return player.first.observer == observer;
   });
@@ -586,6 +610,12 @@ void MediaSessionImpl::RemovePlayers(MediaSessionPlayerObserver* observer) {
   base::EraseIf(ambient_players_, [observer](const auto& player) {
     return player.observer == observer;
   });
+
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  if (has_normal_player && (normal_players_.size() == 0)) {
+    SetWebviewShow(false, false);
+  }
+#endif // ARKWEB_MEDIA_AVSESSION
 
   if (guarding_player_id_ && guarding_player_id_->observer == observer)
     ResetDurationUpdateGuard();
@@ -641,6 +671,9 @@ void MediaSessionImpl::OnPlayerPaused(MediaSessionPlayerObserver* observer,
   // Otherwise, suspend the session.
   // The session might not have audio focus if it was paused prior to being
   // suspended, which is fine.
+  if (!pause_avcast_) {
+    implUtils_->DoEndSessionWhenHide();
+  }
   OnSuspendInternal(SuspendType::kContent, State::SUSPENDED);
 }
 
@@ -685,8 +718,10 @@ void MediaSessionImpl::RebuildAndNotifyMediaPositionChanged() {
     }
   }
 
-  if (position == position_)
+  if (position == position_) {
+    implUtils_->CheckPosition(position);
     return;
+  }
 
   position_ = position;
 
@@ -708,6 +743,11 @@ void MediaSessionImpl::RebuildAndNotifyMediaPositionChanged() {
 }
 
 void MediaSessionImpl::Resume(SuspendType suspend_type) {
+#if BUILDFLAG(ARKWEB_MEDIA)
+  if (!IsSuspended())
+    return;
+#endif
+
   // If the site has registered an action handler for play, we should pass it to
   // the site and let them handle it.
   if (suspend_type == SuspendType::kUI &&
@@ -936,6 +976,9 @@ void MediaSessionImpl::RemoveAllPlayersForTest() {
   normal_players_.clear();
   one_shot_players_.clear();
   ambient_players_.clear();
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  players_mute_state_.clear();
+#endif
   AbandonSystemAudioFocusIfNeeded();
 }
 
@@ -1998,6 +2041,8 @@ void MediaSessionImpl::RebuildAndNotifyMetadataChanged() {
   media_session::MediaMetadata metadata;
   BuildMetadata(metadata, artwork);
 
+  implUtils_->PushBackMediaImage(artwork);
+
   // If we have no artwork in |images_| or the arwork has changed then we should
   // update it with the latest artwork from the routed service.
   auto it = images_.find(MediaSessionImageType::kArtwork);
@@ -2077,6 +2122,7 @@ void MediaSessionImpl::BuildMetadata(
   if (metadata.title.empty()) {
     metadata.title = SanitizeMediaTitle(web_contents()->GetTitle());
   }
+  implUtils_->SetMediaTitle(metadata);
 
   ContentClient* content_client = GetContentClient();
   const GURL& url = web_contents()->GetLastCommittedURL();
@@ -2202,8 +2248,14 @@ std::vector<MediaAudioVideoState> MediaSessionImpl::GetMediaAudioVideoStates() {
          const PlayerIdentifier& player) {
         // If we have a routed frame then we should limit the players to the
         // frame so it is aligned with the media metadata.
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+        if (!player.observer ||
+            (routed_rfh && player.observer->render_frame_host() != routed_rfh))
+          return;
+#else
         if (routed_rfh && player.observer->render_frame_host() != routed_rfh)
           return;
+#endif
 
         const bool has_audio = player.observer->HasAudio(player.player_id);
         const bool has_video = player.observer->HasVideo(player.player_id);
@@ -2428,3 +2480,7 @@ PAGE_USER_DATA_KEY_IMPL(MediaSessionImpl::PageData);
 WEB_CONTENTS_USER_DATA_KEY_IMPL(MediaSessionImpl);
 
 }  // namespace content
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/media/session/media_session_impl_for_include.cc"
+#endif

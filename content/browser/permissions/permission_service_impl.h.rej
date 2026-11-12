@@ -1,0 +1,45 @@
+diff a/content/browser/permissions/permission_service_impl.h b/content/browser/permissions/permission_service_impl.h	(rejected hunks)
+@@ -47,10 +47,26 @@ class PermissionServiceImpl : public blink::mojom::PermissionService {
+       base::OnceCallback<void(blink::mojom::PermissionStatus)>;
+ 
+   class PendingRequest;
+   using RequestsMap = base::IDMap<std::unique_ptr<PendingRequest>>;
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_CLIPBOARD)
++  void HasPermissionAsync(blink::mojom::PermissionDescriptorPtr permission,
++                          PermissionStatusCallback callback);
++
++  // blink::mojom::PermissionService.
++  void RequestPermissionSync(blink::mojom::PermissionDescriptorPtr permission,
++                             bool user_gesture,
++                             PermissionStatusCallback callback) override;
++#endif  // ARKWEB_CLIPBOARD
++
++#if !BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_CLIPBOARD)
++  void RequestPermissionSync(blink::mojom::PermissionDescriptorPtr permission,
++                            bool user_gesture,
++                            PermissionStatusCallback callback) override {}
++#endif
++
+   // blink::mojom::PermissionService.
+   void HasPermission(blink::mojom::PermissionDescriptorPtr permission,
+                      PermissionStatusCallback callback) override;
+   void RegisterPageEmbeddedPermissionControl(
+       std::vector<blink::mojom::PermissionDescriptorPtr> permissions,
+@@ -83,11 +99,16 @@ class PermissionServiceImpl : public blink::mojom::PermissionService {
+                            bool is_added) override;
+ 
+   void RequestPermissionsInternal(
+       BrowserContext* browser_context,
+       PermissionRequestDescription request_description,
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++      RequestPermissionsCallback callback,
++      bool permissions_policy_verification = true);
++#else      
+       RequestPermissionsCallback callback);
++#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)      
+ 
+   void OnRequestPermissionsResponse(
+       int pending_request_id,
+       const std::vector<PermissionResult>& result);
+ 

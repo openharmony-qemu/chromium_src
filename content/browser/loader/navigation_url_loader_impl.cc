@@ -131,6 +131,12 @@
 #include "content/public/browser/plugin_service.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "base/base_switches.h"
+#include "content/browser/web_contents/web_contents_impl.h"
+#include "content/public/browser/web_contents.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -290,6 +296,11 @@ std::unique_ptr<network::ResourceRequest> CreateResourceRequest(
   if (request_info.is_outermost_main_frame) {
     load_flags |= net::LOAD_MAIN_FRAME_DEPRECATED;
     load_flags |= net::LOAD_CAN_USE_RESTRICTED_PREFETCH_FOR_MAIN_FRAME;
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+    if(frame_tree_node->navigation_request()->load_ignore_cache_params){
+      load_flags |= net::LOAD_IGNORE_CACHE_CONTROL;
+    }
+#endif
   }
 
   if (URLLoaderFactoryParamsHelper::IsMainFrameOriginRecentlyAccessed(
@@ -1546,7 +1557,13 @@ void NavigationURLLoaderImpl::OnReceiveResponse(
   // When a plugin intercepted the response, we don't want to download it.
   bool is_download =
       !head->intercepted_by_plugin && (must_download || !known_mime_type);
-
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  LOG_FEEDBACK(INFO, kNavigation)
+      << "OnReceiveResponse isDownload:" << is_download
+      << " mustDownload:" << must_download
+      << " knownMimeType:" << known_mime_type << " mimeType:" << head->mime_type
+      << " url:" << url::LogUtils::ConvertUrlWithMask(url_.spec());
+#endif
   CallOnReceivedResponse(std::move(head),
                          std::move(url_loader_client_endpoints), is_download);
 }
@@ -2270,7 +2287,11 @@ NavigationURLLoaderImpl::CreateTerminalNonNetworkLoaderFactory(
     return DataURLLoaderFactory::Create();
   }
 
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
+  if (url.GetScheme() == url::kFileScheme || url.GetScheme() == url::kResourcesScheme) {
+#else
   if (url.GetScheme() == url::kFileScheme) {
+#endif
     // USER_BLOCKING because this scenario is exactly one of the examples
     // given by the doc comment for USER_BLOCKING:
     // Loading and rendering a web page after the user clicks a link.

@@ -1,0 +1,13 @@
+diff a/content/browser/browser_context.cc b/content/browser/browser_context.cc	(rejected hunks)
+@@ -13,10 +13,11 @@
+ #include <optional>
+ #include <unordered_set>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/base64.h"
+ #include "base/check_op.h"
+ #include "base/command_line.h"
+ #include "base/files/file_path.h"
+ #include "base/functional/bind.h"

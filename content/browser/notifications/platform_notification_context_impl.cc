@@ -2,6 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "arkweb/chromium_ext/content/browser/notifications/blink_notification_service_impl_ext.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "content/browser/notifications/platform_notification_context_impl.h"
 
 #include <set>

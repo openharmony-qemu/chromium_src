@@ -10,6 +10,8 @@
 #include "base/containers/flat_set.h"
 #include "base/memory/raw_ptr.h"
 #include "base/observer_list.h"
+#include "arkweb/build/features/features.h"
+#include "build/buildflag.h"
 #include "content/common/content_export.h"
 #include "content/public/browser/web_contents_user_data.h"
 #include "mojo/public/cpp/bindings/remote.h"

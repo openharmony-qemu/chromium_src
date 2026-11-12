@@ -58,6 +58,9 @@ class CONTENT_EXPORT FileSystemChooser : public ui::SelectFileDialog::Listener {
     const std::u16string& title() const { return title_; }
     const base::FilePath& default_path() const { return default_path_; }
     int default_file_type_index() const { return default_file_type_index_; }
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+    void set_start_in(std::u16string start_in) { file_types_.start_in = start_in; }
+#endif
 
    private:
     base::FilePath ResolveSuggestedNameExtension(

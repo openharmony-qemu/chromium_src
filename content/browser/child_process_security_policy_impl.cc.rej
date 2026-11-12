@@ -1,0 +1,61 @@
+diff a/content/browser/child_process_security_policy_impl.cc b/content/browser/child_process_security_policy_impl.cc
+--- a/content/browser/child_process_security_policy_impl.cc
++++ b/content/browser/child_process_security_policy_impl.cc
+@@ -9,10 +9,11 @@
+ #include <string_view>
+ #include <tuple>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/command_line.h"
+ #include "base/containers/contains.h"
+ #include "base/debug/crash_logging.h"
+ #include "base/debug/dump_without_crashing.h"
+ #include "base/feature_list.h"
+@@ -61,10 +62,14 @@
+ #include "third_party/blink/public/common/features.h"
+ #include "url/gurl.h"
+ #include "url/url_canon.h"
+ #include "url/url_constants.h"
+ 
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++#include "url/ohos/log_utils.h"
++#endif
++
+ namespace features {
+ 
+ // TODO(https://crbug.com/324934416): Remove this killswitch once the new
+ // CanCommitURL restrictions finish rolling out.
+ BASE_FEATURE(kAdditionalNavigationCommitChecks,
+@@ -1955,10 +1960,16 @@ bool ChildProcessSecurityPolicyImpl::CanAccessOrigin(int child_id,
+       // browser-initiated navigations to data: URLs) and fix them so we have
+       // precursor information (or the process lock is compatible with a missing
+       // precursor). Remove this logic once that has been completed.
+       base::AutoLock lock(lock_);
+       SecurityState* security_state = GetSecurityState(child_id);
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++      if (!security_state) {
++        LOG(URL) << "percursor_tuple is invalid and donn't found a valid "
++                 << "security state" << origin.GetDebugString();
++      }
++#endif
+       return !!security_state;
+     } else {
+       url_to_check = precursor_tuple.GetURL();
+     }
+   } else {
+@@ -1972,10 +1983,13 @@ bool ChildProcessSecurityPolicyImpl::CanAccessOrigin(int child_id,
+ 
+   // Note: LogCanAccessDataForOriginCrashKeys() is called in the
+   // CanAccessDataForOrigin() call above. The code below overrides the origin
+   // crash key set in that call with data from |origin| because it provides
+   // more accurate information than the origin derived from |url_to_check|.
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++  LOG(URL) << "Can not access data for origin " << origin.GetDebugString();
++#endif
+   auto* requested_origin_key = GetRequestedOriginCrashKey();
+   base::debug::SetCrashKeyString(requested_origin_key, origin.GetDebugString());
+   return false;
+ }
+ 

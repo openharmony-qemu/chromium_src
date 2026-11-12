@@ -1,0 +1,35 @@
+diff a/content/browser/network_service_instance_impl.cc b/content/browser/network_service_instance_impl.cc	(rejected hunks)
+@@ -146,11 +151,15 @@ network::NetworkService* g_in_process_instance = nullptr;
+ 
+ static NetworkServiceClient* g_client = nullptr;
+ 
+ void CreateInProcessNetworkServiceOnThread(
+     mojo::PendingReceiver<network::mojom::NetworkService> receiver) {
++#if BUILDFLAG(IS_ARKWEB)
++  g_in_process_instance = new network::ArkWebNetworkServiceExt(
++#else
+   g_in_process_instance = new network::NetworkService(
++#endif
+       nullptr /* registry */, std::move(receiver),
+       true /* delay_initialization_until_set_client */);
+ }
+ 
+ // A utility function to make it clear what behavior is expected by the network
+@@ -324,10 +333,17 @@ void CreateInProcessNetworkService(
+       options.thread_type = base::ThreadType::kDisplayCritical;
+     }
+ #endif  // BUILDFLAG(IS_ANDROID)
+     GetNetworkServiceDedicatedThread().StartWithOptions(std::move(options));
+     task_runner = GetNetworkServiceDedicatedThread().task_runner();
++#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
++    using namespace OHOS::NWeb;
++    ResSchedClientAdapter::ReportKeyThread(
++        ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
++        GetNetworkServiceDedicatedThread().GetThreadId().raw(),
++        ResSchedRoleAdapter::USER_INTERACT);
++#endif
+     task_runner->PostTask(
+         FROM_HERE, base::BindOnce([]() {
+           mojo::InterfaceEndpointClient::SetThreadNameSuffixForMetrics(
+               "NetworkService");
+ #if BUILDFLAG(IS_ANDROID)

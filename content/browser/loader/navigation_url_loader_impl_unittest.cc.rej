@@ -1,0 +1,20 @@
+diff a/content/browser/loader/navigation_url_loader_impl_unittest.cc b/content/browser/loader/navigation_url_loader_impl_unittest.cc	(rejected hunks)
+@@ -195,12 +199,16 @@ class NavigationURLLoaderImplTest : public testing::Test {
+             std::nullopt /* initiator_document_token */,
+             GlobalRenderFrameHostId() /* previous_render_frame_host_id */,
+             nullptr /* serving_page_metrics_container */,
+             false /* allow_cookies_from_browser */, 0 /* navigation_id */,
+             false /* shared_storage_writable */,
+-            is_ad_tagged /* is_ad_tagged */,
+-            false /* force_no_https_upgrade */));
++            is_ad_tagged /* is_ad_tagged */, false /* force_no_https_upgrade */
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++            ,
++            false /*retry_with_fallback_proxy*/, 0 /*orginal_error_code*/
++#endif
++            ));
+ 
+     return std::make_unique<NavigationURLLoaderImpl>(
+         browser_context_.get(), browser_context_->GetDefaultStoragePartition(),
+         std::move(request_info), nullptr /* navigation_ui_data */,
+         nullptr /* service_worker_handle */,

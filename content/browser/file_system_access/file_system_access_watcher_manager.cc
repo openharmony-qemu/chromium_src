@@ -432,8 +432,14 @@ void FileSystemAccessWatcherManager::DidInitializeSource(
         });
   }
 
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+  size_t source_current_usage = source ? source->current_usage() : 0;
+  std::move(on_source_initialized)
+      .Run(std::move(result), source_current_usage);
+#else
   std::move(on_source_initialized)
       .Run(std::move(result), source->current_usage());
+#endif
 }
 
 FileSystemAccessObserverQuotaManager::Handle

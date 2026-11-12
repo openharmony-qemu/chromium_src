@@ -1,0 +1,18 @@
+diff a/content/browser/media/audio_input_stream_broker.cc b/content/browser/media/audio_input_stream_broker.cc	(rejected hunks)
+@@ -48,10 +48,16 @@ AudioInputStreamBroker::AudioInputStreamBroker(
+       shared_memory_count_(shared_memory_count),
+       enable_agc_(enable_agc),
+       deleter_(std::move(deleter)),
+       processing_config_(std::move(processing_config)),
+       renderer_factory_client_(std::move(renderer_factory_client)) {
++#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
++  media::AudioParameters preParams = params;
++  preParams.set_render_process_id(render_process_id);
++  preParams.set_render_frame_id(render_frame_id);
++  params_ = preParams;
++#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+   DCHECK_CURRENTLY_ON(BrowserThread::IO);
+   DCHECK(renderer_factory_client_);
+   DCHECK(deleter_);
+   TRACE_EVENT_BEGIN("audio", "AudioInputStreamBroker",
+                     perfetto::Track::FromPointer(this));

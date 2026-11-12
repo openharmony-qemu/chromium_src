@@ -1,0 +1,14 @@
+diff a/content/browser/devtools/devtools_agent_host_impl.h b/content/browser/devtools/devtools_agent_host_impl.h	(rejected hunks)
+@@ -119,10 +119,12 @@ class CONTENT_EXPORT DevToolsAgentHostImpl : public DevToolsAgentHost {
+   virtual protocol::TargetAutoAttacher* auto_attacher();
+   virtual std::string GetSubtype();
+ 
+   base::ProcessId GetProcessId() const { return process_id_; }
+ 
++  DevToolsSession* GetSessionByIdForTesting(const std::string& session_id);
++
+  protected:
+   explicit DevToolsAgentHostImpl(const std::string& id);
+   ~DevToolsAgentHostImpl() override;
+ 
+   static bool ShouldForceCreation();

@@ -98,6 +98,8 @@ bool DeviceHasEnoughMemoryForPrerender() {
   static constexpr int kDefaultMemoryThresholdMb =
 #if BUILDFLAG(IS_ANDROID)
       1700;
+#elif BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      1700;
 #else
       0;
 #endif

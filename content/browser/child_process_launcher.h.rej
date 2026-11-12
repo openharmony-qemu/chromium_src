@@ -1,0 +1,15 @@
+diff a/content/browser/child_process_launcher.h b/content/browser/child_process_launcher.h	(rejected hunks)
+@@ -98,10 +98,13 @@ struct RenderProcessPriority {
+                         bool boost_for_discard,
+ #if BUILDFLAG(IS_ANDROID)
+                         bool is_spare_renderer,
+                         ChildProcessImportance importance
+ #else
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
++                        base::TimeTicks background_time,
++#endif
+                         std::optional<base::Process::Priority> priority_override
+ #endif
+   );
+ 
+   RenderProcessPriority(const RenderProcessPriority&);

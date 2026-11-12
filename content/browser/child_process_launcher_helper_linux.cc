@@ -109,7 +109,11 @@ ChildProcessLauncherHelper::LaunchProcessOnLauncherThread(
     process.process = base::Process(handle);
     process.zygote = zygote_handle;
   } else {
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
+    arkweb_child_process_launcher_helper_utils_->LaunchChildProcess(command_line(), options, process);
+#else
     process.process = base::LaunchProcess(*command_line(), *options);
+#endif
     *launch_result = process.process.IsValid() ? LAUNCH_RESULT_SUCCESS
                                                : LAUNCH_RESULT_FAILURE;
   }
@@ -139,6 +143,10 @@ ChildProcessTerminationInfo ChildProcessLauncherHelper::GetTerminationInfo(
   if (process.zygote) {
     info.status = process.zygote->GetTerminationStatus(
         process.process.Handle(), known_dead, &info.exit_code);
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
+  } if (app_mgr_client_adapter_) {
+  arkweb_child_process_launcher_helper_utils_->GetTerminationInfoArkweb(process.process, known_dead, info);
+#endif
   } else if (known_dead) {
     info.status = base::GetKnownDeadTerminationStatus(process.process.Handle(),
                                                       &info.exit_code);

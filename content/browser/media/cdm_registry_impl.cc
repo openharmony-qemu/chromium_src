@@ -35,6 +35,10 @@
 #include "media/base/android/media_drm_bridge.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+#include "content/browser/media/key_system_support_ohos.h"
+#endif
+
 #if BUILDFLAG(IS_WIN)
 #include "content/browser/gpu/gpu_data_manager_impl.h"
 #include "content/browser/media/key_system_support_win.h"

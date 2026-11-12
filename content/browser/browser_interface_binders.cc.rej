@@ -1,0 +1,173 @@
+diff a/content/browser/browser_interface_binders.cc b/content/browser/browser_interface_binders.cc	(rejected hunks)
+@@ -252,10 +252,34 @@
+ #if BUILDFLAG(IS_FUCHSIA)
+ #include "content/browser/renderer_host/media/fuchsia_media_cdm_provider_impl.h"
+ #include "media/mojo/mojom/fuchsia_media.mojom.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
++#include "content/browser/ohos/date_time_chooser_ohos.h"
++#endif  // BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
++
++#if BUILDFLAG(ARKWEB_CRASHPAD)
++#include "arkweb/chromium_ext/content/browser/dfx/dfx_reporter_browser_impl.h"
++#endif
++
++#if BUILDFLAG(ARKWEB_JSHEAP_DUMP)
++#include "arkweb/chromium_ext/v8/heap_dump/mojom_impl/chunk_writer_browser_impl.h"
++#endif
++
++#if BUILDFLAG(ARKWEB_AI)
++#include "arkweb/chromium_ext/content/browser/ai/echo_ai_manager_ohos.h"
++#endif
++
++#if BUILDFLAG(ARKWEB_V8_OOM_MONITOR)
++#include "arkweb/chromium_ext/v8/dfx/oom_mojom/v8_oom_reporter_browser_impl.h"
++#endif
++
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
++#include "arkweb/chromium_ext/content/browser/blank_screen_monitor_host_impl.h"
++#endif
++
+ namespace blink {
+ class StorageKey;
+ }  // namespace blink
+ 
+ namespace content {
+@@ -365,10 +389,22 @@ void BindTextSuggestionHostForFrame(
+ 
+   view->text_suggestion_host()->BindTextSuggestionHost(std::move(receiver));
+ }
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
++void BindDateTimeChooserForFrame(
++    RenderFrameHost* host,
++    mojo::PendingReceiver<blink::mojom::DateTimeChooser> receiver) {
++  auto* date_time_chooser = DateTimeChooserOHOS::FromWebContents(
++      WebContents::FromRenderFrameHost(host));
++  if (date_time_chooser) {
++    date_time_chooser->OnDateTimeChooserReceiver(std::move(receiver));
++  }
++}
++#endif  // ARKWEB_CSS_INPUT_TIME
++
+ // Get the service worker's worker process ID and post a task to bind the
+ // receiver on a USER_VISIBLE task runner.
+ // This is necessary because:
+ // - Binding the host itself and checking the ID on the task's thread may cause
+ //   a UAF if the host has been deleted in the meantime.
+@@ -849,11 +885,12 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
+ 
+   map->Add<media::mojom::InterfaceFactory>(base::BindRepeating(
+       &RenderFrameHostImpl::BindMediaInterfaceFactoryReceiver,
+       base::Unretained(host)));
+ 
+-#if BUILDFLAG(ENABLE_LIBRARY_CDMS) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(ENABLE_LIBRARY_CDMS) || BUILDFLAG(IS_WIN) || \
++    BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_ENABLE_CDM)
+   map->Add<media::mojom::KeySystemSupport>(
+       base::BindRepeating(&RenderFrameHostImpl::BindKeySystemSupportReceiver,
+                           base::Unretained(host)));
+ #endif
+ 
+@@ -969,16 +1006,34 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
+ 
+   map->Add<blink::mojom::NonAssociatedLocalFrameHost>(
+       base::BindRepeating(&RenderFrameHostImpl::BindNonAssociatedLocalFrameHost,
+                           base::Unretained(host)));
+ 
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
++  map->Add<blank_screen::mojom::BlankScreenMonitorHost>(
++      base::BindRepeating(
++          [](mojo::PendingReceiver<blank_screen::mojom::BlankScreenMonitorHost>
++                 receiver) {
++            BlankScreenMonitorHostImpl::ProcessPendingReceiver(
++                std::move(receiver));
++          }));
++#endif
++
+   map->Add<blink::mojom::AIManager>(base::BindRepeating(
+       [](ContentBrowserClient* browser_client, RenderFrameHostImpl* host,
+          mojo::PendingReceiver<blink::mojom::AIManager> receiver) {
++#if BUILDFLAG(ARKWEB_AI)
++        auto* manager = EchoAIManagerOHOS::FromWebContents(
++            WebContents::FromRenderFrameHost(host));
++        if (manager) {
++          manager->AddReceiver(std::move(receiver));
++        }
++#else
+         browser_client->BindAIManager(host->GetBrowserContext(),
+                                       &host->document_associated_data(), host,
+                                       std::move(receiver));
++#endif
+       },
+       base::Unretained(GetContentClient()->browser()), base::Unretained(host)));
+ 
+ #if BUILDFLAG(IS_FUCHSIA)
+   map->Add<media::mojom::FuchsiaMediaCodecProvider>(
+@@ -988,14 +1043,22 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
+ 
+   if (base::FeatureList::IsEnabled(blink::features::kTranslationAPI)) {
+     map->Add<blink::mojom::TranslationManager>(base::BindRepeating(
+         [](RenderFrameHostImpl* host,
+            mojo::PendingReceiver<blink::mojom::TranslationManager> receiver) {
++#if BUILDFLAG(ARKWEB_AI)
++          auto* manager = EchoAIManagerOHOS::FromWebContents(
++              WebContents::FromRenderFrameHost(host));
++          if (manager) {
++            manager->AddReceiver(std::move(receiver));
++          }
++#else
+           GetContentClient()->browser()->BindTranslationManager(
+               host->GetProcess(), host->GetBrowserContext(),
+               &host->document_associated_data(), host->GetLastCommittedOrigin(),
+               std::move(receiver));
++#endif
+         },
+         base::Unretained(host)));
+   }
+ 
+   if (base::FeatureList::IsEnabled(blink::features::kLanguageDetectionAPI)) {
+@@ -1009,10 +1072,28 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
+                   host->GetBrowserContext(), &host->document_associated_data(),
+                   std::move(receiver));
+             },
+             base::Unretained(host)));
+   }
++
++#if BUILDFLAG(ARKWEB_CRASHPAD)
++  map->Add<dfx::mojom::DfxReporter>(base::BindRepeating(
++      [](RenderFrameHostImpl *host,
++         mojo::PendingReceiver<dfx::mojom::DfxReporter> receiver) {
++        DfxReporterImpl::ProcessPendingReceiver(receiver);
++      },
++      host));
++#endif
++
++#if BUILDFLAG(ARKWEB_V8_OOM_MONITOR)
++  map->Add<v8_oom::mojom::V8OOMReporter>(base::BindRepeating(
++      [](RenderFrameHostImpl* host,
++         mojo::PendingReceiver<v8_oom::mojom::V8OOMReporter> receiver) {
++        V8OOMReporterImpl::ProcessPendingReceiver(receiver);
++      },
++      host));
++#endif
+ }
+ 
+ void PopulateBinderMapWithContext(
+     RenderFrameHostImpl* host,
+     mojo::BinderMapWithContext<RenderFrameHost*>* map) {
+@@ -1028,11 +1109,11 @@ void PopulateBinderMapWithContext(
+       &EmptyBinderForFrame<blink::mojom::AnchorElementMetricsHost>);
+   map->Add<blink::mojom::CredentialManager>(
+       &EmptyBinderForFrame<blink::mojom::CredentialManager>);
+   map->Add<blink::mojom::LCPCriticalPathPredictorHost>(
+       &EmptyBinderForFrame<blink::mojom::LCPCriticalPathPredictorHost>);
+-  // Currently defined in content/shell/common/shell_switches.h which we cannot
++   // Currently defined in content/shell/common/shell_switches.h which we cannot
+   // have a DEPS on.
+   constexpr char kExposeInternalsForTesting[] = "expose-internals-for-testing";
+   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+           kExposeInternalsForTesting)) {
+     map->Add<blink::mojom::FrameWidgetHost>(base::BindRepeating(

@@ -64,6 +64,10 @@ std::unique_ptr<FlingingRenderer> FlingingRenderer::Create(
 // media::Renderer implementation
 void FlingingRenderer::Initialize(media::MediaResource* media_resource,
                                   media::RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                  media::RequestSurfaceCB request_surface_cb,
+                                  media::VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                                   media::PipelineStatusCallback init_cb) {
   DVLOG(2) << __func__;
   client_ = client;

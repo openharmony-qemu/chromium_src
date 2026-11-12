@@ -1,0 +1,43 @@
+diff a/content/browser/interest_group/interest_group_auction.cc b/content/browser/interest_group/interest_group_auction.cc
+--- a/content/browser/interest_group/interest_group_auction.cc
++++ b/content/browser/interest_group/interest_group_auction.cc
+@@ -1638,20 +1638,29 @@ class InterestGroupAuction::BuyerHelper
+                                                trusted_signals_fetch_latency);
+     auction_->HandleUpdateIfOlderThan(interest_group.owner, interest_group.name,
+                                       update_if_older_than);
+     std::optional<double> new_priority;
+     if (!priority_vector.empty()) {
+-      new_priority = CalculateInterestGroupPriority(
+-          *auction_->config_, *(state->bidder), auction_->auction_start_time_,
+-          priority_vector,
+-          (interest_group.priority_vector &&
+-           !interest_group.priority_vector->empty())
+-              ? state->calculated_priority
+-              : std::optional<double>());
+-      if (*new_priority < 0) {
+-        auction_->auction_metrics_recorder_
+-            ->RecordBidFilteredDuringReprioritization();
++      bool valid_priority_vector = true;
++      for (const auto& [unused_signal_name, value] : priority_vector) {
++        if (!std::isfinite(value)) {
++          valid_priority_vector = false;
++          break;
++        }
++      }
++      if (valid_priority_vector) {
++        new_priority = CalculateInterestGroupPriority(
++            *auction_->config_, *(state->bidder), auction_->auction_start_time_,
++            priority_vector,
++            (interest_group.priority_vector &&
++             !interest_group.priority_vector->empty())
++                ? state->calculated_priority
++                : std::optional<double>());
++        if (*new_priority < 0) {
++          auction_->auction_metrics_recorder_
++              ->RecordBidFilteredDuringReprioritization();
++        }
+       }
+     }
+     OnBiddingSignalsReceivedInternal(state, new_priority,
+                                      std::move(resume_generate_bid_callback));
+   }

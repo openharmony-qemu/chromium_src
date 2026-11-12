@@ -1,0 +1,30 @@
+diff a/content/browser/browser_process_io_thread.cc b/content/browser/browser_process_io_thread.cc	(rejected hunks)
+@@ -27,19 +27,28 @@
+ 
+ #if BUILDFLAG(IS_WIN)
+ #include "base/win/scoped_com_initializer.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
++#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
++#endif
++using namespace OHOS::NWeb;
+ namespace content {
+ 
+ BrowserProcessIOThread::BrowserProcessIOThread()
+     : base::Thread(BrowserThreadImpl::GetThreadName(BrowserThread::IO)) {
+   // Not bound to creation thread.
+   DETACH_FROM_THREAD(browser_thread_checker_);
+ }
+ 
+ BrowserProcessIOThread::~BrowserProcessIOThread() {
++#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
++  ResSchedClientAdapter::ReportKeyThread(
++      ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentProcId(),
++      GetThreadId().raw(), ResSchedRoleAdapter::USER_INTERACT);
++#endif
+   Stop();
+ }
+ 
+ void BrowserProcessIOThread::RegisterAsBrowserThread() {
+   DCHECK(IsRunning());

@@ -258,6 +258,10 @@ void NetworkServiceClient::OnSSLCertificateError(
     int net_error,
     const net::SSLInfo& ssl_info,
     bool fatal,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    const GURL& origin_url,
+    const std::string& referrer,
+#endif
     OnSSLCertificateErrorCallback response) {
   std::move(response).Run(net_error);
 }

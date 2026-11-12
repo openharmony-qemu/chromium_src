@@ -37,10 +37,15 @@
 #include "mojo/public/cpp/bindings/pending_associated_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/device/public/mojom/wake_lock.mojom.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/android/view_android.h"
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+#include "content/public/browser/navigation_handle.h"
+#include "content/public/browser/navigation_entry.h"
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
 namespace blink {
 enum class WebFullscreenVideoStatus;
@@ -174,6 +179,10 @@ class CONTENT_EXPORT MediaWebContentsObserver
   mojo::AssociatedRemote<media::mojom::MediaPlayer>& GetMediaPlayerRemote(
       const MediaPlayerId& player_id);
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  bool IsPlayerIdInMediaPlayerRemotesMap(const MediaPlayerId& player_id);
+#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+
   // Creates a new MediaPlayerObserverHostImpl associated to |player_id| if
   // needed, and then passes |player_receiver| to it to establish a
   // communication channel.
@@ -188,6 +197,30 @@ class CONTENT_EXPORT MediaWebContentsObserver
   // be suspended.
   void SuspendAllMediaPlayers();
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  void RequestEnterFullscreen(const MediaPlayerId& player_id);
+  void RequestExitFullscreen(const MediaPlayerId& player_id);
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  bool IsMediaPlaying(const MediaPlayerId& player_id);
+  void SetPlaybackRate(double playback_rate, const MediaPlayerId& player_id);
+  void RequestFullScreen(bool enable, const MediaPlayerId& player_id);
+  void RequestDownloadUrl(const MediaPlayerId& player_id);
+  void HidePlaybackSpeedList(const MediaPlayerId& player_id);
+  void SetVolume(double volume, const MediaPlayerId& player_id);
+  double GetVolume(const MediaPlayerId& player_id);
+  void RequestAVCastStarted(bool enable, const MediaPlayerId& player_id);
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_PIP)
+  MediaPlayerId GetMediaPlayerId(
+    int delegate_id, int child_id, int frame_routing_id, bool& status);
+#endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+    void DidFinishNavigation(NavigationHandle* navigation_handle) override;
+    void NotifyRemoteExitFullScreen();
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
  protected:
   MediaSessionControllersManager* session_controllers_manager() {
     return session_controllers_manager_.get();
@@ -219,6 +252,10 @@ class CONTENT_EXPORT MediaWebContentsObserver
         mojo::PendingAssociatedReceiver<media::mojom::MediaPlayerObserver>
             media_player_observer,
         int32_t player_id) override;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    void RequestVideoAssistantConfig(
+        RequestVideoAssistantConfigCallback callback) override;
+#endif // ARKWEB_VIDEO_ASSISTANT
 
    private:
     GlobalRenderFrameHostId frame_routing_id_;
@@ -243,11 +280,19 @@ class CONTENT_EXPORT MediaWebContentsObserver
     // media::mojom::MediaPlayerObserver implementation.
     void OnMediaPlaying() override;
     void OnMediaPaused(bool stream_ended) override;
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+    void OnMediaPlayerGone() override;
+#endif
     void OnMutedStatusChanged(bool muted) override;
     void OnMediaMetadataChanged(
         bool has_audio,
         bool has_video,
         media::MediaContentType media_content_type) override;
+
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+    void OnEndAVSession(bool is_hidden) override;
+#endif // ARKWEB_MEDIA_AVSESSION
+
     void OnMediaPositionStateChanged(
         const media_session::MediaPosition& media_position) override;
     void OnMediaEffectivelyFullscreenChanged(
@@ -283,6 +328,10 @@ class CONTENT_EXPORT MediaWebContentsObserver
     bool uses_audio_service_ = true;
     std::unique_ptr<AudioStreamMonitor::AudibleClientRegistration>
         audio_client_registration_;
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    std::unique_ptr<MediaPlayerListener> media_player_listener_;
+#endif // ARKWEB_VIDEO_ASSISTANT
 
     base::WeakPtrFactory<MediaPlayerObserverHostImpl> weak_factory_{this};
   };

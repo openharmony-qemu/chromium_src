@@ -1,0 +1,64 @@
+diff a/content/browser/network/cross_origin_embedder_policy_reporter.cc b/content/browser/network/cross_origin_embedder_policy_reporter.cc	(rejected hunks)
+@@ -7,25 +7,19 @@
+ #include <string_view>
+ 
+ #include "base/values.h"
+ #include "content/public/browser/storage_partition.h"
+ #include "services/network/public/cpp/request_destination.h"
++#include "services/network/public/cpp/url_util.h"
+ #include "services/network/public/mojom/network_context.mojom.h"
+ 
+ namespace content {
+ 
+ namespace {
+ 
+ constexpr char kType[] = "coep";
+ 
+-GURL StripUsernameAndPassword(const GURL& url) {
+-  GURL::Replacements replacements;
+-  replacements.ClearUsername();
+-  replacements.ClearPassword();
+-  return url.ReplaceComponents(replacements);
+-}
+-
+ }  // namespace
+ 
+ CrossOriginEmbedderPolicyReporter::CrossOriginEmbedderPolicyReporter(
+     base::WeakPtr<StoragePartition> storage_partition,
+     const GURL& context_url,
+@@ -53,11 +47,11 @@ void CrossOriginEmbedderPolicyReporter::set_reporting_source(
+ 
+ void CrossOriginEmbedderPolicyReporter::QueueCorpViolationReport(
+     const GURL& blocked_url,
+     network::mojom::RequestDestination destination,
+     bool report_only) {
+-  GURL url_to_pass = StripUsernameAndPassword(blocked_url);
++  GURL url_to_pass = network::SerializeResponseUrlForReporting(blocked_url);
+   QueueAndNotify(
+       {std::make_pair("type", "corp"),
+        std::make_pair("blockedURL", url_to_pass.spec()),
+        std::make_pair("destination",
+                       network::RequestDestinationToString(destination))},
+@@ -70,20 +64,20 @@ void CrossOriginEmbedderPolicyReporter::BindObserver(
+ }
+ 
+ void CrossOriginEmbedderPolicyReporter::QueueNavigationReport(
+     const GURL& blocked_url,
+     bool report_only) {
+-  GURL url_to_pass = StripUsernameAndPassword(blocked_url);
++  GURL url_to_pass = network::SerializeResponseUrlForReporting(blocked_url);
+   QueueAndNotify({std::make_pair("type", "navigation"),
+                   std::make_pair("blockedURL", url_to_pass.spec())},
+                  report_only);
+ }
+ 
+ void CrossOriginEmbedderPolicyReporter::QueueWorkerInitializationReport(
+     const GURL& blocked_url,
+     bool report_only) {
+-  GURL url_to_pass = StripUsernameAndPassword(blocked_url);
++  GURL url_to_pass = network::SerializeResponseUrlForReporting(blocked_url);
+   QueueAndNotify({std::make_pair("type", "worker initialization"),
+                   std::make_pair("blockedURL", url_to_pass.spec())},
+                  report_only);
+ }
+ 

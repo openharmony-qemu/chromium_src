@@ -31,6 +31,7 @@ namespace content {
 
 struct NotificationDatabaseData;
 class PlatformNotificationContextImpl;
+class BlinkNotificationServiceImplExt;
 
 // Implementation of the NotificationService used for Web Notifications. Is
 // responsible for displaying, updating and reading of both non-persistent
@@ -39,6 +40,8 @@ class PlatformNotificationContextImpl;
 class CONTENT_EXPORT BlinkNotificationServiceImpl
     : public blink::mojom::NotificationService {
  public:
+  friend class BlinkNotificationServiceImplExt;
+
   BlinkNotificationServiceImpl(
       PlatformNotificationContextImpl* notification_context,
       BrowserContext* browser_context,
@@ -55,6 +58,12 @@ class CONTENT_EXPORT BlinkNotificationServiceImpl
       delete;
 
   ~BlinkNotificationServiceImpl() override;
+
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+  virtual BlinkNotificationServiceImplExt* AsBlinkNotificationServiceImplExt() {
+    return nullptr;
+  }
+#endif  // ARKWEB_NOTIFICATION
 
   // blink::mojom::NotificationService implementation.
   void GetPermissionStatus(GetPermissionStatusCallback callback) override;
@@ -154,5 +163,7 @@ class CONTENT_EXPORT BlinkNotificationServiceImpl
 };
 
 }  // namespace content
-
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+#include "arkweb/chromium_ext/services/network/network_service_network_delegate_ext.h"
+#endif  // ARKWEB_NOTIFICATION
 #endif  // CONTENT_BROWSER_NOTIFICATIONS_BLINK_NOTIFICATION_SERVICE_IMPL_H_

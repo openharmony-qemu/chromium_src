@@ -13,6 +13,7 @@
 #include "content/common/content_export.h"
 #include "content/public/browser/web_contents_observer.h"  // For MediaPlayerId.
 #include "services/media_session/public/mojom/media_session.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace media {
 enum class MediaContentType;
@@ -58,6 +59,11 @@ class CONTENT_EXPORT MediaSessionControllersManager {
 
   // Called when the given player |id| has paused.
   void OnPause(const MediaPlayerId& id, bool reached_end_of_stream);
+
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  // Called when the given player |id| has destroyed media AVSession.
+  void OnEndAVSession(const MediaPlayerId& id, bool is_hidden);
+#endif // ARKWEB_MEDIA_AVSESSION
 
   // Called when the given player |id| has been destroyed.
   void OnEnd(const MediaPlayerId& id);

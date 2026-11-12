@@ -1,0 +1,22 @@
+diff a/content/browser/compositor/viz_process_transport_factory.cc b/content/browser/compositor/viz_process_transport_factory.cc	(rejected hunks)
+@@ -328,10 +337,20 @@ void VizProcessTransportFactory::OnEstablishedGpuChannel(
+     return;
+ 
+   bool gpu_compositing =
+       !is_gpu_compositing_disabled_ && !compositor->force_software_compositor();
+ 
++#if BUILDFLAG(IS_ARKWEB)
++  if (!gpu_compositing) {
++    LOG(ERROR) << "Gpu compositor info, gpu_compositing: " << gpu_compositing
++               << " , is_gpu_compositing_disabled_: " << is_gpu_compositing_disabled_;
++  }
++  TRACE_EVENT2("base", "VizProcessTransportFactory::OnEstablishedGpuChannel",
++               "gpu_compositing", gpu_compositing,
++               "is_gpu_compositing_disabled_", is_gpu_compositing_disabled_);
++#endif
++
+   if (gpu_compositing) {
+     auto context_result = TryCreateContextsForGpuCompositing(gpu_channel_host);
+     if (context_result == gpu::ContextResult::kTransientFailure) {
+       // Get a new GpuChannelHost and retry context creation.
+       gpu_channel_establish_factory_->EstablishGpuChannel(

@@ -1,0 +1,31 @@
+diff a/content/browser/permissions/permission_controller_impl.cc b/content/browser/permissions/permission_controller_impl.cc	(rejected hunks)
+@@ -448,13 +480,18 @@ void PermissionControllerImpl::GrantPermissionOverrides(
+   // If any statuses changed because they lose overrides or the new overrides
+   // modify their previous state (overridden or not), subscribers must be
+   // notified manually.
+   NotifyChangedSubscriptions(old_statuses);
+ 
++#if BUILDFLAG(ARKWEB_PERMISSION)
++  GrantPermissionOverridesToDelegate(requesting_origin, permissions,
++                                     std::move(callback));
++#else
+   UpdateCookieManagerContentSettings(
+       /*permission=*/std::nullopt,
+       base::BindOnce(std::move(callback), OverrideStatus::kOverrideSet));
++#endif
+ }
+ 
+ void PermissionControllerImpl::ResetPermissionOverrides(
+     base::OnceClosure callback) {
+   const auto old_statuses = GetSubscriptionsStatuses();
+@@ -919,7 +956,10 @@ PermissionControllerImpl::GetExclusionAreaBoundsInScreen(
+ void PermissionControllerImpl::NotifyEventListener() {
+   if (onchange_listeners_callback_for_tests_) {
+     onchange_listeners_callback_for_tests_.Run();
+   }
+ }
++#if BUILDFLAG(ARKWEB_NOTIFICATION) || BUILDFLAG(ARKWEB_CLIPBOARD)
++#include "arkweb/chromium_ext/content/browser/permissions/permission_controller_impl_ext.cc"
++#endif // BUILDFLAG(ARKWEB_NOTIFICATION) || BUILDFLAG(ARKWEB_CLIPBOARD)
+ 
+ }  // namespace content

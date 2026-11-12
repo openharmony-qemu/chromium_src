@@ -1,0 +1,19 @@
+diff a/content/browser/interest_group/interest_group_priority_util.cc b/content/browser/interest_group/interest_group_priority_util.cc
+--- a/content/browser/interest_group/interest_group_priority_util.cc
++++ b/content/browser/interest_group/interest_group_priority_util.cc
+@@ -87,9 +87,15 @@ double CalculateInterestGroupPriority(
+         continue;
+       caclulated_priority += signals_pair->second * priority_pair.second;
+       break;
+     }
+   }
++
++  // Ignore non-finite results.
++  if (!std::isfinite(caclulated_priority)) {
++    return -1;
++  }
++
+   return caclulated_priority;
+ }
+ 
+ }  // namespace content

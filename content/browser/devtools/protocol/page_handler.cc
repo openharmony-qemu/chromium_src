@@ -529,6 +529,8 @@ PageHandler::PageHandler(
       prepare_for_reload_callback_(std::move(prepare_for_reload_callback)) {
 #if BUILDFLAG(IS_ANDROID)
   constexpr auto kScreencastPixelFormat = media::PIXEL_FORMAT_I420;
+#elif (BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_DEVTOOLS))
+  constexpr auto kScreencastPixelFormat = media::PIXEL_FORMAT_I420;
 #else
   constexpr auto kScreencastPixelFormat = media::PIXEL_FORMAT_ARGB;
 #endif
@@ -1492,6 +1494,16 @@ void PageHandler::CaptureScreenshot(
           Response::ServerError("Only screenshots from surface are allowed."));
       return;
     }
+#if BUILDFLAG(IS_OHOS)
+    // OSR mode does not have a native window,
+    // GrabViewSnapshot will crash. Return error instead.
+    if (!widget_host->GetView()->GetNativeView()) {
+      pending_request->callback->sendFailure(
+          Response::ServerError(
+              "Screenshot from window is not supported, use fromSurface=true."));
+      return;
+    }
+#endif
     widget_host->GetSnapshotFromBrowser(
         base::BindOnce(&PageHandler::ScreenshotCaptured,
                        weak_factory_.GetWeakPtr(), std::move(pending_request)),
@@ -2401,6 +2413,12 @@ Page::BackForwardCacheNotRestoredReason BlocklistedFeatureToProtocol(
       return Page::BackForwardCacheNotRestoredReasonEnum::UnloadHandler;
     case WebSchedulerTrackedFeature::kParserAborted:
       return Page::BackForwardCacheNotRestoredReasonEnum::ParserAborted;
+#if BUILDFLAG(ARKWEB_BFCACHE)
+    case WebSchedulerTrackedFeature::kEnableCacheNativeEmbed:
+      return "EnableCacheNativeEmbed";
+    case WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver:
+      return "EnableCacheMediaTakeOver";
+#endif
     case WebSchedulerTrackedFeature::kWebAuthentication:
       return Page::BackForwardCacheNotRestoredReasonEnum::
           ContentWebAuthenticationAPI;
@@ -2630,6 +2648,10 @@ Page::BackForwardCacheNotRestoredReasonType MapBlocklistedFeatureToType(
     case WebSchedulerTrackedFeature::kLiveMediaStreamTrack:
     case WebSchedulerTrackedFeature::kUnloadHandler:
     case WebSchedulerTrackedFeature::kParserAborted:
+#if BUILDFLAG(ARKWEB_BFCACHE)
+    case WebSchedulerTrackedFeature::kEnableCacheNativeEmbed:
+    case WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver:
+#endif
       return Page::BackForwardCacheNotRestoredReasonTypeEnum::PageSupportNeeded;
     case WebSchedulerTrackedFeature::kWebNfc:
     case WebSchedulerTrackedFeature::kRequestedStorageAccessGrant:
@@ -2861,6 +2883,29 @@ void PageHandler::BackForwardCacheNotUsed(
 bool PageHandler::ShouldBypassCSP() {
   return enabled_ && bypass_csp_;
 }
+
+// do not turn off ARKWEB_AUTOLAYOUT or build will fail here
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+Response PageHandler::GetPageVisibility(bool* is_visible) {
+  Response response = AssureTopLevelActiveFrame();
+  if (response.IsError()) {
+    return response;
+  }
+
+  auto* web_contents_impl = static_cast<content::WebContentsImpl*>(WebContents::FromRenderFrameHost(host_));
+  if (!web_contents_impl) {
+    return Response::ServerError("Unable to get WebContentsImpl");
+  }
+
+  auto* web_contents_ext = web_contents_impl->AsWebContentsImplExt();
+  if (!web_contents_ext) {
+    return Response::ServerError("Unable to get WebContentsImplExt");
+  }
+
+  *is_visible = web_contents_ext->GetPageVisibility();
+  return Response::Success();
+}
+#endif // ARKWEB_AUTOLAYOUT
 
 }  // namespace protocol
 }  // namespace content

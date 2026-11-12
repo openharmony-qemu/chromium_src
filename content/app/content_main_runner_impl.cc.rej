@@ -1,0 +1,78 @@
+diff a/content/app/content_main_runner_impl.cc b/content/app/content_main_runner_impl.cc	(rejected hunks)
+@@ -15,10 +15,11 @@
+ #include <tuple>
+ #include <utility>
+ #include <variant>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/allocator/allocator_check.h"
+ #include "base/allocator/partition_alloc_support.h"
+ #include "base/at_exit.h"
+ #include "base/base_switches.h"
+ #include "base/command_line.h"
+@@ -852,10 +861,17 @@ int ContentMainRunnerImpl::Initialize(ContentMainParams params) {
+   g_fds->Set(kTraceOutputSharedMemoryDescriptor,
+              kTraceOutputSharedMemoryDescriptor +
+                  base::GlobalDescriptors::kBaseDescriptor);
+ #endif  // !BUILDFLAG(IS_ANDROID)
+ 
++#if BUILDFLAG(IS_OHOS)
++  g_fds->Set(kTraceConfigSharedMemoryDescriptor,
++             kTraceConfigSharedMemoryDescriptor +
++                 base::GlobalDescriptors::kBaseDescriptor);
++  LOG(INFO) << "ContentMainRunnerImpl::Initialize::kTraceConfigSharedMemoryDescriptor is registered.";
++#endif  // BUILDFLAG(IS_OHOS)
++
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OPENBSD)
+   g_fds->Set(kCrashDumpSignal,
+              kCrashDumpSignal + base::GlobalDescriptors::kBaseDescriptor);
+ #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
+         // BUILDFLAG(IS_OPENBSD)
+@@ -1068,10 +1084,17 @@ NO_STACK_PROTECTOR int ContentMainRunnerImpl::Run() {
+ 
+   // Run this logic on all child processes.
+   bool needs_startup_tracing_after_sandbox_init = false;
+   if (!process_type.empty()) {
+     if (process_type != switches::kZygoteProcess) {
++      // Zygotes will run this at a later point in time when the command line
++      // has been updated.
++#if BUILDFLAG(IS_ARKWEB)
++      if (!RunRenderRemoteProxy(*command_line)) {
++        return -1;
++      }
++#endif
+       if (delegate_->ShouldCreateFeatureList(
+               ContentMainDelegate::InvokedInChildProcess())) {
+         InitializeFieldTrialAndFeatureList();
+       }
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+@@ -1289,10 +1312,28 @@ int ContentMainRunnerImpl::RunBrowser(MainFunctionParams main_params,
+   is_browser_main_loop_started_ = true;
+   main_params.startup_data = mojo_ipc_support_->CreateBrowserStartupData();
+   return RunBrowserProcessMain(std::move(main_params), delegate_);
+ }
+ 
++#if BUILDFLAG(IS_ARKWEB)
++bool ContentMainRunnerImpl::RunRenderRemoteProxy(
++    const base::CommandLine& command_line) {
++  std::string process_type =
++      command_line.GetSwitchValueASCII(switches::kProcessType);
++  if (process_type != switches::kRendererProcess &&
++      process_type != switches::kGpuProcess) {
++    return true;
++  }
++  RenderRemoteProxy::CreateAndRegist(command_line, process_type);
++  bool is_gpu = (process_type == switches::kGpuProcess);
++  if (is_gpu || !RenderRemoteProxy::IsFdsChannelReady()) {
++    return RenderRemoteProxy::WaitForBrowserFd(is_gpu);
++  }
++  return true;
++}
++#endif
++
+ void ContentMainRunnerImpl::Shutdown() {
+   DCHECK(is_initialized_);
+   DCHECK(!is_shutdown_);
+ 
+ #if BUILDFLAG(IS_IOS)

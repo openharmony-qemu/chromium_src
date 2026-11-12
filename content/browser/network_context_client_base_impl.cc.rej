@@ -1,0 +1,16 @@
+diff a/content/browser/network_context_client_base_impl.cc b/content/browser/network_context_client_base_impl.cc	(rejected hunks)
+@@ -17,10 +18,14 @@
+ #include "content/public/common/content_client.h"
+ #include "mojo/public/cpp/bindings/remote.h"
+ #include "net/base/net_errors.h"
+ #include "services/network/public/mojom/trust_tokens.mojom.h"
+ 
++#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
++#include "arkweb/chromium_ext/base/datashare_uri_utils.h"
++#endif
++
+ namespace content {
+ 
+ namespace {
+ 
+ void HandleFileUploadRequest(

@@ -380,8 +380,15 @@ enum class CompositingMode {
   kMaxValue = kMetal
 };
 
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+const std::string process_type = "browser";
+const std::string error_reason = "gpu process is not usable.";
+#endif
 // Intentionally crash with a very descriptive name.
 NOINLINE void IntentionallyCrashBrowserForUnusableGpuProcess() {
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  crashpad::CrashpadDfx::ProcessCrashReport(process_type, "", "", error_reason);
+#endif
   LOG(FATAL) << "GPU process isn't usable. Goodbye.";
 }
 

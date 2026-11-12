@@ -222,6 +222,10 @@
 #include "base/debug/asan_service.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "content/renderer/render_remote_proxy_ohos.h"
+#endif
+
 namespace content {
 extern int GpuMain(MainFunctionParams);
 extern int RendererMain(MainFunctionParams);
@@ -568,6 +572,14 @@ class ContentClientInitializer {
   static void Set(const std::string& process_type,
                   ContentMainDelegate* delegate) {
     ContentClient* content_client = GetContentClient();
+
+  // TODO(ARKWEB_DFX_TRACING): waiting to confirm the impact
+#if !BUILDFLAG(ARKWEB_DFX_TRACING)
+    if (process_type == switches::kUtilityProcess ||
+        cmd->HasSwitch(switches::kSingleProcess))
+#endif
+      content_client->utility_ = delegate->CreateContentUtilityClient();
+
     if (process_type.empty())
       content_client->browser_ = delegate->CreateContentBrowserClient();
 
@@ -580,10 +592,6 @@ class ContentClientInitializer {
     if (process_type == switches::kRendererProcess ||
         cmd->HasSwitch(switches::kSingleProcess))
       content_client->renderer_ = delegate->CreateContentRendererClient();
-
-    if (process_type == switches::kUtilityProcess ||
-        cmd->HasSwitch(switches::kSingleProcess))
-      content_client->utility_ = delegate->CreateContentUtilityClient();
   }
 };
 
@@ -904,7 +912,7 @@ int ContentMainRunnerImpl::Initialize(ContentMainParams params) {
 // On Android, the shared descriptors are passed through the Java service,
 // which takes care of updating these mappings; otherwise, we need to update
 // the mappings explicitly.
-#if !BUILDFLAG(IS_ANDROID)
+#if (!BUILDFLAG(IS_ANDROID)  && !BUILDFLAG(IS_OHOS))
   g_fds->Set(kMojoIPCChannel,
              kMojoIPCChannel + base::GlobalDescriptors::kBaseDescriptor);
   g_fds->Set(kFieldTrialDescriptor,

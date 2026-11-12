@@ -90,7 +90,12 @@ class CONTENT_EXPORT SavePackage final
   // SavePackage that will generate and sanitize a suggested name for the user
   // in the "Save As" dialog box.
   explicit SavePackage(PageImpl& page);
-
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  SavePackage(PageImpl& page,
+              SavePageType save_type,
+              const base::FilePath& file_full_path,
+              SavePageExCallback callback);
+#endif // ARKWEB_SAVE_PAGE
   SavePackage(const SavePackage&) = delete;
   SavePackage& operator=(const SavePackage&) = delete;
 
@@ -127,6 +132,10 @@ class CONTENT_EXPORT SavePackage final
   SavePackageId id() const { return unique_id_; }
 
   void GetSaveInfo();
+
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  void GetSaveInfoEx();
+#endif // ARKWEB_SAVE_PAGE
 
   // Response from |sender| frame to GetSavableResourceLinks request.
   void SavableResourceLinksResponse(
@@ -332,7 +341,12 @@ class CONTENT_EXPORT SavePackage final
                            const base::FilePath& suggested_path);
   void OnPathPicked(SavePackagePathPickedParams params,
                     SavePackageDownloadCreatedCallback cb);
-
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  void ContinueGetSaveInfoEx(bool can_save_as_complete,
+                             base::FilePath suggested_path);
+  void OnPathPickedEx(SavePackagePathPickedParams params,
+                    SavePackageDownloadCreatedCallback cb);
+#endif // ARKWEB_SAVE_PAGE
   // The number of in process SaveItems.
   int in_process_count() const {
     return static_cast<int>(in_progress_items_.size());
@@ -465,6 +479,10 @@ class CONTENT_EXPORT SavePackage final
   // UKM IDs for reporting.
   ukm::SourceId ukm_source_id_;
   uint64_t ukm_download_id_;
+
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  SavePageExCallback callback_;
+#endif // ARKWEB_SAVE_PAGE
 
   // Display name of the main file. If this is empty, the name will be
   // inferred from `saved_main_file_path_`.

@@ -14,6 +14,10 @@
 #include "content/public/browser/render_frame_host.h"
 #include "third_party/blink/public/common/permissions/permission_utils.h"
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+#include "arkweb/build/features/features.h"
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
+
 namespace content {
 
 namespace {

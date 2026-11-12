@@ -787,3 +787,7 @@ void PermissionServiceImpl::ReceivedBadMessage() {
 }
 
 }  // namespace content
+
+#if BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_CLIPBOARD)
+#include "arkweb/chromium_ext/content/browser/permissions/permission_service_impl_for_include.cc"
+#endif  // ARKWEB_CLIPBOARD

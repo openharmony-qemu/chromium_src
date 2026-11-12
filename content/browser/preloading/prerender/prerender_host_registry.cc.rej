@@ -1,0 +1,83 @@
+diff a/content/browser/preloading/prerender/prerender_host_registry.cc b/content/browser/preloading/prerender/prerender_host_registry.cc	(rejected hunks)
+@@ -47,10 +47,14 @@
+ #include "services/network/public/cpp/simple_url_loader.h"
+ #include "third_party/abseil-cpp/absl/cleanup/cleanup.h"
+ #include "third_party/blink/public/common/features.h"
+ #include "url/gurl.h"
+ 
++#if BUILDFLAG(ARKWEB_EXT_UA)
++#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
++#endif
++
+ namespace content {
+ 
+ namespace {
+ 
+ bool IsBackground(Visibility visibility) {
+@@ -536,10 +542,22 @@ void PrerenderHostRegistry::RemoveObserver(Observer* observer) {
+ }
+ 
+ FrameTreeNodeId PrerenderHostRegistry::CreateAndStartHost(
+     const PrerenderAttributes& attributes,
+     PreloadingAttempt* attempt) {
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  if (attributes.trigger_type != PreloadingTriggerType::kEmbedder) {
++    RecordFailedPrerenderFinalStatus(
++        PrerenderCancellationReason(PrerenderFinalStatus::kPreloadingDisabled),
++        attributes);
++    if (attempt) {
++      attempt->SetEligibility(PreloadingEligibility::kPreloadingDisabled);
++    }
++    return FrameTreeNodeId();
++  }
++#endif
++
+   std::string recorded_url =
+       attributes.initiator_origin.has_value()
+           ? attributes.initiator_origin.value().GetURL().spec()
+           : "(empty_url)";
+ 
+@@ -985,13 +1003,29 @@ std::set<FrameTreeNodeId> PrerenderHostRegistry::CancelHosts(
+     const std::vector<FrameTreeNodeId>& frame_tree_node_ids,
+     const PrerenderCancellationReason& reason) {
+   TRACE_EVENT("navigation", "PrerenderHostRegistry::CancelHosts",
+               "frame_tree_node_ids", frame_tree_node_ids);
+ 
++#if BUILDFLAG(ARKWEB_EXT_UA)
++  if (reason.final_status() == PrerenderFinalStatus::kUaChangeRequiresReload &&
++      reserved_prerender_host_ &&
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          switches::kEnableNwebEx)) {
++    LOG_FEEDBACK(INFO, kNetwork)
++        << "CancelReservedPrerenderHosts message:UaChanged";
++    return {};
++  }
++#endif
++
+   // Cancel must not be requested during activation.
+   CHECK(!reserved_prerender_host_);
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  LOG(DEBUG) << "Cancel Prerendered host, reason = "
++             << static_cast<int>(reason.final_status());
++#endif
++
+   std::set<FrameTreeNodeId> cancelled_ids;
+ 
+   for (FrameTreeNodeId host_id : frame_tree_node_ids) {
+     if (CancelHostInternal(host_id, reason) ||
+         CancelNewTabHostInternal(host_id, reason)) {
+@@ -1186,10 +1220,13 @@ FrameTreeNodeId PrerenderHostRegistry::FindPotentialHostToActivate(
+     return FrameTreeNodeId();
+   }
+   // Use the first match. This prioritizes the exact match or No-Vary-Search
+   // header match than No-Vary-Search hint match.
+   PrerenderHost* host = *matchable_hosts.begin();
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  LOG(DEBUG) << "Found a Prerender host.";
++#endif
+ 
+   base::UmaHistogramCounts100(
+       "Prerender.Experimental.MatchableHostCountOnActivation",
+       matchable_hosts.size());
+   // Cannot activate if prerendering navigation has not started yet.

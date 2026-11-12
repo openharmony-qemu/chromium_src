@@ -1,0 +1,59 @@
+diff a/content/browser/file_system_access/file_system_access_manager_impl.cc b/content/browser/file_system_access/file_system_access_manager_impl.cc	(rejected hunks)
+@@ -45,10 +45,11 @@
+ #include "content/browser/file_system_access/file_system_chooser.h"
+ #include "content/browser/file_system_access/fixed_file_system_access_permission_grant.h"
+ #include "content/browser/renderer_host/frame_tree_node.h"
+ #include "content/public/browser/browser_task_traits.h"
+ #include "content/public/browser/browser_thread.h"
++#include "content/public/browser/child_process_security_policy.h"
+ #include "content/public/browser/content_browser_client.h"
+ #include "content/public/browser/render_frame_host.h"
+ #include "content/public/browser/web_contents.h"
+ #include "content/public/common/content_client.h"
+ #include "content/public/common/content_switches.h"
+@@ -499,10 +511,18 @@ void FileSystemAccessManagerImpl::GetSandboxedFileSystem(
+     const std::optional<storage::BucketLocator>& bucket,
+     const std::vector<std::string>& directory_path_components,
+     GetSandboxedFileSystemCallback callback) {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+ 
++  if (!ChildProcessSecurityPolicy::GetInstance()->CanAccessDataForOrigin(
++          binding_context.process_id(), binding_context.storage_key.origin())) {
++    std::move(callback).Run(file_system_access_error::FromFileError(
++                                base::File::FILE_ERROR_SECURITY),
++                            mojo::NullRemote());
++    return;
++  }
++
+   auto response_callback = base::BindOnce(
+       [](base::WeakPtr<FileSystemAccessManagerImpl> manager,
+          const BindingContext& callback_binding_context,
+          GetSandboxedFileSystemCallback callback,
+          scoped_refptr<base::SequencedTaskRunner> task_runner,
+@@ -741,10 +761,26 @@ void FileSystemAccessManagerImpl::SetDefaultPathAndShowPicker(
+       GetSelectFileDialogType(options->type_specific_options),
+       GetAndMoveAcceptsTypesInfo(options->type_specific_options),
+       std::move(title), std::move(default_directory),
+       std::move(suggested_name_path));
+ 
++#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
++  if (!options->start_in_options.is_null()) {
++      if (options->start_in_options->is_well_known_directory()) {
++        auto start_in = options->start_in_options->get_well_known_directory();
++        std::u16string directory = u"";
++        auto it = wellKnownDirectoryConverter.find(start_in);
++        if (it != wellKnownDirectoryConverter.end()) {
++            directory = it->second;
++        }
++        file_system_chooser_options.set_start_in(directory);
++      } else if (options->start_in_options->is_directory_token()) {
++        file_system_chooser_options.set_start_in(default_directory.AsUTF16Unsafe());
++      }
++  }
++#endif
++
+   if (auto_file_picker_result_for_test_) {
+     DidChooseEntries(
+         context, file_system_chooser_options, options->starting_directory_id,
+         request_directory_write_access, std::move(callback),
+         file_system_access_error::Ok(), {*auto_file_picker_result_for_test_});

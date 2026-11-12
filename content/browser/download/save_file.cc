@@ -9,6 +9,10 @@
 #include "base/notreached.h"
 #include "components/download/public/common/download_item.h"
 #include "components/download/public/common/download_task_runner.h"
+#if BUILDFLAG(IS_OHOS)
+#include "base/path_service.h"
+#include "chrome/common/chrome_paths.h"
+#endif
 
 namespace content {
 

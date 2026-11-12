@@ -1,0 +1,54 @@
+diff a/content/browser/gpu/gpu_process_host.cc b/content/browser/gpu/gpu_process_host.cc	(rejected hunks)
+@@ -129,10 +135,18 @@
+ #if BUILDFLAG(IS_MAC)
+ #include "content/browser/gpu/browser_child_process_backgrounded_bridge.h"
+ #include "content/browser/gpu/ca_transaction_gpu_coordinator.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
++#include "content/browser/renderer_host/render_process_host_impl.h"
++#endif
++
++#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
++#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
++#endif
++
+ namespace content {
+ 
+ base::subtle::Atomic32 GpuProcessHost::gpu_crash_count_ = 0;
+ bool GpuProcessHost::crashed_before_ = false;
+ int GpuProcessHost::recent_crash_count_ = 0;
+@@ -258,10 +272,16 @@ static const char* const kSwitchNames[] = {
+ #if BUILDFLAG(IS_WIN)
+     switches::kDisableHighResTimer,
+     switches::kRaiseTimerFrequency,
+     switches::kUseRedistributableDirectML,
+ #endif  // BUILDFLAG(IS_WIN)
++#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
++    switches::kOhosEnableDrDc,
++#endif
++#if BUILDFLAG(ARKWEB_VULKAN)
++    switches::kOhosEnableVulkan,
++#endif
+     switches::kBackgroundThreadPoolFieldTrial,
+     switches::kEnableANGLEFeatures,
+     switches::kDelegatedInkRenderer,
+     switches::kDisableANGLEFeatures,
+     switches::kDisableBreakpad,
+@@ -936,10 +964,16 @@ bool GpuProcessHost::Init() {
+     // WGL needs to create its own window and pump messages on it.
+     options.message_pump_type = base::MessagePumpType::UI;
+ #endif
+     options.thread_type = base::ThreadType::kDisplayCritical;
+     in_process_gpu_thread_->StartWithOptions(std::move(options));
++#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
++    OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
++        OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED,
++        base::GetCurrentRealPid(), in_process_gpu_thread_->GetThreadRealId().raw(),
++        OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
++#endif
+   } else if (!LaunchGpuProcess()) {
+     return false;
+   }
+ 
+   mojo::PendingRemote<viz::mojom::VizMain> viz_main_pending_remote;

@@ -1,0 +1,16 @@
+diff a/content/browser/devtools/devtools_url_loader_interceptor.cc b/content/browser/devtools/devtools_url_loader_interceptor.cc	(rejected hunks)
+@@ -464,10 +464,14 @@ class InterceptionJob : public network::mojom::URLLoaderClient,
+       const net::HttpRequestHeaders& modified_cors_exempt_headers,
+       const std::optional<GURL>& new_url) override;
+   void SetPriority(net::RequestPriority priority,
+                    int32_t intra_priority_value) override;
+ 
++#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
++  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
++#endif
++
+   // network::mojom::URLLoaderClient methods
+   void OnReceiveEarlyHints(network::mojom::EarlyHintsPtr early_hints) override;
+   void OnReceiveResponse(
+       network::mojom::URLResponseHeadPtr head,
+       mojo::ScopedDataPipeConsumerHandle body,

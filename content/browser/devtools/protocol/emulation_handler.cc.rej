@@ -1,0 +1,71 @@
+diff a/content/browser/devtools/protocol/emulation_handler.cc b/content/browser/devtools/protocol/emulation_handler.cc	(rejected hunks)
+@@ -179,10 +179,20 @@ Response EmulationHandler::Disable() {
+   sensor_overrides_.clear();
+ #if BUILDFLAG(ENABLE_COMPUTE_PRESSURE)
+   pressure_overrides_.clear();
+ #endif  // BUILDFLAG(ENABLE_COMPUTE_PRESSURE)
+   ClearDevicePostureOverride();
++#if BUILDFLAG(ARKWEB_DEVTOOLS)
++  // 作用：DevTools session断开时重置CDP JS禁用状态；合理性：browser_only session的
++  // Mojo pipe未绑定到renderer，无法自动重置；必要性：删除后JS在DevTools关闭后仍被禁用
++  if (auto* wc = GetWebContents()) {
++    auto* wci = static_cast<WebContentsImpl*>(wc);
++    if (wci && wci->IsCdpScriptExecutionDisabled()) {
++      wci->SetCdpScriptExecutionDisabled(false);
++    }
++  }
++#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
+   return Response::Success();
+ }
+ 
+ namespace {
+ 
+@@ -494,16 +508,47 @@ Response EmulationHandler::SetPressureSourceOverrideEnabled(
+ 
+ // TODO: Remove obsolete method.
+ // `SetPressureStateOverride` will be replaced by SetPressureDataOverride.
+ // The method UpdateVirtualPressureSourceState called previously
+ // was removed in //content.
++// Bug:513009005, `SetPressureDataOverride` has been reverted in the new version,
++// so DevTools continues to use `SetPressureStateOverride`.
+ void EmulationHandler::SetPressureStateOverride(
+     const Emulation::PressureSource& source,
+     const Emulation::PressureState& state,
+     std::unique_ptr<SetPressureStateOverrideCallback> callback) {
++  if (!host_) {
++    callback->sendFailure(Response::InternalError());
++    return;
++  }
++
++#if BUILDFLAG(ENABLE_COMPUTE_PRESSURE)
++  device::mojom::PressureSource mojo_source;
++  if (auto response = ConvertPressureSource(source, &mojo_source);
++      !response.IsSuccess()) {
++    callback->sendFailure(response);
++    return;
++  }
++  device::mojom::PressureState mojo_state;
++  if (auto response = ConvertPressureState(state, &mojo_state);
++      !response.IsSuccess()) {
++    callback->sendFailure(response);
++    return;
++  }
++  auto it = pressure_overrides_.find(mojo_source);
++  if (it == pressure_overrides_.end()) {
++    callback->sendFailure(
++        Response::InvalidParams(kPressureSourceIsNotOverridden));
++    return;
++  }
++  it->second->UpdateVirtualPressureSourceData(
++      mojo_state, /*own_contribution_estimate=*/0.0,
++      base::BindOnce(&SetPressureStateOverrideCallback::sendSuccess,
++                     std::move(callback)));
++#else
+   callback->sendFailure(Response::InternalError());
+-  return;
++#endif  // BUILDFLAG(ENABLE_COMPUTE_PRESSURE)
+ }
+ 
+ void EmulationHandler::SetPressureDataOverride(
+     const Emulation::PressureSource& source,
+     const Emulation::PressureState& state,

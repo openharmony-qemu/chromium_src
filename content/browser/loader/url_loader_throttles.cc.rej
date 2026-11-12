@@ -1,0 +1,57 @@
+diff a/content/browser/loader/url_loader_throttles.cc b/content/browser/loader/url_loader_throttles.cc	(rejected hunks)
+@@ -42,15 +42,25 @@ CreateContentBrowserURLLoaderThrottles(
+     const network::ResourceRequest& request,
+     BrowserContext* browser_context,
+     const base::RepeatingCallback<WebContents*()>& wc_getter,
+     NavigationUIData* navigation_ui_data,
+     FrameTreeNodeId frame_tree_node_id,
+-    std::optional<int64_t> navigation_id) {
++    std::optional<int64_t> navigation_id
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++,
++    bool is_prerendering
++#endif
++    ) {
+   std::vector<std::unique_ptr<blink::URLLoaderThrottle>> throttles =
+       GetContentClient()->browser()->CreateURLLoaderThrottles(
+           request, browser_context, wc_getter, navigation_ui_data,
+-          frame_tree_node_id, navigation_id);
++          frame_tree_node_id, navigation_id
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++,
++          is_prerendering
++#endif
++          );
+   variations::OmniboxAutofocusURLLoaderThrottle::AppendThrottleIfNeeded(
+       &throttles);
+   // TODO(crbug.com/40135370): Consider whether we want to use the WebContents
+   // to determine the value for variations::Owner. Alternatively, this is the
+   // browser side, and we might be fine with Owner::kUnknown.
+@@ -118,11 +128,12 @@ CreateContentBrowserURLLoaderThrottles(
+           *origin_trials_delegate, std::move(top_origin), source_id));
+     }
+   }
+ 
+   if (auto throttle = MaybeCreateIdentityUrlLoaderThrottle(base::BindRepeating(
+-          webid::SetIdpSigninStatus, browser_context, frame_tree_node_id))) {
++          webid::SetIdpSigninStatus, browser_context, request.destination,
++          frame_tree_node_id))) {
+     throttles.push_back(std::move(throttle));
+   }
+ 
+   if (auto throttle =
+           PrerenderURLLoaderThrottle::MaybeCreate(frame_tree_node_id)) {
+@@ -144,11 +155,12 @@ CreateContentBrowserURLLoaderThrottlesForKeepAlive(
+   // browser side, and we might be fine with Owner::kUnknown.
+   variations::VariationsURLLoaderThrottle::AppendThrottleIfNeeded(
+       browser_context->GetVariationsClient(), &throttles);
+ 
+   auto throttle = MaybeCreateIdentityUrlLoaderThrottle(base::BindRepeating(
+-      webid::SetIdpSigninStatus, browser_context, frame_tree_node_id));
++      webid::SetIdpSigninStatus, browser_context,
++      network::mojom::RequestDestination::kEmpty, frame_tree_node_id));
+   if (throttle) {
+     throttles.push_back(std::move(throttle));
+   }
+ 
+   return throttles;

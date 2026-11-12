@@ -85,6 +85,7 @@
 #include "services/network/public/mojom/network_service.mojom.h"
 #include "services/network/public/mojom/network_service_test.mojom.h"
 #include "services/network/public/mojom/socket_broker.mojom.h"
+#include "arkweb/chromium_ext/services/network/arkweb_network_service_ext.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/background_thread_pool_field_trial.h"
@@ -105,6 +106,10 @@
 #include "net/base/address_map_linux.h"
 #include "net/base/address_tracker_linux.h"
 #include "services/network/public/mojom/network_interface_change_listener.mojom.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #endif
 
 namespace content {
@@ -452,7 +457,11 @@ void CreateNetworkServiceOnIOForTesting(
     return;
   }
 
+#if BUILDFLAG(IS_ARKWEB)
+  GetLocalNetworkService() = std::make_unique<network::ArkWebNetworkServiceExt>(
+#else
   GetLocalNetworkService() = std::make_unique<network::NetworkService>(
+#endif
       nullptr /* registry */, std::move(receiver),
       true /* delay_initialization_until_set_client */);
   GetLocalNetworkService()->Initialize(

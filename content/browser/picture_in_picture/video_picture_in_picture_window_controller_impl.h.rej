@@ -1,0 +1,15 @@
+diff a/content/browser/picture_in_picture/video_picture_in_picture_window_controller_impl.h b/content/browser/picture_in_picture/video_picture_in_picture_window_controller_impl.h	(rejected hunks)
+@@ -252,10 +272,13 @@ class CONTENT_EXPORT VideoPictureInPictureWindowControllerImpl
+   // Coordinates of the video element in WebContents coordinates.
+   gfx::Rect source_bounds_;
+ 
+   // The origin of the initiator.
+   std::optional<url::Origin> origin_;
++#if BUILDFLAG(ARKWEB_PIP)
++  MediaPlayerId pip_media_player_id_{GlobalRenderFrameHostId{0, 0}, 0};
++#endif
+ 
+   // Callback to notify the observers about the video PiP window creation event.
+   base::OnceClosure on_window_created_notify_observers_callback_;
+ 
+   WEB_CONTENTS_USER_DATA_KEY_DECL();

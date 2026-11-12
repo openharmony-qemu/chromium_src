@@ -1,0 +1,309 @@
+diff a/content/browser/BUILD.gn b/content/browser/BUILD.gn	(rejected hunks)
+@@ -24,10 +31,21 @@ import("//printing/buildflags/buildflags.gni")
+ import("//services/device/public/cpp/compute_pressure/buildflags.gni")
+ import("//testing/libfuzzer/fuzzer_test.gni")
+ import("//third_party/blink/public/public_features.gni")
+ import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
+ 
++if (defined(is_arkweb_ext) && is_arkweb_ext) {
++  import("//arkweb/ohos_nweb_ex/overrides/chromium/content/browser/chromium_content_browser_ext.gni")
++}
++
++if (is_arkweb) {
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++  if (defined(arkweb_fido) && arkweb_fido) {
++    import("//arkweb/chromium_ext/content/browser/webauth/webauth_ext.gni")
++  }
++}
++
+ if (is_mac) {
+   import("//content/public/app/mac_helpers.gni")
+ }
+ if (is_android) {
+   import("//third_party/jni_zero/jni_zero.gni")
+@@ -47,10 +65,14 @@ if (is_android) {
+       "//third_party/rust/skrifa/v0_39:lib",
+     ]
+   }
+ }
+ 
++if (is_ohos) {
++  import("//build/config/ohos/config.gni")
++}
++
+ if (is_ios) {
+   import("//build/config/apple/mobile_config.gni")  # For `target_platform`
+ }
+ 
+ source_set("browser") {
+@@ -67,12 +89,26 @@ source_set("browser") {
+     "//content/test/fuzzer:clipboard_host_mojolpm_fuzzer",
+     "//content/test/fuzzer:cookie_readiness_list_parser_fuzzer",
+     "//content/test/fuzzer:first_party_set_parser_fuzzer_support",
+     "//content/test/fuzzer:indexed_db_fuzzer_support",
+     "//content/test/fuzzer:media_stream_dispatcher_host_mojolpm_fuzzer",
++    "//arkweb/chromium_ext/ohos_test:clipboard_fuzzer",
++    "//arkweb/chromium_ext/ohos_test/fuzztest/chromium_ext/content/*",
++    "//arkweb/chromium_ext/ohos_test/fuzztest/components/password_manager/content/browser:content_password_manager_driver_ext_fuzzer",
+   ]
+ 
++  if (arkweb_unittests) {
++    visibility += [ "//gpu:gpu_unittests" ]
++  }
++
++  if (arkweb_fuzz_compile_error_fix) {
++    visibility += [
++      "//arkweb/chromium_ext/ohos_test/fuzztest/content/browser/renderer_host/arkweb_render_process_host_fuzzer",
++      "//arkweb/chromium_ext/ohos_test/fuzztest/chromium_ext/third_party/blink/renderer/core/editing/ime/arkweb_input_method_controller_fuzzer",
++    ]
++  }
++
+   if (use_fuzzing_engine && is_android) {
+     visibility += [
+       ":*",
+       "//content/test/fuzzer:*",
+     ]
+@@ -345,10 +381,11 @@ source_set("browser") {
+   ]
+ 
+   public_deps = [
+     "//base",
+     "//components/memory_pressure",
++    "//components/page_load_metrics/common:page_load_metrics_mojom",
+     "//content/browser/indexed_db",
+     "//ipc",
+     "//media/mojo/mojom:remoting",
+     "//skia:skia_switches",
+     "//third_party/blink/public/mojom:embedded_frame_sink_mojo_bindings",
+@@ -813,10 +850,11 @@ source_set("browser") {
+     "closewatcher/close_listener_manager.h",
+     "code_cache/generated_code_cache.cc",
+     "code_cache/generated_code_cache.h",
+     "code_cache/generated_code_cache_context.cc",
+     "code_cache/generated_code_cache_context.h",
++    "code_cache/oh_code_cache.h",
+     "code_cache/simple_lru_cache.cc",
+     "code_cache/simple_lru_cache.h",
+     "compositor/surface_utils.cc",
+     "compositor/surface_utils.h",
+     "contacts/contacts_manager_impl.cc",
+@@ -1378,10 +1416,25 @@ source_set("browser") {
+     "media/capture/desktop_capture_device_uma_types.cc",
+     "media/capture/desktop_capture_device_uma_types.h",
+     "media/capture/desktop_streams_registry_impl.cc",
+     "media/capture/desktop_streams_registry_impl.h",
+     "permissions/permission_descriptor_util.cc",
++
++    "../../arkweb/chromium_ext/content/browser/renderer_host/agent_scheduling_group_host_utils.cc",
++    "../../arkweb/chromium_ext/content/browser/renderer_host/agent_scheduling_group_host_utils.h",
++    "../../arkweb/chromium_ext/content/browser/renderer_host/media/video_capture_host_utils.cc",
++    "../../arkweb/chromium_ext/content/browser/renderer_host/media/video_capture_host_utils.h",
++    "../../arkweb/chromium_ext/content/browser/renderer_host/navigation_request_utils.cc",
++    "../../arkweb/chromium_ext/content/browser/renderer_host/navigation_request_utils.h",
++    "../../arkweb/chromium_ext/content/browser/renderer_host/render_widget_host_impl_ext.cc",
++    "../../arkweb/chromium_ext/content/browser/renderer_host/render_widget_host_impl_ext.h",
++    "../../arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_ext.cc",
++    "../../arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_ext.h",
++    "../../arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_utils.cc",
++    "../../arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_utils.h",
++    "//arkweb/chromium_ext/content/browser/renderer_host/navigator_utils.cc",
++    "//arkweb/chromium_ext/content/browser/renderer_host/navigator_utils.h",
+     "web_contents_based_canceller.cc",
+     "web_contents_based_canceller.h",
+ 
+     # TODO(crbug.com/202736352): This is built even if enable_screen_capture is
+     # false. Consider better separation of the screen capture and the other
+@@ -2533,10 +2586,58 @@ source_set("browser") {
+     "worker_host/worker_script_loader.h",
+     "worker_host/worker_script_loader_factory.cc",
+     "worker_host/worker_script_loader_factory.h",
+   ]
+ 
++  if (defined(arkweb_logger_report) && arkweb_logger_report) {
++    deps += [
++      "//base:base_static",
++      "//base:base",
++    ]
++  }
++
++  if (arkweb_arkweb_extensions && !is_component_build) {
++    deps += [
++      "//extensions/common:mojom",
++    ]
++  }
++
++  if (arkweb_webrtc) {
++    import("//arkweb/chromium_ext/content/browser/renderer_host/media/arkweb_content_browser_renderer_host_media.gni")
++    sources += arkweb_content_browser_renderer_host_media_sources
++  }
++
++  if (is_arkweb_ext &&report_sys_event) {
++    defines += [ "REPORT_SYS_EVENT" ]
++  }
++
++  if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
++    deps += [ "//components/dom_distiller/content/common/mojom" ]
++  }
++
++  if (arkweb_blank_screen_monitor) {
++    deps += [
++      "//arkweb/chromium_ext/components/blank_screen:frame_analysis",
++      "//arkweb/chromium_ext/components/blank_screen:blank_screen_monitor",
++      "//arkweb/chromium_ext/components/blank_screen:blank_screen_monitor_browser",
++    ]
++    sources += [
++      "//arkweb/chromium_ext/components/blank_screen/gpu_evidence_collector.cc",
++      "//arkweb/chromium_ext/components/blank_screen/gpu_evidence_collector.h",
++      "//arkweb/chromium_ext/components/blank_screen/blank_screen_monitor.cc",
++      "//arkweb/chromium_ext/components/blank_screen/blank_screen_monitor.h",
++    ]
++  }
++
++  if (arkweb_software_compositor) {
++    sources += [
++      "//arkweb/chromium_ext/content/browser/ohos/software_compositor_host_ohos.cc",
++      "//arkweb/chromium_ext/content/browser/ohos/software_compositor_host_ohos.h",
++    ]
++    sources += arkweb_content_browser_renderer_host_sources
++  }
++
+   if (is_android) {
+     sources += [
+       "memory_pressure/user_level_memory_pressure_signal_generator.cc",
+       "memory_pressure/user_level_memory_pressure_signal_generator.h",
+       "renderer_host/input/touch_selection_controller_input_observer.cc",
+@@ -2643,18 +2806,30 @@ source_set("browser") {
+       "//content/common:sandbox_support_linux",
+       "//third_party/blink/public/mojom:memory_usage_monitor_linux_mojo_bindings",
+     ]
+   }
+ 
++  if (is_ohos) {
++    sources -= [
++      "file_system_access/file_path_watcher/file_path_watcher_stub.cc"
++    ]
++    sources += [
++      "file_system_access/file_path_watcher/file_path_watcher_inotify.cc",
++      "file_system_access/file_path_watcher/file_path_watcher_inotify.h",
++    ]
++  }
++
+   if (is_win) {
+     deps += [ "//components/stylus_handwriting/win" ]
+   }
+ 
+   if (is_win || is_linux) {
+     deps += [ "//components/services/font_data:lib" ]
+   }
+-
++  if (arkweb_css_font) {
++    deps += [ "//arkweb/chromium_ext/components/services/font_data:lib" ]
++  }
+   if (allow_oop_video_decoder) {
+     sources += [ "media/oop_video_decoder_factory.cc" ]
+     deps += [ "//media/mojo/mojom" ]
+   }
+ 
+@@ -3527,10 +3737,14 @@ source_set("browser") {
+         "//components/crash/content/browser/error_reporting",
+         "//media/mojo/mojom:web_speech_recognition",
+       ]
+     }
+ 
++    if (defined(arkweb_fido) && arkweb_fido) {
++      sources += arkweb_webauth_ext_sources
++    }
++
+     deps += [
+       "//components/device_event_log",
+       "//components/password_manager/core/common",
+       "//components/soda",
+       "//components/soda:constants",
+@@ -3573,10 +3806,42 @@ source_set("browser") {
+ 
+   if (is_win) {
+     deps += [ "//ui/base/ime/win" ]
+   }
+ 
++  if (arkweb_suspend_all_timers) {
++    import(
++        "//arkweb/chromium_ext/content/browser/ohos/arkweb_content_browser_ohos_ext.gni")
++    sources += arkweb_content_browser_ohos_sources
++    include_dirs = ohos_src_includes
++    deps += [ "//ohos_glue:ohos_adapter_glue_source" ]
++  }
++
++  if (is_arkweb && arkweb_wpt) {
++    sources += arkweb_content_browser_font_unique_name_lookup_sources
++    sources += [
++      "font_unique_name_lookup/font_unique_name_lookup_service.cc",
++      "font_unique_name_lookup/font_unique_name_lookup_service.h",
++    ]
++    deps += [
++      "//build/config/freetype",
++      "//third_party/blink/public/common:font_unique_name_table_proto",
++      "//third_party/blink/public/mojom:mojom_platform_blink"
++    ]
++  }
++
++  if (defined(arkweb_custom_fonts) && arkweb_custom_fonts) {
++    sources += arkweb_custom_font_lookup_content_browser_sources
++  }
++
++  if (arkweb_css_input_time) {
++    sources += [
++      "//arkweb/chromium_ext/content/browser/ohos/date_time_chooser_ohos.cc",
++      "//arkweb/chromium_ext/content/browser/ohos/date_time_chooser_ohos.h",
++    ]
++  }
++
+   if (use_aura) {
+     deps += [
+       "//ui/aura",
+       "//ui/aura_extra",
+       "//ui/strings",
+@@ -3695,10 +3996,44 @@ source_set("browser") {
+       "devtools/protocol/native_profiling_handler.h",
+       "profiling_utils.cc",
+     ]
+   }
+ 
++  if (arkweb_media) {
++    import(
++        "//arkweb/chromium_ext/media/base/ohos/arkweb_media_base_ohos_ext.gni")
++
++    sources += arkweb_media_base_ohos_sources
++
++    lib_dirs = []
++    if (target_cpu == "arm") {
++      lib_dirs += [
++        "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/",
++      ]
++    } else if (target_cpu == "arm64") {
++      lib_dirs += [ "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/" ]
++    } else if (target_cpu == "x86" || target_cpu == "x64") {
++      lib_dirs += [ "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/" ]
++    }
++
++    libs = [ "native_window" ]
++
++    defines += [ "IS_MEDIA_IMPL" ]
++  }
++
++  #if BUILDFLAG(ARKWEB_BFCACHE)
++  if (is_arkweb) {
++    sources += [
++      "//arkweb/chromium_ext/content/browser/renderer_host/ark_web_back_forward_cache_impl.cc",
++      "//arkweb/chromium_ext/content/browser/renderer_host/ark_web_back_forward_cache_impl.h",
++    ]
++  }  #endif // BUILDFLAG(ARKWEB_BFCACHE)
++
++  if (defined(is_arkweb_ext) && is_arkweb_ext) {
++    sources += chromium_content_browser_ext_gn_sources
++  }
++
+   # TODO(crbug.com/371609830): Remove dep on experiment end.
+   if (is_chromeos) {
+     deps += [ "//ash/constants" ]
+   }
+ }

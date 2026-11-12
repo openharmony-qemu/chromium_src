@@ -1,0 +1,119 @@
+diff a/content/browser/media/session/media_session_impl.cc b/content/browser/media/session/media_session_impl.cc	(rejected hunks)
+@@ -35,10 +35,11 @@
+ #include "media/audio/audio_device_description.h"
+ #include "media/base/media_content_type.h"
+ #include "media/base/media_switches.h"
+ #include "media/base/picture_in_picture_events_info.h"
+ #include "mojo/public/cpp/bindings/callback_helpers.h"
++#include "ohos_nweb/src/sysevent/event_reporter.h"
+ #include "services/media_session/public/cpp/media_image_manager.h"
+ #include "services/media_session/public/mojom/audio_focus.mojom.h"
+ #include "third_party/blink/public/common/features.h"
+ #include "third_party/blink/public/mojom/favicon/favicon_url.mojom.h"
+ #include "third_party/blink/public/strings/grit/blink_strings.h"
+@@ -745,10 +786,13 @@ void MediaSessionImpl::Stop(SuspendType suspend_type) {
+   if (audio_focus_state_ != State::SUSPENDED)
+     OnSuspendInternal(suspend_type, State::SUSPENDED);
+ 
+   DCHECK(audio_focus_state_ == State::SUSPENDED);
+   normal_players_.clear();
++#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
++  players_mute_state_.clear();
++#endif
+ 
+   AbandonSystemAudioFocusIfNeeded();
+   RebuildAndNotifyMediaPositionChanged();
+ }
+ 
+@@ -976,21 +1023,33 @@ MediaSessionImpl::MediaSessionImpl(WebContents* web_contents)
+       WebContentsUserData<MediaSessionImpl>(*web_contents),
+       audio_focus_state_(State::INACTIVE),
+       desired_audio_focus_type_(AudioFocusType::kGainTransientMayDuck),
+       is_ducking_(false),
+       ducking_volume_multiplier_(kDefaultDuckingVolumeMultiplier),
+-      routed_service_(nullptr) {
++      routed_service_(nullptr)
++#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
++      , weakMediaSessionFactory_(this)
++#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
++{
++  implUtils_ = new MediaSessionImplUtils(this);
+ #if BUILDFLAG(IS_ANDROID)
+   session_android_ = std::make_unique<MediaSessionAndroid>(this);
+   should_throttle_duration_update_ = true;
+ #else
+   if (base::FeatureList::IsEnabled(media::kAudioDucking)) {
+     ducking_volume_multiplier_ =
+         1.0 -
+         (std::clamp(media::kAudioDuckingAttenuation.Get(), 0, 100) / 100.0);
+   }
+ #endif  // BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
++  memory_pressure_listener_ = std::make_unique<base::MemoryPressureListener>(
++              FROM_HERE,
++              base::BindRepeating(&MediaSessionImpl::OnMemoryPressure,
++                                  weakMediaSessionFactory_.GetWeakPtr()));
++#endif  // ARKWEB_MEDIA_MEMORY_PRESSURE
++  CreateSessionOhos();
+   if (web_contents && web_contents->GetPrimaryMainFrame() &&
+       web_contents->GetPrimaryMainFrame()->GetView()) {
+     focused_ = web_contents->GetPrimaryMainFrame()->GetView()->HasFocus();
+   }
+ 
+@@ -1019,10 +1078,14 @@ AudioFocusDelegate::AudioFocusResult MediaSessionImpl::RequestSystemAudioFocus(
+   DCHECK_NE(media_session::mojom::AudioFocusType::kGainTransient,
+             audio_focus_type);
+ 
+   should_unduck_on_focus_gained_ = true;
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
++  LOG(INFO) << "RequestSystemAudioFocus" << static_cast<int32_t>(audio_focus_type);
++#endif // ARKWEB_MEDIA_POLICY
++
+   AudioFocusDelegate::AudioFocusResult result =
+       delegate_->RequestAudioFocus(audio_focus_type);
+   desired_audio_focus_type_ = audio_focus_type;
+ 
+   bool success = result != AudioFocusDelegate::AudioFocusResult::kFailed;
+@@ -1276,11 +1339,10 @@ void MediaSessionImpl::EnterPictureInPicture() {
+     uma_helper_.RecordEnterPictureInPicture(
+         MediaSessionUmaHelper::EnterPictureInPictureType::kRegisteredManual);
+     return;
+   }
+ 
+-  DCHECK_EQ(normal_players_.size(), 1u);
+   if (normal_players_.size() != 1u) {
+     // There should be one and only one player when we enter picture-in-picture.
+     return;
+   }
+ 
+@@ -1341,17 +1403,27 @@ void MediaSessionImpl::Raise() {
+ 
+   delegate->ActivateContents(web_contents());
+ }
+ 
+ void MediaSessionImpl::SetMute(bool mute) {
+-  DCHECK_EQ(normal_players_.size(), 1u);
++  // The SetMute action should only be available when there is one normal
++  // player, though due to the asynchronous nature of mojo, we may no longer
++  // have 1 normal player. In that case, just return.
++  if (normal_players_.size() != 1u) {
++    return;
++  }
+   normal_players_.begin()->first.observer->OnSetMute(
+       normal_players_.begin()->first.player_id, mute);
+ }
+ 
+ void MediaSessionImpl::RequestMediaRemoting() {
+-  DCHECK_EQ(normal_players_.size(), 1u);
++  // The RequestMediaRemoting action should only be available when there is one
++  // normal player, though due to the asynchronous nature of mojo, we may no
++  // longer have 1 normal player. In that case, just return.
++  if (normal_players_.size() != 1u) {
++    return;
++  }
+   normal_players_.begin()->first.observer->OnRequestMediaRemoting(
+       normal_players_.begin()->first.player_id);
+ }
+ 
+ void MediaSessionImpl::GetMediaImageBitmap(

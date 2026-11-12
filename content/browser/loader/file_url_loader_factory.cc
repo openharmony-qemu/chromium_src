@@ -381,6 +381,12 @@ class FileURLDirectoryLoader
   uint64_t total_bytes_written_ = 0;
 };
 
+}  // namespace
+}  // namespace content
+#include "arkweb/chromium_ext/content/browser/loader/file_url_loader_factory_for_include.cc"
+namespace content {
+namespace {
+
 class FileURLLoader : public network::mojom::URLLoader {
  public:
   static void CreateAndStart(
@@ -398,6 +404,19 @@ class FileURLLoader : public network::mojom::URLLoader {
     // Owns itself. Will live as long as its URLLoader and URLLoaderClient
     // bindings are alive - essentially until either the client gives up or all
     // file data has been sent to it.
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
+    int32_t apiVersion = GetApplicationApiVersion();
+    if (apiVersion > 0 && apiVersion < APPLICATION_API_10) {
+      LOG(INFO) << "application api version: " << apiVersion;
+      base::FilePath path;
+      base::File::Info info;
+      if (!net::FileURLToFilePath(request.url, &path) || !base::GetFileInfo(path, &info)) {
+        ResourceURLLoader::CreateAndStart(profile_path, request, response_type, std::move(loader),
+            std::move(client_remote), std::move(observer), std::move(extra_response_headers));
+        return;
+      }
+    }
+#endif
     auto* file_url_loader = new FileURLLoader;
     file_url_loader->Start(
         profile_path, request, response_type, std::move(loader),
@@ -439,6 +458,7 @@ class FileURLLoader : public network::mojom::URLLoader {
                    int32_t intra_priority_value) override {}
 
  private:
+  friend class FileURLLoaderUtils;
   // Used to save outstanding redirect data while waiting for FollowRedirect
   // to be called. Values default to their most restrictive in case they are
   // not set.
@@ -860,7 +880,6 @@ void FileURLLoaderFactory::CreateLoaderAndStart(
     mojo::PendingRemote<network::mojom::URLLoaderClient> client,
     const net::MutableNetworkTrafficAnnotationTag& traffic_annotation) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
-
   // CORS mode requires a valid |request_initiator|.
   if (network::cors::IsCorsEnabledRequestMode(request.mode) &&
       !request.request_initiator) {
@@ -909,7 +928,6 @@ void FileURLLoaderFactory::CreateLoaderAndStartInternal(
     mojo::PendingReceiver<network::mojom::URLLoader> loader,
     mojo::PendingRemote<network::mojom::URLLoaderClient> client) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
-
   if (response_type == network::mojom::FetchResponseType::kCors) {
     // FileURLLoader doesn't support CORS and it's not covered by CorsURLLoader,
     // so we need to reject requests that need CORS manually.
@@ -920,6 +938,17 @@ void FileURLLoaderFactory::CreateLoaderAndStartInternal(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
+  if (request.url.SchemeIs(url::kResourcesScheme)) {
+    task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(&ResourceURLLoader::CreateAndStart,
+                                  profile_path_, request, response_type,
+                                  std::move(loader), std::move(client),
+                                  std::unique_ptr<FileURLLoaderObserver>(),
+                                  nullptr /* extra_response_headers */));
+    return;
+  }
+#endif
   // Check file path just after all CORS flag checks are handled.
   base::FilePath file_path;
   if (!net::FileURLToFilePath(request.url, &file_path)) {

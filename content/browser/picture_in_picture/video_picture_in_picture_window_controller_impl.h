@@ -174,6 +174,26 @@ class CONTENT_EXPORT VideoPictureInPictureWindowControllerImpl
     return active_session_.get();
   }
 
+#if BUILDFLAG(ARKWEB_PIP)
+  PictureInPictureResult StartSessionExt(
+      PictureInPictureServiceImpl* service,
+      const MediaPlayerId&,
+      mojo::PendingAssociatedRemote<media::mojom::MediaPlayer> player_remote,
+      const viz::SurfaceId& surface_id,
+      const gfx::Size& natural_size,
+      bool show_play_pause_button,
+      mojo::PendingRemote<blink::mojom::PictureInPictureSessionObserver>,
+      const gfx::Rect& source_bounds,
+      mojo::PendingRemote<blink::mojom::PictureInPictureSession>*
+          session_remote,
+      gfx::Size* window_size);
+  void CloseExt(bool should_pause_video);
+  void OnLeavingPictureInPictureExt(bool should_pause_video);
+  void OnPictureInPictureStateChanged(
+      const MediaPlayerId& id, uint32_t state, int32_t width, int32_t height);
+  void WebContentsDestroyedExt();
+#endif
+
  protected:
   // Use VideoPictureInPictureWindowControllerImpl::GetOrCreateForWebContents()
   // to create an instance.

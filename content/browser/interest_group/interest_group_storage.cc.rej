@@ -1,0 +1,24 @@
+diff a/content/browser/interest_group/interest_group_storage.cc b/content/browser/interest_group/interest_group_storage.cc
+--- a/content/browser/interest_group/interest_group_storage.cc
++++ b/content/browser/interest_group/interest_group_storage.cc
+@@ -5309,14 +5309,20 @@ std::optional<DebugReportCooldown> DoGetDebugReportCooldownForOrigin(
+   cooldown_debugging_only_report.BindString(0, Serialize(origin));
+   cooldown_debugging_only_report.BindTime(
+       1, ignore_before.value_or(base::Time::Min()));
+ 
+   if (cooldown_debugging_only_report.Step()) {
++#if BUILDFLAG(IS_OHOS)
++  return DebugReportCooldown{cooldown_debugging_only_report.ColumnTime(0),
++                             static_cast<DebugReportCooldownType>(
++                                 cooldown_debugging_only_report.ColumnInt(1))};
++#else
+     return DebugReportCooldown(
+         cooldown_debugging_only_report.ColumnTime(0),
+         static_cast<DebugReportCooldownType>(
+             cooldown_debugging_only_report.ColumnInt(1)));
++#endif
+   }
+ 
+   if (!cooldown_debugging_only_report.Succeeded()) {
+     // When reading the table fails, treat it as there is an unexpired cooldown,
+     // to cautiously avoid sending more fDO reports than allowed in case there

@@ -1,0 +1,18 @@
+diff a/content/browser/indexed_db/instance/database.cc b/content/browser/indexed_db/instance/database.cc	(rejected hunks)
+@@ -410,10 +410,16 @@ Status Database::ForceClose(const std::string& message) && {
+   return status;
+ }
+ 
+ void Database::ScheduleOpenConnection(
+     std::unique_ptr<PendingConnection> connection) {
++  bool is_accepting_connections  = IsAcceptingConnections();
++  DCHECK(is_accepting_connections);
++  if (!is_accepting_connections) {
++    LOG(ERROR) << " IsAcceptingConnections() is false. ";
++  }
++      
+   CHECK(!force_closing_);
+   connection_coordinator_.ScheduleOpenConnection(std::move(connection));
+ }
+ 
+ void Database::ScheduleDeleteDatabase(

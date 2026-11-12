@@ -1,0 +1,14 @@
+diff a/content/browser/indexed_db/instance/bucket_context.cc b/content/browser/indexed_db/instance/bucket_context.cc	(rejected hunks)
+@@ -610,11 +610,11 @@ void BucketContext::Open(
+     // CreateDatabaseDeleteClosure can be called synchronously.
+     database_ptr = CreateAndAddDatabase(name);
+   } else {
+     database_ptr = it->second.get();
+   }
+-
++   
+   database_ptr->ScheduleOpenConnection(std::move(connection));
+ }
+ 
+ void BucketContext::DeleteDatabase(
+     mojo::PendingAssociatedRemote<blink::mojom::IDBFactoryClient>

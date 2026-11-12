@@ -37,6 +37,7 @@ class WebContentsImpl;
 class CONTENT_EXPORT MediaSessionController
     : public MediaSessionPlayerObserver {
  public:
+  friend class MediaSessionControllerExt;
   MediaSessionController(const MediaPlayerId& id,
                          WebContentsImpl* web_contents);
 
@@ -170,5 +171,6 @@ class CONTENT_EXPORT MediaSessionController
 };
 
 }  // namespace content
+#include "arkweb/chromium_ext/content/browser/media/session/media_session_controller_ext.h"
 
 #endif  // CONTENT_BROWSER_MEDIA_SESSION_MEDIA_SESSION_CONTROLLER_H_

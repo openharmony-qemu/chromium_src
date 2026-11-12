@@ -125,7 +125,8 @@ class CONTENT_EXPORT FilePathWatcher {
     Type type = Type::kNonRecursive;
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
+    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || \
+    BUILDFLAG(IS_OHOS)
     // The callback will return the full path to a changed file instead of
     // the watched path supplied as |path| when Watch is called.
     // So the full path can be different from the watched path when a folder is
@@ -133,7 +134,7 @@ class CONTENT_EXPORT FilePathWatcher {
     bool report_modified_path = false;
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
         // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_WIN)
-        // || BUILDFLAG(IS_MAC)
+        // || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
   };
 
   // Callback type for Watch(). |path| points to the file that was updated,

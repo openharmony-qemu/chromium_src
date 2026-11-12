@@ -205,11 +205,19 @@ bool MediaSessionController::HasSufficientlyVisibleVideo(int player_id) const {
 
 void MediaSessionController::OnPlaybackPaused(bool reached_end_of_stream) {
   is_paused_ = true;
-
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  media_session_->SetPlayingState(false);
+  LOG(INFO) << "MediaSessionController OnPlaybackStarted SetPlayingState false";
+#endif
   if (reached_end_of_stream) {
     is_playback_in_progress_ = false;
     AddOrRemovePlayer();
   }
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+    if (media_session_) {
+      media_session_->SetEndOfMedia(reached_end_of_stream);
+    }
+#endif // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
 
   // We check for suspension here since the renderer may issue its own pause
   // in response to or while a pause from the browser is in flight.
@@ -235,6 +243,9 @@ void MediaSessionController::OnMediaPositionStateChanged(
 
 void MediaSessionController::OnMediaMutedStatusChanged(bool mute) {
   media_session_->OnMediaMutedStatusChanged(mute);
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  media_session_->UpdateMediaPlayersMuteState(player_id_, mute);
+#endif
 }
 
 void MediaSessionController::OnPictureInPictureAvailabilityChanged(
@@ -295,7 +306,9 @@ bool MediaSessionController::IsMediaSessionNeeded() const {
 
 bool MediaSessionController::AddOrRemovePlayer() {
   const bool needs_session = IsMediaSessionNeeded();
-
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  AsMediaSessionControllerExt()->SetSessionStateIfNeed(needs_session);
+#endif // ARKWEB_MEDIA_POLICY
   if (needs_session) {
     // Attempt to add a session even if we already have one.  MediaSession
     // expects AddPlayer() to be called after OnPlaybackPaused() to reactivate

@@ -1,0 +1,93 @@
+diff a/content/browser/picture_in_picture/video_picture_in_picture_window_controller_impl.cc b/content/browser/picture_in_picture/video_picture_in_picture_window_controller_impl.cc	(rejected hunks)
+@@ -18,10 +18,14 @@
+ #include "content/public/browser/web_contents.h"
+ #include "content/public/browser/web_contents_delegate.h"  // for PictureInPictureResult
+ #include "content/public/browser/web_contents_observer.h"
+ #include "content/public/common/content_client.h"
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/content/browser/picture_in_picture/video_pip_for_include.cc"
++#endif
++
+ namespace content {
+ 
+ // static
+ VideoPictureInPictureWindowController*
+ PictureInPictureWindowController::GetOrCreateVideoPictureInPictureController(
+@@ -282,10 +290,17 @@ PictureInPictureResult VideoPictureInPictureWindowControllerImpl::StartSession(
+     bool show_play_pause_button,
+     mojo::PendingRemote<blink::mojom::PictureInPictureSessionObserver> observer,
+     const gfx::Rect& source_bounds,
+     mojo::PendingRemote<blink::mojom::PictureInPictureSession>* session_remote,
+     gfx::Size* window_size) {
++#if BUILDFLAG(ARKWEB_PIP)
++    pip_media_player_id_ = player_id;
++    return StartSessionExt(
++        service, player_id, std::move(player_remote), surface_id, natural_size,
++        show_play_pause_button, std::move(observer), source_bounds,
++        session_remote, window_size);
++#else
+   auto result = GetWebContentsImpl()->EnterPictureInPicture();
+ 
+   // Picture-in-Picture may not be supported by all embedders, so we should only
+   // create the session if the EnterPictureInPicture request was successful.
+   if (result != PictureInPictureResult::kSuccess)
+@@ -323,10 +338,11 @@ PictureInPictureResult VideoPictureInPictureWindowControllerImpl::StartSession(
+ 
+   // TODO(crbug.com/40227464): Rather than set this synchronously, we should
+   // call back with the bounds once the window provides them.
+   *window_size = GetSize();
+   return result;
++#endif
+ }
+ 
+ void VideoPictureInPictureWindowControllerImpl::OnServiceDeleted(
+     PictureInPictureServiceImpl* service) {
+   if (!active_session_ || active_session_->service() != service)
+@@ -560,31 +583,44 @@ void VideoPictureInPictureWindowControllerImpl::MediaStoppedPlaying(
+   if (web_contents()->IsBeingDestroyed())
+     return;
+ 
+   if (!active_session_ || active_session_->player_id() != media_player_id)
+     return;
+-
++#if BUILDFLAG(ARKWEB_PIP)
++  if (GetWebContentsImpl() && GetWebContentsImpl()->AsWebContentsImplExt()) {
++    GetWebContentsImpl()->AsWebContentsImplExt()->OnPip(PIP_STATE_PAUSE,
++      media_player_id.player_id,
++      media_player_id.frame_routing_id.child_id,
++      media_player_id.frame_routing_id.frame_routing_id, 0, 0);
++  }
++#endif
+   UpdatePlaybackState();
+ }
+ 
+ void VideoPictureInPictureWindowControllerImpl::WebContentsDestroyed() {
++#if BUILDFLAG(ARKWEB_PIP)
++  WebContentsDestroyedExt();
++#endif
+   if (window_)
+     window_->Close();
+ }
+ 
+ void VideoPictureInPictureWindowControllerImpl::OnLeavingPictureInPicture(
+     bool should_pause_video) {
+   DCHECK(active_session_);
+-
++#if BUILDFLAG(ARKWEB_PIP)
++  OnLeavingPictureInPictureExt(should_pause_video);
++#else
+   if (IsPlayerActive() && should_pause_video) {
+     // Pause the current video so there is only one video playing at a time.
+     active_session_->GetMediaPlayerRemote()->RequestPause(
+         /*triggered_by_user=*/false);
+   }
+ 
+   active_session_->Shutdown();
+   active_session_ = nullptr;
++#endif
+   pip_session_media_position_ = std::nullopt;
+ }
+ 
+ void VideoPictureInPictureWindowControllerImpl::CloseInternal(
+     bool should_pause_video) {

@@ -1,0 +1,158 @@
+diff a/content/browser/media/media_web_contents_observer.h b/content/browser/media/media_web_contents_observer.h	(rejected hunks)
+@@ -18,10 +18,11 @@
+ #include "content/browser/media/audio_stream_monitor.h"
+ #include "content/browser/media/media_devices_util.h"
+ #include "content/browser/media/media_power_experiment_manager.h"
+ #include "content/browser/media/session/media_session_controllers_manager.h"
+ #include "content/common/content_export.h"
++#include "content/public/browser/document_user_data.h"
+ #include "content/public/browser/global_routing_id.h"
+ #include "content/public/browser/media_player_id.h"
+ #include "content/public/browser/render_frame_host.h"
+ #include "content/public/browser/web_contents_observer.h"
+ #include "media/base/use_after_free_checker.h"
+@@ -54,13 +60,55 @@ namespace gfx {
+ class Size;
+ }  // namespace gfx
+ 
+ namespace content {
+ 
++#if BUILDFLAG(ARKWEB_PIP)
++enum PictureInPictureState {
++  PIP_STATE_ENTER = 0,
++  PIP_STATE_EXIT,
++  PIP_STATE_PLAY,
++  PIP_STATE_PAUSE,
++  PIP_STATE_FAST_FORWARD,
++  PIP_STATE_FAST_BACKWARD,
++  PIP_STATE_RESTORE,
++  PIP_STATE_HLS_ENTER,
++  PIP_STATE_HLS_EXIT,
++  PIP_STATE_RESIZE,
++  PIP_STATE_NONE,
++  PIP_STATE_UPDATE_SURFACE,
++  PIP_STATE_PAGE_CLOSE,
++};
++#endif
++
+ class AudibleMetrics;
+ class WebContentsImpl;
+ 
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++class MediaPlayerListener;
++#endif // ARKWEB_VIDEO_ASSISTANT
++
++// Used to authorize a frame to bypass the browser's audio service for
++// audibility, when using `MediaFoundationRenderer`. This is stored as
++// `DocumentUserData` on the `RenderFrameHost`.
++class CONTENT_EXPORT AudibilityBypassAuthorization
++    : public DocumentUserData<AudibilityBypassAuthorization> {
++ public:
++  ~AudibilityBypassAuthorization() override;
++
++  // Returns true if the given `rfh` has been authorized to bypass the
++  // browser's audio service for audibility. This is used for renderers that
++  // handle their own audio output, currently only `MediaFoundationRenderer` on
++  // Windows.
++  static bool IsAuthorized(RenderFrameHost* rfh);
++
++ private:
++  friend class DocumentUserData<AudibilityBypassAuthorization>;
++  explicit AudibilityBypassAuthorization(RenderFrameHost* rfh);
++  DOCUMENT_USER_DATA_KEY_DECL();
++};
++
+ // This class manages all RenderFrame based media related managers at the
+ // browser side. It receives IPC messages from media RenderFrameObservers and
+ // forwards them to the corresponding managers. The managers are responsible
+ // for sending IPCs back to the RenderFrameObservers at the render side.
+ class CONTENT_EXPORT MediaWebContentsObserver
+@@ -95,10 +143,15 @@ class CONTENT_EXPORT MediaWebContentsObserver
+   // WebContentsObserver implementation.
+   void WebContentsDestroyed() override;
+   void RenderFrameDeleted(RenderFrameHost* render_frame_host) override;
+   void MediaPictureInPictureChanged(bool is_picture_in_picture) override;
+   void DidUpdateAudioMutingState(bool muted) override;
++
++#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
++    // Set whether to the HTML play can be used to control media
++  void SetHtmlPlayEnabled(bool enabled) override;
++#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+   void DidStartNavigation(NavigationHandle* navigation_handle) override;
+   void RenderFrameHostChanged(RenderFrameHost* old_host,
+                               RenderFrameHost* new_host) override;
+ 
+   // MediaPlayerObserverClient implementation.
+@@ -222,10 +315,72 @@ class CONTENT_EXPORT MediaWebContentsObserver
+     void OnRemotePlaybackMetadataChange(
+         media_session::mojom::RemotePlaybackMetadataPtr
+             remote_playback_metadata) override;
+     void OnVideoVisibilityChanged(bool meets_visibility_threshold) override;
+ 
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++    void UpdateLayerRect(const gfx::Rect& rect) override;
++    void FullscreenChanged(bool is_fullscreen) override;
++#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
++
++#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
++    void OnGetMediaTitle(const std::string& data) override;
++    void OnGetVideoPoster(const std::string& data) override;
++    void OnInitMediaTitle() override;
++    void OnInitVideoPoster() override;
++#endif // ARKWEB_MEDIA_AVSESSION
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++    void OnVideoPlaying(
++        media::mojom::VideoAttributesForVASTPtr video_attributes) override;
++    void OnUpdateVideoAttributes(
++        media::mojom::VideoAttributesForVASTPtr video_attributes) override;
++    void OnVideoDestroyed() override;
++    void OnFullScreenOverlayEnter(
++        media::mojom::MediaInfoForVASTPtr media_info) override;
++    void OnAVCastStarted(
++        media::mojom::MediaInfoForVASTPtr media_info) override;
++
++    void UpdatePlayStateOverlay(uint32_t playState) override;
++    void MutedChangedOverlay(bool muted) override;
++    void PlaybackRateChangedOverlay(double playback_rate) override;
++
++    void DurationChangedOverlay(double duration) override;
++    void TimeUpdateOverlay(double current_time) override;
++    void BufferedEndTimeChangedOverlay(double buffered_end_time) override;
++    void EndedOverlay() override;
++
++    void FullscreenChangedOverlay(bool fullscreen) override;
++    void SeekingOverlay() override;
++    void SeekingFinishedOverlay() override;
++    void ErrorOverlay(int32_t error_code, const std::string& error_msg) override;
++    void VideoSizeChangedOverlay(int32_t width, int32_t height) override;
++    void FullscreenOverlayChanged(
++        bool fullscreen_overlay, const std::string& decoder_name) override;
++    void OnVolumeChanged(double volume) override;
++#endif  // ARKWEB_VIDEO_ASSISTANT
++
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++    bool IsWebContentsAvailable();
++#endif
++
++#if BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
++    bool IsFullscreenVideoOverlayEnabled();
++#endif
++
++#if BUILDFLAG(ARKWEB_PIP)
++    void OnPictureInPictureStateChanged(
++        uint32_t state, int32_t width, int32_t height) override;
++#endif
++
++#if BUILDFLAG(ARKWEB_MEDIA_CAST)
++    void OnMediaCastEnter() override;
++    void OnNotifyMeidaCastUri(const std::string& media_uri) override;
++    void HandleStopMediaCast() override;
++    void UpdateRemotePlayState(bool is_playing) override;
++    void UpdateRemotePlayPosition(int64_t position) override;
++    void SetPauseByAvcast(bool pause_avcast) override;
++#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+    private:
+     PlayerInfo* GetPlayerInfo();
+     void NotifyAudioStreamMonitorIfNeeded();
+ 
+     void OnReceivedMediaDeviceSalt(

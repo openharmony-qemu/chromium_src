@@ -581,6 +581,11 @@ class BLINK_EXPORT WebLocalFrame : public WebFrame {
   virtual void SelectRange(const gfx::Point& base,
                            const gfx::Point& extent) = 0;
 
+#if BUILDFLAG(ARKWEB_MENU)
+  virtual void SelectRangeV2(const gfx::Point& position,
+                             bool is_base) = 0;
+#endif
+
   enum HandleVisibilityBehavior {
     // Hide handle(s) in the new selection.
     kHideSelectionHandle,
@@ -809,6 +814,11 @@ class BLINK_EXPORT WebLocalFrame : public WebFrame {
   virtual std::unique_ptr<WebAssociatedURLLoader> CreateAssociatedURLLoader(
       const WebAssociatedURLLoaderOptions&) = 0;
 
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  virtual std::unique_ptr<WebAssociatedURLLoader> CreateVideoURLLoader(
+      const WebAssociatedURLLoaderOptions&) = 0;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
   // This API is deprecated and only required by PepperURLLoaderHost::Close()
   // and PepperPluginInstanceImpl::HandleDocumentLoad() and so it should not be
   // used on a regular basis.
@@ -992,6 +1002,27 @@ class BLINK_EXPORT WebLocalFrame : public WebFrame {
   // This should only be used for extensions and the webview tag.
   virtual void SetAllowsCrossBrowsingInstanceFrameLookup() = 0;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  virtual void DidSubresourceFiltered() = 0;
+
+  virtual void SetHasElemHideTypeOption(bool has_elemhide_type_option) = 0;
+
+  virtual bool GetHasElemHideTypeOption() const = 0;
+
+  virtual void SetHasDocumentTypeOption(bool has_document_type_option) = 0;
+
+  virtual bool GetHasDocumentTypeOption() const = 0;
+
+  virtual void SetHasGenericHideTypeOption(
+      bool has_generichide_type_option) = 0;
+
+  virtual bool GetHasGenericHideTypeOption() const = 0;
+
+  virtual bool GetAdBlockEnabled() = 0;
+
+  virtual void UpdateAdBlockEnabledToRender(bool site_adblock_enabled) = 0;
+#endif
+
   virtual void SetTargetToCurrentHistoryItem(const WebString& target) = 0;
   virtual void UpdateCurrentHistoryItem() = 0;
   virtual PageState CurrentHistoryItemToPageState() = 0;
@@ -1033,6 +1064,14 @@ class BLINK_EXPORT WebLocalFrame : public WebFrame {
 
   virtual bool AllowStorageAccessSyncAndNotify(
       WebContentSettingsClient::StorageType storage_type) = 0;
+
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  virtual void SelectClosetWordAndShowSelectionMenu() = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_AI)
+  virtual void OnDataDetectorSelectText() = 0;
+#endif
 
  protected:
   explicit WebLocalFrame(mojom::TreeScopeType scope,

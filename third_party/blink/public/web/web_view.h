@@ -33,6 +33,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/common/dom_storage/session_storage_namespace_id.h"
 #include "third_party/blink/public/common/fenced_frame/redacted_fenced_frame_config.h"
 #include "third_party/blink/public/common/fingerprinting_protection/noise_token.h"
@@ -371,7 +372,12 @@ class BLINK_EXPORT WebView {
 
   // Sets the visibility of the WebView.
   virtual void SetVisibilityState(mojom::PageVisibilityState visibility_state,
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
                                   bool is_initial_state) = 0;
+#else
+                                  bool is_initial_state,
+                                  bool storing_in_bfcache = false) = 0;
+#endif
   virtual mojom::PageVisibilityState GetVisibilityState() = 0;
 
   // PageLifecycleState ----------------------------------------------------
@@ -442,7 +448,11 @@ class BLINK_EXPORT WebView {
   // Applies blink related preferences to this view.
   static void ApplyWebPreferences(const web_pref::WebPreferences& prefs,
                                   WebView* web_view);
-
+#if BUILDFLAG(IS_ARKWEB)
+  static void ApplyWebPreferencesForInclude(
+      const web_pref::WebPreferences& prefs,
+      WebView* web_view);
+#endif
   virtual void SetWebPreferences(
       const web_pref::WebPreferences& preferences) = 0;
   virtual const web_pref::WebPreferences& GetWebPreferences() = 0;

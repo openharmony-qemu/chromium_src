@@ -1,0 +1,16 @@
+diff a/third_party/blink/public/common/context_menu_data/context_menu_data.h b/third_party/blink/public/common/context_menu_data/context_menu_data.h	(rejected hunks)
+@@ -32,10 +32,14 @@
+ #define THIRD_PARTY_BLINK_PUBLIC_COMMON_CONTEXT_MENU_DATA_CONTEXT_MENU_DATA_H_
+ 
+ #include <optional>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "services/network/public/mojom/referrer_policy.mojom-shared.h"
+ #include "third_party/blink/public/common/context_menu_data/menu_item_info.h"
+ #include "third_party/blink/public/common/input/web_menu_source_type.h"
+ #include "third_party/blink/public/common/navigation/impression.h"
+ #include "third_party/blink/public/mojom/annotation/annotation.mojom-shared.h"

@@ -95,7 +95,10 @@ class BLINK_PLATFORM_EXPORT WebThreadScheduler
   // IPC::Channel::UrgentMessageDelegate implementation:
   void OnUrgentMessageReceived() override;
   void OnUrgentMessageProcessed() override;
-
+#if BUILDFLAG(ARKWEB_SUSPEND_ALL_TIMERS)
+  virtual void PauseTimersForOHOSWebView();
+  virtual void ResumeTimersForOHOSWebView();
+#endif  // BUILDFLAG(IS_OHOS)
  protected:
   WebThreadScheduler() = default;
 };

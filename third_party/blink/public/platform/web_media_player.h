@@ -33,6 +33,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/time/time.h"
@@ -49,6 +50,16 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/size.h"
 #include "url/gurl.h"
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#include "arkweb/chromium_ext/media/base/action_reason.h"
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+#include "base/memory/memory_pressure_listener.h"
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+#include "media/base/pipeline_status.h"
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 namespace cc {
 class PaintCanvas;

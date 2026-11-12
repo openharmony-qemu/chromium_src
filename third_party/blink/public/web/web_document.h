@@ -153,7 +153,12 @@ class BLINK_EXPORT WebDocument : public WebNode {
       const WebString& source_code,
       const WebStyleSheetKey* = nullptr,
       WebCssOrigin = WebCssOrigin::kAuthor,
-      BackForwardCacheAware = BackForwardCacheAware::kAllow);
+      BackForwardCacheAware = BackForwardCacheAware::kAllow
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      ,
+      const StyleSheetType = StyleSheetType::kNormal
+#endif
+  );
 
   // Removes the CSS which was previously inserted by a call to
   // InsertStyleSheet().
@@ -168,6 +173,11 @@ class BLINK_EXPORT WebDocument : public WebNode {
   std::vector<WebDraggableRegion> DraggableRegions() const;
 
   WebDistillabilityFeatures DistillabilityFeatures();
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  BLINK_EXPORT WebDistillabilityMatchInfo DistillabilityMatchInfo(
+      const blink::mojom::UrlHostDistillerInfoPtr& distiller_info);
+#endif
 
   void SetShowBeforeUnloadDialog(bool show_dialog);
 

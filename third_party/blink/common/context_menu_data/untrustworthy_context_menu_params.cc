@@ -4,6 +4,9 @@
 
 #include "third_party/blink/public/common/context_menu_data/untrustworthy_context_menu_params.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "third_party/blink/public/common/context_menu_data/context_menu_data.h"
 #include "third_party/blink/public/mojom/context_menu/context_menu.mojom.h"
 #include "ui/base/mojom/menu_source_type.mojom-shared.h"
@@ -19,6 +22,12 @@ UntrustworthyContextMenuParams::UntrustworthyContextMenuParams()
       media_flags(0),
       spellcheck_enabled(false),
       is_editable(false),
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+      is_selectable(false),
+#endif
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      is_ai_link(false),
+#endif
       writing_direction_default(
           blink::ContextMenuData::kCheckableMenuItemDisabled),
       writing_direction_left_to_right(
@@ -28,7 +37,8 @@ UntrustworthyContextMenuParams::UntrustworthyContextMenuParams()
       edit_flags(0),
       referrer_policy(network::mojom::ReferrerPolicy::kDefault),
       source_type(ui::mojom::MenuSourceType::kNone),
-      selection_start_offset(0) {}
+      selection_start_offset(0) {
+}
 
 UntrustworthyContextMenuParams::UntrustworthyContextMenuParams(
     const UntrustworthyContextMenuParams& other) {
@@ -83,6 +93,13 @@ void UntrustworthyContextMenuParams::Assign(
   is_content_editable_for_autofill = other.is_content_editable_for_autofill;
   field_renderer_id = other.field_renderer_id;
   form_renderer_id = other.form_renderer_id;
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  is_selectable = other.is_selectable;
+#endif
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  image_rect = other.image_rect;
+  is_ai_link = other.is_ai_link;
+#endif
 }
 
 UntrustworthyContextMenuParams::~UntrustworthyContextMenuParams() = default;

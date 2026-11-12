@@ -1,0 +1,55 @@
+diff a/third_party/blink/public/web/web_document.h b/third_party/blink/public/web/web_document.h	(rejected hunks)
+@@ -46,10 +46,19 @@
+ #include "third_party/blink/public/platform/web_security_origin.h"
+ #include "third_party/blink/public/web/web_css_origin.h"
+ #include "third_party/blink/public/web/web_draggable_region.h"
+ #include "third_party/blink/public/web/web_node.h"
+ #include "third_party/skia/include/core/SkColor.h"
++
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
++
++#if BUILDFLAG(ARKWEB_READER_MODE)
++#include "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom.h"
++#endif
++
+ #include "ui/accessibility/ax_error_types.h"
+ 
+ namespace ui {
+ struct AXTreeUpdate;
+ class AXMode;
+@@ -64,10 +73,13 @@ class WebFormControlElement;
+ class WebElementCollection;
+ class WebLocalFrame;
+ class WebString;
+ class WebURL;
+ struct WebDistillabilityFeatures;
++#if BUILDFLAG(ARKWEB_READER_MODE)
++struct WebDistillabilityMatchInfo;
++#endif
+ 
+ using WebStyleSheetKey = WebString;
+ 
+ // An enumeration used to enumerate usage of APIs that may prevent a document
+ // from entering the back forward cache. |kAllow| means usage of the API will
+@@ -80,10 +92,19 @@ enum class BackForwardCacheAware { kAllow, kPossiblyDisallow };
+ class BLINK_EXPORT WebDocument : public WebNode {
+  public:
+   WebDocument() = default;
+   WebDocument(const WebDocument& e) = default;
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  enum class StyleSheetType : int32_t {
++    kNormal,
++    kAdBlock,
++    kUserAdBlock,
++    kManualAdBlock
++  };
++#endif
++
+   WebDocument& operator=(const WebDocument& e) {
+     WebNode::Assign(e);
+     return *this;
+   }
+   void Assign(const WebDocument& e) { WebNode::Assign(e); }

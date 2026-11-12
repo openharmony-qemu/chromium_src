@@ -77,6 +77,9 @@ class BLINK_PLATFORM_EXPORT ResourceLoadInfoNotifierWrapper {
   // |weak_wrapper_resource_load_info_notifier_|.
   mojom::ResourceLoadInfoPtr resource_load_info_;
 
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  bool used_shared_memory_{false};
+#endif
   bool is_ad_resource_ = false;
 };
 

@@ -1,0 +1,25 @@
+diff a/third_party/abseil-cpp/absl/synchronization/BUILD.gn b/third_party/abseil-cpp/absl/synchronization/BUILD.gn	(rejected hunks)
+@@ -1,10 +1,11 @@
+ # Copyright 2018 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//third_party/abseil-cpp/absl.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ absl_source_set("graphcycles_internal") {
+   sources = [ "internal/graphcycles.cc" ]
+   public = [ "internal/graphcycles.h" ]
+   deps = [
+@@ -88,10 +89,11 @@ absl_source_set("synchronization") {
+     "//third_party/abseil-cpp/absl/debugging:stacktrace",
+     "//third_party/abseil-cpp/absl/debugging:symbolize",
+     "//third_party/abseil-cpp/absl/meta:type_traits",
+     "//third_party/abseil-cpp/absl/time",
+   ]
++  deps +=["//arkweb/build/features"]
+ }
+ 
+ absl_test("barrier_test") {
+   sources = [ "barrier_test.cc" ]
+   deps = [

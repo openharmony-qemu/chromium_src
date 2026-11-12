@@ -4,10 +4,14 @@
 
 #include "third_party/blink/public/common/web_preferences/web_preferences_mojom_traits.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/strings/string_util.h"
 #include "build/build_config.h"
 #include "mojo/public/cpp/base/string16_mojom_traits.h"
 #include "url/mojom/url_gurl_mojom_traits.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/common/web_preferences_mojom_traits_for_include.cc"
+#endif
 
 namespace mojo {
 
@@ -139,6 +143,9 @@ bool StructTraits<blink::mojom::WebPreferencesDataView,
   out->viewport_meta_enabled = data.viewport_meta_enabled();
   out->auto_zoom_focused_editable_to_legible_scale =
       data.auto_zoom_focused_editable_to_legible_scale();
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  out->is_desktop = data.is_desktop();
+#endif
   out->shrinks_viewport_contents_to_fit =
       data.shrinks_viewport_contents_to_fit();
   out->smooth_scroll_for_find_enabled = data.smooth_scroll_for_find_enabled();

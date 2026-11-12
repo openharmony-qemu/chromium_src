@@ -1,0 +1,16 @@
+diff a/third_party/blink/public/devtools_protocol/domains/Page.pdl b/third_party/blink/public/devtools_protocol/domains/Page.pdl	(rejected hunks)
+@@ -1778,5 +1778,13 @@ domain Page
+     returns
+       # The annotated page content as a base64 encoded protobuf.
+       # The format is defined by the `AnnotatedPageContent` message in
+       # components/optimization_guide/proto/features/common_quality_data.proto
+       binary content
++
++  # BUILDFLAG(ARKWEB_AUTOLAYOUT), relative changes in content/browser/devtools/protocol_config.json
++  # and third_party/blink/renderer/core/inspector/inspector_protocol_config.json.
++  # Returns whether the page is visible.
++  command getPageVisibility
++    returns
++      # True if the page is visible.
++      boolean isVisible
+\ No newline at end of file

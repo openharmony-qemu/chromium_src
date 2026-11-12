@@ -1,0 +1,27 @@
+diff a/third_party/blink/public/platform/resource_load_info_notifier_wrapper.h b/third_party/blink/public/platform/resource_load_info_notifier_wrapper.h	(rejected hunks)
+@@ -3,10 +3,11 @@
+ // found in the LICENSE file.
+ 
+ #ifndef THIRD_PARTY_BLINK_PUBLIC_PLATFORM_RESOURCE_LOAD_INFO_NOTIFIER_WRAPPER_H_
+ #define THIRD_PARTY_BLINK_PUBLIC_PLATFORM_RESOURCE_LOAD_INFO_NOTIFIER_WRAPPER_H_
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/sequence_checker.h"
+ #include "base/task/single_thread_task_runner.h"
+ #include "build/build_config.h"
+ #include "net/base/request_priority.h"
+ #include "services/network/public/mojom/fetch_api.mojom-shared.h"
+@@ -60,10 +61,13 @@ class BLINK_PLATFORM_EXPORT ResourceLoadInfoNotifierWrapper {
+       network::mojom::URLResponseHeadPtr response_head);
+   void NotifyResourceTransferSizeUpdated(int32_t transfer_size_diff);
+   void NotifyResourceLoadCompleted(
+       const network::URLLoaderCompletionStatus& status);
+   void NotifyResourceLoadCanceled(int net_error);
++#if BUILDFLAG(ARKWEB_NETWORK_BASE)
++  void SetUsedSharedMemory() { used_shared_memory_ = true; }
++#endif
+ 
+  private:
+   SEQUENCE_CHECKER(sequence_checker_);
+ 
+   // |weak_wrapper_resource_load_info_notifier_| should only be dereferenced on

@@ -1,0 +1,51 @@
+diff a/third_party/blink/common/BUILD.gn b/third_party/blink/common/BUILD.gn	(rejected hunks)
+@@ -326,16 +328,32 @@ source_set("common") {
+     "//ui/events:events_base",
+     "//ui/events/mojom:event_latency_metadata_mojom",
+     "//ui/latency/mojom:shared_mojom_traits",
+   ]
+ 
++  if (arkweb_input_events) {
++    sources += arkweb_third_party_blink_common_event_sources
++  }
++
++  if (arkweb_msgport) {
++    sources += arkweb_string_message_codec_cc_sources
++  }
++
++  if (is_arkweb) {
++    sources += arkweb_context_memu_params_builder_cc_sources
++  }
++
++  if (arkweb_pinch_smooth) {
++    deps += [ "//arkweb/build/features" ]
++  }
++
+   # If use_blink is used then it needs to depend on //media
+   if (use_blink) {
+     deps += [ "//media" ]
+   }
+ 
+-  if (is_android || is_win) {
++  if (is_android || is_win || (is_arkweb && arkweb_wpt)) {
+     sources += [
+       "font_unique_name_lookup/font_table_matcher.cc",
+       "font_unique_name_lookup/font_table_persistence.cc",
+       "font_unique_name_lookup/icu_fold_case_util.cc",
+     ]
+@@ -487,10 +510,15 @@ source_set("common_unittests_sources") {
+       "messaging/string_message_codec_unittest.cc",
+       "messaging/web_message_port_unittest.cc",
+     ]
+   }
+ 
++  if (arkweb_unittests) {
++    sources += arkweb_string_message_codec_test_sources
++    sources += arkweb_third_party_blink_common_event_test_sources
++  }
++
+   if (is_android || is_win) {
+     sources += [
+       "font_unique_name_lookup/font_table_matcher_unittest.cc",
+       "font_unique_name_lookup/icu_fold_case_util_unittest.cc",
+     ]

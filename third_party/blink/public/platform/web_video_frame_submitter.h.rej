@@ -1,0 +1,23 @@
+diff a/third_party/blink/public/platform/web_video_frame_submitter.h b/third_party/blink/public/platform/web_video_frame_submitter.h	(rejected hunks)
+@@ -80,10 +80,21 @@ class BLINK_PLATFORM_EXPORT WebVideoFrameSubmitter
+   // not submit unless submission is expected.
+   virtual void SetForceBeginFrames(bool) = 0;
+ 
+   // Set whether frames should always be submitted regardless of visibility.
+   virtual void SetForceSubmit(bool) = 0;
++
++  virtual void ResetDroppedFrameMetrics() = 0;
++
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  virtual void SetRenderVideoView(bool) {}
++#endif
++
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  virtual void SetHasNativeLayer(bool has_native_layer) {}
++  virtual void SetDeviceScaleFactor(float device_scale_factor) {}
++#endif
+ };
+ 
+ }  // namespace blink
+ 
+ #endif  // THIRD_PARTY_BLINK_PUBLIC_PLATFORM_WEB_VIDEO_FRAME_SUBMITTER_H_

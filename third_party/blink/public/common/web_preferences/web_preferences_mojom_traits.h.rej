@@ -1,0 +1,207 @@
+diff a/third_party/blink/public/common/web_preferences/web_preferences_mojom_traits.h b/third_party/blink/public/common/web_preferences/web_preferences_mojom_traits.h	(rejected hunks)
+@@ -5,10 +5,14 @@
+ #ifndef THIRD_PARTY_BLINK_PUBLIC_COMMON_WEB_PREFERENCES_WEB_PREFERENCES_MOJOM_TRAITS_H_
+ #define THIRD_PARTY_BLINK_PUBLIC_COMMON_WEB_PREFERENCES_WEB_PREFERENCES_MOJOM_TRAITS_H_
+ 
+ #include <optional>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "build/build_config.h"
+ #include "mojo/public/cpp/bindings/struct_traits.h"
+ #include "net/nqe/effective_connection_type.h"
+ #include "third_party/blink/public/common/common_export.h"
+ #include "third_party/blink/public/common/web_preferences/web_preferences.h"
+@@ -538,10 +547,89 @@ struct BLINK_COMMON_EXPORT StructTraits<blink::mojom::WebPreferencesDataView,
+ 
+   static const GURL& web_app_scope(const ::blink::web_pref::WebPreferences& r) {
+     return r.web_app_scope;
+   }
+ 
++#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
++  static float font_scale_factor(const blink::web_pref::WebPreferences& r) {
++    return r.font_scale_factor;
++  }
++
++  static int font_weight_adjustment(const blink::web_pref::WebPreferences& r) {
++    return r.font_weight_adjustment;
++  }
++
++  static int text_size_contrast_factor(
++      const blink::web_pref::WebPreferences& r) {
++    return r.text_size_contrast_factor;
++  }
++
++  static float device_scale_adjustment(
++      const blink::web_pref::WebPreferences& r) {
++    return r.device_scale_adjustment;
++  }
++
++  static bool support_deprecated_target_density_dpi(
++      const blink::web_pref::WebPreferences& r) {
++    return r.support_deprecated_target_density_dpi;
++  }
++
++  static bool wide_viewport_quirk(const blink::web_pref::WebPreferences& r) {
++    return r.wide_viewport_quirk;
++  }
++
++  static bool use_wide_viewport(const blink::web_pref::WebPreferences& r) {
++    return r.use_wide_viewport;
++  }
++
++  static bool force_zero_layout_height(
++      const blink::web_pref::WebPreferences& r) {
++    return r.force_zero_layout_height;
++  }
++
++  static bool viewport_meta_merge_content_quirk(
++      const blink::web_pref::WebPreferences& r) {
++    return r.viewport_meta_merge_content_quirk;
++  }
++
++  static bool viewport_meta_non_user_scalable_quirk(
++      const blink::web_pref::WebPreferences& r) {
++    return r.viewport_meta_non_user_scalable_quirk;
++  }
++
++  static bool viewport_meta_zero_values_quirk(
++      const blink::web_pref::WebPreferences& r) {
++    return r.viewport_meta_zero_values_quirk;
++  }
++
++  static bool ignore_main_frame_overflow_hidden_quirk(
++      const blink::web_pref::WebPreferences& r) {
++    return r.ignore_main_frame_overflow_hidden_quirk;
++  }
++
++  static bool report_screen_size_in_physical_pixels_quirk(
++      const blink::web_pref::WebPreferences& r) {
++    return r.report_screen_size_in_physical_pixels_quirk;
++  }
++
++  static bool reuse_global_for_unowned_main_frame(
++      const blink::web_pref::WebPreferences& r) {
++    return r.reuse_global_for_unowned_main_frame;
++  }
++
++  static bool css_hex_alpha_color_enabled(
++      const blink::web_pref::WebPreferences& r) {
++    return r.css_hex_alpha_color_enabled;
++  }
++
++  static bool disable_accelerated_small_canvases(
++      const blink::web_pref::WebPreferences& r) {
++    return r.disable_accelerated_small_canvases;
++  }
++
++#endif
++
+ #if BUILDFLAG(IS_ANDROID)
+   static float font_scale_factor(const blink::web_pref::WebPreferences& r) {
+     return r.font_scale_factor;
+   }
+ 
+@@ -823,10 +1106,100 @@ struct BLINK_COMMON_EXPORT StructTraits<blink::mojom::WebPreferencesDataView,
+   require_transient_activation_and_user_confirmation_for_subapps_api(
+       const blink::web_pref::WebPreferences& r) {
+     return r.subapps_apis_require_user_gesture_and_authorization;
+   }
+ 
++#if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
++  static int64_t delay_for_background_tab_freezing(
++      const blink::web_pref::WebPreferences& r) {
++    return r.delay_for_background_tab_freezing;
++  }
++#endif  // ARKWEB_ACTIVE_POLICY
++
++#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
++  static bool contextmenu_customization_enabled(
++      const blink::web_pref::WebPreferences& r) {
++    return r.contextmenu_customization_enabled;
++  }
++#endif
++
++#if BUILDFLAG(ARKWEB_COPY_OPTION)
++  static blink::mojom::CopyOptionMode copy_option(
++      const blink::web_pref::WebPreferences& r) {
++    return r.copy_option;
++  }
++#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
++
++#if BUILDFLAG(ARKWEB_FOCUS)
++  static int gesture_focus_mode(const blink::web_pref::WebPreferences& r) {
++    return r.gesture_focus_mode;
++  }
++#endif
++
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++  static bool custom_video_player_enable(
++      const blink::web_pref::WebPreferences& r) {
++    return r.custom_video_player_enable;
++  }
++  static bool custom_video_player_overlay(
++      const blink::web_pref::WebPreferences& r) {
++    return r.custom_video_player_overlay;
++  }
++#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
++
++#if BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
++  static bool fullscreen_video_overlay_enable(
++      const blink::web_pref::WebPreferences& r) {
++    return r.fullscreen_video_overlay_enable;
++  }
++#endif  // ARKWEB_FULLSCREEN_VIDEO_OVERLAY
++
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++  static int32_t usage_scenario(const blink::web_pref::WebPreferences& r) {
++    return r.usage_scenario;
++  }
++#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
++
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  static bool video_assistant_enabled(
++      const blink::web_pref::WebPreferences& r) {
++    return r.video_assistant_enabled;
++  }
++  static bool custom_media_player_enabled(
++      const blink::web_pref::WebPreferences& r) {
++    return r.custom_media_player_enabled;
++  }
++#endif // ARKWEB_VIDEO_ASSISTANT
++
++#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
++  static bool force_enable_zoom(const blink::web_pref::WebPreferences& r) {
++    return r.force_enable_zoom;
++  }
++#endif
++
++#if BUILDFLAG(ARKWEB_ERROR_PAGE)
++  static bool error_page_enabled(const blink::web_pref::WebPreferences& r) {
++    return r.error_page_enabled;
++  }
++  static bool subframe_error_page_enabled(const blink::web_pref::WebPreferences& r) {
++    return r.subframe_error_page_enabled;
++  }
++#endif
++
++#if BUILDFLAG(ARKWEB_BFCACHE)
++  static bool media_resume_from_bfcache_page(const blink::web_pref::WebPreferences& r) {
++    return r.media_resume_from_bfcache_page;
++  }
++#endif // BUILDFLAG(ARKWEB_BFCACHE)
++
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++  static bool clipboard_site_permission_enabled(const blink::web_pref::WebPreferences& r) {
++    return r.clipboard_site_permission_enabled;
++  }
++#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
++
++
+   static bool payment_request_enabled(
+       const blink::web_pref::WebPreferences& r) {
+     return r.payment_request_enabled;
+   }
+ 

@@ -1,0 +1,30 @@
+diff a/third_party/blink/public/web/web_element.h b/third_party/blink/public/web/web_element.h	(rejected hunks)
+@@ -48,10 +48,11 @@ namespace blink {
+ 
+ class Element;
+ class Image;
+ class LayoutBox;
+ class WebLabelElement;
++class WebElementUtils;
+ 
+ // Provides access to some properties of a DOM element node.
+ class BLINK_EXPORT WebElement : public WebNode {
+  public:
+   WebElement() : WebNode() {}
+@@ -119,11 +120,16 @@ class BLINK_EXPORT WebElement : public WebNode {
+   //   action appends to the element.
+   // - Otherwise, the current selection is unchanged, so that the paste replaces
+   //   the selected text.
+   //
+   // This is a no-op if the element is not editable.
++#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
++  void PasteText(const WebString& text, bool replace_all, bool should_smart_replace = true,
++               bool suppress_paste_event = false);
++#else
+   void PasteText(const WebString& text, bool replace_all);
++#endif
+ 
+   // Returns all <label> elements associated to this element.
+   std::vector<WebLabelElement> Labels() const;
+ 
+   // Returns true if this is an autonomous custom element.

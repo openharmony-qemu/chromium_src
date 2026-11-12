@@ -1,0 +1,15 @@
+diff a/third_party/blink/public/platform/media/web_media_player_builder.h b/third_party/blink/public/platform/media/web_media_player_builder.h	(rejected hunks)
+@@ -98,10 +102,13 @@ class BLINK_PLATFORM_EXPORT WebMediaPlayerBuilder {
+       bool is_background_video_playback_enabled,
+       bool is_background_video_track_optimization_supported,
+       std::unique_ptr<media::Demuxer> demuxer_override,
+       scoped_refptr<ThreadSafeBrowserInterfaceBrokerProxy> remote_interfaces);
+ 
++#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
++  void SetNewsFeedPageFitted(bool val);
++#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+  private:
+   // Media resource cache.
+   std::unique_ptr<ResourceFetchContext> fetch_context_;
+   std::unique_ptr<UrlIndex> url_index_;
+ };

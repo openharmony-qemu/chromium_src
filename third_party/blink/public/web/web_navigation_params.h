@@ -8,6 +8,11 @@
 #include <memory>
 #include <optional>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 #include "base/containers/flat_map.h"
 #include "base/containers/span.h"
 #include "base/memory/raw_ptr.h"
@@ -649,6 +654,10 @@ struct BLINK_EXPORT WebNavigationParams {
   // the VisitedLinkNotificationSink interface) after the :visited link
   // hashtable is initialized.
   std::optional<uint64_t> visited_link_salt;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  int32_t custom_viewport_width = 0;
+#endif
 
   // Map of permission statuses at commit time.
   // Note: the permission statues will be only used as initial states of

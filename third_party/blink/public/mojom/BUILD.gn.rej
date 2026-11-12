@@ -1,0 +1,20 @@
+diff a/third_party/blink/public/mojom/BUILD.gn b/third_party/blink/public/mojom/BUILD.gn	(rejected hunks)
+@@ -11,10 +12,18 @@ import("//third_party/blink/renderer/config.gni")
+ 
+ if (is_android) {
+   import("//build/config/android/config.gni")
+ }
+ 
++if (is_arkweb) {
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++}
++
++if (defined(is_arkweb_ext) && is_arkweb_ext) {
++  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
++}
++
+ # This target includes all mojom interfaces which can be used from
+ # renderer/platform. In particular these mojom interfaces can't use types that
+ # are typemapped to a type in renderer/core.
+ #
+ # Source targets outside of Blink that want to depend on mojom_platform should

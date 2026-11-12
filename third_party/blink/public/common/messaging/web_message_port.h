@@ -8,6 +8,7 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/task/sequenced_task_runner.h"
 #include "mojo/public/cpp/bindings/connector.h"
@@ -193,6 +194,10 @@ struct BLINK_COMMON_EXPORT WebMessagePort::Message {
   Message& operator=(const Message&) = delete;
   Message& operator=(Message&&);
   ~Message();
+
+#if BUILDFLAG(ARKWEB_MSGPORT)
+#include "arkweb/chromium_ext/third_party/blink/public/common/messaging/arkweb_web_message_port_for_include.h"
+#endif
 
   // Creates a message with the given |data|.
   explicit Message(const std::u16string& data);

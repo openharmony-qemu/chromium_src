@@ -77,6 +77,21 @@ struct FileChooserParams {
   // initiated by a document. Note that this value should be considered
   // untrustworthy since it is specified by the sandbox and not validated.
   url.mojom.Url requestor;
+
+  [EnableIf=arkweb_file_upload]
+  array<mojo_base.mojom.String16> mime_types;
+
+  [EnableIf=arkweb_file_upload]
+  bool is_exclude_accept_all_options = false;
+
+  [EnableIf=arkweb_file_upload]
+  array<mojo_base.mojom.String16> descriptions;
+
+  [EnableIf=arkweb_file_upload]
+  array<mojo_base.mojom.String16> start_in;
+
+  [EnableIf=arkweb_file_upload]
+  array<mojo_base.mojom.String16> accepts;
 };
 
 struct NativeFileInfo {

@@ -45,6 +45,11 @@ class WebAudioSourceProvider {
   // Must always be called from the same thread. I.e., once called on a thread,
   // all future calls to SetClient must be issued from that same thread.
   virtual void SetClient(WebAudioSourceProviderClient*) {}
+
+  // Sets a callback to invoke when the source pause state changes.
+  virtual void SetOnSourcePausedChangedCallback(
+      base::RepeatingCallback<void(bool)> /*callback*/) {}
+
 };
 
 }  // namespace blink

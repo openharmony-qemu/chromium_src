@@ -4,6 +4,9 @@
 
 #include "third_party/blink/public/common/context_menu_data/context_menu_mojom_traits.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "build/build_config.h"
 #include "third_party/blink/public/common/context_menu_data/menu_item_info.h"
 

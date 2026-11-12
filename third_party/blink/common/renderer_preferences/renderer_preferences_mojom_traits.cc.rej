@@ -1,0 +1,25 @@
+diff a/third_party/blink/common/renderer_preferences/renderer_preferences_mojom_traits.cc b/third_party/blink/common/renderer_preferences/renderer_preferences_mojom_traits.cc	(rejected hunks)
+@@ -121,10 +121,23 @@ bool StructTraits<blink::mojom::RendererPreferencesDataView,
+   out->middle_click_paste_allowed = data.middle_click_paste_allowed();
+ #endif
+   out->plugin_fullscreen_allowed = data.plugin_fullscreen_allowed();
+   out->caret_browsing_enabled = data.caret_browsing_enabled();
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  out->is_global_adblock_enabled = data.is_global_adblock_enabled();
++#endif
++
++#if BUILDFLAG(ARKWEB_READER_MODE)
++  out->is_reader_mode_enabled = data.is_reader_mode_enabled();
++  out->is_custom_reader_mode_enabled = data.is_custom_reader_mode_enabled();
++#endif
++
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
++  out->blank_screen_monitor_enabled = data.blank_screen_monitor_enabled();
++#endif
++
+ #if BUILDFLAG(IS_ANDROID)
+   out->uses_platform_autofill = data.uses_platform_autofill();
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
+   if (!data.ReadExplicitlyAllowedNetworkPorts(

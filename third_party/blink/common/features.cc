@@ -1786,9 +1786,9 @@ BASE_FEATURE(kPreferCompositingToLCDText,
 #endif
 );
 
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 BASE_FEATURE(kPrefetchFontLookupTables,
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
              base::FEATURE_DISABLED_BY_DEFAULT
 #else
              base::FEATURE_ENABLED_BY_DEFAULT
@@ -2333,6 +2333,18 @@ BASE_FEATURE_PARAM(int,
                    1);
 
 BASE_FEATURE(kVSyncDecoding, base::FEATURE_DISABLED_BY_DEFAULT);
+
+#if BUILDFLAG(ARKWEB_NOT_LOAD_IFRAME)
+BASE_FEATURE(kNotLoadIframe,
+                     "kNotLoadIframe",
+                     base::FEATURE_ENABLED_BY_DEFAULT);
+BASE_FEATURE_PARAM(int, 
+                           kCrashesFrequencyPerUnitTime,
+                           &kNotLoadIframe,
+                           "crashes_frequency_per_unit_time",
+                           16);
+#endif  // ARKWEB_NOT_LOAD_IFRAME
+
 BASE_FEATURE_PARAM(base::TimeDelta,
                    kVSyncDecodingHiddenOccludedTickDuration,
                    &kVSyncDecoding,
@@ -2414,7 +2426,7 @@ BASE_FEATURE(kWebAudioAudibilityHysteresis, base::FEATURE_ENABLED_BY_DEFAULT);
 // The feature is disabled on Android for WebView API issue discussed at
 // https://crbug.com/942440.
 BASE_FEATURE(kWebFontsCacheAwareTimeoutAdaption,
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
              base::FEATURE_DISABLED_BY_DEFAULT
 #else
              base::FEATURE_ENABLED_BY_DEFAULT

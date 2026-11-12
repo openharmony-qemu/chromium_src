@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/features.gni")
 import("//build/config/ui.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
@@ -305,6 +306,22 @@ mojom("mojom_platform") {
     "worker/worklet_global_scope_creation_params.mojom",
   ]
 
+  if (arkweb_software_compositor) {
+    sources += [ "//arkweb/chromium_ext/third_party/blink/public/mojom/input/software_compositor_ohos.mojom" ]
+  }
+
+  if (arkweb_ai) {
+    sources += [ "//arkweb/chromium_ext/third_party/blink/public/mojom/ai/ai_language_detector.mojom" ]
+  }
+
+  if (arkweb_copy_option) {
+    sources += arkweb_copy_option_mojom_sources
+  }
+
+  if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
+    sources += [ "//arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom" ]
+  }
+
   if (is_android) {
     sources += [ "input/synchronous_compositor.mojom" ]
   }
@@ -431,9 +448,20 @@ mojom("mojom_platform") {
     ]
   }
 
+  if (defined(arkweb_custom_fonts) && arkweb_custom_fonts) {
+    public_deps += [ "//arkweb/chromium_ext/third_party/blink/public/mojom/custom_font_lookup:mojom" ]
+  }
+
   enabled_features = []
   if (use_ozone) {
     enabled_features += [ "is_selection_clipboard_buffer_possible" ]
+  }
+  if (is_arkweb) {
+    import("//arkweb/chromium_ext/third_party/blink/public/mojom/arkweb_features_include.gni")
+    enabled_features += mojom_platform_enabled_features
+  }
+  if (defined(arkweb_ext_free_copy) && arkweb_ext_free_copy) {
+    enabled_features += [ "arkweb_ext_free_copy" ]
   }
 
   shared_cpp_typemaps = [
@@ -1193,6 +1221,7 @@ mojom("mojom_core") {
     "page/page.mojom",
     "page/page_visibility_state.mojom",
     "page/prerender_page_param.mojom",
+    "//arkweb/chromium_ext/third_party/blink/public/mojom/page/text_recognize_result.mojom",
     "page/widget.mojom",
     "page_state/page_state.mojom",
 
@@ -1300,6 +1329,15 @@ mojom("mojom_core") {
   enabled_features = []
   if (use_aura) {
     enabled_features += [ "use_aura" ]
+  }
+
+  if (is_arkweb) {
+    import("//arkweb/chromium_ext/third_party/blink/public/mojom/arkweb_features_include.gni")
+    enabled_features += mojom_core_enabled_features
+  }
+
+  if (defined(arkweb_ext_free_copy) && arkweb_ext_free_copy) {
+    enabled_features += [ "arkweb_ext_free_copy" ]
   }
 
   shared_cpp_typemaps = [
@@ -1783,6 +1821,10 @@ mojom("color_scheme_mojo_bindings") {
 
   sources = [ "frame/color_scheme.mojom" ]
 
+  enabled_features = []
+  if (defined(arkweb_night_mode)) {
+    enabled_features += [ "arkweb_night_mode" ]
+  }
   export_class_attribute = "BLINK_COMMON_EXPORT"
   export_define = "BLINK_COMMON_IMPLEMENTATION=1"
   export_header = "third_party/blink/public/common/common_export.h"

@@ -1,0 +1,29 @@
+diff a/third_party/blink/public/mojom/webpreferences/web_preferences.mojom b/third_party/blink/public/mojom/webpreferences/web_preferences.mojom	(rejected hunks)
+@@ -4,10 +4,13 @@
+ 
+ module blink.mojom;
+ 
+ import "mojo/public/mojom/base/string16.mojom";
+ import "skia/public/mojom/skcolor.mojom";
++
++[EnableIf=arkweb_copy_option]
++import "arkweb/chromium_ext/third_party/blink/public/mojom/copy_options.mojom";
+ import "third_party/blink/public/mojom/css/preferred_color_scheme.mojom";
+ import "third_party/blink/public/mojom/css/preferred_contrast.mojom";
+ import "third_party/blink/public/mojom/v8_cache_options.mojom";
+ import "url/mojom/url.mojom";
+ 
+@@ -291,11 +410,12 @@ struct WebPreferences {
+   int32 text_size_contrast_factor;
+ 
+   [EnableIf=is_android]
+   float device_scale_adjustment;
+ 
+-  [EnableIf=is_android]
++  // BUILDFLAG(IS_ARKWEB)
++  [EnableIf=is_android_or_arkweb]
+   bool force_enable_zoom;
+ 
+   [EnableIf=is_android]
+   url.mojom.Url default_video_poster_url;
+ 

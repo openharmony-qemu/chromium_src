@@ -1,0 +1,34 @@
+diff a/third_party/blink/public/mojom/webauthn/authenticator.mojom b/third_party/blink/public/mojom/webauthn/authenticator.mojom	(rejected hunks)
+@@ -245,10 +254,17 @@ struct AuthenticationExtensionsClientOutputs {
+ 
+   SupplementalPubKeysResponse? supplemental_pub_keys;
+ 
+   // The response for the payment extension.
+   AuthenticationExtensionsPaymentResponse? payment;
++
++  // Value that getClientExtensionResults() called on the returned
++  // PublicKeyCredential instance should contain for the `digitalShieldData`
++  // extension output `authData` parameter.
++  // #if BUILDFLAG(ARKWEB_FIDO)
++  array<uint8>? digital_shield_data;
++  // #endif BUILDFLAG(ARKWEB_FIDO)
+ };
+ 
+ // Information about the relying party. These fields take arbitrary input.
+ struct PublicKeyCredentialRpEntity {
+   // An ASCII serialization of an origin.
+@@ -633,10 +653,14 @@ struct PublicKeyCredentialCreationOptions {
+   array<PublicKeyCredentialParameters>? payment_browser_bound_key_parameters;
+ 
+   // https://w3c.github.io/webauthn/#dom-publickeycredentialcreationoptionsjson-attestationformats
+   array<string> attestation_formats;
+ 
++  // Mediation for fido.
++  [EnableIf=arkweb_fido]
++  PublicKeyCredentialMediationRequirement mediation;
++
+   bool is_conditional = false;
+ };
+ 
+ // See https://w3c.github.io/webauthn/#enumdef-attestationconveyancepreference
+ enum AttestationConveyancePreference {

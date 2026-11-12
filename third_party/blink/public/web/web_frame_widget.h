@@ -33,7 +33,9 @@
 
 #include <stdint.h>
 
+#include "arkweb/build/features/features.h"
 #include <vector>
+#include <string>
 
 #include "base/functional/callback_forward.h"
 #include "base/types/pass_key.h"
@@ -91,6 +93,80 @@ class WebFrameWidget : public WebWidget {
       const display::ScreenInfos& screen_info,
       const cc::LayerTreeSettings* settings,
       WebFrameWidget& previous_widget) = 0;
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void SetZoomLevel(float magnify_delta, const gfx::Point& anchor) {}
+  virtual void SetOverscrollMode(int mode) {}
+  virtual bool IsElementExist(std::string xPath) {
+    return false;
+  }
+  virtual int32_t ExecuteInputCommand(const std::string& xpath,
+                                      const std::string& value,
+                                      const std::string& event_type) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
+
+  virtual int32_t ExecuteAIPageInputCommandByXPath(const std::string& xpath,
+                                                   const std::string& value,
+                                                   const std::string& input_type) {
+    return 11; // WebCommandErrorCode::FAILED
+  }
+
+  virtual int32_t ExecuteAIPageInputCommandById(const std::string& id,
+                                                const std::string& value,
+                                                const std::string& input_type) {
+    return 11; // WebCommandErrorCode::FAILED
+  }
+
+  virtual int32_t ExecuteSelectCommand(const std::string& xpath,
+                                       const std::vector<int32_t>& indexes,
+                                       const std::vector<std::string>& values) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
+  virtual int32_t ExecuteSelectCommandById(const std::string& id,
+                                           const std::vector<int32_t>& indexes,
+                                           const std::vector<std::string>& values) {
+    return 11; // WebCommandErrorCode::FAILED
+  }
+  virtual int32_t ExecuteFocusCommand(const std::string& xpath,
+                                      bool suppress_keyboard) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
+  virtual int32_t ExecuteInputModifyCommand(const std::string& content) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
+  virtual int32_t ExecuteInputInsertCommand(const std::string& content,
+                                            int32_t index) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
+  virtual int32_t ExecuteAutoFillCommand(const std::string& xpath,
+                                         const std::string& content,
+                                         int32_t index, int32_t mode) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
+  virtual int32_t ExecuteClickCommand(const std::string& xpath) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
+  virtual int32_t ExecuteScrollCommand(const std::string& xpath,
+                                       const std::string& align,
+                                       int32_t offset) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
+  virtual int32_t ExecuteInputSelectCommand(int32_t start_index,
+                                            int32_t finish_index) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
+  virtual int32_t ExecuteInputSetCursorCommand(int32_t index) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  virtual gfx::Vector2dF GetOverScrollOffset() = 0;
+#endif
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  virtual void SetArkWebFrameSinkId(const viz::FrameSinkId& frame_sink_id) {}
+#endif
 
   // Returns the local root of this WebFrameWidget.
   virtual WebLocalFrame* LocalRoot() const = 0;

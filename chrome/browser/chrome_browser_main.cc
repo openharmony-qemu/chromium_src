@@ -204,7 +204,8 @@
 #include "chrome/browser/ui/views/chrome_browser_main_extra_parts_views_linux.h"
 #endif
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(ARKWEB_TEST)
 #include "chrome/browser/headless/headless_mode_metrics.h"  // nogncheck
 #include "chrome/browser/headless/headless_mode_util.h"     // nogncheck
 #include "chrome/browser/metrics/desktop_session_duration/desktop_session_duration_tracker.h"
@@ -632,7 +633,7 @@ bool ProcessSingletonNotificationCallback(
       FROM_HERE, base::BindOnce(&ProcessSingletonNotificationCallbackImpl,
                                 std::move(command_line), current_directory));
 }
-#endif  // BUILDFLAG(ENABLE_PROCESS_SINGLETON)
+#endif  // BUILDFLAG(ENABLE_PROCESS_SINGLETON) || BUILDFLAG(ARKWEB_TEST)
 
 #if !BUILDFLAG(IS_ANDROID)
 bool ShouldInstallSodaDuringPostProfileInit(
@@ -1115,7 +1116,7 @@ void ChromeBrowserMainParts::PreCreateMainMessageLoop() {
 void ChromeBrowserMainParts::PostCreateMainMessageLoop() {
   TRACE_EVENT0("startup", "ChromeBrowserMainParts::PostCreateMainMessageLoop");
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
   // Initialize the upgrade detector here after `ChromeBrowserMainPartsAsh`
   // has had a chance to connect the DBus services.
   UpgradeDetector::GetInstance()->Init();
@@ -1267,7 +1268,10 @@ int ChromeBrowserMainParts::PreCreateThreadsImpl() {
   TRACE_EVENT0("startup", "ChromeBrowserMainParts::PreCreateThreadsImpl");
 
   if (startup_data_->chrome_feature_list_creator()->actual_locale().empty()) {
+#if !BUILDFLAG(IS_OHOS)
+    // TODO:OHOS
     ShowMissingLocaleMessageBox();
+#endif
     return CHROME_RESULT_CODE_MISSING_DATA;
   }
 
@@ -1470,7 +1474,7 @@ int ChromeBrowserMainParts::PostCreateThreads() {
                      sampling_profiler::ProfilerThreadType::kIo));
 // Sampling multiple threads might cause overhead on Android and we don't want
 // to enable it unless the data is needed.
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
   // We pass in CreateCoreUnwindersFactory here since it lives in the chrome/
   // layer while TracingSamplerProfiler is outside of chrome/.
   content::GetIOThreadTaskRunner({})->PostTask(
@@ -1885,7 +1889,7 @@ int ChromeBrowserMainParts::PreMainMessageLoopRunImpl() {
           ->GetSharedURLLoaderFactory());
 #endif
 
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_OHOS)
   // Wait for the chrome browser cloud management enrollment to finish.
   // If enrollment is not mandatory, this function returns immediately.
   // Abort the launch process if required enrollment fails.
@@ -2383,11 +2387,11 @@ std::unique_ptr<base::RunLoop> ChromeBrowserMainParts::TakeRunLoopForTest() {
 }
 #endif
 
-#if BUILDFLAG(ENABLE_PROCESS_SINGLETON)
+#if BUILDFLAG(ENABLE_PROCESS_SINGLETON) || BUILDFLAG(ARKWEB_TEST)
 // static
 bool ChromeBrowserMainParts::ProcessSingletonNotificationForTesting(
     base::CommandLine command_line) {
   return ProcessSingletonNotificationCallback(command_line,
                                               /*current_directory=*/{});
 }
-#endif  // BUILDFLAG(ENABLE_PROCESS_SINGLETON)
+#endif  // BUILDFLAG(ENABLE_PROCESS_SINGLETON) || BUILDFLAG(ARKWEB_TEST)

@@ -479,6 +479,10 @@ class ChromeContentBrowserClient : public content::ContentBrowserClient {
       const GURL& request_url,
       bool is_primary_main_frame_request,
       bool strict_enforcement,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      const GURL& origin_url,
+      const std::string& referrer,
+#endif
       base::OnceCallback<void(content::CertificateRequestResultType)> callback)
       override;
 #if !BUILDFLAG(IS_ANDROID)
@@ -677,7 +681,12 @@ class ChromeContentBrowserClient : public content::ContentBrowserClient {
       const base::RepeatingCallback<content::WebContents*()>& wc_getter,
       content::NavigationUIData* navigation_ui_data,
       content::FrameTreeNodeId frame_tree_node_id,
-      std::optional<int64_t> navigation_id) override;
+      std::optional<int64_t> navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+      bool is_prerendering
+#endif
+      ) override;
   std::vector<std::unique_ptr<blink::URLLoaderThrottle>>
   CreateURLLoaderThrottlesForKeepAlive(
       content::BrowserContext* browser_context,
@@ -1456,6 +1465,38 @@ class ChromeContentBrowserClient : public content::ContentBrowserClient {
   std::unique_ptr<WindowsSystemTracingClient> windows_system_tracing_client_;
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+  mojo::AssociatedRemote<chrome::mojom::RendererConfiguration>
+  GetRendererConfiguration(content::RenderProcessHost* render_process_host);
+#endif  // BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  bool ShouldOverrideUrlLoading(content::FrameTreeNodeId frame_tree_node_id,
+                                bool browser_initiated,
+                                const GURL& gurl,
+                                const std::string& request_method,
+                                bool has_user_gesture,
+                                bool is_redirect,
+                                bool is_outermost_main_frame,
+                                bool is_prerendering,
+                                ui::PageTransition transition,
+                                bool* ignore_navigation) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  std::string OverrideErrorPage(content::FrameTreeNodeId frame_tree_node_id,
+                                bool browser_initiated,
+                                const GURL& gurl,
+                                const std::string& request_method,
+                                bool has_user_gesture,
+                                bool is_redirect,
+                                bool is_outermost_main_frame,
+                                int error_code,
+                                const std::string& error_text,
+                                bool is_prerendering,
+                                ui::PageTransition transition,
+                                std::string* html) override;
+#endif
   base::WeakPtrFactory<ChromeContentBrowserClient> weak_factory_{this};
 };
 

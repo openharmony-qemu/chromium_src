@@ -1,0 +1,63 @@
+diff a/chrome/browser/chrome_content_browser_client.h b/chrome/browser/chrome_content_browser_client.h	(rejected hunks)
+@@ -12,10 +12,14 @@
+ #include <set>
+ #include <string>
+ #include <string_view>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/containers/flat_map.h"
+ #include "base/functional/callback.h"
+ #include "base/gtest_prod_util.h"
+ #include "base/memory/scoped_refptr.h"
+ #include "base/memory/weak_ptr.h"
+@@ -50,10 +54,16 @@
+ #include "services/network/public/cpp/permissions_policy/permissions_policy_declaration.h"
+ #include "services/network/public/mojom/network_context.mojom.h"
+ #include "services/network/public/mojom/url_loader_factory.mojom.h"
+ #include "third_party/blink/public/mojom/on_device_translation/translation_manager.mojom-forward.h"
+ #include "third_party/blink/public/mojom/worker/shared_worker_info.mojom.h"
++
++#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
++#include "chrome/common/renderer_configuration.mojom.h"
++#include "mojo/public/cpp/bindings/associated_remote.h"
++#endif
++
+ #include "ui/base/clipboard/clipboard_metadata.h"
+ 
+ class ChromeContentBrowserClientParts;
+ class PrefRegistrySimple;
+ class ScopedKeepAlive;
+@@ -278,10 +288,14 @@ class ChromeContentBrowserClient : public content::ContentBrowserClient {
+   bool ShouldSwapBrowsingInstancesForNavigation(
+       content::SiteInstance* site_instance,
+       const GURL& current_effective_url,
+       const GURL& destination_effective_url) override;
+   bool ShouldIsolateErrorPage(bool in_main_frame) override;
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  void UpdateAdBlockEnabledForSite(content::RenderFrameHost* rfh,
++                                   const GURL& gurl) override;
++#endif
+   std::vector<url::Origin> GetOriginsRequiringDedicatedProcess() override;
+   void WillComputeSiteForNavigation(content::BrowserContext* browser_context,
+                                     const GURL& url) override;
+   bool ShouldEnableStrictSiteIsolation() override;
+   std::optional<bool> GetOverrideValueForOriginKeyedProcesses() override;
+@@ -1231,10 +1254,14 @@ class ChromeContentBrowserClient : public content::ContentBrowserClient {
+   virtual std::unique_ptr<HttpAuthCoordinator> CreateHttpAuthCoordinator();
+ 
+  private:
+   friend class DisableWebRtcEncryptionFlagTest;
+   friend class InProcessBrowserTest;
++  friend class ChromeContentBrowserClientUtils;
++#if BUILDFLAG(ARKWEB_TEST)
++  friend class ChromeContentBrowserClientForIncludeTest;
++#endif  // BUILDFLAG(ARKWEB_TEST)
+ 
+   FRIEND_TEST_ALL_PREFIXES(ChromeSiteIsolationPolicyTest,
+                            IsolatedOriginsContainChromeOrigins);
+ 
+   // Initializes `network_contexts_parent_directory_` and

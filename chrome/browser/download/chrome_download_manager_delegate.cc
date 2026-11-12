@@ -884,6 +884,10 @@ bool ChromeDownloadManagerDelegate::DetermineDownloadTarget(
     ReportPDFLoadStatus(PDFLoadStatus::kTriggeredNoGestureDriveByDownload);
   }
 
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  return cef_delegate_->DetermineDownloadTarget(download, callback);
+#endif
+
 #if BUILDFLAG(ENABLE_CEF)
   if (cef_delegate_->DetermineDownloadTarget(download, callback)) {
     return true;
@@ -2372,6 +2376,13 @@ bool ChromeDownloadManagerDelegate::IsOpenInBrowserPreferredForFile(
     return true;
   }
 #endif
+
+#if BUILDFLAG(IS_OHOS)
+  if (path.MatchesExtension(FILE_PATH_LITERAL(".mhtml"))) {
+    return true;
+  }
+#endif
+
   return false;
 }
 
@@ -2815,3 +2826,7 @@ void ChromeDownloadManagerDelegate::OnDetermineSavePackagePathDone(
 #if BUILDFLAG(IS_ANDROID)
 DEFINE_JNI(PdfUtils)
 #endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/download/chrome_download_manager_delegate_for_include.cc"
+#endif // IS_ARKWEB

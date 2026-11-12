@@ -1,0 +1,15 @@
+diff a/chrome/browser/enterprise/data_protection/data_protection_navigation_observer.cc b/chrome/browser/enterprise/data_protection/data_protection_navigation_observer.cc	(rejected hunks)
+@@ -127,10 +127,13 @@ void OnDoLookupComplete(
+   RunPendingNavigationCallback(web_contents.get(), std::move(callback));
+ }
+ 
+ bool SkipUrl(const GURL& url) {
+   return !url.is_valid() || url.SchemeIs(content::kChromeUIScheme) ||
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++         url.SchemeIs(extensions::kArkwebExtensionScheme) ||
++#endif
+          url.SchemeIs(extensions::kExtensionScheme);
+ }
+ 
+ bool IsEnterpriseLookupEnabled(Profile* profile) {
+   // Some tests return a non-null pointer for the enterprise lookup service,

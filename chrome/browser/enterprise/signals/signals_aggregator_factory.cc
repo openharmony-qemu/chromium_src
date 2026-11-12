@@ -124,12 +124,12 @@ SignalsAggregatorFactory::BuildServiceInstanceForBrowserContext(
   }
 
   std::vector<std::unique_ptr<device_signals::SignalsCollector>> collectors;
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
   auto* service_host = SystemSignalsServiceHostFactory::GetForProfile(profile);
   collectors.push_back(
       std::make_unique<device_signals::FileSystemSignalsCollector>(
           service_host));
-#endif  // !BUILDFLAG(IS_ANDROID)
+#endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
   collectors.push_back(std::make_unique<device_signals::AgentSignalsCollector>(

@@ -1,0 +1,17 @@
+diff a/chrome/browser/content_settings/page_specific_content_settings_delegate.cc b/chrome/browser/content_settings/page_specific_content_settings_delegate.cc	(rejected hunks)
+@@ -150,10 +150,15 @@ void PageSpecificContentSettingsDelegate::UpdateLocationBar() {
+   if (state.Has(PageSpecificContentSettings::kCameraAccessed) ||
+       state.Has(PageSpecificContentSettings::kMicrophoneAccessed)) {
+     auto* permission_tracker =
+         permissions::PermissionRecoverySuccessRateTracker::FromWebContents(
+             web_contents());
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++    if (!permission_tracker) {
++      return;
++    }
++#endif
+ 
+     if (state.Has(PageSpecificContentSettings::kMicrophoneAccessed)) {
+       permission_tracker->TrackUsage(ContentSettingsType::MEDIASTREAM_MIC);
+     }
+ 

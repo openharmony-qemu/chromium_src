@@ -1,0 +1,59 @@
+diff a/chrome/browser/devtools/devtools_ui_bindings.cc b/chrome/browser/devtools/devtools_ui_bindings.cc	(rejected hunks)
+@@ -1216,21 +1222,44 @@ void DevToolsUIBindings::LoadNetworkResource(DispatchCallback callback,
+   // TODO(caseq): this preserves behavior of URLFetcher-based implementation.
+   // We really need to pass proper first party origin from the front-end.
+   resource_request.site_for_cookies = net::SiteForCookies::FromUrl(gurl);
+   resource_request.headers.AddHeadersFromString(headers);
+ 
++  content::WebContents* target_tab = delegate_->GetInspectedWebContents();
++
+   NetworkResourceLoader::URLLoaderFactoryHolder url_loader_factory;
+   if (gurl.SchemeIsFile()) {
++    GURL frontend_url = web_contents_->GetLastCommittedURL();
++    bool is_remote_frontend =
++        frontend_url.is_valid() && !frontend_url.IsAboutBlank() &&
++        IsValidRemoteFrontendURL(frontend_url);
++    if (is_remote_frontend) {
++      if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
++              switches::kAllowUnsafeDevToolsRemoteFileLoading)) {
++        base::DictValue response_dict;
++        response_dict.Set("statusCode", 403);
++        response_dict.Set("netError", net::ERR_ACCESS_DENIED);
++        response_dict.Set("netErrorName",
++                          net::ErrorToString(net::ERR_ACCESS_DENIED));
++        response_dict.Set(
++            "messageOverride",
++            "Local file loading is restricted for remote DevTools. Use "
++            "--allow-unsafe-devtools-remote-file-loading to enable it.");
++        auto response = base::Value(std::move(response_dict));
++        std::move(callback).Run(&response);
++        return;
++      }
++    }
++
+     mojo::PendingRemote<network::mojom::URLLoaderFactory> pending_remote =
+         content::CreateFileURLLoaderFactory(
+             base::FilePath() /* profile_path */,
+             nullptr /* shared_cors_origin_access_list */);
+     url_loader_factory = network::SharedURLLoaderFactory::Create(
+         std::make_unique<network::WrapperPendingSharedURLLoaderFactory>(
+             std::move(pending_remote)));
+   } else if (content::HasWebUIScheme(gurl)) {
+-    content::WebContents* target_tab = delegate_->GetInspectedWebContents();
+ #if defined(NDEBUG)
+     // In release builds, allow files from the chrome://, devtools:// and
+     // chrome-untrusted:// schemes if a custom devtools front-end was specified.
+     const base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
+     const bool allow_web_ui_scheme =
+@@ -1265,11 +1294,10 @@ void DevToolsUIBindings::LoadNetworkResource(DispatchCallback callback,
+       auto response = base::Value(std::move(response_dict));
+       std::move(callback).Run(&response);
+       return;
+     }
+   } else {
+-    content::WebContents* target_tab = delegate_->GetInspectedWebContents();
+     if (target_tab) {
+       auto* partition =
+           target_tab->GetPrimaryMainFrame()->GetStoragePartition();
+       url_loader_factory = partition->GetURLLoaderFactoryForBrowserProcess();
+     } else {

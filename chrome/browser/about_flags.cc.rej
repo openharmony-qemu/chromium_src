@@ -1,0 +1,66 @@
+diff a/chrome/browser/about_flags.cc b/chrome/browser/about_flags.cc	(rejected hunks)
+@@ -385,21 +385,22 @@ using flags_ui::kDeprecated;
+ using flags_ui::kOsAndroid;
+ using flags_ui::kOsCrOS;
+ using flags_ui::kOsCrOSOwnerOnly;
+ using flags_ui::kOsLinux;
+ using flags_ui::kOsMac;
++using flags_ui::kOsOhOS;
+ using flags_ui::kOsWin;
+ 
+ namespace about_flags {
+ 
+ namespace {
+ 
+-const unsigned kOsAll = kOsMac | kOsWin | kOsLinux | kOsCrOS | kOsAndroid;
+-const unsigned kOsDesktop = kOsMac | kOsWin | kOsLinux | kOsCrOS;
++const unsigned kOsAll = kOsMac | kOsWin | kOsLinux | kOsCrOS | kOsAndroid | kOsOhOS;
++const unsigned kOsDesktop = kOsMac | kOsWin | kOsLinux | kOsCrOS | kOsOhOS;
+ 
+ #if defined(USE_AURA)
+-const unsigned kOsAura = kOsWin | kOsLinux | kOsCrOS;
++const unsigned kOsAura = kOsWin | kOsLinux | kOsCrOS | kOsOhOS;
+ #endif  // USE_AURA
+ 
+ #if defined(USE_AURA)
+ const FeatureEntry::Choice kPullToRefreshChoices[] = {
+     {flags_ui::kGenericExperimentChoiceDefault, "", ""},
+@@ -1276,11 +1277,11 @@ const FeatureEntry::FeatureVariation kLensAimSuggestionsVariations[] = {
+ const FeatureEntry::FeatureVariation kRemotePageMetadataVariations[] = {
+     {"High Performance Canonicalization", nullptr, 0, "3362133"},
+ };
+ 
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_MAC) || \
+-    BUILDFLAG(IS_WIN)
++    BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+ 
+ // A limited number of combinations of the rich autocompletion params.
+ const FeatureEntry::FeatureParam kOmniboxRichAutocompletionAggressive1[] = {
+     {"RichAutocompletionAutocompleteTitlesMinChar", "1"},
+     {"RichAutocompletionAutocompleteShortcutTextMinChar", "1"}};
+@@ -1860,11 +1861,11 @@ const FeatureEntry::FeatureVariation
+         kNtpFeatureOptimizationShortcutsRemovalTesting,
+         std::size(kNtpFeatureOptimizationShortcutsRemovalTesting), nullptr},
+ };
+ 
+ #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_MAC) ||
+-        // BUILDFLAG(IS_WIN)
++        // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+ 
+ const FeatureEntry::FeatureParam kOmniboxMlUrlScoringEnabledWithFixes[] = {
+     {"enable_scoring_signals_annotators_for_ml_scoring", "true"},
+     {"MlUrlScoringShortcutDocumentSignals", "true"},
+ };
+@@ -10798,11 +10799,11 @@ const FeatureEntry kFeatureEntries[] = {
+ #endif
+ 
+ #if BUILDFLAG(ENABLE_HLS_DEMUXER)
+     {"enable-hls-playback", flag_descriptions::kEnableHlsPlaybackName,
+      flag_descriptions::kEnableHlsPlaybackDescription,
+-     kOsMac | kOsWin | kOsLinux | kOsCrOS,
++     kOsMac | kOsWin | kOsLinux | kOsCrOS | kOsOhOS,
+      FEATURE_VALUE_TYPE(media::kBuiltInHlsPlayer)},
+ #endif
+ 
+ #if BUILDFLAG(IS_CHROMEOS)
+     {"flex-firmware-update", flag_descriptions::kFlexFirmwareUpdateName,

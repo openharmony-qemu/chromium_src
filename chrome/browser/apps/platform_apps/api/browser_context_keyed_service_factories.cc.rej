@@ -1,0 +1,14 @@
+diff a/chrome/browser/apps/platform_apps/api/browser_context_keyed_service_factories.cc b/chrome/browser/apps/platform_apps/api/browser_context_keyed_service_factories.cc	(rejected hunks)
+@@ -14,9 +14,12 @@ namespace chrome_apps::api {
+ 
+ void EnsureBrowserContextKeyedServiceFactoriesBuilt() {
+ #if BUILDFLAG(IS_CHROMEOS)
+   ArcAppsPrivateAPI::GetFactoryInstance();
+ #endif
++  #if !BUILDFLAG(IS_OHOS)
++  // TODO:OHOS
+   MediaGalleriesEventRouter::GetFactoryInstance();
++#endif
+ }
+ 
+ }  // namespace chrome_apps::api

@@ -1,0 +1,13 @@
+diff a/chrome/browser/download/download_target_determiner.cc b/chrome/browser/download/download_target_determiner.cc	(rejected hunks)
+@@ -227,11 +227,10 @@ DownloadTargetDeterminer::Result
+   DCHECK_EQ(confirmation_reason_, DownloadConfirmationReason::NONE);
+   DCHECK(!should_notify_extensions_);
+   bool is_forced_path = !download_->GetForcedFilePath().empty();
+ 
+   next_state_ = STATE_SET_INSECURE_DOWNLOAD_STATUS;
+-
+   // Transient download should use the existing path.
+   if (download_->IsTransient()) {
+     if (is_forced_path) {
+       RecordDownloadPathGeneration(DownloadPathGenerationEvent::USE_FORCE_PATH,
+                                    true);

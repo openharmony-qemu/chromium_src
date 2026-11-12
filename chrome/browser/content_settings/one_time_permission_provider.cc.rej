@@ -1,0 +1,14 @@
+diff a/chrome/browser/content_settings/one_time_permission_provider.cc b/chrome/browser/content_settings/one_time_permission_provider.cc	(rejected hunks)
+@@ -197,11 +197,11 @@ std::optional<base::TimeDelta> OneTimePermissionProvider::RenewContentSetting(
+   return std::nullopt;
+ }
+ 
+ void OneTimePermissionProvider::ClearAllContentSettingsRules(
+     ContentSettingsType content_type) {
+-  if (permissions::PermissionUtil::DoesStoreTemporaryGrantsInHcsm(
++  if (!permissions::PermissionUtil::DoesStoreTemporaryGrantsInHcsm(
+           content_type)) {
+     return;
+   }
+   base::AutoLock lock(value_map_.GetLock());
+   value_map_.DeleteValues(content_type);

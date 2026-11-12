@@ -221,6 +221,14 @@ protocol::Response TargetHandler::CreateTarget(
     }
   }
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  // ArkWeb: delegate to the content layer which calls
+  // ohos::DevToolsManagerDelegate::CreateNewTarget to create an Alloy-style
+  // browser. The Chrome path below (Navigate + ChromeBrowserHostImpl) would
+  // crash because AlloyBrowserHostImpl::GetBrowserForHost() finds
+  // ChromeBrowserHostImpl and CHECK(IsAlloyStyle()) fails.
+  return protocol::Response::FallThrough();
+#endif
   NavigateParams params = CreateNavigateParams(
       profile, gurl, ui::PAGE_TRANSITION_AUTO_TOPLEVEL, create_new_window,
       create_in_background, target_browser_interface);

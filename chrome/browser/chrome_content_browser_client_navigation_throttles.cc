@@ -254,7 +254,11 @@ bool IsErrorPageAutoReloadEnabled() {
   if (command_line.HasSwitch(switches::kDisableAutoReload)) {
     return false;
   }
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  return false;
+#else
   return true;
+#endif
 }
 
 // NOTE: MaybeCreateVisitedLinkNavigationThrottleFor is defined here due to
@@ -541,11 +545,13 @@ void CreateAndAddChromeThrottlesForNavigation(
   MaybeCreateAndAddAuthSessionNavigationThrottle(registry);
 #endif
 
+#if !BUILDFLAG(ARKWEB_NETWORK_LOAD)
   if (profile && profile->GetPrefs()) {
     security_interstitials::InsecureFormNavigationThrottle::MaybeCreateAndAdd(
         registry, std::make_unique<ChromeSecurityBlockingPageFactory>(),
         profile->GetPrefs());
   }
+#endif
 
   if (IsErrorPageAutoReloadEnabled()) {
     error_page::NetErrorAutoReloader::MaybeCreateAndAddNavigationThrottle(
@@ -575,11 +581,13 @@ void CreateAndAddChromeThrottlesForNavigation(
   offline_pages::OfflinePageNavigationThrottle::MaybeCreateAndAdd(registry);
 #endif
 
+#if !BUILDFLAG(ARKWEB_NETWORK_LOAD)
   if (profile) {
     HttpsUpgradesNavigationThrottle::MaybeCreateAndAdd(
         registry, std::make_unique<ChromeSecurityBlockingPageFactory>(),
         profile);
   }
+#endif
 
 #if !BUILDFLAG(IS_ANDROID)
   MaybeCreateAndAddWebViewSidePanelThrottle(registry);

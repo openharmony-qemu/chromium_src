@@ -1,0 +1,20 @@
+diff a/chrome/browser/apps/link_capturing/link_capturing_navigation_throttle.cc b/chrome/browser/apps/link_capturing/link_capturing_navigation_throttle.cc
+--- a/chrome/browser/apps/link_capturing/link_capturing_navigation_throttle.cc
++++ b/chrome/browser/apps/link_capturing/link_capturing_navigation_throttle.cc
+@@ -253,11 +253,15 @@ bool LinkCapturingNavigationThrottle::IsGoogleRedirectorUrl(const GURL& url) {
+ bool LinkCapturingNavigationThrottle::ShouldOverrideUrlIfRedirected(
+     const GURL& previous_url,
+     const GURL& current_url) {
+   // Check the scheme for both |previous_url| and |current_url| since an
+   // extension could have referred us (e.g. Google Docs).
+-  if (previous_url.SchemeIs(extensions::kExtensionScheme)) {
++  if (previous_url.SchemeIs(extensions::kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      || previous_url.SchemeIs(extensions::kArkwebExtensionScheme)
++#endif
++  ) {
+     return false;
+   }
+ 
+   // Skip URL redirectors that are intermediate pages redirecting towards a
+   // final URL.

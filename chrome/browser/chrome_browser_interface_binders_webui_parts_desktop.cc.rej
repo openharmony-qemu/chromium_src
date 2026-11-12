@@ -1,0 +1,14 @@
+diff a/chrome/browser/chrome_browser_interface_binders_webui_parts_desktop.cc b/chrome/browser/chrome_browser_interface_binders_webui_parts_desktop.cc	(rejected hunks)
+@@ -128,11 +128,11 @@
+ #include "ui/webui/resources/cr_components/most_visited/most_visited.mojom.h"
+ #include "ui/webui/resources/cr_components/theme_color_picker/theme_color_picker.mojom.h"
+ #include "ui/webui/resources/js/browser_command/browser_command.mojom.h"
+ #include "ui/webui/resources/js/tracked_element/tracked_element.mojom.h"  // nogncheck crbug.com/1125897
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ #include "chrome/browser/ui/webui/app_home/app_home.mojom.h"
+ #include "chrome/browser/ui/webui/app_home/app_home_ui.h"
+ #include "chrome/browser/ui/webui/app_settings/web_app_settings_ui.h"
+ #include "chrome/browser/ui/webui/on_device_translation_internals/on_device_translation_internals_ui.h"
+ #include "chrome/browser/ui/webui/signin/history_sync_optin/history_sync_optin.mojom.h"

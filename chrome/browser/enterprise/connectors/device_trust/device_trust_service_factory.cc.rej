@@ -1,0 +1,53 @@
+diff a/chrome/browser/enterprise/connectors/device_trust/device_trust_service_factory.cc b/chrome/browser/enterprise/connectors/device_trust/device_trust_service_factory.cc	(rejected hunks)
+@@ -20,11 +20,11 @@
+ #include "chrome/browser/profiles/profile.h"
+ #include "components/keyed_service/core/keyed_service.h"
+ #include "components/policy/core/common/management/management_service.h"
+ #include "content/public/browser/browser_context.h"
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(ARKWEB_ASAN)
+ #include "chrome/browser/browser_process.h"
+ #include "chrome/browser/enterprise/connectors/device_trust/attestation/browser/browser_attestation_service.h"
+ #include "chrome/browser/enterprise/connectors/device_trust/attestation/browser/device_attester.h"
+ #include "chrome/browser/enterprise/connectors/device_trust/attestation/browser/profile_attester.h"
+ #include "chrome/browser/enterprise/identifiers/profile_id_service_factory.h"
+@@ -37,11 +37,11 @@
+ #include "components/policy/core/common/cloud/cloud_policy_store.h"
+ #include "components/policy/core/common/cloud/machine_level_user_cloud_policy_manager.h"
+ #include "components/policy/core/common/cloud/machine_level_user_cloud_policy_store.h"
+ #include "components/policy/core/common/cloud/profile_cloud_policy_manager.h"
+ #include "components/policy/core/common/cloud/user_cloud_policy_manager.h"
+-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
++#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(ARKWEB_ASAN)
+ 
+ #if BUILDFLAG(IS_CHROMEOS)
+ #include "chrome/browser/enterprise/connectors/device_trust/ash/ash_attestation_policy_observer.h"
+ #include "chrome/browser/enterprise/connectors/device_trust/attestation/ash/ash_attestation_service_impl.h"
+ #endif  // BUILDFLAG(IS_CHROMEOS)
+@@ -51,11 +51,11 @@ bool IsProfileManaged(Profile* profile) {
+   auto* management_service =
+       policy::ManagementServiceFactory::GetForProfile(profile);
+   return management_service && management_service->IsManaged();
+ }
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_ASAN)
+ policy::CloudPolicyStore* GetUserCloudPolicyStore(Profile* profile) {
+   policy::CloudPolicyManager* user_policy_manager =
+       profile->GetCloudPolicyManager();
+   if (user_policy_manager) {
+     auto* core = user_policy_manager->core();
+@@ -63,11 +63,11 @@ policy::CloudPolicyStore* GetUserCloudPolicyStore(Profile* profile) {
+       return core->store();
+     }
+   }
+   return nullptr;
+ }
+-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_ASAN)
+ 
+ }  // namespace
+ 
+ namespace enterprise_connectors {
+ 

@@ -197,7 +197,7 @@ bool DownloadCommands::CanOpenPdfInSystemViewer() const {
 }
 
 #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) ||
-        // BUILDFLAG(IS_CHROMEOS)
+        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
 void DownloadCommands::CopyFileAsImageToClipboard() {
   if (!model_)

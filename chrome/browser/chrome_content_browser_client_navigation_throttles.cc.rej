@@ -1,0 +1,50 @@
+diff a/chrome/browser/chrome_content_browser_client_navigation_throttles.cc b/chrome/browser/chrome_content_browser_client_navigation_throttles.cc	(rejected hunks)
+@@ -166,10 +166,14 @@
+ #include "chrome/browser/extensions/user_script_listener.h"
+ #include "extensions/browser/extension_navigation_throttle.h"
+ #include "extensions/browser/extensions_browser_client.h"
+ #endif  // BUILDFLAG(ENABLE_EXTENSIONS_CORE)
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
++#include "arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_navigation_throttle.h"
++#endif
++
+ namespace {
+ 
+ // Wrapper for SSLErrorHandler::HandleSSLError() that supplies //chrome-level
+ // parameters.
+ void HandleSSLErrorWrapper(
+@@ -394,18 +402,19 @@ void CreateAndAddChromeThrottlesForNavigation(
+           Profile::FromBrowserContext(context)),
+       SafeSearchFactory::GetForBrowserContext(context)));
+ 
+   // Before setting up SSL error detection, configure SSLErrorHandler to invoke
+   // the relevant extension API whenever an SSL interstitial is shown.
++#if !BUILDFLAG(ARKWEB_NETWORK_LOAD)
+   SSLErrorHandler::SetClientCallbackOnInterstitialsShown(
+       base::BindRepeating(&MaybeTriggerSecurityInterstitialShownEvent));
+   registry.AddThrottle(std::make_unique<SSLErrorNavigationThrottle>(
+       registry, base::BindOnce(&HandleSSLErrorWrapper),
+       base::BindOnce(&IsInHostedApp),
+       base::BindOnce(
+           &ShouldIgnoreSslInterstitialBecauseNavigationDefaultedToHttps)));
+-
++#endif
+   registry.AddThrottle(std::make_unique<LoginNavigationThrottle>(registry));
+ 
+   if (base::FeatureList::IsEnabled(omnibox::kDefaultTypedNavigationsToHttps)) {
+     TypedNavigationUpgradeThrottle::MaybeCreateAndAdd(registry);
+   }
+@@ -574,8 +587,12 @@ void CreateAndAddChromeThrottlesForNavigation(
+   web_app::IsolatedWebAppThrottle::MaybeCreateAndAdd(registry);
+ 
+   actor::ActorNavigationThrottle::MaybeCreateAndAdd(registry);
+ #endif  // !BUILDFLAG(IS_ANDROID)
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
++  OhosHttpsUpgradesNavigationThrottle::MaybeCreateAndAdd(registry);
++#endif
++
+   dom_distiller::DistillerPageWebContents::MaybeCreateAndAddNavigationThrottle(
+       registry);
+ }

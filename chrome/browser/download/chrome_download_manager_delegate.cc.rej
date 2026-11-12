@@ -1,0 +1,74 @@
+diff a/chrome/browser/download/chrome_download_manager_delegate.cc b/chrome/browser/download/chrome_download_manager_delegate.cc	(rejected hunks)
+@@ -609,10 +609,20 @@ ChromeDownloadManagerDelegate::ChromeDownloadManagerDelegate(Profile* profile)
+       download_prefs_(std::make_unique<DownloadPrefs>(profile)) {
+ #if BUILDFLAG(ENABLE_CEF)
+   cef_delegate_ =
+       cef::DownloadManagerDelegate::Create(profile_->GetDownloadManager());
+ #endif
++
++#if BUILDFLAG(IS_OHOS)
++  // The default path obtained without kDownloadDefault Directory is'/'and does
++  // not have read and write permissions
++  if (download_prefs_->DownloadPath().value() == "/") {
++    base::FilePath path;
++    base::PathService::Get(chrome::DIR_DEFAULT_DOWNLOADS, &path);
++    download_prefs_->SetDownloadPath(path);
++  }
++#endif
+ }
+ 
+ ChromeDownloadManagerDelegate::~ChromeDownloadManagerDelegate() {
+   // If a DownloadManager was set for this, Shutdown() must be called.
+   DCHECK(!download_manager_);
+@@ -972,10 +986,11 @@ bool ChromeDownloadManagerDelegate::IsDownloadReadyForCompletion(
+     return false;
+   }
+ 
+ #endif  // BUILDFLAG(SAFE_BROWSING_DOWNLOAD_PROTECTION)
+   return true;
++  
+ }
+ 
+ #if BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
+ void ChromeDownloadManagerDelegate::OnDeobfuscationComplete(
+     base::OnceClosure callback,
+@@ -1007,21 +1022,25 @@ void ChromeDownloadManagerDelegate::ShouldCompleteDownloadInternal(
+ }
+ 
+ bool ChromeDownloadManagerDelegate::ShouldCompleteDownload(
+     DownloadItem* item,
+     base::OnceClosure user_complete_callback) {
++#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
++  return true;
++#else
+   return IsDownloadReadyForCompletion(
+       item, base::BindOnce(
+                 &ChromeDownloadManagerDelegate::ShouldCompleteDownloadInternal,
+                 weak_ptr_factory_.GetWeakPtr(), item->GetId(),
+                 std::move(user_complete_callback)));
++#endif
+ }
+ 
+ bool ChromeDownloadManagerDelegate::ShouldOpenDownload(
+     DownloadItem* item,
+     content::DownloadOpenDelayedCallback callback) {
+-#if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
++#if BUILDFLAG(ENABLE_EXTENSIONS_CORE) && !BUILDFLAG(IS_ARKWEB)
+   if (download_crx_util::IsExtensionDownload(*item) &&
+       !extensions::WebstoreInstaller::GetAssociatedApproval(*item)) {
+     scoped_refptr<CrxInstaller> installer(
+         download_crx_util::CreateCrxInstaller(profile_, *item));
+ 
+@@ -1388,11 +1407,11 @@ void ChromeDownloadManagerDelegate::NotifyExtensions(
+     const base::FilePath& virtual_path,
+     NotifyExtensionsCallback callback) {
+   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+   DCHECK(!download->IsTransient());
+ 
+-#if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
++#if BUILDFLAG(ENABLE_EXTENSIONS_CORE) && (!BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS))
+   extensions::ExtensionDownloadsEventRouter* router =
+       DownloadCoreServiceFactory::GetForBrowserContext(profile_)
+           ->GetExtensionEventRouter();
+   if (router) {
+     router->OnDeterminingFilename(download, virtual_path.BaseName(),

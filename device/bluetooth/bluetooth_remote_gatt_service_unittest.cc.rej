@@ -1,0 +1,14 @@
+diff a/device/bluetooth/bluetooth_remote_gatt_service_unittest.cc b/device/bluetooth/bluetooth_remote_gatt_service_unittest.cc	(rejected hunks)
+@@ -20,10 +20,12 @@
+ #include "device/bluetooth/test/bluetooth_test_cast.h"
+ #elif BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
+ #include "device/bluetooth/test/bluetooth_test_bluez.h"
+ #elif BUILDFLAG(IS_FUCHSIA)
+ #include "device/bluetooth/test/bluetooth_test_fuchsia.h"
++#elif BUILDFLAG(IS_OHOS)
++#include "arkweb/chromium_ext/device/bluetooth/test/bluetooth_test_ohos.h"
+ #endif
+ 
+ namespace device {
+ 
+ class BluetoothRemoteGattServiceTest :

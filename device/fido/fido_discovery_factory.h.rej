@@ -1,0 +1,16 @@
+diff a/device/fido/fido_discovery_factory.h b/device/fido/fido_discovery_factory.h	(rejected hunks)
+@@ -120,10 +120,14 @@ class COMPONENT_EXPORT(DEVICE_FIDO) FidoDiscoveryFactory {
+   // available. Returns nullptr otherwise.
+   virtual std::unique_ptr<FidoDiscoveryBase>
+   MaybeCreateWinWebAuthnApiDiscovery();
+ #endif  // BUILDFLAG(IS_WIN)
+ 
++#if BUILDFLAG(ARKWEB_FIDO)
++  virtual std::unique_ptr<FidoDiscoveryBase> CreateOhosFidoDiscovery();
++#endif  // BUILDFLAG(ARKWEB_FIDO)
++
+ #if BUILDFLAG(IS_CHROMEOS)
+   // Sets a callback to generate an identifier when making DBUS requests to
+   // u2fd.
+   void set_generate_request_id_callback(base::RepeatingCallback<std::string()>);
+ 

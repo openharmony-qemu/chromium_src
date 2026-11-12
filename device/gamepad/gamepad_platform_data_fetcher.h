@@ -34,6 +34,8 @@
 #elif (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)) && defined(USE_UDEV)
 #include "device/gamepad/gamepad_platform_data_fetcher_linux.h"
 #include "device/gamepad/nintendo_data_fetcher.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "device/gamepad/gamepad_platform_data_fetcher_ohos.h"
 #endif
 
 namespace device {
@@ -70,6 +72,8 @@ void AddGamepadPlatformDataFetchers(GamepadDataFetcherManager* manager) {
       base::SequencedTaskRunner::GetCurrentDefault()));
   manager->AddFactory(new NintendoDataFetcher::Factory());
 
+#elif BUILDFLAG(IS_OHOS)
+  manager->AddFactory(new GamepadPlatformDataFetcherOhos::Factory());
 #endif
 
   if (base::FeatureList::IsEnabled(

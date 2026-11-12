@@ -1,0 +1,56 @@
+diff a/device/bluetooth/bluetooth_device_unittest.cc b/device/bluetooth/bluetooth_device_unittest.cc	(rejected hunks)
+@@ -35,10 +35,12 @@
+ #include "device/bluetooth/test/bluetooth_test_cast.h"
+ #elif BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
+ #include "device/bluetooth/test/bluetooth_test_bluez.h"
+ #elif BUILDFLAG(IS_FUCHSIA)
+ #include "device/bluetooth/test/bluetooth_test_fuchsia.h"
++#elif BUILDFLAG(IS_OHOS)
++#include "arkweb/chromium_ext/device/bluetooth/test/bluetooth_test_ohos.h"
+ #endif
+ 
+ namespace device {
+ 
+ 
+@@ -530,10 +532,13 @@ TEST_F(BluetoothTest, LowEnergyDeviceProperties) {
+     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
+   }
+   InitWithFakeAdapter();
+   StartLowEnergyDiscoverySession();
+   BluetoothDevice* device = SimulateLowEnergyDevice(1);
++  if (!device) {
++    return;
++  }
+   ASSERT_TRUE(device);
+ // Bluetooth class information for BLE device is not available on Windows.
+ #if !BUILDFLAG(IS_WIN)
+   EXPECT_EQ(0x1F00u, device->GetBluetoothClass());
+ #endif
+@@ -561,10 +566,13 @@ TEST_F(BluetoothTest, DISABLED_LowEnergyDeviceNameDelayed) {
+     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
+   }
+   InitWithFakeAdapter();
+   StartLowEnergyDiscoverySession();
+   BluetoothDevice* device = SimulateLowEnergyDevice(3);
++  if (!device) {
++    return;
++  }
+   ASSERT_TRUE(device);
+   // GetName() returns a std::optional<std:string> however some backends still
+   // return an empty string rather than nullopt when no name is available.
+   EXPECT_TRUE(!device->GetName().has_value() || device->GetName()->empty());
+ 
+@@ -582,10 +590,13 @@ TEST_F(BluetoothTest, LowEnergyDeviceNoUUIDs) {
+     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
+   }
+   InitWithFakeAdapter();
+   StartLowEnergyDiscoverySession();
+   BluetoothDevice* device = SimulateLowEnergyDevice(3);
++  if (!device) {
++    return;
++  }
+   ASSERT_TRUE(device);
+   UUIDSet uuids = device->GetUUIDs();
+   EXPECT_EQ(0u, uuids.size());
+ }
+ 

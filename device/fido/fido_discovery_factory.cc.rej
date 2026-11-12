@@ -1,0 +1,21 @@
+diff a/device/fido/fido_discovery_factory.cc b/device/fido/fido_discovery_factory.cc	(rejected hunks)
+@@ -80,10 +84,19 @@ std::vector<std::unique_ptr<FidoDiscoveryBase>> FidoDiscoveryFactory::Create(
+           FIDO_LOG(EVENT) << "Not starting hybrid because Windows handles it.";
+           return {};
+         }
+       }
+ #endif  // BUILDFLAG(IS_WIN)
++#if BUILDFLAG(ARKWEB_FIDO)
++      {
++        bool ohos_handles_hybrid = true;
++        if (ohos_handles_hybrid) {
++          LOG(INFO) << "Not starting hybrid because OHOS handles it.";
++          return {};
++        }
++      }
++#endif  // BUILDFLAG(ARKWEB_FIDO)
+       if (device::BluetoothAdapterFactory::Get()->IsLowEnergySupported() &&
+           (cable_data_.has_value() || qr_generator_key_.has_value())) {
+         auto v1_discovery = std::make_unique<FidoCableDiscovery>(
+             cable_data_.value_or(std::vector<CableDiscoveryData>()));
+ 

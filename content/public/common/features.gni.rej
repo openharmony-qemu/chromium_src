@@ -1,0 +1,9 @@
+diff a/content/public/common/features.gni b/content/public/common/features.gni	(rejected hunks)
+@@ -18,6 +26,6 @@ declare_args() {
+ 
+ # Screen capture is enabled on most platforms. Currently, screen capture
+ # is only enabled for desktop Android, but should be enabled on all Android
+ # at some point once the feature is stable. See crbug.com/40418135.
+ enable_screen_capture = is_linux || is_chromeos || (is_apple && use_blink) ||
+-                        is_win || is_android || is_fuchsia
++                        is_win || is_android || is_fuchsia || is_ohos

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "content/public/browser/web_contents_delegate.h"
+#include "content/public/browser/custom_media_player_listener.h"
 
 #include <memory>
 #include <utility>
@@ -77,6 +78,9 @@ bool WebContentsDelegate::ShouldPreserveAbortedURLs(WebContents* source) {
 bool WebContentsDelegate::DidAddMessageToConsole(
     WebContents* source,
     blink::mojom::ConsoleMessageLevel log_level,
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+    blink::mojom::ConsoleMessageSource log_source,
+#endif
     const std::u16string& message,
     int32_t line_no,
     const std::u16string& source_id) {
@@ -384,6 +388,23 @@ bool WebContentsDelegate::ShouldAllowRunningInsecureContent(
   return allowed_per_prefs;
 }
 
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+float WebContentsDelegate::GetTopControlsHeight() {
+  return 0;
+}
+
+float WebContentsDelegate::GetTopControlsMinHeight() {
+  return 0;
+}
+
+float WebContentsDelegate::GetBottomControlsHeight() {
+  return 0;
+}
+
+float WebContentsDelegate::GetBottomControlsMinHeight() {
+  return 0;
+}
+#else
 int WebContentsDelegate::GetTopControlsHeight() {
   return 0;
 }
@@ -399,6 +420,7 @@ int WebContentsDelegate::GetBottomControlsHeight() {
 int WebContentsDelegate::GetBottomControlsMinHeight() {
   return 0;
 }
+#endif
 
 bool WebContentsDelegate::ShouldAnimateBrowserControlsHeightChanges() {
   return false;
@@ -518,6 +540,74 @@ WebContentsDelegate::GetBackForwardTransitionFallbackUXConfig() {
   return BackForwardTransitionAnimationManager::FallbackUXConfig();
 }
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+std::unique_ptr<CustomMediaPlayer> WebContentsDelegate::CreateCustomMediaPlayer(
+    std::unique_ptr<CustomMediaPlayerListener> listener,
+    const MediaInfo& media_info) {
+  return nullptr;
+}
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void WebContentsDelegate::OnShowToast(double duration,
+                                      const std::string& toast) {}
+
+void WebContentsDelegate::OnShowVideoAssistant(
+    const std::string& videoAssistantItems) {}
+
+void WebContentsDelegate::OnReportStatisticLog(const std::string& content) {}
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+std::unique_ptr<VideoAssistant> WebContentsDelegate::CreateVideoAssistant() {
+  return std::make_unique<VideoAssistant>();
+}
+void WebContentsDelegate::PopluateVideoAssistantConfig(
+    const std::string& url,
+    media::mojom::VideoAssistantConfigPtr& config) {}
+void WebContentsDelegate::OnVideoPlaying(
+    media::mojom::VideoAttributesForVASTPtr video_attributes) {}
+void WebContentsDelegate::OnUpdateVideoAttributes(
+    media::mojom::VideoAttributesForVASTPtr video_attributes) {}
+
+std::unique_ptr<MediaPlayerListener>
+WebContentsDelegate::OnFullScreenOverlayEnter(
+    media::mojom::MediaInfoForVASTPtr media_info,
+    const MediaPlayerId& media_player_id) {
+  return nullptr;
+}
+
+std::unique_ptr<MediaPlayerListener>
+WebContentsDelegate::OnAVCastStarted(
+    media::mojom::MediaInfoForVASTPtr media_info,
+    const MediaPlayerId& media_player_id) {
+  return nullptr;
+}
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void WebContentsDelegate::OnShowConfirmInfoBar(const std::string& title,
+                                               const std::string& infoId,
+                                               const std::string& message,
+                                               int buttons,
+                                               const std::string& buttonLabelOK,
+                                               const std::string& buttonLabelCancel) {
+}
+void WebContentsDelegate::OnHideConfirmInfoBar(const std::string& title,
+                                               const std::string& infoId,
+                                               const std::string& message,
+                                               int buttons,
+                                               const std::string& buttonLabelOK,
+                                               const std::string& buttonLabelCancel) {
+}
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+bool WebContentsDelegate::IsForDistillerPage() {
+  return false;
+}
+#endif
 
 std::vector<blink::mojom::RelatedApplicationPtr>
 WebContentsDelegate::GetSavedRelatedApplications(WebContents* web_contents) {

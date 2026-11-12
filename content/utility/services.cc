@@ -41,6 +41,7 @@
 #include "services/tracing/tracing_service.h"
 #include "services/video_capture/public/mojom/video_capture_service.mojom.h"
 #include "services/video_capture/video_capture_service_impl.h"
+#include "arkweb/chromium_ext/services/network/arkweb_network_service_ext.h"
 
 #if BUILDFLAG(IS_MAC)
 #include "base/apple/mach_logging.h"

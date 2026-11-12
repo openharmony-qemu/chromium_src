@@ -76,7 +76,6 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
     // the message call name (eg. MouseCaptureLost) or the name of an
     // input event (eg. GestureScrollBegin).
     const std::string& name() const { return name_; }
-
    private:
     std::string name_;
   };
@@ -278,6 +277,10 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
       std::optional<std::unique_ptr<blink::WebCoalescedInputEvent>>
           original_event_for_gesture,
       DispatchEventCallback callback) override;
+#if BUILDFLAG(IS_ARKWEB)
+  void TryStartFling() override {}
+  void TryFinishFling() override {}
+#endif
   void DispatchNonBlockingEvent(
       std::unique_ptr<blink::WebCoalescedInputEvent> event) override;
   void WaitForInputProcessed(WaitForInputProcessedCallback callback) override;

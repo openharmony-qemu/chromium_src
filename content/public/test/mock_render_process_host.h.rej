@@ -1,0 +1,14 @@
+diff a/content/public/test/mock_render_process_host.h b/content/public/test/mock_render_process_host.h	(rejected hunks)
+@@ -161,10 +161,12 @@ class MockRenderProcessHost : public RenderProcessHost {
+       WebRtcRtpPacketCallback packet_callback) override;
+   void BindReceiver(mojo::GenericPendingReceiver receiver) override;
+   std::unique_ptr<base::PersistentMemoryAllocator> TakeMetricsAllocator()
+       override;
+   const base::TimeTicks& GetLastInitTime() override;
++  base::TimeTicks timeTicksForMock = base::TimeTicks::Now();
++  const base::TimeTicks& ProcessBackgroundTime() override {return timeTicksForMock;}
+   base::Process::Priority GetPriority() const override;
+   size_t GetWorkerRefCount() const;
+   std::string GetKeepAliveDurations() const override;
+   size_t GetShutdownDelayRefCount() const override;
+   int GetRenderFrameHostCount() const override;

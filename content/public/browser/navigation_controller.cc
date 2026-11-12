@@ -10,6 +10,11 @@
 #include "content/public/browser/render_frame_host.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 #include "third_party/blink/public/mojom/navigation/was_activated_option.mojom.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
 
 namespace content {
 

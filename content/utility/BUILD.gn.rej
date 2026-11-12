@@ -1,0 +1,15 @@
+diff a/content/utility/BUILD.gn b/content/utility/BUILD.gn	(rejected hunks)
+@@ -127,11 +127,12 @@ source_set("utility") {
+   # PAC execution is done in process on Android.
+   if (!is_android) {
+     deps += [ "//services/proxy_resolver:lib" ]
+   }
+ 
+-  if (enable_screen_ai_service && (is_linux || is_chromeos)) {
++  # FIXME is_component_build
++  if (!is_component_build && enable_screen_ai_service && (is_linux || is_chromeos || is_ohos)) {
+     deps += [ "//services/screen_ai:screen_ai_sandbox_hook" ]
+   }
+ 
+   if (enable_accessibility_service) {
+     deps += [ "//services/accessibility:lib" ]

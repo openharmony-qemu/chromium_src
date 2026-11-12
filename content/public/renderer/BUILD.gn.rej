@@ -1,0 +1,20 @@
+diff a/content/public/renderer/BUILD.gn b/content/public/renderer/BUILD.gn	(rejected hunks)
+@@ -24,10 +29,18 @@ if (is_component_build) {
+ }
+ target(link_target_type, "renderer_sources") {
+   # External code should depend on via ":renderer" above.
+   visibility = [ "//content/*" ]
+ 
++  if (arkweb_unittests) {
++    visibility += [
++      "//media/cdm/library_cdm/clear_key_cdm:clear_key_cdm_bin",
++      "//media:media_unittests",
++      "//device:device_unittests",
++    ]
++  }
++
+   sources = [
+     "chrome_object_extensions_utils.cc",
+     "chrome_object_extensions_utils.h",
+     "content_renderer_client.cc",
+     "content_renderer_client.h",

@@ -1,0 +1,15 @@
+diff a/content/public/browser/navigation_handle.h b/content/public/browser/navigation_handle.h	(rejected hunks)
+@@ -811,10 +834,13 @@ class CONTENT_EXPORT NavigationHandle : public base::SupportsUserData {
+   // specially in some cases, such as skipping NavigationThrottles.
+   // Note: This is exposed in NavigationHandle because it needs to be present on
+   // both NavigationRequest and MockNavigationHandle. It's not actually needed
+   // outside of //content.
+   virtual bool IsInitialWebUISyncNavigation() = 0;
++#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
++  virtual void SetCustomViewportWidth(int32_t width) = 0;
++#endif
+ };
+ 
+ }  // namespace content
+ 
+ #endif  // CONTENT_PUBLIC_BROWSER_NAVIGATION_HANDLE_H_

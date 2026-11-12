@@ -51,6 +51,10 @@
 #include "base/android/scoped_java_ref.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "arkweb/chromium_ext/content/public/browser/error_page_reload_reason.h"
+#endif
+
 class GURL;
 
 namespace net {
@@ -152,6 +156,13 @@ class CONTENT_EXPORT NavigationHandle : public base::SupportsUserData {
 
   // Get a unique ID for this navigation.
   virtual int64_t GetNavigationId() const = 0;
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // Get extra headers for this navigation.
+  virtual const std::string& GetExtraHeaders() const = 0;
+  // Get complete request headers including extra_headers.
+  virtual std::string GetCompleteHeaders() const = 0;
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
 
   // Get the page UKM ID that will be in use once this navigation fully commits
   // (typically the eventual value of
@@ -873,6 +884,18 @@ class CONTENT_EXPORT NavigationHandle : public base::SupportsUserData {
   // Returns whether this navigation is currently deferred.
   virtual bool IsDeferredForTesting() = 0;
   virtual bool IsCommitDeferringConditionDeferredForTesting() = 0;
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  virtual bool NeedsReloadWithFallbackProxy() = 0;
+  virtual ErrorPageReloadReason  GetCurrentReloadReason() = 0;
+  virtual int GetOriginalNetErrorCode() = 0;
+  virtual bool HasBeenReloadedForThisReason(ErrorPageReloadReason  reason) = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  virtual bool IsAutoReload() = 0;
+  virtual void OnReportNewNavigationInfo(const std::string& page_trace_id) = 0;
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   // Returns a reference to NavigationHandle Java counterpart.

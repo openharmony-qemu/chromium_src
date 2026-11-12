@@ -1,0 +1,27 @@
+diff a/content/public/browser/BUILD.gn b/content/public/browser/BUILD.gn	(rejected hunks)
+@@ -698,10 +752,25 @@ source_set("browser_sources") {
+   if (use_atk) {
+     sources += [ "ax_inspect_factory_auralinux.cc" ]
+     configs += [ "//build/config/linux/atspi2" ]
+   }
+ 
++  if (arkweb_same_layer) {
++    sources += arkweb_content_public_browser_sources
++  }
++
++  if (defined(arkweb_fullscreen_video_overlay) && arkweb_fullscreen_video_overlay) {
++    sources += arkweb_content_public_browser_fullscreen_overlay_sources
++  }
++
++  if (defined(arkweb_network_base) && arkweb_network_base) {
++    sources += [
++      "//cef/ohos_cef_ext/libcef/browser/ark_web_javascript_dialog_manager.cc",
++      "//cef/ohos_cef_ext/libcef/browser/ark_web_javascript_dialog_manager.h",
++    ]
++  }
++
+   if (is_linux || is_chromeos) {
+     sources += [ "zygote_host/zygote_host_linux.h" ]
+   }
+ 
+   if (allow_oop_video_decoder) {

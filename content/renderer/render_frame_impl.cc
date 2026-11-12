@@ -260,7 +260,27 @@
 #include <cpu-features.h>
 
 #include "content/renderer/java/gin_java_bridge_dispatcher.h"
+#endif
 #include "mojo/public/cpp/bindings/self_owned_associated_receiver.h"
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/renderer/render_frame_impl_before_for_include.cc"
+#endif
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "arkweb/chromium_ext/content/browser/dfx/memory_monitor_render_impl.h"
+#endif
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#include "arkweb/chromium_ext/content/renderer/dfx_event_sender.h"
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_JSHEAP_DUMP)
+#include "arkweb/chromium_ext/v8/heap_dump/mojom_impl/binary_writer_render_impl.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_V8_OOM_MONITOR)
+#include "arkweb/chromium_ext/v8/dfx/oom_mojom/v8_oom_monitor_render_impl.h"
 #endif
 
 using base::Time;
@@ -687,7 +707,15 @@ blink::mojom::CommonNavigationParamsPtr MakeCommonNavigationParams(
       info->should_check_main_world_content_security_policy,
       info->initiator_origin_trial_features, info->href_translate.Latin1(),
       is_history_navigation_in_new_child_frame, info->input_start,
-      request_destination);
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+      request_destination, ""
+#else
+      request_destination
+#endif
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+      , false
+#endif
+      );
 }
 
 WebFrameLoadType NavigationTypeToLoadType(
@@ -1408,6 +1436,10 @@ mojo::ScopedDataPipeConsumerHandle FillResponseForInitialWebUI(
 }
 
 }  // namespace
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/renderer/render_frame_impl_for_include.cc"
+#endif
 
 // Implementation of WebFrameSerializer::MHTMLPartsGenerationDelegate that
 // 1. Bases shouldSkipResource and getContentID responses on contents of
@@ -2143,6 +2175,10 @@ void RenderFrameImpl::Initialize(blink::WebFrame* parent) {
 
   RegisterMojoInterfaces();
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
+  InitBlankScreenMonitor();
+#endif
+
   {
     TRACE_EVENT("navigation", "ContentRendererClient::RenderFrameCreated");
     // We delay calling this until we have the WebFrame so that any observer or
@@ -2438,6 +2474,12 @@ const blink::WebLocalFrame* RenderFrameImpl::GetWebFrame() const {
 }
 
 blink::WebView* RenderFrameImpl::GetWebView() {
+#if BUILDFLAG(ARKWEB_TEST)
+  if (web_view_test_mode) {
+    web_view_test_mode = false;
+    return web_view_test;
+  }
+#endif
   blink::WebView* web_view = GetWebFrame()->View();
   DCHECK(web_view);
   return web_view;
@@ -2866,7 +2908,7 @@ void RenderFrameImpl::CommitNavigation(
   // - The actual data: URL will be saved in the document's DocumentState to
   // later be returned as the `url` in DidCommitProvisionalLoadParams.
   bool should_handle_data_url_as_string = false;
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
   should_handle_data_url_as_string |=
       is_main_frame_ && !commit_params->data_url_as_string.empty();
 #endif
@@ -3135,6 +3177,14 @@ void RenderFrameImpl::CommitNavigationWithParams(
         timer.Elapsed());
   }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  // Navigation-time renderer-side application: apply the adblock state received
+  // from the browser via commit params (commit_params->site_adblock_enabled).
+  // In strict site isolation mode, each process's local frame receives and
+  // applies its own copy of the state.
+  OnUpdateAdBlockEnabledToRender(site_adblock_enabled);
+#endif
+
   ResetMembersUsedForDurationOfCommit();
 }
 
@@ -3245,6 +3295,12 @@ void RenderFrameImpl::CommitFailedNavigation(
   std::string* error_html_ptr = &error_html;
   if (error_code == net::ERR_HTTP_RESPONSE_CODE_FAILURE) {
     DCHECK_NE(commit_params->http_response_code, -1);
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+    if (error_page_content && common_params->is_override_error_page) {
+      error_html = error_page_content.value();
+      error_html_ptr = nullptr;
+    }
+#endif
     GetContentClient()->renderer()->PrepareErrorPageForHttpStatusError(
         this, error, navigation_params->http_method.Ascii(),
         commit_params->http_response_code,
@@ -3325,7 +3381,20 @@ void RenderFrameImpl::CommitFailedNavigation(
       *common_params, *commit_params, std::move(callback),
       std::move(navigation_client_impl_), blink::GenerateRequestId(),
       false /* was_initiated_in_this_frame */);
-
+#if BUILDFLAG(ARKWEB_EXT_UA)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExUa)) {
+    if (IsMainFrame() &&
+        viewport_meta_enabled_ != GetBlinkPreferences().viewport_meta_enabled &&
+        (common_params->navigation_type ==
+             blink::mojom::NavigationType::RELOAD ||
+         common_params->navigation_type ==
+             blink::mojom::NavigationType::RELOAD_BYPASSING_CACHE)) {
+      document_state->set_must_reset_scroll_and_scale_state(true);
+    }
+    viewport_meta_enabled_ = GetBlinkPreferences().viewport_meta_enabled;
+  }
+#endif
   DCHECK(!pending_loader_factories_);
   pending_loader_factories_ = std::move(new_loader_factories);
 
@@ -4009,6 +4078,7 @@ void RenderFrameImpl::DidAddMessageToConsole(
 
 void RenderFrameImpl::DidCreateDocumentLoader(
     blink::WebDocumentLoader* document_loader) {
+  LOG(INFO) << "[RenderPipeline] DidCreateDocumentLoader";
   DocumentState* document_state =
       DocumentState::FromDocumentLoader(document_loader);
   if (!document_state) {
@@ -4045,6 +4115,63 @@ void RenderFrameImpl::DidCommitNavigation(
                "RenderFrameImpl::didStartProvisionalLoad", "frame_token",
                frame_token_, "url",
                document_loader->GetUrl().GetString().Utf8());
+  LOG(INFO) << "[RenderPipeline] DidCommitNavigation: is_main_frame=" << IsMainFrame();
+
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  if (IsMainFrame()) {
+    LOG(WARNING) << "event_message: page load start, routing_id: "
+                 <<  ", url: ***";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    OnDidCommitNavigation(document_loader, commit_type);
+#endif
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+    if (!MemoryMonitorImpl::GetInstance()->IsInitialized()) {
+      GetBrowserInterfaceBroker().GetInterface(
+          std::move(MemoryMonitorImpl::GetInstance()->GetPendingReceiver())
+      );
+    }
+    MemoryMonitorImpl::GetInstance()->Trigger(document_loader->GetUrl().GetString().Utf8());
+#endif
+
+#if BUILDFLAG(ARKWEB_JSHEAP_DUMP)
+    if (!dfx::BinaryWriterRender::GetInstance()->IsInitialized()) {
+      LOG(INFO) << "HeapDump: GetInstance()->SetInitialized()\n";
+      dfx::BinaryWriterRender::GetInstance()->SetInitialized();
+      LOG(INFO) << "HeapDump: RenderFrameImpl::Initialize\n";
+      GetBrowserInterfaceBroker().GetInterface(std::move(
+          dfx::BinaryWriterRender::GetInstance()->GetPendingReceiver()));
+    }
+#endif
+
+#if BUILDFLAG(ARKWEB_V8_OOM_MONITOR)
+    if (!v8_oom::V8OOMMonitorImpl::GetInstance()->IsInitialized()) {
+      v8_oom::V8OOMMonitorImpl::GetInstance()->SetInitialized();
+      GetBrowserInterfaceBroker().GetInterface(std::move(
+          v8_oom::V8OOMMonitorImpl::GetInstance()->GetPendingReceiver()));
+    }
+    v8_oom::V8OOMMonitorImpl::GetInstance()->Trigger(document_loader->GetUrl().GetString().Utf8());
+#endif
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  if (!DfxEventSender::GetInstance()->IsBound()) {
+    GetBrowserInterfaceBroker().GetInterface(
+        DfxEventSender::GetInstance()->GetPendingReceiver());
+  }
+
+  static bool forwarder_registered = false;
+  if (!forwarder_registered) {
+    forwarder_registered = true;
+    SetHiSysEventForwarder(base::BindRepeating(
+        [](const std::string& event_name, base::Value::Dict info) {
+          DfxEventSender::GetInstance()->ReportHiSysEvent(event_name,
+                                                          std::move(info));
+        }));
+    LOG(INFO) << "HiSysEventForwarder registered in renderer process";
+  }
+#endif
 
   // Install factories as early as possible - it needs to happen before the
   // newly committed document starts any subresource fetches.  In particular,
@@ -4880,6 +5007,10 @@ void RenderFrameImpl::SetDidCompleteResponseCallback(
   did_complete_response_callback_ = std::move(callback);
 }
 
+base::WeakPtr<RenderFrame> RenderFrameImpl::GetRenderFrameWeakPtr() {
+  return GetWeakPtr();
+}
+
 void RenderFrameImpl::SetDidCancelResponseCallback(
     DidCancelResponseCallback callback) {
   did_cancel_response_callback_ = std::move(callback);
@@ -5708,7 +5839,7 @@ void RenderFrameImpl::BeginNavigation(
                      !url.SchemeIs(url::kDataScheme);
   DCHECK(!(use_archive && IsMainFrame()));
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_LOAD)
   // The handlenavigation API is deprecated and will be removed once
   // crbug.com/325351 is resolved.
   if (!url.is_empty() && !use_archive && !IsURLHandledByNetworkStack(url) &&
@@ -5812,6 +5943,9 @@ void RenderFrameImpl::BeginNavigation(
   // that will end up in a different tab/window, and BeginNavigation handles
   // everything else.
   if (info->navigation_policy == blink::kWebNavigationPolicyDownload) {
+#if BUILDFLAG(ARKWEB_DISABLE_MOJO_JS)
+    LOG(INFO) << "download url from rfh";
+#endif
     mojo::PendingRemote<blink::mojom::BlobURLToken> blob_url_token =
         CloneBlobURLToken(info->blob_url_token);
 
@@ -6379,6 +6513,13 @@ void RenderFrameImpl::BeginNavigationInternal(
     transition_type = ui::PageTransitionFromInt(
         transition_type | ui::PAGE_TRANSITION_CLIENT_REDIRECT);
   }
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  if (info->is_triggered_by_js) {
+    transition_type = ui::PageTransitionFromInt(
+        transition_type | ui::PAGE_TRANSITION_FROM_JAVASCRIPT);
+  }
+
+#endif
 
   // Note: At this stage, the goal is to apply all the modifications the
   // renderer wants to make to the request, and then send it to the browser, so
@@ -6656,7 +6797,7 @@ void RenderFrameImpl::DecodeDataURL(
     GURL* base_url) {
   // A loadData request with a specified base URL.
   GURL data_url = common_params.url;
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
   if (!commit_params.data_url_as_string.empty()) {
 #if DCHECK_IS_ON()
     {
@@ -6807,6 +6948,10 @@ void RenderFrameImpl::RegisterMojoInterfaces() {
       base::BindRepeating(&RenderFrameImpl::BindGinJavaBridge,
                           weak_factory_.GetWeakPtr()));
 #endif
+
+  GetAssociatedInterfaceRegistry()->AddInterface<mojom::OhGinJavascriptBridge>(
+      base::BindRepeating(&RenderFrameImpl::BindOhGinJavascriptBridge,
+                          weak_factory_.GetWeakPtr()));
 }
 
 #if BUILDFLAG(IS_ANDROID)
@@ -6816,6 +6961,12 @@ void RenderFrameImpl::BindGinJavaBridge(
       std::make_unique<GinJavaBridgeDispatcher>(this), std::move(receiver));
 }
 #endif
+
+void RenderFrameImpl::BindOhGinJavascriptBridge(
+    mojo::PendingAssociatedReceiver<mojom::OhGinJavascriptBridge> receiver) {
+  mojo::MakeSelfOwnedAssociatedReceiver(
+      std::make_unique<NWEB::OhGinJavascriptBridgeDispatcher>(this), std::move(receiver));
+}
 
 void RenderFrameImpl::BindMhtmlFileWriter(
     mojo::PendingAssociatedReceiver<mojom::MhtmlFileWriter> receiver) {
@@ -7327,5 +7478,17 @@ void RenderFrameImpl::ResetMembersUsedForDurationOfCommit() {
   pending_storage_info_.reset();
   is_requesting_navigation_ = false;
 }
+
+#if BUILDFLAG(ARKWEB_TEST)
+void RenderFrameImpl::SetLocalRootWebFrameWidgetForTest(blink::WebFrameWidget* widget) {
+  web_frame_widget_test_mode = true;
+  web_frame_widget_test = widget;
+}
+
+void RenderFrameImpl::SetWebViewForTest(blink::WebView* web_view) {
+  web_view_test_mode = true;
+  web_view_test = web_view;
+}
+#endif
 
 }  // namespace content

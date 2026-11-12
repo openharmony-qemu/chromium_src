@@ -74,6 +74,7 @@ bool RendererMainPlatformDelegate::EnableSandbox() {
 #endif  // __x86_64__
 
   return true;
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
 }
 
 }  // namespace content

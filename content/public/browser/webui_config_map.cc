@@ -70,7 +70,9 @@ WebUIConfigMap::WebUIConfigMap()
 WebUIConfigMap::~WebUIConfigMap() = default;
 
 void WebUIConfigMap::AddWebUIConfig(std::unique_ptr<WebUIConfig> config) {
+#if !BUILDFLAG(ARKWEB_NETWORK_LOAD)
   CHECK_EQ(config->scheme(), kChromeUIScheme);
+#endif
   AddWebUIConfigImpl(std::move(config));
 }
 
@@ -141,5 +143,4 @@ std::vector<WebUIConfigInfo> WebUIConfigMap::GetWebUIConfigList(
   }
   return origins;
 }
-
 }  // namespace content

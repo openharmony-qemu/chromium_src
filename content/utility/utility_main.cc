@@ -85,7 +85,8 @@
 #include "printing/sandbox/print_backend_sandbox_hook_linux.h"
 #endif
 
-#if BUILDFLAG(ENABLE_SCREEN_AI_SERVICE)
+#if (BUILDFLAG(ENABLE_SCREEN_AI_SERVICE) && !defined(COMPONENT_BUILD) && \
+     (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)))
 #include "services/screen_ai/public/cpp/utilities.h"  // nogncheck
 #include "services/screen_ai/sandbox/screen_ai_sandbox_hook_linux.h"  // nogncheck
 #endif
@@ -136,7 +137,8 @@ namespace content {
 
 namespace {
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if !defined(COMPONENT_BUILD) && \
+    (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)) // FIXME
 std::vector<std::string> GetNetworkContextsParentDirectories() {
   base::MemoryMappedFile::Region region;
   base::ScopedFD read_pipe_fd = base::FileDescriptorStore::GetInstance().TakeFD(
@@ -364,7 +366,8 @@ int UtilityMain(MainFunctionParams parameters) {
 #endif  // BUILDFLAG(ENABLE_ON_DEVICE_TRANSLATION) && (BUILDFLAG(IS_LINUX) ||
         // BUILDFLAG(IS_CHROMEOS))
     case sandbox::mojom::Sandbox::kScreenAI:
-#if BUILDFLAG(ENABLE_SCREEN_AI_SERVICE)
+#if defined(ENABLE_SCREEN_AI_SERVICE) && ENABLE_SCREEN_AI_SERVICE && \
+    !defined(COMPONENT_BUILD)
       pre_sandbox_hook =
           base::BindOnce(&screen_ai::ScreenAIPreSandboxHook,
                          parameters.command_line->GetSwitchValuePath(

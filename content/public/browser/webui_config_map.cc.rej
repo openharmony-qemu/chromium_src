@@ -1,0 +1,43 @@
+diff a/content/public/browser/webui_config_map.cc b/content/public/browser/webui_config_map.cc	(rejected hunks)
+@@ -93,14 +95,22 @@ WebUIConfig* WebUIConfigMap::GetConfig(BrowserContext* browser_context,
+                                        const GURL& url) {
+   // "filesystem:" and "blob:" get dropped by url::Origin::Create() below. We
+   // don't want navigations to these URLs to have WebUI bindings, e.g.
+   // chrome.send() or Mojo.bindInterface(), since some WebUIs currently expose
+   // untrusted content via these schemes.
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  if (url.GetScheme() != kChromeUIScheme &&
++      url.GetScheme() != kChromeUIUntrustedScheme &&
++      url.GetScheme() != kArkWebUIScheme) {
++    return nullptr;
++  }
++#else
+   if (url.GetScheme() != kChromeUIScheme &&
+       url.GetScheme() != kChromeUIUntrustedScheme) {
+     return nullptr;
+   }
++#endif
+ 
+   auto origin_and_config = configs_map_.find(url::Origin::Create(url));
+   if (origin_and_config == configs_map_.end()) {
+     return nullptr;
+   }
+@@ -113,12 +123,18 @@ WebUIConfig* WebUIConfigMap::GetConfig(BrowserContext* browser_context,
+ 
+   return config.get();
+ }
+ 
+ std::unique_ptr<WebUIConfig> WebUIConfigMap::RemoveConfig(const GURL& url) {
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+   CHECK(url.GetScheme() == kChromeUIScheme ||
+         url.GetScheme() == kChromeUIUntrustedScheme);
++#else
++  CHECK(url.GetScheme() == kChromeUIScheme ||
++        url.GetScheme() == kChromeUIUntrustedScheme ||
++        url.GetScheme() == kArkWebUIScheme);
++#endif
+ 
+   auto it = configs_map_.find(url::Origin::Create(url));
+   if (it == configs_map_.end()) {
+     return nullptr;
+   }

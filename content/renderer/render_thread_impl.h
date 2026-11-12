@@ -65,6 +65,15 @@
 #include "third_party/blink/public/platform/web_connection_type.h"
 #include "ui/gfx/native_ui_types.h"
 
+#ifdef IS_ARKWEB
+#include "arkweb/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom-forward.h"
+#include "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom.h"
+#endif
+
 namespace blink {
 class WebVideoCaptureImplManager;
 }
@@ -355,11 +364,45 @@ class CONTENT_EXPORT RenderThreadImpl
   void SetPrivateMemoryFootprint(uint64_t private_memory_footprint_bytes);
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetBlanklessDumpInfo(uint32_t nweb_id,
+                            uint64_t blankless_key,
+                            uint64_t frame_sink_id,
+                            int32_t lcp_time,
+                            int64_t pref_hash);
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void UpdateReaderModeConfig(
+      blink::mojom::ReaderModeConfigPtr config) override;
+  const blink::mojom::ReaderModeConfig* GetReaderModeConfig() override;
+#endif
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  void UpdateVideoLoadOptimizationConfigData(const bool enable,
+                                             const int preload_video_time,
+                                             const int min_cache_time,
+                                             const int max_cache_time,
+                                             const int moov_size,
+                                             const int bit_rate,
+                                             const std::vector<std::string>& support_domains) override;
+  bool IsVideoLoadOptimizationEnabled(const std::string& url) const;
+  bool IsVideoLoadOptSupportDomainMatch(const std::string& url) const;
+  int GetVideoPreloadTimeDefault() const;
+  int GetVideoMinCacheTimeDefault() const;
+  int GetVideoMaxCacheTimeDefault() const;
+  int GetVideoMoovSizeDefault() const;
+  int GetVideoBitrateDefault() const;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
  private:
   FRIEND_TEST_ALL_PREFIXES(RenderThreadImplBrowserTest,
                            TransferSharedLastForegroundTime);
+
   friend class RenderThreadImplBrowserTest;
   friend class AgentSchedulingGroup;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class RenderThreadImplExtUnittest;
+#endif
 
   void OnProcessFinalRelease() override;
   // IPC::Listener
@@ -368,6 +411,20 @@ class CONTENT_EXPORT RenderThreadImpl
   // ChildThread
   void RecordAction(const base::UserMetricsAction& action) override;
   void RecordComputedAction(const std::string& action) override;
+
+#if BUILDFLAG(ARKWEB_I18N)
+  void NotifyLocaleChanged(const std::string& update_locale) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+  void RequestJSDump(mojo::PlatformHandle socket,
+                     bool needGC,
+                     bool needSnapshot, bool needRaw) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void OnChannelConnected(int32_t peer_pid) override;
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   // ChildThreadImpl
@@ -567,6 +624,11 @@ class CONTENT_EXPORT RenderThreadImpl
       agent_scheduling_groups_;
 
   int process_foregrounded_count_;
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  bool has_reported_initial_foreground_memory_ = false;
+  bool has_reported_background_memory_ = false;
+#endif
 
   int32_t client_id_;
 

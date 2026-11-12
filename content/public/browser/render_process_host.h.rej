@@ -1,0 +1,112 @@
+diff a/content/public/browser/render_process_host.h b/content/public/browser/render_process_host.h	(rejected hunks)
+@@ -122,14 +132,23 @@ enum class ChildProcessImportance;
+ 
+ namespace mojom {
+ class Renderer;
+ }  // namespace mojom
+ 
++#if BUILDFLAG(IS_ARKWEB)
++enum class RenderProcessMode {
++    SINGLE_MODE = 0,
++    MULTIPLE_MODE = 1,
++    DEFAULT_MODE = 2,
++};
++#endif
++
+ // Interface that represents the browser side of the browser <-> renderer
+ // communication channel. There will generally be one RenderProcessHost per
+ // renderer process.
+ class CONTENT_EXPORT RenderProcessHost : public IPC::Listener,
++                                         public RenderProcessHostOhos,
+                                          public base::SupportsUserData {
+   // Do not remove this macro!
+   // The macro is maintained by the memory safety team.
+   ADVANCED_MEMORY_SAFETY_CHECKS();
+ 
+@@ -491,10 +510,21 @@ class CONTENT_EXPORT RenderProcessHost : public IPC::Listener,
+   // (after a new renderer process was created); further calls to Init would
+   // change this value only when they caused the new process to be created after
+   // a crash.
+   virtual const base::TimeTicks& GetLastInitTime() = 0;
+ 
++#if BUILDFLAG(IS_ARKWEB)
++  // Returns true if this process currently has backgrounded priority.
++  virtual bool IsProcessBackgrounded() { return false; }
++
++  virtual const base::TimeTicks& ProcessBackgroundTime() = 0;
++#endif
++
++#if BUILDFLAG(ARKWEB_THEME_FONT)
++  virtual void OnThemeFontChange() {}
++#endif
++
+   // Returns the priority of this process.
+   virtual base::Process::Priority GetPriority() const = 0;
+ 
+   // Returns a list of durations for active KeepAlive requests.
+   // For debugging only. TODO(wjmaclean): Remove once the causes behind
+@@ -788,10 +818,18 @@ class CONTENT_EXPORT RenderProcessHost : public IPC::Listener,
+   // provided by the renderer periodically. On other platforms this value is
+   // read from the OS but is cached for a short duration so we don't incur
+   // a cost on every call.
+   virtual uint64_t GetPrivateMemoryFootprint() = 0;
+ 
++#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
++  virtual void dumpCurrentJavaScriptStackInMainThread(
++      base::OnceCallback<void(const std::string&)> callback) {}
++
++  virtual void InvokeRenderCrashDump() {}
++
++  virtual void ReportRenderUnresponsive(int32_t pid, const std::string& stack) {}
++#endif
+   // Static management functions -----------------------------------------------
+ 
+   // Flag to run the renderer in process.  This is primarily
+   // for debugging purposes.  When running "in process", the
+   // browser maintains a single RenderProcessHost which communicates
+@@ -852,19 +890,45 @@ class CONTENT_EXPORT RenderProcessHost : public IPC::Listener,
+       AnalyzeHungRendererFunction analyze_hung_renderer);
+ 
+   // Counts current RenderProcessHost(s), ignoring all spare processes.
+   static int GetCurrentRenderProcessCountForTesting();
+ 
++#if BUILDFLAG(ARKWEB_I18N)
++  static void OnLocaleChangedToRenderer(const std::string& update_locale);
++#endif
++
+   // Allows tests to override host interface binding behavior. Any interface
+   // binding request which would normally pass through the RPH's internal
+   // IOThreadHostImpl::BindHostReceiver() will pass through |callback| first if
+   // non-null. |callback| is only called from the IO thread.
+   using BindHostReceiverInterceptor =
+       base::RepeatingCallback<void(ChildProcessId render_process_id,
+                                    mojo::GenericPendingReceiver* receiver)>;
+   static void InterceptBindHostReceiverForTesting(
+       BindHostReceiverInterceptor callback);
++
++#if BUILDFLAG(IS_ARKWEB)
++  static void SetRenderProcessMode(RenderProcessMode mode);
++  static RenderProcessMode render_process_mode();
++
++  enum class RenderType {
++    kExtension = 0,
++    kPdf = 1,
++    kWebUI = 2,
++  };
++
++  std::map<RenderType, unsigned> special_render_numbers_ {
++    {RenderType::kExtension, 0},
++    {RenderType::kPdf, 0},
++    {RenderType::kWebUI, 0},
++  };
++#endif
++
++#if BUILDFLAG(ARKWEB_NETWORK_DFX) && BUILDFLAG(ARKWEB_NWEB_EX)
++  virtual base::TimeTicks GetChildProcessStartTime() const = 0;
++#endif
++
+ };
+ 
+ }  // namespace content
+ 
+ #endif  // CONTENT_PUBLIC_BROWSER_RENDER_PROCESS_HOST_H_

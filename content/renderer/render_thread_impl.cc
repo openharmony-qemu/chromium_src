@@ -225,6 +225,11 @@
 #include "base/test/clang_profiling.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/renderer/renderer_blink_platform_impl_ext.h"
+#include "arkweb/chromium_ext/content/renderer/render_thread_impl_ext.cc"
+#endif
+
 namespace content {
 
 namespace {
@@ -267,9 +272,11 @@ BASE_FEATURE(kUseThreadPoolForMediaTaskRunner,
 
 // Updates the crash key for whether this renderer is foregrounded.
 void UpdateForegroundCrashKey(bool foreground) {
+#if !BUILDFLAG(ARKWEB_BUGFIX_CRASH)
   static auto* const crash_key = base::debug::AllocateCrashKeyString(
       "renderer_foreground", base::debug::CrashKeySize::Size32);
   base::debug::SetCrashKeyString(crash_key, base::ToString(foreground));
+#endif
 }
 
 // Hook that allows single-sample metric code from //components/metrics to
@@ -851,6 +858,9 @@ void RenderThreadImpl::InitializeWebKit(mojo::BinderMap* binders) {
   // skia initialization code for the GPU.
   SkGraphics::SetImageGeneratorFromEncodedDataFactory(
       blink::WebImageGenerator::CreateAsSkImageGenerator);
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  InitializeWebKitExt(compositor_task_runner_);
+#endif
 }
 
 void RenderThreadImpl::InitializeRenderer(

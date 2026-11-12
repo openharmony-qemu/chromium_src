@@ -8,6 +8,13 @@
 #include "base/memory/raw_ptr.h"
 #include "content/common/content_export.h"
 #include "url/gurl.h"
+#if BUILDFLAG(ARKWEB_NAVIGATION)
+#include "arkweb/chromium_ext/content/public/browser/ohos_navigation_type.h"
+#endif // BUILDFLAG(ARKWEB_NAVIGATION)
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+#include <vector>
+#endif
 
 namespace content {
 
@@ -73,6 +80,15 @@ struct CONTENT_EXPORT LoadCommittedDetails {
   // replaced on the next navigation.
   // See also https://crbug.com/1277414.
   bool should_stay_as_initial_entry = false;
+
+  #if BUILDFLAG(ARKWEB_NAVIGATION)
+  content::OhosNavigationType type;
+  GURL current_commit_entry_url;
+  #endif // BUILDFLAG(ARKWEB_NAVIGATION)
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  std::vector<GURL> redirect_chain;
+#endif
 };
 
 // Provides the details for a NOTIFICATION_NAV_ENTRY_CHANGED notification.

@@ -46,6 +46,27 @@
 #include "ui/base/ui_base_types.h"
 #include "ui/base/window_open_disposition.h"
 #include "ui/gfx/native_ui_types.h"
+#include "arkweb/build/features/features.h"
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "arkweb/chromium_ext/content/public/browser/native_embed_info.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "media/mojo/mojom/media_player.mojom-forward.h"
+#endif // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "components/dom_distiller/content/common/mojom/distillability_service.mojom.h"
+#endif  // ARKWEB_READER_MODE
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+#include "arkweb/ohos_nweb/src/capi/nweb_extension_javascript_item.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_AI)
+#include "arkweb/chromium_ext/content/public/browser/ai_session_types.h"
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_java_ref.h"
@@ -60,6 +81,10 @@ class ScopedHardwareBufferHandle;
 }  // namespace base::android
 
 #endif
+
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+#include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
+#endif // ARKWEB_DEVTOOLS
 
 class GURL;
 
@@ -138,6 +163,14 @@ enum class PictureInPictureResult {
   // Picture-in-Picture is not supported by the embedder.
   kNotSupported,
 };
+
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+enum class RendererIsUnresponsiveReason;
+#endif
+
+#if BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+enum class VideoPlaybackNotificationType;
+#endif // ARKWEB_FULLSCREEN_VIDEO_OVERLAY
 
 #if BUILDFLAG(IS_ANDROID)
 using HardwareBufferResultCallback =
@@ -278,6 +311,9 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual bool DidAddMessageToConsole(
       WebContents* source,
       blink::mojom::ConsoleMessageLevel log_level,
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+      blink::mojom::ConsoleMessageSource log_source,
+#endif
       const std::u16string& message,
       int32_t line_no,
       const std::u16string& source_id);
@@ -475,8 +511,13 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual void RendererUnresponsive(
       WebContents* source,
       RenderWidgetHost* render_widget_host,
-      base::RepeatingClosure hang_monitor_restarter) {}
-
+      base::RepeatingClosure hang_monitor_restarter
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+      ,
+      RendererIsUnresponsiveReason reason
+#endif
+  ) {
+  }
   // Notification that a process in the WebContents is no longer hung. |source|
   // is the WebContents that was hung, and |render_widget_host| is the
   // RenderWidgetHost that was passed in an earlier call to
@@ -763,10 +804,17 @@ class CONTENT_EXPORT WebContentsDelegate {
   // values again, except part of resize. But this is not needed by embedder
   // because it's always accompanied by view size change. The values returned
   // by these APIs are in physical pixels (not DIPs).
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  virtual float GetTopControlsHeight();
+  virtual float GetTopControlsMinHeight();
+  virtual float GetBottomControlsHeight();
+  virtual float GetBottomControlsMinHeight();
+#else
   virtual int GetTopControlsHeight();
   virtual int GetTopControlsMinHeight();
   virtual int GetBottomControlsHeight();
   virtual int GetBottomControlsMinHeight();
+#endif
   virtual bool ShouldAnimateBrowserControlsHeightChanges();
   virtual bool DoBrowserControlsShrinkRendererSize(WebContents* web_contents);
   virtual int GetVirtualKeyboardHeight(WebContents* web_contents);
@@ -965,6 +1013,20 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual BackForwardTransitionAnimationManager::FallbackUXConfig
   GetBackForwardTransitionFallbackUXConfig();
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/public/browser/web_contents_delegate_for_include.h"
+#endif  // BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_PIP)
+  virtual void OnPipEvent(int event) {}
+  virtual void OnPip(int status,
+                     int delegate_id,
+                     int child_id,
+                     int frame_routing_id,
+                     int width,
+                     int height) {}
+#endif
+
 
   // Returns the saved related_applications web app manifest field associated
   // with the given `web_contents`. The information is saved via the

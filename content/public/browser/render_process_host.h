@@ -66,6 +66,16 @@
 #include "media/mojo/mojom/fuchsia_media.mojom-forward.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+#include "base/files/file.h"
+#endif
+
+#include "arkweb/chromium_ext/content/public/browser/render_process_host_ohos.h"
+
 class GURL;
 
 namespace base {

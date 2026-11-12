@@ -1,0 +1,79 @@
+diff a/content/renderer/render_thread_impl.h b/content/renderer/render_thread_impl.h	(rejected hunks)
+@@ -111,10 +120,14 @@ class VariationsRenderThreadObserver;
+ class DCOMPTextureFactory;
+ class OverlayStateServiceProvider;
+ class OverlayStateServiceProviderImpl;
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++class NativeTextureFactory;
++#endif
++
+ // The RenderThreadImpl class represents the main thread, where `blink::WebView`
+ // instances live.  Most of the communication occurs in the form of mojo IPC
+ // messages, however there is still some legacy IPC messages.  They are
+ // routed to the RenderThread according to the routing IDs of the messages.
+ // The routing IDs correspond to `RenderFrameImpl` instances.
+@@ -248,10 +261,14 @@ class CONTENT_EXPORT RenderThreadImpl
+   // clear is supported, otherwise GetOverlayStateServiceProvider will return
+   // nullptr.
+   scoped_refptr<OverlayStateServiceProvider> GetOverlayStateServiceProvider();
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  scoped_refptr<NativeTextureFactory> GetNativeTexureFactory();
++#endif
++
+   blink::WebVideoCaptureImplManager* video_capture_impl_manager() const {
+     return vc_manager_.get();
+   }
+ 
+   // Get the GPU channel. Returns NULL if the channel is not established or
+@@ -424,10 +489,17 @@ class CONTENT_EXPORT RenderThreadImpl
+       WriteClangProfilingProfileCallback callback) override;
+ #endif
+   void SetIsCrossOriginIsolated(bool value) override;
+   void SetIsWebSecurityDisabled(bool value) override;
+   void SetIsIsolatedContext(bool value) override;
++#if BUILDFLAG(ARKWEB_SYNC_RENDER)
++  void SetDrawMode(int mode, base::PassKey<AgentSchedulingGroup>);
++#endif
++
++#if BUILDFLAG(ARKWEB_THEME_FONT)
++  void UpdateThemeFontFile(const std::vector<base::File> theme_fonts) override;
++#endif
+   void SetWebUIResourceUrlToCodeCacheMap(
+       const base::flat_map<GURL, int>& resource_map) override;
+   void OnMemoryPressure(
+       base::MemoryPressureLevel memory_pressure_level) override;
+ 
+@@ -515,10 +587,29 @@ class CONTENT_EXPORT RenderThreadImpl
+   scoped_refptr<DCOMPTextureFactory> dcomp_texture_factory_;
+   scoped_refptr<OverlayStateServiceProviderImpl>
+       overlay_state_service_provider_;
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  scoped_refptr<NativeTextureFactory> native_texture_factory_;
++#endif
++
++#if BUILDFLAG(ARKWEB_READER_MODE)
++  blink::mojom::ReaderModeConfigPtr reader_mode_config_;
++#endif  // ARKWEB_READER_MODE
++
++#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
++  std::atomic<bool> video_load_opt_enable_{false};
++  std::atomic<int> preload_video_time_{4};
++  std::atomic<int> min_cache_time_{2};
++  std::atomic<int> max_cache_time_{6};
++  std::atomic<int> moov_size_{512};
++  std::atomic<int> bit_rate_{2000};
++  std::vector<std::string> support_domains_;
++  mutable std::mutex cloud_control_config_mutex;
++#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
++
+   scoped_refptr<viz::ContextProviderCommandBuffer> shared_main_thread_contexts_;
+ 
+   base::ObserverList<RenderThreadObserver>::Unchecked observers_;
+ 
+   scoped_refptr<viz::RasterContextProvider>

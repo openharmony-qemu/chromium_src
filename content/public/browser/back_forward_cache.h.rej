@@ -1,0 +1,21 @@
+diff a/content/public/browser/back_forward_cache.h b/content/public/browser/back_forward_cache.h	(rejected hunks)
+@@ -8,14 +8,19 @@
+ #include <cstdint>
+ #include <map>
+ #include <optional>
+ #include <set>
+ 
++#include "arkweb/build/features/features.h"
+ #include "content/common/content_export.h"
+ #include "content/public/browser/global_routing_id.h"
+ #include "services/metrics/public/cpp/ukm_source_id.h"
+ 
++#if BUILDFLAG(ARKWEB_BFCACHE)
++#include "base/time/time.h"
++#endif
++
+ namespace content {
+ 
+ class Page;
+ class RenderFrameHost;
+ 

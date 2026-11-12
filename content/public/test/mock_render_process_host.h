@@ -339,6 +339,21 @@ class MockRenderProcessHost : public RenderProcessHost {
     return foreground_service_worker_count_;
   }
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void UpdateReaderModeConfig(
+      const nweb_ex::BrowserReaderModeConfigData*) override {}
+#endif
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  void UpdateVideoLoadOptimizationConfig(
+      nweb_ex::AlloyVideoLoadOptimizationData&) override {}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+#if BUILDFLAG(ARKWEB_NETWORK_DFX) && BUILDFLAG(ARKWEB_NWEB_EX)
+  base::TimeTicks GetChildProcessStartTime() const override {
+    return base::TimeTicks();
+  };
+#endif
+
  private:
   // Stores IPC messages that would have been sent to the renderer.
   int bad_msg_count_;

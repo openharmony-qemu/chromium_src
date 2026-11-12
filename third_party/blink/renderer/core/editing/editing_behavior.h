@@ -21,6 +21,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_EDITING_EDITING_BEHAVIOR_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_EDITING_EDITING_BEHAVIOR_H_
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/mojom/webpreferences/web_preferences.mojom-blink.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
@@ -44,9 +45,13 @@ class CORE_EXPORT EditingBehavior {
   // area, maintain the horizontal position on Windows, Android and ChromeOS but
   // extend it to the boundary of the editable content on Mac and Linux.
   bool ShouldMoveCaretToHorizontalBoundaryWhenPastTopOrBottom() const {
+#if BUILDFLAG(ARKWEB_MENU)
+    return false;
+#else
     return type_ != mojom::blink::EditingBehavior::kEditingWindowsBehavior &&
            type_ != mojom::blink::EditingBehavior::kEditingAndroidBehavior &&
            type_ != mojom::blink::EditingBehavior::kEditingChromeOSBehavior;
+#endif
   }
 
   bool ShouldSelectReplacement() const {
@@ -129,8 +134,12 @@ class CORE_EXPORT EditingBehavior {
   // Support for global selections, used on platforms like the X Window
   // System that treat selection as a type of clipboard.
   bool SupportsGlobalSelection() const {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    return false;
+#else
     return type_ != mojom::blink::EditingBehavior::kEditingWindowsBehavior &&
            type_ != mojom::blink::EditingBehavior::kEditingMacBehavior;
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   }
 
   // Convert a KeyboardEvent to a command name like "Copy", "Undo" and so on.

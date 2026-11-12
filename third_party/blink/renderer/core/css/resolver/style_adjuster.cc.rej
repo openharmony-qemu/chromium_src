@@ -1,0 +1,33 @@
+diff a/third_party/blink/renderer/core/css/resolver/style_adjuster.cc b/third_party/blink/renderer/core/css/resolver/style_adjuster.cc	(rejected hunks)
+@@ -1111,11 +1115,15 @@ void StyleAdjuster::AdjustComputedStyle(StyleResolverState& state,
+       builder.SetDisplay(EquivalentBlockDisplay(builder.Display()));
+     }
+ 
+     // math display values on non-MathML elements compute to flow display
+     // values.
++#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
++    if (!Cssutils::IsMathFormulaDisabledMode() && (!IsA<MathMLElement>(element) && builder.IsDisplayMathType())) {
++#else
+     if (!IsA<MathMLElement>(element) && builder.IsDisplayMathType()) {
++#endif
+       builder.SetDisplay(builder.Display() == EDisplay::kBlockMath
+                              ? EDisplay::kBlock
+                              : EDisplay::kInline);
+     }
+ 
+@@ -1233,11 +1241,15 @@ void StyleAdjuster::AdjustComputedStyle(StyleResolverState& state,
+ 
+   if (auto* svg_element = DynamicTo<SVGElement>(element); svg_element) {
+     auto* styled_element = DynamicTo<SVGElement>(state.GetStyledElement());
+     AdjustStyleForSvgElement(*svg_element, styled_element, builder,
+                              layout_parent_style);
++#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
++  } else if (IsA<MathMLElement>(element) && !Cssutils::IsMathFormulaDisabledMode()) {
++#else
+   } else if (IsA<MathMLElement>(element)) {
++#endif
+     if (builder.Display() == EDisplay::kContents) {
+       // https://drafts.csswg.org/css-display/#unbox-mathml
+       builder.SetDisplay(EDisplay::kNone);
+     }
+   }

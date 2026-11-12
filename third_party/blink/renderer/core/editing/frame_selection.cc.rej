@@ -1,0 +1,100 @@
+diff a/third_party/blink/renderer/core/editing/frame_selection.cc b/third_party/blink/renderer/core/editing/frame_selection.cc	(rejected hunks)
+@@ -27,10 +27,11 @@
+ 
+ #include <stdio.h>
+ 
+ #include <optional>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/auto_reset.h"
+ #include "base/trace_event/trace_event.h"
+ #include "third_party/blink/public/mojom/scroll/scroll_into_view_params.mojom-blink.h"
+ #include "third_party/blink/renderer/core/accessibility/ax_object_cache.h"
+ #include "third_party/blink/renderer/core/accessibility/blink_ax_event_intent.h"
+@@ -94,11 +95,16 @@
+ #include "third_party/blink/renderer/platform/bindings/exception_state.h"
+ #include "third_party/blink/renderer/platform/graphics/graphics_context.h"
+ #include "third_party/blink/renderer/platform/text/text_direction.h"
+ #include "third_party/blink/renderer/platform/text/unicode_utilities.h"
+ #include "ui/gfx/geometry/quad_f.h"
+-
++#if BUILDFLAG(ARKWEB_MENU)
++#include "third_party/blink/public/web/web_local_frame.h"
++#include "third_party/blink/renderer/core/exported/web_settings_impl.h"
++#include "third_party/blink/renderer/core/exported/web_view_impl.h"
++#include "third_party/blink/renderer/core/frame/local_frame_client.h"
++#endif
+ #define EDIT_DEBUG 0
+ 
+ namespace blink {
+ 
+ static inline bool ShouldAlwaysUseDirectionalSelection(LocalFrame* frame) {
+@@ -261,16 +267,23 @@ bool FrameSelection::SetSelectionDeprecated(
+     TypingCommand::CloseTyping(frame_);
+ 
+   if (options.ShouldClearTypingStyle())
+     frame_->GetEditor().ClearTypingStyle();
+ 
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++  AsFrameSelectionExt()->SetIsSelectAll(options.IsSelectAll());
++#endif  // ARKWEB_CLIPBOARD
++
+   const SelectionInDOMTree old_selection_in_dom_tree =
+       selection_editor_->GetSelectionInDOMTree();
+   const bool is_changed = old_selection_in_dom_tree != new_selection;
+   const bool should_show_handle = options.ShouldShowHandle();
+   if (!is_changed && is_handle_visible_ == should_show_handle &&
+       is_directional_ == options.IsDirectional())
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++    if (AsFrameSelectionExt()->GetSelectionMarkMaxLengthOverflow())
++#endif
+     return false;
+   Document& current_document = GetDocument();
+   if (is_changed) {
+     AssertUserSelection(new_selection, options);
+     selection_editor_->SetSelectionAndEndTyping(new_selection);
+@@ -770,11 +787,17 @@ bool FrameSelection::ComputeAbsoluteBounds(gfx::Rect& anchor,
+ void FrameSelection::PaintCaret(GraphicsContext& context,
+                                 const PhysicalOffset& paint_offset) {
+   frame_caret_->PaintCaret(context, paint_offset);
+ }
+ 
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++bool FrameSelection::Contains(const PhysicalOffset& point,
++                              bool contains_boundaries) {
++#else
+ bool FrameSelection::Contains(const PhysicalOffset& point) {
++#endif
++
+   if (!GetDocument().GetLayoutView())
+     return false;
+ 
+   // This is a workaround of the issue that we sometimes get null from
+   // ComputeVisibleSelectionInDOMTree(), but non-null from flat tree.
+@@ -1118,16 +1161,25 @@ static bool IsFrameElement(const Node* n) {
+   if (auto* embedded = DynamicTo<LayoutEmbeddedContent>(n->GetLayoutObject()))
+     return embedded->ChildFrameView();
+   return false;
+ }
+ 
+-void FrameSelection::SetFocusedNodeIfNeeded() {
++void FrameSelection::SetFocusedNodeIfNeeded(
++#if BUILDFLAG(ARKWEB_FOCUS)
++    bool is_skip_focus_check
++#endif
++) {
+   // TODO(editing-dev): The use of UpdateStyleAndLayout
+   // needs to be audited.  See http://crbug.com/590369 for more details.
+   GetDocument().UpdateStyleAndLayout(DocumentUpdateReason::kSelection);
+ 
++#if BUILDFLAG(ARKWEB_FOCUS)
++  if (ComputeVisibleSelectionInDOMTree().IsNone() ||
++      !(FrameIsFocused() || is_skip_focus_check)) {
++#else
+   if (ComputeVisibleSelectionInDOMTree().IsNone() || !FrameIsFocused()) {
++#endif
+     return;
+   }
+ 
+   if (Element* target =
+           ComputeVisibleSelectionInDOMTree().RootEditableElement()) {

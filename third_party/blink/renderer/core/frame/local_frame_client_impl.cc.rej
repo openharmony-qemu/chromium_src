@@ -1,0 +1,55 @@
+diff a/third_party/blink/renderer/core/frame/local_frame_client_impl.cc b/third_party/blink/renderer/core/frame/local_frame_client_impl.cc	(rejected hunks)
+@@ -639,11 +653,16 @@ void LocalFrameClientImpl::BeginNavigation(
+     const LocalFrameToken* initiator_frame_token,
+     SourceLocation* source_location,
+     mojo::PendingRemote<mojom::blink::NavigationStateKeepAliveHandle>
+         initiator_navigation_state_keep_alive_handle,
+     bool is_container_initiated,
+-    bool has_rel_opener) {
++#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
++    bool has_rel_opener,
++    bool is_triggered_by_js) {
++#else
++     bool has_rel_opener) {
++#endif
+   if (!web_frame_->Client()) {
+     return;
+   }
+ 
+   // |initiator_frame_token| and |initiator_navigation_state_keep_alive_handle|
+@@ -670,10 +689,13 @@ void LocalFrameClientImpl::BeginNavigation(
+   navigation_info->actual_navigation_start = actual_navigation_start;
+   navigation_info->initiator_frame_token =
+       base::OptionalFromPtr(initiator_frame_token);
+   navigation_info->initiator_navigation_state_keep_alive_handle =
+       std::move(initiator_navigation_state_keep_alive_handle);
++#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
++  navigation_info->is_triggered_by_js = is_triggered_by_js;
++#endif
+   LocalFrame* origin_frame =
+       origin_window ? origin_window->GetFrame() : nullptr;
+   if (origin_frame) {
+     // Many navigation paths do not pass an |initiator_frame_token|, so we need
+     // to compute it here.
+@@ -1267,6 +1304,21 @@ void LocalFrameClientImpl::BindDevToolsAgent(
+ 
+ bool LocalFrameClientImpl::IsDomStorageDisabled() const {
+   return web_frame_->Client()->IsDomStorageDisabled();
+ }
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++void LocalFrameClientImpl::DispatchDidSubresourceFiltered() {
++  impl_utils_->DispatchDidSubresourceFiltered();
++}
++
++bool LocalFrameClientImpl::GetGlobalAdblockEnabled() {
++  return impl_utils_->GetGlobalAdblockEnabled();
++}
++#endif
++
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++void LocalFrameClientImpl::NotifyLcpForBlankless() {
++  impl_utils_->NotifyLcpForBlankless();
++}
++#endif
+ }  // namespace blink

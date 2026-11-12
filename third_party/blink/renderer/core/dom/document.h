@@ -298,6 +298,9 @@ struct IconURL;
 struct TextDiffRange;
 struct WebPrintPageDescription;
 
+// ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+class VideoPriority;
+
 using MouseEventWithHitTestResults = EventWithHitTestResults<WebMouseEvent>;
 
 // Specifies a class of document. Values are not mutually exclusive, and can be
@@ -1485,12 +1488,30 @@ class CORE_EXPORT Document : public ContainerNode,
                    const String& value,
                    ExceptionState&);
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  bool ValidateClipboardPreconditions(const EditorCommand& command, const String& checked_value);
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
   bool IsRunningExecCommand() const { return is_running_exec_command_; }
   bool queryCommandEnabled(const String& command, ExceptionState&);
   bool queryCommandIndeterm(const String& command, ExceptionState&);
   bool queryCommandState(const String& command, ExceptionState&);
   bool queryCommandSupported(const String& command, ExceptionState&);
   String queryCommandValue(const String& command, ExceptionState&);
+
+  // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+  bool isVideoPrioritySupported();
+  void setVideoPriority(const HeapVector<Member<VideoPriority>>&);
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  void SetVideoIsPlaying(std::string id, bool playing);
+  bool IsUseVideoLoadOptimization();
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  void SetCustomViewportWidth(float width);
+  float GetCustomViewportWidth() const;
+#endif
 
   KURL OpenSearchDescriptionURL();
 
@@ -1918,10 +1939,9 @@ class CORE_EXPORT Document : public ContainerNode,
   static void SetForceSynchronousParsingForTesting(bool);
   static bool ForceSynchronousParsingForTesting();
 
-#if DCHECK_IS_ON()
+#if DCHECK_IS_ON() || BUILDFLAG(IS_ARKWEB)
   void IncrementNodeCount() { node_count_++; }
   void DecrementNodeCount() {
-    DCHECK_GT(node_count_, 0);
     node_count_--;
   }
 #endif  // DCHECK_IS_ON()
@@ -3174,7 +3194,7 @@ class CORE_EXPORT Document : public ContainerNode,
 
   Member<IntersectionObserverController> intersection_observer_controller_;
 
-#if DCHECK_IS_ON()
+#if DCHECK_IS_ON() || BUILDFLAG(IS_ARKWEB)
   int node_count_ = 0;
 #endif
 

@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/core/dom/element.idl b/third_party/blink/renderer/core/dom/element.idl	(rejected hunks)
+@@ -185,10 +185,13 @@ dictionary SetHTMLUnsafeOptions {
+     // Scoped Custom Element Registries
+     [RuntimeEnabled=ScopedCustomElementRegistry] readonly attribute CustomElementRegistry? customElementRegistry;
+ 
+     // Declarative document updates
+     [RuntimeEnabled=DocumentPatching] readonly attribute Patch? currentPatch;
++
++    // arkweb_ai
++    boolean hasArkWebShadowRoot();
+ };
+ 
+ Element includes ParentNode;
+ Element includes ChildNode;
+ Element includes NonDocumentTypeChildNode;

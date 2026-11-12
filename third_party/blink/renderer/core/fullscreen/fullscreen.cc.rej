@@ -1,0 +1,14 @@
+diff a/third_party/blink/renderer/core/fullscreen/fullscreen.cc b/third_party/blink/renderer/core/fullscreen/fullscreen.cc	(rejected hunks)
+@@ -27,10 +27,12 @@
+  *
+  */
+ 
+ #include "third_party/blink/renderer/core/fullscreen/fullscreen.h"
+ 
++#include "absl/types/optional.h"
++#include "arkweb/build/features/features.h"
+ #include "base/containers/adapters.h"
+ #include "base/time/time.h"
+ #include "services/network/public/mojom/permissions_policy/permissions_policy_feature.mojom-blink.h"
+ #include "third_party/blink/public/mojom/permissions/permission.mojom-blink.h"
+ #include "third_party/blink/public/platform/task_type.h"

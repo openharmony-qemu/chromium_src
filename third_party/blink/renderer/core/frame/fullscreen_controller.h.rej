@@ -1,0 +1,22 @@
+diff a/third_party/blink/renderer/core/frame/fullscreen_controller.h b/third_party/blink/renderer/core/frame/fullscreen_controller.h	(rejected hunks)
+@@ -29,15 +29,20 @@
+  */
+ 
+ #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_FULLSCREEN_CONTROLLER_H_
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_FULLSCREEN_CONTROLLER_H_
+ 
++#include "absl/types/optional.h"
++#include "arkweb/build/features/features.h"
+ #include "third_party/blink/renderer/core/core_export.h"
+ #include "third_party/blink/renderer/platform/graphics/color.h"
+ #include "third_party/blink/renderer/platform/heap/collection_support/heap_linked_hash_set.h"
+ #include "third_party/blink/renderer/platform/heap/persistent.h"
+ #include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
++#if BUILDFLAG(ARKWEB_FULLSCREEN)
++#include "ui/gfx/geometry/size.h"
++#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
+ 
+ namespace blink {
+ 
+ class Element;
+ class FullscreenOptions;

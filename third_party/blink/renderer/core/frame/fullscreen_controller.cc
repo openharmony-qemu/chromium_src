@@ -59,7 +59,15 @@ namespace {
 mojom::blink::FullscreenOptionsPtr ToMojoOptions(
     LocalFrame* frame,
     const FullscreenOptions* options,
-    FullscreenRequestType request_type) {
+    FullscreenRequestType request_type
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+    ,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    bool overlay_fullscreen = false,
+#endif // ARKWEB_VIDEO_ASSISTANT
+    const absl::optional<gfx::Size>& video_natural_size = absl::nullopt
+#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
+) {
   auto fullscreen_options = mojom::blink::FullscreenOptions::New();
   fullscreen_options->prefers_navigation_bar =
       options->navigationUI() == V8FullscreenNavigationUI::Enum::kShow;
@@ -258,7 +266,16 @@ void FullscreenController::EnterFullscreen(LocalFrame& frame,
   }
 
   DCHECK(state_ == State::kInitial || requesting_fullscreen_screen_change);
-  auto fullscreen_options = ToMojoOptions(&frame, options, request_type);
+  auto fullscreen_options = ToMojoOptions(&frame, options,
+                                          request_type
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+                                          ,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                          overlay_fullscreen,
+#endif // ARKWEB_VIDEO_ASSISTANT
+                                          video_natural_size
+#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
+  );
 
   // We want to disallow entering fullscreen with status and navigation bars
   // both visible, as this would translate into "no fullscreen at all".

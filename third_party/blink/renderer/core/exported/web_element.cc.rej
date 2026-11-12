@@ -1,0 +1,46 @@
+diff a/third_party/blink/renderer/core/exported/web_element.cc b/third_party/blink/renderer/core/exported/web_element.cc	(rejected hunks)
+@@ -70,10 +70,11 @@
+ #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
+ #include "third_party/blink/renderer/platform/wtf/casting.h"
+ #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
+ #include "ui/gfx/geometry/rect_conversions.h"
+ #include "ui/gfx/geometry/size.h"
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/exported/web_element_utils.h"
+ #include "ui/gfx/geometry/vector2d_f.h"
+ 
+ namespace blink {
+ 
+ WebElement WebElement::FromV8Value(v8::Isolate* isolate,
+@@ -237,11 +241,16 @@ void WebElement::SelectText(bool select_all) {
+         SelectionInDOMTree::Builder().SetBaseAndExtent(base, extent).Build(),
+         SetSelectionOptions());
+   }
+ }
+ 
++#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
++void WebElement::PasteText(const WebString& text, bool replace_all, bool should_smart_replace,
++                           bool suppress_paste_event) {
++#else
+ void WebElement::PasteText(const WebString& text, bool replace_all) {
++#endif
+   if (!IsEditable()) {
+     return;
+   }
+   auto* element = Unwrap<Element>();
+   LocalFrame* frame = element->GetDocument().GetFrame();
+@@ -289,11 +302,15 @@ void WebElement::PasteText(const WebString& text, bool replace_all) {
+     return;
+   }
+   // Fires "textInput" and "input".
+   target->DispatchEvent(
+       *TextEvent::CreateForPlainTextPaste(frame->DomWindow(), text,
++                                      #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
++                                          should_smart_replace));
++                                      #else      
+                                           /*should_smart_replace=*/true));
++                                      #endif
+ }
+ 
+ std::vector<WebLabelElement> WebElement::Labels() const {
+   auto* html_element = blink::DynamicTo<HTMLElement>(ConstUnwrap<Element>());
+   if (!html_element)

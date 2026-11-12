@@ -494,7 +494,11 @@ static bool ConvertFontFamilyName(
       }
     } else if (cssValueID == CSSValueID::kSystemUi) {
       family_name = font_family_names::kSystemUi;
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+    } else if (cssValueID == CSSValueID::kMath && !Cssutils::IsMathFormulaDisabledMode()) {
+#else
     } else if (cssValueID == CSSValueID::kMath) {
+#endif
       family_name = font_family_names::kMath;
     }
     // Something went wrong with the conversion or retrieving the name from
@@ -3898,6 +3902,11 @@ ColorSchemeFlags StyleBuilderConverter::ExtractColorSchemes(
         case CSSValueID::kOnly:
           flags |= static_cast<ColorSchemeFlags>(ColorSchemeFlag::kOnly);
           break;
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+        case CSSValueID::kNight:
+          flags |= static_cast<ColorSchemeFlags>(ColorSchemeFlag::kNight);
+          break;
+#endif
         default:
           break;
       }

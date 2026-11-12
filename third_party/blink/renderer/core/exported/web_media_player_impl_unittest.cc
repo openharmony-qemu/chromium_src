@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "third_party/blink/renderer/platform/media/web_media_player_impl.h"
-
 #include <stdint.h>
 
 #include <algorithm>
@@ -58,6 +56,13 @@
 #include "mojo/public/cpp/bindings/remote.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#define private public
+#endif  // ARKWEB_TEST
+#include "third_party/blink/renderer/platform/media/web_media_player_impl.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#undef private
+#endif  // ARKWEB_TEST
 #include "third_party/blink/public/common/thread_safe_browser_interface_broker_proxy.h"
 #include "third_party/blink/public/common/tokens/tokens.h"
 #include "third_party/blink/public/platform/cross_variant_mojo_util.h"
@@ -94,6 +99,11 @@
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 #include "third_party/blink/renderer/platform/wtf/vector.h"
 #include "ui/gfx/geometry/size.h"
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/web_media_player_impl_ext.h"
+#include "media/filters/memory_data_source.h"
+#endif  // ARKWEB_TEST
 
 namespace blink {
 
@@ -206,11 +216,16 @@ class MockWebMediaPlayerClient
   MOCK_METHOD1(MediaRemotingStopped, void(int));
   MOCK_METHOD0(PictureInPictureStopped, void());
   MOCK_METHOD0(OnPictureInPictureStateChange, void());
+  MOCK_METHOD0(UpdatePictureInPictureSurface, void());
   MOCK_CONST_METHOD0(CouldPlayIfEnoughData, bool());
   MOCK_METHOD0(ResumePlayback, void());
   MOCK_METHOD1(PausePlayback, void(WebMediaPlayer::PauseReason));
   MOCK_METHOD0(DidPlayerStartPlaying, void());
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  MOCK_METHOD1(DidEndAVSession, void(bool));
+#endif // ARKWEB_MEDIA_AVSESSION
   MOCK_METHOD1(DidPlayerPaused, void(bool));
+  MOCK_METHOD0(DidPlayerGone, void());
   MOCK_METHOD1(DidPlayerMutedStatusChange, void(bool));
   MOCK_METHOD6(DidMediaMetadataChange,
                void(bool,
@@ -235,6 +250,10 @@ class MockWebMediaPlayerClient
   MOCK_METHOD2(OnFirstFrame, void(base::TimeTicks, size_t));
   MOCK_METHOD0(OnRequestVideoFrameCallback, void());
   MOCK_METHOD0(GetElementId, int());
+  MOCK_METHOD0(ScheduleVideoFreezeEvent, void());
+#if BUILDFLAG(ARKWEB_TEST)
+  MOCK_CONST_METHOD0(IsMediaResumeFromBFCachePage, bool());
+#endif  // ARKWEB_TEST
 };
 
 class MockWebMediaPlayerEncryptedMediaClient
@@ -663,7 +682,11 @@ class WebMediaPlayerImplTest
     delegate_.SetPageHiddenForTesting(true);
     SetWasSuspendedForFrameClosed(false);
 
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
     wmpi_->OnPageHidden();
+#else
+    wmpi_->OnPageHidden(false);
+#endif
 
     loop.Run();
 
@@ -679,7 +702,11 @@ class WebMediaPlayerImplTest
     delegate_.SetPageHiddenForTesting(false);
     SetWasSuspendedForFrameClosed(false);
 
+#if !BUILDFLAG(ARKWEB_BFCACHE)
     wmpi_->OnPageShown();
+#else
+    wmpi_->OnPageShown(false);
+#endif // ARKWEB_BFCACHE
 
     loop.Run();
 
@@ -3884,5 +3911,9 @@ INSTANTIATE_TEST_SUITE_P(
         ::testing::Bool(),
         ::testing::Bool(),
         ::testing::Bool()));
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/web_media_player_impl_ext_unittest_include.cc"
+#endif  // BUILDFLAG(ARKWEB_TEST)
 
 }  // namespace blink

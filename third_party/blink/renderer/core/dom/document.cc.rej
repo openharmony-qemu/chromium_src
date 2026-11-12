@@ -1,0 +1,170 @@
+diff a/third_party/blink/renderer/core/dom/document.cc b/third_party/blink/renderer/core/dom/document.cc	(rejected hunks)
+@@ -403,10 +403,16 @@
+ #include "third_party/blink/renderer/platform/wtf/text/character_visitor.h"
+ #include "third_party/blink/renderer/platform/wtf/text/code_point_iterator.h"
+ #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
+ #include "third_party/blink/renderer/platform/wtf/text/string_buffer.h"
+ #include "third_party/blink/renderer/platform/wtf/text/text_encoding_registry.h"
++
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/dom/document_for_include.cc"
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/dom/document_utils.h"
++#endif
++
+ #include "third_party/blink/renderer/platform/wtf/text/utf16.h"
+ 
+ namespace blink {
+ 
+ namespace {
+@@ -528,11 +534,10 @@ bool IsSyntheticSelect(Element& element) {
+          IsAriaHasPopupListbox(element);
+ }
+ 
+ // The sampling rate for UKM.
+ constexpr double kUkmSamplingRate = 0.001;
+-
+ }  // namespace
+ 
+ static const unsigned kCMaxWriteRecursionDepth = 21;
+ 
+ // This amount of time must have elapsed before we will even consider scheduling
+@@ -3314,10 +3319,14 @@ void Document::Initialize() {
+   GetFrame()->DidAttachDocument();
+   lifecycle_.AdvanceTo(DocumentLifecycle::kStyleClean);
+ 
+   if (View())
+     View()->DidAttachDocument();
++
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  MakeGarbageCollected<DocumentUtils>()->DocumentInitializeUtils(fetcher_, base_url_);
++#endif
+ }
+ 
+ void Document::Shutdown() {
+   TRACE_EVENT_WITH_FLOW0("blink", "Document::shutdown", TRACE_ID_LOCAL(this),
+                          TRACE_EVENT_FLAG_FLOW_IN);
+@@ -4418,10 +4427,13 @@ bool Document::CheckCompletedInternal() {
+     if (!ShouldComplete())
+       return false;
+   }
+ 
+   // OK, completed. Fire load completion events as needed.
++#if BUILDFLAG(IS_ARKWEB)
++  TRACE_EVENT1("blink", "Document::CheckCompletedInternal", "node_count", node_count_);
++#endif
+   SetReadyState(kComplete);
+   const bool load_event_needed = LoadEventStillNeeded();
+   if (load_event_needed) {
+     ImplicitClose();
+   }
+@@ -4974,10 +4986,14 @@ void Document::SetURL(const KURL& url) {
+ 
+   TRACE_EVENT_WITH_FLOW1("blink", "Document::SetURL", TRACE_ID_LOCAL(this),
+                          TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT,
+                          "url", new_url.GetString().Utf8());
+ 
++#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
++  MakeGarbageCollected<DocumentUtils>()->SetURLUtils();
++#endif
++
+   // Strip the fragment directive from the URL fragment. E.g. "#id:~:text=a"
+   // --> "#id". See https://github.com/WICG/scroll-to-text-fragment.
+   new_url = fragment_directive_->ConsumeFragmentDirective(new_url);
+ 
+   url_ = new_url;
+@@ -5113,25 +5129,20 @@ void Document::SetBaseURLOverride(const KURL& url) {
+ void Document::ProcessBaseElement() {
+   UseCounter::Count(*this, WebFeature::kBaseElement);
+ 
+   // Find the first href attribute in a base element and the first target
+   // attribute in a base element.
+-  const AtomicString* href = nullptr;
+-  const AtomicString* target = nullptr;
++  AtomicString href;
++  AtomicString target;
+   for (HTMLBaseElement* base = Traversal<HTMLBaseElement>::FirstWithin(*this);
+-       base && (!href || !target);
++       base && (href.IsNull() || target.IsNull());
+        base = Traversal<HTMLBaseElement>::Next(*base)) {
+-    if (!href) {
+-      const AtomicString& value = base->FastGetAttribute(html_names::kHrefAttr);
+-      if (!value.IsNull())
+-        href = &value;
++    if (href.IsNull()) {
++      href = base->FastGetAttribute(html_names::kHrefAttr);
+     }
+-    if (!target) {
+-      const AtomicString& value =
+-          base->FastGetAttribute(html_names::kTargetAttr);
+-      if (!value.IsNull())
+-        target = &value;
++    if (target.IsNull()) {
++      target = base->FastGetAttribute(html_names::kTargetAttr);
+     }
+     if (GetExecutionContext() &&
+         GetExecutionContext()->GetContentSecurityPolicy()->IsActive()) {
+       UseCounter::Count(*this,
+                         WebFeature::kContentSecurityPolicyWithBaseElement);
+@@ -5139,12 +5150,12 @@ void Document::ProcessBaseElement() {
+   }
+ 
+   // FIXME: Since this doesn't share code with completeURL it may not handle
+   // encodings correctly.
+   KURL base_element_url;
+-  if (href) {
+-    String stripped_href = StripLeadingAndTrailingHTMLSpaces(*href);
++  if (!href.IsNull()) {
++    String stripped_href = StripLeadingAndTrailingHTMLSpaces(href);
+     if (!stripped_href.empty())
+       base_element_url = KURL(FallbackBaseURL(), stripped_href);
+   }
+ 
+   if (!base_element_url.IsEmpty()) {
+@@ -5178,20 +5189,21 @@ void Document::ProcessBaseElement() {
+             base_element_url)) {
+       base_element_url_ = base_element_url;
+     } else {
+       base_element_url_ = FallbackBaseURL();
+     }
++    // NOTE: UpdateBaseURL can fire events and thus run script.
+     UpdateBaseURL();
+   }
+ 
+   AtomicString old_base_target = base_target_;
+-  if (target) {
+-    if (target->Contains('\n') || target->Contains('\r'))
++  if (!target.IsNull()) {
++    if (target.Contains('\n') || target.Contains('\r'))
+       UseCounter::Count(*this, WebFeature::kBaseWithNewlinesInTarget);
+-    if (target->Contains('<'))
++    if (target.Contains('<'))
+       UseCounter::Count(*this, WebFeature::kBaseWithOpenBracketInTarget);
+-    base_target_ = *target;
++    base_target_ = target;
+   } else {
+     base_target_ = g_null_atom;
+   }
+   if (old_base_target != base_target_) {
+     if (auto* document_rules = DocumentSpeculationRules::FromIfExists(*this)) {
+@@ -7981,10 +7993,21 @@ void Document::OnPrepareToStopParsing() {
+   }
+   MaybeExecuteDelayedAsyncScripts(
+       MilestoneForDelayedAsyncScript::kFinishedParsing);
+ }
+ 
++#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
++void Document::SetCustomViewportWidth(float width) {
++  LOG(INFO) << "[ViewportWidth] SetCustomViewportWidth width is " << width;
++  custom_viewport_width_ = width;
++}
++
++float Document::GetCustomViewportWidth() const {
++  return custom_viewport_width_;
++}
++#endif
++
+ void Document::FinishedParsing() {
+   TRACE_EVENT_WITH_FLOW0("blink", "Document::FinishedParsing",
+                          TRACE_ID_LOCAL(this),
+                          TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT);
+   DCHECK(!GetScriptableDocumentParser() || !parser_->IsParsing());

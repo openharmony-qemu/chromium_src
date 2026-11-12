@@ -1,0 +1,27 @@
+diff a/third_party/blink/renderer/core/css/properties/css_parsing_utils.cc b/third_party/blink/renderer/core/css/properties/css_parsing_utils.cc	(rejected hunks)
+@@ -10,10 +10,11 @@
+ #include <limits>
+ #include <memory>
+ #include <optional>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/notreached.h"
+ #include "third_party/blink/renderer/core/css/counter_style_map.h"
+ #include "third_party/blink/renderer/core/css/css_axis_value.h"
+ #include "third_party/blink/renderer/core/css/css_basic_shape_values.h"
+ #include "third_party/blink/renderer/core/css/css_border_image.h"
+@@ -107,10 +108,13 @@
+ #include "third_party/blink/renderer/platform/loader/fetch/fetch_initiator_type_names.h"
+ #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
+ #include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
+ #include "ui/gfx/animation/keyframe/timing_function.h"
+ #include "ui/gfx/color_utils.h"
++#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
++#endif
+ 
+ namespace blink {
+ 
+ using cssvalue::CSSBracketedValueList;
+ using cssvalue::CSSFontFeatureValue;

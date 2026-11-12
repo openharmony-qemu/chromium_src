@@ -5,6 +5,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_DISPLAY_CUTOUT_CLIENT_IMPL_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_DISPLAY_CUTOUT_CLIENT_IMPL_H_
 
+#include "arkweb/build/features/features.h"
 #include "mojo/public/cpp/bindings/pending_associated_receiver.h"
 #include "third_party/blink/public/mojom/page/display_cutout.mojom-blink.h"
 #include "third_party/blink/renderer/core/core_export.h"
@@ -15,6 +16,7 @@
 
 namespace blink {
 
+class DisplayCutoutClientImplUtils;
 class LocalFrame;
 
 // Mojo interface to set CSS environment variables for display cutout.
@@ -38,11 +40,13 @@ class CORE_EXPORT DisplayCutoutClientImpl final
   void Trace(Visitor*) const;
 
  private:
+  friend class DisplayCutoutClientImplUtils;
   Member<LocalFrame> frame_;
 
   HeapMojoAssociatedReceiver<mojom::blink::DisplayCutoutClient,
                              DisplayCutoutClientImpl>
       receiver_;
+  Member<DisplayCutoutClientImplUtils> utils_;
 };
 
 }  // namespace blink

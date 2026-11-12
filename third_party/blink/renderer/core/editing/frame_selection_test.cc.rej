@@ -1,0 +1,12 @@
+diff a/third_party/blink/renderer/core/editing/frame_selection_test.cc b/third_party/blink/renderer/core/editing/frame_selection_test.cc	(rejected hunks)
+@@ -1571,5 +1571,9 @@ TEST_F(FrameSelectionTest, PaintCaretRecordsSelectionWithNoSelectionHandles) {
+   EXPECT_TRUE(selection_data->end.has_value());
+   EXPECT_EQ(gfx::SelectionBound::HIDDEN, selection_data->end->type);
+ }
+ 
+ }  // namespace blink
++
++#if BUILDFLAG(ARKWEB_MENU)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/frame_selection_ext_unittest_for_include.cc"
++#endif
+\ No newline at end of file

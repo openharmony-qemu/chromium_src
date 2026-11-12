@@ -1,0 +1,18 @@
+diff a/third_party/blink/renderer/core/css/css_math_expression_node.cc b/third_party/blink/renderer/core/css/css_math_expression_node.cc	(rejected hunks)
+@@ -2044,11 +2044,16 @@ CSSMathExpressionNode* CSSMathExpressionOperation::CreateExponentialFunction(
+ CSSMathExpressionNode* CSSMathExpressionOperation::CreateSignRelatedFunction(
+     Operands&& operands,
+     CSSValueID function_id) {
+   const CSSMathExpressionNode* operand = operands.front();
+ 
++#if BUILDFLAG(IS_ARKWEB)
++  // https://issues.chromium.org/issues/475197564
++  if (operand->IsCalcSize() || CSSMathType(*operand).IsIntermediateResult()) {
++#else
+   if (operand->IsCalcSize()) {
++#endif
+     return nullptr;
+   }
+ 
+   switch (function_id) {
+     case CSSValueID::kAbs: {

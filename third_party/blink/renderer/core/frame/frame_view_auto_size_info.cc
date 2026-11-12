@@ -148,6 +148,7 @@ bool FrameViewAutoSizeInfo::AutoSizeIfNeeded(bool should_reset_for_content) {
     // Don't bother checking for a horizontal scrollbar because the height is
     // already greater the maximum.
   }
+#endif  // defined(ARKWEB_NWEB_EX)
 
   // Ensure the size is at least the min bounds.
   new_size.SetToMax(min_auto_size_);

@@ -127,6 +127,9 @@ class SelectionEditor final : public GarbageCollected<SelectionEditor> {
   mutable gfx::Rect cached_focus_bounds_;
   mutable bool cached_absolute_bounds_are_dirty_ = true;
   mutable bool has_selection_bounds_ = false;
+#if BUILDFLAG(ARKWEB_MENU)
+  mutable bool recalculate_cursor_location_ = false;
+#endif
 
 #if DCHECK_IS_ON()
   // TODO(xiaochengh): We should move these style versions into VisibleSelection

@@ -1,0 +1,16 @@
+diff a/third_party/blink/renderer/core/dom/node.h b/third_party/blink/renderer/core/dom/node.h	(rejected hunks)
+@@ -1104,10 +1114,14 @@ class CORE_EXPORT Node : public EventTarget {
+ 
+   // Called when a node changes its flat tree parent, either because slot
+   // assignments changed, or the node got reparented by a moveBefore().
+   void FlatTreeParentChanged();
+ 
++#if BUILDFLAG(ARKWEB_AI)
++  int getArkWebDomNodeId() { return GetDomNodeId(); }
++#endif
++
+  private:
+   enum NodeFlags : uint32_t {
+     // getNodeType() is called extensively. As it's called quite a bit its
+     // value is first so that a bit-shift is not needed to extract the value.
+     // Also note the node-type never changes once created.

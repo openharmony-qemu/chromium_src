@@ -48,17 +48,21 @@
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 #include "third_party/blink/renderer/platform/weborigin/kurl.h"
 #include "third_party/blink/renderer/platform/wtf/casting.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/local_frame_client_impl_utils.h"
 
 namespace blink {
 
 class WebDevToolsAgentImpl;
 class WebLocalFrameImpl;
 class WebSpellCheckPanelHostClient;
+class LocalFrameClientImplUtils;
 
 class CORE_EXPORT LocalFrameClientImpl final : public LocalFrameClient {
  public:
   explicit LocalFrameClientImpl(WebLocalFrameImpl*);
   ~LocalFrameClientImpl() override;
+
+  friend class LocalFrameClientImplUtils;
 
   void Trace(Visitor*) const override;
 
@@ -75,6 +79,10 @@ class CORE_EXPORT LocalFrameClientImpl final : public LocalFrameClient {
   void RunScriptsAtDocumentElementAvailable() override;
   void RunScriptsAtDocumentReady(bool document_is_empty) override;
   void RunScriptsAtDocumentIdle() override;
+
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  void RunScriptsAtHeadElementAvailable() override;
+#endif
 
   void DidCreateScriptContext(v8::Local<v8::Context>,
                               int32_t world_id) override;
@@ -118,6 +126,11 @@ class CORE_EXPORT LocalFrameClientImpl final : public LocalFrameClient {
   void DispatchDidDispatchDOMContentLoadedEvent() override;
   void DispatchDidFinishLoad() override;
   void DispatchDidFinishLoadForPrinting() override;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void DispatchDidSubresourceFiltered() override;
+  bool GetGlobalAdblockEnabled() override;
+#endif
 
   void BeginNavigation(
       const ResourceRequest&,

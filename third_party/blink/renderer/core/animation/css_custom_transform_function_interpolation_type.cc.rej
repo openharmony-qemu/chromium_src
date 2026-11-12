@@ -1,0 +1,20 @@
+diff a/third_party/blink/renderer/core/animation/css_custom_transform_function_interpolation_type.cc b/third_party/blink/renderer/core/animation/css_custom_transform_function_interpolation_type.cc	(rejected hunks)
+@@ -38,12 +38,18 @@ CSSCustomTransformFunctionInterpolationType::MaybeConvertTransformFunction(
+ InterpolationValue
+ CSSCustomTransformFunctionInterpolationType::MaybeConvertValue(
+     const CSSValue& value,
+     const StyleResolverState& state,
+     ConversionCheckers&) const {
++#if BUILDFLAG(IS_ARKWEB)
++  // https://issues.chromium.org/issues/498010837
++  return MaybeConvertTransformFunction(
++      value, state.CssToLengthConversionData().Unzoomed());
++#else
+   return MaybeConvertTransformFunction(value,
+                                        state.CssToLengthConversionData());
++#endif
+ }
+ 
+ const CSSValue* CSSCustomTransformFunctionInterpolationType::CreateCSSValue(
+     const InterpolableValue& value,
+     const NonInterpolableValue*,

@@ -1,0 +1,80 @@
+diff a/third_party/blink/renderer/core/frame/local_frame_client_impl.h b/third_party/blink/renderer/core/frame/local_frame_client_impl.h	(rejected hunks)
+@@ -32,10 +32,14 @@
+ #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_LOCAL_FRAME_CLIENT_IMPL_H_
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_LOCAL_FRAME_CLIENT_IMPL_H_
+ 
+ #include <memory>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/memory/scoped_refptr.h"
+ #include "base/time/time.h"
+ #include "base/unguessable_token.h"
+ #include "mojo/public/cpp/bindings/pending_remote.h"
+ #include "mojo/public/cpp/bindings/receiver_set.h"
+@@ -146,11 +163,16 @@ class CORE_EXPORT LocalFrameClientImpl final : public LocalFrameClient {
+       const LocalFrameToken* initiator_frame_token,
+       SourceLocation* source_location,
+       mojo::PendingRemote<mojom::blink::NavigationStateKeepAliveHandle>
+           initiator_navigation_state_keep_alive_handle,
+       bool is_container_initiated,
++#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
++      bool has_rel_opener,
++      bool is_triggered_by_js = false) override;
++#else
+       bool has_rel_opener) override;
++#endif
+   void DispatchWillSendSubmitEvent(HTMLFormElement*) override;
+   void DidStartLoading() override;
+   void DidStopLoading() override;
+   bool NavigateBackForward(
+       int offset,
+@@ -200,10 +222,17 @@ class CORE_EXPORT LocalFrameClientImpl final : public LocalFrameClient {
+                                        bool load_manually) override;
+   std::unique_ptr<WebMediaPlayer> CreateWebMediaPlayer(
+       HTMLMediaElement&,
+       const WebMediaPlayerSource&,
+       WebMediaPlayerClient*) override;
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  std::unique_ptr<WebNativeBridge> CreateWebNativeBridge(
++      NativeLoader&,
++      WebNativeClient*) override;
++
++  float GetDeviceScaleFactor(NativeLoader& native_loader) override;
++#endif
+   RemotePlaybackClient* CreateRemotePlaybackClient(HTMLMediaElement&) override;
+   void DidChangeScrollOffset() override;
+   void NotifyCurrentHistoryItemChanged() override;
+   void DidUpdateCurrentHistoryItem() override;
+ 
+@@ -293,19 +322,28 @@ class CORE_EXPORT LocalFrameClientImpl final : public LocalFrameClient {
+       mojo::PendingAssociatedReceiver<mojom::blink::DevToolsAgent> receiver)
+       override;
+ 
+   bool IsDomStorageDisabled() const override;
+ 
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  void NotifyLcpForBlankless() override;
++#endif
++
++#if BUILDFLAG(ARKWEB_NWEB_EX) && BUILDFLAG(ARKWEB_LOGGER_REPORT)
++  void DispatchHistoryGoEvent(LocalFrame* frame, int delta) override;
++#endif
++
+  private:
+   bool IsLocalFrameClientImpl() const override { return true; }
+   WebDevToolsAgentImpl* DevToolsAgent(bool create_if_necessary);
+ 
+   // The WebFrame that owns this object and manages its lifetime. Therefore,
+   // the web frame object is guaranteed to exist.
+   Member<WebLocalFrameImpl> web_frame_;
+ 
+   String user_agent_;
++  Member<LocalFrameClientImplUtils> impl_utils_;
+ };
+ 
+ template <>
+ struct DowncastTraits<LocalFrameClientImpl> {
+   static bool AllowFrom(const LocalFrameClient& client) {

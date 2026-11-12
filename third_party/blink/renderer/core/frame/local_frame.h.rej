@@ -1,0 +1,97 @@
+diff a/third_party/blink/renderer/core/frame/local_frame.h b/third_party/blink/renderer/core/frame/local_frame.h	(rejected hunks)
+@@ -30,10 +30,14 @@
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_LOCAL_FRAME_H_
+ 
+ #include <memory>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/gtest_prod_util.h"
+ #include "base/time/default_tick_clock.h"
+ #include "base/time/time.h"
+ #include "base/unguessable_token.h"
+ #include "build/build_config.h"
+@@ -97,10 +101,14 @@
+ #include "third_party/blink/renderer/platform/scheduler/public/frame_scheduler.h"
+ #include "third_party/perfetto/include/perfetto/tracing/traced_value_forward.h"
+ #include "ui/gfx/geometry/transform.h"
+ #include "ui/gfx/image/image_skia.h"
+ 
++#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
++#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_url_loader_manager.h"
++#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
++
+ namespace base {
+ class SingleThreadTaskRunner;
+ }
+ 
+ namespace gfx {
+@@ -166,10 +174,13 @@ class WebInputEventAttribution;
+ class WebPluginContainerImpl;
+ class WebPrescientNetworking;
+ class URLLoader;
+ struct BlinkTransferableMessage;
+ struct WebScriptSource;
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
++class BlankScreenDetector;
++#endif
+ class WindowControlsOverlayChangedDelegate;
+ class ImageDownloaderImpl;
+ class RemoteObjectGatewayFactoryImpl;
+ class RemoteObjectGatewayImpl;
+ class TextSuggestionBackendImpl;
+@@ -195,10 +206,13 @@ enum class BackForwardCacheAware;
+ class CORE_EXPORT LocalFrame final
+     : public Frame,
+       public FrameScheduler::Delegate,
+       public BackForwardCacheLoaderHelperImpl::Delegate {
+  public:
++#if BUILDFLAG(IS_ARKWEB)
++  friend class LocalFrameUtil;
++#endif
+   // Returns the LocalFrame instance for the given |frame_token|.
+   static LocalFrame* FromFrameToken(const LocalFrameToken& frame_token);
+ 
+   // For a description of |inheriting_agent_factory| go see the comment on the
+   // Frame constructor.
+@@ -1022,11 +1113,18 @@ class CORE_EXPORT LocalFrame final
+       ForwardDeclaredMember<DevToolsFrontendImpl, InspectorFrontendClient>
+           dev_tools_frontend_impl) {
+     dev_tools_frontend_impl_ = dev_tools_frontend_impl;
+   }
+ 
++#if BUILDFLAG(ARKWEB_PDF)
++  bool IsPDF();
++#endif
++
+  private:
++#if BUILDFLAG(ARKWEB_TEST)
++  friend class LocalFrameUtilTest;
++#endif
+   friend class FrameNavigationDisabler;
+   // LocalFrameMojoHandler is a part of LocalFrame.
+   friend class LocalFrameMojoHandler;
+ 
+   FRIEND_TEST_ALL_PREFIXES(LocalFrameTest, CharacterIndexAtPointWithPinchZoom);
+@@ -1309,10 +1417,18 @@ class CORE_EXPORT LocalFrame final
+       dev_tools_frontend_impl_;
+ 
+   void OnStorageAccessCallback(base::OnceCallback<void(bool)> callback,
+                                mojom::blink::StorageTypeAccessed storage_type,
+                                bool isAllowed);
++
++#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
++  VideoUrlLoaderManager loader_manager_;
++#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
++
++#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
++  base::WeakPtrFactory<LocalFrame> weak_local_frame_{this};
++#endif
+ };
+ 
+ inline FrameLoader& LocalFrame::Loader() const {
+   return loader_;
+ }

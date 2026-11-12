@@ -1,0 +1,17 @@
+diff a/third_party/blink/renderer/core/css/style_rule.h b/third_party/blink/renderer/core/css/style_rule.h	(rejected hunks)
+@@ -165,10 +174,15 @@ class CORE_EXPORT StyleRuleBase : public GarbageCollected<StyleRuleBase> {
+   CSSRule* CreateCSSOMWrapper(wtf_size_t position_hint,
+                               CSSStyleSheet* parent_sheet,
+                               CSSRule* parent_rule,
+                               bool trigger_use_counters) const;
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  bool is_for_adblock_ : 1;
++  bool is_for_user_adblock_ : 1;
++#endif
++
+   const uint8_t type_;
+ };
+ 
+ // A set of custom mixin bindings at some given point in the stylesheet,
+ // i.e., which variable has which value (and which type is it supposed

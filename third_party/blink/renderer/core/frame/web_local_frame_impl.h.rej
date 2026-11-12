@@ -1,0 +1,28 @@
+diff a/third_party/blink/renderer/core/frame/web_local_frame_impl.h b/third_party/blink/renderer/core/frame/web_local_frame_impl.h	(rejected hunks)
+@@ -36,10 +36,11 @@
+ #include <set>
+ #include <string>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/dcheck_is_on.h"
+ #include "base/observer_list.h"
+ #include "base/task/single_thread_task_runner.h"
+ #include "base/types/pass_key.h"
+ #include "build/build_config.h"
+@@ -314,10 +318,14 @@ class CORE_EXPORT WebLocalFrameImpl final
+       const base::Location&,
+       base::OnceCallback<void(base::TimeTicks deadline)>) override;
+   WebInputMethodController* GetInputMethodController() override;
+   std::unique_ptr<WebAssociatedURLLoader> CreateAssociatedURLLoader(
+       const WebAssociatedURLLoaderOptions&) override;
++#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
++  std::unique_ptr<WebAssociatedURLLoader> CreateVideoURLLoader(
++      const WebAssociatedURLLoaderOptions&) override;
++#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+   void DeprecatedStopLoading() override;
+   void RequestNetworkIdleCallback(base::OnceClosure callback) override;
+   gfx::PointF GetScrollOffset() const override;
+   bool SetScrollOffset(const gfx::PointF&) override;
+   gfx::Size DocumentSize() const override;

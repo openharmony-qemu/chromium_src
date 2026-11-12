@@ -422,6 +422,7 @@ void AppendValuesForMaskClipAndOrigin(CSSValueList* result_list,
   }
 }
 
+#if !BUILDFLAG(IS_ARKWEB)
 // Returns a list for a <gap-rule>. A <gap-rule> is defined as:
 // [ <line-width> || <line-style> || <color> ]. The computed value serialization
 // should follow the shortest serialization principle, making it consistent with
@@ -456,6 +457,7 @@ CSSValueList* GetValueListForGapRule(const CSSValue& width_value,
   }
   return result_list;
 }
+#endif
 
 }  // namespace
 
@@ -1049,7 +1051,11 @@ CSSValueID IdentifierForFamily(const AtomicString& family) {
   if (family == font_family_names::kSystemUi) {
     return CSSValueID::kSystemUi;
   }
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  if (family == font_family_names::kMath && !Cssutils::IsMathFormulaDisabledMode()) {
+#else
   if (family == font_family_names::kMath) {
+#endif
     return CSSValueID::kMath;
   }
   // If family does not correspond to any of the above, then it was actually

@@ -1,0 +1,27 @@
+diff a/third_party/blink/renderer/core/frame/frame_view_auto_size_info.cc b/third_party/blink/renderer/core/frame/frame_view_auto_size_info.cc	(rejected hunks)
+@@ -59,11 +59,13 @@ bool FrameViewAutoSizeInfo::AutoSizeIfNeeded() {
+       frame_view_->Resize(size.width(), min_auto_size_.height());
+       return true;
+     }
+   }
+ 
++#if !BUILDFLAG(ARKWEB_NWEB_EX)
+   PaintLayerScrollableArea* layout_viewport = frame_view_->LayoutViewport();
++#endif  // defined(ARKWEB_NWEB_EX)
+ 
+   // Do the resizing twice. The first time is basically a rough calculation
+   // using the preferred width which may result in a height change during the
+   // second iteration.
+   if (++num_passes_ > 2u)
+@@ -83,10 +85,11 @@ bool FrameViewAutoSizeInfo::AutoSizeIfNeeded() {
+     return false;
+ 
+   int height = document_layout_box->ScrollHeight().ToInt();
+   gfx::Size new_size(width, height);
+ 
++#if !BUILDFLAG(ARKWEB_NWEB_EX)
+   // Check to see if a scrollbar is needed for a given dimension and
+   // if so, increase the other dimension to account for the scrollbar.
+   // Since the dimensions are only for the view rectangle, once a
+   // dimension exceeds the maximum, there is no need to increase it further.
+   if (new_size.width() > max_auto_size_.width()) {

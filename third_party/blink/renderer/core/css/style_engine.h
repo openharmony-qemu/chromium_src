@@ -529,6 +529,9 @@ class CORE_EXPORT StyleEngine final : public GarbageCollected<StyleEngine>,
   void EnsureUAStyleForElement(const Element&);
   void EnsureUAStyleForPseudoElement(PseudoId);
   void EnsureUAStyleForForcedColors();
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void EnsureUAStyleForMediaElement();
+#endif
 
   void PlatformColorsChanged();
 

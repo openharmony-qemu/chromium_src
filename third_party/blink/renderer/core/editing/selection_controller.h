@@ -27,6 +27,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_EDITING_SELECTION_CONTROLLER_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_EDITING_SELECTION_CONTROLLER_H_
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/platform/web_input_event_result.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/dom/document.h"
@@ -36,7 +37,6 @@
 #include "third_party/blink/renderer/core/execution_context/execution_context_lifecycle_observer.h"
 #include "third_party/blink/renderer/core/page/event_with_hit_test_results.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
-
 namespace blink {
 
 class HitTestResult;
@@ -46,6 +46,9 @@ class CORE_EXPORT SelectionController final
     : public GarbageCollected<SelectionController>,
       public ExecutionContextLifecycleObserver {
  public:
+#if BUILDFLAG(ARKWEB_MENU)
+  friend class SelectionControllerUtils;
+#endif
   explicit SelectionController(LocalFrame&);
   SelectionController(const SelectionController&) = delete;
   SelectionController& operator=(const SelectionController&) = delete;
@@ -60,7 +63,11 @@ class CORE_EXPORT SelectionController final
   bool HandleMouseReleaseEvent(const MouseEventWithHitTestResults&,
                                const PhysicalOffset&);
   bool HandlePasteGlobalSelection(const WebMouseEvent&);
+#if BUILDFLAG(ARKWEB_FOCUS)
+  bool HandleGestureLongPress(const HitTestResult&, bool = false);
+#else
   bool HandleGestureLongPress(const HitTestResult&);
+#endif
   void HandleGestureTwoFingerTap(const GestureEventWithHitTestResults&);
 
   void UpdateSelectionForMouseDrag(const PhysicalOffset&,
@@ -79,9 +86,39 @@ class CORE_EXPORT SelectionController final
   bool HasExtendedSelection() const {
     return selection_state_ == SelectionState::kExtendedSelection;
   }
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  bool HandleGestureTapIfSelectionExist(const MouseEventWithHitTestResults&);
+#endif  // ARKWEB_CLIPBOARD
+#if BUILDFLAG(ARKWEB_AI)
+  void SetImageOverlayHitTest(HitTestResult image_overlay_hit_test_result) {
+    image_overlay_hit_test_result_ = image_overlay_hit_test_result;
+  }
+  void SetDataDetectorHitTest(const MouseEventWithHitTestResults& event);
+  bool ShowSelectionByLastLinkHitTestResult();
+  void SetTapDownNode(Node* node) { tap_down_node_ = node; }
+#endif
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY) || BUILDFLAG(ARKWEB_AI)
+  bool SelectClosestWordFromLiveLink(const HitTestResult& result);
+  void FocusDocumentView();
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  bool ShowSelectionByLastLongPressHitTestResult();
+  void SetLastLongPressHitTestResult(const HitTestResult&);
+  const HitTestResult& GetHitTestResult() const {
+    return last_long_press_hit_test_result_;
+  }
+  void NotifyContextMenuWillShow();
+#endif
+#if BUILDFLAG(ARKWEB_MENU)
+  bool MouseSelectMenuShow(bool show);
+#endif
  private:
   friend class SelectionControllerTest;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class SelectionControllerForIncludeTest;
+#endif
 
   enum class AppendTrailingWhitespace { kShouldAppend, kDontAppend };
   enum class SelectInputEventType { kTouch, kMouse };
@@ -98,13 +135,23 @@ class CORE_EXPORT SelectionController final
   // Returns |true| if a word was selected.
   bool SelectClosestWordFromHitTestResult(const HitTestResult&,
                                           AppendTrailingWhitespace,
-                                          SelectInputEventType);
+                                          SelectInputEventType
+#if BUILDFLAG(ARKWEB_AI)
+                                          ,
+                                          bool is_double_click = false
+#endif
+                                          );
   void SelectClosestMisspellingFromHitTestResult(const HitTestResult&,
                                                  AppendTrailingWhitespace);
   // Returns |true| if a word was selected.
   template <typename MouseEventObject>
   bool SelectClosestWordFromMouseEvent(const MouseEventObject* mouse_event,
-                                       const HitTestResult& result);
+                                       const HitTestResult& result
+#if BUILDFLAG(ARKWEB_AI)
+                                       ,
+                                       bool is_double_click = false
+#endif
+                                       );
   template <typename MouseEventObject>
   void SelectClosestMisspellingFromMouseEvent(
       const MouseEventObject* mouse_event,
@@ -116,7 +163,11 @@ class CORE_EXPORT SelectionController final
   void SetNonDirectionalSelectionIfNeeded(const SelectionInFlatTree&,
                                           const SetSelectionOptions&,
                                           EndPointsAdjustmentMode);
+#if BUILDFLAG(ARKWEB_FOCUS)
+  void SetCaretAtHitTestResult(const HitTestResult&, bool = false);
+#else
   void SetCaretAtHitTestResult(const HitTestResult&);
+#endif
   bool UpdateSelectionForMouseDownDispatchingSelectStart(
       Node*,
       const SelectionInFlatTree&,
@@ -151,6 +202,19 @@ class CORE_EXPORT SelectionController final
     kExtendedSelection
   };
   SelectionState selection_state_;
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  bool mouse_menu_show_ = false;
+  bool mouse_click_down_allows_ = false;
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+  HitTestResult image_overlay_hit_test_result_;
+  HitTestResult last_link_hit_test_result_;
+  WebMenuSourceType last_link_menu_source_type_;
+  Member<Node> tap_down_node_ = nullptr;
+#endif
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  HitTestResult last_long_press_hit_test_result_;
+#endif
 };
 
 bool IsSelectionOverLink(const MouseEventWithHitTestResults&);

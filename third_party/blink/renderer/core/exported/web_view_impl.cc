@@ -211,6 +211,28 @@
 #include "third_party/blink/public/web/win/web_font_rendering.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_VIEWPORT)
+#include "base/ohos/sys_info_utils_ext.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/display_cutout_client_imp_utils.h"
+#include "third_party/blink/renderer/core/frame/display_cutout_client_impl.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "third_party/blink/renderer/core/css/style_engine.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+#include "content/public/common/content_switches.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/night_mode_inverter.h"
+#endif
+
 // Get rid of WTF's pow define so we can use std::pow.
 #undef pow
 #include <cmath>  // for std::pow
@@ -582,7 +604,11 @@ WebViewImpl::WebViewImpl(
     int32_t history_length)
     : widgets_never_composited_(widgets_never_composited),
       web_view_client_(client),
+#if BUILDFLAG(IS_ARKWEB)
+      chrome_client_(MakeGarbageCollected<ChromeClientImplExt>(this)),
+#else
       chrome_client_(MakeGarbageCollected<ChromeClientImpl>(this)),
+#endif  // IS_ARKWEB
       minimum_zoom_level_(
           blink::ZoomFactorToZoomLevel(kMinimumBrowserZoomFactor)),
       maximum_zoom_level_(
@@ -2096,7 +2122,11 @@ void WebViewImpl::SetPageFocus(bool enable) {
 
 WebSettingsImpl* WebViewImpl::SettingsImpl() {
   if (!web_settings_) {
+#if BUILDFLAG(ARKWEB_MENU)
+    web_settings_ = std::make_unique<WebSettingsImplExt>(
+#else
     web_settings_ = std::make_unique<WebSettingsImpl>(
+#endif
         &page_->GetSettings(), dev_tools_emulator_.Get());
   }
   DCHECK(web_settings_);
@@ -2656,7 +2686,12 @@ void WebViewImpl::SetPageLifecycleStateInternal(
     DispatchPagehide(new_state->pagehide_dispatch);
   }
   if (hiding_page) {
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
     SetVisibilityState(new_state->visibility, /*is_initial_state=*/false);
+#else
+    SetVisibilityState(new_state->visibility, /*is_initial_state=*/false,
+                       storing_in_bfcache);
+#endif
   }
   if (storing_in_bfcache) {
     // TODO(https://crbug.com/427130212): Consider moving this to happen earlier
@@ -2698,7 +2733,12 @@ void WebViewImpl::SetPageLifecycleStateInternal(
     SetPageFrozen(false);
   }
   if (showing_page) {
+#if !BUILDFLAG(ARKWEB_BFCACHE)
     SetVisibilityState(new_state->visibility, /*is_initial_state=*/false);
+#else
+    SetVisibilityState(new_state->visibility, /*is_initial_state=*/false,
+                      restoring_from_bfcache);
+#endif // !BUILDFLAG(ARKWEB_BFCACHE)
   }
   if (restoring_from_bfcache) {
     DCHECK(dispatching_pageshow);
@@ -3950,7 +3990,28 @@ const web_pref::WebPreferences& WebViewImpl::GetWebPreferences() {
 
 void WebViewImpl::UpdateWebPreferences(
     const blink::web_pref::WebPreferences& preferences) {
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  bool old_viewport_meta_enabled = web_preferences_.viewport_meta_enabled;
+  bool old_is_desktop = web_preferences_.is_desktop;
+#endif
   web_preferences_ = preferences;
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx) && 
+          old_is_desktop != web_preferences_.is_desktop) {
+    cached_viewport_meta_enabled_ = web_preferences_.viewport_meta_enabled;
+    web_preferences_.viewport_meta_enabled = old_viewport_meta_enabled;
+    LOG(INFO) << "[ARKWEB] Cached viewport_meta_enabled: "
+              << cached_viewport_meta_enabled_.value()
+              <<", old value: " << old_viewport_meta_enabled;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (should_auto_resize_) {
+    web_preferences_.text_autosizing_enabled = false;
+  }
+#endif  // defined(ARKWEB_NWEB_EX)
 
   if (IsFencedFrameRoot()) {
     // The main frame of a fenced frame should not behave like a top level
@@ -3984,8 +4045,43 @@ void WebViewImpl::UpdateWebPreferences(
   }
 
   ApplyWebPreferences(web_preferences_, this);
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  // 作用：UpdateWebPreferences中同步DevToolsEmulator的双层脚本状态；
+  // 合理性：SetScriptExecutionDisabled必须在SetScriptEnabled之前（guard依赖顺序）；
+  // 必要性：删除后javascript_enabled=false不会同步到DevToolsEmulator，后续
+  // SetScriptEnabled(true)会绕过CDP禁用恢复JS
+  if (dev_tools_emulator_) {
+    dev_tools_emulator_->SetScriptExecutionDisabled(
+        !web_preferences_.javascript_enabled);
+    dev_tools_emulator_->SetScriptEnabled(web_preferences_.javascript_enabled);
+  }
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
   ApplyCommandLineToSettings(SettingsImpl());
 }
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+bool WebViewImpl::ApplyCachedViewportMetaEnabled() {
+  bool is_apply_cache = false;
+  if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
+            ::switches::kEnableNwebEx)) {
+    return is_apply_cache;
+  }
+  if (!cached_viewport_meta_enabled_.has_value()) {
+    return is_apply_cache;
+  }
+  if (web_preferences_.viewport_meta_enabled !=
+      cached_viewport_meta_enabled_.value()) {
+    web_preferences_.viewport_meta_enabled =
+        cached_viewport_meta_enabled_.value();
+    ApplyWebPreferences(web_preferences_, this);
+    LOG(INFO) << "[ARKWEB] Applied cached viewport_meta_enabled: "
+              << cached_viewport_meta_enabled_.value();
+    is_apply_cache = true;
+  }
+  cached_viewport_meta_enabled_.reset();
+  return is_apply_cache;
+}
+#endif
 
 void WebViewImpl::AddObserver(WebViewObserver* observer) {
   observers_.AddObserver(observer);
@@ -4150,6 +4246,12 @@ void WebViewImpl::PageScaleFactorChanged() {
       SetDeviceEmulationTransform(device_emulation_transform);
     }
   }
+
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
+  if (auto* local_frame = DynamicTo<LocalFrame>(GetPage()->MainFrame())) {
+    DisplayCutoutClientImplUtils::UpdateSafeArea(local_frame);
+  }
+#endif
 }
 
 void WebViewImpl::OutermostMainFrameScrollOffsetChanged() {
@@ -4331,7 +4433,12 @@ PageScheduler* WebViewImpl::Scheduler() const {
 
 void WebViewImpl::SetVisibilityState(
     mojom::blink::PageVisibilityState visibility_state,
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
     bool is_initial_state) {
+#else
+    bool is_initial_state,
+    bool storing_in_bfcache) {
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
   DCHECK(GetPage());
   GetPage()->SetVisibilityState(visibility_state, is_initial_state);
   // Do not throttle if the page should be painting.

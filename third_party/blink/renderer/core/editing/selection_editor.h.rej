@@ -1,0 +1,16 @@
+diff a/third_party/blink/renderer/core/editing/selection_editor.h b/third_party/blink/renderer/core/editing/selection_editor.h	(rejected hunks)
+@@ -75,10 +75,14 @@ class SelectionEditor final : public GarbageCollected<SelectionEditor> {
+   void NodeChildrenWillBeRemoved(ContainerNode&);
+   void NodeWillBeRemoved(Node&);
+ 
+   void Trace(Visitor*) const;
+ 
++#if BUILDFLAG(ARKWEB_MENU)
++  void NeedRecalculateCursor();
++#endif
++
+  private:
+   Document& GetDocument() const;
+   LocalFrame* GetFrame() const { return frame_.Get(); }
+ 
+   void AssertSelectionValid() const;

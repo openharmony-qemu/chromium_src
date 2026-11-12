@@ -1,0 +1,24 @@
+diff a/third_party/blink/renderer/core/editing/set_selection_options.cc b/third_party/blink/renderer/core/editing/set_selection_options.cc	(rejected hunks)
+@@ -79,6 +79,22 @@ SetSelectionOptions::Builder::SetShouldShrinkNextTap(bool new_value) {
+ SetSelectionOptions::Builder& SetSelectionOptions::Builder::SetIsDirectional(
+     bool new_value) {
+   data_.is_directional_ = new_value;
+   return *this;
+ }
++
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++SetSelectionOptions::Builder& SetSelectionOptions::Builder::SetIsSelectAll(
++    bool new_value) {
++  data_.is_select_all_ = new_value;
++  return *this;
++}
++#endif  // ARKWEB_CLIPBOARD
++
++#if BUILDFLAG(ARKWEB_FOCUS)
++SetSelectionOptions::Builder& SetSelectionOptions::Builder::SetSkipFocusCheck(
++    bool new_value) {
++  data_.is_skip_focus_check_ = new_value;
++  return *this;
++}
++#endif
+ }  // namespace blink

@@ -1,0 +1,54 @@
+diff a/third_party/blink/renderer/core/editing/frame_selection.h b/third_party/blink/renderer/core/editing/frame_selection.h	(rejected hunks)
+@@ -27,10 +27,11 @@
+ #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_EDITING_FRAME_SELECTION_H_
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_EDITING_FRAME_SELECTION_H_
+ 
+ #include <memory>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/check_op.h"
+ #include "base/dcheck_is_on.h"
+ #include "third_party/blink/renderer/core/core_export.h"
+ #include "third_party/blink/renderer/core/editing/ephemeral_range.h"
+ #include "third_party/blink/renderer/core/editing/forward.h"
+@@ -129,18 +133,23 @@ struct LayoutTextSelectionStatus {
+   unsigned start;
+   unsigned end;
+   SelectionIncludeEnd include_end;
+ };
+ 
+-class CORE_EXPORT FrameSelection final
++class CORE_EXPORT FrameSelection
+     : public GarbageCollected<FrameSelection> {
+  public:
+   explicit FrameSelection(LocalFrame&);
+   FrameSelection(const FrameSelection&) = delete;
+   FrameSelection& operator=(const FrameSelection&) = delete;
+   ~FrameSelection();
+ 
++#if BUILDFLAG(ARKWEB_MENU)
++  friend class FrameSelectionExt;
++  virtual FrameSelectionExt* AsFrameSelectionExt() { return nullptr; }
++#endif  // ARKWEB_MENU
++
+   bool IsAvailable() const;
+   // You should not call |document()| when |!isAvailable()|.
+   Document& GetDocument() const;
+   LocalFrame* GetFrame() const { return frame_.Get(); }
+   // Note that RootEditableElementOrDocumentElement can return null if the
+@@ -282,11 +296,15 @@ class CORE_EXPORT FrameSelection final
+ 
+ #if DCHECK_IS_ON()
+   void ShowTreeForThis() const;
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_FOCUS)
++  void SetFocusedNodeIfNeeded(bool = false);
++#else
+   void SetFocusedNodeIfNeeded();
++#endif
+   void NotifyTextControlOfSelectionChange(SetSelectionBy);
+ 
+   String SelectedHTMLForClipboard() const;
+   String SelectedText(const TextIteratorBehavior&) const;
+   String SelectedText() const;

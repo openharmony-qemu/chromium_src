@@ -1,0 +1,19 @@
+diff a/third_party/blink/renderer/core/frame/local_frame_client.h b/third_party/blink/renderer/core/frame/local_frame_client.h	(rejected hunks)
+@@ -198,11 +204,16 @@ class CORE_EXPORT LocalFrameClient : public FrameClient {
+       const LocalFrameToken* initiator_frame_token,
+       SourceLocation* source_location,
+       mojo::PendingRemote<mojom::blink::NavigationStateKeepAliveHandle>
+           initiator_navigation_state_keep_alive_handle,
+       bool is_container_initiated,
+-      bool has_rel_opener) = 0;
++#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
++      bool has_rel_opener,
++      bool is_triggered_by_js = false) = 0;
++#else
++       bool has_rel_opener) = 0;
++#endif
+ 
+   virtual void DispatchWillSendSubmitEvent(HTMLFormElement*) = 0;
+ 
+   virtual void DidStartLoading() = 0;
+   virtual void DidStopLoading() = 0;

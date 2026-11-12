@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/core/clipboard/system_clipboard.h b/third_party/blink/renderer/core/clipboard/system_clipboard.h	(rejected hunks)
+@@ -25,10 +25,13 @@ namespace blink {
+ class DataObject;
+ class Image;
+ class KURL;
+ class LocalFrame;
+ class ScopedSystemClipboardSnapshot;
++#if BUILDFLAG(ARKWEB_COPY_OPTION)
++class SystemClipboardUtils;
++#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+ 
+ // SystemClipboard:
+ // - is a LocalFrame bounded object.
+ // - provides sanitized, platform-neutral read/write access to the clipboard.
+ // - mediates between core classes and mojom::ClipboardHost.

@@ -50,6 +50,9 @@ class ViewportData final : public GarbageCollected<ViewportData> {
   CORE_EXPORT bool GetVirtualKeyboardOverlaysContent() const {
     return virtual_keyboard_overlays_content_;
   }
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  float GetParsedInitialScale() const { return parsed_initial_scale_; }
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
  private:
   Member<Document> document_;
@@ -70,6 +73,10 @@ class ViewportData final : public GarbageCollected<ViewportData> {
 
   HeapMojoAssociatedRemote<mojom::blink::DisplayCutoutHost>
       display_cutout_host_;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  float parsed_initial_scale_ = -1.0f;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 inline bool ViewportData::ShouldOverrideLegacyDescription(

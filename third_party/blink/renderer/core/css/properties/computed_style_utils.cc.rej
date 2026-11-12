@@ -1,0 +1,99 @@
+diff a/third_party/blink/renderer/core/css/properties/computed_style_utils.cc b/third_party/blink/renderer/core/css/properties/computed_style_utils.cc	(rejected hunks)
+@@ -1,10 +1,11 @@
+ // Copyright 2017 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ #include "third_party/blink/renderer/core/css/properties/computed_style_utils.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/memory/values_equivalent.h"
+ #include "third_party/blink/renderer/core/css/basic_shape_functions.h"
+ #include "third_party/blink/renderer/core/css/css_alternate_value.h"
+ #include "third_party/blink/renderer/core/css/css_border_image.h"
+ #include "third_party/blink/renderer/core/css/css_border_image_slice_value.h"
+@@ -81,10 +82,13 @@
+ #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+ #include "third_party/blink/renderer/platform/transforms/matrix_3d_transform_operation.h"
+ #include "third_party/blink/renderer/platform/transforms/matrix_transform_operation.h"
+ #include "third_party/blink/renderer/platform/transforms/perspective_transform_operation.h"
+ #include "third_party/blink/renderer/platform/transforms/skew_transform_operation.h"
++#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
++#endif
+ 
+ namespace blink {
+ 
+ namespace {
+ 
+@@ -4109,10 +4119,15 @@ CSSValueList* ComputedStyleUtils::ValueForGapDecorationRuleShorthand(
+     CSSGapDecorationPropertyDirection direction) {
+   // If the CSSGapDecorations feature is not enabled, fallback to legacy
+   // behavior of handling the shorthand since values are stored as single
+   // values and not lists.
+   if (!RuntimeEnabledFeatures::CSSGapDecorationEnabled()) {
++#if BUILDFLAG(IS_ARKWEB)
++    // revert pr 6576943
++    return ValuesForShorthandProperty(shorthand, style, layout_object,
++                                      allow_visited_style, value_phase);
++#else
+     const CSSValue* width_value =
+         shorthand.properties()[0]->CSSValueFromComputedStyle(
+             style, layout_object, allow_visited_style, value_phase);
+     const CSSValue* style_value =
+         shorthand.properties()[1]->CSSValueFromComputedStyle(
+@@ -4120,10 +4135,11 @@ CSSValueList* ComputedStyleUtils::ValueForGapDecorationRuleShorthand(
+     const CSSValue* color_value =
+         shorthand.properties()[2]->CSSValueFromComputedStyle(
+             style, layout_object, allow_visited_style, value_phase);
+ 
+     return GetValueListForGapRule(*width_value, *style_value, *color_value);
++#endif
+   }
+ 
+   CHECK_EQ(shorthand.length(), 3u);
+   CHECK(shorthand.properties()[0]->IDEquals(
+       CSSGapDecorationUtils::GetLonghandProperty(
+@@ -4220,14 +4236,22 @@ CSSValueList* ComputedStyleUtils::ValueForGapDecorationRuleShorthand(
+           rules_count != color_repeat_value->Values().length()) {
+         return nullptr;
+       }
+ 
+       for (size_t j = 0; j < rules_count; ++j) {
++#if BUILDFLAG(IS_ARKWEB)
++        // revert pr 6576943
++        CSSValueList* gap_rule = CSSValueList::CreateSpaceSeparated();
++        gap_rule->Append(width_repeat_value->Values().Item(j));
++        gap_rule->Append(style_repeat_value->Values().Item(j));
++        gap_rule->Append(color_repeat_value->Values().Item(j));
++#else
+         CSSValueList* gap_rule =
+             GetValueListForGapRule(width_repeat_value->Values().Item(j),
+                                    style_repeat_value->Values().Item(j),
+                                    color_repeat_value->Values().Item(j));
++#endif
+         repeated_gap_rules->Append(*gap_rule);
+       }
+ 
+       CSSValue* repeater_gap_rule =
+           MakeGarbageCollected<cssvalue::CSSRepeatValue>(repetitions,
+@@ -4243,12 +4267,20 @@ CSSValueList* ComputedStyleUtils::ValueForGapDecorationRuleShorthand(
+       // that don't align.
+       if (style_repeat_value || color_repeat_value) {
+         return nullptr;
+       }
+ 
++#if BUILDFLAG(IS_ARKWEB)
++      // revert pr 6576943
++      CSSValueList* gap_rule = CSSValueList::CreateSpaceSeparated();
++      gap_rule->Append(width_values->Item(i));
++      gap_rule->Append(style_values->Item(i));
++      gap_rule->Append(color_values->Item(i));
++#else
+       CSSValueList* gap_rule = GetValueListForGapRule(
+           width_values->Item(i), style_values->Item(i), color_values->Item(i));
++#endif
+       result->Append(*gap_rule);
+     }
+   }
+ 
+   return result;

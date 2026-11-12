@@ -30,6 +30,7 @@
 
 #include "third_party/blink/public/web/web_form_element.h"
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/platform/web_string.h"
 #include "third_party/blink/public/platform/web_url.h"
 #include "third_party/blink/public/web/web_form_control_element.h"
@@ -57,6 +58,12 @@ WebString WebFormElement::GetName() const {
 WebString WebFormElement::Method() const {
   return ConstUnwrap<HTMLFormElement>()->method();
 }
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+uint64_t WebFormElement::UniqueRendererFormId() const {
+  return ConstUnwrap<HTMLFormElement>()->UniqueRendererFormId();
+}
+#endif
 
 std::vector<WebFormControlElement> WebFormElement::GetFormControlElements()
     const {

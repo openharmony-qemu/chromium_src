@@ -90,6 +90,10 @@ void MatchResult::BeginAddingAuthorRulesForTreeScope(
 }
 
 void MatchResult::Reset() {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  has_display_none_from_adblock_ = false;
+  has_display_none_from_user_adblock_ = false;
+#endif
   matched_properties_.clear();
   matched_properties_hashes_.clear();
   is_cacheable_ = true;

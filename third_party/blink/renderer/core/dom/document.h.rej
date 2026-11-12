@@ -1,0 +1,50 @@
+diff a/third_party/blink/renderer/core/dom/document.h b/third_party/blink/renderer/core/dom/document.h	(rejected hunks)
+@@ -103,10 +103,14 @@
+ #if BUILDFLAG(IS_ANDROID)
+ #include "third_party/blink/public/mojom/facilitated_payments/payment_link_handler.mojom-blink.h"
+ #include "third_party/blink/renderer/platform/mojo/heap_mojo_remote.h"
+ #endif
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif // IS_ARKWEB_EXT
++
+ namespace base {
+ class SingleThreadTaskRunner;
+ }
+ 
+ namespace cc {
+@@ -300,10 +304,14 @@ class DocumentMetadataServer;
+ class FrameMetadataObserverRegistry;
+ class InnerHtmlAgent;
+ class InnerTextAgent;
+ class RTCPeerConnectionController;
+ 
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++class EditorCommand;
++#endif  // ARKWEB_CLIPBOARD
++
+ template <typename EventType>
+ class EventWithHitTestResults;
+ 
+ enum class CSSPropertyID;
+ 
+@@ -3485,10 +3513,18 @@ class CORE_EXPORT Document : public ContainerNode,
+   // in blink::Document.  It should be in a per-Frame class like
+   // blink::LocalDOMWindow and blink::LocalFrame.
+   //
+   // If you need to add new data members to blink::Document and it requires new
+   // #includes, add them to blink::DocumentData instead.
++
++#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
++  float custom_viewport_width_ = 0.0f;
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
++  bool is_use_video_load_opt_ = false;
++#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION  
+ };
+ 
+ inline void Document::ScheduleLayoutTreeUpdateIfNeeded() {
+   // Inline early out to avoid the function calls below.
+   if (HasPendingVisualUpdate())

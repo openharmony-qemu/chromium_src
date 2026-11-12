@@ -1996,6 +1996,7 @@ void InputMethodController::Trace(Visitor* visitor) const {
   visitor->Trace(frame_);
   visitor->Trace(composition_range_);
   visitor->Trace(active_edit_context_);
+  visitor->Trace(arkweb_input_method_controller_utils_);
   ExecutionContextLifecycleObserver::Trace(visitor);
 }
 

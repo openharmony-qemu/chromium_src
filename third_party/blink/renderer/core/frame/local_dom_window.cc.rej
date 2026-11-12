@@ -1,0 +1,65 @@
+diff a/third_party/blink/renderer/core/frame/local_dom_window.cc b/third_party/blink/renderer/core/frame/local_dom_window.cc	(rejected hunks)
+@@ -182,11 +182,17 @@
+ #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
+ #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
+ #include "third_party/blink/renderer/platform/wtf/uuid.h"
+ #include "ui/display/screen_info.h"
+ #include "v8/include/v8.h"
++#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
++#include "third_party/blink/renderer/core/frame/ark_web.h"
++#endif // ARKWEB_SCROLLBAR_AVOID_AREA
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "third_party/blink/renderer/core/frame/detect_simulated_click_risk_enhanced_impl.h"
++#endif // IS_ARKWEB
+ namespace blink {
+ 
+ namespace {
+ bool IsRunningMicrotasks(ScriptState* script_state) {
+   if (auto* microtask_queue = ToMicrotaskQueue(script_state))
+@@ -2414,12 +2426,16 @@ DOMWindow* LocalDOMWindow::open(v8::Isolate* isolate,
+   }
+ 
+   FrameTree::FindResult result =
+       GetFrame()->Tree().FindOrCreateFrameForNavigation(
+           frame_request, target.empty() ? AtomicString("_blank") : target);
+-  if (!result.frame)
++  if (!result.frame) {
++    LOG(WARNING) << "window open failed: result.frame is null."
++                 << "Please check whether the configuration properties are set correctly,"
++                 << " for example, allowWindowOpenMethod.";
+     return nullptr;
++  }
+ 
+   if (window_features.x_set || window_features.y_set) {
+     // This runs after FindOrCreateFrameForNavigation() so blocked popups are
+     // not counted.
+     UseCounter::Count(*entered_window,
+@@ -2556,10 +2572,13 @@ void LocalDOMWindow::Trace(Visitor* visitor) const {
+   visitor->Trace(isolated_world_csp_map_);
+   visitor->Trace(network_state_observer_);
+   visitor->Trace(fence_);
+   visitor->Trace(crash_report_storage_);
+   visitor->Trace(closewatcher_stack_);
++#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
++  visitor->Trace(arkWeb_);
++#endif // ARKWEB_SCROLLBAR_AVOID_AREA
+   visitor->Trace(soft_navigation_heuristics_);
+   visitor->Trace(global_fetch_impl_);
+   visitor->Trace(global_cache_storage_impl_);
+   visitor->Trace(global_cookie_store_impl_);
+   visitor->Trace(global_performance_impl_);
+@@ -2602,10 +2621,13 @@ void LocalDOMWindow::Trace(Visitor* visitor) const {
+   visitor->Trace(third_party_script_detector_);
+   visitor->Trace(user_media_client_);
+   visitor->Trace(web_launch_service_impl_);
+   visitor->Trace(window_screen_details_);
+   visitor->Trace(window_shared_storage_impl_);
++#if BUILDFLAG(IS_ARKWEB)
++  visitor->Trace(detect_simulated_click_risk_enhanced_impl_);
++#endif // IS_ARKWEB
+   DOMWindow::Trace(visitor);
+   ExecutionContext::Trace(visitor);
+   WindowOrWorkerGlobalScope::Trace(visitor);
+ }
+ 

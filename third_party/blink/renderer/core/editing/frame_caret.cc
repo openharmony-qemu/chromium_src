@@ -50,6 +50,10 @@
 #include "third_party/blink/renderer/platform/widget/frame_widget.h"
 #include "ui/gfx/selection_bound.h"
 
+#if BUILDFLAG(ARKWEB_MENU)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/frame_caret_utils.h"
+#endif
+
 namespace blink {
 
 namespace {
@@ -70,6 +74,9 @@ FrameCaret::FrameCaret(LocalFrame& frame,
                                TransformPaintPropertyNode::Root()))) {
 #if DCHECK_IS_ON()
   effect_->SetDebugName("Caret");
+#endif
+#if BUILDFLAG(ARKWEB_MENU)
+  frame_caret_utils_ = std::make_shared<FrameCaretUtils>(this);
 #endif
 }
 
@@ -374,3 +381,7 @@ void FrameCaret::RecreateCaretBlinkTimerForTesting(
 }
 
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_MENU)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/frame_caret_utils.cc"
+#endif

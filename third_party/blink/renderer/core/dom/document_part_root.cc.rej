@@ -1,0 +1,29 @@
+diff a/third_party/blink/renderer/core/dom/document_part_root.cc b/third_party/blink/renderer/core/dom/document_part_root.cc
+--- a/third_party/blink/renderer/core/dom/document_part_root.cc
++++ b/third_party/blink/renderer/core/dom/document_part_root.cc
+@@ -21,23 +21,21 @@ void DocumentPartRoot::Trace(Visitor* visitor) const {
+   visitor->Trace(root_container_);
+   ScriptWrappable::Trace(visitor);
+   PartRoot::Trace(visitor);
+ }
+ 
+-PartRootUnion* DocumentPartRoot::clone(ExceptionState& exception_state) {
++PartRootUnion* DocumentPartRoot::clone(ExceptionState&) {
+   NodeCloningData data{CloneOption::kIncludeDescendants,
+                        RuntimeEnabledFeatures::DOMPartsAPIMinimalEnabled()
+                            ? CloneOption::kPreserveDOMPartsMinimalAPI
+                            : CloneOption::kPreserveDOMParts};
+ 
+   Node* clone = rootContainer()->Clone(rootContainer()->GetDocument(), data,
+                                        /*append_to*/ nullptr,
+                                        /*fallback_registry*/ nullptr);
++  // http://crbug.com/1467847: clone may be null and can be hit by clusterfuzz.
+   if (!clone) {
+-    // Note we MUST throw if we can't return a non-null value.
+-    exception_state.ThrowDOMException(DOMExceptionCode::kDataCloneError,
+-                                      "Failed to clone a DOMPart");
+     return nullptr;
+   }
+   DocumentPartRoot* new_part_root =
+       clone->IsDocumentNode() ? &To<Document>(clone)->getPartRoot()
+                               : &To<DocumentFragment>(clone)->getPartRoot();

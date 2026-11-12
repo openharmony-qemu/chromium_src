@@ -1,0 +1,16 @@
+diff a/third_party/blink/renderer/core/editing/iterators/text_iterator_text_node_handler.cc b/third_party/blink/renderer/core/editing/iterators/text_iterator_text_node_handler.cc	(rejected hunks)
+@@ -183,10 +183,14 @@ void TextIteratorTextNodeHandler::HandleTextNodeInRange(const Text* node,
+   mapping_units_.clear();
+ 
+   const OffsetMapping* const mapping =
+       OffsetMapping::ForceGetFor(Position(node, offset_));
+   if (!mapping) [[unlikely]] {
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++    LOG_FEEDBACK(ERROR) << "We have LayoutText outside LayoutBlockFlow "
++                        << text_node_;
++#endif
+     DUMP_WILL_BE_NOTREACHED()
+         << "We have LayoutText outside LayoutBlockFlow " << text_node_;
+     return;
+   }
+ 

@@ -1,0 +1,18 @@
+diff a/third_party/blink/renderer/core/dom/element.h b/third_party/blink/renderer/core/dom/element.h	(rejected hunks)
+@@ -1957,10 +1957,16 @@ class CORE_EXPORT Element : public ContainerNode, public Animatable {
+   bool SupportsBaseAppearance(AppearanceValue) const;
+ 
+   OverscrollAreaTracker& EnsureOverscrollAreaTracker();
+   OverscrollAreaTracker* OverscrollAreaTracker() const;
+ 
++#if BUILDFLAG(ARKWEB_AI)
++  bool hasArkWebShadowRoot() const {
++    return AuthorShadowRoot() != nullptr;
++  };
++#endif
++
+  protected:
+   bool HasElementData() const { return static_cast<bool>(element_data_); }
+   const ElementData* GetElementData() const { return element_data_.Get(); }
+   UniqueElementData& EnsureUniqueElementData();
+ 

@@ -424,3 +424,7 @@ String CaretDisplayItemClient::DebugName() const {
 }
 
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_MENU)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/caret_display_item_client_utils.cc"
+#endif // BUILDFLAG(ARKWEB_MENU)

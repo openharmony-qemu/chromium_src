@@ -1,0 +1,55 @@
+diff a/third_party/blink/renderer/core/css/style_engine.h b/third_party/blink/renderer/core/css/style_engine.h	(rejected hunks)
+@@ -48,10 +48,11 @@
+ #include "third_party/blink/renderer/core/css/css_to_length_conversion_data.h"
+ #include "third_party/blink/renderer/core/css/invalidation/pending_invalidations.h"
+ #include "third_party/blink/renderer/core/css/invalidation/style_invalidator.h"
+ #include "third_party/blink/renderer/core/css/layout_tree_rebuild_root.h"
+ #include "third_party/blink/renderer/core/css/mixin_map.h"
++#include "third_party/blink/renderer/core/css/css_style_sheet.h"
+ #include "third_party/blink/renderer/core/css/pending_sheet_type.h"
+ #include "third_party/blink/renderer/core/css/random_caching_key.h"
+ #include "third_party/blink/renderer/core/css/resolver/match_request.h"
+ #include "third_party/blink/renderer/core/css/resolver/style_resolver_utils.h"
+ #include "third_party/blink/renderer/core/css/rule_feature_set.h"
+@@ -82,11 +83,10 @@ class ComputedStyleBuilder;
+ class CounterStyle;
+ class CounterStyleMap;
+ class StyleContainmentScopeTree;
+ class CSSFontSelector;
+ class CSSPropertyValueSet;
+-class CSSStyleSheet;
+ class CSSValue;
+ class Document;
+ class ElementRuleCollector;
+ class Font;
+ class FontSelector;
+@@ -799,10 +802,14 @@ class CORE_EXPORT StyleEngine final : public GarbageCollected<StyleEngine>,
+   double GetCachedRandomBaseValue(RandomValueSharing random_value_sharing,
+                                   const Element* element,
+                                   AtomicString property_name,
+                                   size_t property_value_index);
+ 
++#if BUILDFLAG(ARKWEB_NIGHT_MODE)
++  bool GetNightModeEnabled() const { return night_mode_enabled_; }
++#endif
++
+  private:
+   void UpdateCounters(const Element& element,
+                       CountersAttachmentContext& context);
+   // FontSelectorClient implementation.
+   void FontsNeedUpdate(FontSelector*, FontInvalidationReason) override;
+@@ -1192,10 +1199,14 @@ class CORE_EXPORT StyleEngine final : public GarbageCollected<StyleEngine>,
+ 
+   Color forced_background_color_;
+ 
+   bool force_dark_mode_enabled_{false};
+ 
++#if BUILDFLAG(ARKWEB_NIGHT_MODE)
++  bool night_mode_enabled_{false};
++#endif
++
+   friend class NodeTest;
+   friend class StyleEngineTest;
+   friend class WhitespaceAttacherTest;
+   friend class StyleCascadeTest;
+   friend class StyleImageCacheTest;

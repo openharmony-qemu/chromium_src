@@ -1,0 +1,58 @@
+diff a/third_party/blink/renderer/core/frame/local_frame_view.cc b/third_party/blink/renderer/core/frame/local_frame_view.cc	(rejected hunks)
+@@ -1900,10 +1920,19 @@ Color LocalFrameView::DocumentBackgroundColor() {
+   if (!background_source)
+     return result;
+ 
+   Color doc_bg =
+       background_source->ResolveColor(GetCSSPropertyBackgroundColor());
++#if BUILDFLAG(ARKWEB_NIGHT_MODE)
++  if (background_source->StyleRef().NightModeEnabled() &&
++      !background_source->StyleRef().NightColorScheme()) {
++    doc_bg = NightModeInverter::GetInverter().InvertElementColor(
++        doc_bg, NightModeInverter::ElementRole::kBackground);
++    return blend_with_base ? result.Blend(doc_bg) : doc_bg;
++  }
++#endif
++
+   if (background_source->StyleRef().ColorSchemeForced()) {
+     // TODO(https://crbug.com/1351544): The DarkModeFilter operate on SkColor4f,
+     // and DocumentBackgroundColor should return an SkColor4f.
+     doc_bg = Color::FromSkColor4f(EnsureDarkModeFilter().InvertColorIfNeeded(
+         doc_bg.toSkColor4f(), DarkModeFilter::ElementRole::kBackground));
+@@ -2593,10 +2622,21 @@ bool LocalFrameView::ShouldDeferLayoutSnap() const {
+     }
+   }
+   return false;
+ }
+ 
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
++bool LocalFrameView::RunJavaScriptForFSP(const std::string& script) {
++  if (auto* web_frame = WebLocalFrameImpl::FromFrame(frame_)) {
++    WebScriptSource source = WebScriptSource(blink::WebString::FromASCII(script));
++    web_frame->ExecuteScript(source);
++    return true;
++  }
++  return false;
++}
++#endif
++
+ void LocalFrameView::EnqueueScrollSnapChangingFromImplIfNecessary() {
+   ForAllNonThrottledLocalFrameViews([](LocalFrameView& frame_view) {
+     for (const auto& area : frame_view.scrollable_areas_.Values()) {
+       if (area->ScrollsOverflow()) {
+         area->EnqueueScrollSnapChangingEventFromImplIfNeeded();
+@@ -3315,10 +3359,14 @@ void LocalFrameView::UpdateStyleAndLayout() {
+         GetScrollableArea()->VisibleContentRect().size();
+     bool visual_viewport_size_changed =
+         (new_visual_viewport_size != visual_viewport_size);
+     SetNeedsUpdateGeometries();
+     PerformPostLayoutTasks(visual_viewport_size_changed);
++
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++    utils_->PerformLayoutOnPreload(GetFrame().GetDocument());
++#endif
+     GetFrame().GetDocument()->LayoutUpdated();
+   }
+   UpdateGeometriesIfNeeded();
+ }
+ 

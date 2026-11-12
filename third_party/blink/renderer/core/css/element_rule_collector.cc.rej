@@ -1,0 +1,87 @@
+diff a/third_party/blink/renderer/core/css/element_rule_collector.cc b/third_party/blink/renderer/core/css/element_rule_collector.cc	(rejected hunks)
+@@ -70,10 +70,14 @@
+ #include "third_party/blink/renderer/core/inspector/invalidation_set_to_selector_map.h"
+ #include "third_party/blink/renderer/core/page/scrolling/fragment_anchor.h"
+ #include "third_party/blink/renderer/core/probe/core_probes.h"
+ #include "third_party/blink/renderer/core/style/computed_style.h"
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/element_rule_collector_for_include.cc"
++#endif
++
+ namespace blink {
+ namespace {
+ 
+ struct CumulativeRulePerfKey {
+   String selector;
+@@ -698,10 +702,15 @@ bool ElementRuleCollector::CollectMatchingRulesForListInternal(
+         }
+       }
+     }
+ 
+     matched++;
++
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++    DidMatchCssRuleForInclude(rule_data, context_, result_);
++#endif
++
+     if (perf_trace_enabled) {
+       selector_statistics_collector.SetDidMatch();
+     }
+     unsigned layer_order = layer_seeker.SeekLayerOrder(rule_data.GetPosition());
+     DidMatchRule(&rule_data, layer_order, container_query, result.proximity,
+@@ -908,22 +917,24 @@ DISABLE_CFI_PERF bool ElementRuleCollector::CollectMatchingRulesInternal(
+     // would never find any rule buckets matching them anyway),
+     // but they may cause reallocation of the vector. For this reason,
+     // we cannot use range-based iterators over the attributes here
+     // if we don't synchronize before the loop; we need to use
+     // simple indexes and then refresh the span after every call.
++    // We also need to not hold references into the Attribute,
++    // as they would be similarly invalidated.
+     base::span<const Attribute> attributes =
+         GetAttributes(element, match_request.NeedStyleSynchronized());
+ 
+     for (unsigned attr_idx = 0; attr_idx < attributes.size(); ++attr_idx) {
+-      const AtomicString& attribute_name = attributes[attr_idx].LocalName();
+       // NOTE: Attributes in non-default namespaces are case-sensitive.
+       // There is a bug where you can set mixed-cased attributes (in
+       // non-default namespaces) with setAttributeNS(), but they never match
+       // anything. (The relevant code is in AnyAttributeMatches(), in
+       // selector_checker.cc.) What we're doing here doesn't influence that
+       // bug.
+-      const AtomicString& lower_name =
++      const AtomicString& attribute_name = attributes[attr_idx].LocalName();
++      const AtomicString lower_name =
+           (lower_attrs_in_default_ns &&
+            attributes[attr_idx].NamespaceURI() == g_null_atom)
+               ? attribute_name.LowerASCII()
+               : attribute_name;
+ 
+@@ -934,19 +945,22 @@ DISABLE_CFI_PERF bool ElementRuleCollector::CollectMatchingRulesInternal(
+             bundle.rule_set->CanIgnoreEntireList(
+                 list, lower_name, attributes[attr_idx].Value())) {
+           continue;
+         }
+         if (CollectMatchingRulesForList<stop_at_first_match>(
+-                bundle.rule_set->AttrRules(lower_name), match_request,
+-                bundle.rule_set, bundle.style_sheet_index, checker, context) &&
++                list, match_request, bundle.rule_set, bundle.style_sheet_index,
++                checker, context) &&
+             stop_at_first_match) {
+           return true;
+         }
+-      }
+ 
+-      const AttributeCollection collection = element.AttributesWithoutUpdate();
+-      attributes = base::span(collection);
++        // Refresh the attribute span, in case CollectMatchingRulesForList()
++        // reallocated it.
++        const AttributeCollection collection =
++            element.AttributesWithoutUpdate();
++        attributes = base::span(collection);
++      }
+     }
+   }
+ 
+   if (element.HasLocalName(html_names::kInputTag.LocalName())) {
+     if (const AtomicString& input_type =

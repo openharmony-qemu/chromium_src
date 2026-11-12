@@ -202,6 +202,7 @@ void History::go(ScriptState* script_state,
         "fully active");
     return;
   }
+
   LocalFrame* frame = window->GetFrame();
   DCHECK(frame);
 
@@ -217,6 +218,12 @@ void History::go(ScriptState* script_state,
   // transition to MPArch completely.
   if (frame->IsInFencedFrameTree())
     return;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT) && BUILDFLAG(ARKWEB_NWEB_EX)
+  if (auto* client = frame->Client()) {
+    client->DispatchHistoryGoEvent(frame, delta);
+  }
+#endif
 
   if (delta) {
     // Set up propagating the current task state to the navigation commit.
@@ -238,7 +245,11 @@ void History::go(ScriptState* script_state,
     // Otherwise, navigation happens on the root frame.
     // This behavior is designed in the following spec.
     // https://html.spec.whatwg.org/C/#dom-history-go
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+    frame->Reload(WebFrameLoadType::kReload, /*is_triggered_by_js=*/true);
+#else
     frame->Reload(WebFrameLoadType::kReload);
+#endif
   }
 }
 
@@ -272,6 +283,10 @@ void History::pushState(ScriptState* script_state,
   if (exception_state.HadException())
     return;
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  OnStateChanged("HistoryPushState", url.Utf8());
+#endif
+
   StateObjectAdded(std::move(serialized_data), title, url, load_type,
                    script_state, exception_state);
 }
@@ -289,6 +304,10 @@ void History::replaceState(ScriptState* script_state,
                                        exception_state);
   if (exception_state.HadException())
     return;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  OnStateChanged("HistoryReplaceState", url.Utf8());
+#endif
 
   StateObjectAdded(std::move(serialized_data), title, url,
                    WebFrameLoadType::kReplaceCurrentItem, script_state,

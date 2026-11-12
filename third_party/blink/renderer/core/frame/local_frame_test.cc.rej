@@ -1,0 +1,11 @@
+diff a/third_party/blink/renderer/core/frame/local_frame_test.cc b/third_party/blink/renderer/core/frame/local_frame_test.cc	(rejected hunks)
+@@ -137,5 +137,9 @@ TEST_F(LocalFrameTest, CharacterIndexAtPointWithPinchZoom) {
+   uint32_t index = main_frame->GetCharacterIndexAtPoint(gfx::Point(100, 15));
+   EXPECT_EQ(index, 5ul);
+ }
+ #endif
+ }  // namespace blink
++
++#if BUILDFLAG(ARKWEB_TEST)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/local_frame_for_include_unittest.cc"
++#endif

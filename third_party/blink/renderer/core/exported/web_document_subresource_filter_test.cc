@@ -83,6 +83,41 @@ class TestDocumentSubresourceFilter : public WebDocumentSubresourceFilter {
     return queried_subresource_paths_;
   }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_ADBLOCK)
+  void ClearStatistics() override {}
+
+  std::unique_ptr<std::string> GetElementHidingSelectors(
+      const WebURL& document_url,
+      bool need_common_selectors) override {}
+
+  bool HasGenericHideTypeOption(
+      const WebURL& document_url,
+      const url::Origin& parent_document_origin) override {}
+
+  bool HasElemHideTypeOption(
+      const WebURL& document_url,
+      const url::Origin& parent_document_origin) override {}
+
+  bool HasDocumentTypeOption(
+      const WebURL& document_url,
+      const url::Origin& parent_document_origin) override {}
+
+  void DidMatchCssRule(const WebURL& document_url,
+                       const std::string& dom_path,
+                       //  unsigned rule_line_num = 0,
+                       bool is_for_report = false) override {}
+
+  void SetDidFinishLoad(bool did_load_finished) override {}
+
+  bool GetDidFinishLoad() override {}
+
+  std::unique_ptr<std::vector<std::string>> GetUserDomPathSelectors(
+      const blink::WebURL& document_url,
+      bool need_generic_selectors) override {}
+
+  void set_activation_state(bool enabled) override {}
+#endif
+
  private:
   // Using STL types for compatibility with gtest/gmock.
   Vector<String> queried_subresource_paths_;

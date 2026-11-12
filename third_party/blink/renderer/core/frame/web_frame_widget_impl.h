@@ -1059,6 +1059,9 @@ class CORE_EXPORT WebFrameWidgetImpl
                          bool should_show_handle,
                          bool should_show_context_menu,
                          SelectAroundCaretCallback callback) override;
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void SetZoomLevel(float magnify_delta, const gfx::Point& anchor) override {}
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
   // PageWidgetEventHandler overrides:
   WebInputEventResult HandleKeyEvent(const WebKeyboardEvent&) override;

@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/core/fileapi/file_test.cc b/third_party/blink/renderer/core/fileapi/file_test.cc	(rejected hunks)
+@@ -84,12 +84,11 @@ class MockFileSystemManager : public mojom::blink::FileSystemManager {
+   ~MockFileSystemManager() override {
+     broker_.SetBinderForTesting(mojom::blink::FileSystemManager::Name_, {});
+   }
+ 
+   // mojom::blink::FileSystem
+-  void Open(const scoped_refptr<const SecurityOrigin>& origin,
+-            mojom::blink::FileSystemType file_system_type,
++  void Open(mojom::blink::FileSystemType file_system_type,
+             OpenCallback callback) override {}
+   void ResolveURL(const KURL& filesystem_url,
+                   ResolveURLCallback callback) override {}
+   void Move(const KURL& src_path,
+             const KURL& dest_path,

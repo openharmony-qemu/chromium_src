@@ -1,0 +1,97 @@
+diff a/third_party/blink/renderer/core/css/resolver/style_resolver.cc b/third_party/blink/renderer/core/css/resolver/style_resolver.cc	(rejected hunks)
+@@ -30,10 +30,11 @@
+ 
+ #include "third_party/blink/renderer/core/css/resolver/style_resolver.h"
+ 
+ #include <optional>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/adapters.h"
+ #include "base/memory/stack_allocated.h"
+ #include "base/types/optional_util.h"
+ #include "third_party/blink/public/mojom/use_counter/metrics/web_feature.mojom-blink.h"
+ #include "third_party/blink/public/web/web_print_page_description.h"
+@@ -505,17 +509,34 @@ void ApplyLengthConversionFlags(StyleResolverState& state) {
+ void ApplyInertness(StyleResolverState& state) {
+   std::optional<bool> html_inert;
+   std::optional<bool> css_inert;
+ 
+   if (state.StyleBuilder().Interactivity() == EInteractivity::kInert &&
++#if BUILDFLAG(IS_ARKWEB)
++      !state.StyleBuilder().InteractivityIsInherited()) {
++    // https://issues.chromium.org/issues/473768107
++    // If we applied interactivity:inert to this element, we also need to
++    // set IsCSSInert to true. With this flag set, it is not possible to escape
++    // CSS inertness in the subtree with 'interactivity' set to 'auto' in a
++    // descendant.
++    //
++#else
+       !state.StyleBuilder().InteractivityIsInherited() &&
+       !state.StyleBuilder().IsCSSInert()) {
+     // If the computed value of 'interactivity' is 'inert', set the internal
+     // CSS inertness flag to true. With this flag set, it is not possible to
+     // escape CSS inertness in the subtree with 'interactivity' set to 'auto'
+     // in a descendant.
++#endif
+     // TODO(crbug.com/413291835): This is not in line with the current spec.
++#if BUILDFLAG(IS_ARKWEB)
++    // https://issues.chromium.org/issues/473768107
++    //
++    // We explicitly set css_inert even if the inherited IsCSSInert is already
++    // true because we need independent property inheritance from an ancestor
++    // to stop by setting IsCSSInertIsInherited to false.
++#endif
+     css_inert = true;
+   }
+ 
+   const Element& element = state.GetElement();
+   Document& document = element.GetDocument();
+@@ -1544,11 +1568,16 @@ void StyleResolver::InitStyle(Element& element,
+ 
+   if (!style_request.IsPseudoStyleRequest() && element.IsLink()) {
+     state.StyleBuilder().SetIsLink();
+   }
+ 
++#if BUILDFLAG(ARKWEB_CSS_FONT)
++  const ComputedStyle* old_style = state.GetElement().GetComputedStyle();
++  if (!IsForPseudoElement(element, style_request) && old_style) {
++#else
+   if (!IsForPseudoElement(element, style_request)) {
++#endif
+     // Preserve the text autosizing multiplier on style recalc. Autosizer will
+     // update it during layout if needed.
+     // NOTE: This must occur before CascadeAndApplyMatchedProperties for correct
+     // computation of font-relative lengths.
+     // NOTE: This can never be overwritten by a MPC hit, since we don't use the
+@@ -2754,11 +2788,16 @@ StyleResolver::CacheSuccess StyleResolver::ApplyMatchedCache(
+         cached_matched_properties->computed_style.Get();
+ 
+     InitStyle(element, style_request, *style_to_clone, style_to_clone,
+               style_to_clone, state);
+ 
++#if BUILDFLAG(IS_ARKWEB)
++    if (cached_matched_properties->computed_style &&
++        cached_matched_properties->computed_style->CanAffectAnimations()) {
++#else
+     if (cached_matched_properties->computed_style->CanAffectAnimations()) {
++#endif
+       // Need to set this flag from the cached ComputedStyle to make
+       // ShouldStoreOldStyle() correctly return true. We do not collect matching
+       // rules when the cache is hit, and the flag is set as part of that
+       // process for the full style resolution.
+       state.StyleBuilder().SetCanAffectAnimations();
+@@ -3547,10 +3586,14 @@ void StyleResolver::PropagateStyleToViewport() {
+                    nullptr);
+     PROPAGATE_FROM(document_element_style, ForcedColorAdjust,
+                    SetForcedColorAdjust, EForcedColorAdjust::kAuto);
+     PROPAGATE_FROM(document_element_style, ColorSchemeFlagsIsNormal,
+                    SetColorSchemeFlagsIsNormal, false);
++#if BUILDFLAG(ARKWEB_NIGHT_MODE)
++    PROPAGATE_FROM(document_element_style, NightModeEnabled,
++                   SetNightModeEnabled, false);
++#endif
+   }
+ 
+   changed |= PropagateScrollSnapStyleToViewport(
+       GetDocument(), document_element_style, new_viewport_style_builder);
+ 

@@ -1161,6 +1161,10 @@ static bool PrefersColorSchemeMediaFeatureEval(
 
   return (preferred_scheme == mojom::blink::PreferredColorScheme::kDark &&
           value.Id() == CSSValueID::kDark) ||
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+         (preferred_scheme == mojom::blink::PreferredColorScheme::kNight &&
+          value.Id() == CSSValueID::kNight) ||
+#endif
          (preferred_scheme == mojom::blink::PreferredColorScheme::kLight &&
           value.Id() == CSSValueID::kLight);
 }

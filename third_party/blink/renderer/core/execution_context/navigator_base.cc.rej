@@ -1,0 +1,14 @@
+diff a/third_party/blink/renderer/core/execution_context/navigator_base.cc b/third_party/blink/renderer/core/execution_context/navigator_base.cc	(rejected hunks)
+@@ -30,11 +30,11 @@ String GetReducedNavigatorPlatform() {
+   return "MacIntel";
+ #elif BUILDFLAG(IS_WIN)
+   return "Win32";
+ #elif BUILDFLAG(IS_FUCHSIA)
+   return "";
+-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+   return "Linux x86_64";
+ #elif BUILDFLAG(IS_IOS)
+   return "iPhone";
+ #else
+ #error Unsupported platform

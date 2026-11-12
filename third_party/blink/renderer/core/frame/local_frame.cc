@@ -261,6 +261,7 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/rect_f.h"
 #include "ui/gfx/geometry/transform.h"
+#include "third_party/blink/renderer/core/page/page_utils.h"
 
 #if BUILDFLAG(IS_MAC)
 #include "third_party/blink/renderer/core/editing/ephemeral_range.h"
@@ -268,6 +269,10 @@
 #include "third_party/blink/renderer/platform/fonts/mac/attributed_string_type_converter.h"
 #include "ui/base/mojom/attributed_string.mojom-blink.h"
 #include "ui/gfx/range/range.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/local_frame_for_include.cc"
 #endif
 
 namespace blink {
@@ -1151,7 +1156,11 @@ void LocalFrame::Reload(WebFrameLoadType load_type) {
   probe::FrameScheduledNavigation(this, request.GetResourceRequest().Url(),
                                   base::TimeDelta(),
                                   ClientNavigationReason::kReload);
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  loader_.StartNavigation(request, load_type, is_triggered_by_js);
+#else
   loader_.StartNavigation(request, load_type);
+#endif
   probe::FrameClearedScheduledNavigation(this);
 }
 
@@ -2048,7 +2057,11 @@ LocalFrame::LocalFrame(
                         : FrameScheduler::FrameType::kSubframe)),
       loader_(this),
       editor_(MakeGarbageCollected<Editor>(*this)),
+      #if BUILDFLAG(ARKWEB_MENU)
+      selection_(MakeGarbageCollected<FrameSelectionExt>(*this)),
+      #else
       selection_(MakeGarbageCollected<FrameSelection>(*this)),
+      #endif  // ARKWEB_MENU
       event_handler_(MakeGarbageCollected<EventHandler>(*this)),
       console_(MakeGarbageCollected<FrameConsole>(*this)),
       navigation_disable_count_(0),
@@ -4481,6 +4494,21 @@ bool LocalFrame::ScriptEnabled() {
   bool allow_script_renderer = GetSettings()->GetScriptEnabled();
   bool allow_script_content_setting =
       loader_.GetDocumentLoader()->GetContentSettings()->allow_script;
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+  const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line && command_line->HasSwitch(switches::kEnableNwebExExceptionList)) {
+    if(GetDocument() && !GetDocument()->Url().IsNull()){
+      // 作用：exception list 不绕过 CDP JS 禁用；
+      // 合理性：exception list 仅绕过 ContentSetting 限制，不应绕过 CDP setScriptExecutionDisabled；
+      // 必要性：不加则 exception list 中页面 JS 无法被 CDP 禁用
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+      return allow_script_renderer && allow_script_content_setting;
+#else
+      return allow_script_content_setting;
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
+    }
+  }
+#endif  // BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
   return allow_script_renderer && allow_script_content_setting;
 }
 

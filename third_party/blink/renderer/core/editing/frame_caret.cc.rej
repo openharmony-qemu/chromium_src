@@ -1,0 +1,19 @@
+diff a/third_party/blink/renderer/core/editing/frame_caret.cc b/third_party/blink/renderer/core/editing/frame_caret.cc	(rejected hunks)
+@@ -253,10 +260,17 @@ void FrameCaret::SetVisibleIfActive(bool visible) {
+   DCHECK(frame_);
+   DCHECK(effect_);
+   if (!frame_->View())
+     return;
+ 
++#if BUILDFLAG(ARKWEB_MENU)
++  LocalFrameView *frame_view = frame_->View();
++  if (frame_caret_utils_->GetTouchHandleStateFromWeb(frame_view)) {
++    visible = false;
++  }
++#endif  // BUILDFLAG(ARKWEB_MENU)
++
+   auto change_type = effect_->Update(
+       *effect_->Parent(),
+       CaretEffectNodeState(visible, effect_->LocalTransformSpace()));
+   DCHECK_EQ(PaintPropertyChangeType::kChangedOnlySimpleValues, change_type);
+   if (auto* compositor = frame_->View()->GetPaintArtifactCompositor()) {

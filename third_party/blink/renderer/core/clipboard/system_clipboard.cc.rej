@@ -1,0 +1,34 @@
+diff a/third_party/blink/renderer/core/clipboard/system_clipboard.cc b/third_party/blink/renderer/core/clipboard/system_clipboard.cc	(rejected hunks)
+@@ -68,10 +74,14 @@ SystemClipboard::SystemClipboard(LocalFrame* frame)
+           frame->GetTaskRunner(TaskType::kUserInteraction)));
+ #if BUILDFLAG(IS_OZONE)
+   is_selection_buffer_available_ =
+       frame->GetSettings()->GetSelectionClipboardBufferAvailable();
+ #endif  // BUILDFLAG(IS_OZONE)
++
++#if BUILDFLAG(ARKWEB_COPY_OPTION)
++  utils_ = MakeGarbageCollected<SystemClipboardUtils>(this, frame);
++#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+ }
+ 
+ bool SystemClipboard::IsSelectionMode() const {
+   return buffer_ == mojom::blink::ClipboardBuffer::kSelection;
+ }
+@@ -140,10 +153,17 @@ void SystemClipboard::WritePlainText(const String& plain_text,
+                                      SmartReplaceOption) {
+   ResetSnapshot();
+ 
+   if (!clipboard_.is_bound())
+     return;
++
++#if BUILDFLAG(ARKWEB_COPY_OPTION)
++  if (!utils_->IsCopyAllowed()) {
++    LOG(ERROR) << "WritePlainText failed, copy option mode is 'NONE'";
++    return;
++  }
++#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+   // TODO(https://crbug.com/106449): add support for smart replace, which is
+   // currently under-specified.
+   String text = plain_text;
+ #if BUILDFLAG(IS_WIN)
+   text = NormalizeLineEndingsToCRLF(text);

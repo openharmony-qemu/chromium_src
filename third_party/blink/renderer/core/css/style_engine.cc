@@ -4559,6 +4559,10 @@ void StyleEngine::UpdateColorScheme() {
   preferred_contrast_ = settings->GetPreferredContrast();
   bool old_force_dark_mode_enabled = force_dark_mode_enabled_;
   force_dark_mode_enabled_ = settings->GetForceDarkModeEnabled();
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  bool old_night_mode_enabled = night_mode_enabled_;
+  night_mode_enabled_ = settings->GetNightModeEnabled();
+#endif
   bool media_feature_override_color_scheme = false;
   bool media_feature_override_contrast = false;
 
@@ -4608,10 +4612,16 @@ void StyleEngine::UpdateColorScheme() {
     preferred_color_scheme_ = mojom::blink::PreferredColorScheme::kLight;
     preferred_contrast_ = mojom::blink::PreferredContrast::kNoPreference;
     force_dark_mode_enabled_ = false;
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    night_mode_enabled_ = false;
+#endif
   }
 
   if (forced_colors_ != old_forced_colors ||
       preferred_color_scheme_ != old_preferred_color_scheme ||
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+      night_mode_enabled_ != old_night_mode_enabled ||
+#endif
       preferred_contrast_ != old_preferred_contrast ||
       force_dark_mode_enabled_ != old_force_dark_mode_enabled) {
     PlatformColorsChanged();
@@ -4724,8 +4734,22 @@ void StyleEngine::UpdateColorSchemeBackground(bool color_scheme_changed) {
         root_color_scheme == mojom::blink::ColorScheme::kLight
             ? Color::kWhite
             : Color(0x12, 0x12, 0x12);
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    bool real_night_color_scheme =
+        (root_color_scheme == mojom::blink::ColorScheme::kLight &&
+         night_mode_enabled_) ||
+        root_color_scheme == mojom::blink::ColorScheme::kNight;
+    if (real_night_color_scheme) {
+      color_scheme_background_ = Color(0x12, 0x12, 0x12);
+    }
+#endif
     if (GetDocument().IsInMainFrame()) {
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+      if (real_night_color_scheme ||
+          root_color_scheme == mojom::blink::ColorScheme::kDark) {
+#else
       if (root_color_scheme == mojom::blink::ColorScheme::kDark) {
+#endif
         use_color_adjust_background =
             LocalFrameView::UseColorAdjustBackground::kIfBaseNotTransparent;
       }

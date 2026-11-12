@@ -1,0 +1,22 @@
+diff a/third_party/blink/renderer/core/frame/window.idl b/third_party/blink/renderer/core/frame/window.idl	(rejected hunks)
+@@ -212,10 +212,20 @@
+ 
+     // Collection of fenced frame APIs
+     // https://github.com/shivanigithub/fenced-frame/issues/14
+     [RuntimeEnabled=FencedFrames] readonly attribute Fence? fence;
+ 
++    // Arkweb scrollbar avoid area
++    // Non-standard APIs, added for arkWeb in Browser
++    [Replaceable] readonly attribute ArkWeb arkWeb;    
++
++    // Non-standard API for business risk intelligent detection
++    [CallWith=ScriptState, RaisesException]
++    Promise<DOMString> detectSimulatedClickRiskEnhanced(long algorithm,
++                                                        sequence<long> nonce,
++                                                        optional long version = 1);
++
+     // See
+     // https://github.com/WICG/crash-reporting/blob/gh-pages/crashStorage-explainer.md.
+     [RuntimeEnabled=CrashReportingStorageAPI] readonly attribute CrashReportStorage? crashReport;
+ 
+     // Responsively-sized iframes

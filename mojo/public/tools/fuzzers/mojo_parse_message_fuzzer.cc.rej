@@ -1,0 +1,19 @@
+diff a/mojo/public/tools/fuzzers/mojo_parse_message_fuzzer.cc b/mojo/public/tools/fuzzers/mojo_parse_message_fuzzer.cc	(rejected hunks)
+@@ -51,11 +51,16 @@ void FuzzMessage(const uint8_t* data, size_t size, base::RunLoop* run) {
+ 
+ // Environment for the fuzzer. Initializes the mojo EDK and sets up a
+ // ThreadPool, because Mojo messages must be sent and processed from
+ // TaskRunners.
+ struct Environment {
+-  Environment() : main_thread_task_executor(base::MessagePumpType::UI) {
++#ifndef OHOS_FUZZ_COMPILE_ERROR_FIX
++  base::MessagePumpType testType = base::MessagePumpType::DEFAULT;
++#else
++  base::MessagePumpType testType = base::MessagePumpType::UI;
++#endif
++  Environment() : main_thread_task_executor(testType) {
+     base::ThreadPoolInstance::CreateAndStartWithDefaultParams(
+         "MojoParseMessageFuzzerProcess");
+     mojo::core::Init();
+   }
+ 

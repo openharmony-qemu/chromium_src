@@ -1,0 +1,34 @@
+diff a/mojo/public/cpp/bindings/lib/connector.cc b/mojo/public/cpp/bindings/lib/connector.cc	(rejected hunks)
+@@ -111,20 +111,32 @@ class Connector::RunLoopNestingObserver
+   raw_ptr<ActiveDispatchTracker> top_tracker_ = nullptr;
+ };
+ 
+ Connector::ActiveDispatchTracker::ActiveDispatchTracker(
+     const base::WeakPtr<Connector>& connector)
++#if BUILDFLAG(ARKWEB_MOJO_CONNECTOR_TEARDOWN_GUARD)
++    : connector_(connector),
++      nesting_observer_(connector.get() ? connector.get()->nesting_observer_
++                                        : nullptr) {
++  if (!nesting_observer_)
++    return;  // 空 observer ⇒ 本 tracker 完全 no-op，不入链
++#else
+     : connector_(connector), nesting_observer_(connector_->nesting_observer_) {
++#endif
+   DCHECK(nesting_observer_);
+   if (nesting_observer_->top_tracker_) {
+     outer_tracker_ = nesting_observer_->top_tracker_;
+     outer_tracker_->inner_tracker_ = this;
+   }
+   nesting_observer_->top_tracker_ = this;
+ }
+ 
+ Connector::ActiveDispatchTracker::~ActiveDispatchTracker() {
++#if BUILDFLAG(ARKWEB_MOJO_CONNECTOR_TEARDOWN_GUARD)
++  if (!nesting_observer_)
++    return;
++#endif
+   if (nesting_observer_->top_tracker_ == this)
+     nesting_observer_->top_tracker_ = outer_tracker_;
+   else if (inner_tracker_)
+     inner_tracker_->outer_tracker_ = outer_tracker_;
+   if (outer_tracker_)

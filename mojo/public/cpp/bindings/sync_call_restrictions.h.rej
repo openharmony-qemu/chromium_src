@@ -1,0 +1,38 @@
+diff a/mojo/public/cpp/bindings/sync_call_restrictions.h b/mojo/public/cpp/bindings/sync_call_restrictions.h	(rejected hunks)
+@@ -26,20 +26,24 @@ class ChromeOsCdmFactory;
+ namespace content {
+ class AndroidOverlaySyncHelper;
+ #if BUILDFLAG(IS_WIN)
+ class DCOMPTextureFactory;
+ #endif
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++class NativeTextureFactory;
++#endif
+ }  // namespace content
+ 
+ namespace gpu {
+ class CommandBufferProxyImpl;
+ class GpuChannelHost;
+ class SharedImageInterfaceProxy;
+ }  // namespace gpu
+ 
+ namespace ui {
+ class Compositor;
++class CompositorUtils;
+ }  // namespace ui
+ 
+ namespace viz {
+ class GpuDisplayProvider;
+ class GpuHostImpl;
+@@ -120,10 +124,11 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) SyncCallRestrictions {
+   friend class viz::HostFrameSinkManager;
+   friend class viz::HostGpuMemoryBufferManager;
+   // For preventing frame swaps of wrong size during resize on Windows.
+   // (https://crbug.com/811945)
+   friend class ui::Compositor;
++  friend class ui::CompositorUtils;
+   // For calling sync mojo API to get cdm origin in the ChromeOS GPU process.
+   // Migrating to async is non-trivial and has not been prioritized.
+   // (http://crbug.com/368792274)
+   friend class chromeos::ChromeOsCdmFactory;
+   // For calling sync mojo API to get cdm origin. The service and the client are

@@ -1,0 +1,42 @@
+diff a/mojo/core/core.cc b/mojo/core/core.cc
+--- a/mojo/core/core.cc
++++ b/mojo/core/core.cc
+@@ -686,11 +686,11 @@ MojoResult Core::CreateDataPipe(const MojoCreateDataPipeOptions* options,
+   // producer handle can be transferred freely. There is no compelling reason
+   // to restrict access rights of consumers since they are the exclusive
+   // consumer of this pipe, and it would be impossible to support such access
+   // control on Android anyway.
+   auto writable_region_handle = ring_buffer_region.PassPlatformHandle();
+-#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_APPLE)
++#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_OHOS)
+   // This isn't strictly necessary, but it does make the handle configuration
+   // consistent with regular UnsafeSharedMemoryRegions.
+   writable_region_handle.readonly_fd.reset();
+ #endif
+   base::UnsafeSharedMemoryRegion producer_region =
+@@ -1051,11 +1051,11 @@ MojoResult Core::WrapPlatformSharedMemoryRegion(
+     const MojoWrapPlatformSharedMemoryRegionOptions* options,
+     MojoHandle* mojo_handle) {
+   DCHECK(size);
+ 
+ #if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && \
+-    !BUILDFLAG(MOJO_USE_APPLE_CHANNEL)
++    !BUILDFLAG(MOJO_USE_APPLE_CHANNEL) && !BUILDFLAG(IS_OHOS)
+   if (access_mode == MOJO_PLATFORM_SHARED_MEMORY_REGION_ACCESS_MODE_WRITABLE) {
+     if (num_platform_handles != 2)
+       return MOJO_RESULT_INVALID_ARGUMENT;
+   }
+ #else
+@@ -1175,11 +1175,11 @@ MojoResult Core::UnwrapPlatformSharedMemoryRegion(
+   const uint32_t available_handle_storage_slots = *num_platform_handles;
+   if (available_handle_storage_slots < 1)
+     return MOJO_RESULT_RESOURCE_EXHAUSTED;
+   *num_platform_handles = 1;
+ #if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && \
+-    !BUILDFLAG(MOJO_USE_APPLE_CHANNEL)
++    !BUILDFLAG(MOJO_USE_APPLE_CHANNEL) && !BUILDFLAG(IS_OHOS)
+   if (region.GetMode() ==
+       base::subtle::PlatformSharedMemoryRegion::Mode::kWritable) {
+     if (available_handle_storage_slots < 2)
+       return MOJO_RESULT_INVALID_ARGUMENT;
+     PlatformHandle::ToMojoPlatformHandle(std::move(read_only_handle),

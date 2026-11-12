@@ -1,0 +1,27 @@
+diff a/mojo/core/core_ipcz.cc b/mojo/core/core_ipcz.cc	(rejected hunks)
+@@ -689,11 +689,11 @@ MojoResult MojoUnwrapPlatformSharedMemoryRegionIpcz(
+   const base::UnguessableToken guid = buffer->region().GetGUID();
+   const uint32_t size = static_cast<uint32_t>(buffer->region().GetSize());
+ 
+   uint32_t capacity = *num_platform_handles;
+   uint32_t required_handles = 1;
+-#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
+   if (buffer->region().GetMode() ==
+       base::subtle::PlatformSharedMemoryRegion::Mode::kWritable) {
+     required_handles = 2;
+   }
+ #endif
+@@ -703,11 +703,11 @@ MojoResult MojoUnwrapPlatformSharedMemoryRegionIpcz(
+   }
+ 
+   PlatformHandle handles[2];
+   base::subtle::ScopedPlatformSharedMemoryHandle region_handle =
+       buffer->region().PassPlatformHandle();
+-#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
+   handles[0] = PlatformHandle(std::move(region_handle.fd));
+   handles[1] = PlatformHandle(std::move(region_handle.readonly_fd));
+ #else
+   handles[0] = PlatformHandle(std::move(region_handle));
+ #endif

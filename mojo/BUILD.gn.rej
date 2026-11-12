@@ -1,0 +1,13 @@
+diff a/mojo/BUILD.gn b/mojo/BUILD.gn	(rejected hunks)
+@@ -51,10 +51,11 @@ group("tests") {
+ test("mojo_unittests") {
+   deps = [
+     "//mojo/core:test_sources",
+     "//mojo/core/test:run_all_unittests",
+     "//mojo/public/cpp/base:tests",
++    "//arkweb/chromium_ext/mojo/public/cpp/bindings/lib:tests",
+     "//mojo/public/cpp/bindings/tests",
+     "//mojo/public/cpp/platform/tests",
+     "//mojo/public/cpp/system/tests",
+     "//mojo/public/js/ts/bindings/tests",
+   ]

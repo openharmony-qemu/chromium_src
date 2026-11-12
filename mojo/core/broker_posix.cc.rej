@@ -1,0 +1,14 @@
+diff a/mojo/core/broker_posix.cc b/mojo/core/broker_posix.cc	(rejected hunks)
+@@ -115,11 +115,11 @@ base::WritableSharedMemoryRegion Broker::GetWritableSharedMemoryRegion(
+     LOG(ERROR) << "Error sending complete broker message";
+     return base::WritableSharedMemoryRegion();
+   }
+ 
+ #if !BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_ANDROID) || \
+-    BUILDFLAG(MOJO_USE_APPLE_CHANNEL)
++    BUILDFLAG(MOJO_USE_APPLE_CHANNEL) || BUILDFLAG(IS_OHOS)
+   // Non-POSIX systems, as well as Android and Mac, only use a single handle to
+   // represent a writable region.
+   constexpr size_t kNumExpectedHandles = 1;
+ #else
+   constexpr size_t kNumExpectedHandles = 2;

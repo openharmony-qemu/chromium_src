@@ -1,0 +1,55 @@
+diff a/mojo/core/shared_buffer_dispatcher.cc b/mojo/core/shared_buffer_dispatcher.cc
+--- a/mojo/core/shared_buffer_dispatcher.cc
++++ b/mojo/core/shared_buffer_dispatcher.cc
+@@ -150,11 +150,11 @@ scoped_refptr<SharedBufferDispatcher> SharedBufferDispatcher::Deserialize(
+     return nullptr;
+   }
+ 
+   PlatformHandle handles[2];
+ #if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && \
+-    !BUILDFLAG(MOJO_USE_APPLE_CHANNEL)
++    !BUILDFLAG(MOJO_USE_APPLE_CHANNEL) && !BUILDFLAG(IS_OHOS)
+   if (serialized_state->access_mode ==
+       MOJO_PLATFORM_SHARED_MEMORY_REGION_ACCESS_MODE_WRITABLE) {
+     if (num_platform_handles != 2)
+       return nullptr;
+     handles[1] = std::move(platform_handles[1]);
+@@ -274,11 +274,11 @@ MojoResult SharedBufferDispatcher::DuplicateBufferHandle(
+         base::subtle::PlatformSharedMemoryRegion::Mode::kReadOnly) {
+       return MOJO_RESULT_FAILED_PRECONDITION;
+     } else if (region_.GetMode() ==
+                base::subtle::PlatformSharedMemoryRegion::Mode::kWritable) {
+       auto handle = region_.PassPlatformHandle();
+-#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_APPLE)
++#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_OHOS)
+       // On POSIX systems excluding Android, Fuchsia, iOS, and macOS, we
+       // explicitly wipe out the secondary (read-only) FD from the platform
+       // handle to repurpose it for exclusive unsafe usage.
+       handle.readonly_fd.reset();
+ #endif
+@@ -335,11 +335,11 @@ void SharedBufferDispatcher::StartSerialize(uint32_t* num_bytes,
+                                             uint32_t* num_platform_handles) {
+   *num_bytes = sizeof(SerializedState);
+   *num_ports = 0;
+   *num_platform_handles = 1;
+ #if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && \
+-    !BUILDFLAG(MOJO_USE_APPLE_CHANNEL)
++    !BUILDFLAG(MOJO_USE_APPLE_CHANNEL) && !BUILDFLAG(IS_OHOS)
+   if (region_.GetMode() ==
+       base::subtle::PlatformSharedMemoryRegion::Mode::kWritable) {
+     *num_platform_handles = 2;
+   }
+ #endif
+@@ -374,11 +374,11 @@ bool SharedBufferDispatcher::EndSerialize(void* destination,
+   serialized_state->guid_low = guid.GetLowForSerialization();
+   serialized_state->padding = 0;
+ 
+   auto region = std::move(region_);
+ #if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && \
+-    !BUILDFLAG(MOJO_USE_APPLE_CHANNEL)
++    !BUILDFLAG(MOJO_USE_APPLE_CHANNEL) && !BUILDFLAG(IS_OHOS)
+   if (region.GetMode() ==
+       base::subtle::PlatformSharedMemoryRegion::Mode::kWritable) {
+     PlatformHandle platform_handles[2];
+     ExtractPlatformHandlesFromSharedMemoryRegionHandle(
+         region.PassPlatformHandle(), &platform_handles[0],

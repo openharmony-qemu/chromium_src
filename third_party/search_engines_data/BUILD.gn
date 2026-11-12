@@ -6,6 +6,29 @@ import("//build/config/chrome_build.gni")
 import("//tools/grit/grit_rule.gni")
 import("//tools/json_to_struct/json_to_struct.gni")
 
+if (is_ohos) {
+  action("create_prepopulated_engines_json") {
+    script = "//arkweb/build/search_engines/prepopulated_engines.py"
+    args = [
+      "--input",
+      rebase_path("//third_party/search_engines_data/resources/definitions/prepopulated_engines.json", root_build_dir),
+    ]
+    outputs = [
+      "$root_out_dir/../../arkweb/build/search_engines/prepopulated_engines.json"
+    ]
+  }
+
+  copy("copy_prepopulated_engines_json") {
+    sources = [
+      "//arkweb/build/search_engines/prepopulated_engines.json"
+    ]
+    outputs = [
+      "$root_out_dir/../../third_party/search_engines_data/resources/definitions/prepopulated_engines.json"
+    ]
+    deps = [":create_prepopulated_engines_json"]
+  }
+}
+
 json_to_struct("prepopulated_engines") {
   visibility = [
     ":*",
@@ -17,6 +40,11 @@ json_to_struct("prepopulated_engines") {
   schema_file = "prepopulated_engines_schema.json"
   namespace = "TemplateURLPrepopulateData"
   deps = [ "//base" ]
+  if (is_ohos) {
+    deps += [
+      ":copy_prepopulated_engines_json"
+    ]
+  }
 }
 
 json_to_struct("regional_settings") {

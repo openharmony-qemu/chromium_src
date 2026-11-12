@@ -1,0 +1,36 @@
+diff a/third_party/libpng/pngwrite.c b/third_party/libpng/pngwrite.c	(rejected hunks)
+@@ -975,10 +975,20 @@ png_write_destroy(png_structrp png_ptr)
+ #ifdef PNG_SET_UNKNOWN_CHUNKS_SUPPORTED
+    png_free(png_ptr, png_ptr->chunk_list);
+    png_ptr->chunk_list = NULL;
+ #endif
+ 
++#if defined(PNG_tRNS_SUPPORTED)
++   /* Free the independent copy of trans_alpha owned by png_struct. */
++   png_free(png_ptr, png_ptr->trans_alpha);
++   png_ptr->trans_alpha = NULL;
++#endif
++
++   /* Free the independent copy of the palette owned by png_struct. */
++   png_free(png_ptr, png_ptr->palette);
++   png_ptr->palette = NULL;
++
+    /* The error handling and memory handling information is left intact at this
+     * point: the jmp_buf may still have to be freed.  See png_destroy_png_struct
+     * for how this happens.
+     */
+ }
+@@ -2140,12 +2150,11 @@ png_image_write_main(png_voidp argument)
+ 
+    /* Check for the cases that currently require a pre-transform on the row
+     * before it is written.  This only applies when the input is 16-bit and
+     * either there is an alpha channel or it is converted to 8-bit.
+     */
+-   if ((linear != 0 && alpha != 0 ) ||
+-       (colormap == 0 && display->convert_to_8bit != 0))
++   if (linear != 0 && (alpha != 0 || display->convert_to_8bit != 0))
+    {
+       png_bytep row = png_voidcast(png_bytep, png_malloc(png_ptr,
+           png_get_rowbytes(png_ptr, info_ptr)));
+       int result;
+ 

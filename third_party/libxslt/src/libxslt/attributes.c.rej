@@ -1,0 +1,16 @@
+diff a/third_party/libxslt/src/libxslt/attributes.c b/third_party/libxslt/src/libxslt/attributes.c	(rejected hunks)
+@@ -1034,12 +1034,12 @@ xsltAttribute(xsltTransformContextPtr ctxt,
+ 	/*
+ 	* This was taken over from xsltCopyText() (transform.c).
+ 	*/
+ 	if (ctxt->internalized &&
+ 	    (ctxt->insert->doc != NULL) &&
+- 	    (ctxt->insert->doc->dict == ctxt->dict) &&
+- 	 	xmlDictOwns(ctxt->dict, inst->children->content))
++	    (ctxt->insert->doc->dict == ctxt->dict) &&
++	    xmlDictOwns(ctxt->dict, inst->children->content))
+ 	{
+ 	    copyTxt = xmlNewText(NULL);
+ 	    if (copyTxt == NULL) /* TODO: report error */
+ 		goto error;
+ 	    /*

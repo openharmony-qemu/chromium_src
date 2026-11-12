@@ -1,0 +1,24 @@
+diff --git a/third_party/ninja/README.chromium b/third_party/ninja/README.chromium
+new file mode 100644
+index 0000000000000000000000000000000000000000..c10c1e20adbce04e682c050f920311e4ea5ae6d3
+--- /dev/null
++++ b/third_party/ninja/README.chromium
+@@ -0,0 +1,18 @@
++Name: ninja
++Short Name: ninja
++URL: https://github.com/ninja-build/ninja
++Version: 1.13.2
++License: Apache License 2.0
++License File: COPYING
++Security Critical: no
++Shipped: no
++
++Description:
++Ninja is a small build system with a focus on speed, and is used to build
++this project.
++
++The CIPD packages are built using the 3pp pipeline.
++https://chromium.googlesource.com/infra/infra/+/refs/heads/main/3pp/ninja/
++
++Local Modifications:
++None

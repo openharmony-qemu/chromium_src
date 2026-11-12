@@ -65,7 +65,12 @@ config("lzma_build_config") {
           "+crypto",
         ]
       } else {
+        if (!enable_cfi_protection) {
         cflags += [ "-march=armv8-a+crc+crypto" ]
+        } else {
+          config -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+          cflags += [ "-march=armv8-a+pauth-hint-only+crc+crypto" ]
+        }
       }
     }
   }

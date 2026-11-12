@@ -1,9 +1,0 @@
-diff a/chrome/test/data/extensions/api_test/user_scripts/navigation_race/script.js b/chrome/test/data/extensions/api_test/user_scripts/navigation_race/script.js
---- a/chrome/test/data/extensions/api_test/user_scripts/navigation_race/script.js
-+++ b/chrome/test/data/extensions/api_test/user_scripts/navigation_race/script.js
-@@ -0,0 +1,5 @@
-+// Copyright 2026 The Chromium Authors
-+// Use of this source code is governed by a BSD-style license that can be
-+// found in the LICENSE file.
-+
-+document.title = 'Injected';

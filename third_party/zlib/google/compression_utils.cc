@@ -5,9 +5,14 @@
 #include "third_party/zlib/google/compression_utils.h"
 
 #include "base/check_op.h"
+#include "base/logging.h"
 #include "base/process/memory.h"
 
 #include "third_party/zlib/google/compression_utils_portable.h"
+
+#if BUILDFLAG(IS_OHOS)
+#include "securec.h"
+#endif
 
 namespace compression {
 
@@ -51,6 +56,29 @@ bool GzipCompress(base::span<const uint8_t> input, std::string* output) {
     return false;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  if (zlib_internal::GzipCompressHelper(
+          compressed_data, &compressed_data_size,
+          reinterpret_cast<const Bytef*>(input.data()), input_size, nullptr,
+          nullptr) != Z_OK) {
+    base::UncheckedFree(compressed_data);
+    return false;
+  }
+
+  // Do not pass UncheckedMalloc-allocated pointers to realloc(), as it may
+  // dispatch to a different allocator (e.g. jemalloc) via ELF symbol
+  // interposition in dual-so builds, causing a SIGSEGV. Use UncheckedMalloc +
+  // memcpy + UncheckedFree instead.
+  Bytef* resized_data;
+  if (!base::UncheckedMalloc(compressed_data_size,
+                             reinterpret_cast<void**>(&resized_data))) {
+    LOG(ERROR) << "GzipCompress: UncheckedMalloc failed for resized_data";
+    base::UncheckedFree(compressed_data);
+    return false;
+  }
+  memcpy_s(resized_data, compressed_data_size, compressed_data, compressed_data_size);
+  base::UncheckedFree(compressed_data);
+#else
   if (zlib_internal::GzipCompressHelper(
           compressed_data, &compressed_data_size,
           reinterpret_cast<const Bytef*>(input.data()), input_size, nullptr,
@@ -65,10 +93,15 @@ bool GzipCompress(base::span<const uint8_t> input, std::string* output) {
     free(compressed_data);
     return false;
   }
+#endif
   output->assign(resized_data, resized_data + compressed_data_size);
   DCHECK_EQ(input_size, GetUncompressedSize(*output));
 
+#if BUILDFLAG(IS_OHOS)
+  base::UncheckedFree(resized_data);
+#else
   free(resized_data);
+#endif
   return true;
 }
 

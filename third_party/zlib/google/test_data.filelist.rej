@@ -1,0 +1,13 @@
+diff a/third_party/zlib/google/test_data.filelist b/third_party/zlib/google/test_data.filelist	(rejected hunks)
+@@ -13,10 +13,11 @@ test/data/Repeated Dir Name.zip
+ test/data/Repeated File Name With Different Cases.zip
+ test/data/Repeated File Name.zip
+ test/data/SJIS Bug 846195.zip
+ test/data/Windows Special Names.zip
+ test/data/Wrong CRC.zip
++test/data/bug500521311.zip
+ test/data/create_symlink_test_zips.py
+ test/data/create_test_zip.sh
+ test/data/empty.zip
+ test/data/evil.zip
+ test/data/evil_via_absolute_file_name.zip

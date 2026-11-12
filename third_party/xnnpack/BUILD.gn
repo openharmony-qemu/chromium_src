@@ -40799,7 +40799,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-avgpool_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -40825,7 +40830,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-avgpool_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -40909,7 +40919,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-conv-hwc2chw_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -40935,7 +40950,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-conv-hwc2chw_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -40964,7 +40984,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-dwconv2d-chw_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -40993,7 +41018,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-dwconv2d-chw_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41025,7 +41055,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-dwconv_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41055,7 +41090,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-dwconv_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41208,7 +41248,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-f32acc-rdsum2_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41234,7 +41279,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-f32acc-rdsum2_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41263,7 +41313,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-f32acc-rdsum_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41289,7 +41344,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-f32acc-rdsum_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41318,7 +41378,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-f32acc-rsum2_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41344,7 +41409,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-f32acc-rsum2_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41373,7 +41443,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-f32acc-rsum_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41399,7 +41474,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-f32acc-rsum_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41428,7 +41508,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-gemm_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41457,7 +41542,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-gemm_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41489,7 +41579,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-gemm_arch=armv8.2-a+fp16+dotprod") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -41522,7 +41617,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-gemm_arch=armv8.2-a+fp16+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -41558,7 +41658,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-ibilinear-chw_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41584,7 +41689,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-ibilinear-chw_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41613,7 +41723,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-ibilinear_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41639,7 +41754,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-ibilinear_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41668,7 +41788,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-igemm_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41697,7 +41822,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-igemm_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41729,7 +41859,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-igemm_arch=armv8.2-a+fp16+dotprod") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -41762,7 +41897,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-igemm_arch=armv8.2-a+fp16+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -41798,7 +41938,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-maxpool_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41824,7 +41969,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-maxpool_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41853,7 +42003,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-qs8-vcvt_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -41879,7 +42034,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-qs8-vcvt_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42022,7 +42182,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-raddstoreexpminusmax_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42048,7 +42213,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-raddstoreexpminusmax_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42077,7 +42247,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-rdminmax_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42104,7 +42279,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-rdminmax_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42191,7 +42371,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-rminmax_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42219,7 +42404,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-rminmax_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42309,7 +42499,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-spmm_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42335,7 +42530,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-spmm_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42364,7 +42564,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-vapproxgelu_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42390,7 +42595,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-vapproxgelu_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42476,7 +42686,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-vbinary_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42523,7 +42738,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-vbinary_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42634,7 +42854,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-vclamp_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42660,7 +42885,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-vclamp_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42689,7 +42919,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-vcmul_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42715,7 +42950,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-vcmul_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42856,7 +43096,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-velu_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42882,7 +43127,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-velu_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42911,7 +43161,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-vexp_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -42937,7 +43192,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-vexp_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -43023,7 +43283,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-vgelu_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -43049,7 +43314,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-vgelu_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -43133,7 +43403,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-vhswish_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -43159,7 +43434,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-vhswish_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -43355,7 +43635,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-vlrelu_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -43381,7 +43666,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-vlrelu_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -43410,7 +43700,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-vmulcaddc_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -43436,7 +43731,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-vmulcaddc_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -43465,7 +43765,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-vrnd_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -43494,7 +43799,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-vrnd_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -43526,7 +43836,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-vrsqrt_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -43552,7 +43867,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-vrsqrt_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -43581,7 +43901,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-vsigmoid_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -43608,7 +43933,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-vsigmoid_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -43750,7 +44080,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-vsqrt_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -43777,7 +44112,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-vsqrt_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -43974,7 +44314,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f16-vunary_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -44002,7 +44347,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f16-vunary_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -44403,7 +44753,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f32-dwconv_arch=armv8.2-a+fp16+dotprod") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -44431,7 +44786,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f32-dwconv_arch=armv8.2-a+fp16+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -44612,7 +44972,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f32-gemm_arch=armv8.2-a+fp16+dotprod") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -44660,7 +45025,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f32-gemm_arch=armv8.2-a+fp16+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -44916,7 +45286,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("f32-igemm_arch=armv8.2-a+fp16+dotprod") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -44961,7 +45336,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("f32-igemm_arch=armv8.2-a+fp16+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -47653,7 +48033,13 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qb4-packw_arch=armv8.2-a+dotprod") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
+
 
       sources = [
         "src/include/xnnpack.h",
@@ -47680,7 +48066,13 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qb4-packw_arch=armv8.2-a+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
+
 
       sources = [
         "src/include/xnnpack.h",
@@ -47881,7 +48273,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f16-qb4w-gemm_arch=armv8.2-a+dotprod+fp16") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+dotprod+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod+fp16" ] 
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -47908,7 +48305,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f16-qb4w-gemm_arch=armv8.2-a+dotprod+fp16_standalone") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+dotprod+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod+fp16" ] 
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -47938,7 +48340,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f16-qb4w-gemm_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -47965,7 +48372,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f16-qb4w-gemm_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -47995,7 +48407,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f16-qb4w-gemm_arch=armv8.2-a+i8mm+fp16") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48022,7 +48439,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f16-qb4w-gemm_arch=armv8.2-a+i8mm+fp16_standalone") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48166,7 +48588,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f16-qc4w-gemm_arch=armv8.2-a+dotprod+fp16") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+dotprod+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod+fp16" ] 
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48193,7 +48620,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f16-qc4w-gemm_arch=armv8.2-a+dotprod+fp16_standalone") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+dotprod+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod+fp16" ] 
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48223,7 +48655,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f16-qc4w-gemm_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48250,7 +48687,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f16-qc4w-gemm_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48280,7 +48722,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f16-qc4w-gemm_arch=armv8.2-a+i8mm+fp16") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48307,7 +48754,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f16-qc4w-gemm_arch=armv8.2-a+i8mm+fp16_standalone") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48337,7 +48789,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f16-qc8w-gemm_arch=armv8.2-a+dotprod+fp16") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+dotprod+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod+fp16" ] 
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48366,7 +48823,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f16-qc8w-gemm_arch=armv8.2-a+dotprod+fp16_standalone") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+dotprod+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod+fp16" ] 
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48398,7 +48860,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f16-qc8w-gemm_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48425,7 +48892,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f16-qc8w-gemm_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48455,7 +48927,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f16-qc8w-gemm_arch=armv8.2-a+fp16+dotprod") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -48484,7 +48961,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f16-qc8w-gemm_arch=armv8.2-a+fp16+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -48516,7 +48998,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f16-qc8w-gemm_arch=armv8.2-a+i8mm+fp16") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48543,7 +49030,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f16-qc8w-gemm_arch=armv8.2-a+i8mm+fp16_standalone") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48573,7 +49065,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f16-qc8w-igemm_arch=armv8.2-a+dotprod+fp16") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+dotprod+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod+fp16" ] 
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48602,7 +49099,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f16-qc8w-igemm_arch=armv8.2-a+dotprod+fp16_standalone") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+dotprod+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod+fp16" ] 
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48634,7 +49136,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f16-qc8w-igemm_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48661,7 +49168,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f16-qc8w-igemm_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48691,7 +49203,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f16-qc8w-igemm_arch=armv8.2-a+fp16+dotprod") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -48720,7 +49237,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f16-qc8w-igemm_arch=armv8.2-a+fp16+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -48752,7 +49274,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f16-qc8w-igemm_arch=armv8.2-a+i8mm+fp16") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48779,7 +49306,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f16-qc8w-igemm_arch=armv8.2-a+i8mm+fp16_standalone") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48809,7 +49341,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f32-qb4w-gemm_arch=armv8.2-a+dotprod") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48836,7 +49373,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f32-qb4w-gemm_arch=armv8.2-a+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48866,7 +49408,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f32-qb4w-gemm_arch=armv8.2-a+i8mm+fp16") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -48893,7 +49440,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f32-qb4w-gemm_arch=armv8.2-a+i8mm+fp16_standalone") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -49098,7 +49650,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f32-qc4w-gemm_arch=armv8.2-a+dotprod") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -49125,7 +49682,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f32-qc4w-gemm_arch=armv8.2-a+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -49155,7 +49717,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f32-qc4w-gemm_arch=armv8.2-a+i8mm+fp16") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -49182,7 +49749,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f32-qc4w-gemm_arch=armv8.2-a+i8mm+fp16_standalone") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -49273,7 +49845,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f32-qc8w-gemm_arch=armv8.2-a+dotprod") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -49302,7 +49879,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f32-qc8w-gemm_arch=armv8.2-a+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -49334,7 +49916,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f32-qc8w-gemm_arch=armv8.2-a+fp16+dotprod") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -49363,7 +49950,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f32-qc8w-gemm_arch=armv8.2-a+fp16+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -49395,7 +49987,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f32-qc8w-gemm_arch=armv8.2-a+i8mm+fp16") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -49422,7 +50019,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f32-qc8w-gemm_arch=armv8.2-a+i8mm+fp16_standalone") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -49519,7 +50121,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f32-qc8w-igemm_arch=armv8.2-a+dotprod") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -49548,7 +50155,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f32-qc8w-igemm_arch=armv8.2-a+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -49580,7 +50192,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f32-qc8w-igemm_arch=armv8.2-a+fp16+dotprod") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -49609,7 +50226,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f32-qc8w-igemm_arch=armv8.2-a+fp16+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -49641,7 +50263,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f32-qc8w-igemm_arch=armv8.2-a+i8mm+fp16") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -49668,7 +50295,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qd8-f32-qc8w-igemm_arch=armv8.2-a+i8mm+fp16_standalone") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -49826,7 +50458,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qp8-f32-qb4w-gemm_arch=armv8.2-a+dotprod") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -49854,7 +50491,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qp8-f32-qb4w-gemm_arch=armv8.2-a+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -49885,7 +50527,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qp8-f32-qb4w-gemm_arch=armv8.2-a+i8mm+fp16") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -49911,7 +50558,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qp8-f32-qb4w-gemm_arch=armv8.2-a+i8mm+fp16_standalone") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -49997,7 +50649,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qp8-f32-qc4w-gemm_arch=armv8.2-a+dotprod") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -50025,7 +50682,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qp8-f32-qc4w-gemm_arch=armv8.2-a+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -50056,7 +50718,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qp8-f32-qc4w-gemm_arch=armv8.2-a+i8mm+fp16") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -50082,7 +50749,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qp8-f32-qc4w-gemm_arch=armv8.2-a+i8mm+fp16_standalone") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -50172,7 +50844,13 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qp8-f32-qc8w-gemm_arch=armv8.2-a+dotprod") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
+
 
       sources = [
         "src/include/xnnpack.h",
@@ -50200,7 +50878,13 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qp8-f32-qc8w-gemm_arch=armv8.2-a+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
+
 
       sources = [
         "src/include/xnnpack.h",
@@ -50414,7 +51098,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qs8-f16-vcvt_arch=armv8.2-a+fp16") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -50440,7 +51129,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qs8-f16-vcvt_arch=armv8.2-a+fp16_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -50772,7 +51466,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qs8-qc4w-gemm_arch=armv8.2-a+fp16+dotprod") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -50801,7 +51500,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qs8-qc4w-gemm_arch=armv8.2-a+fp16+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -51087,7 +51791,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qs8-qc8w-gemm_arch=armv8.2-a+dotprod") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -51116,7 +51825,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qs8-qc8w-gemm_arch=armv8.2-a+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -51148,7 +51862,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qs8-qc8w-gemm_arch=armv8.2-a+fp16+dotprod") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -51185,7 +51904,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qs8-qc8w-gemm_arch=armv8.2-a+fp16+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -51225,7 +51949,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qs8-qc8w-gemm_arch=armv8.2-a+i8mm+fp16") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -51252,7 +51981,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qs8-qc8w-gemm_arch=armv8.2-a+i8mm+fp16_standalone") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -51349,7 +52083,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qs8-qc8w-igemm_arch=armv8.2-a+dotprod") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -51378,7 +52117,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qs8-qc8w-igemm_arch=armv8.2-a+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -51410,7 +52154,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qs8-qc8w-igemm_arch=armv8.2-a+fp16+dotprod") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -51447,7 +52196,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qs8-qc8w-igemm_arch=armv8.2-a+fp16+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -51487,7 +52241,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qs8-qc8w-igemm_arch=armv8.2-a+i8mm+fp16") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -51514,7 +52273,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qs8-qc8w-igemm_arch=armv8.2-a+i8mm+fp16_standalone") {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
+      } else {
+         configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+         cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm+fp16" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -51725,7 +52489,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qs8-rsum_arch=armv8.2-a+dotprod") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -51751,7 +52520,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qs8-rsum_arch=armv8.2-a+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
 
       sources = [
         "src/include/xnnpack.h",
@@ -52474,7 +53248,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qu8-gemm_arch=armv8.2-a+fp16+dotprod") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -52505,7 +53284,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qu8-gemm_arch=armv8.2-a+fp16+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -52606,7 +53390,12 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qu8-igemm_arch=armv8.2-a+fp16+dotprod") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 
@@ -52637,7 +53426,12 @@ if (current_cpu == "arm64") {
   # This is a target that cannot depend on //base.
   if (build_with_internal_optimization_guide) {
     source_set("qu8-igemm_arch=armv8.2-a+fp16+dotprod_standalone") {
-      cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+fp16+dotprod" ]
+      }
 
       asmflags = cflags
 

@@ -10883,7 +10883,7 @@ bool Element::HasNamedNodeMap() const {
 
 inline void Element::UpdateName(const AtomicString& old_name,
                                 const AtomicString& new_name) {
-  if (!IsInDocumentTree()) {
+  if (!IsInDocumentTree() || IsPseudoElement()) {
     return;
   }
 
@@ -10899,7 +10899,7 @@ inline void Element::UpdateName(const AtomicString& old_name,
 
 inline void Element::UpdateId(const AtomicString& old_id,
                               const AtomicString& new_id) {
-  if (!IsInTreeScope()) {
+  if (!IsInTreeScope() || IsPseudoElement()) {
     return;
   }
 
@@ -10914,6 +10914,9 @@ inline void Element::UpdateId(const AtomicString& old_id,
 inline void Element::UpdateId(TreeScope& scope,
                               const AtomicString& old_id,
                               const AtomicString& new_id) {
+  if (IsPseudoElement()) {
+    return;
+  }
   DCHECK(IsInTreeScope());
   DCHECK_NE(old_id, new_id);
 
@@ -12275,6 +12278,13 @@ void Element::UpdateTransitionPseudoElements(
       To<ViewTransitionPseudoElementBase>(this);
 
   if (!transition || !transition->IsGeneratingPseudo(*transition_pseudo)) {
+    return;
+  }
+
+  if (ChildStyleRecalcBlockedByDisplayLock()) {
+    GetDisplayLockContext()->NotifyChildStyleRecalcWasBlocked(
+        style_recalc_change.EnsureAtLeast(
+            StyleRecalcChange::kUpdatePseudoElements));
     return;
   }
 

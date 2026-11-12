@@ -19,6 +19,7 @@
 #include "components/invalidation/profile_invalidation_provider.h"
 #include "components/policy/core/common/cloud/cloud_policy_manager.h"
 #include "components/policy/core/common/remote_commands/remote_commands_constants.h"
+#include "base/logging.h"
 
 #if BUILDFLAG(IS_CHROMEOS)
 #include "chrome/browser/ash/cert_provisioning/cert_provisioning_common.h"
@@ -70,6 +71,11 @@ void UserFmRegistrationTokenUploader::OnProfileInitializationComplete(
     Profile* profile) {
   CHECK(profile_observation_.IsObservingSource(profile));
   profile_observation_.Reset();
+
+#if BUILDFLAG(IS_ARKWEB)
+  LOG(INFO) << "ArkWeb GCM is disabled, skipping invalidation service initialization.";
+  return;
+#endif
 
   // Initialize now that profile creation is complete and the invalidation
   // service can safely be initialized.

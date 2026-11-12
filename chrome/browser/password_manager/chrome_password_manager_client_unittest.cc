@@ -319,6 +319,10 @@ class FakePasswordAutofillAgent
       FillChangePasswordFormCallback callback) override {}
   void AnnotateFieldsWithParsingResult(
       const autofill::ParsingResult& parsing_result) override {}
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  void SetParsedPasswordForm(
+      const autofill::PasswordFormFillData& form_data) override {}
+#endif
   void CheckViewAreaVisible(FieldRendererId field_id,
                             CheckViewAreaVisibleCallback callback) override {}
   void SetLoggingState(bool active) override {

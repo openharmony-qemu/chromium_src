@@ -936,8 +936,7 @@ class DiceWebSigninInterceptorWithHatsSurveyBrowserTest
   DiceWebSigninInterceptorWithHatsSurveyBrowserTest() {
     feature_list_.InitWithFeatures(
         /*enabled_features=*/
-        {{switches::kChromeIdentitySurveyDiceWebSigninAccepted,
-          switches::kChromeIdentitySurveyDiceWebSigninDeclined}},
+        {{}},
         /*disabled_features=*/{});
   }
 

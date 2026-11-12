@@ -128,6 +128,10 @@ export interface NativeLayer {
    */
   managePrinters(): void;
 
+  // <if expr="is_ohos">
+  systemPrint(): void;
+  // </if>
+
   /**
    * Requests that the document be printed.
    * @param printTicket The serialized print ticket for the print

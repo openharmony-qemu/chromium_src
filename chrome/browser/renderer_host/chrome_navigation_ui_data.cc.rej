@@ -1,0 +1,16 @@
+diff a/chrome/browser/renderer_host/chrome_navigation_ui_data.cc b/chrome/browser/renderer_host/chrome_navigation_ui_data.cc	(rejected hunks)
+@@ -120,10 +124,14 @@ std::unique_ptr<content::NavigationUIData> ChromeNavigationUIData::Clone() {
+   copy->is_no_state_prefetching_ = is_no_state_prefetching_;
+   copy->bookmark_id_ = bookmark_id_;
+   copy->actor_task_id_ = actor_task_id_;
+   copy->navigation_initiated_from_sync_ = navigation_initiated_from_sync_;
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  copy->extra_headers_ = extra_headers_;
++#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
++
+   return std::move(copy);
+ }
+ 
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
+ void ChromeNavigationUIData::SetExtensionNavigationUIData(

@@ -402,7 +402,8 @@ export class ExtensionsDetailViewElement extends
   }
 
   protected onExtensionWebSiteClick_() {
-    this.delegate.openUrl(this.data.manifestHomePageUrl);
+    // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    this.delegate.openUrlEx(this.data.manifestHomePageUrl, 3);
   }
 
   protected onSiteSettingsClick_() {
@@ -410,9 +411,10 @@ export class ExtensionsDetailViewElement extends
     this.delegate.showSiteSettings(this.data.id);
     // </if>
     // <if expr="not is_android">
-    this.delegate.openUrl(
-        `chrome://settings/content/siteDetails?site=chrome-extension://${
-            this.data.id}`);
+    // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    this.delegate.openUrlEx(
+        `chrome://settings/websiteSettings?site=arkweb-extension://${
+            this.data.id}`, 1);
     // </if>
   }
 
@@ -631,6 +633,16 @@ export class ExtensionsDetailViewElement extends
     return this.i18n(
         'mv2DeprecationPanelExtensionActionMenuLabel', this.data.name);
   }
+
+  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  protected onOptionalPermissionChange_(e: Event): void {
+    const row = e.target as ExtensionsToggleRowElement;
+    const {name} = row.dataset;
+    if (name) {
+      this.delegate.setItemOptionalPermission(this.data.id, name, row.checked);
+    }
+  }
+  // #endif
 }
 
 declare global {

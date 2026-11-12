@@ -1997,6 +1997,17 @@ void RegisterLocalState(PrefRegistrySimple* registry) {
   // Always call this last.
   browser_prefs::RegisterLocalStatePrefs(registry);
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  browser_prefs::RegisterMigratePasswordsPrefs(registry);
+#endif
+
+#if BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    fallback_proxy::ArkwebGlobalListConfig::RegisterPrefs(registry);
+  }
+#endif
 }
 
 // Register prefs applicable to all profiles.

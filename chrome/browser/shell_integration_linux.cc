@@ -163,6 +163,7 @@ shell_integration::DefaultWebClientState GetIsDefaultWebClient(
              : shell_integration::NOT_DEFAULT;
 #endif
 }
+#endif // BUILDFLAG(ARKWEB_ASAN)
 
 // https://wiki.gnome.org/Projects/GnomeShell/ApplicationBased
 // The WM_CLASS property should be set to the same as the *.desktop file without
@@ -264,6 +265,7 @@ void SetActionsForDesktopApplication(
 }
 #endif
 
+#if !BUILDFLAG(ARKWEB_ASAN)
 base::FilePath GetDesktopFileForDefaultSchemeHandler(base::Environment* env,
                                                      const GURL& url) {
   base::ScopedBlockingCall scoped_blocking_call(FROM_HERE,
@@ -286,6 +288,7 @@ base::FilePath GetDesktopFileForDefaultSchemeHandler(base::Environment* env,
 
   return base::FilePath();
 }
+#endif // BUILDFLAG(ARKWEB_ASAN)
 
 std::string GetDesktopEntryStringValueFromFromDesktopFile(
     const std::string& key,
@@ -818,6 +821,7 @@ std::string GetMimeTypesRegistrationFileContents(
 
 }  // namespace shell_integration_linux
 
+#if !BUILDFLAG(ARKWEB_ASAN)
 namespace shell_integration {
 
 bool SetAsDefaultBrowser() {
@@ -899,3 +903,4 @@ DefaultWebClientSetPermission GetPlatformSpecificDefaultWebClientSetPermission(
 }  // namespace internal
 
 }  // namespace shell_integration
+#endif // BUILDFLAG(ARKWEB_ASAN)

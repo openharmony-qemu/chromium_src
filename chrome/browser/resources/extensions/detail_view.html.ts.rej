@@ -1,0 +1,95 @@
+diff a/chrome/browser/resources/extensions/detail_view.html.ts b/chrome/browser/resources/extensions/detail_view.html.ts	(rejected hunks)
+@@ -68,11 +68,11 @@ this text can be found by Ctrl + F because it isn't hidden. -->
+         </cr-icon>
+         <div class="message-text">
+           <span class="section-title" aria-level="2">
+             ${this.getMv2DeprecationMessageHeader_()}
+           </span>
+-          <div class="section-content"
++          <div hidden=true class="section-content"
+               .innerHTML="${this.getMv2DeprecationMessageSubtitle_()}">
+           </div>
+         </div>
+         <cr-button class="find-alternative-button"
+             @click="${this.onFindAlternativeButtonClick_}"
+@@ -158,14 +158,10 @@ this text can be found by Ctrl + F because it isn't hidden. -->
+         <div class="cr-row continuation warning" id="suspicious-warning"
+             ?hidden="${!this.data.disableReasons.suspiciousInstall}">
+           <cr-icon class="warning-icon" icon="cr:warning"></cr-icon>
+           <span>
+             $i18n{itemSuspiciousInstall}
+-            <a target="_blank" href="$i18n{suspiciousInstallHelpUrl}"
+-                aria-label="$i18n{itemSuspiciousInstallLearnMore}">
+-              $i18n{learnMore}
+-            </a>
+           </span>
+         </div>
+         <div class="cr-row continuation warning control-line"
+             id="corrupted-warning" ?hidden="${!this.showRepairButton_()}">
+           <cr-icon class="warning-icon" icon="cr:warning"></cr-icon>
+@@ -312,20 +308,46 @@ this text can be found by Ctrl + F because it isn't hidden. -->
+             <extensions-toggle-row id="show-access-requests-toggle"
+                 ?checked="${this.data.showAccessRequestsInToolbar}"
+                 class="hr" @change="${this.onShowAccessRequestsChange_}">
+               <div id="access-toggle-and-link">
+                 <span>$i18n{itemShowAccessRequestsInToolbar}</span>
+-                <a class="link-icon-button"
++                <a hidden=true class="link-icon-button"
+                     aria-label="$i18n{itemShowAccessRequestsLearnMore}"
+                     href="$i18n{showAccessRequestsInToolbarLearnMoreLink}"
+                     target="_blank">
+                   <cr-icon icon="cr:help-outline"></cr-icon>
+                 </a>
+               </div>
+             </extensions-toggle-row>` : ''}
+         </div>
+       </div>` : ''}
++    <div class="section hr">
++      <div class="section-title" role="heading" aria-level="2">
++        $i18n{itemOptionalPermissions}
++      </div>
++      <div class="section-content">
++        <ul id="optional-permissions-list"
++            ?hidden="${!this.data.permissions.optionalSimplePermissions?.length}">
++          ${(this.data.permissions.optionalSimplePermissions || []).map(item => html`
++            <li>
++              <extensions-toggle-row
++                class="optional-permissions-toggle"
++                data-name="${item.name}"
++                ?checked="${item.granted}"
++                @change="${this.onOptionalPermissionChange_}">
++                <div>
++                  ${item.message}
++                  <ul ?hidden="${!item.submessages.length}">
++                    ${item.submessages.map(submessage => html`
++                      <li>${submessage}</li>`)}
++                  </ul>
++                </div>
++              </extensions-toggle-row>
++            </li>`)}
++        </ul>
++      </div>
++    </div>
+       ${this.showUserScriptSectionToggle_() ? html`
+         <extensions-toggle-row id="allow-user-scripts"
+         ?checked="${this.data.userScriptsAccess.isActive}" class="hr"
+               @change="${this.onAllowUserScriptsChange_}">
+           <div>
+@@ -400,15 +422,15 @@ this text can be found by Ctrl + F because it isn't hidden. -->
+     </cr-link-row>
+     <cr-link-row class="hr" ?hidden="${!this.data.manifestHomePageUrl.length}"
+         id="extensionWebsite" label="$i18n{extensionWebsite}"
+         @click="${this.onExtensionWebSiteClick_}" external>
+     </cr-link-row>
+-    <cr-link-row class="hr" ?hidden="${!this.data.webStoreUrl.length}"
++    <cr-link-row class="hr" hidden=true
+         id="viewInStore" label="$i18n{viewInStore}"
+         @click="${this.onViewInStoreClick_}" external>
+     </cr-link-row>
+-    <div class="section hr">
++    <div hidden=true class="section hr">
+       <div class="section-title" role="heading" aria-level="2">
+         $i18n{itemSource}
+       </div>
+       <div id="source" class="section-content">
+         ${this.computeSourceString_()}

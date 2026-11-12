@@ -1,0 +1,24 @@
+diff a/chrome/browser/resources/extensions/service.ts b/chrome/browser/resources/extensions/service.ts	(rejected hunks)
+@@ -272,10 +272,22 @@ export class Service implements ServiceInterface {
+       extensionId: id,
+       pinnedToToolbar,
+     });
+   }
+ 
++  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  setItemOptionalPermission(id: string, name: string, enabled: boolean): void {
++    chrome.developerPrivate.updateExtensionConfiguration({
++      extensionId: id,
++      optionalPermission: {
++        name,
++        enabled,
++      },
++    });
++  }
++  // #endif
++
+   inspectItemView(id: string, view: chrome.developerPrivate.ExtensionView):
+       void {
+     chrome.developerPrivate.openDevTools({
+       extensionId: id,
+       renderProcessId: view.renderProcessId,

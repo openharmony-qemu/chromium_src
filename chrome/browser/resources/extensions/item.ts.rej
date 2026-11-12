@@ -1,0 +1,30 @@
+diff a/chrome/browser/resources/extensions/item.ts b/chrome/browser/resources/extensions/item.ts	(rejected hunks)
+@@ -53,10 +55,13 @@ export interface ItemDelegate {
+   setItemSafetyCheckWarningAcknowledged(
+       id: string,
+       reason: chrome.developerPrivate.SafetyCheckWarningReason): void;
+   setShowAccessRequestsInToolbar(id: string, showRequests: boolean): void;
+   setItemPinnedToToolbar(id: string, pinnedToToolbar: boolean): void;
++  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  setItemOptionalPermission(id: string, name: string, enabled: boolean): void;
++  // #endif
+   uploadItemToAccount(id: string): Promise<boolean>;
+ 
+   // TODO(tjudkins): This function is not specific to items, so should be pulled
+   // out to a more generic place when we need to access it from elsewhere.
+   recordUserAction(metricName: string): void;
+@@ -107,10 +114,14 @@ export class DummyItemDelegate {
+   }
+   setItemSafetyCheckWarningAcknowledged(
+       _id: string, _reason: chrome.developerPrivate.SafetyCheckWarningReason) {}
+   setShowAccessRequestsInToolbar(_id: string, _showRequests: boolean) {}
+   setItemPinnedToToolbar(_id: string, _pinnedToToolbar: boolean) {}
++  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  setItemOptionalPermission(_id: string, _name: string, _enabled: boolean):
++      void {}
++  // #endif
+   uploadItemToAccount(_id: string) {
+     return Promise.resolve(false);
+   }
+   recordUserAction(_metricName: string) {}
+   getItemStateChangedTarget() {

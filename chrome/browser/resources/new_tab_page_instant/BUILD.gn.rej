@@ -1,0 +1,14 @@
+diff a/chrome/browser/resources/new_tab_page_instant/BUILD.gn b/chrome/browser/resources/new_tab_page_instant/BUILD.gn	(rejected hunks)
+@@ -2,11 +2,11 @@
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//ui/webui/resources/tools/build_webui.gni")
+ 
+-assert(is_linux || is_chromeos || is_win || is_mac)
++assert(is_linux || is_chromeos || is_win || is_mac || is_ohos)
+ assert(!is_fuchsia, "Fuchsia shouldn't use anything in //chrome")
+ 
+ build_webui("build") {
+   grd_prefix = "new_tab_page_instant"
+   static_files = [

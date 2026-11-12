@@ -2449,6 +2449,7 @@ const PolicyToPreferenceMapEntry kSimplePolicyMap[] = {
     base::Value::Type::BOOLEAN },
 #endif
 
+#if !BUILDFLAG(IS_OHOS)
   { key::kCACertificates,
     prefs::kCACertificates,
     base::Value::Type::LIST },
@@ -2998,13 +2999,13 @@ std::unique_ptr<ConfigurationPolicyHandlerList> BuildHandlerList(
       SimpleSchemaValidatingPolicyHandler::MANDATORY_ALLOWED));
 #endif  // !BUILDFLAG(IS_ANDROID)
 
-#if !BUILDFLAG(IS_CHROMEOS)
+#if !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_ARKWEB)
   handlers->AddHandler(
       std::make_unique<enterprise_idle::IdleTimeoutPolicyHandler>());
   handlers->AddHandler(
       std::make_unique<enterprise_idle::IdleTimeoutActionsPolicyHandler>(
           chrome_schema));
-#endif  // !BUILDFLAG(IS_CHROMEOS)
+#endif  // !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_ARKWEB)
 
   handlers->AddHandler(
       std::make_unique<content_settings::CookieSettingsPolicyHandler>());

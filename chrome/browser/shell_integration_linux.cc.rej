@@ -1,0 +1,13 @@
+diff a/chrome/browser/shell_integration_linux.cc b/chrome/browser/shell_integration_linux.cc	(rejected hunks)
+@@ -142,10 +142,11 @@ const int EXIT_XDG_SETTINGS_SYNTAX_ERROR = 1;
+ // system fails, as the system copy may be missing capabilities of the Chrome
+ // copy.
+ 
+ // If |scheme| is empty this function sets Chrome as the default browser,
+ // otherwise it sets Chrome as the default handler application for |scheme|.
++#if !BUILDFLAG(ARKWEB_ASAN)
+ bool SetDefaultWebClient(const std::string& scheme) {
+ #if BUILDFLAG(IS_CHROMEOS)
+   return true;
+ #else
+   std::unique_ptr<base::Environment> env(base::Environment::Create());

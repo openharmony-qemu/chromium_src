@@ -1,0 +1,20 @@
+diff a/chrome/browser/preloading/prefetch/no_state_prefetch/chrome_no_state_prefetch_contents_delegate.cc b/chrome/browser/preloading/prefetch/no_state_prefetch/chrome_no_state_prefetch_contents_delegate.cc	(rejected hunks)
+@@ -29,16 +29,18 @@ NoStatePrefetchContents* ChromeNoStatePrefetchContentsDelegate::FromWebContents(
+   return no_state_prefetch_manager->GetNoStatePrefetchContents(web_contents);
+ }
+ 
+ void ChromeNoStatePrefetchContentsDelegate::OnNoStatePrefetchContentsCreated(
+     content::WebContents* web_contents) {
++#ifndef BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+   DCHECK(web_contents);
+   TabHelpers::AttachTabHelpers(web_contents);
+ 
+   // Tag the NoStatePrefetch contents with the task manager specific prerender
+   // tag, so that it shows up in the task manager.
+   task_manager::WebContentsTags::CreateForNoStatePrefetchContents(web_contents);
++#endif
+ }
+ 
+ void ChromeNoStatePrefetchContentsDelegate::ReleaseNoStatePrefetchContents(
+     content::WebContents* web_contents) {
+   DCHECK(web_contents);

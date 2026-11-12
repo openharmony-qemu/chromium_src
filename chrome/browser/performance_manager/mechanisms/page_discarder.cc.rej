@@ -1,0 +1,22 @@
+diff a/chrome/browser/performance_manager/mechanisms/page_discarder.cc b/chrome/browser/performance_manager/mechanisms/page_discarder.cc	(rejected hunks)
+@@ -45,16 +45,20 @@ std::optional<base::ByteCount> PageDiscarder::DiscardPageNode(
+     ::mojom::LifecycleUnitDiscardReason discard_reason) {
+   base::WeakPtr<content::WebContents> contents = page_node->GetWebContents();
+ 
+   std::optional<DiscardPageOnUIThreadOutcome> outcome;
+   absl::Cleanup record_discard_outcome = [&]() {
++#if !BUILDFLAG(IS_ARKWEB)
+     CHECK(outcome.has_value(), base::NotFatalUntil::M140);
+     base::UmaHistogramEnumeration("Discarding.DiscardPageOnUIThreadOutcome",
+                                   outcome.value());
++#endif
+   };
+ 
++#if !BUILDFLAG(IS_ARKWEB)
+   CHECK(contents, base::NotFatalUntil::M140);
++#endif
+   if (!contents) {
+     outcome = DiscardPageOnUIThreadOutcome::kNoContents;
+     return std::nullopt;
+   }
+ 

@@ -1,0 +1,99 @@
+diff a/chrome/browser/printing/print_view_manager_base.h b/chrome/browser/printing/print_view_manager_base.h	(rejected hunks)
+@@ -25,10 +25,14 @@
+ #include "components/printing/common/print.mojom-forward.h"
+ #include "components/services/print_compositor/public/mojom/print_compositor.mojom.h"
+ #include "printing/buildflags/buildflags.h"
+ #include "ui/accessibility/ax_tree_update_forward.h"
+ 
++#if BUILDFLAG(ENABLE_PRINT_PREVIEW)
++#include "base/containers/queue.h"
++#endif
++
+ #if BUILDFLAG(ENABLE_OOP_PRINTING)
+ #include <optional>
+ 
+ #include "chrome/browser/printing/print_backend_service_manager.h"
+ #endif
+@@ -89,10 +93,13 @@ class PrintViewManagerBase : public PrintManager, public PrintJob::Observer {
+   // frame host for the preview initiator contents respectively.
+   void PrintForPrintPreview(base::Value::Dict job_settings,
+                             scoped_refptr<base::RefCountedMemory> print_data,
+                             content::RenderFrameHost* rfh,
+                             PrinterHandler::PrintCallback callback);
++
++  void AppendPrintPreviewSettings(base::Value::Dict settings, bool is_pdf);
++  void ClearPrintPreviewSettings();
+ #endif
+ 
+   // Prints the current document pages specified by `page_ranges` with
+   // parameters, specified by `print_pages_params` into a PDF document,
+   // returned with `callback`. If `page_ranges` is empty, the entire
+@@ -119,19 +126,24 @@ class PrintViewManagerBase : public PrintManager, public PrintJob::Observer {
+   void DidPrintDocument(mojom::DidPrintDocumentParamsPtr params,
+                         DidPrintDocumentCallback callback) override;
+   void GetDefaultPrintSettings(
+       GetDefaultPrintSettingsCallback callback) override;
+ #if BUILDFLAG(ENABLE_PRINT_PREVIEW)
+-  void UpdatePrintSettings(base::Value::Dict job_settings,
+-                           UpdatePrintSettingsCallback callback) override;
++  void GetPrintPreviewParams(GetPrintPreviewParamsCallback callback) override;
+   void SetAccessibilityTree(
+       int32_t cookie,
+       const ui::AXTreeUpdate& accessibility_tree) override;
+ #endif
+   void IsPrintingEnabled(IsPrintingEnabledCallback callback) override;
+   void ScriptedPrint(mojom::ScriptedPrintParamsPtr params,
+                      ScriptedPrintCallback callback) override;
++#if BUILDFLAG(ARKWEB_PRINT)
++  void PdfWritingDone(int page_count) override {}
++  void PrintRequested(PrintRequestedCallback callback) override {}
++  void CheckCancel(CheckCancelCallback callback) override {}
++  void PrintPdfRequested() override {}
++#endif  // BUILDFLAG(ARKWEB_PRINT)
+   void PrintingFailed(int32_t cookie,
+                       mojom::PrintFailureReason reason) override;
+ 
+   // Adds and removes observers for `PrintViewManagerBase` events. The order in
+   // which notifications are sent to observers is undefined. Observers must be
+@@ -271,22 +283,22 @@ class PrintViewManagerBase : public PrintManager, public PrintJob::Observer {
+   // Helper for mojom::PrintManagerHost handling.
+   void OnDidPrintDocument(PrintManager::DidPrintDocumentCallback callback,
+                           bool succeeded);
+ 
+ #if BUILDFLAG(ENABLE_PRINT_PREVIEW)
+-  // Helpers for UpdatePrintSettings().
++  // Helpers for GetPrintPreviewParams().
+ #if BUILDFLAG(IS_WIN)
+   void OnDidUpdatePrintableArea(std::unique_ptr<PrinterQuery> printer_query,
+                                 base::Value::Dict job_settings,
+                                 std::unique_ptr<PrintSettings> print_settings,
+-                                UpdatePrintSettingsCallback callback,
++                                GetPrintPreviewParamsCallback callback,
+                                 bool success);
+ #endif
+-  void CompleteUpdatePrintSettings(
++  void CompleteGetPrintPreviewParams(
+       base::Value::Dict job_settings,
+       std::unique_ptr<PrintSettings> print_settings,
+-      UpdatePrintSettingsCallback callback);
++      GetPrintPreviewParamsCallback callback);
+ 
+   // Helpers for PrintForPrintPreview();
+   void OnPrintSettingsDone(scoped_refptr<base::RefCountedMemory> print_data,
+                            uint32_t page_count,
+ #if BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
+@@ -402,10 +414,14 @@ class PrintViewManagerBase : public PrintManager, public PrintJob::Observer {
+   // Called by `PrintDocument` to insert content analysis logic before key
+   // printing steps like `PrintJob::StartPrinting`.
+   PrintDocumentCallback content_analysis_before_printing_document_;
+ #endif  // BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
+ 
++#if BUILDFLAG(ENABLE_PRINT_PREVIEW)
++  base::queue<base::Value::Dict> print_preview_settings_;
++#endif
++
+   const scoped_refptr<PrintQueriesQueue> queue_;
+ 
+   base::ObserverList<TestObserver> test_observers_;
+ 
+   base::WeakPtrFactory<PrintViewManagerBase> weak_ptr_factory_{this};

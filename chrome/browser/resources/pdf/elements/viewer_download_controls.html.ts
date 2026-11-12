@@ -23,4 +23,5 @@ export function getHtml(this: ViewerDownloadControlsElement) {
   </button>
 </cr-action-menu>
 <!--_html_template_end_-->`;
+  // arkweb_pdf DTS2025060933461: update pdf previewer icons END
 }

@@ -50,6 +50,10 @@ ChromeNavigationUIData::ChromeNavigationUIData(
       navigation_handle, tab_id, window_id);
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  extra_headers_ = navigation_handle->GetExtraHeaders();
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
+
   auto* no_state_prefetch_contents =
       prerender::ChromeNoStatePrefetchContentsDelegate::FromWebContents(
           web_contents);

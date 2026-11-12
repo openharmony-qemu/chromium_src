@@ -1,0 +1,16 @@
+diff a/chrome/browser/profiles/off_the_record_profile_impl.cc b/chrome/browser/profiles/off_the_record_profile_impl.cc	(rejected hunks)
+@@ -614,10 +634,14 @@ class GuestSessionProfile : public OffTheRecordProfileImpl {
+       : OffTheRecordProfileImpl(real_profile, OTRProfileID::PrimaryID()) {
+     if (new_guest_profile_impl_) {
+       CHECK_EQ(profile_metrics::BrowserProfileType::kGuest,
+                profile_metrics::GetBrowserProfileType(this));
+     } else {
++#if BUILDFLAG(ARKWEB_WEBSTORAGE)
++      LOG(INFO) << "GuestSessionProfile SetBrowserProfileType, context : "
++          << reinterpret_cast<uintptr_t>(this) % 100000000;
++#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
+       profile_metrics::SetBrowserProfileType(
+           this, profile_metrics::BrowserProfileType::kGuest);
+     }
+   }
+ 

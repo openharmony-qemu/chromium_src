@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_is_test.h"
 #include "base/containers/flat_map.h"
 #include "base/functional/bind.h"

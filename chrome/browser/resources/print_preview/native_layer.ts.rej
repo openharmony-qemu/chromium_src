@@ -1,0 +1,20 @@
+diff a/chrome/browser/resources/print_preview/native_layer.ts b/chrome/browser/resources/print_preview/native_layer.ts	(rejected hunks)
+@@ -198,10 +202,18 @@ export class NativeLayerImpl implements NativeLayer {
+ 
+   managePrinters() {
+     chrome.send('managePrinters');
+   }
+ 
++  // <if expr="is_ohos">
++  systemPrint() {
++    chrome.send('systemPrint');
++    chrome.send('closePrintPreviewDialog');
++    chrome.send('dialogClose');
++  }
++  // </if>
++
+   doPrint(printTicket: string) {
+     return sendWithPromise('doPrint', printTicket);
+   }
+ 
+   cancelPendingPrintRequest() {

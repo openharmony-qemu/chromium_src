@@ -1,0 +1,32 @@
+diff a/chrome/browser/ssl/https_only_mode_tab_helper.h b/chrome/browser/ssl/https_only_mode_tab_helper.h	(rejected hunks)
+@@ -54,10 +54,16 @@ class HttpsOnlyModeTabHelper
+   void set_is_exempt_error(bool is_exempt_error) {
+     is_exempt_error_ = is_exempt_error;
+   }
+   bool is_exempt_error() const { return is_exempt_error_; }
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
++  void set_is_ssl_error(bool is_ssl_error) { is_ssl_error_ = is_ssl_error; }
++
++  bool is_ssl_error() const { return is_ssl_error_; }
++#endif
++
+  private:
+   explicit HttpsOnlyModeTabHelper(content::WebContents* web_contents);
+   friend class content::WebContentsUserData<HttpsOnlyModeTabHelper>;
+ 
+   // TODO(crbug.com/40771668): Track upgrade status per-navigation rather than
+@@ -91,9 +97,13 @@ class HttpsOnlyModeTabHelper
+   // is used to track whether to maintain upgrade state across reloads (such as
+   // the automatic net error reload) and continue the upgrade attempt
+   // post-reload.
+   bool is_exempt_error_ = false;
+ 
++#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
++  bool is_ssl_error_ = false;
++#endif
++
+   WEB_CONTENTS_USER_DATA_KEY_DECL();
+ };
+ 
+ #endif  // CHROME_BROWSER_SSL_HTTPS_ONLY_MODE_TAB_HELPER_H_

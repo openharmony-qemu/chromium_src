@@ -1,0 +1,45 @@
+diff a/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc b/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc	(rejected hunks)
+@@ -5,10 +5,11 @@
+ #include "chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.h"
+ 
+ #include <memory>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/feature_list.h"
+ #include "build/build_config.h"
+ #include "build/chromeos_buildflags.h"
+ #include "chrome/browser/accessibility/accessibility_labels_service_factory.h"
+ #include "chrome/browser/accessibility/page_colors_controller_factory.h"
+@@ -964,11 +974,11 @@ void ChromeBrowserMainExtraPartsProfiles::
+ #endif
+   FieldInfoManagerFactory::GetInstance();
+   FileSystemAccessPermissionContextFactory::GetInstance();
+   FindBarStateFactory::GetInstance();
+   first_party_sets::FirstPartySetsPolicyServiceFactory::GetInstance();
+-#if !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_ANDROID)
++#if !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
+   FirstRunServiceFactory::GetInstance();
+ #endif
+ #if BUILDFLAG(IS_CHROMEOS)
+   if (ash::features::IsFloatingSsoAllowed()) {
+     ash::floating_sso::FloatingSsoServiceFactory::GetInstance();
+@@ -1450,10 +1463,18 @@ void ChromeBrowserMainExtraPartsProfiles::
+     webapk::WebApkSyncServiceFactory::GetInstance();
+   }
+ #endif
+   WebDataServiceFactory::GetInstance();
+   webrtc_event_logging::WebRtcEventLogManagerKeyedServiceFactory::GetInstance();
++
++#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
++  OhHostContentSettingsObserverFactory::GetInstance();
++#endif
++
++#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
++  ohos_predictors::LoadingPredictorFactory::GetInstance();
++#endif
+ }
+ 
+ void ChromeBrowserMainExtraPartsProfiles::PreProfileInit() {
+   EnsureBrowserContextKeyedServiceFactoriesBuilt();
+ }

@@ -1,0 +1,51 @@
+diff a/chrome/browser/profiles/BUILD.gn b/chrome/browser/profiles/BUILD.gn	(rejected hunks)
+@@ -7,10 +7,11 @@ import("//chrome/common/features.gni")
+ import("//components/captive_portal/core/features.gni")
+ import("//components/enterprise/buildflags/buildflags.gni")
+ import("//components/services/on_device_translation/buildflags/features.gni")
+ import("//components/signin/features.gni")
+ import("//extensions/buildflags/buildflags.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ # This target should be the default place for adding public interface things
+ # (ie, non-factory, non-impl). There will likely need to be a :factory or :impl
+ # target (maybe both) for those eventually.
+ source_set("profiles") {
+@@ -326,10 +327,11 @@ source_set("profiles_extra_parts_impl") {
+     "//chrome/browser/ui/find_bar",
+     "//chrome/browser/ui/hats",
+     "//chrome/browser/ui/prefs",
+     "//chrome/browser/ui/safety_hub",
+     "//chrome/browser/ui/startup",
++    "//chrome/browser/ui/startup:impl",
+     "//chrome/browser/ui/toolbar",
+     "//chrome/browser/ui/toolbar/pinned_toolbar",
+     "//chrome/browser/updates/announcement_notification",
+     "//chrome/browser/usb",
+     "//chrome/browser/webauthn",
+@@ -521,10 +523,13 @@ source_set("unit_tests") {
+   testonly = true
+   sources = [
+     "profile_downloader_unittest.cc",
+     "profile_metrics_unittest.cc",
+   ]
++  if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
++    sources += [ "//arkweb/chromium_ext/chrome/browser/profiles/profile_for_include_unittest.cc" ]
++  }
+   deps = [
+     ":profile_downloader",
+     ":profile_util",
+     "//base",
+     "//base/test:test_support",
+@@ -535,10 +540,11 @@ source_set("unit_tests") {
+     "//components/signin/public/base:test_support",
+     "//components/signin/public/identity_manager:test_support",
+     "//content/test:test_support",
+     "//services/network:test_support",
+     "//testing/gtest",
++    "//testing/gmock",
+   ]
+ 
+   if (is_chromeos) {
+     sources += [ "profile_os_sync_unittest.cc" ]
+     deps += [

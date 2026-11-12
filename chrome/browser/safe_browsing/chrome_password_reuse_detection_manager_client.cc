@@ -285,7 +285,11 @@ void ChromePasswordReuseDetectionManagerClient::CheckProtectedPasswordEntry(
   // Converts the url_string to GURL to avoid constructing it twice.
   GURL domain_gurl(domain);
   // If the webpage is not an extension page, do nothing.
-  if (!domain_gurl.SchemeIs(extensions::kExtensionScheme)) {
+  if (!domain_gurl.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !domain_gurl.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     return;
   }
   content::BrowserContext* browser_context =

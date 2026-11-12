@@ -1,0 +1,12 @@
+diff a/chrome/browser/resources/pdf/index.html b/chrome/browser/resources/pdf/index.html	(rejected hunks)
+@@ -1,9 +1,10 @@
+ <!doctype html>
+ <html dir="$i18n{textdirection}" lang="$i18n{language}" $i18n{pdfOopifEnabled}>
+ <head>
+   <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width">
+ 
+   <link rel="stylesheet" href="chrome://resources/css/text_defaults_md.css">
+   <link rel="stylesheet" href="index.css">
+   <style>
+     html,

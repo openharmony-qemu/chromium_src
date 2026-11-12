@@ -1,0 +1,19 @@
+diff a/chrome/browser/resources/extensions/toolbar.html.ts b/chrome/browser/resources/extensions/toolbar.html.ts	(rejected hunks)
+@@ -23,17 +23,10 @@ export function getHtml(this: ToolbarElement) {
+     <cr-toggle id="devMode" @change="${this.onDevModeToggleChange_}"
+         ?disabled="${this.shouldDisableDevMode_()}" ?checked="${this.inDevMode}"
+         aria-labelledby="devModeLabel">
+     </cr-toggle>
+   </div>
+-  <if expr="is_android">
+-    <picture slot="product-logo">
+-      <source media="(prefers-color-scheme: dark)"
+-          srcset="//resources/images/chrome_logo_dark.svg">
+-      <img srcset="images/product_logo.png" role="presentation">
+-    </picture>
+-  </if>
+ </cr-toolbar>
+ ${this.showPackDialog_ ? html`
+   <extensions-pack-dialog .delegate="${this.delegate}"
+       @close="${this.onPackDialogClose_}">
+   </extensions-pack-dialog>` : ''}

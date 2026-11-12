@@ -1,0 +1,47 @@
+diff a/chrome/browser/printing/system_access_process_print_browsertest.cc b/chrome/browser/printing/system_access_process_print_browsertest.cc	(rejected hunks)
+@@ -1510,19 +1519,19 @@ IN_PROC_BROWSER_TEST_P(SystemAccessProcessPrintBrowserTest,
+   ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), url));
+ 
+   content::WebContents* web_contents =
+       browser()->tab_strip_model()->GetActiveWebContents();
+   ASSERT_TRUE(web_contents);
+-  TestPrintViewManager print_view_manager(web_contents);
+-  PrintViewManager::SetReceiverImplForTesting(&print_view_manager);
++  TestPrintViewManager* print_view_manager =
++      TestPrintViewManager::CreateForWebContents(web_contents);
+ 
+   PrintAndWaitUntilPreviewIsReady();
+ 
+   EXPECT_EQ(3u, rendered_page_count());
+ 
+   const mojom::PrintPagesParamsPtr& snooped_params =
+-      print_view_manager.snooped_params();
++      print_view_manager->snooped_params();
+   ASSERT_TRUE(snooped_params);
+   EXPECT_EQ(test::kPrinterCapabilitiesDpi, snooped_params->params->dpi);
+ 
+ #if BUILDFLAG(IS_MAC)
+   EXPECT_EQ(kLegalPhysicalSize, snooped_params->params->page_size);
+@@ -1545,19 +1554,19 @@ IN_PROC_BROWSER_TEST_P(SystemAccessProcessPrintBrowserTest,
+   ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), url));
+ 
+   content::WebContents* web_contents =
+       browser()->tab_strip_model()->GetActiveWebContents();
+   ASSERT_TRUE(web_contents);
+-  TestPrintViewManager print_view_manager(web_contents);
+-  PrintViewManager::SetReceiverImplForTesting(&print_view_manager);
++  TestPrintViewManager* print_view_manager =
++      TestPrintViewManager::CreateForWebContents(web_contents);
+ 
+   AdjustMediaAfterPreviewIsReadyAndLoaded();
+ 
+   EXPECT_EQ(1u, rendered_page_count());
+ 
+   const mojom::PrintPagesParamsPtr& snooped_params =
+-      print_view_manager.snooped_params();
++      print_view_manager->snooped_params();
+   ASSERT_TRUE(snooped_params);
+   EXPECT_EQ(test::kPrinterCapabilitiesDpi, snooped_params->params->dpi);
+ 
+ #if BUILDFLAG(IS_MAC)
+   EXPECT_EQ(kLetterPhysicalSize, snooped_params->params->page_size);

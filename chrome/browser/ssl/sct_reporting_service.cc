@@ -205,6 +205,10 @@ SCTReportingService::SCTReportingService(
   if (profile_->IsOffTheRecord())
     return;
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  return;
+#endif
+
   // Subscribe to SafeBrowsing preference change notifications. The initial Safe
   // Browsing state gets emitted to subscribers during Profile creation.
   safe_browsing_state_subscription_ =

@@ -292,6 +292,8 @@ export interface ContentController {
   rotateCounterclockwise(): void;
   setDisplayAnnotations(displayAnnotations: boolean): void;
   setTwoUpView(enableTwoUpView: boolean): void;
+  /** arkweb_pdf: extends for bookmark clicking. */
+  onClickBookmark(id: string): void;
 
   /** Triggers printing of the current document. */
   print(): void;
@@ -738,6 +740,14 @@ export class PluginController implements ContentController {
       type: 'saveAttachment',
       attachmentIndex: index,
     });
+  }
+
+  /** arkweb_pdf: extends for bookmark clicking. */
+  onClickBookmark(id: string) {
+    return this.postMessage_({
+      type: 'clickBookmark',
+      id,
+    })
   }
 
   /**

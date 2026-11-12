@@ -397,7 +397,7 @@ export class SettingsSectionElement extends SettingsSectionElementBase {
     this.removeActorLoginPermissionSite_ = undefined;
   }
 
-  // <if expr="is_win or is_macosx or is_chromeos">
+  // <if expr="is_win or is_macosx or is_chromeos or is_ohos">
   private switchBiometricAuthBeforeFillingState_(e: Event) {
     const biometricAuthenticationForFillingToggle =
         e.target as PrefToggleButtonElement;

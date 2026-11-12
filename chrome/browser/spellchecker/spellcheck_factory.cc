@@ -72,8 +72,14 @@ void SpellcheckServiceFactory::RegisterProfilePrefs(
 #else
   uint32_t flags = user_prefs::PrefRegistrySyncable::SYNCABLE_PREF;
 #endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  user_prefs->RegisterBooleanPref(spellcheck::prefs::kSpellCheckEnable, false,
+                                  flags);
+#else
   user_prefs->RegisterBooleanPref(spellcheck::prefs::kSpellCheckEnable, true,
                                   flags);
+#endif
 }
 
 bool SpellcheckServiceFactory::ServiceIsNULLWhileTesting() const {

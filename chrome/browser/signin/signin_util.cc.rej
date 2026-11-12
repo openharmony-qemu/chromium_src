@@ -1,0 +1,31 @@
+diff a/chrome/browser/signin/signin_util.cc b/chrome/browser/signin/signin_util.cc	(rejected hunks)
+@@ -48,17 +48,17 @@
+ #include "google_apis/gaia/gaia_id.h"
+ #include "net/cookies/canonical_cookie.h"
+ #include "services/network/public/mojom/cookie_manager.mojom.h"
+ #include "ui/base/l10n/l10n_util.h"
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+ #include "chrome/browser/ui/browser_dialogs.h"
+ #include "chrome/browser/ui/browser_finder.h"
+ #include "components/strings/grit/components_strings.h"
+ #include "ui/base/interaction/element_identifier.h"
+ #include "ui/base/models/dialog_model.h"
+-#endif  // BUILDFLAG(IS_LINUX) ||  BUILDFLAG(IS_MAC) ||  BUILDFLAG(IS_WIN)
++#endif  // BUILDFLAG(IS_LINUX) ||  BUILDFLAG(IS_MAC) ||  BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+ 
+ namespace signin_util {
+ 
+ namespace {
+ 
+@@ -642,8 +642,8 @@ void ShowErrorDialogWithMessage(Browser* browser, int error_message_id) {
+                            .SetId(kSigninErrorDialogOkButtonId))
+           .Build();
+ 
+   chrome::ShowBrowserModal(browser, std::move(dialog_model));
+ }
+-#endif  // BUILDFLAG(IS_LINUX) ||  BUILDFLAG(IS_MAC) ||  BUILDFLAG(IS_WIN)
++#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+ 
+ }  // namespace signin_util

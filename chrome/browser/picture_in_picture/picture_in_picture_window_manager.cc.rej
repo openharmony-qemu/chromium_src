@@ -1,0 +1,18 @@
+diff a/chrome/browser/picture_in_picture/picture_in_picture_window_manager.cc b/chrome/browser/picture_in_picture/picture_in_picture_window_manager.cc	(rejected hunks)
+@@ -590,11 +590,15 @@ bool PictureInPictureWindowManager::IsSupportedForDocumentPictureInPicture(
+     BUILDFLAG(IS_CHROMEOS)
+   // Only allow document PiP to be opened if the URL is of a type that we know
+   // how to display in the title bar.  Otherwise, the title bar might be
+   // misleading in certain scenarios.  See https://crbug.com/1460025 .
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
+-  if (url.SchemeIs(extensions::kExtensionScheme)) {
++  if (url.SchemeIs(extensions::kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      || url.SchemeIs(extensions::kArkwebExtensionScheme)
++#endif
++  ) {
+     return true;
+   }
+ #endif  // BUILDFLAG(ENABLE_EXTENSIONS)
+ 
+   return url.SchemeIs(url::kHttpsScheme) || url.SchemeIsFile() ||

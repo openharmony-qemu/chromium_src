@@ -1,0 +1,19 @@
+diff a/chrome/browser/profile_resetter/reset_report_uploader.cc b/chrome/browser/profile_resetter/reset_report_uploader.cc	(rejected hunks)
+@@ -19,12 +19,17 @@
+ #include "services/network/public/cpp/resource_request.h"
+ #include "services/network/public/cpp/simple_url_loader.h"
+ #include "services/network/public/mojom/url_loader_factory.mojom.h"
+ 
+ namespace {
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++const char kResetReportUrl[] = "https://x.x.x"; 
++#else
++// The URL for providing more information about Google nameservers.
+ const char kResetReportUrl[] =
+     "https://sb-ssl.google.com/safebrowsing/clientreport/chrome-reset";
++#endif
+ 
+ GURL GetClientReportUrl(const std::string& report_url) {
+   GURL url(report_url);
+   std::string api_key = google_apis::GetAPIKey();
+   if (!api_key.empty())

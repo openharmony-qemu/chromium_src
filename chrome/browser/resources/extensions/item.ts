@@ -45,6 +45,8 @@ export interface ItemDelegate {
   inspectItemView(id: string, view: chrome.developerPrivate.ExtensionView):
       void;
   openUrl(url: string): void;
+  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  openUrlEx(url: string, type: Number): void;
   reloadItem(id: string): Promise<void>;
   repairItem(id: string): void;
   showItemOptionsPage(extension: chrome.developerPrivate.ExtensionInfo): void;
@@ -96,6 +98,8 @@ export class DummyItemDelegate {
   setItemCollectsErrors(_id: string, _collectsErrors: boolean) {}
   inspectItemView(_id: string, _view: chrome.developerPrivate.ExtensionView) {}
   openUrl(_url: string) {}
+  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  openUrlEx(_url: string, _type: Number) {}
   reloadItem(_id: string) {
     return Promise.resolve();
   }

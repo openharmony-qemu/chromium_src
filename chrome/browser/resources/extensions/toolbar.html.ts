@@ -45,7 +45,7 @@ ${this.showPackDialog_ ? html`
         @click="${this.onLoadUnpackedClick_}">
       $i18n{toolbarLoadUnpacked}
     </cr-button>
-    <cr-button id="packExtensions" @click="${this.onPackClick_}">
+    <cr-button id="packExtensions" hidden=true @click="${this.onPackClick_}">
       $i18n{toolbarPack}
     </cr-button>
     <cr-button id="updateNow" @click="${this.onUpdateNowClick_}"
@@ -54,6 +54,17 @@ ${this.showPackDialog_ ? html`
     </cr-button>
   </div>
 </div>
+<cr-dialog id="devModeConfirmationDialog" @cancel="${this.onDevModeDialogCancel_}">
+  <div slot="body">$i18n{toolbarDevModeConfirmation}</div>
+  <div slot="button-container">
+    <cr-button class="cancel-button" @click="${this.onDevModeDialogCancel_}">
+      $i18n{toolbarDevModeCancel}
+    </cr-button>
+    <cr-button class="action-button" @click="${this.onDevModeDialogConfirm_}">
+      $i18n{toolbarDevModeConfirm}
+    </cr-button>
+  </div>
+</cr-dialog>
 <!--_html_template_end_-->`;
   // clang-format on
 }

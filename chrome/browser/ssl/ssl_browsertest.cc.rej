@@ -1,0 +1,14 @@
+diff a/chrome/browser/ssl/ssl_browsertest.cc b/chrome/browser/ssl/ssl_browsertest.cc	(rejected hunks)
+@@ -733,11 +733,11 @@ class SSLUITestBase : public InProcessBrowserTest,
+ 
+ class SSLUITest : public SSLUITestBase {
+  public:
+   SSLUITest() : SSLUITestBase() {
+     scoped_feature_list_.InitWithFeatures(
+-        /*enabled_features=*/{net::features::kVerifyQWACs},
++        /*enabled_features=*/{},
+         /*disabled_features=*/{blink::features::kMixedContentAutoupgrade});
+   }
+ 
+   SSLUITest(const SSLUITest&) = delete;
+   SSLUITest& operator=(const SSLUITest&) = delete;

@@ -1,0 +1,41 @@
+diff a/chrome/browser/policy/BUILD.gn b/chrome/browser/policy/BUILD.gn	(rejected hunks)
+@@ -3,10 +3,11 @@
+ # found in the LICENSE file.
+ 
+ import("//components/services/on_device_translation/buildflags/features.gni")
+ import("//components/signin/features.gni")
+ import("//extensions/buildflags/buildflags.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ assert(!is_fuchsia, "Fuchsia shouldn't use anything in //chrome")
+ 
+ source_set("path_parser") {
+   sources = [ "policy_path_parser.h" ]
+@@ -15,10 +16,12 @@ source_set("path_parser") {
+     sources += [ "policy_path_parser_linux.cc" ]
+   } else if (is_mac) {
+     sources += [ "policy_path_parser_mac.mm" ]
+   } else if (is_win) {
+     sources += [ "policy_path_parser_win.cc" ]
++  } else if (is_ohos) {
++    sources += [ "//arkweb/chromium_ext/chrome/browser/policy/policy_path_parser_ohos.cc" ]
+   }
+ 
+   deps = [
+     "//base",
+     "//chrome/common:constants",
+@@ -371,10 +374,14 @@ source_set("policy_specific_browser_tests") {
+ 
+   if (enable_on_device_translation) {
+     sources += [ "test/translator_api_policy_browsertest.cc" ]
+     deps += [ "//chrome/browser/on_device_translation:test_support" ]
+   }
++
++  if (arkweb_test) {
++    sources -= [ "test/autoplay_policy_browsertest.cc" ]
++  }
+ }
+ 
+ source_set("browser_tests") {
+   testonly = true
+ 

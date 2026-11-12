@@ -1,0 +1,18 @@
+diff a/chrome/browser/policy/messaging_layer/upload/encrypted_reporting_client.cc b/chrome/browser/policy/messaging_layer/upload/encrypted_reporting_client.cc	(rejected hunks)
+@@ -630,10 +631,16 @@ void EncryptedReportingClient::CreateUploadJob(
+     ResponseCallback callback,
+     std::optional<base::Value::Dict> payload_result,
+     ScopedReservation scoped_reservation,
+     int64_t last_sequence_id,
+     uint64_t events_to_send) {
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++  std::move(callback).Run(base::unexpected(
++      Status(error::FAILED_PRECONDITION, "Failure to build request")));
++  return;
++#endif
++
+   if (!payload_result.has_value()) {
+     std::move(callback).Run(base::unexpected(
+         Status(error::FAILED_PRECONDITION, "Failure to build request")));
+     return;
+   }

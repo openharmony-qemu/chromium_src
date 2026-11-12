@@ -1,0 +1,16 @@
+diff a/components/safe_browsing/content/browser/BUILD.gn b/components/safe_browsing/content/browser/BUILD.gn	(rejected hunks)
+@@ -2,10 +2,14 @@
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//components/safe_browsing/buildflags.gni")
+ 
++if (is_arkweb) {
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++}
++
+ # NOTE: This target is separated from :browser as
+ # //components/safe_browsing/content/browser/web_ui, which :browser depends on, depends
+ # on this.
+ # TODO(crbug.com/40770425): Consider folding all of three these together into
+ # :browser, along with the other browser process code in

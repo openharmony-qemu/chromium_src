@@ -1,0 +1,17 @@
+diff a/components/spellcheck/browser/spelling_service_client.cc b/components/spellcheck/browser/spelling_service_client.cc	(rejected hunks)
+@@ -37,11 +38,15 @@
+ 
+ namespace {
+ 
+ // The REST endpoint for requesting spell checking and sending user feedback.
+ const char kSpellingServiceRestURL[] =
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++    "https://xxx%dxxx%s";
++#else
+     "https://www.googleapis.com/spelling/v%d/spelling/check?key=%s";
++#endif
+ 
+ // The spellcheck suggestions object key in the JSON response from the spelling
+ // service.
+ const char kMisspellingsRestPath[] = "spellingCheckResponse.misspellings";
+ 

@@ -1,0 +1,56 @@
+diff a/components/signin/public/base/signin_switches.h b/components/signin/public/base/signin_switches.h	(rejected hunks)
+@@ -295,20 +295,20 @@ BASE_DECLARE_FEATURE_PARAM(base::TimeDelta, kOfferMigrationToDiceUsersMaxDelay);
+ COMPONENT_EXPORT(SIGNIN_SWITCHES)
+ BASE_DECLARE_FEATURE_PARAM(base::TimeDelta,
+                            kOfferMigrationToDiceUsersMinTimeBetweenDialogs);
+ #endif  // BUILDFLAG(ENABLE_DICE_SUPPORT)
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ // Experimenting with a button to all profiles from the profile picker.
+ COMPONENT_EXPORT(SIGNIN_SWITCHES)
+ BASE_DECLARE_FEATURE(kOpenAllProfilesFromProfilePickerExperiment);
+ COMPONENT_EXPORT(SIGNIN_SWITCHES)
+ extern const base::FeatureParam<int>
+     kMaxProfilesCountToShowOpenAllButtonInProfilePicker;
+-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ // Experimenting with changing the secondary CTA for FRE and new profile
+ // creation.
+ COMPONENT_EXPORT(SIGNIN_SWITCHES)
+ BASE_DECLARE_FEATURE(kProfileCreationDeclineSigninCTAExperiment);
+ 
+@@ -339,11 +339,11 @@ enum class ProfilePickerVariation {
+   kKeepEverythingInChrome = 4,
+ };
+ COMPONENT_EXPORT(SIGNIN_SWITCHES)
+ extern const base::FeatureParam<ProfilePickerVariation>
+     kProfilePickerTextVariation;
+-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ 
+ COMPONENT_EXPORT(SIGNIN_SWITCHES)
+ BASE_DECLARE_FEATURE(kProfilesReordering);
+ 
+ #if BUILDFLAG(ENABLE_DICE_SUPPORT)
+@@ -369,15 +369,15 @@ extern const base::FeatureParam<int> kContextualSigninPromoShownThreshold;
+ // Param that controls the threshold of the contextual sign in promos dismissed
+ // limit for the experiment.
+ COMPONENT_EXPORT(SIGNIN_SWITCHES)
+ extern const base::FeatureParam<int> kContextualSigninPromoDismissedThreshold;
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ // Uses the Material Next theme for the signin promo.
+ COMPONENT_EXPORT(SIGNIN_SWITCHES)
+ BASE_DECLARE_FEATURE(kSignInPromoMaterialNextUI);
+-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ 
+ // Feature flag used for testing purposes only:
+ //
+ // Set this flag to force the flow on any platform.
+ COMPONENT_EXPORT(SIGNIN_SWITCHES)

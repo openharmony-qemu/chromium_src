@@ -1,0 +1,13 @@
+diff a/components/safe_browsing/content/resources/gen_file_type_proto.py b/components/safe_browsing/content/resources/gen_file_type_proto.py	(rejected hunks)
+@@ -38,10 +38,11 @@ def PlatformTypes():
+         download_file_types_pb2.DownloadFileType.PLATFORM_TYPE_CHROME_OS,
+         "linux": download_file_types_pb2.DownloadFileType.PLATFORM_TYPE_LINUX,
+         "mac": download_file_types_pb2.DownloadFileType.PLATFORM_TYPE_MAC,
+         "win": download_file_types_pb2.DownloadFileType.PLATFORM_TYPE_WINDOWS,
+         # LINT.ThenChange(BUILD.gn:PlatformTypes)
++        "ohos": download_file_types_pb2.DownloadFileType.PLATFORM_TYPE_OHOS,
+     }
+ 
+ 
+ def PrunePlatformSettings(file_type, default_settings, platform_type):
+     # Modify this file_type's platform_settings by keeping the only the

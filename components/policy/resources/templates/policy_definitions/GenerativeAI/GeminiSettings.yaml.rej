@@ -1,0 +1,11 @@
+diff a/components/policy/resources/templates/policy_definitions/GenerativeAI/GeminiSettings.yaml b/components/policy/resources/templates/policy_definitions/GenerativeAI/GeminiSettings.yaml	(rejected hunks)
+@@ -35,8 +35,9 @@ items:
+   value: 1
+ default: 0
+ supported_on:
+ - chrome.win:137-
+ - chrome.mac:137-
++- chrome.ohos:137-
+ - ios:139-
+ - chrome_os:144-
+ tags: []

@@ -1,0 +1,11 @@
+diff a/components/policy/resources/templates/policy_definitions/Miscellaneous/RoamingProfileSupportEnabled.yaml b/components/policy/resources/templates/policy_definitions/Miscellaneous/RoamingProfileSupportEnabled.yaml	(rejected hunks)
+@@ -25,8 +25,9 @@ schema:
+   type: boolean
+ supported_on:
+ - chrome.win:57-
+ - chrome.mac:88-
+ - chrome.linux:88-
++- chrome.ohos:126-
+ tags:
+ - local-data-access
+ type: main

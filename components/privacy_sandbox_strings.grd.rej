@@ -1,0 +1,14 @@
+diff a/components/privacy_sandbox_strings.grd b/components/privacy_sandbox_strings.grd	(rejected hunks)
+@@ -276,10 +277,12 @@
+     <file path="strings/privacy_sandbox_strings_vi.xtb" lang="vi" />
+     <file path="strings/privacy_sandbox_strings_zh-CN.xtb" lang="zh-CN" />
+     <file path="strings/privacy_sandbox_strings_zh-HK.xtb" lang="zh-HK" />
+     <file path="strings/privacy_sandbox_strings_zh-TW.xtb" lang="zh-TW" />
+     <file path="strings/privacy_sandbox_strings_zu.xtb" lang="zu" />
++    <file path="strings/privacy_sandbox_strings_bo-CN.xtb" lang="bo-CN" />
++    <file path="strings/privacy_sandbox_strings_ug.xtb" lang="ug" />
+   </translations>
+   <release seq="1">
+     <!--For strings used exclusively within the Privacy Sandbox Dialogs, those containing the word "Chrome" do not require a "Chromium" conditional variant, as these dialogs only appear in Chrome-branded builds-->
+     <messages fallback_to_english="true">
+       <!-- Ad Topics Page disclaimer -->

@@ -1,0 +1,14 @@
+diff a/components/payments/content/installable_payment_app_crawler.cc b/components/payments/content/installable_payment_app_crawler.cc	(rejected hunks)
+@@ -140,11 +140,11 @@ void InstallablePaymentAppCrawler::OnPaymentMethodManifestDownloaded(
+     return;
+   }
+ 
+   number_of_payment_method_manifest_to_parse_++;
+   parser_->ParsePaymentMethodManifest(
+-      method_manifest_url, content,
++      method_manifest_url_after_redirects, content,
+       base::BindOnce(
+           &InstallablePaymentAppCrawler::OnPaymentMethodManifestParsed,
+           weak_ptr_factory_.GetWeakPtr(), method_manifest_url,
+           method_manifest_url_after_redirects, content));
+ }

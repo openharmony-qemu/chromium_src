@@ -1,0 +1,26 @@
+diff a/components/site_isolation/site_isolation_policy.cc b/components/site_isolation/site_isolation_policy.cc	(rejected hunks)
+@@ -2,10 +2,11 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "components/site_isolation/site_isolation_policy.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/contains.h"
+ #include "base/feature_list.h"
+ #include "base/json/values_util.h"
+ #include "base/metrics/field_trial_params.h"
+ #include "base/metrics/histogram_functions.h"
+@@ -45,11 +46,11 @@ bool ShouldDisableSiteIsolationDueToMemorySlow(
+   //   4GB+ devices and are lower to account for memory carveouts, which
+   //   reduce the amount of memory seen by AmountOfPhysicalMemoryMB(). Both
+   //   partial and strict site isolation thresholds can be overridden via
+   //   params defined in a kSiteIsolationMemoryThresholds field trial.
+   // - Desktop does not enforce a default memory threshold.
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_SITE_ISOLATION)
+   int default_memory_threshold_mb;
+   if (site_isolation_mode == content::SiteIsolationMode::kStrictSiteIsolation) {
+     default_memory_threshold_mb = 3200;
+   } else {
+     default_memory_threshold_mb = 1900;

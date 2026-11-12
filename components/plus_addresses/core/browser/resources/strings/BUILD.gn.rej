@@ -1,0 +1,18 @@
+diff a/components/plus_addresses/core/browser/resources/strings/BUILD.gn b/components/plus_addresses/core/browser/resources/strings/BUILD.gn
+--- a/components/plus_addresses/core/browser/resources/strings/BUILD.gn
++++ b/components/plus_addresses/core/browser/resources/strings/BUILD.gn
+@@ -21,10 +21,14 @@ grit_strings("strings") {
+ 
+   if (is_android) {
+     create_android_resources = true
+   }
+ 
++  if (arkweb_i18n) {
++    locales = all_chrome_locales + extra_locales
++  }
++
+   output_prefix = "plus_addresses_strings_"
+ }
+ 
+ if (is_android) {
+   java_strings_grd_prebuilt("strings_grd") {

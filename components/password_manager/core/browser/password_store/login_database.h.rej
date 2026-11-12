@@ -1,0 +1,32 @@
+diff a/components/password_manager/core/browser/password_store/login_database.h b/components/password_manager/core/browser/password_store/login_database.h	(rejected hunks)
+@@ -7,10 +7,14 @@
+ 
+ #include <memory>
+ #include <string>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/files/file_path.h"
+ #include "base/functional/callback.h"
+ #include "base/functional/callback_helpers.h"
+ #include "base/pickle.h"
+ #include "build/build_config.h"
+@@ -98,10 +102,15 @@ class LoginDatabase : public EncryptDecryptInterface {
+   // null.
+   [[nodiscard]] PasswordStoreChangeList UpdateLogin(
+       const PasswordForm& form,
+       UpdateCredentialError* error = nullptr);
+ 
++#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
++  bool UpdateLoginDisplayName(const PasswordForm& form,
++                              PasswordStoreChangeList* changes);
++#endif
++
+   // Removes |form| from the list of remembered password forms. Returns true if
+   // |form| was successfully removed from the database. If |changes| is not be
+   // null, it will be used to populate the change list of the removed forms if
+   // any.
+   [[nodiscard]] bool RemoveLogin(const PasswordForm& form,

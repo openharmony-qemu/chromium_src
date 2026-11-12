@@ -1,0 +1,15 @@
+diff a/components/policy/test/data/pref_mapping/ProvisionManagedClientCertificateForUser.json b/components/policy/test/data/pref_mapping/ProvisionManagedClientCertificateForUser.json	(rejected hunks)
+@@ -2,11 +2,12 @@
+   {
+     "os": [
+       "mac",
+       "win",
+       "linux",
+-      "android"
++      "android",
++      "ohos"
+     ],
+     "policy_pref_mapping_tests": [
+       {
+         "policies": {
+           "ProvisionManagedClientCertificateForUser": 0

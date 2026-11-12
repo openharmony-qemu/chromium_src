@@ -1,0 +1,15 @@
+diff a/components/performance_manager/graph/frame_node_impl.h b/components/performance_manager/graph/frame_node_impl.h	(rejected hunks)
+@@ -91,10 +92,13 @@ class FrameNodeImpl
+       base::TimeDelta time_since_navigation_start) override;
+   void OnWebMemoryMeasurementRequested(
+       mojom::WebMemoryMeasurement::Mode mode,
+       OnWebMemoryMeasurementRequestedCallback callback) override;
+   void OnFreezingOriginTrialOptOut() override;
++#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
++  void OnFormEditingStateChanged(uint64_t form_id, bool did_submit) override;
++#endif
+ 
+   // Partial FrameNode implementation:
+   const blink::LocalFrameToken& GetFrameToken() const override;
+   content::BrowsingInstanceId GetBrowsingInstanceId() const override;
+   content::SiteInstanceGroupId GetSiteInstanceGroupId() const override;

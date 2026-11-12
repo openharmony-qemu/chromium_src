@@ -156,6 +156,12 @@ class PasswordStoreBackend {
 
   // Get a WeakPtr to the instance.
   virtual base::WeakPtr<PasswordStoreBackend> AsWeakPtr() = 0;
+
+  // Factory function for creating the backend. The Local backend requires the
+  // provided `login_db_path` for storage.
+  static std::unique_ptr<PasswordStoreBackend> Create(
+      const base::FilePath& login_db_path,
+      PrefService* prefs);
 };
 
 }  // namespace password_manager

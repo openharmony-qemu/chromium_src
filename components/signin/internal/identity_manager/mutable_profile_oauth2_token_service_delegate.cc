@@ -128,8 +128,14 @@ signin::LoadCredentialsState LoadCredentialsStateFromTokenResult(
   NOTREACHED();
 }
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr std::string_view kTokenBindingAssertionDestinationUrl =
+    "https://x.x.x";
+#else
+// The URL for providing more information about Google nameservice
 constexpr std::string_view kTokenBindingAssertionDestinationUrl =
     "https://accounts.google.com/accountmanager";
+#endif
 
 // These values are persisted to logs. Entries should not be renumbered and
 // numeric values should never be reused.

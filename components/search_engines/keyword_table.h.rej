@@ -1,0 +1,14 @@
+diff a/components/search_engines/keyword_table.h b/components/search_engines/keyword_table.h	(rejected hunks)
+@@ -93,11 +93,11 @@ class Statement;
+ class KeywordTable : public WebDatabaseTable {
+  public:
+   enum OperationType {
+     ADD,
+     REMOVE,
+-    UPDATE,
++    UPDATE_OP,
+   };
+ 
+   typedef std::pair<OperationType, TemplateURLData> Operation;
+   typedef std::vector<Operation> Operations;
+   typedef std::vector<TemplateURLData> Keywords;

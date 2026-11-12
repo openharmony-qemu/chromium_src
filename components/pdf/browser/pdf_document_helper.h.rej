@@ -1,0 +1,35 @@
+diff a/components/pdf/browser/pdf_document_helper.h b/components/pdf/browser/pdf_document_helper.h	(rejected hunks)
+@@ -70,10 +70,14 @@ class PDFDocumentHelper
+   void OnSelectionEvent(ui::SelectionEventType event) override;
+   void OnDragUpdate(const ui::TouchSelectionDraggable::Type type,
+                     const gfx::PointF& position) override;
+   std::unique_ptr<ui::TouchHandleDrawable> CreateDrawable() override;
+   void DidScroll() override;
++#if BUILDFLAG(ARKWEB_PDF)
++  void ClearTextSelection() override;
++  void OnScaleChanged(float new_page_scale_factor) override;
++#endif  // BUILDFLAG(ARKWEB_PDF)
+ 
+   // ui::TouchSelectionMenuClient:
+   bool IsCommandIdEnabled(int command_id) const override;
+   void ExecuteCommand(int command_id, int event_flags) override;
+   void RunContextMenu() override;
+@@ -165,10 +185,18 @@ class PDFDocumentHelper
+   int32_t selection_left_height_ = 0;
+   gfx::PointF selection_right_;
+   int32_t selection_right_height_ = 0;
+   bool has_selection_ = false;
+ 
++#if BUILDFLAG(ARKWEB_PDF)
++  // Latest page scale factor received from TouchSelectionControllerClient.
++  float page_scale_factor_ = 1.0f;
++
++  std::atomic<bool> is_left_visible_{true};
++  std::atomic<bool> is_right_visible_{true};
++#endif  // BUILDFLAG(ARKWEB_PDF)
++
+   bool is_document_load_complete_ = false;
+ 
+   // Callbacks to invoke when document load is completed.
+   std::vector<base::OnceClosure> document_load_complete_callbacks_;
+ 

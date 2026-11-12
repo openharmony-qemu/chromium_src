@@ -1,0 +1,44 @@
+diff a/components/policy/core/common/cloud/cloud_policy_client.cc b/components/policy/core/common/cloud/cloud_policy_client.cc	(rejected hunks)
+@@ -6,10 +6,11 @@
+ 
+ #include <string>
+ #include <utility>
+ #include <variant>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/check.h"
+ #include "base/containers/contains.h"
+ #include "base/feature_list.h"
+ #include "base/functional/bind.h"
+ #include "base/functional/callback_helpers.h"
+@@ -1113,10 +1114,14 @@ void CloudPolicyClient::UploadSecurityEvent(
+ void CloudPolicyClient::UploadSecurityEventReport(bool include_device_info,
+                                                   base::Value::Dict report,
+                                                   ResultCallback callback) {
+   DCHECK(!base::FeatureList::IsEnabled(
+       policy::kUploadRealtimeReportingEventsUsingProto));
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++  std::move(callback).Run(CloudPolicyClient::Result(NotRegistered()));
++  return;
++#endif
+ 
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+ 
+   if (!is_registered()) {
+     std::move(callback).Run(CloudPolicyClient::Result(NotRegistered()));
+@@ -1129,10 +1134,15 @@ void CloudPolicyClient::UploadSecurityEventReport(bool include_device_info,
+       include_device_info, std::move(callback));
+ }
+ 
+ void CloudPolicyClient::UploadAppInstallReport(base::Value::Dict report,
+                                                ResultCallback callback) {
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++  std::move(callback).Run(CloudPolicyClient::Result(NotRegistered()));
++  return;
++#endif
++
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+ 
+   if (!is_registered()) {
+     std::move(callback).Run(CloudPolicyClient::Result(NotRegistered()));
+     return;

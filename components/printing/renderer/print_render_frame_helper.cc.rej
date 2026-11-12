@@ -1,0 +1,119 @@
+diff a/components/printing/renderer/print_render_frame_helper.cc b/components/printing/renderer/print_render_frame_helper.cc	(rejected hunks)
+@@ -1219,20 +1237,30 @@ void PrintRenderFrameHelper::DidFinishLoadForPrinting() {
+   DidFinishLoad();
+ }
+ 
+ void PrintRenderFrameHelper::ScriptedPrint(bool user_initiated) {
+   blink::WebLocalFrame* web_frame = render_frame()->GetWebFrame();
++#if BUILDFLAG(ARKWEB_PRINT)
++  if (IsExtensionPopupPrint(web_frame)) {
++    return;
++  }
++#endif // BUILDFLAG(ARKWEB_PRINT)
++
+   if (!IsScriptInitiatedPrintAllowed(web_frame, user_initiated))
+     return;
+ 
+   if (delegate_->OverridePrint(web_frame))
+     return;
+ 
+   // Detached documents can't be printed.
+   if (!web_frame->GetDocument().GetFrame())
+     return;
+ 
++  if (PrintQuitLoop(web_frame)) {
++    return;
++  }
++
+   if (print_in_progress_) {
+     return;
+   }
+ 
+   if (g_is_preview_enabled) {
+@@ -1286,23 +1314,29 @@ void PrintRenderFrameHelper::OnDestruct() {
+ void PrintRenderFrameHelper::BindPrintRenderFrameReceiver(
+     mojo::PendingAssociatedReceiver<mojom::PrintRenderFrame> receiver) {
+   receivers_.Add(this, std::move(receiver));
+ }
+ 
++#ifndef BUILDFLAG(ARKWEB_PRINT)
+ void PrintRenderFrameHelper::PrintRequestedPages() {
+   PrintRequestedPagesInternal(/*already_notified_frame=*/false);
+ }
++#endif
+ 
+ void PrintRenderFrameHelper::PrintRequestedPagesInternal(
+     bool already_notified_frame) {
+   ScopedIPC scoped_ipc(weak_ptr_factory_.GetWeakPtr());
+   if (ipc_nesting_level_ > kAllowedIpcDepthForPrint) {
+     return;
+   }
+ 
+   blink::WebLocalFrame* frame = render_frame()->GetWebFrame();
+ 
++#if BUILDFLAG(ARKWEB_PRINT)
++  frame = ArkWebUpdateFrame(frame);
++#endif // BUILDFLAG(ARKWEB_PRINT)
++
+   if (!already_notified_frame) {
+     frame->DispatchBeforePrintEvent(/*print_client=*/nullptr);
+     // Don't print if the RenderFrame is gone.
+     if (render_frame_gone_) {
+       return;
+@@ -2444,46 +2517,34 @@ PrintRenderFrameHelper::SetOptionsFromPdfDocument() {
+ }
+ 
+ bool PrintRenderFrameHelper::UpdatePrintSettings(
+     blink::WebLocalFrame* frame,
+     const blink::WebNode& node,
+-    base::Value::Dict passed_job_settings) {
+-  CHECK(!passed_job_settings.empty());
+-
+-  base::Value::Dict modified_job_settings;
+-  const base::Value::Dict* job_settings;
+-  bool source_is_html = !IsPrintingPdfFrame(frame, node);
+-  if (source_is_html) {
+-    job_settings = &passed_job_settings;
+-  } else {
+-    modified_job_settings.Merge(std::move(passed_job_settings));
+-    modified_job_settings.Set(kSettingHeaderFooterEnabled, false);
+-    modified_job_settings.Set(kSettingMarginsType,
+-                              static_cast<int>(mojom::MarginType::kNoMargins));
+-    job_settings = &modified_job_settings;
+-  }
++    const base::Value::Dict& job_settings) {
++  CHECK(!job_settings.empty());
+ 
+   mojom::PrintPagesParamsPtr settings;
+-  GetPrintManagerHost()->UpdatePrintSettings(job_settings->Clone(), &settings);
++  GetPrintManagerHost()->GetPrintPreviewParams(&settings);
+   if (!settings) {
+     print_preview_context_.set_error(
+         PrintPreviewErrorBuckets::kEmptyPrinterSettings);
+     return false;
+   }
+ 
+-  settings->params->preview_ui_id = job_settings->FindInt(kPreviewUIID).value();
++  settings->params->preview_ui_id = job_settings.FindInt(kPreviewUIID).value();
+ 
+   // Validate expected print preview settings.
+   settings->params->is_first_request =
+-      job_settings->FindBool(kIsFirstRequest).value();
++      job_settings.FindBool(kIsFirstRequest).value();
+   settings->params->preview_request_id =
+-      job_settings->FindInt(kPreviewRequestID).value();
++      job_settings.FindInt(kPreviewRequestID).value();
+ 
+-  settings->params->print_to_pdf = IsPrintToPdfRequested(*job_settings);
+-  UpdateFrameMarginsCssInfo(*job_settings);
++  settings->params->print_to_pdf = IsPrintToPdfRequested(job_settings);
++  UpdateFrameMarginsCssInfo(job_settings);
++  const bool source_is_html = !IsPrintingPdfFrame(frame, node);
+   settings->params->print_scaling_option = GetPrintScalingOption(
+-      frame, node, source_is_html, *job_settings, *settings->params);
++      frame, node, source_is_html, job_settings, *settings->params);
+ 
+   RecordDebugEvent(settings->params->printed_doc_type ==
+                            mojom::SkiaDocumentType::kMSKP
+                        ? DebugEvent::kSetPrintSettings7
+                        : DebugEvent::kSetPrintSettings8);

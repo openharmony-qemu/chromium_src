@@ -27,8 +27,12 @@ namespace password_manager {
 
 using metrics_util::LeakDialogType;
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr char kPasswordCheckupURL[] = "https://x.x.x.x/";
+#else
 constexpr char kPasswordCheckupURL[] =
     "https://passwords.google.com/checkup/start?hideExplanation=true";
+#endif
 
 LeakedPasswordDetails::LeakedPasswordDetails(CredentialLeakType leak_type,
                                              PasswordForm credentials,

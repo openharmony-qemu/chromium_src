@@ -1,0 +1,16 @@
+diff a/components/proxy_config/pref_proxy_config_tracker_impl.h b/components/proxy_config/pref_proxy_config_tracker_impl.h	(rejected hunks)
+@@ -75,10 +82,14 @@ class ProxyConfigServiceImpl : public net::ProxyConfigService,
+   ProxyPrefs::ConfigState pref_config_state_;
+ 
+   // Configuration as defined by prefs.
+   net::ProxyConfigWithAnnotation pref_config_;
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  raw_ptr<Profile> profile_ = nullptr;
++#endif
++
+   // Indicates whether the base service registration is done.
+   bool registered_observer_;
+ 
+   base::ThreadChecker thread_checker_;
+ };

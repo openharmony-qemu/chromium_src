@@ -339,6 +339,13 @@ class PageNodeObserver : public base::CheckedObserver {
   // Invoked when the HasPictureInPicture property changes.
   virtual void OnHasPictureInPictureChanged(const PageNode* page_node) {}
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  virtual void OnIsMediaPlayingChanged(const PageNode* page_node) {}
+  virtual void OnDecrementAudioNum(const PageNode* page_node) {}
+  virtual void OnAudioContextPlaybackStarted(content::GlobalRenderFrameHostId rfh_id, int audio_context_id) {}
+  virtual void OnAudioContextPlaybackStopped(content::GlobalRenderFrameHostId rfh_id, int audio_context_id) {}
+#endif
+
   // Invoked when the HasFreezingOriginTrialOptOut() property changes.
   virtual void OnPageHasFreezingOriginTrialOptOutChanged(
       const PageNode* page_node) {}
@@ -405,6 +412,14 @@ class PageNodeObserver : public base::CheckedObserver {
   // for more detail.
   virtual void OnAboutToBeDiscarded(const PageNode* page_node,
                                     const PageNode* new_page_node) {}
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+  // Invoked when the Browser is foreground.
+  virtual void SetBrowserForeground(const PageNode* page_node) = 0;
+
+  // Invoked when the Browser is background.
+  virtual void SetBrowserBackground(const PageNode* page_node) = 0;
+#endif
 };
 
 }  // namespace performance_manager

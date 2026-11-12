@@ -167,6 +167,9 @@ static_library("browser") {
   all_dependent_configs = [ ":password_reuse_detection_config" ]
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
 
+  if (arkweb_autofill) {
+    sources += arkweb_components_password_manager_core_browser_sources
+  }
   public_deps = [
     ":metrics_util",
     ":passkey_credential",

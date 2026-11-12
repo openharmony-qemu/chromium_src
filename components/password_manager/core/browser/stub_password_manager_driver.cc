@@ -144,5 +144,4 @@ autofill::AutofillDriver* StubPasswordManagerDriver::GetAutofillDriver() const {
 base::WeakPtr<PasswordManagerDriver> StubPasswordManagerDriver::AsWeakPtr() {
   return weak_ptr_factory_.GetWeakPtr();
 }
-
 }  // namespace password_manager

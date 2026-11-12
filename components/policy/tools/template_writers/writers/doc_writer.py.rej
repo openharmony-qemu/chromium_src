@@ -1,0 +1,13 @@
+diff a/components/policy/tools/template_writers/writers/doc_writer.py b/components/policy/tools/template_writers/writers/doc_writer.py	(rejected hunks)
+@@ -789,10 +789,11 @@ class DocWriter(xml_formatted_writer.XMLFormattedWriter):
+         'chrome_os': self.config['os_name'],
+         'android': 'Android',
+         'win7': 'Windows 7',
+         'ios': 'iOS',
+         'fuchsia': 'Fuchsia',
++        'ohos': 'OpenHarmony',
+     }
+     # Human-readable names of supported products.
+     self._PRODUCT_MAP = {
+         'chrome': self.config['app_name'],
+         'chrome_frame': self.config['frame_name'],

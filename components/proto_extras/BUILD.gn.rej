@@ -1,0 +1,13 @@
+diff a/components/proto_extras/BUILD.gn b/components/proto_extras/BUILD.gn	(rejected hunks)
+@@ -10,10 +10,11 @@ if (current_toolchain == host_toolchain) {
+     deps = [
+       "//base",
+       "//third_party/protobuf:protoc_cpp",
+       "//third_party/protobuf:protoc_lib",
+     ]
++    ldflags = [ "-lgcc_s" ]
+   }
+ 
+   executable("proto_test_extras_plugin") {
+     sources = [ "proto_test_extras_plugin.cc" ]
+     deps = [

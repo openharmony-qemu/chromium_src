@@ -32,6 +32,7 @@
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 #include "url/gurl.h"
 #include "url/origin.h"
+#include "arkweb/build/features/features.h"
 
 namespace performance_manager {
 

@@ -1,0 +1,20 @@
+diff a/components/safe_browsing/core/browser/realtime/chrome_enterprise_url_lookup_service.cc b/components/safe_browsing/core/browser/realtime/chrome_enterprise_url_lookup_service.cc	(rejected hunks)
+@@ -170,13 +170,18 @@ ChromeEnterpriseRealTimeUrlLookupService::GetDMTokenString() const {
+   }
+   return std::nullopt;
+ }
+ 
+ GURL ChromeEnterpriseRealTimeUrlLookupService::GetRealTimeLookupUrl() const {
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++  return GetUrlOverride(is_command_line_switch_supported_)
++      .value_or(GURL("https://x.x.x"));
++#else
+   return GetUrlOverride(is_command_line_switch_supported_)
+       .value_or(GURL("https://enterprise-safebrowsing.googleapis.com/"
+                      "safebrowsing/clientreport/realtime"));
++#endif
+ }
+ 
+ net::NetworkTrafficAnnotationTag
+ ChromeEnterpriseRealTimeUrlLookupService::GetTrafficAnnotationTag() const {
+   // Safe Browsing Zwieback cookies are not sent for enterprise users, because

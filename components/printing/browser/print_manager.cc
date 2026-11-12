@@ -54,7 +54,7 @@ void PrintManager::PrintingFailed(int32_t cookie,
   if (!IsValidCookie(cookie))
     return;
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
   PdfWritingDone(0);
 #endif
 }

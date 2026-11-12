@@ -97,6 +97,12 @@
 #include "ui/gfx/geometry/size_conversions.h"
 #include "ui/gfx/geometry/size_f.h"
 
+#if BUILDFLAG(ARKWEB_PRINT)
+#include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
+#include "base/ohos/sys_info_utils_ext.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
+#endif
+
 using blink::web_pref::WebPreferences;
 
 namespace printing {
@@ -117,6 +123,10 @@ enum PrintPreviewHelperEvents {
   PREVIEW_EVENT_INITIATED,        // Initiated print preview.
   PREVIEW_EVENT_MAX,
 };
+
+#if BUILDFLAG(ARKWEB_PRINT)
+constexpr int kCheckCancelCount = 10;
+#endif // BUILDFLAG(ARKWEB_PRINT)
 
 #if BUILDFLAG(ENABLE_PRINT_PREVIEW)
 bool g_is_preview_enabled = true;
@@ -644,7 +654,11 @@ void RenderPageContent(blink::WebLocalFrame* frame,
 
 class HeaderAndFooterContext {
  public:
+#if BUILDFLAG(IS_ARKWEB)
+  class HeaderAndFooterClient final : public blink::WebLocalFrameClientExt {
+#else
   class HeaderAndFooterClient final : public blink::WebLocalFrameClient {
+#endif
    public:
     // WebLocalFrameClient:
     void BindToFrame(blink::WebNavigationControl* frame) override {
@@ -800,7 +814,11 @@ void ClosuresForMojoResponse::RunScriptedPrintPreviewQuitClosure() {
 // the size of the view temporarily to support full page printing..
 class PrepareFrameAndViewForPrint : public blink::WebViewClient,
                                     public blink::WebNonCompositedWidgetClient,
+#if BUILDFLAG(IS_ARKWEB)
+                                    public blink::WebLocalFrameClientExt {
+#else
                                     public blink::WebLocalFrameClient {
+#endif
  public:
   PrepareFrameAndViewForPrint(blink::WebLocalFrame* frame,
                               const blink::WebNode& node);
@@ -2142,6 +2160,9 @@ void PrintRenderFrameHelper::PrintNode(const blink::WebNode& node) {
     return;
   }
 
+#if BUILDFLAG(ARKWEB_PRINT)
+  ArkWebPrintNode(node);
+#else
   if (print_in_progress_) {
     // This can happen as a result of processing sync messages when printing
     // from ppapi plugins. It's a rare case, so its OK to just fail here.
@@ -2193,6 +2214,7 @@ void PrintRenderFrameHelper::PrintNode(const blink::WebNode& node) {
   }
 
   print_in_progress_ = false;
+#endif // BUILDFLAG(ARKWEB_PRINT)
 }
 
 void PrintRenderFrameHelper::Print(blink::WebLocalFrame* frame,
@@ -2213,6 +2235,13 @@ void PrintRenderFrameHelper::Print(blink::WebLocalFrame* frame,
   }
 
   uint32_t expected_page_count = CalculateNumberOfPages(frame, node);
+
+#if BUILDFLAG(ARKWEB_PRINT)
+  if (CheckCancel()) {
+    LOG(ERROR) << "OhosPrintManager stop print";
+    return;
+  }
+#endif // BUILDFLAG(ARKWEB_PRINT)
 
   // Some full screen plugins can say they don't want to print.
   if (!expected_page_count || expected_page_count > kMaxPageCount) {
@@ -2350,6 +2379,13 @@ void PrintRenderFrameHelper::PrintPages() {
   if (!prep_frame_view_)  // Printing is already canceled or failed.
     return;
 
+#if BUILDFLAG(ARKWEB_PRINT)
+  if (CheckCancel()) {
+    LOG(ERROR) << "OhosPrintManager stop print";
+    return;
+  }
+#endif // BUILDFLAG(ARKWEB_PRINT)
+
   uint32_t page_count = prep_frame_view_->GetPageCount();
   if (!page_count || page_count > kMaxPageCount) {
     LOG(ERROR) << "Can't print 0 pages and the page count couldn't be greater "
@@ -2381,6 +2417,12 @@ bool PrintRenderFrameHelper::PrintPagesNative(
     const std::vector<uint32_t>& printed_pages) {
   DCHECK(!printed_pages.empty());
 
+#if BUILDFLAG(ARKWEB_PRINT)
+  if (CheckCancel()) {
+    LOG(ERROR) << "OhosPrintManager stop print";
+    return false;
+  }
+#endif // BUILDFLAG(ARKWEB_PRINT)
   const mojom::PrintPagesParams& params = *print_pages_params_;
   const mojom::PrintParams& print_params = *params.params;
 
@@ -2426,6 +2468,9 @@ bool PrintRenderFrameHelper::PrintPagesNative(
   page_params->content = mojom::DidPrintContentParams::New();
   page_params->page_size = ToFlooredSize(print_params.page_size);
   page_params->content_area = gfx::Rect(page_params->page_size);
+  bool is_pdf =
+      IsPrintingPdfFrame(prep_frame_view_->frame(), prep_frame_view_->node());
+  LOG(DEBUG) << "PrintRenderFrameHelper::PrintPages is_pdf = " << is_pdf;
 
   {
     std::unique_ptr<HeaderAndFooterContext> header_footer_context;
@@ -2434,20 +2479,32 @@ bool PrintRenderFrameHelper::PrintPagesNative(
       header_footer_context = std::make_unique<HeaderAndFooterContext>(*frame);
       header_footer_frame = header_footer_context->frame();
     }
+    size_t i = 1;
     for (uint32_t printed_page : printed_pages) {
+#if BUILDFLAG(ARKWEB_PRINT)
+      if (i % kCheckCancelCount == 0 && CheckCancel()) {
+        LOG(ERROR) << "OhosPrintManager stop print";
+        return false;
+      }
+#endif // BUILDFLAG(ARKWEB_PRINT)
       PrintPageInternalResult result =
           PrintPageInternal(print_params, printed_page, page_count, frame,
                             header_footer_frame, &metafile);
       if (result != PrintPageInternalResult::kSuccess) {
         return false;
       }
+      ++i;
     }
   }
 
   // blink::printEnd() for PDF should be called before metafile is closed.
   FinishFramePrinting();
 
+#if BUILDFLAG(ARKWEB_PRINT)
+  metafile.OhosFinishDocument(std::bind(&PrintRenderFrameHelper::CheckCancel, this));
+#else
   metafile.FinishDocument();
+#endif // BUILDFLAG(ARKWEB_PRINT)
 
   if (!CopyMetafileDataToDidPrintContentParams(metafile,
                                                page_params->content.get())) {
@@ -3283,4 +3340,5 @@ void PrintRenderFrameHelper::ScriptingThrottler::Reset() {
   count_ = 0;
 }
 
+#include "arkweb/chromium_ext/components/printing/renderer/print_render_frame_helper_include.cc"
 }  // namespace printing

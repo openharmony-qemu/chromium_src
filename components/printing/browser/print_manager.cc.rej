@@ -1,0 +1,14 @@
+diff a/components/printing/browser/print_manager.cc b/components/printing/browser/print_manager.cc	(rejected hunks)
+@@ -99,11 +99,11 @@ PrintManager::GetPrintRenderFrame(content::RenderFrameHost* rfh) {
+ content::RenderFrameHost* PrintManager::GetCurrentTargetFrame() {
+   return print_manager_host_receivers_.GetCurrentTargetFrame();
+ }
+ 
+ void PrintManager::PrintingRenderFrameDeleted() {
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
+   PdfWritingDone(0);
+ #endif
+ }
+ 
+ bool PrintManager::IsValidCookie(int cookie) const {

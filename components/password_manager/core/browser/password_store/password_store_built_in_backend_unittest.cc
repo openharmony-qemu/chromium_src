@@ -1784,4 +1784,8 @@ INSTANTIATE_TEST_SUITE_P(
       return test_suffix;
     });
 
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+#include "arkweb/chromium_ext/components/password_manager/core/browser/password_store/login_database_async_helper_for_include_unittest.cc"
+#endif
+
 }  // namespace password_manager

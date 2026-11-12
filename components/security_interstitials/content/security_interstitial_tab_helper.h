@@ -102,6 +102,11 @@ class SecurityInterstitialTabHelper
   security_interstitials::SecurityInterstitialPage*
   GetBlockingPageForCurrentlyCommittedNavigationForTesting();
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // Whether an interstitial for |navigation_id| is a URL Trust List blocking page.
+  bool IsUrlTrustListBlockedForNavigation(int64_t navigation_id) const;
+#endif
+
  private:
   explicit SecurityInterstitialTabHelper(content::WebContents* web_contents);
   friend class content::WebContentsUserData<SecurityInterstitialTabHelper>;

@@ -66,7 +66,7 @@ class HSTSQueryTest : public testing::Test {
  public:
   HSTSQueryTest()
       : request_context_(net::CreateTestURLRequestContextBuilder()->Build()),
-        network_context_(std::make_unique<network::NetworkContext>(
+        network_context_(std::make_unique<network::ArkWebNetworkContextExt>(
             nullptr,
             network_context_remote_.BindNewPipeAndPassReceiver(),
             request_context_.get(),

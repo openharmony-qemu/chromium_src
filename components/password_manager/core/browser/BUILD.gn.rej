@@ -1,0 +1,29 @@
+diff a/components/password_manager/core/browser/BUILD.gn b/components/password_manager/core/browser/BUILD.gn	(rejected hunks)
+@@ -9,10 +9,14 @@ import("//third_party/libprotobuf-mutator/fuzzable_proto_library.gni")
+ 
+ if (is_android) {
+   import("//build/config/android/config.gni")
+ }
+ 
++if (is_arkweb) {
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++}
++
+ config("password_reuse_detection_config") {
+   defines = []
+   if (!is_ios) {
+     defines += [ "ON_FOCUS_PING_ENABLED" ]
+   }
+@@ -544,11 +551,11 @@ source_set("unit_tests") {
+   }
+   if (use_blink) {
+     sources += [ "http_credentials_cleaner_unittest.cc" ]
+   }
+ 
+-  if (is_win || is_mac || is_linux || is_chromeos) {
++  if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {
+     sources += [ "hash_password_manager_unittest.cc" ]
+   }
+ 
+   if (!is_chromeos && !is_android) {
+     sources += [ "password_reuse_manager_signin_notifier_impl_unittest.cc" ]

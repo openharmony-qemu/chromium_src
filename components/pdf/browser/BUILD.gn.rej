@@ -1,0 +1,16 @@
+diff a/components/pdf/browser/BUILD.gn b/components/pdf/browser/BUILD.gn	(rejected hunks)
+@@ -81,10 +82,14 @@ source_set("unit_tests") {
+     "pdf_navigation_throttle_unittest.cc",
+     "pdf_url_loader_request_interceptor_unittest.cc",
+     "plugin_response_writer_unittest.cc",
+   ]
+ 
++  if (is_arkweb) {
++    sources += arkweb_components_pdf_browser_test_sources
++  }
++
+   deps = [
+     ":interceptors",
+     "//base",
+     "//base/test:test_support",
+     "//content/public/browser",

@@ -1,0 +1,56 @@
+diff a/components/performance_manager/graph/page_node_impl.h b/components/performance_manager/graph/page_node_impl.h	(rejected hunks)
+@@ -123,10 +123,16 @@ class PageNodeImpl
+ 
+   void SetType(PageType type);
+   void SetIsFocused(bool is_focused);
+   void SetIsVisible(bool is_visible);
+   void SetIsAudible(bool is_audible);
++#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
++  void SetIsMediaPlaying(bool is_media_playing);
++  void OneShotMediaPlayerStopped();
++  void AudioContextPlaybackStarted(content::GlobalRenderFrameHostId rfh_id, int audio_context_id);
++  void AudioContextPlaybackStopped(content::GlobalRenderFrameHostId rfh_id, int audio_context_id);
++#endif
+   void SetHasPictureInPicture(bool has_picture_in_picture);
+   void SetLoadingState(LoadingState loading_state);
+   void SetUkmSourceId(ukm::SourceId ukm_source_id);
+   void OnFaviconUpdated();
+   void OnTitleUpdated();
+@@ -152,10 +158,13 @@ class PageNodeImpl
+       blink::mojom::PermissionStatus permission_status);
+ 
+   // Accessors.
+   FrameNodeImpl* opener_frame_node() const;
+   FrameNodeImpl* embedder_frame_node() const;
++#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
++  bool is_media_playing() const;
++#endif
+   FrameNodeImpl* main_frame_node() const;
+   NodeSetView<FrameNodeImpl*> main_frame_nodes() const;
+ 
+   // Invoked to set/clear the opener of this page.
+   void SetOpenerFrameNode(FrameNodeImpl* opener);
+@@ -231,16 +240,23 @@ class PageNodeImpl
+   void SetHasFreezingOriginTrialOptOut(base::PassKey<PageAggregatorData>,
+                                        bool has_freezing_origin_trial_opt_out) {
+     SetHasFreezingOriginTrialOptOut(has_freezing_origin_trial_opt_out);
+   }
+ 
++#if BUILDFLAG(ARKWEB_BGTASK)
++  void SetBrowserForeground();
++  void SetBrowserBackground();
++#endif
+  private:
+   friend class PageNodeImplDescriber;
+ 
+   // Partial PageNode implementation:
+   const FrameNode* GetOpenerFrameNode() const override;
+   const FrameNode* GetEmbedderFrameNode() const override;
++#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
++  bool IsMediaPlaying() const override;
++#endif
+   const FrameNode* GetMainFrameNode() const override;
+   NodeSetView<const FrameNode*> GetMainFrameNodes() const override;
+ 
+   // NodeBase:
+   void OnInitializingProperties() override;

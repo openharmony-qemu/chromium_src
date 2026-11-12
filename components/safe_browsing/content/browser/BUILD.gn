@@ -16,6 +16,8 @@ source_set("safe_browsing_service") {
     "safe_browsing_service_interface.h",
   ]
 
+  sources += arkweb_components_safe_browsing_content_browser_sources
+
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
 
   deps = [

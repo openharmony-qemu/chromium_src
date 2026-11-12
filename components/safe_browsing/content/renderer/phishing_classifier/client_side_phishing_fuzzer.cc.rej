@@ -1,0 +1,15 @@
+diff a/components/safe_browsing/content/renderer/phishing_classifier/client_side_phishing_fuzzer.cc b/components/safe_browsing/content/renderer/phishing_classifier/client_side_phishing_fuzzer.cc	(rejected hunks)
+@@ -32,12 +32,11 @@ DEFINE_PROTO_FUZZER(
+ 
+   if (!model) {
+     return;
+   }
+ 
+-  if (!safe_browsing::ClientSidePhishingModel::
+-          VerifyCSDFlatBufferIndicesAndFields(model)) {
++  if (!safe_browsing::ClientSidePhishingModel::VerifyCSDFlatBufferIndicesAndFields(model)) {
+     return;
+   }
+ 
+   safe_browsing::FeatureMap features;
+   for (const std::string& boolean_feature : fuzzing_case.boolean_features()) {

@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//pdf/features.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 
 assert(enable_pdf)
 

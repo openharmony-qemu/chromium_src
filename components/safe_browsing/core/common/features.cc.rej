@@ -1,0 +1,31 @@
+diff a/components/safe_browsing/core/common/features.cc b/components/safe_browsing/core/common/features.cc	(rejected hunks)
+@@ -7,10 +7,11 @@
+ #include <stddef.h>
+ 
+ #include <algorithm>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/feature_list.h"
+ #include "base/metrics/field_trial_params.h"
+ #include "base/metrics/user_metrics_action.h"
+ #include "base/system/sys_info.h"
+ #include "base/values.h"
+@@ -247,11 +248,16 @@ BASE_FEATURE(kHashPrefixRealTimeLookups,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ constexpr base::FeatureParam<std::string> kHashPrefixRealTimeLookupsRelayUrl{
+     &kHashPrefixRealTimeLookups,
+     "SafeBrowsingHashPrefixRealTimeLookupsRelayUrl",
+     /*default_value=*/
+-    "https://google-ohttp-relay-safebrowsing.fastly-edge.com/"};
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++    "https://x.x.x"
++#else
++    "https://google-ohttp-relay-safebrowsing.fastly-edge.com/"
++#endif
++};
+ constexpr base::FeatureParam<std::string> kHashPrefixRealTimeLookupsKeyFetchUrl{
+     &kHashPrefixRealTimeLookups,
+     "SafeBrowsingHashPrefixRealTimeLookupsKeyFetchUrl",
+     /*default_value=*/
+     "https://safebrowsingohttpgateway.googleapis.com/v1/ohttp/hpkekeyconfig"};

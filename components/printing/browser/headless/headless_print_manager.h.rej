@@ -1,0 +1,15 @@
+diff a/components/printing/browser/headless/headless_print_manager.h b/components/printing/browser/headless/headless_print_manager.h	(rejected hunks)
+@@ -50,12 +56,11 @@ class HeadlessPrintManager
+   void GetDefaultPrintSettings(
+       GetDefaultPrintSettingsCallback callback) override;
+   void ScriptedPrint(printing::mojom::ScriptedPrintParamsPtr params,
+                      ScriptedPrintCallback callback) override;
+ #if BUILDFLAG(ENABLE_PRINT_PREVIEW)
+-  void UpdatePrintSettings(base::Value::Dict job_settings,
+-                           UpdatePrintSettingsCallback callback) override;
++  void GetPrintPreviewParams(GetPrintPreviewParamsCallback callback) override;
+   void SetupScriptedPrintPreview(
+       SetupScriptedPrintPreviewCallback callback) override;
+   void ShowScriptedPrintPreview(bool source_is_modifiable) override;
+   void RequestPrintPreview(
+       printing::mojom::RequestPrintPreviewParamsPtr params) override;

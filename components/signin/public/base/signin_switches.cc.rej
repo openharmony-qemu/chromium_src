@@ -1,0 +1,89 @@
+diff a/components/signin/public/base/signin_switches.cc b/components/signin/public/base/signin_switches.cc	(rejected hunks)
+@@ -133,19 +133,19 @@ BASE_FEATURE(kChromeIdentitySurveySwitchProfileFromProfileMenu,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ BASE_FEATURE(kChromeIdentitySurveySwitchProfileFromProfilePicker,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ BASE_FEATURE(kChromeIdentitySurveyLaunchWithDelay,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ BASE_FEATURE_PARAM(base::TimeDelta,
+                    kChromeIdentitySurveyLaunchWithDelayDuration,
+                    &kChromeIdentitySurveyLaunchWithDelay,
+                    "launch_delay_duration",
+                    base::Milliseconds(3000));
+-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ 
+ #if BUILDFLAG(IS_IOS)
+ BASE_FEATURE(kEnableASWebAuthenticationSession,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ #endif
+@@ -354,20 +354,20 @@ BASE_FEATURE_PARAM(base::TimeDelta,
+                    &kOfferMigrationToDiceUsers,
+                    "offer_migration_to_dice_users_min_time_between_dialogs",
+                    base::Days(7));
+ #endif  // BUILDFLAG(ENABLE_DICE_SUPPORT)
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ BASE_FEATURE(kOpenAllProfilesFromProfilePickerExperiment,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ const base::FeatureParam<int>
+     kMaxProfilesCountToShowOpenAllButtonInProfilePicker{
+         &kOpenAllProfilesFromProfilePickerExperiment,
+         "max_profiles_count_to_show_open_all_button_in_profile_picker", 5};
+-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ BASE_FEATURE(kProfileCreationDeclineSigninCTAExperiment,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kProfileCreationFrictionReductionExperimentPrefillNameRequirement,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+@@ -393,22 +393,22 @@ constexpr base::FeatureParam<ProfilePickerVariation>::Option
+ constexpr base::FeatureParam<ProfilePickerVariation>
+     kProfilePickerTextVariation{
+         &kProfilePickerTextVariations, "profile-picker-variation",
+         ProfilePickerVariation::kKeepWorkAndLifeSeparate,
+         &kProfilePickerVariations};
+-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ 
+ BASE_FEATURE(kProfilesReordering, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ #if BUILDFLAG(ENABLE_DICE_SUPPORT)
+ BASE_FEATURE(kRollbackDiceMigration, base::FEATURE_DISABLED_BY_DEFAULT);
+ #endif  // BUILDFLAG(ENABLE_DICE_SUPPORT)
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ BASE_FEATURE(kShowProfilePickerToAllUsersExperiment,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ 
+ BASE_FEATURE(kSigninPromoLimitsExperiment, base::FEATURE_DISABLED_BY_DEFAULT);
+ const base::FeatureParam<int> kContextualSigninPromoShownThreshold(
+     &kSigninPromoLimitsExperiment,
+     "contextual_signin_promo_shown_threshold",
+@@ -416,13 +416,13 @@ const base::FeatureParam<int> kContextualSigninPromoShownThreshold(
+ const base::FeatureParam<int> kContextualSigninPromoDismissedThreshold(
+     &kSigninPromoLimitsExperiment,
+     "contextual_signin_promo_dismissed_threshold",
+     2);
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ BASE_FEATURE(kSignInPromoMaterialNextUI, base::FEATURE_ENABLED_BY_DEFAULT);
+-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ 
+ BASE_FEATURE(kSigninWindows10DepreciationStateForTesting,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE(kSigninWindows10DepreciationStateBypassForTesting,
+              base::FEATURE_DISABLED_BY_DEFAULT);

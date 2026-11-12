@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/histogram_macros.h"
@@ -227,6 +228,9 @@ LikelyFormFilling SendFillInformationToRenderer(
   WaitForUsernameReason wait_for_username_reason =
       WaitForUsernameReason::kDontWait;
   if (client->IsOffTheRecord()) {
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+    LOG(INFO) << "[passwordSave] current tab is incognito";
+#endif
     wait_for_username_reason = WaitForUsernameReason::kIncognitoMode;
 #if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
   } else if (client->GetPasswordFeatureManager()
@@ -279,6 +283,9 @@ LikelyFormFilling SendFillInformationToRenderer(
 
   bool wait_for_username =
       wait_for_username_reason != WaitForUsernameReason::kDontWait;
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  wait_for_username = true;
+#endif // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 #else
   bool wait_for_username = true;
 #endif  // !BUILDFLAG(IS_IOS) && !defined(ANDROID)

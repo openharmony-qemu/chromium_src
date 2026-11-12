@@ -727,6 +727,17 @@ mojom("url_loader_base") {
     export_header_blink = "third_party/blink/public/platform/web_common.h"
   }
 
+  if (defined(arkweb_ext_navigation) && arkweb_ext_navigation) {
+    public_deps += [
+      "//arkweb/chromium_ext/services/network/public/mojom:mojom_navigation_info"
+    ]
+    enabled_features += [ "arkweb_ext_navigation" ]
+  }
+
+  if (arkweb_scheme_handler) {
+    enabled_features += [ "arkweb_scheme_handler" ]
+  }
+
   # Shared by cpp_typemaps and blink_cpp_typemaps.
   shared_typemaps = [
     {

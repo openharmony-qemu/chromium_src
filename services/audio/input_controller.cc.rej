@@ -1,0 +1,33 @@
+diff a/services/audio/input_controller.cc b/services/audio/input_controller.cc	(rejected hunks)
+@@ -41,10 +41,14 @@
+ 
+ #if BUILDFLAG(CHROME_WIDE_ECHO_CANCELLATION)
+ #include "services/audio/audio_processor_handler.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
++#include "arkweb/chromium_ext/services/audio/input_controller_for_include.cc"
++#endif // ARKWEB_MEDIA_CAPTURE
++
+ namespace audio {
+ namespace {
+ 
+ using OpenOutcome = media::AudioInputStream::OpenOutcome;
+ 
+@@ -708,10 +712,16 @@ void InputController::DoCreate(
+                              base::BindRepeating(&InputController::OnData,
+                                                  base::Unretained(this)));
+ 
+   // Send initial muted state along with OnCreated, to avoid races.
+   is_muted_ = stream_->IsMuted();
++#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
++  LOG(DEBUG) << "InputController::DoCreate, SetPauseStateChangedCallback";
++  stream_->SetPauseStateChangedCallback(base::BindPostTask(
++      task_runner_,
++      base::BindRepeating(&InputController::OnStreamPaused, weak_this_)));
++#endif // ARKWEB_MEDIA_CAPTURE
+   event_handler_->OnCreated(is_muted_);
+   check_muted_state_timer_.Start(FROM_HERE, kCheckMutedStateInterval, this,
+                                  &InputController::CheckMutedState);
+   DCHECK(check_muted_state_timer_.IsRunning());
+ }

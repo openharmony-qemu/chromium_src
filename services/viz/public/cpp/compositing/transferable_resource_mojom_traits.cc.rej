@@ -1,0 +1,29 @@
+diff a/services/viz/public/cpp/compositing/transferable_resource_mojom_traits.cc b/services/viz/public/cpp/compositing/transferable_resource_mojom_traits.cc	(rejected hunks)
+@@ -168,11 +168,11 @@ bool StructTraits<viz::mojom::TransferableResourceDataView,
+       !data.ReadSynchronizationType(&out->synchronization_type) ||
+       !data.ReadOrigin(&out->origin) || !data.ReadAlphaType(&out->alpha_type) ||
+       !data.ReadResourceSource(&out->resource_source)) {
+     return false;
+   }
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
+   if (!data.ReadYcbcrInfo(&out->ycbcr_info)) {
+     return false;
+   }
+ #endif
+ 
+@@ -187,10 +187,14 @@ bool StructTraits<viz::mojom::TransferableResourceDataView,
+ 
+ #if BUILDFLAG(IS_ANDROID)
+   out->is_backed_by_surface_view = data.is_backed_by_surface_view();
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_AI_HDR)
++  out->is_ai_hdr_active = data.is_ai_hdr_active();
++#endif
++
+ #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)
+   out->wants_promotion_hint = data.wants_promotion_hint();
+ #endif
+ 
+   return true;

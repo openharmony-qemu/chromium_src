@@ -1,0 +1,16 @@
+diff a/services/device/public/cpp/device_features.h b/services/device/public/cpp/device_features.h	(rejected hunks)
+@@ -20,11 +20,14 @@ namespace features {
+ // in the .cc file.
+ DEVICE_FEATURES_EXPORT BASE_DECLARE_FEATURE(
+     kComputePressureBreakCalibrationMitigation);
+ DEVICE_FEATURES_EXPORT BASE_DECLARE_FEATURE(kGenericSensorExtraClasses);
+ DEVICE_FEATURES_EXPORT BASE_DECLARE_FEATURE(kSerialPortConnected);
++DEVICE_FEATURES_EXPORT BASE_DECLARE_FEATURE(kWebSerialWorldIsolatedCache);
+ DEVICE_FEATURES_EXPORT BASE_DECLARE_FEATURE(kWebUsbBlocklist);
++DEVICE_FEATURES_EXPORT BASE_DECLARE_FEATURE(
++    kWebUsbProtectedClassControlTransferBlock);
+ DEVICE_FEATURES_EXPORT BASE_DECLARE_FEATURE(
+     kWebUsbEnforceStandardRequestAllowlist);
+ DEVICE_FEATURES_EXPORT BASE_DECLARE_FEATURE(
+     kWebHidAttributeAllowsBackForwardCache);
+ #if BUILDFLAG(IS_WIN)

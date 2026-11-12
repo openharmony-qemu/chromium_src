@@ -34,6 +34,8 @@ WakeLock::WakeLock(mojo::PendingReceiver<mojom::WakeLock> receiver,
 #if BUILDFLAG(IS_ANDROID)
       context_id_(context_id),
       native_view_getter_(native_view_getter),
+#elif BUILDFLAG(ARKWEB_SCREEN_LOCK)
+      context_id_(context_id),
 #endif
       main_task_runner_(base::SingleThreadTaskRunner::GetCurrentDefault()),
       observer_(observer) {

@@ -1,0 +1,101 @@
+diff a/services/tracing/public/cpp/trace_startup_config.cc b/services/tracing/public/cpp/trace_startup_config.cc	(rejected hunks)
+@@ -26,11 +26,11 @@
+ #include "services/tracing/public/cpp/perfetto/perfetto_config.h"
+ #include "services/tracing/public/mojom/perfetto_service.mojom.h"
+ #include "third_party/perfetto/protos/perfetto/config/track_event/track_event_config.gen.h"
+ #include "third_party/snappy/src/snappy.h"
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+ #include "base/android/early_trace_event_binding.h"
+ #endif
+ 
+ namespace tracing {
+ 
+@@ -114,11 +114,11 @@ perfetto::TraceConfig TraceStartupConfig::GetDefaultBackgroundStartupConfig() {
+     auto* source_config = config.add_data_sources()->mutable_config();
+     source_config->set_name(tracing::mojom::kMetaData2SourceName);
+     source_config->set_target_buffer(1);
+   }
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+   config.add_data_sources()->mutable_config()->set_name(
+       tracing::mojom::kSamplerProfilerSourceName);
+ #endif
+   tracing::AdaptPerfettoConfigForChrome(&config, true, true);
+   return config;
+@@ -128,10 +128,11 @@ TraceStartupConfig::TraceStartupConfig() {
+   auto* command_line = base::CommandLine::ForCurrentProcess();
+   const std::string value =
+       command_line->GetSwitchValueASCII(switches::kTraceStartupOwner);
+   if (value == "devtools") {
+     session_owner_ = SessionOwner::kDevToolsTracingHandler;
++    LOG(WARNING) << "TraceStartupConfig::--trace-startup-owner=devtools";
+   } else if (value == "system") {
+     session_owner_ = SessionOwner::kSystemTracing;
+   }
+ 
+   if (EnableFromCommandLine()) {
+@@ -227,11 +228,11 @@ bool TraceStartupConfig::EnableFromCommandLine() {
+     std::string startup_duration_str =
+         command_line->GetSwitchValueASCII(switches::kTraceStartupDuration);
+     if (!startup_duration_str.empty() &&
+         !base::StringToInt(startup_duration_str,
+                            &startup_duration_in_seconds)) {
+-      DLOG(WARNING) << "Could not parse --" << switches::kTraceStartupDuration
++      LOG(WARNING) << "Could not parse --" << switches::kTraceStartupDuration
+                     << "=" << startup_duration_str << " defaulting to 5 (secs)";
+       startup_duration_in_seconds = kDefaultStartupDurationInSeconds;
+     }
+   } else if (command_line->HasSwitch(switches::kEnableTracing)) {
+     // For --enable-tracing, tracing should last until browser shutdown.
+@@ -301,11 +302,11 @@ bool TraceStartupConfig::EnableFromConfigHandle() {
+   is_enabled_ = true;
+   return true;
+ }
+ 
+ bool TraceStartupConfig::EnableFromJsonConfigFile() {
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+   base::FilePath trace_config_file(kAndroidTraceConfigFile);
+ #else
+   auto* command_line = base::CommandLine::ForCurrentProcess();
+   if (!command_line->HasSwitch(switches::kTraceConfigFile)) {
+     return false;
+@@ -314,30 +315,33 @@ bool TraceStartupConfig::EnableFromJsonConfigFile() {
+       command_line->GetSwitchValuePath(switches::kTraceConfigFile);
+ #endif
+ 
+   if (trace_config_file.empty()) {
+     is_enabled_ = true;
+-    DLOG(WARNING) << "Use default trace config.";
++    LOG(WARNING) << "Use default trace config.";
+     perfetto_config_ = tracing::GetDefaultPerfettoConfig(
+         base::trace_event::TraceConfig(), false,
+         output_format_ != OutputFormat::kProto, "");
+     perfetto_config_.set_duration_ms(kDefaultStartupDurationInSeconds * 1000);
+     return true;
+   }
++  LOG(WARNING) << "TraceStartupConfig::EnableFromConfigFile::trace_config_file: " << trace_config_file;
+ 
+   if (!base::PathExists(trace_config_file)) {
+-    DLOG(WARNING) << "The trace config file does not exist.";
++    LOG(WARNING) << "The trace config file does not exist.";
+     return false;
+   }
+ 
+   std::string trace_config_file_content;
+   if (!base::ReadFileToStringWithMaxSize(trace_config_file,
+                                          &trace_config_file_content,
+                                          kTraceConfigFileSizeLimit)) {
+     DLOG(WARNING) << "Cannot read the trace config file correctly.";
+     return false;
+   }
++  LOG(WARNING) << "TraceStartupConfig::EnableFromConfigFile::trace_config_file_content: "
++               << trace_config_file_content;
+   auto config = ParseTraceJsonConfigFileContent(trace_config_file_content);
+   if (!config) {
+     DLOG(WARNING) << "Cannot parse the trace config file correctly.";
+     return false;
+   }

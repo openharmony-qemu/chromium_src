@@ -306,7 +306,16 @@ void LocationProviderManager::OnLocationUpdate(
     } else if (provider == custom_location_provider_.get()) {
       source = LocationProviderManagerSource::kCustomProvider;
     } else {
+#if BUILDFLAG(IS_ARKWEB)
+      GEOLOCATION_LOG(ERROR) << "OnLocationUpdate provider match error: "
+                                "provider_manager_mode_="
+                             << LocationProviderManagerModeAsString(
+                                    provider_manager_mode_)
+                             << " set source to kPlatformProvider";
+      source = LocationProviderManagerSource::kPlatformProvider;
+#else
       NOTREACHED();
+#endif
     }
     base::UmaHistogramEnumeration("Geolocation.LocationProviderManager.Source",
                                   source);

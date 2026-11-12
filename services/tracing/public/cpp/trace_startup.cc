@@ -130,6 +130,10 @@ void InitTracing(
   tracing::EnableETWExport();
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(IS_ARKWEB) || BUILDFLAG(ARKWEB_DFX_TRACING)
+  base::hitrace::EnableHiTraceExport();
+#endif // BUILDFLAG(ARKWEB_DFX_TRACING)
+
   auto& startup_config = TraceStartupConfig::GetInstance();
 
   if (startup_config.IsEnabled()) {

@@ -112,6 +112,13 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
 
   ~NetworkService() override;
 
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) \
+    || BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS) || defined(COMPONENT_BUILD) // FIXME
+  virtual ArkWebNetworkServiceExt* AsArkWebNetworkServiceExt() {
+    return nullptr;
+  }
+#endif
+
   // Allows late binding if the mojo receiver wasn't specified in the
   // constructor.
   void Bind(mojo::PendingReceiver<mojom::NetworkService> receiver);
@@ -618,5 +625,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
 };
 
 }  // namespace network
+
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) \
+    || BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS)
+#include "arkweb/chromium_ext/services/network/arkweb_network_service_ext.h"
+#endif
 
 #endif  // SERVICES_NETWORK_NETWORK_SERVICE_H_

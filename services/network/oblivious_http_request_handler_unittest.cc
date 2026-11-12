@@ -167,7 +167,11 @@ class TestObliviousHttpRequestHandler : public testing::Test {
         network::CreateNetworkContextParamsForTesting();
     context_params->cert_verifier_params =
         network::FakeTestCertVerifierParamsFactory::GetCertVerifierParams();
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+    network_context_ = std::make_unique<network::ArkWebNetworkContextExt>(
+#else
     network_context_ = std::make_unique<network::NetworkContext>(
+#endif
         network_service_.get(),
         network_context_remote_.BindNewPipeAndPassReceiver(),
         std::move(context_params),

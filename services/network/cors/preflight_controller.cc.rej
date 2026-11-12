@@ -1,0 +1,16 @@
+diff a/services/network/cors/preflight_controller.cc b/services/network/cors/preflight_controller.cc	(rejected hunks)
+@@ -43,10 +43,14 @@
+ #include "services/network/public/mojom/url_loader.mojom.h"
+ #include "services/network/public/mojom/url_loader_network_service_observer.mojom.h"
+ #include "services/network/public/mojom/url_response_head.mojom.h"
+ #include "url/gurl.h"
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_BASE)
++#include "arkweb/chromium_ext/services/network/cors/preflight_controller_for_include.cc"
++#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE))
++
+ namespace network::cors {
+ 
+ namespace {
+ 
+ int RetrieveCacheFlags(int load_flags) {

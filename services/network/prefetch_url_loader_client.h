@@ -102,6 +102,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) PrefetchURLLoaderClient final
   template <typename Method, typename... Args>
   void ForwardToRealClient(Method method, Args... args);
 
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
+#endif
+
   const ResourceRequest request_;
   const net::NetworkIsolationKey network_isolation_key_;
   const base::TimeTicks expiry_time_;

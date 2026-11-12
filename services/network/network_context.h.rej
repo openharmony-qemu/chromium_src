@@ -1,0 +1,46 @@
+diff a/services/network/network_context.h b/services/network/network_context.h	(rejected hunks)
+@@ -137,10 +137,13 @@ class SQLiteTrustTokenPersister;
+ class SessionCleanupCookieStore;
+ class SharedDictionaryManager;
+ class SharedResourceChecker;
+ class WebSocketFactory;
+ class WebTransport;
++#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
++class ArkWebNetworkContextExt;
++#endif
+ class DeviceBoundSessionManager;
+ 
+ struct ResourceRequest;
+ 
+ // A NetworkContext creates and manages access to a URLRequestContext.
+@@ -740,11 +759,30 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
+   // `url` is allowed. See `network_revocation_nonces_` and
+   // `network_revocation_exemptions_`.
+   bool IsNetworkForNonceAndUrlAllowed(const base::UnguessableToken& nonce,
+                                       const GURL& url) const;
+ 
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++  bool IsDestructing() const;
++#endif // BUILDFLAG(ARKWEB_LOGGER_REPORT)
++
++#if BUILDFLAG(ARKWEB_MEDIA)
++  void LookupServerBasicAuthCredentials(
++      const GURL& url,
++      const net::NetworkAnonymizationKey& network_anonymization_key,
++      LookupServerBasicAuthCredentialsCallback callback) override;
++#endif // ARKWEB_MEDIA
++
++#if BUILDFLAG(ARKWEB_TEST)
++ public:
++#else
+  private:
++#endif // ARKWEB_TEST
++#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  friend class ArkWebNetworkContextExt;
++#endif
++
+   class NetworkContextHttpAuthPreferences : public net::HttpAuthPreferences {
+    public:
+     explicit NetworkContextHttpAuthPreferences(NetworkService* network_service);
+     ~NetworkContextHttpAuthPreferences() override;
+ #if BUILDFLAG(IS_LINUX)

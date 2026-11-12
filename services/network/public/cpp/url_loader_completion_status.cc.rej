@@ -1,0 +1,25 @@
+diff a/services/network/public/cpp/url_loader_completion_status.cc b/services/network/public/cpp/url_loader_completion_status.cc	(rejected hunks)
+@@ -2,10 +2,11 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "services/network/public/cpp/url_loader_completion_status.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/trace_event/trace_event.h"
+ #include "net/base/net_errors.h"
+ 
+ namespace network {
+ 
+@@ -51,8 +65,11 @@ void URLLoaderCompletionStatus::WriteIntoTrace(
+   dict.Add("error_code", error_code);
+   dict.Add("extended_error_code", extended_error_code);
+   dict.Add("encoded_data_length", encoded_data_length);
+   dict.Add("encoded_body_length", encoded_body_length);
+   dict.Add("decoded_body_length", decoded_body_length);
++#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
++  dict.Add("custom_error_code", custom_error_code);
++#endif
+ }
+ 
+ }  // namespace network

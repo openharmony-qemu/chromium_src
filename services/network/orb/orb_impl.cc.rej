@@ -1,0 +1,20 @@
+diff a/services/network/orb/orb_impl.cc b/services/network/orb/orb_impl.cc
+--- a/services/network/orb/orb_impl.cc
++++ b/services/network/orb/orb_impl.cc
+@@ -494,10 +494,16 @@ OpaqueResponseBlockingAnalyzer::ShouldHandleBlockedResponseAs() const {
+   // "ORB v0.1" uses CORB-style error handling with injecting an empty response.
+   // "ORB v0.2" uses ORB-specified error handling (injecting a network error)
+   // for non-script fetches, by injecting a network error.
+   // "ORB errors-for-all-fetches" uses ORB-specified error handling everywhere.
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_BASE)
++  if (!base::FeatureList::IsEnabled(features::kOpaqueResponseBlockingV02)) {
++    return BlockedResponseHandling::kEmptyResponse;
++  }
++#endif
++
+   if (base::FeatureList::IsEnabled(
+           features::kOpaqueResponseBlockingErrorsForAllFetches)) {
+     return BlockedResponseHandling::kNetworkError;
+   }
+ 

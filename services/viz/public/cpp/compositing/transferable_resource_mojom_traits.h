@@ -94,6 +94,12 @@ struct StructTraits<viz::mojom::TransferableResourceDataView,
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_AI_HDR)
+  static bool is_ai_hdr_active(const viz::TransferableResource& resource) {
+    return resource.is_ai_hdr_active;
+  }
+#endif
+
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)
   static bool wants_promotion_hint(const viz::TransferableResource& resource) {
     return resource.wants_promotion_hint;
@@ -109,7 +115,7 @@ struct StructTraits<viz::mojom::TransferableResourceDataView,
     return resource.needs_detiling;
   }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
   static const std::optional<gpu::VulkanYCbCrInfo>& ycbcr_info(
       const viz::TransferableResource& resource) {
     return resource.ycbcr_info;

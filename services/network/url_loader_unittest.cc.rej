@@ -1,0 +1,17 @@
+diff a/services/network/url_loader_unittest.cc b/services/network/url_loader_unittest.cc	(rejected hunks)
+@@ -713,10 +713,15 @@ struct URLLoaderOptions {
+         ObserverWrapper(std::move(trust_token_observer)),
+         ObserverWrapper(std::move(url_loader_network_observer)),
+         ObserverWrapper(std::move(devtools_observer)),
+         ObserverWrapper(std::move(device_bound_session_observer)),
+         std::move(accept_ch_frame_observer), shared_storage_writable_eligible,
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++        std::move(prpp_loader),
++        org_main_url,
++        std::move(preload_info),
++#endif
+         *shared_resource_checker, std::move(maybe_durable_message));
+   }
+ 
+   int32_t options = mojom::kURLLoadOptionNone;
+   base::WeakPtr<mojom::URLLoaderClient> sync_url_loader_client;

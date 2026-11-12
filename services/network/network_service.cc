@@ -585,20 +585,41 @@ void NetworkService::SetTestDohConfigForTesting(
 
 std::unique_ptr<NetworkService> NetworkService::Create(
     mojo::PendingReceiver<mojom::NetworkService> receiver) {
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) ||                                \
+    BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS) || \
+    BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  return std::make_unique<ArkWebNetworkServiceExt>(nullptr,
+                                                   std::move(receiver));
+#else
   return std::make_unique<NetworkService>(nullptr, std::move(receiver));
+#endif
 }
 
 // static
 std::unique_ptr<NetworkService> NetworkService::CreateForTesting() {
   auto network_service =
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) ||                                \
+    BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS) || \
+    BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+      std::make_unique<ArkWebNetworkServiceExt>(nullptr /* binder_registry */);
+#else
       std::make_unique<NetworkService>(nullptr /* binder_registry */);
+#endif
   network_service->InitMockNetworkChangeNotifierForTesting();  // IN-TEST
   return network_service;
 }
 
 void NetworkService::RegisterNetworkContext(NetworkContext* network_context) {
   DCHECK_EQ(0u, network_contexts_.count(network_context));
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  AsArkWebNetworkServiceExt()->SetURLRequestContext(network_context);
+#endif
   network_contexts_.insert(network_context);
+
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  AsArkWebNetworkServiceExt()->NetworkContextSetHostIP(network_context);
+#endif
+
   if (quic_disabled_) {
     network_context->DisableQuic();
   }
@@ -631,6 +652,9 @@ void NetworkService::RegisterNetworkContext(NetworkContext* network_context) {
 void NetworkService::DeregisterNetworkContext(NetworkContext* network_context) {
   DCHECK_EQ(1u, network_contexts_.count(network_context));
   network_contexts_.erase(network_context);
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  AsArkWebNetworkServiceExt()->DeregisterNetworkContextExt(network_context);
+#endif
 }
 
 void NetworkService::CreateNetLogEntriesForActiveObjects(
@@ -775,6 +799,7 @@ void NetworkService::ConfigureStubHostResolver(
   overrides.allow_dns_over_https_upgrade =
       base::FeatureList::IsEnabled(features::kDnsOverHttpsUpgrade);
   overrides.fallback_doh_nameservers = fallback_doh_nameservers;
+#endif  // BUILDFLAG(ARKWEB_HTTP_DNS)
   host_resolver_manager_->SetDnsConfigOverrides(overrides);
 
   const bool happy_eyeballs_v3_changed =

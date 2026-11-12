@@ -86,6 +86,10 @@ class MockClientAndObserver : public media::mojom::AudioInputStreamClient,
   MOCK_METHOD0(DidStartRecording, void());
   void OnMutedStateChanged(bool) override { NOTREACHED(); }
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  void OnPausedStateChanged(bool) override {}
+#endif // ARKWEB_MEDIA_CAPTURE
+
  private:
   mojo::Receiver<media::mojom::AudioInputStreamClient> client_receiver_{this};
   mojo::Receiver<media::mojom::AudioInputStreamObserver> observer_receiver_{

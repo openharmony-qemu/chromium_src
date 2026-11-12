@@ -140,6 +140,10 @@ struct CustomProxyConfig {
   // to the CONNECT request. Headers here will overwrite matching headers on
   // the CONNECT request if a custom proxy is used.
   HttpRequestHeaders connect_tunnel_headers;
+
+  // Whether this proxy config is for accelerate proxy mode.
+  [EnableIf=arkweb_ex_fallback_proxy]
+  bool is_accelerate_proxy = false;
 };
 
 // Observer of custom proxy connections, especially for when errors occur.
@@ -155,6 +159,14 @@ interface CustomProxyConnectionObserver {
   OnTunnelHeadersReceived(ProxyChain proxy_chain,
                           uint64 chain_index,
                           HttpResponseHeaders response_headers);
+
+  [EnableIf=arkweb_ex_fallback_proxy]
+  OnProxyConnectResult(ProxyChain proxy_chain, int32 net_error);
+ 
+  [EnableIf=arkweb_ex_fallback_proxy]
+  OnTunnelHeadersReceivedWithToken(
+    ProxyChain proxy_chain,
+    HttpResponseHeaders response_headers, string token);
 };
 
 // Includes a pipe to a CertVerifierService for usage by the
@@ -183,6 +195,21 @@ interface CookieStoreReadyCallback {
 // Client to update the custom proxy config.
 interface CustomProxyConfigClient {
   OnCustomProxyConfigUpdated(CustomProxyConfig proxy_config) => ();
+
+  [EnableIf=arkweb_ex_fallback_proxy]
+  SaveURLMaliciousTypeAndHwCode(string url, int32 type, int32 hw_code);
+ 
+  [EnableIf=arkweb_ex_fallback_proxy]
+  OnFallbackProxyInfoConfigUpdated(FallbackProxyInfoConfig fallback_proxy_info_config);
+ 
+  [EnableIf=arkweb_ex_fallback_proxy]
+  UpdateFallbackProxyAuthHeaders(HttpRequestHeaders tunnel_headers);
+ 
+  [EnableIf=arkweb_ex_fallback_proxy]
+  UpdateFallbackProxyStatus(int32 status);
+ 
+  [EnableIf=arkweb_ex_fallback_proxy]
+  OnHostBlockListUpdated(array<string> block_list);
 };
 
 // Sent by TrustedURLLoaderHeaderClient to perform modifications for a request.
@@ -983,6 +1010,12 @@ struct URLLoaderFactoryParams {
   // For context on usage see:
   // https://privacycg.github.io/saa-non-cookie-storage/shared-workers.html
   bool require_cross_site_request_for_cookies = false;
+
+  [EnableIf=arkweb_prp_preload]
+  string main_url = "";
+
+  [EnableIf=arkweb_prp_preload]
+  uint64 addr_web_handle;
 
   // If this is true, this URLLoaderFactory should not be reset when
   // calling `ResetURLLoaderFactories()`.

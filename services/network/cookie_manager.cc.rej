@@ -1,0 +1,16 @@
+diff a/services/network/cookie_manager.cc b/services/network/cookie_manager.cc	(rejected hunks)
+@@ -30,10 +30,14 @@
+ #include "services/network/cookie_access_delegate_impl.h"
+ #include "services/network/session_cleanup_cookie_store.h"
+ #include "services/network/tpcd/metadata/manager.h"
+ #include "url/gurl.h"
+ 
++#if BUILDFLAG(ARKWEB_COOKIE)
++#include "arkweb/chromium_ext/services/network/cookie_manager_for_include.cc"
++#endif
++
+ using CookieDeletionInfo = net::CookieDeletionInfo;
+ using CookieDeleteSessionControl = net::CookieDeletionInfo::SessionControl;
+ 
+ namespace network {
+ 

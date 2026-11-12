@@ -1,0 +1,19 @@
+diff a/services/network/throttling/throttling_network_transaction.cc b/services/network/throttling/throttling_network_transaction.cc	(rejected hunks)
+@@ -310,10 +314,17 @@ void ThrottlingNetworkTransaction::SetIsSharedDictionaryReadAllowedCallback(
+ net::ConnectionAttempts ThrottlingNetworkTransaction::GetConnectionAttempts()
+     const {
+   return network_transaction_->GetConnectionAttempts();
+ }
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++net::ConnectionAttempts
++ThrottlingNetworkTransaction::GetExtraConnectionAttempts() const {
++  return network_transaction_->GetExtraConnectionAttempts();
++}
++#endif
++
+ void ThrottlingNetworkTransaction::CloseConnectionOnDestruction() {
+   network_transaction_->CloseConnectionOnDestruction();
+ }
+ 
+ bool ThrottlingNetworkTransaction::IsMdlMatchForMetrics() const {

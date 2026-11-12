@@ -1,0 +1,23 @@
+diff a/services/device/wake_lock/power_save_blocker/power_save_blocker.h b/services/device/wake_lock/power_save_blocker/power_save_blocker.h	(rejected hunks)
+@@ -46,14 +51,21 @@ class PowerSaveBlocker {
+   // valid only for the lifetime of this call; hence it should not be cached
+   // internally.
+   void InitDisplaySleepBlocker(ui::ViewAndroid* view_android);
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
++  void InitDisplaySleepBlocker(const int32_t id);
++#endif
++
+  private:
+   class Delegate;
+ 
+   base::SequenceBound<Delegate> delegate_;
++#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
++  int32_t id_;
++#endif //BUILDFLAG(ARKWEB_SCREEN_LOCK)
+ };
+ 
+ }  // namespace device
+ 
+ #endif  // SERVICES_DEVICE_WAKE_LOCK_POWER_SAVE_BLOCKER_POWER_SAVE_BLOCKER_H_

@@ -1,0 +1,23 @@
+diff a/services/viz/public/mojom/compositing/compositor_frame_sink.mojom b/services/viz/public/mojom/compositing/compositor_frame_sink.mojom	(rejected hunks)
+@@ -111,10 +120,21 @@ interface CompositorFrameSink {
+   // Informs the display compositor the IDs of the thread involved in frame
+   // production. This is used on Android PerformanceHint API to dynamically
+   // adjust performance to allow power saving.
+   [EnableIf=is_android]
+   SetThreads(array<Thread> threads);
++
++  // Report the key threads in render process. This is used on OHOS to
++  // dynamic resource scheduling.
++  [EnableIf=arkweb_performance_scheduling]
++  ReportKeyThreadIds(array<int32> thread_ids, int32 process_id, bool is_created);
++
++  [EnableIf=arkweb_vsync_schedule]
++  OnSetBypassVsyncCondition(int32 condition);
++
++  [EnableIf=arkweb_throttle_frame]
++  UpdateThrottleMode(bool is_enable);
+ };
+ 
+ [DirectReceiver]
+ interface CompositorFrameSinkClient {
+   // Notification that the previous CompositorFrame given to

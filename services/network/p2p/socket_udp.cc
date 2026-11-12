@@ -366,9 +366,11 @@ bool P2PSocketUdp::HandleReadResult(int result) {
       if ((stun && IsRequestOrResponse(type))) {
         connected_peers_.insert(recv_address_);
       } else if (!stun || type == STUN_DATA_INDICATION) {
+#if !BUILDFLAG(ARKWEB_NETWORK_BASE)
         LOG(ERROR) << "Received unexpected data packet from "
                    << recv_address_.ToString()
                    << " before STUN binding is finished.";
+#endif
         return true;
       }
     }

@@ -21,6 +21,9 @@
 #include "services/network/public/mojom/fetch_api.mojom-forward.h"
 #include "services/network/public/mojom/network_context.mojom-forward.h"
 #include "services/network/public/mojom/url_response_head.mojom-forward.h"
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD) || BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+#include "arkweb/chromium_ext/services/network/url_loader_utils.h"
+#endif
 
 namespace base {
 class SequencedTaskRunner;

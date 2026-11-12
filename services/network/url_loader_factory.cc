@@ -38,6 +38,7 @@
 #include "services/network/web_bundle/web_bundle_url_loader_factory.h"
 #include "url/gurl.h"
 #include "url/origin.h"
+#include "arkweb/chromium_ext/services/network/url_loader_factory_utils.h"
 
 namespace network {
 
@@ -119,6 +120,7 @@ URLLoaderFactory::URLLoaderFactory(
     context_->network_service()->keepalive_statistics_recorder()->Register(
         *params_->top_frame_id);
   }
+  factoryUtils_ = std::make_unique<URLLoaderFactoryUtils>(this);
 }
 
 URLLoaderFactory::~URLLoaderFactory() {

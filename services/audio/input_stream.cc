@@ -28,6 +28,10 @@
 #include "services/audio/reference_signal_provider.h"
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "arkweb/chromium_ext/services/audio/input_stream_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPTURE
+
 namespace audio {
 
 namespace {

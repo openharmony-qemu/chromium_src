@@ -1,0 +1,23 @@
+diff a/services/resource_coordinator/public/cpp/memory_instrumentation/os_metrics_linux.cc b/services/resource_coordinator/public/cpp/memory_instrumentation/os_metrics_linux.cc	(rejected hunks)
+@@ -343,19 +343,21 @@ bool OSMetrics::FillOSMemoryDump(base::ProcessHandle handle,
+   dump->platform_private_footprint->vm_swap_bytes = info->vm_swap_bytes;
+   dump->resident_set_kb =
+       base::saturated_cast<uint32_t>(info->resident_set_bytes / 1024);
+   dump->peak_resident_set_kb = GetPeakResidentSetSize(handle);
+   dump->is_peak_rss_resettable = ResetPeakRSSIfPossible(handle);
++  #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX) || defined(OS_OHOS)
+   if (flags.Has(mojom::MemDumpFlags::MEM_DUMP_COUNT_MAPPINGS)) {
+     dump->mappings_count = CountMappings(handle);
+   }
+   if (flags.Has(mojom::MemDumpFlags::MEM_DUMP_PSS)) {
+     base::ByteCount pss, swap_pss;
+     GetSmapsRollup(&pss, &swap_pss);
+     dump->pss_kb = pss.InKiB();
+     dump->swap_pss_kb = swap_pss.InKiB();
+   }
++#endif
+ 
+ #if BUILDFLAG(IS_ANDROID)
+ #if BUILDFLAG(SUPPORTS_CODE_ORDERING)
+   if (flags.Has(mojom::MemDumpFlags::MEM_DUMP_PAGES_BITMAP)) {
+     if (!base::android::AreAnchorsSane()) {

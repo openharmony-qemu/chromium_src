@@ -10,6 +10,7 @@
 #include <optional>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/debug/crash_logging.h"
 #include "base/memory/scoped_refptr.h"
@@ -228,6 +229,9 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) ResourceRequest {
       mojom::CorsPreflightPolicy::kConsiderPreflight;
   bool originated_from_service_worker = false;
   bool skip_service_worker = false;
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  bool corb_detachable = false;
+#endif
   // `kNoCors` mode is the default request mode for legacy reasons, however this
   // mode is highly discouraged for new requests made on the web platform;
   // please consider using another mode like `kCors` instead, and only use

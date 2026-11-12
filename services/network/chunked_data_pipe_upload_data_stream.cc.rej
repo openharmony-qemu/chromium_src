@@ -1,0 +1,90 @@
+diff a/services/network/chunked_data_pipe_upload_data_stream.cc b/services/network/chunked_data_pipe_upload_data_stream.cc	(rejected hunks)
+@@ -10,45 +10,71 @@
+ #include "base/functional/callback.h"
+ #include "base/location.h"
+ #include "base/numerics/safe_conversions.h"
+ #include "base/task/sequenced_task_runner.h"
+ #include "mojo/public/c/system/types.h"
++#include "mojo/public/cpp/bindings/message.h"
+ #include "net/base/io_buffer.h"
++#include "net/base/net_errors.h"
+ 
+ namespace network {
+ 
+ ChunkedDataPipeUploadDataStream::ChunkedDataPipeUploadDataStream(
+     scoped_refptr<ResourceRequestBody> resource_request_body,
+     mojo::PendingRemote<mojom::ChunkedDataPipeGetter> chunked_data_pipe_getter,
++#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
++    bool has_null_source,
++    bool get_size_when_initialize)
++#else
+     bool has_null_source)
++#endif
+     : net::UploadDataStream(/*is_chunked=*/true,
+                             /*has_null_source=*/has_null_source,
+                             resource_request_body->identifier()),
+       resource_request_body_(std::move(resource_request_body)),
+       chunked_data_pipe_getter_(std::move(chunked_data_pipe_getter)),
++#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
++      handle_watcher_(FROM_HERE,
++                      mojo::SimpleWatcher::ArmingPolicy::MANUAL,
++                      base::SequencedTaskRunner::GetCurrentDefault()),
++      has_null_source_(has_null_source),
++      get_size_when_initialize_(get_size_when_initialize) {
++#else
+       handle_watcher_(FROM_HERE,
+                       mojo::SimpleWatcher::ArmingPolicy::MANUAL,
+                       base::SequencedTaskRunner::GetCurrentDefault()) {
++#endif
+   // TODO(yhirano): Turn this to a DCHECK once we find the root cause of
+   // https://crbug.com/1156550.
+   CHECK(chunked_data_pipe_getter_.is_bound());
++#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
++  if (!get_size_when_initialize) {
++    ArkWebInitInternal();
++  }
++#else
+   chunked_data_pipe_getter_.set_disconnect_handler(
+       base::BindOnce(&ChunkedDataPipeUploadDataStream::OnDataPipeGetterClosed,
+                      base::Unretained(this)));
+   chunked_data_pipe_getter_->GetSize(
+       base::BindOnce(&ChunkedDataPipeUploadDataStream::OnSizeReceived,
+                      base::Unretained(this)));
++#endif
+ }
+ 
+ ChunkedDataPipeUploadDataStream::~ChunkedDataPipeUploadDataStream() {}
+ 
+ bool ChunkedDataPipeUploadDataStream::AllowHTTP1() const {
+   return resource_request_body_->AllowHTTP1ForStreamingUpload();
+ }
+ 
+ int ChunkedDataPipeUploadDataStream::InitInternal(
+     const net::NetLogWithSource& net_log) {
++#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
++  if (get_size_when_initialize_) {
++    ArkWebInitInternal();
++  }
++#endif
+   // If there was an error either passed to the ReadCallback or as a result of
+   // closing the DataPipeGetter pipe, fail the read.
+   if (status_ != net::OK)
+     return status_;
+ 
+@@ -173,10 +199,16 @@ void ChunkedDataPipeUploadDataStream::ResetInternal() {
+ void ChunkedDataPipeUploadDataStream::OnSizeReceived(int32_t status,
+                                                      uint64_t size) {
+   DCHECK(!size_);
+   DCHECK_EQ(net::OK, status_);
+ 
++  // `status` must be a final net error.
++  if (status > 0 || status == net::ERR_IO_PENDING) {
++    mojo::ReportBadMessage("Only net::Errors allowed.");
++    status = net::ERR_INVALID_ARGUMENT;
++  }
++
+   status_ = status;
+   if (status == net::OK) {
+     size_ = size;
+     if (size == bytes_read_) {
+       // Only set this as a final chunk if there's a read in progress. Setting

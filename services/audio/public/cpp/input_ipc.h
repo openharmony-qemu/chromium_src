@@ -58,6 +58,9 @@ class COMPONENT_EXPORT(AUDIO_PUBLIC_CPP) InputIPC
   // AudioInputStreamClient implementation.
   void OnError(media::mojom::InputStreamErrorCode code) override;
   void OnMutedStateChanged(bool is_muted) override;
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  void OnPausedStateChanged(bool is_paused) override {}
+#endif // ARKWEB_MEDIA_CAPTURE
 
   void StreamCreated(media::mojom::ReadWriteAudioDataPipePtr data_pipe,
                      bool is_muted,

@@ -1,0 +1,23 @@
+diff a/services/viz/public/mojom/compositing/begin_frame_args.mojom b/services/viz/public/mojom/compositing/begin_frame_args.mojom	(rejected hunks)
+@@ -29,14 +30,21 @@ struct BeginFrameArgs {
+   mojo_base.mojom.TimeTicks dispatch_time;
+   mojo_base.mojom.TimeTicks client_arrival_time;
+   BeginFrameArgsType type;
+   bool on_critical_path;
+   bool animate_only;
++  [EnableIf=is_ohos]
++  gfx.mojom.Rect draw_rect;
++  [EnableIf=is_ohos]
++  bool internal_frame;
+ };
+ 
+ // See components/viz/common/frame_sinks/begin_frame_args.h.
+ struct BeginFrameAck {
+   uint64 source_id;
+   uint64 sequence_number;
+   int64 trace_id;
+   bool has_damage;
++
++  // ArkWeb: preferred frame interval for throttling
++  mojo_base.mojom.TimeDelta? preferred_frame_interval;
+ };

@@ -1,0 +1,31 @@
+diff a/services/network/test/test_cookie_manager.h b/services/network/test/test_cookie_manager.h	(rejected hunks)
+@@ -65,10 +66,29 @@ class TestCookieManager : public network::mojom::CookieManager {
+   void BlockThirdPartyCookies(bool block) override {}
+   void SetMitigationsEnabledFor3pcd(bool enable) override {}
+   void SetTrackingProtectionEnabledFor3pcd(bool enable) override {}
+   void SetPreCommitCallbackDelayForTesting(base::TimeDelta delay) override {}
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  void SetCanonicalCookieSync(
++      const ::net::CanonicalCookie& cookie,
++      const ::GURL& source_url,
++      const ::net::CookieOptions& cookie_options,
++      SetCanonicalCookieSyncCallback callback) override {}
++  void GetCookieListSync(
++      const ::GURL& url,
++      const ::net::CookieOptions& cookie_options,
++      const ::net::CookiePartitionKeyCollection& cookie_partition_key_collection,
++      GetCookieListSyncCallback callback) override {}
++  void DeleteCookiesSync(
++      network::mojom::CookieDeletionFilterPtr filter,
++      DeleteCookiesSyncCallback callback) override {}
++  void GetAllCookiesSync(GetAllCookiesSyncCallback callback) override {}
++  void SetAllCookies(const net::CookieList& list,
++                     SetAllCookiesCallback callback) override {}
++#endif
++
+   virtual void DispatchCookieChange(const net::CookieChangeInfo& change);
+ 
+  private:
+   // List of observers receiving cookie change notifications.
+   std::vector<mojo::Remote<network::mojom::CookieChangeListener>>

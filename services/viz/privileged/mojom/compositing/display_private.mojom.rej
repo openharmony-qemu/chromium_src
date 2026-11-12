@@ -1,0 +1,33 @@
+diff a/services/viz/privileged/mojom/compositing/display_private.mojom b/services/viz/privileged/mojom/compositing/display_private.mojom	(rejected hunks)
+@@ -16,10 +16,11 @@ import "ui/gfx/mojom/transform.mojom";
+ import "ui/gfx/geometry/mojom/geometry.mojom";
+ import "ui/latency/mojom/latency_info.mojom";
+ import "services/viz/privileged/mojom/compositing/begin_frame_observer.mojom";
+ import "services/viz/privileged/mojom/compositing/layered_window_updater.mojom";
+ import "services/viz/privileged/mojom/compositing/vsync_parameter_observer.mojom";
++import "services/viz/public/mojom/compositing/frame_sink_id.mojom";
+ 
+ // The DisplayPrivate is used by privileged clients to talk to Display.
+ [DirectReceiver]
+ interface DisplayPrivate {
+   SetDisplayVisible(bool visible);
+@@ -27,10 +28,19 @@ interface DisplayPrivate {
+   // Attempts to immediately swap a frame with the current size if possible,
+   // then will no longer swap until Resize() is called with a non-empty size.
+   [EnableIf=is_win, Sync]
+   DisableSwapUntilResize() => ();
+ 
++  [EnableIf=is_ohos, Sync]
++  SetShouldFrameSubmissionBeforeDraw(bool should) => ();
++
++  [EnableIf=is_ohos]
++  SetDrawRect(gfx.mojom.Rect rect);
++
++  [EnableIf=is_ohos]
++  SetDrawMode(int32 mode);
++
+   // Resizes the display.
+   Resize(gfx.mojom.Size size);
+ 
+   // Sets the matrix that will be used to transform the output color of the
+   // display. This only works in GPU compositing.

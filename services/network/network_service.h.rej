@@ -1,0 +1,61 @@
+diff a/services/network/network_service.h b/services/network/network_service.h	(rejected hunks)
+@@ -62,10 +62,14 @@
+ 
+ #if BUILDFLAG(IS_CT_SUPPORTED)
+ #include "services/network/public/mojom/ct_log_info.mojom.h"
+ #endif  // BUILDFLAG(IS_CT_SUPPORTED)
+ 
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++#include "arkweb/chromium_ext/servieces/network/public/mojom/network_config_ohos.mojom.h"
++#endif
++
+ namespace net {
+ class FileNetLogObserver;
+ class HostResolverManager;
+ class HttpAuthHandlerFactory;
+ class IPEndPoint;
+@@ -81,10 +85,14 @@ class DnsConfigChangeManager;
+ class HttpAuthCacheProxyCopier;
+ class NetLogProxySink;
+ class NetworkContext;
+ class NetworkService;
+ class SCTAuditingCache;
++#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) \
++    || BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS) || defined(COMPONENT_BUILD) // FIXME
++class ArkWebNetworkServiceExt;
++#endif
+ 
+ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
+     : public mojom::NetworkService {
+  public:
+   static const base::TimeDelta kInitialDohProbeTimeout;
+@@ -377,10 +392,14 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
+   }
+ 
+   static NetworkService* GetNetworkServiceForTesting();
+ 
+  private:
++#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) \
++    || BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS) || defined(COMPONENT_BUILD) // FIXME
++  friend class ArkWebNetworkServiceExt;
++#endif
+   class DelayedDohProbeActivator;
+ 
+   void InitMockNetworkChangeNotifierForTesting();
+ 
+   void DestroyNetworkContexts();
+@@ -512,10 +531,14 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
+ 
+   // This is used only in tests. It avoids leaky SystemDnsConfigChangeNotifiers
+   // leaking stale listeners between tests.
+   std::unique_ptr<net::NetworkChangeNotifier> mock_network_change_notifier_;
+ 
++#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
++  int timeout_override_ = 0;
++  net::handles::NetworkHandle network_for_dns_{net::handles::kInvalidNetworkHandle};
++#endif
+ #if BUILDFLAG(IS_LINUX)
+   mojo::Remote<mojom::GssapiLibraryLoadObserver> gssapi_library_load_observer_;
+ #endif  // BUILDFLAG(IS_LINUX)
+ 
+   std::unique_ptr<network::tpcd::metadata::Manager> tpcd_metadata_manager_;

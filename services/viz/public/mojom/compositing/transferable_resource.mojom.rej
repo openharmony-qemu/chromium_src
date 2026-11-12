@@ -1,0 +1,24 @@
+diff a/services/viz/public/mojom/compositing/transferable_resource.mojom b/services/viz/public/mojom/compositing/transferable_resource.mojom	(rejected hunks)
+@@ -63,18 +63,21 @@ struct TransferableResource {
+   bool is_low_latency_rendering;
+ 
+   [EnableIf=is_android]
+   bool is_backed_by_surface_view;
+ 
++  [EnableIf=arkweb_ai_hdr]
++  bool is_ai_hdr_active;
++
+   [EnableIf=is_android|is_win]
+   bool wants_promotion_hint;
+ 
+   gfx.mojom.ColorSpace color_space;
+   gfx.mojom.HDRMetadata hdr_metadata;
+   bool needs_detiling;
+ 
+-  [EnableIf=is_android]
++  [EnableIf=is_android|is_arkweb]
+   gpu.mojom.VulkanYCbCrInfo? ycbcr_info;
+ 
+   skia.mojom.SurfaceOrigin origin;
+   skia.mojom.AlphaType alpha_type;
+   ResourceSource resource_source;

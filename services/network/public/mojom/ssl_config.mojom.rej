@@ -1,0 +1,16 @@
+diff a/services/network/public/mojom/ssl_config.mojom b/services/network/public/mojom/ssl_config.mojom	(rejected hunks)
+@@ -3,10 +3,14 @@
+ // found in the LICENSE file.
+ 
+ module network.mojom;
+ 
+ enum SSLVersion {
++  [EnableIf=arkweb_ssl_auth_algo]
++  kTLS1,
++  [EnableIf=arkweb_ssl_auth_algo]
++  kTLS11,
+   kTLS12,
+   kTLS13,
+ };
+ 
+ // Controls the named groups for key agreement configured in supported_groups

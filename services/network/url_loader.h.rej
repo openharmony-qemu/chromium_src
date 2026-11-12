@@ -1,0 +1,67 @@
+diff a/services/network/url_loader.h b/services/network/url_loader.h	(rejected hunks)
+@@ -11,10 +11,11 @@
+ #include <memory>
+ #include <optional>
+ #include <string>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/component_export.h"
+ #include "base/functional/callback.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/raw_ref.h"
+ #include "base/memory/scoped_refptr.h"
+@@ -69,10 +70,15 @@
+ #include "services/network/shared_storage/shared_storage_request_helper.h"
+ #include "services/network/trust_tokens/trust_token_request_helper_factory.h"
+ #include "services/network/upload_progress_tracker.h"
+ #include "services/network/url_loader_context.h"
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++#include "arkweb/chromium_ext/services/network/prp_preload/include/preload_runner/prpp_request_loader.h"
++#include "arkweb/chromium_ext/services/network/prp_preload/include/preload_runner/prpp_request_loader_factory.h"
++#endif
++
+ namespace net {
+ class HttpResponseHeaders;
+ class IOBufferWithSize;
+ class IPEndPoint;
+ class URLRequestContext;
+@@ -106,19 +112,21 @@ class KeepaliveStatisticsRecorder;
+ class NetToMojoPendingBuffer;
+ class ScopedThrottlingToken;
+ class SharedDictionaryManager;
+ class SharedResourceChecker;
+ class SlopBucket;
++class URLLoaderUtils;
+ class TrustTokenUrlLoaderInterceptor;
+ 
+ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
+     : public mojom::URLLoader,
+       public net::URLRequest::Delegate,
+       public mojom::AuthChallengeResponder,
+       public mojom::ClientCertificateResponder {
+  public:
+   using DeleteCallback = base::OnceCallback<void(URLLoader* loader)>;
++  friend class URLLoaderUtils;
+ 
+   // Holds a sync and async implementation of URLLoaderClient. The sync
+   // implementation can be used if present to avoid posting a task to call back
+   // into CorsURLLoader.
+   class MaybeSyncURLLoaderClient {
+@@ -182,10 +190,15 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
+       ObserverWrapper<mojom::DeviceBoundSessionAccessObserver>
+           device_bound_session_observer,
+       mojo::PendingRemote<mojom::AcceptCHFrameObserver>
+           accept_ch_frame_observer,
+       bool shared_storage_writable_eligible,
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++      std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader,
++      const std::string& org_main_url,
++      std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info,
++#endif
+       SharedResourceChecker& shared_resource_checker,
+       base::WeakPtr<DevtoolsDurableMessage> devtools_durable_message);
+ 
+   URLLoader(const URLLoader&) = delete;
+   URLLoader& operator=(const URLLoader&) = delete;

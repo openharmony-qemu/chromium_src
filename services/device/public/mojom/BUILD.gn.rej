@@ -1,0 +1,18 @@
+diff a/services/device/public/mojom/BUILD.gn b/services/device/public/mojom/BUILD.gn	(rejected hunks)
+@@ -161,10 +169,16 @@ mojom("generic_sensor") {
+       ]
+     },
+   ]
+ 
+   public_deps = [ "//mojo/public/mojom/base" ]
++
++  enabled_features = []
++  if (is_arkweb) {
++    enabled_features += [ "is_arkweb" ]
++    enabled_features += [ "arkweb_sensor" ]
++  }
+ }
+ 
+ mojom("usb") {
+   generate_java = true
+   sources = [

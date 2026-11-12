@@ -62,7 +62,11 @@ class NetworkContextWithRealCertVerifierTest : public testing::Test {
   std::unique_ptr<network::NetworkContext> CreateContextWithParams(
       network::mojom::NetworkContextParamsPtr context_params) {
     network_context_remote_.reset();
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+    return std::make_unique<network::ArkWebNetworkContextExt>(
+#else
     return std::make_unique<network::NetworkContext>(
+#endif
         network_service_.get(),
         network_context_remote_.BindNewPipeAndPassReceiver(),
         std::move(context_params));

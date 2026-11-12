@@ -1,0 +1,13 @@
+diff a/services/network/public/cpp/url_loader_completion_status_mojom_traits.h b/services/network/public/cpp/url_loader_completion_status_mojom_traits.h	(rejected hunks)
+@@ -5,10 +5,11 @@
+ #ifndef SERVICES_NETWORK_PUBLIC_CPP_URL_LOADER_COMPLETION_STATUS_MOJOM_TRAITS_H_
+ #define SERVICES_NETWORK_PUBLIC_CPP_URL_LOADER_COMPLETION_STATUS_MOJOM_TRAITS_H_
+ 
+ #include <optional>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/component_export.h"
+ #include "base/time/time.h"
+ #include "mojo/public/cpp/bindings/struct_traits.h"
+ #include "net/ssl/ssl_info.h"
+ #include "services/network/public/cpp/cors/cors_mojom_traits.h"

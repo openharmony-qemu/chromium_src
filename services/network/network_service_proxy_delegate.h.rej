@@ -1,0 +1,57 @@
+diff a/services/network/network_service_proxy_delegate.h b/services/network/network_service_proxy_delegate.h	(rejected hunks)
+@@ -62,18 +66,55 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkServiceProxyDelegate
+       size_t chain_index,
+       const net::HttpResponseHeaders& response_headers,
+       net::CompletionOnceCallback callback) override;
+   void SetProxyResolutionService(
+       net::ProxyResolutionService* proxy_resolution_service) override;
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++  void OnTunnelConnectResult(
++      const net::ProxyChain& proxy_chain,
++      const std::string& host,
++      const net::HttpResponseHeaders& response_headers,
++      const net::HttpRequestHeaders& request_headers) override;
++  void OnProxyConnectResult(const net::ProxyChain& proxy_chain,
++                            int error_code) override;
++  void AddSuccessMainFrameHosts(const std::string& host) override;
++  bool IsFallbackProxyFailedHost(const std::string& host) override;
++  bool IsFallbackProxySuccessMainFrameHost(const std::string& host) override;
++  void AddByPassRuleWithHost(const std::string& host) override;
++  bool GetUrlMaliciousTypeAndHwCode(const std::vector<GURL>& url_chain,
++                                    int* malicious_type,
++                                    int* hw_code) override;
++  bool IsFallbackProxyMaliciousType(int malicious_type) override;
++  bool IsFallbackProxyHwCode(int hw_code) override;
++  bool IsFallbackProxyRetryErrorCode(int net_error) override;
++  bool IsFallbackProxyBlockHost(const std::string& host) override;
++  int GetMaliciousUrlCheckWaitTime() override;
++  int GetProxyConnectTimeout() override;
++  int GetProxyTunnelTimeout() override;
++  net::FallbackProxyStatus GetFallbackProxyStatus() override;
++  bool IsFallbackProxyServer(const net::ProxyChain& proxy_chain) override;
++  bool IsAccelerateProxyConfig() override;
++  bool IsDomainInProxyWhitelist(const std::string& domain) override;
++#endif
+   bool AliasRequiresProxyOverride(
+       const std::string scheme,
+       const std::vector<std::string>& dns_aliases,
+       const net::NetworkAnonymizationKey& network_anonymization_key) override;
+ 
+  private:
+   friend class NetworkServiceProxyDelegateTest;
+ 
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++  struct PageSafeBrowsingInfo {
++    PageSafeBrowsingInfo(int type, int code);
++    ~PageSafeBrowsingInfo();
++
++    int malicious_type;
++    int hw_code;
++  };
++#endif
++
+   // Checks whether `proxy_chain` is present in the current proxy config.
+   bool IsInProxyConfig(const net::ProxyChain& proxy_chain) const;
+ 
+   // Whether the HTTP |method| with current |proxy_info| is eligible to be
+   // proxied.

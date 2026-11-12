@@ -1,0 +1,53 @@
+diff a/services/viz/public/mojom/BUILD.gn b/services/viz/public/mojom/BUILD.gn	(rejected hunks)
+@@ -1,10 +1,11 @@
+ # Copyright 2017 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ import("//build/config/ui.gni")
+ import("//mojo/public/tools/bindings/mojom.gni")
++import("//arkweb/build/features/features.gni")
+ mojom("mojom") {
+   generate_java = true
+   sources = [
+     "compositing/animation.mojom",
+     "compositing/begin_frame_args.mojom",
+@@ -51,15 +52,39 @@ mojom("mojom") {
+     "hit_test/input_target_client.mojom",
+   ]
+ 
+   # Used in thread.mojom
+   enabled_features = []
++  if (arkweb_slide && !is_component_build) { # FIXME is_component_build
++    enabled_features += [ "arkweb_slide" ]
++  }
++  if (arkweb_same_layer) {
++    enabled_features += ["arkweb_same_layer"]
++  }
++  if (arkweb_performance_scheduling) {
++    enabled_features += ["arkweb_performance_scheduling"]
++  }
++  if (arkweb_vsync_schedule) {
++    enabled_features += ["arkweb_vsync_schedule"]
++  }
++  if (arkweb_report_sys_event) {
++    enabled_features += ["arkweb_report_sys_event"]
++  }
+   if (is_fuchsia || is_apple) {
+     enabled_features += [ "thread_id_is_64_bit" ]
+   } else {
+     enabled_features += [ "thread_id_is_32_bit" ]
+   }
++  if (arkweb_throttle_frame) {
++    enabled_features += ["arkweb_throttle_frame"]
++  }
++  if (arkweb_video_assistant) {
++    enabled_features += ["arkweb_render_video_view"]
++  }
++  if (arkweb_ai_hdr) {
++    enabled_features += ["arkweb_ai_hdr"]
++  }
+ 
+   public_deps = [
+     ":shared_image_format",
+     ":surfaces",
+     "//cc/mojom:mojom_browser_controls",

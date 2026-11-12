@@ -204,6 +204,22 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
 
   ~NetworkContext() override;
 
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  virtual ArkWebNetworkContextExt* AsArkWebNetworkContextExt() {
+    return nullptr;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  void InitPRParallelPreloadMgr() override {}
+  void StartPage(const std::string& url,
+      const net::NetworkAnonymizationKey& networkAnonymizationKey, uint64_t addr_web_handle,
+      StartPageCallback page_origin_cb) override {}
+  void StopPage(uint64_t addr_web_handle) override {}
+  void SetURLLoaderFactoryParam(mojom::URLLoaderFactoryParamsPtr params) override {}
+#endif
+
+
   static std::unique_ptr<NetworkContext> CreateForTesting(
       NetworkService* network_service,
       mojo::PendingReceiver<mojom::NetworkContext> receiver,
@@ -1259,5 +1275,9 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
 };
 
 }  // namespace network
+
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
+#include "arkweb/chromium_ext/services/network/arkweb_network_context_ext.h"
+#endif
 
 #endif  // SERVICES_NETWORK_NETWORK_CONTEXT_H_

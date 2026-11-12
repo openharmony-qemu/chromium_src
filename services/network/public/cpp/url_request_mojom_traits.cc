@@ -146,6 +146,12 @@ bool StructTraits<
     network::debug::SetDeserializationCrashKeyString("referrer");
     return false;
   }
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  if (!data.ReadMainUrl(&out->main_url)) {
+    network::debug::SetDeserializationCrashKeyString("main_url");
+    return false;
+  }
+#endif  //  ARKWEB_PRP_PRELOAD
   if (!data.ReadReferrerPolicy(&out->referrer_policy) ||
       !data.ReadHeaders(&out->headers) ||
       !data.ReadCorsExemptHeaders(&out->cors_exempt_headers) ||

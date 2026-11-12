@@ -1,0 +1,37 @@
+diff a/services/network/prefetch_matches.cc b/services/network/prefetch_matches.cc	(rejected hunks)
+@@ -14,10 +14,11 @@
+ #include <string>
+ #include <string_view>
+ #include <type_traits>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/check.h"
+ #include "base/compiler_specific.h"
+ #include "base/containers/contains.h"
+ #include "base/containers/fixed_flat_map.h"
+ #include "base/containers/fixed_flat_set.h"
+@@ -119,10 +126,11 @@ namespace {
+   DO_FIELD(socket_tag) __VA_ARGS__                                 \
+   DO_FIELD(keepalive_token) __VA_ARGS__                            \
+   DO_FIELD(allows_device_bound_session_registration) __VA_ARGS__   \
+   DO_FIELD(permissions_policy) __VA_ARGS__   \
+   DO_FIELD(fetch_retry_options)
++#endif // BUILDFLAG(IS_ARKWEB)
+ 
+ // clang-format on
+ 
+ constexpr bool FieldCountIsCorrect(const ResourceRequest& request) {
+   if ((false)) {
+@@ -220,10 +229,11 @@ enum class FieldsForUma {
+   kExpectedPublicKeys = 64,
+   kPermissionsPolicy = 65,
+   kClientSideContentDecodingEnabled = 66,
+   kMaxValue = kClientSideContentDecodingEnabled,
+ };
++#endif
+ // LINT.ThenChange(//tools/metrics/histograms/metadata/network/enums.xml:PrefetchMatchesResourceRequestField)
+ 
+ constexpr auto kUmaEnumMap = base::MakeFixedFlatMap<Fields, FieldsForUma>({
+     {Fields::kmethod, FieldsForUma::kMethod},
+     {Fields::kurl, FieldsForUma::kUrl},

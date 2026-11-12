@@ -81,6 +81,9 @@ interface DeviceService {
   BindPublicIpAddressGeolocationProvider(
       pending_receiver<PublicIpAddressGeolocationProvider> receiver);
 
+  // Binds an AudioDataReport endpoint.
+  BindResSchedReport(pending_receiver<ResSchedReport> receiver);
+
   // Binds a ScreenOrientationListener endpoint.
   BindScreenOrientationListener(
       pending_receiver<ScreenOrientationListener> receiver);
@@ -90,6 +93,9 @@ interface DeviceService {
 
   // binds a SerialPortManager endpoint.
   BindSerialPortManager(pending_receiver<SerialPortManager> receiver);
+
+  // Binds a SysPropRenderObserver endpoint.
+  BindSysPropRenderObserver(pending_receiver<SysPropRenderObserver> receiver);
 
   // Binds a TimeZoneMonitor endpoint.
   BindTimeZoneMonitor(pending_receiver<TimeZoneMonitor> receiver);

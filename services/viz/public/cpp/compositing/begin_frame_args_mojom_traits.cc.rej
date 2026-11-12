@@ -1,0 +1,55 @@
+diff a/services/viz/public/cpp/compositing/begin_frame_args_mojom_traits.cc b/services/viz/public/cpp/compositing/begin_frame_args_mojom_traits.cc	(rejected hunks)
+@@ -4,10 +4,13 @@
+ 
+ #include "services/viz/public/cpp/compositing/begin_frame_args_mojom_traits.h"
+ 
+ #include "mojo/public/cpp/base/time_mojom_traits.h"
+ #include "services/viz/public/cpp/crash_keys.h"
++#if BUILDFLAG(ARKWEB_SYNC_RENDER)
++#include "ui/gfx/geometry/mojom/geometry_mojom_traits.h"
++#endif
+ 
+ namespace mojo {
+ 
+ // static
+ viz::mojom::BeginFrameArgsType
+@@ -66,10 +69,18 @@ bool StructTraits<viz::mojom::BeginFrameArgsDataView, viz::BeginFrameArgs>::
+   }
+   out->frames_throttled_since_last = data.frames_throttled_since_last();
+   out->trace_id = data.trace_id();
+   out->on_critical_path = data.on_critical_path();
+   out->animate_only = data.animate_only();
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  out->internal_frame = data.internal_frame();
++#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
++#if BUILDFLAG(ARKWEB_SYNC_RENDER)
++  if (!data.ReadDrawRect(&out->draw_rect)) {
++    return false;
++  }
++#endif
+   return true;
+ }
+ 
+ // static
+ bool StructTraits<viz::mojom::BeginFrameAckDataView, viz::BeginFrameAck>::Read(
+@@ -82,9 +93,20 @@ bool StructTraits<viz::mojom::BeginFrameAckDataView, viz::BeginFrameAck>::Read(
+   }
+   out->frame_id.source_id = data.source_id();
+   out->frame_id.sequence_number = data.sequence_number();
+   out->trace_id = data.trace_id();
+   out->has_damage = data.has_damage();
++
++#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
++  if (!data.ReadPreferredFrameInterval(&out->preferred_frame_interval)) {
++    return false;
++  }
++  // Preferred_frame_interval must be nullopt or non-negative.
++  if (out->preferred_frame_interval &&
++      out->preferred_frame_interval->is_negative()) {
++    return false;
++  }
++#endif
+   return true;
+ }
+ 
+ }  // namespace mojo

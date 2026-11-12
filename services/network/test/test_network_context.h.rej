@@ -1,0 +1,41 @@
+diff a/services/network/test/test_network_context.h b/services/network/test/test_network_context.h	(rejected hunks)
+@@ -385,20 +385,39 @@ class TestNetworkContext : public mojom::NetworkContext {
+                 const ResourceRequest& request,
+                 const net::MutableNetworkTrafficAnnotationTag&
+                     traffic_annotation) override {}
+   void GetBoundNetworkForTesting(
+       GetBoundNetworkForTestingCallback callback) override {}
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  void SetHostIP(const std::string& HostName,
++    const std::vector<std::string>& Address,
++    uint32_t AliveTime) override {}
++  void ClearHostIP(const std::string& HostName) override {}
++  void InitPRParallelPreloadMgr() override {}
++  void StartPage(const std::string &url, const ::net::NetworkAnonymizationKey &networkAnonymizationKey,
++                 uint64_t addr_web_handle, StartPageCallback callback) override {}
++  void StopPage(uint64_t addr_web_handle) override {}
++  void SetURLLoaderFactoryParam(mojom::URLLoaderFactoryParamsPtr params) override {}
++  void LookupServerBasicAuthCredentials(
++      const GURL& url,
++      const net::NetworkAnonymizationKey& network_anonymization_key,
++      LookupServerBasicAuthCredentialsCallback callback) override {}
++#endif  // BUILDFLAG(ARKWEB_UNITTESTS)
+   void GetDeviceBoundSessionManager(
+       mojo::PendingReceiver<network::mojom::DeviceBoundSessionManager>
+           device_bound_session_manager) override {}
+   void EnableDurableMessageCollector(
+       const base::UnguessableToken& throttling_profile_id,
+       mojo::PendingReceiver<network::mojom::DurableMessageCollector> receiver)
+       override {}
+   void AddQuicHints(
+       const std::vector<url::SchemeHostPort>& origins,
+       const net::NetworkAnonymizationKey& network_anonymization_key) override {}
++
++#if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
++  void ClearClientAuthCache() override {}
++#endif  // BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
+ };
+ 
+ }  // namespace network
+ 
+ #endif  // SERVICES_NETWORK_TEST_TEST_NETWORK_CONTEXT_H_

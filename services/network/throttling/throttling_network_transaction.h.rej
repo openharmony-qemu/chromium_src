@@ -1,0 +1,17 @@
+diff a/services/network/throttling/throttling_network_transaction.h b/services/network/throttling/throttling_network_transaction.h	(rejected hunks)
+@@ -94,10 +101,15 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ThrottlingNetworkTransaction
+       base::RepeatingCallback<void(net::HttpRequestHeaders*)> callback)
+       override;
+   void SetIsSharedDictionaryReadAllowedCallback(
+       base::RepeatingCallback<bool()> callback) override;
+   net::ConnectionAttempts GetConnectionAttempts() const override;
++
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  net::ConnectionAttempts GetExtraConnectionAttempts() const override;
++#endif
++
+   void CloseConnectionOnDestruction() override;
+   bool IsMdlMatchForMetrics() const override;
+ 
+  protected:
+   friend class ThrottlingControllerTestHelper;

@@ -34,6 +34,7 @@ void VibrationManagerImpl::Vibrate(int64_t milliseconds,
 }
 
 void VibrationManagerImpl::Cancel(CancelCallback callback) {
+  PlatformCancel();
   VibrationManagerImpl::cancelled_for_testing_ = true;
   std::move(callback).Run();
 }

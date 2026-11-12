@@ -17,6 +17,13 @@ import "services/viz/public/mojom/compositing/thread.mojom";
 import "services/viz/public/mojom/hit_test/hit_test_region_list.mojom";
 import "ui/gfx/geometry/mojom/geometry.mojom";
 
+enum CompositorFrameSinkType {
+  kUnspecified,
+  kVideo,
+  kMediaStream,
+  kLayerTree,
+};
+
 struct LayerContextSettings {
   bool draw_mode_is_gpu;
 
@@ -90,6 +97,8 @@ interface CompositorFrameSink {
                         CompositorFrame frame,
                         HitTestRegionList? hit_test_region_list,
                         uint64 submit_time);
+  [EnableIf=arkweb_throttle_frame]
+  InitializeCompositorFrameSinkType(CompositorFrameSinkType type);
 
   // Notifies the frame sink that a BeginFrame was completed, but that no
   // CompositorFrame was produced as a result of it.

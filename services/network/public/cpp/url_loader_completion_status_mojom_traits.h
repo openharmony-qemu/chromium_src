@@ -21,6 +21,15 @@
 #include "services/network/public/mojom/cors.mojom-shared.h"
 #include "services/network/public/mojom/url_loader_completion_status.mojom-shared.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/net/base/navigation_info.h"
+#include "arkweb/chromium_ext/services/network/public/mojom/navigation_info.mojom-shared.h"
+#endif
+
 namespace mojo {
 
 // The wrapper struct is effectively an alias of the wrapped enum, so map them.
@@ -56,6 +65,12 @@ class COMPONENT_EXPORT(NETWORK_CPP_BASE)
       const network::URLLoaderCompletionStatus& status) {
     return status.exists_in_cache;
   }
+
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  static bool abort_due_to_cef_browser_destroyed(const network::URLLoaderCompletionStatus& status) {
+    return status.abort_due_to_cef_browser_destroyed;
+  }
+#endif  //  ARKWEB_EX_DOWNLOAD
 
   static const base::TimeTicks& completion_time(
       const network::URLLoaderCompletionStatus& status) {
@@ -111,6 +126,32 @@ class COMPONENT_EXPORT(NETWORK_CPP_BASE)
       const network::URLLoaderCompletionStatus& status) {
     return status.should_collapse_initiator;
   }
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  static bool used_fallback_proxy(
+      const network::URLLoaderCompletionStatus& status) {
+    return status.used_fallback_proxy;
+  }
+
+  static bool needs_reload_with_fallback_proxy(
+      const network::URLLoaderCompletionStatus& status) {
+    return status.needs_reload_with_fallback_proxy;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
+  static int32_t custom_error_code(
+      const network::URLLoaderCompletionStatus& status) {
+    return status.custom_error_code;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  static const std::optional<net::NavigationInfo>& navigation_info(
+      const network::URLLoaderCompletionStatus& status) {
+    return status.navigation_info;
+  }
+#endif
 
   static bool Read(network::mojom::URLLoaderCompletionStatusDataView data,
                    network::URLLoaderCompletionStatus* out);

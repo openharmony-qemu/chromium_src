@@ -507,7 +507,7 @@ void HandleHelpSwitches(const base::CommandLine& command_line) {
 }
 #endif  // BUILDFLAG(IS_LINUX)
 
-#if !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 void SIGTERMProfilingShutdown(int signal) {
   content::Profiling::Stop();
   struct sigaction sigact;
@@ -764,7 +764,7 @@ void InitLogging(const std::string& process_type) {
   }
 #endif  // BUILDFLAG(IS_CHROMEOS)
 }
-#endif  // !BUILDFLAG(IS_ANDROID)
+#endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 
 void RecordMainStartupMetrics(const StartupTimestamps& timestamps) {
   const base::TimeTicks now = base::TimeTicks::Now();
@@ -1095,8 +1095,8 @@ void ChromeMainDelegate::CreateThreadPool(std::string_view name) {
       std::make_unique<ChromeThreadProfilerClient>());
 
 // `ChromeMainDelegateAndroid::PreSandboxStartup` creates the profiler a little
-// later. Same with CEF.
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ENABLE_CEF)
+// later.
+#if !BUILDFLAG(IS_ANDROID)
   // Start the sampling profiler as early as possible - namely, once the thread
   // pool has been created.
   sampling_profiler_ = std::make_unique<MainThreadStackSamplingProfiler>();
@@ -1273,8 +1273,11 @@ std::optional<int> ChromeMainDelegate::BasicStartupComplete() {
 
   content::Profiling::ProcessStarted();
 
+#if !BUILDFLAG(IS_OHOS)
+  // TODO:OHOS
   // Setup tracing sampler profiler as early as possible at startup if needed.
   SetupTracing();
+#endif
 
 #if BUILDFLAG(IS_WIN)
   v8_crashpad_support::SetUp();
@@ -1716,7 +1719,8 @@ void ChromeMainDelegate::PreSandboxStartup() {
     CHECK(!loaded_locale.empty()) << "Locale could not be found for " << locale;
   }
 
-#if !BUILDFLAG(ENABLE_CEF)
+  // if (!cef::IsChromeRuntimeEnabled()) {
+  if (false) {
 #if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_MAC)
   // Zygote needs to call InitCrashReporter() in RunZygote().
   if (process_type != switches::kZygoteProcess &&
@@ -1738,8 +1742,10 @@ void ChromeMainDelegate::PreSandboxStartup() {
     }
 #else
     crash_reporter::InitializeCrashpad(process_type.empty(), process_type);
+#if !defined(__MUSL__)
     crash_reporter::SetFirstChanceExceptionHandler(
         v8::TryHandleWebAssemblyTrapPosix);
+#endif
 #endif  // BUILDFLAG(IS_ANDROID)
   }
 #endif  // BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_MAC)
@@ -1894,8 +1900,10 @@ void ChromeMainDelegate::ZygoteForked() {
   std::string process_type =
       command_line->GetSwitchValueASCII(switches::kProcessType);
   crash_reporter::InitializeCrashpad(false, process_type);
+#if !defined(__MUSL__)
   crash_reporter::SetFirstChanceExceptionHandler(
       v8::TryHandleWebAssemblyTrapPosix);
+#endif
 
   // Reset the command line for the newly spawned process.
   crash_keys::SetCrashKeysFromCommandLine(*command_line);

@@ -1,0 +1,18 @@
+diff a/chrome/app/BUILD.gn b/chrome/app/BUILD.gn	(rejected hunks)
+@@ -82,10 +82,16 @@ if (is_win) {
+ grit_strings("generated_resources") {
+   source = "generated_resources.grd"
+   defines = chrome_grit_defines + [ "is_cfm=${is_cfm}" ]
+   output_dir = "$root_gen_dir/chrome"
+   outputs = [ "grit/generated_resources.h" ]
++#ifdef arkweb_i18n
++  if (arkweb_i18n) {
++    locales = all_chrome_locales + extra_locales
++  }
++
++#endif
+ 
+   if (is_android) {
+     create_android_resources = true
+   }
+ }

@@ -1,0 +1,17 @@
+diff a/chrome/app/google_chrome_strings.grd b/chrome/app/google_chrome_strings.grd	(rejected hunks)
+@@ -304,10 +304,15 @@ chromium_strings.grd. -->
+       <if expr="is_macosx or is_linux">
+         <message name="IDS_FIRST_RUN_DIALOG_WINDOW_TITLE" desc="Window title of First Run dialog on Mac and Linux, displayed in title bar">
+           Welcome to Google Chrome
+         </message>
+       </if>
++      <if expr="is_ohos">
++        <message name="IDS_FIRST_RUN_DIALOG_WINDOW_TITLE" desc="Window title of First Run dialog on Ohos, displayed in title bar">
++          Welcome to Google Chrome
++        </message>
++      </if>
+       <if expr="is_chromeos">
+         <if expr="reven">
+           <message name="IDS_PRODUCT_OS_NAME" desc="The ChromeOS Flex application name">
+             Google ChromeOS Flex
+           </message>

@@ -1,0 +1,17 @@
+diff a/chrome/app/chromium_strings.grd b/chrome/app/chromium_strings.grd	(rejected hunks)
+@@ -318,10 +325,15 @@ If you update this file, be sure also to update google_chrome_strings.grd. -->
+       <if expr="is_macosx or is_linux">
+         <message name="IDS_FIRST_RUN_DIALOG_WINDOW_TITLE" desc="Window title of First Run dialog on Mac and Linux, displayed in title bar">
+           Welcome to Chromium
+         </message>
+       </if>
++      <if expr="is_ohos">
++        <message name="IDS_FIRST_RUN_DIALOG_WINDOW_TITLE" desc="Window title of First Run dialog on Ohos, displayed in title bar">
++          Welcome to Chromium
++        </message>
++      </if>
+       <if expr="is_chromeos">
+         <message name="IDS_PRODUCT_OS_NAME" desc="The ChromeOS application name">
+           ChromiumOS
+         </message>
+         <message name="IDS_SHORT_PRODUCT_OS_NAME" desc="The ChromeOS application short name">

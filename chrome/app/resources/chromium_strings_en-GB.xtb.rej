@@ -1,0 +1,102 @@
+diff a/chrome/app/resources/chromium_strings_en-GB.xtb b/chrome/app/resources/chromium_strings_en-GB.xtb	(rejected hunks)
+@@ -106,16 +106,18 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
+ <translation id="2190166659037789668">Update check error: <ph name="UPDATE_CHECK_ERROR" />.</translation>
+ <translation id="2199210295479376551">Remove account from Chromium</translation>
+ <translation id="2210502920229141283">Stay safer on the go with Enhanced Safe Browsing on Chromium for iOS</translation>
+ <translation id="2210682093923538346">Dangerous site. Chromium removed notifications.</translation>
+ <translation id="2236949375853147973">My Activity</translation>
++<translation id="2238104961394611930">On • Extension source cannot be verified</translation>
+ <translation id="2238130810669087193">To get your addresses and more on all your devices, sign in to Chromium. This address will be saved in your Google Account after you sign in.</translation>
+ <translation id="2241627712206172106">If you share a computer, friends and family can browse separately and set up Chromium just the way they want.</translation>
+ <translation id="2283803047247799269">Search this tab with image search</translation>
+ <translation id="2287771843518581140">{NUM_TABS,plural, =1{Chromium recommends pausing the tab that's slowing your browser}other{Chromium recommends pausing the tabs that are slowing your browser}}</translation>
+ <translation id="2307973900865360088">Keep in Dock</translation>
+ <translation id="2313870531055795960">Checks URLs with a list of unsafe sites stored in Chromium. If a site tries to steal your password, or when you download a harmful file, Chromium may also send URLs, including bits of page content, to Safe Browsing.</translation>
++<translation id="2340553376566028509">On • The source of this extension could not be verified</translation>
+ <translation id="2332076562712130931">This action will:
+         <ph name="LINE_BREAKS" />
+           • Reset some Chromium settings and Chromium shortcuts
+           <ph name="LINE_BREAK" />
+           • Disable extensions
+@@ -144,10 +146,11 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
+ <translation id="2560420686485554789">Chromium needs storage access to download files</translation>
+ <translation id="2572494885440352020">Chromium Helper</translation>
+ <translation id="2575822587468774919">Select anything to search with image search</translation>
+ <translation id="2576118232315942160">To get your passwords and more on all your devices, sign in to Chromium</translation>
+ <translation id="2592940277904433508">Continue using Chromium</translation>
++<translation id="259482898795437589">{NUM_EXTENSIONS,plural, =1{Browser recommends that you remove it}other {Browser recommends that you remove them}}</translation>
+ <translation id="259935314519650377">Failed to cache the downloaded installer. Error: <ph name="UNPACK_CACHING_ERROR_CODE" />.</translation>
+ <translation id="2620436844016719705">System</translation>
+ <translation id="2629740064077610681">Your organisation can see and manage browsing data, such as your bookmarks, history and passwords. It can't see browsing data in other Chromium profiles</translation>
+ <translation id="2635452620547538388">Verify that it's you to use and save Chromium data in your account, <ph name="ACCOUNT_EMAIL" /></translation>
+ <translation id="2637732208198500597">{COUNT,plural, =0{Advanced Protection requires that you relaunch Chromium to apply an update}=1{Advanced Protection requires that you relaunch Chromium to apply an update. Your Incognito window won't reopen.}other{Advanced Protection requires that you relaunch Chromium to apply an update. Your # Incognito windows won't reopen.}}</translation>
+@@ -221,19 +224,21 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
+ <translation id="3366305173356742781">Chromium data in your account</translation>
+ <translation id="3369405342922656244">Search this page with image search</translation>
+ <translation id="3387527074123400161">Chromium OS</translation>
+ <translation id="3406848076815591792">Switch to existing Chromium profile?</translation>
+ <translation id="3412460710772753638">In Password Manager on this device</translation>
++<translation id="3467729044755133349">Off • The source of this extension could not be verified</translation>
+ <translation id="3461644266919055473">Making Chromium yours…</translation>
+ <translation id="347328004046849135">Chromium will notify you when you sign in with a compromised password</translation>
+ <translation id="3474745554856756813">This will delete <ph name="ITEMS_COUNT" /> items from this device. To retrieve your data later, sign in to Chromium as <ph name="USER_EMAIL" />.</translation>
+ <translation id="3497319089134299931"><ph name="SHORTCUT" /> can switch between Chromium profiles</translation>
+ <translation id="3509308970982693815">Please close all Chromium windows and try again.</translation>
+ <translation id="3522404737534491619">To share your window, allow screen recording for Chromium in System Settings</translation>
+ <translation id="3530103706039034513"><ph name="EXISTING_USER" /> is already signed in.  To keep your browsing separate, sign in to Chromium in your own profile as <ph name="USER_EMAIL_ADDRESS" />.</translation>
+ <translation id="3561853857681580870">To share your screen, allow screen recording for Chromium in System Settings.</translation>
+ <translation id="3597003331831379823">Failed to run setup with elevated privileges. <ph name="METAINSTALLER_ERROR" /></translation>
++<translation id="360610872308168435">Browser recommends you to review this extension</translation>
+ <translation id="3639635944603682591">This person's browsing data will be deleted from this device. To recover the data, sign in to Chromium as <ph name="USER_EMAIL" />.</translation>
+ <translation id="364817392622123556">{COUNT,plural, =0{A new update for Chromium is available and will be applied as soon as you relaunch.}=1{A new update for Chromium is available and will be applied as soon as you relaunch. Your Incognito window won't reopen.}other{A new update for Chromium is available and will be applied as soon as you relaunch. Your # Incognito windows won't reopen.}}</translation>
+ <translation id="3651803019964686660">To send a number from <ph name="ORIGIN" /> to your Android phone, sign in to Chromium on both devices.</translation>
+ <translation id="3667616615096815454">Unable to install, the application is unknown to the server.</translation>
+ <translation id="3675854891107786059">Use your <ph name="BEGIN_LINK" />own passphrase<ph name="END_LINK" /> to encrypt all the Chromium data in your Google Account. Payment methods and addresses from Google Pay won't be encrypted. Browsing history from Chromium won't sync.</translation>
+@@ -341,10 +346,11 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
+ <translation id="4759645701210484457">Ask Chromium</translation>
+ <translation id="4771701986670315895">You haven't visited recently. Chromium removed <ph name="PERMISSION_1" />, <ph name="PERMISSION_2" /> and <ph name="COUNT" /> more.</translation>
+ <translation id="4788777615168560705">Chromium can't check your passwords. Try again after 24 hours or <ph name="BEGIN_LINK" />check passwords in your Google Account<ph name="END_LINK" />.</translation>
+ <translation id="479167709087336770">This uses the same spell checker that's used in Google search. Text that you type in the browser is sent to Google. You can always change this behaviour in settings.</translation>
+ <translation id="4814736265800133385">Use Chromium without an account</translation>
++<translation id="483739396253020185">Browser can't verify where this extension comes from, and it might be unsafe. Remove it from Browser so it can no longer see or change your data on sites you visit, including your personal info.</translation>
+ <translation id="4888717733111232871">Inbound rule for Chromium to allow mDNS traffic.</translation>
+ <translation id="4893347770495441059">Relaunch to Update &amp;Chromium</translation>
+ <translation id="4918844574251943176">Image copied</translation>
+ <translation id="4943838377383847465">Chromium is in background mode.</translation>
+ <translation id="494490797786467921">Click to close the Chromium sign-in dialogue</translation>
+@@ -515,10 +521,11 @@ Some features may be unavailable. Please specify a different profile directory o
+ <translation id="6857782730669500492">Chromium - <ph name="PAGE_TITLE" /></translation>
+ <translation id="6859580922007887573">Tab to continue</translation>
+ <translation id="6862030660799253820">Search this image with image search</translation>
+ <translation id="6873893289264747459">Chromium found that '<ph name="EXTENSION_NAME" />' contains malware</translation>
+ <translation id="6877155553248388166">bottom-right corner of search area: right <ph name="RIGHT" />%, bottom <ph name="BOTTOM" />%</translation>
++<translation id="6885534934768077023">Note: Browser cannot prevent extensions from recording your browsing history. To disable this extension in Private mode, toggle off this option.</translation>
+ <translation id="6896758677409633944">Copy</translation>
+ <translation id="6901631050894301805">Set Chromium as your default browser and pin it to your taskbar</translation>
+ <translation id="6909503629704372277">&amp;Manage Chromium profiles</translation>
+ <translation id="6934579572334859869">Ask image search about this image</translation>
+ <translation id="6964305034639999644">Open link in Chromium inco&amp;gnito window</translation>
+@@ -573,10 +580,11 @@ Google Chrome is unable to recover your settings.</translation>
+ <translation id="7517403744065880907">You'll save and use passwords and more in your Google Account whenever you're signed in to Chromium. <ph name="LEARN_MORE" /></translation>
+ <translation id="751935028865900641">Sites will probably work as expected. You'll be signed out of most sites when you close all Chromium windows, except your Google Account if you're signed in to Chromium.</translation>
+ <translation id="753534427205733210">{0,plural, =1{Chromium will relaunch in 1 minute}other{Chromium will relaunch in # minutes}}</translation>
+ <translation id="7565444033145385702">To protect your data, let Chromium remove permissions from sites that you haven't visited recently.</translation>
+ <translation id="7583399374488819119"><ph name="COMPANY_NAME" /> installer</translation>
++<translation id="7597668698051545254">Off • Extension source cannot be verified</translation>
+ <translation id="761356813943268536">Chromium is using your camera and microphone.</translation>
+ <translation id="7617377681829253106">Chromium just got better</translation>
+ <translation id="7622753900276619808">You now have more features available in Chromium</translation>
+ <translation id="7649070708921625228">Help</translation>
+ <translation id="7658239707568436148">Cancel</translation>
+@@ -619,10 +627,11 @@ Google Chrome is unable to recover your settings.</translation>
+ <translation id="8105840573057009683">Chromium needs location permission for this site</translation>
+ <translation id="8118331347066725040">Send feedback for search with Lens</translation>
+ <translation id="8133124826068723441">Chromium OS could not sync your data because sync is not available for your domain.</translation>
+ <translation id="813913629614996137">Initialising...</translation>
+ <translation id="81770708095080097">This file is dangerous, so Chromium has blocked it.</translation>
++<translation id="8203309434113072810">Warning: Browser cannot prevent extensions from recording your browsing history. To disable this extension in Incognito mode, unselect this option.</translation>
+ <translation id="8177472873527554730">Can't find content in page</translation>
+ <translation id="8200109504272824693">Enter your passphrase to use and save Chromium data in your account, <ph name="USER_EMAIL" /></translation>
+ <translation id="8221491193165283816">You usually block notifications. To let this site notify you, click here.</translation>
+ <translation id="8223363452568144035">To use your camera, give Chromium access in <ph name="BEGIN_LINK" />system settings<ph name="END_LINK" /></translation>
+ <translation id="8232193495299001329">Chromium can't verify where this extension comes from, and it might be unsafe. Remove it from Chromium so that it can no longer see and change your data on sites that you visit, including personal info.</translation>

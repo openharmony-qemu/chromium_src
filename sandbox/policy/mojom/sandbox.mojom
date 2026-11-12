@@ -147,8 +147,8 @@ enum Sandbox {
   // Currently the sandboxing of the On Device Translation service needs
   // a dedicated sandbox type on macOS, Linux and ChromeOS.
   // On Windows the kService sandbox type is used.
-  [EnableIf=is_linux|is_mac|is_chromeos] kOnDeviceTranslation,
+  [EnableIf=is_linux|is_mac|is_chromeos|is_ohos] kOnDeviceTranslation,
 
   // Like kUtility but allows loading of the shape detection internal library.
-  [EnableIf=is_chromeos|is_linux] kShapeDetection,
+  [EnableIf=is_chromeos|is_linux|is_ohos] kShapeDetection,
 };

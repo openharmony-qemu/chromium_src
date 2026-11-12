@@ -1,0 +1,9 @@
+diff a/.gn b/.gn	(rejected hunks)
+@@ -167,6 +168,7 @@ exec_script_allowlist =
+       "//remoting/remoting_version.gni",
+       "//remoting/host/installer/win/generate_clsids.gni",
+ 
+       "//tools/grit/grit_rule.gni",
+       "//tools/gritsettings/BUILD.gn",
++      "//v8/BUILD.gn"
+     ]

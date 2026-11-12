@@ -1,0 +1,59 @@
+diff a/tools/grit/grit/format/data_pack.py b/tools/grit/grit/format/data_pack.py	(rejected hunks)
+@@ -247,11 +249,12 @@ def ReadGrdInfo(grd_file):
+ 
+ def RePack(output_file,
+            input_files,
+            allowlist_file=None,
+            suppress_removed_key_output=False,
+-           output_info_filepath=None):
++           output_info_filepath=None,
++           rejectlist_file=None):
+   """Write a new data pack file by combining input pack files.
+ 
+   Args:
+       output_file: path to the new data pack file.
+       input_files: a list of paths to the data pack files to combine.
+@@ -272,13 +278,19 @@ def RePack(output_file,
+   if allowlist_file:
+     lines = util.ReadFile(allowlist_file, 'utf-8').strip().splitlines()
+     if not lines:
+       raise Exception('Allowlist file should not be empty')
+     allowlist = {int(x) for x in lines}
++
++  # OHOS get rejectlist
++  rejectlist = None
++  if rejectlist_file:
++    rejectlist = GetRejectList(input_info_files, rejectlist_file)
++
+   inputs = [(p.resources, p.encoding) for p in input_data_packs]
+   resources, encoding = RePackFromDataPackStrings(inputs, allowlist,
+-                                                  suppress_removed_key_output)
++                                                  suppress_removed_key_output, rejectlist)
+   WriteDataPack(resources, output_file, encoding)
+   if output_info_filepath is None:
+     output_info_filepath = output_file + '.info'
+   with open(output_info_filepath, 'w') as output_info_file:
+     for filename in input_info_files:
+@@ -286,18 +298,21 @@ def RePack(output_file,
+         output_info_file.writelines(info_file.readlines())
+ 
+ 
+ def RePackFromDataPackStrings(inputs,
+                               allowlist,
+-                              suppress_removed_key_output=False):
++                              suppress_removed_key_output=False,
++                              rejectlist=None):
+   """Combines all inputs into one.
+ 
+   Args:
+       inputs: a list of (resources_by_id, encoding) tuples to be combined.
+       allowlist: a list of resource IDs that should be kept in the output string
+                  or None to include all resources.
+       suppress_removed_key_output: Do not print removed keys.
++      rejectlist: a list of resource IDs that should be del in the output string
++                 or None to include all resources.
+ 
+   Returns:
+       Returns (resources_by_id, encoding).
+ 
+   Raises:

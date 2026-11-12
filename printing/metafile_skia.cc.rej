@@ -1,0 +1,16 @@
+diff a/printing/metafile_skia.cc b/printing/metafile_skia.cc	(rejected hunks)
+@@ -50,10 +50,14 @@ namespace {
+ 
+ // `InitFromData()` should make a copy of data for the safety of all operations
+ // which would then operate upon that.
+ constexpr bool kInitFromDataCopyData = true;
+ 
++#if BUILDFLAG(ARKWEB_PRINT)
++constexpr int kCheckCancelCount = 5;
++#endif // BUILDFLAG(ARKWEB_PRINT)
++
+ bool WriteAssetToBuffer(const SkStreamAsset* asset, void* buffer, size_t size) {
+   // Calling duplicate() keeps original asset state unchanged.
+   std::unique_ptr<SkStreamAsset> assetCopy(asset->duplicate());
+   size_t length = assetCopy->getLength();
+   return length <= size && length == assetCopy->read(buffer, length);

@@ -1,0 +1,90 @@
+diff a/chromecast/media/audio/capture_service/message_parsing_utils.cc b/chromecast/media/audio/capture_service/message_parsing_utils.cc
+--- a/chromecast/media/audio/capture_service/message_parsing_utils.cc
++++ b/chromecast/media/audio/capture_service/message_parsing_utils.cc
+@@ -79,11 +79,21 @@ bool ConvertInterleavedData(int channels,
+       CheckAudioData<typename Traits::ValueType>(channels, data, data_size);
+   if (frames <= 0) {
+     return false;
+   }
+ 
+-  DCHECK_EQ(frames, audio->frames());
++  if (frames != audio->frames()) {
++    LOG(ERROR) << "Audio frames (" << frames
++               << ") don't match audio bus frames (" << audio->frames() << ")";
++    return false;
++  }
++  if (channels > audio->channels()) {
++    LOG(ERROR) << "Audio channels (" << channels
++               << ") don't match audio bus channels (" << audio->channels()
++               << ")";
++    return false;
++  }
+   audio->FromInterleaved<Traits>(
+       reinterpret_cast<const typename Traits::ValueType*>(data), frames);
+   return true;
+ }
+ 
+@@ -96,11 +106,21 @@ bool ConvertPlanarData(int channels,
+       CheckAudioData<typename Traits::ValueType>(channels, data, data_size);
+   if (frames <= 0) {
+     return false;
+   }
+ 
+-  DCHECK_EQ(frames, audio->frames());
++  if (frames != audio->frames()) {
++    LOG(ERROR) << "Audio frames (" << frames
++               << ") don't match audio bus frames (" << audio->frames() << ")";
++    return false;
++  }
++  if (channels > audio->channels()) {
++    LOG(ERROR) << "Audio channels (" << channels
++               << ") don't match audio bus channels (" << audio->channels()
++               << ")";
++    return false;
++  }
+   const typename Traits::ValueType* base_data =
+       reinterpret_cast<const typename Traits::ValueType*>(data);
+   for (int c = 0; c < channels; ++c) {
+     const typename Traits::ValueType* source =
+         UNSAFE_TODO(base_data + c * frames);
+@@ -119,11 +139,21 @@ bool ConvertPlanarFloat(int channels,
+   const int frames = CheckAudioData<float>(channels, data, data_size);
+   if (frames <= 0) {
+     return false;
+   }
+ 
+-  DCHECK_EQ(frames, audio->frames());
++  if (frames != audio->frames()) {
++    LOG(ERROR) << "Audio frames (" << frames
++               << ") don't match audio bus frames (" << audio->frames() << ")";
++    return false;
++  }
++  if (channels > audio->channels()) {
++    LOG(ERROR) << "Audio channels (" << channels
++               << ") don't match audio bus channels (" << audio->channels()
++               << ")";
++    return false;
++  }
+   const float* base_data = reinterpret_cast<const float*>(data);
+   for (int c = 0; c < channels; ++c) {
+     const float* source = UNSAFE_TODO(base_data + c * frames);
+     std::copy(source, UNSAFE_TODO(source + frames),
+               audio->channel_span(c).data());
+@@ -288,11 +318,16 @@ scoped_refptr<net::IOBufferWithSize> MakeSerializedMessage(
+ bool ReadDataToAudioBus(const StreamInfo& stream_info,
+                         const char* data,
+                         size_t size,
+                         ::media::AudioBus* audio_bus) {
+   DCHECK(audio_bus);
+-  DCHECK_EQ(stream_info.num_channels, audio_bus->channels());
++  if (stream_info.num_channels > audio_bus->channels()) {
++    LOG(ERROR) << "Stream channels (" << stream_info.num_channels
++               << ") exceed audio bus channels (" << audio_bus->channels()
++               << ")";
++    return false;
++  }
+   return ConvertData(stream_info.num_channels, stream_info.sample_format,
+                      UNSAFE_TODO(data + kPcmAudioHeaderBytes),
+                      size - kPcmAudioHeaderBytes, audio_bus);
+ }
+ 

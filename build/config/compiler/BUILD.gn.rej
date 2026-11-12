@@ -1,0 +1,69 @@
+diff a/build/config/compiler/BUILD.gn b/build/config/compiler/BUILD.gn	(rejected hunks)
+@@ -299,11 +299,11 @@ config("default_include_dirs") {
+ 
+ # Compiler instrumentation can introduce dependencies in DSOs to symbols in
+ # the executable they are loaded into, so they are unresolved at link-time.
+ config("no_unresolved_symbols") {
+   if (!using_sanitizer &&
+-      (is_linux || is_chromeos || is_android || is_fuchsia)) {
++      (is_linux || is_chromeos || is_android || is_fuchsia || is_ohos)) {
+     ldflags = [
+       "-Wl,-z,defs",
+       "-Wl,--as-needed",
+     ]
+   }
+@@ -683,10 +685,13 @@ config("compiler") {
+         "-fcrash-diagnostics=all",
+         "-fcrash-diagnostics-dir=" + clang_diagnostic_dir,
+       ]
+     }
+ 
++    # remove flag split-threshold-for-reg-with-hint and instcombine-lower-dbg-declare
++    # it's not supported in clang <= 17 on ohos toolchain.
++    if (default_toolchain != "//build/toolchain/ohos:ohos_clang_arm64") {
+     # TODO(hans): Remove this once Clang generates better optimized debug info
+     # by default. https://crbug.com/765793
+     cflags += [
+       "-mllvm",
+       "-instcombine-lower-dbg-declare=0",
+@@ -1289,11 +1300,11 @@ config("compiler_cpu_abi") {
+ 
+   if ((is_posix && !is_apple) || is_fuchsia) {
+     # CPU architecture. We may or may not be doing a cross compile now, so for
+     # simplicity we always explicitly set the architecture.
+     if (current_cpu == "x64") {
+-      if (is_clang && !is_android && !is_fuchsia && !is_chromeos_device) {
++      if (is_clang && !is_android && !is_fuchsia && !is_chromeos_device && !is_ohos) {
+         cflags += [ "--target=x86_64-unknown-linux-gnu" ]
+         ldflags += [ "--target=x86_64-unknown-linux-gnu" ]
+       } else {
+         cflags += [ "-m64" ]
+         ldflags += [ "-m64" ]
+@@ -1310,11 +1321,12 @@ config("compiler_cpu_abi") {
+       cflags += [
+         "-mfpmath=sse",
+         "-msse3",
+       ]
+     } else if (current_cpu == "arm") {
+-      if (is_clang && !is_android && !is_chromeos_device) {
++      if (is_clang && !is_android && !is_ohos &&
++          !is_chromeos_device) {
+         cflags += [ "--target=arm-linux-gnueabihf" ]
+         ldflags += [ "--target=arm-linux-gnueabihf" ]
+       }
+       cflags += [
+         "-march=$arm_arch",
+@@ -1322,11 +1334,12 @@ config("compiler_cpu_abi") {
+       ]
+       if (arm_tune != "") {
+         cflags += [ "-mtune=$arm_tune" ]
+       }
+     } else if (current_cpu == "arm64") {
+-      if (is_clang && !is_android && !is_fuchsia && !is_chromeos_device) {
++      if (is_clang && !is_android && !is_fuchsia && !is_ohos &&
++           !is_chromeos_device) {
+         cflags += [ "--target=aarch64-linux-gnu" ]
+         ldflags += [ "--target=aarch64-linux-gnu" ]
+       }
+     } else if (current_cpu == "mipsel") {
+       ldflags += [ "-Wl,--hash-style=sysv" ]

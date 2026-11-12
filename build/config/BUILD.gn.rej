@@ -1,0 +1,15 @@
+diff a/build/config/BUILD.gn b/build/config/BUILD.gn	(rejected hunks)
+@@ -77,10 +77,13 @@ config("feature_flags") {
+     defines += [ "MEMORY_TOOL_REPLACES_ALLOCATOR" ]
+   }
+   if (is_asan) {
+     defines += [ "ADDRESS_SANITIZER" ]
+   }
++  if (is_hwasan) {
++    defines += [ "HWADDRESS_SANITIZER" ]
++  }
+   if (is_lsan) {
+     defines += [ "LEAK_SANITIZER" ]
+   }
+   if (is_tsan) {
+     defines += [

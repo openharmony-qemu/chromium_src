@@ -1,0 +1,25 @@
+diff a/build/config/clang/BUILD.gn b/build/config/clang/BUILD.gn	(rejected hunks)
+@@ -218,10 +218,23 @@ template("clang_lib") {
+         } else if (current_cpu == "riscv64") {
+           _suffix = "-riscv64-android"
+         } else {
+           assert(false)  # Unhandled cpu type
+         }
++      } else if (is_ohos) {
++        clang_version = "22"
++        if (current_cpu == "x64") {
++          _dir = "x86_64-linux-ohos"
++        }  else if (current_cpu == "arm") {
++          _dir = "arm-linux-ohos"
++        } else if (current_cpu == "arm64") {
++          _dir = "aarch64-linux-ohos"
++        } else if (current_cpu == "riscv64") {
++          _dir = "riscv64-linux-ohos"
++        } else {
++          assert(false)  # Unhandled cpu type
++        }
+       } else {
+         assert(false)  # Unhandled target platform
+       }
+ 
+       _clang_lib_dir = "$clang_base_path/lib/clang/$clang_version/lib"

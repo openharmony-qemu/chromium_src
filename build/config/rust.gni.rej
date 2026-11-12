@@ -1,0 +1,22 @@
+diff a/build/config/rust.gni b/build/config/rust.gni	(rejected hunks)
+@@ -110,11 +112,11 @@ declare_args() {
+ use_chromium_rust_toolchain = rust_sysroot_absolute == ""
+ 
+ # `rustc_nightly_capability = false` will make the build avoid the use of
+ # Rust nightly features. There are no bots that test this and there is no
+ # guarantee it will work, but we accept patches for this configuration.
+-rustc_nightly_capability = use_chromium_rust_toolchain
++rustc_nightly_capability = use_chromium_rust_toolchain || is_ohos || is_linux
+ 
+ # Platform support for the Rust toolchain.
+ chromium_toolchain_supports_platform = !is_wasm
+ custom_toolchain_supports_platform = true
+ 
+@@ -402,6 +417,6 @@ if (toolchain_for_rust_host_build_tools) {
+ 
+ # When this is true, a prebuilt Rust stdlib will be used. This has implications
+ # such as that the panic strategy (unwind, abort) must match how the stdlib is
+ # compiled, which is typically as unwind.
+ rust_prebuilt_stdlib =
+-    !use_chromium_rust_toolchain || toolchain_for_rust_host_build_tools
++    (!use_chromium_rust_toolchain && !is_ohos) || toolchain_for_rust_host_build_tools

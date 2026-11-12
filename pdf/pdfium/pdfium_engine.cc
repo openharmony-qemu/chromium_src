@@ -1186,6 +1186,15 @@ void PDFiumEngine::Paint(const gfx::Rect& rect,
     first_paint_metric_reported_ = true;
     base::UmaHistogramMediumTimes("PDF.FirstPaintTime",
                                   begin_time - engine_creation_time_);
+#if BUILDFLAG(ARKWEB_PDF)
+    int64_t firstPaintTime =
+        (begin_time - engine_creation_time_).ToInternalValue();
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetHiSysEventAdapterInstance()
+        .Write(PDF_FIRST_PAINT_TIME,
+               OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+               {FIRST_PAINT_TIME, std::to_string(firstPaintTime)});
+#endif
   }
 
   for (size_t i = 0; i < visible_pages_.size(); ++i) {
@@ -1266,6 +1275,16 @@ void PDFiumEngine::Paint(const gfx::Rect& rect,
 
   base::UmaHistogramMediumTimes("PDF.RenderAndPaintVisiblePagesTime",
                                 base::TimeTicks::Now() - begin_time);
+#if BUILDFLAG(ARKWEB_PDF)
+  int64_t paintVisiblePagesTime =
+      (base::TimeTicks::Now() - begin_time).ToInternalValue();
+  if (paintVisiblePagesTime > RENDER_TIME_30FPS_THRESHOLD)
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetHiSysEventAdapterInstance()
+        .Write(PDF_PAINT_VISIBLE_PAGES_TAME,
+              OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+              {PAINT_VISIBLE_PAGES_TAME, std::to_string(paintVisiblePagesTime)});
+#endif
 }
 
 void PDFiumEngine::PostPaint() {
@@ -1424,6 +1443,10 @@ void PDFiumEngine::OnDocumentCanceled() {
 void PDFiumEngine::ClearTextSelection() {
   SelectionChangeInvalidator selection_invalidator(this);
   selection_.clear();
+#if BUILDFLAG(ARKWEB_PDF)
+  is_finding_result_ = false;
+  range_moved_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 void PDFiumEngine::ExtendAndInvalidateSelectionByChar(
@@ -1540,6 +1563,9 @@ void PDFiumEngine::StartSelection(const PageCharacterIndex& index) {
 }
 
 void PDFiumEngine::FinishLoadingDocument() {
+#if BUILDFLAG(ARKWEB_PDF)
+  TRACE_EVENT0("media", "PDFiumEngine::FinishLoadingDocument");
+#endif
   // Note that doc_loader_->IsDocumentComplete() may not be true here if
   // called via `OnDocumentCanceled()`.
   DCHECK(doc());
@@ -1756,11 +1782,18 @@ bool PDFiumEngine::HandleInputEvent(const blink::WebInputEvent& event) {
     }
     case blink::WebInputEvent::Type::kTouchEnd:
       KillTouchTimer();
+#if BUILDFLAG(ARKWEB_PDF)
+      client_->SetIsTouching(false);
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
       break;
     case blink::WebInputEvent::Type::kTouchMove:
       // TODO(dsinclair): This should allow a little bit of movement (up to the
       // touch radii) to account for finger jiggle.
       KillTouchTimer();
+#if BUILDFLAG(ARKWEB_PDF)
+      client_->SetIsTouching(true);
+#endif  // BUILDFLAG(ARKWEB_PDF)
       break;
     default:
       break;
@@ -1871,6 +1904,12 @@ void PDFiumEngine::UpdateFocus(bool has_focus) {
       return;
     }
   }
+#if BUILDFLAG(ARKWEB_PDF)
+  // Clear selection when PDF lose focus.
+  if (!has_focus) {
+   ClearTextSelection();
+  } 
+#endif  // BUILDFLAG(ARKWEB_PDF)
   if (caret_) {
     caret_->SetVisible(has_focus && !IsSelecting());
   }
@@ -2111,6 +2150,10 @@ bool PDFiumEngine::OnLeftMouseDown(const blink::WebMouseEvent& event) {
   auto selection_invalidator =
       std::make_unique<SelectionChangeInvalidator>(this);
   selection_.clear();
+#if BUILDFLAG(ARKWEB_PDF)
+  is_finding_result_ = false;
+  range_moved_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   const gfx::PointF& point = event.PositionInWidget();
   auto point_data = GetPointData(point);
@@ -2870,6 +2913,10 @@ bool PDFiumEngine::SelectFindResult(bool forward) {
   // Invalidate the previous find selection.
   FindResultChangeInvalidator find_change_invalidator(this);
 
+#if BUILDFLAG(ARKWEB_PDF)
+  is_finding_result_ = true;
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   // Move back/forward through the search locations we previously found.
   size_t new_index;
   const size_t last_index = find_results_.size() - 1;
@@ -2897,6 +2944,9 @@ bool PDFiumEngine::SelectFindResult(bool forward) {
   // Clear the current text selection.
   SelectionChangeInvalidator selection_invalidator(this);
   selection_.clear();
+#if BUILDFLAG(ARKWEB_PDF)
+  range_moved_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // If the result is not in view, scroll to it.
   ScrollToBoundingRects(find_results_[current_find_index_.value()],
@@ -3238,6 +3288,13 @@ base::DictValue PDFiumEngine::TraverseBookmarks(FPDF_BOOKMARK bookmark,
       /*check_expected_size=*/true);
   dict.Set("title", title);
 
+#if BUILDFLAG(ARKWEB_PDF)
+  std::string bookmark_id = GenerateBookmarkId();
+  dict.Set("id", bookmark_id);
+  if (bookmark) {
+    bookmark_store_[bookmark_id] = bookmark;
+  }
+#else
   FPDF_DEST dest = FPDFBookmark_GetDest(doc(), bookmark);
   // Some bookmarks don't have a page to select.
   if (dest) {
@@ -3425,13 +3482,23 @@ void PDFiumEngine::HandleLongPress(const blink::WebTouchEvent& event) {
   // Only consider the first touch point.
   DCHECK_GT(event.touches_length, 0u);
 
+#if BUILDFLAG(ARKWEB_PDF)
+  is_finding_result_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   // Send a fake mouse down to trigger the multi-click selection code.
   blink::WebMouseEvent mouse_event(blink::WebInputEvent::Type::kMouseDown,
                                    event.GetModifiers(), event.TimeStamp());
   mouse_event.button = blink::WebPointerProperties::Button::kLeft;
   mouse_event.click_count = 2;
   mouse_event.SetPositionInWidget(event.touches[0].PositionInWidget());
-
+#if BUILDFLAG(ARKWEB_PDF)
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetHiSysEventAdapterInstance()
+      .Write(PDF_LONG_PRESS_EVENT,
+             OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+             {LONG_PRESSED, "true"});
+#endif
   OnMouseDown(mouse_event);
 }
 
@@ -3494,6 +3561,10 @@ void PDFiumEngine::AppendBlankPages(size_t num_pages) {
 
   selection_.clear();
   pending_pages_.clear();
+#if BUILDFLAG(ARKWEB_PDF)
+  is_finding_result_ = false;
+  range_moved_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // Delete all pages except the first one.
   while (pages_.size() > 1) {
@@ -3587,11 +3658,25 @@ void PDFiumEngine::LoadDocument() {
     ContinueLoadingDocument(std::string());
     return;
   }
+#if BUILDFLAG(ARKWEB_PDF)
+  if (needs_password) {
+    GetPasswordAndLoad();
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetHiSysEventAdapterInstance()
+        .Write(PDF_ENCRYPTED_DOCUMENT,
+               OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+               {DOCUMENT_ENCRYPTED, "true"});
+
+  } else {
+    client_->DocumentLoadFailed();
+  }
+#else
   if (needs_password) {
     GetPasswordAndLoad();
   } else {
     client_->DocumentLoadFailed();
   }
+#endif
 }
 
 bool PDFiumEngine::TryLoadingDoc(const std::string& password,
@@ -4382,6 +4467,9 @@ gfx::Rect PDFiumEngine::GetPDFiumRect(int page_index,
 
 int PDFiumEngine::GetRenderingFlags() const {
   int flags = FPDF_LCD_TEXT;
+#if BUILDFLAG(ARKWEB_PDF)
+  flags |= FPDF_REVERSE_BYTE_ORDER;
+#endif
   if (render_grayscale_) {
     flags |= FPDF_GRAYSCALE;
   }
@@ -4801,6 +4889,16 @@ void PDFiumEngine::OnSelectionTextChanged() {
   client_->SetSelectedText(GetSelectedText());
 }
 
+#if BUILDFLAG(ARKWEB_PDF)
+bool PDFiumEngine::ShouldSuppressInvalidSelectionPositionForArkWeb(
+    bool has_selection_bounds) const {
+  if (is_finding_result_ || !range_moved_) {
+    return false;
+  }
+  return !has_selection_bounds;
+}
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
 void PDFiumEngine::OnSelectionPositionChanged() {
   // We need to determine the top-left and bottom-right points of the selection
   // in order to report those to the embedder. This code assumes that the
@@ -4808,6 +4906,25 @@ void PDFiumEngine::OnSelectionPositionChanged() {
   gfx::Rect left(std::numeric_limits<int32_t>::max(),
                  std::numeric_limits<int32_t>::max(), 0, 0);
   gfx::Rect right;
+
+#if BUILDFLAG(ARKWEB_PDF)
+  if (!client_) {
+    LOG(ERROR) << __func__ << ", PDF client_ is null.";
+    return;
+  }
+  gfx::Rect clipped_selection_bounds(0, 0, 0, 0);
+  bool has_selection_bounds = true;
+  // When searching for results, do not calculate the selection position to
+  // hide the menu and handles.
+  if (!is_finding_result_) {
+    has_selection_bounds = UpdateSelectionBoundsAndPositions(
+      left, right, clipped_selection_bounds, selection_);
+  }
+  if (ShouldSuppressInvalidSelectionPositionForArkWeb(has_selection_bounds)) {
+    LOG(DEBUG) << __func__ << ", suppress invalid selection position while dragging.";
+    return;
+  }
+#else
   for (const auto& sel : selection_) {
     const std::vector<gfx::Rect>& screen_rects = sel.GetScreenRects(
         GetVisibleRect().origin(), current_zoom_, GetCurrentOrientation());
@@ -4820,11 +4937,17 @@ void PDFiumEngine::OnSelectionPositionChanged() {
       }
     }
   }
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   right.set_x(right.x() + right.width());
   if (left.IsEmpty()) {
     left.set_x(0);
     left.set_y(0);
   }
+#if BUILDFLAG(ARKWEB_PDF)
+  CheckSelectionVisibility(left, right, clipped_selection_bounds);
+  client_->ConvertAndUpdateSelectionBounds(clipped_selection_bounds);
+#endif  // BUILDFLAG(ARKWEB_PDF)
   client_->SelectionChanged(left, right);
 }
 
@@ -4972,7 +5095,10 @@ void PDFiumEngine::SetSelection(const PageCharacterIndex& selection_start_index,
                                 const PageCharacterIndex& selection_end_index) {
   SelectionChangeInvalidator selection_invalidator(this);
   selection_.clear();
-
+#if BUILDFLAG(ARKWEB_PDF)
+  is_finding_result_ = false;
+  range_moved_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
   PageCharacterIndex sel_start_index = selection_start_index;
   PageCharacterIndex sel_end_index = selection_end_index;
   if (sel_end_index.page_index < sel_start_index.page_index) {

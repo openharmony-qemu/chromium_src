@@ -1,0 +1,16 @@
+diff a/chromecast/starboard/media/media/starboard_video_decoder.cc b/chromecast/starboard/media/media/starboard_video_decoder.cc	(rejected hunks)
+@@ -183,10 +183,14 @@ bool StarboardVideoDecoder::SetConfig(const VideoConfig& config) {
+ 
+ BufferStatus StarboardVideoDecoder::PushBuffer(CastDecoderBuffer* buffer) {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+   DCHECK(buffer);
+ 
++  if (!DrmInfoWrapper::VerifySubsamplesMatchSize(*buffer)) {
++    return BufferStatus::kBufferFailed;
++  }
++
+   // At this point the VideoPipelineImpl (the delegate) should be in the
+   // kPlaying state, so it is safe to update the resolution.
+   MediaPipelineBackend::Decoder::Delegate* const delegate = GetDelegate();
+   if (resolution_changed_ && delegate) {
+     delegate->OnVideoResolutionChanged(

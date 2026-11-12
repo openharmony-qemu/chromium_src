@@ -389,7 +389,31 @@ void PaintManager::DoPaint() {
 
   std::vector<PaintReadyRect> ready_rects;
   std::vector<gfx::Rect> pending_rects;
+#if BUILDFLAG(ARKWEB_PDF)
+  if (update.has_scroll) {
+    last_update_rect.has_scroll = update.has_scroll;
+    last_update_rect.scroll_delta = update.scroll_delta;
+    last_update_rect.scroll_rect = update.scroll_rect;
+    last_update_rect.paint_rects = update.paint_rects;
+  }
+  if (is_repainting && last_update_rect.has_scroll &&
+      (std::abs(update.scroll_delta.x()) != 0 ||
+      std::abs(update.scroll_delta.y()) == 0)) {
+    if (last_update_rect.paint_rects.empty()) {
+      last_update_rect.paint_rects = update.paint_rects;
+    }
+    for (auto& rect : last_update_rect.paint_rects) {
+      rect = client_->GetAvailableArea();
+    }
+    client_->OnPaint(last_update_rect.paint_rects, ready_rects, pending_rects);
+    last_update_rect.paint_rects.clear();
+    last_update_rect.has_scroll = false;
+  } else {
+#endif
   client_->OnPaint(update.paint_rects, ready_rects, pending_rects);
+#if BUILDFLAG(ARKWEB_PDF)
+  }
+#endif
 
   if (ready_rects.empty() && pending_rects.empty()) {
     return;  // Nothing was painted, don't schedule a flush.
@@ -662,7 +686,11 @@ void PaintManager::OnManualCallbackComplete() {
   // is pending, a Flush callback could have come in before this callback was
   // executed and that could have cleared the queue.
   if (aggregator_.HasPendingUpdate()) {
+#if BUILDFLAG(ARKWEB_PDF)
+    DoPaint(false);
+#else
     DoPaint();
+#endif
   }
 }
 

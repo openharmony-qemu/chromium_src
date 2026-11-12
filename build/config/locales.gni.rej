@@ -1,0 +1,49 @@
+diff a/build/config/locales.gni b/build/config/locales.gni	(rejected hunks)
+@@ -1,10 +1,11 @@
+ # Copyright 2014 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//build/config/chromeos/ui_mode.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ # This file creates |platform_pak_locales| which is the set of packed locales
+ # based on the current platform. Locales in this list are formatted based on
+ # what .pak files expect. The |platform_pak_locales| variable *may* contain
+ # pseudolocales, depending on the |enable_pseudolocales| flag.
+@@ -255,20 +279,35 @@ if (is_android) {
+ }
+ 
+ locales_without_pseudolocales = platform_pak_locales - pseudolocales
+ locales_with_pseudolocales = platform_pak_locales
+ 
++#ifdef arkweb_i18n
++if (arkweb_i18n) {
++  locales_for_ohos = locales_without_pseudolocales
++  locales_for_ohos += extra_locales
++}
++
++#endif
++
+ declare_args() {
+   # We want to give pseudolocales to everyone except end-users (devs & QA).
+   # Note that this only packages the locales in, and doesn't add the ui to enable them.
+   enable_pseudolocales = !is_official_build
+ }
+ 
+ if (!enable_pseudolocales) {
+   platform_pak_locales -= pseudolocales
+ }
+ 
++#ifdef arkweb_i18n
++if (arkweb_i18n) {
++  ohos_platform_pak_locales = all_chrome_locales + extra_locales
++}
++
++#endif
++
+ if (is_apple) {
+   # Same as the locales list but in the format Mac expects for output files:
+   # it uses underscores instead of hyphens, and "en" instead of "en-US".
+   locales_as_apple_outputs = []
+   foreach(locale, platform_pak_locales) {

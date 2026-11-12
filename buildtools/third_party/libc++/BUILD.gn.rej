@@ -1,0 +1,31 @@
+diff a/buildtools/third_party/libc++/BUILD.gn b/buildtools/third_party/libc++/BUILD.gn	(rejected hunks)
+@@ -3,10 +3,11 @@
+ # found in the LICENSE file.
+ 
+ import("//build/config/c++/c++.gni")
+ import("//build/config/sanitizers/sanitizers.gni")
+ import("//build/toolchain/toolchain.gni")
++import("//arkweb/build/config/sanitizers/sanitizers.gni")
+ import("//buildtools/third_party/libc++/libcxx_headers.gni")
+ import("//buildtools/third_party/libc++/modules.gni")
+ 
+ if (is_mac) {
+   import("//build/config/mac/mac_sdk.gni")
+@@ -613,10 +614,17 @@ target(libcxx_target_type, "libc++") {
+     ":custom_headers",
+     ":libcxx_headers",
+     "//third_party/llvm-libc:llvm-libc-shared",
+   ]
+ 
++  if(use_custom_libcxx && enable_cfi_protection) {
++    configs -= [ 
++      "//arkweb/build/config/sanitizers:ptrauth_base",
++      "//arkweb/build/config/sanitizers:armv83a",
++    ]
++  }
++
+   if (use_clang_modules) {
+     # TODO(https://github.com/llvm/llvm-project/issues/127012): We don't enable
+     # Clang modules for libc++ as libc++'s iostream.cpp has ODR issue
+     # (https://crbug.com/40440396#comment81). Also we don't take care about the
+     # libc++'s build performance much.

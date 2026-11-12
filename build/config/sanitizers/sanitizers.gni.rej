@@ -1,0 +1,21 @@
+diff a/build/config/sanitizers/sanitizers.gni b/build/config/sanitizers/sanitizers.gni	(rejected hunks)
+@@ -7,12 +7,19 @@ import("//build/config/chrome_build.gni")
+ import("//build/config/chromeos/args.gni")
+ import("//build/config/chromeos/ui_mode.gni")
+ import("//build/config/profiling/profiling.gni")
+ import("//build/toolchain/toolchain.gni")
+ 
++declare_args() {
++  # The global switch of cfi. Disable it to improve compiling efficiency while
++  # being vulnerable to cfi attack.
++  use_cfi = false
++}
++
+ declare_args() {
+   # Compile for Address Sanitizer to find memory bugs.
++  is_nolegacy = true
+   is_asan = false
+ 
+   # Compile for Hardware-Assisted Address Sanitizer to find memory bugs
+   # (android/arm64 only).
+   # See http://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html

@@ -8,9 +8,18 @@
 
 #include "base/metrics/histogram_functions.h"
 #include "pdf/document_metadata.h"
-
+#if BUILDFLAG(ARKWEB_PDF)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
 namespace chrome_pdf {
-
+#if BUILDFLAG(ARKWEB_PDF)
+constexpr char PDF_VERSION[] = "PDF_VERSION";
+constexpr char VERSION[] = "VERSION";
+constexpr char PDF_PAGE_COUNT[] = "PDF_PAGE_COUNT";
+constexpr char PAGE_COUNT[] = "PAGE_COUNT";
+constexpr char PDF_HAS_ATTACHMENT[] = "PDF_HAS_ATTACHMENT";
+constexpr char HAS_ATTACHMENT[] = "HAS_ATTACHMENT";
+#endif
 namespace {
 
 // These values are persisted to logs. Entries should not be renumbered and

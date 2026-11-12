@@ -1,0 +1,14 @@
+diff a/tools/grit/grit/node/base.py b/tools/grit/grit/node/base.py	(rejected hunks)
+@@ -506,11 +512,11 @@ class Node:
+         value = target_platform == 'fuchsia'
+       elif name == 'is_bsd':
+         value = 'bsd' in target_platform
+       elif name == 'is_posix':
+         value = (target_platform in ('linux', 'darwin', 'sunos5', 'android',
+-                                     'ios', 'chromeos')
++                                     'ios', 'chromeos', "ohos")
+                  or 'bsd' in target_platform)
+ 
+       elif name == 'pp_ifdef':
+         def pp_ifdef(symbol):
+           return symbol in defs

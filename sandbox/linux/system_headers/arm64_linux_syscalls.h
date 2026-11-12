@@ -1279,4 +1279,18 @@
 #define __NR_mseal 462
 #endif
 
+#if defined(__MUSL__)
+#if !defined(__NR_seteuid)
+#define __NR_seteuid 463
+#endif
+
+#if !defined(__NR_setegid)
+#define __NR_setegid 464
+#endif
+
+#if !defined(__NR_klogctl)
+#define __NR_klogctl 465
+#endif
+#endif
+
 #endif  // SANDBOX_LINUX_SYSTEM_HEADERS_ARM64_LINUX_SYSCALLS_H_

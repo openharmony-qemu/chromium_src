@@ -190,4 +190,21 @@ interface PdfHost {
   // called at most once.
   [EnableIf=enable_screen_ai_service]
   OnSearchifyStarted();
+
+  // #if BUILDFLAG(ARKWEB_PDF)
+  [EnableIf=arkweb_pdf]
+  ConvertAndUpdateSelectionBounds(gfx.mojom.Rect clipped_selection_bounds);
+
+  [EnableIf=arkweb_pdf]
+  HideHandleAndQuickMenu(bool hide);
+
+  [EnableIf=arkweb_pdf]
+  ResetResponsePendingInputEvent();
+
+  [EnableIf=arkweb_pdf]
+  SetIsLeftHandleVisible(bool visible);
+
+  [EnableIf=arkweb_pdf]
+  SetIsRightHandleVisible(bool visible);
+  // #endif
 };

@@ -17,6 +17,10 @@
 #include "url/origin.h"
 #include "url/url_canon.h"
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "url/url_features.h"
+#endif
+
 namespace storage {
 
 namespace {
@@ -147,10 +151,23 @@ DatabaseIdentifier DatabaseIdentifier::Parse(std::string_view identifier) {
   GURL url(base::StrCat({scheme, "://", hostname, "/"}));
 
   // If a url doesn't parse cleanly or doesn't round trip, reject it.
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (!url.is_valid() || url.GetScheme() != scheme) {
+    return DatabaseIdentifier();
+  }
+  // Unless StandardCompliantNonSpecialSchemeURLParsing feature is enabled,
+  // url.host() always return an empty string for non-special URLs.
+  if ((url::IsUsingStandardCompliantNonSpecialSchemeURLParsing() ||
+       url.IsStandard()) &&
+      (url.host() != hostname)) {
+    return DatabaseIdentifier();
+  }
+#else
   if (!url.is_valid() || url.GetScheme() != scheme ||
       url.GetHost() != hostname) {
     return DatabaseIdentifier();
   }
+#endif
   // Clear hostname for a non-special URL. This behavior existed before
   // non-special URLs are properly supported, and we're keeping this for
   // compatibility reasons.

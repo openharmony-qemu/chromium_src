@@ -1,0 +1,14 @@
+diff a/build/config/sanitizers/BUILD.gn b/build/config/sanitizers/BUILD.gn	(rejected hunks)
+@@ -52,11 +52,11 @@ group("deps") {
+       data += [
+         "//tools/valgrind/asan/",
+         "$clang_base_path/bin/llvm-symbolizer${exe}",
+       ]
+     }
+-    if (is_asan || is_lsan || is_msan || is_tsan || is_ubsan_any) {
++    if (is_asan || is_lsan || is_msan || is_tsan || is_ubsan_any || is_hwasan) {
+       public_configs += [ ":sanitizer_options_link_helper" ]
+       deps += [ ":options_sources" ]
+ 
+       # Sanitizer malloc/free hooks depends on weak symbols.
+       if (is_asan && is_posix) {

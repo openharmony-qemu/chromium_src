@@ -193,6 +193,20 @@ declare global {
         submessages: string[];
       }
 
+      // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      export interface OptionalPermission {
+        name: string;
+        message: string;
+        submessages: string[];
+        granted: boolean;
+      }
+
+      export interface OptionalPermissionUpdate {
+        name: string;
+        enabled: boolean;
+      }
+      // #endif
+
       export interface SiteControl {
         host: string;
         granted: boolean;
@@ -279,6 +293,9 @@ declare global {
         showAccessRequestsInToolbar?: boolean;
         acknowledgeSafetyCheckWarningReason?: SafetyCheckWarningReason;
         pinnedToToolbar?: boolean;
+        // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        optionalPermission?: OptionalPermissionUpdate;
+        // #endif
       }
 
       export interface ProfileConfigurationUpdate {

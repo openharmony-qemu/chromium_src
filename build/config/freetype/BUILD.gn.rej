@@ -1,0 +1,13 @@
+diff a/build/config/freetype/BUILD.gn b/build/config/freetype/BUILD.gn	(rejected hunks)
+@@ -17,10 +17,11 @@ group("freetype") {
+   #
+   # Eventually `freetype` should be replaced with Fontations libraries.
+   # Therefore no new entries should be added to this list.
+   visibility = [
+     "//chrome/test:*",
++    "//content/browser:browser",
+     "//content/test:*",
+     "//skia",
+     "//third_party/fontconfig",
+ 
+     # The path/label of the PDFium target that depends on `freetype` is

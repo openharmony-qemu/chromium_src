@@ -253,6 +253,10 @@ class PDFiumEngine : public DocumentLoader::Client,
   void SetReadOnly(bool read_only);
   void SetDocumentLayout(DocumentLayout::PageSpread page_spread);
   void DisplayAnnotations(bool display);
+#if BUILDFLAG(ARKWEB_PDF)
+  void OnClickBookmark(const std::string& bookmarkId);
+  void SelectionChangedAtScrollStopped();
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // Returns the text contained on the given page. The caller is responsible for
   // passing a valid `page_index`.
@@ -671,6 +675,16 @@ class PDFiumEngine : public DocumentLoader::Client,
 
   // Sets whether form highlight should be enabled or cleared.
   virtual void SetFormHighlight(bool enable_form);
+
+#if BUILDFLAG(ARKWEB_PDF)
+  bool UpdateSelectionBoundsAndPositions(gfx::Rect& left,
+                                        gfx::Rect& right,
+                                        gfx::Rect& clipped_selection_bounds,
+                                        const std::vector<PDFiumRange>& selections);
+  void CheckSelectionVisibility(const gfx::Rect& left,
+                                const gfx::Rect& right,
+                                gfx::Rect& clipped_selection_bounds);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // Scrolls to and highlights the first entry in `text_fragment_highlights_`.
   // Only valid if `text_fragment_highlights_` is non-empty (gated by a CHECK).
@@ -1105,6 +1119,11 @@ class PDFiumEngine : public DocumentLoader::Client,
   // Called when the selection changes.
   void OnSelectionTextChanged();
   void OnSelectionPositionChanged();
+  
+#if BUILDFLAG(ARKWEB_PDF)
+  bool ShouldSuppressInvalidSelectionPositionForArkWeb(
+      bool has_selection_bounds) const;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // Sets text selection status of document. This does not include text
   // within form text fields.
@@ -1411,6 +1430,14 @@ class PDFiumEngine : public DocumentLoader::Client,
 
   // Whether to render PDF annotations.
   bool render_annots_ = true;
+
+#if BUILDFLAG(ARKWEB_PDF)
+  // Whether PDF is searching for results.
+  bool is_finding_result_ = false;
+
+  // Whether PDF selection range is moved.
+  bool range_moved_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // Pending progressive paints.
   class ProgressivePaint {

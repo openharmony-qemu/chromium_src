@@ -1,0 +1,19 @@
+diff a/sandbox/policy/linux/bpf_gpu_policy_linux.cc b/sandbox/policy/linux/bpf_gpu_policy_linux.cc	(rejected hunks)
+@@ -77,10 +77,17 @@ ResultExpr GpuProcessPolicy::EvaluateSyscall(int sysno) const {
+ #if !defined(__aarch64__)
+     case __NR_getdents:
+ #endif
+     case __NR_getdents64:
+     case __NR_ioctl:
++#if BUILDFLAG(IS_OHOS)
++    case __NR_openat:
++    case __NR_faccessat:
++#if !defined(__arm__)
++    case __NR_newfstatat:
++#endif
++#endif
+       return Allow();
+ #if defined(__i386__) || defined(__x86_64__) || defined(__mips__)
+     // The Nvidia driver uses flags not in the baseline policy
+     // (MAP_LOCKED | MAP_EXECUTABLE | MAP_32BIT)
+     case __NR_mmap:

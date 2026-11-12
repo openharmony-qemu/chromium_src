@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/buildflag_header.gni")
 import("//crypto/features.gni")
 import("//testing/test.gni")
@@ -317,6 +318,13 @@ test("crypto_unittests") {
 
   if (is_apple) {
     deps += [ ":mock_apple_keychain" ]
+  }
+
+  if (arkweb_unittests) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    sources += arkweb_components_os_crpty_sync_test_source
+    sources += arkweb_components_os_crpty_include_test_source
+    deps += ["//components/os_crypt/sync"]
   }
 
   configs += [ "//build/config/compiler:wexit_time_destructors" ]

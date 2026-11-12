@@ -445,6 +445,7 @@ exec_script_allowlist =
       "//build_overrides/build.gni",
 
       "//cef/BUILD.gn",
+      "//arkweb/ohos_adapter_ndk/BUILD.gn",
 
       "//chrome/version.gni",
 

@@ -1,0 +1,57 @@
+diff a/pdf/pdfium/pdfium_engine.h b/pdf/pdfium/pdfium_engine.h	(rejected hunks)
+@@ -896,11 +910,12 @@ class PDFiumEngine : public DocumentLoader::Client,
+   // Called once PDFium is finished rendering a page so that we draw our
+   // borders, highlighting etc.
+   void FinishPaint(size_t progressive_index, SkBitmap& image_data);
+ 
+   // Stops any paints that are in progress.
+-  void CancelPaints();
++  // Returns the screen rects whose progressive paints were canceled.
++  std::vector<gfx::Rect> CancelPaints();
+ 
+   // Invalidates all pages. Use this when some global parameter, such as page
+   // orientation, has changed.
+   void InvalidateAllPages();
+ 
+@@ -1108,10 +1128,15 @@ class PDFiumEngine : public DocumentLoader::Client,
+ #if BUILDFLAG(ENABLE_PDF_INK2)
+   std::vector<FPDF_PAGEOBJECT> GetActiveInkPageObjectsForPage(
+       int page_index) const;
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_PDF)
++  // Converts a page position (e.g. the location of a bookmark) to a screen position.
++  gfx::PointF ConverPageToScreen(int page_index, gfx::PointF point);
++#endif  // BUILDFLAG(ARKWEB_PDF)
++
+   const raw_ptr<PDFiumEngineClient> client_;
+ 
+   // The current document layout.
+   DocumentLayout layout_;
+ 
+@@ -1402,15 +1435,24 @@ class PDFiumEngine : public DocumentLoader::Client,
+   // Key: ID to identify a shape.
+   // Value: The PDFium page object associated with the shape.
+   std::map<InkModeledShapeId, FPDF_PAGEOBJECT> ink_modeled_shape_map_;
+ #endif  // BUILDFLAG(ENABLE_PDF_INK2)
+ 
++#if BUILDFLAG(ARKWEB_PDF)
++  std::map<std::string, FPDF_BOOKMARK> bookmark_store_;
++
++  // Used for generating the bookmark ID.
++  static std::atomic<uint64_t> g_bookmark_id_;
++#endif  // BUILDFLAG(ARKWEB_PDF)
++
++  bool in_dtor_ = false;
++
+   base::WeakPtrFactory<PDFiumEngine> weak_factory_{this};
+ 
+   // Weak pointers from this factory are used to bind the ContinueFind()
+   // function. This allows those weak pointers to be invalidated during
+-  // StopFind(), and keeps the invalidation separated from `weak_factory_`.
++//StopFind(),and keeps the invalidation separated from 'weak_factory_'.
+   base::WeakPtrFactory<PDFiumEngine> find_weak_factory_{this};
+ };
+ 
+ }  // namespace chrome_pdf
+ 

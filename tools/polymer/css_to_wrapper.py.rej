@@ -1,0 +1,14 @@
+diff a/tools/polymer/css_to_wrapper.py b/tools/polymer/css_to_wrapper.py	(rejected hunks)
+@@ -177,11 +177,11 @@ def _extract_metadata(css_file):
+ 
+         if metadata['scheme'] == 'default':
+           scheme_match = re.search(_SCHEME_REGEX, line)
+           if scheme_match:
+             scheme = line[scheme_match.end():]
+-            assert scheme in ['chrome', 'relative']
++            assert scheme in ['chrome', 'relative', 'arkweb']
+             metadata['scheme'] = scheme
+ 
+         if _METADATA_END_REGEX in line:
+           assert metadata_start_line > -1
+           metadata_end_line = i

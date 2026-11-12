@@ -5,6 +5,7 @@
 #ifndef SANDBOX_POLICY_SWITCHES_H_
 #define SANDBOX_POLICY_SWITCHES_H_
 
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "sandbox/policy/export.h"
 

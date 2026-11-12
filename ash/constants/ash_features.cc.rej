@@ -1,0 +1,23 @@
+diff a/ash/constants/ash_features.cc b/ash/constants/ash_features.cc	(rejected hunks)
+@@ -199,14 +199,21 @@ constexpr base::FeatureParam<base::TimeDelta>
+         "StudentHeartbeatPeriodicJobIntervalInSeconds", base::Seconds(30)};
+ 
+ // Enables or disables Spotlight for Boca on ChromeOS.
+ BASE_FEATURE(kBocaSpotlight, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++constexpr base::FeatureParam<std::string> kBocaSpotlightUrlTemplate{
++    &kBocaSpotlight, "spotlight-url-template", "https://x.x.x"};
++#else
++// The URL for providing more information about Google nameservers.
+ // The url to use when connecting to spotlight
+ constexpr base::FeatureParam<std::string> kBocaSpotlightUrlTemplate{
+     &kBocaSpotlight, "spotlight-url-template",
+     "https://remotedesktop.google.com/support/session/{sessionCode}"};
++#endif
++
+ 
+ // Enables or disables Boca network restriction for Boca on ChromeOS.
+ BASE_FEATURE(kBocaNetworkRestriction, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Enables or disables using a specific app name for speech recognition for Boca

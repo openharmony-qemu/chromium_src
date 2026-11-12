@@ -1,0 +1,36 @@
+diff a/build/build_config.h b/build/build_config.h	(rejected hunks)
+@@ -270,10 +272,34 @@
+ #define BUILDFLAG_INTERNAL_IS_OZONE() (1)
+ #else
+ #define BUILDFLAG_INTERNAL_IS_OZONE() (0)
+ #endif
+ 
++#if defined(OS_OHOS)
++#define BUILDFLAG_INTERNAL_IS_OHOS() (1)
++#else
++#define BUILDFLAG_INTERNAL_IS_OHOS() (0)
++#endif
++
++#if defined(IS_ARKWEB_TRUE)
++#define BUILDFLAG_INTERNAL_IS_ARKWEB() (1)
++#else
++#define BUILDFLAG_INTERNAL_IS_ARKWEB() (0)
++#endif
++
++#if defined(ENABLE_ARKWEB_EXT_TRUE)
++#define BUILDFLAG_INTERNAL_ENABLE_ARKWEB_EXT() (1)
++#else
++#define BUILDFLAG_INTERNAL_ENABLE_ARKWEB_EXT() (0)
++#endif
++
++#if defined(IS_ARKWEB_EXT_TRUE)
++#define BUILDFLAG_INTERNAL_IS_ARKWEB_EXT() (1)
++#else
++#define BUILDFLAG_INTERNAL_IS_ARKWEB_EXT() (0)
++#endif
++
+ // Compiler detection. Note: clang masquerades as GCC on POSIX and as MSVC on
+ // Windows.
+ #if defined(__GNUC__)
+ #define COMPILER_GCC 1
+ #elif defined(_MSC_VER)

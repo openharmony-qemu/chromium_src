@@ -1,0 +1,29 @@
+diff a/tools/typescript/definitions/developer_private.d.ts b/tools/typescript/definitions/developer_private.d.ts	(rejected hunks)
+@@ -204,10 +218,14 @@ declare global {
+ 
+       export interface Permissions {
+         simplePermissions: chrome.developerPrivate.Permission[];
+         runtimeHostPermissions?: RuntimeHostPermissions;
+         canAccessSiteData: boolean;
++        // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++        optionalSimplePermissions?:
++            chrome.developerPrivate.OptionalPermission[];
++        // #endif
+       }
+ 
+       export interface ExtensionInfo {
+         blocklistText?: string;
+         safetyCheckText?: SafetyCheckStrings;
+@@ -490,10 +511,12 @@ declare global {
+       export function getUserAndExtensionSitesByEtld(): Promise<SiteGroup[]>;
+       export function getMatchingExtensionsForSite(site: string):
+           Promise<MatchingExtensionInfo[]>;
+       export function updateSiteAccess(
+           site: string, updates: ExtensionSiteAccessUpdate[]): Promise<void>;
++      // ifdef ARKWEB_ARKWEB_EXTENSIONS
++      export function openUrl(url: string, type: number): void;
+       export function dismissSafetyHubExtensionsMenuNotification(): void;
+       export function dismissMv2DeprecationPanel(): void;
+       export function dismissMv2DeprecationNoticeForExtension(
+           extensionId: string): Promise<void>;
+       export function uploadExtensionToAccount(extensionId: string):

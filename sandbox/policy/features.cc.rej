@@ -1,0 +1,14 @@
+diff a/sandbox/policy/features.cc b/sandbox/policy/features.cc	(rejected hunks)
+@@ -30,11 +30,11 @@ BASE_FEATURE(kNetworkServiceSyscallFilter, base::FEATURE_ENABLED_BY_DEFAULT);
+ // Only has an effect if IsNetworkSandboxEnabled() returns true.
+ // If the network service sandbox is enabled and |kNetworkServiceFileAllowlist|
+ // is disabled, a file path allowlist will still be applied, but the policy will
+ // allow everything.
+ BASE_FEATURE(kNetworkServiceFileAllowlist, base::FEATURE_ENABLED_BY_DEFAULT);
+-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+ #endif  // !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_FUCHSIA)
+ 
+ #if BUILDFLAG(IS_WIN)
+ // Experiment for Windows sandbox security mitigation,
+ // sandbox::MITIGATION_EXTENSION_POINT_DISABLE.

@@ -1,0 +1,13 @@
+diff a/tools/variations/fieldtrial_to_struct.py b/tools/variations/fieldtrial_to_struct.py	(rejected hunks)
+@@ -39,10 +39,11 @@ _platforms = [
+     'fuchsia',
+     'ios',
+     'linux',
+     'mac',
+     'windows',
++    'ohos',
+ ]
+ 
+ _form_factors = [
+     'desktop',
+     'phone',

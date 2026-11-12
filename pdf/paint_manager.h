@@ -82,6 +82,9 @@ class PaintManager {
     virtual void UpdateLayerTransform(float scale,
                                       const gfx::Vector2dF& translate) = 0;
 
+#if BUILDFLAG(ARKWEB_PDF)
+    virtual gfx::Rect GetAvailableArea() = 0;
+#endif
    protected:
     // You shouldn't delete through this interface.
     ~Client() = default;

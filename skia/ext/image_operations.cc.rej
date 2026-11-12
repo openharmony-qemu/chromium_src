@@ -1,0 +1,14 @@
+diff a/skia/ext/image_operations.cc b/skia/ext/image_operations.cc	(rejected hunks)
+@@ -356,11 +356,11 @@ SkBitmap ImageOperations::Resize(const SkPixmap& source,
+   // Check that we deal with an "algorithm methods" from this point onward.
+   DCHECK((ImageOperations::RESIZE_FIRST_ALGORITHM_METHOD <= method) &&
+          (method <= ImageOperations::RESIZE_LAST_ALGORITHM_METHOD));
+ 
+   if (!source.addr() || source.colorType() != kN32_SkColorType) {
+-     return SkBitmap();
++    return SkBitmap();
+   }
+ 
+   // Avoid overflows in the convolver
+   if (source.rowBytes() >
+       static_cast<size_t>(std::numeric_limits<int>::max())) {

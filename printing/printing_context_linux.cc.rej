@@ -1,0 +1,45 @@
+diff a/printing/printing_context_linux.cc b/printing/printing_context_linux.cc	(rejected hunks)
+@@ -67,11 +67,11 @@ mojom::ResultCode PrintingContextLinux::UseDefaultSettings() {
+   DCHECK(!in_print_job_);
+ 
+   ResetSettings();
+ 
+ #if BUILDFLAG(IS_LINUX)
+-  if (!ui::PrintingContextLinuxDelegate::instance())
++  if (!ui::PrintingContextLinuxDelegate::instance()) {
+     return mojom::ResultCode::kSuccess;
+ 
+   if (!print_dialog_)
+     print_dialog_ = ui::PrintingContextLinuxDelegate::instance()->CreatePrintDialog(this);
+ 
+@@ -83,11 +83,11 @@ mojom::ResultCode PrintingContextLinux::UseDefaultSettings() {
+   return mojom::ResultCode::kSuccess;
+ }
+ 
+ gfx::Size PrintingContextLinux::GetPdfPaperSizeDeviceUnits() {
+ #if BUILDFLAG(IS_LINUX)
+-  if (ui::PrintingContextLinuxDelegate::instance())
++  if (ui::PrintingContextLinuxDelegate::instance()) {
+     return ui::PrintingContextLinuxDelegate::instance()->GetPdfPaperSize(this);
+ #endif
+ 
+   return gfx::Size();
+ }
+@@ -96,16 +96,12 @@ mojom::ResultCode PrintingContextLinux::UpdatePrinterSettings(
+     const PrinterSettings& printer_settings) {
+   DCHECK(!printer_settings.show_system_dialog);
+   DCHECK(!in_print_job_);
+ 
+ #if BUILDFLAG(IS_LINUX)
+-  if (!ui::PrintingContextLinuxDelegate::instance())
++  if (!ui::PrintingContextLinuxDelegate::instance()) {
+     return mojom::ResultCode::kSuccess;
+-
+-  if (!print_dialog_)
+-    print_dialog_ = ui::PrintingContextLinuxDelegate::instance()->CreatePrintDialog(this);
+-
+   if (print_dialog_) {
+     // PrintDialogGtk::UpdateSettings() calls InitWithSettings() so settings_ will
+     // remain non-null after this line.
+     print_dialog_->UpdateSettings(std::move(settings_));
+     DCHECK(settings_);

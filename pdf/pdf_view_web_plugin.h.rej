@@ -1,0 +1,45 @@
+diff a/pdf/pdf_view_web_plugin.h b/pdf/pdf_view_web_plugin.h	(rejected hunks)
+@@ -391,10 +404,14 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
+   std::unique_ptr<UrlLoader> CreateUrlLoader() override;
+   v8::Isolate* GetIsolate() override;
+   std::vector<SearchStringResult> SearchString(const std::u16string& needle,
+                                                const std::u16string& haystack,
+                                                bool case_sensitive) override;
++#if BUILDFLAG(ARKWEB_PDF)
++  void NotifyPdfScrollAtBottom(float scroll_position_y, float max_y);
++  static int32_t CastFpdfErrorToPdfLoadEvent(int pdf_error);
++#endif  // BUILDFLAG(ARKWEB_PDF)
+   void DocumentLoadComplete() override;
+   void DocumentLoadFailed() override;
+   void DocumentHasUnsupportedFeature(const std::string& feature) override;
+   void DocumentLoadProgress(uint32_t available, uint32_t doc_size) override;
+   void FormFieldFocusChange(PDFiumEngineClient::FocusFieldType type) override;
+@@ -422,10 +439,14 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
+   void MoveRangeSelectionExtent(const gfx::PointF& extent) override;
+   void SetSelectionBounds(const gfx::PointF& base,
+                           const gfx::PointF& extent) override;
+   void GetPdfBytes(uint32_t size_limit, GetPdfBytesCallback callback) override;
+   void GetPageText(int32_t page_index, GetPageTextCallback callback) override;
++#if BUILDFLAG(ARKWEB_PDF)
++  void ClearTextSelection() override;
++  void OnScaleChanged() override;
++#endif  // BUILDFLAG(ARKWEB_PDF)
+   void GetMostVisiblePageIndex(
+       GetMostVisiblePageIndexCallback callback) override;
+ #if BUILDFLAG(ENABLE_PDF_SAVE_TO_DRIVE)
+   void GetSaveDataBufferHandlerForDrive(
+       pdf::mojom::SaveRequestType request_type,
+@@ -643,10 +674,13 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
+   void HandleSetBackgroundColorMessage(const base::Value::Dict& message);
+   void HandleSetPresentationModeMessage(const base::Value::Dict& message);
+   void HandleSetTwoUpViewMessage(const base::Value::Dict& message);
+   void HandleStopScrollingMessage(const base::Value::Dict& message);
+   void HandleViewportMessage(const base::Value::Dict& message);
++#if BUILDFLAG(ARKWEB_PDF)
++  void HandleClickBookmarkMessage(const base::Value::Dict& message);
++#endif  // BUILDFLAG(ARKWEB_PDF)
+ 
+   void SaveToBuffer(pdf::mojom::SaveRequestType request_type,
+                     const std::string& token);
+   void SaveToFile(const std::string& token);
+ 

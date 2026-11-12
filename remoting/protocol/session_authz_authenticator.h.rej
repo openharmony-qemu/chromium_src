@@ -1,0 +1,26 @@
+diff a/remoting/protocol/session_authz_authenticator.h b/remoting/protocol/session_authz_authenticator.h	(rejected hunks)
+@@ -9,10 +9,11 @@
+ #include <optional>
+ #include <string>
+ #include <string_view>
+ 
+ #include "base/functional/callback.h"
++#include "base/memory/weak_ptr.h"
+ #include "base/time/time.h"
+ #include "remoting/base/constants.h"
+ #include "remoting/base/http_status.h"
+ #include "remoting/base/session_authz_service_client.h"
+ #include "remoting/base/session_policies.h"
+@@ -153,10 +154,12 @@ class SessionAuthzAuthenticator : public Authenticator {
+ 
+   RejectionDetails rejection_details_;
+ 
+   std::string session_id_;
+   std::string host_token_;
++
++  base::WeakPtrFactory<SessionAuthzAuthenticator> weak_factory_{this};
+ };
+ 
+ }  // namespace remoting::protocol
+ 
+ #endif  // REMOTING_PROTOCOL_SESSION_AUTHZ_AUTHENTICATOR_H_

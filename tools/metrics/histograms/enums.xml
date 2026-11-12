@@ -4415,6 +4415,7 @@ shown properly on the user-facing crash UI.
   <int value="15" label="GamepadSource::kOpenxr"/>
   <int value="16" label="GamepadSource::kWinWgi"/>
   <int value="17" label="GamepadSource::kSimulated"/>
+  <int value="18" label="GamepadSource::kOhos"/>
 </enum>
 
 <enum name="GamepadVendorProduct">
@@ -22328,6 +22329,7 @@ from previous Chrome versions.
   <int value="5" label="kFrameInjectingDemuxer"/>
   <int value="6" label="kStreamProviderDemuxer"/>
   <int value="7" label="kManifestDemuxer"/>
+  <int value="8" label="kOhosMediaPlayerDemuxer"/>
 </enum>
 
 <enum name="MediaEncryptionType">

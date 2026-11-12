@@ -1,28 +1,4 @@
 diff a/extensions/browser/api/user_scripts/user_scripts_api.cc b/extensions/browser/api/user_scripts/user_scripts_api.cc	(rejected hunks)
-@@ -693,23 +693,10 @@ ExtensionFunction::ResponseAction UserScriptsExecuteFunction::Run() {
-   std::string error;
-   if (!IsValidWorldId(injection_.world, injection_.world_id, &error)) {
-     return RespondNow(Error(std::move(error)));
-   }
- 
--  // Validate injection target.
--  scripting::InjectionTarget internal_injection_target =
--      ConvertToInternalInjectionTarget(std::move(injection_.target));
--  ScriptExecutor* script_executor = nullptr;
--  ScriptExecutor::FrameScope frame_scope = ScriptExecutor::SPECIFIED_FRAMES;
--  std::set<int> frame_ids;
--  if (!scripting::CanAccessTarget(
--          *extension()->permissions_data(), internal_injection_target,
--          browser_context(), include_incognito_information(), &script_executor,
--          &frame_scope, &frame_ids, &error)) {
--    return RespondNow(Error(std::move(error)));
--  }
--
-   // Retrieve injection sources in order. Since file sources need to be loaded,
-   // we use a nullopt for placeholder in the source list. After files are
-   // successfully loaded, they should be converted to js source too.
-   std::vector<std::string> file_sources;
-   std::vector<std::optional<mojom::JSSourcePtr>> sources;
 @@ -728,25 +715,22 @@ ExtensionFunction::ResponseAction UserScriptsExecuteFunction::Run() {
      constexpr bool kRequiresLocalization = false;
      scripting::CheckAndLoadFiles(
@@ -87,16 +63,3 @@ diff a/extensions/browser/api/user_scripts/user_scripts_api.cc b/extensions/brow
    std::optional<std::string> execution_world_id = injection_.world_id;
    bool inject_immediately = injection_.inject_immediately.value_or(false);
  
-@@ -798,10 +792,12 @@ void UserScriptsExecuteFunction::Execute(
-   scripting::ExecuteScript(
-       extension()->id(), std::move(js_sources), execution_world,
-       execution_world_id, script_executor, frame_scope, frame_ids,
-       inject_immediately, user_gesture(),
-       base::BindOnce(&UserScriptsExecuteFunction::OnScriptExecuted, this));
-+
-+  return true;
- }
- 
- void UserScriptsExecuteFunction::OnScriptExecuted(
-     std::vector<ScriptExecutor::FrameResult> frame_results) {
-   // If only a single frame was included and the injection failed, respond with

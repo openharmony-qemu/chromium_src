@@ -1,30 +1,4 @@
 diff a/gpu/command_buffer/client/gles2_implementation.cc b/gpu/command_buffer/client/gles2_implementation.cc	(rejected hunks)
-@@ -143,11 +143,11 @@ bool IsReadbackUsage(GLenum usage) {
- }
- 
- void UpdateProgramInfo(base::span<const uint8_t>& data,
-                        ProgramInfoManager* manager,
-                        ProgramInfoManager::ProgramInfoType type) {
--  DCHECK(data.size() > sizeof(cmds::GLES2ReturnProgramInfo));
-+  CHECK(data.size() >= sizeof(cmds::GLES2ReturnProgramInfo));
-   const cmds::GLES2ReturnProgramInfo* return_program_info =
-       reinterpret_cast<const cmds::GLES2ReturnProgramInfo*>(data.data());
-   uint32_t program = return_program_info->program_client_id;
-   base::span<const int8_t> UNSAFE_TODO(info(
-       reinterpret_cast<const int8_t*>(return_program_info->deserialized_buffer),
-@@ -410,11 +410,11 @@ void GLES2Implementation::CallDeferredErrorCallbacks() {
-   }
- }
- 
- void GLES2Implementation::OnGpuControlReturnData(
-     base::span<const uint8_t> data) {
--  DCHECK(data.size() > sizeof(cmds::GLES2ReturnDataHeader));
-+  CHECK(data.size() >= sizeof(cmds::GLES2ReturnDataHeader));
-   const cmds::GLES2ReturnDataHeader& gles2ReturnDataHeader =
-       *reinterpret_cast<const cmds::GLES2ReturnDataHeader*>(data.data());
- 
-   switch (gles2ReturnDataHeader.return_data_type) {
-     case GLES2ReturnDataType::kES2ProgramInfo: {
 @@ -5805,12 +5805,12 @@ void GLES2Implementation::RemoveMappedBufferRangeById(GLuint buffer) {
      auto iter = mapped_buffer_range_map_.find(buffer);
      if (iter != mapped_buffer_range_map_.end() && iter->second.shm_memory) {
@@ -64,18 +38,3 @@ diff a/gpu/command_buffer/client/gles2_implementation.cc b/gpu/command_buffer/cl
    mapped_buffer_range_map_.clear();
  }
  
-@@ -6427,12 +6427,12 @@ void GLES2Implementation::AllocateShadowCopiesForReadback() {
-     int32_t shm_id = -1;
-     uint32_t shm_offset = 0;
-     bool already_allocated = false;
-     uint32_t size = buffer->Alloc(&shm_id, &shm_offset, &already_allocated);
-     if (shm_id == -1) {
-- 	  	continue;
-- 	  }
-+      continue;
-+    }
-     if (already_allocated) {
-       SendErrorMessage(
-           "performance warning: READ-usage buffer was written, then "
-           "fenced, but written again before being read back. This discarded "
-           "the shadow copy that was created to accelerate readback.",

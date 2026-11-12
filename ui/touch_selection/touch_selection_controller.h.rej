@@ -1,16 +1,4 @@
 diff a/ui/touch_selection/touch_selection_controller.h b/ui/touch_selection/touch_selection_controller.h	(rejected hunks)
-@@ -4,10 +4,11 @@
- 
- #ifndef UI_TOUCH_SELECTION_TOUCH_SELECTION_CONTROLLER_H_
- #define UI_TOUCH_SELECTION_TOUCH_SELECTION_CONTROLLER_H_
- 
- #include "base/memory/raw_ptr.h"
-+#include "base/memory/weak_ptr.h"
- #include "base/time/time.h"
- #include "ui/events/types/event_type.h"
- #include "ui/gfx/geometry/point.h"
- #include "ui/gfx/geometry/point_f.h"
- #include "ui/gfx/geometry/rect_f.h"
 @@ -183,10 +207,14 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
    const gfx::SelectionBound& start() const { return start_; }
    const gfx::SelectionBound& end() const { return end_; }

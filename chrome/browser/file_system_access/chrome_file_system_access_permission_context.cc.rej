@@ -22,16 +22,3 @@ diff a/chrome/browser/file_system_access/chrome_file_system_access_permission_co
           grant_iter != grant_end;) {
        // The grant may be removed from `read_grants`, so increase the iterator
        // before continuing.
-@@ -1544,10 +1556,12 @@ bool ChromeFileSystemAccessPermissionContext::RevokeActiveGrants(
- 
- void ChromeFileSystemAccessPermissionContext::RevokeAllActiveGrants() {
-   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
- 
-   for (auto& [origin, origin_state] : active_permissions_map_) {
-+    origin_state.downgraded_read_paths.clear();
-+
-     // Only update `persisted_grant_status` if the state has not already been
-     // set via tab backgrounding. We do this before iterating over grants so
-     // `FileSystemAccessPermissionGrant::Observer`s can update their state
-     // correctly.
-     if (origin_state.persisted_grant_status !=

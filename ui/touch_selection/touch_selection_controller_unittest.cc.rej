@@ -1,30 +1,4 @@
 diff a/ui/touch_selection/touch_selection_controller_unittest.cc b/ui/touch_selection/touch_selection_controller_unittest.cc	(rejected hunks)
-@@ -240,10 +251,13 @@ class TouchSelectionControllerTest : public testing::Test,
-     return events;
-   }
- 
-   TouchSelectionController& controller() { return *controller_; }
- 
-+ protected:
-+  std::unique_ptr<TouchSelectionController> controller_;
-+
-  private:
-   gfx::PointF last_event_start_;
-   gfx::PointF last_event_end_;
-   gfx::PointF caret_position_;
-   gfx::PointF selection_start_;
-@@ -255,11 +269,10 @@ class TouchSelectionControllerTest : public testing::Test,
-   bool selection_moved_ = false;
-   bool selection_points_swapped_ = false;
-   bool needs_animate_ = false;
-   bool animation_enabled_ = true;
-   bool dragging_enabled_ = false;
--  std::unique_ptr<TouchSelectionController> controller_;
- };
- 
- TEST_F(TouchSelectionControllerTest, InsertionBasic) {
-   gfx::RectF insertion_rect(5, 5, 0, 10);
-   bool visible = true;
 @@ -1905,7 +1918,29 @@ TEST_F(TouchSelectionControllerTest, SwipeToMoveCursor_HandleWasNotShown) {
    // Step 5: Swipe-to-move-cursor ends: show handles.
    controller().OnSwipeToMoveCursorEnd();

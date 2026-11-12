@@ -12,44 +12,6 @@ diff a/media/gpu/h264_decoder_unittest.cc b/media/gpu/h264_decoder_unittest.cc	(
  
  using ::testing::_;
  using ::testing::Args;
-@@ -307,26 +309,28 @@ TEST_F(H264DecoderTest, DecodeSingleFrame) {
- }
- 
- // This is for CENCv1 full sample encryption.
- TEST_F(H264DecoderTest, DecodeSingleEncryptedFrame) {
-   SetInputFrameFiles({kBaselineFrame0});
-+
-+  EXPECT_CALL(*accelerator_, ParseEncryptedSliceHeader(_, _, _, _))
-+      .WillOnce([this](const std::vector<base::span<const uint8_t>>& data,
-+                       const std::vector<SubsampleEntry>& subsamples,
-+                       uint64_t /*secure_handle*/,
-+                       H264SliceHeader* slice_hdr_out) {
-+        return ParseSliceHeader(
-+            data, subsamples, accelerator_->last_sps_nalu_data,
-+            accelerator_->last_pps_nalu_data, slice_hdr_out);
-+      });
-+
-   ASSERT_EQ(AcceleratedVideoDecoder::kConfigChange, Decode(true));
-   EXPECT_EQ(gfx::Size(320, 192), decoder_->GetPicSize());
-   EXPECT_EQ(H264PROFILE_BASELINE, decoder_->GetProfile());
-   EXPECT_LE(9u, decoder_->GetRequiredNumOfPictures());
- 
-   {
-     InSequence sequence;
--    EXPECT_CALL(*accelerator_, ParseEncryptedSliceHeader(_, _, _, _))
--        .WillOnce([this](const std::vector<base::span<const uint8_t>>& data,
--                         const std::vector<SubsampleEntry>& subsamples,
--                         uint64_t /*secure_handle*/,
--                         H264SliceHeader* slice_hdr_out) {
--          return ParseSliceHeader(
--              data, subsamples, accelerator_->last_sps_nalu_data,
--              accelerator_->last_pps_nalu_data, slice_hdr_out);
--        });
-     EXPECT_CALL(*accelerator_, CreateH264Picture());
-     EXPECT_CALL(*accelerator_, SubmitFrameMetadata(_, _, _, _, _, _, _));
-     EXPECT_CALL(*accelerator_, SubmitSlice(_, _, _, _, _, _, _, _));
-     EXPECT_CALL(*accelerator_, SubmitDecode(_));
-     EXPECT_CALL(*accelerator_, OutputPicture(_));
 @@ -627,14 +631,10 @@ TEST_F(H264DecoderTest, SetEncryptedStream) {
    EXPECT_TRUE(decoder_->Flush());
  }

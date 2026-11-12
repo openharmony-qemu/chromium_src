@@ -11,29 +11,3 @@ diff a/gpu/command_buffer/service/shared_image/ahardwarebuffer_image_backing_fac
  #include "base/strings/string_number_conversions.h"
  #include "build/build_config.h"
  #include "components/viz/common/gpu/vulkan_context_provider.h"
-@@ -65,11 +66,11 @@
- #include "ui/gl/scoped_binders.h"
- 
- namespace gpu {
- namespace {
- 
--class OverlayImage final : public base::RefCounted<OverlayImage> {
-+class OverlayImage final : public base::RefCountedThreadSafe<OverlayImage> {
-  public:
-   explicit OverlayImage(AHardwareBuffer* buffer)
-       : handle_(base::android::ScopedHardwareBufferHandle::Create(buffer)) {}
- 
-   base::ScopedFD TakeEndFence() {
-@@ -84,11 +85,11 @@ class OverlayImage final : public base::RefCounted<OverlayImage> {
-         this, base::android::ScopedHardwareBufferHandle::Create(handle_.get()),
-         std::move(previous_end_read_fence_));
-   }
- 
-  private:
--  friend class base::RefCounted<OverlayImage>;
-+  friend class base::RefCountedThreadSafe<OverlayImage>;
- 
-   class ScopedHardwareBufferFenceSyncImpl
-       : public base::android::ScopedHardwareBufferFenceSync {
-    public:
-     ScopedHardwareBufferFenceSyncImpl(

@@ -1,25 +1,4 @@
 diff a/media/gpu/h264_decoder.cc b/media/gpu/h264_decoder.cc	(rejected hunks)
-@@ -170,15 +170,16 @@ void H264Decoder::Reset() {
-   recovery_frame_cnt_.reset();
- 
-   decoder_buffer_.reset();
-   secure_handle_ = 0;
- 
--  // If we are in kDecoding, we can resume without processing an SPS.
--  // The state becomes kDecoding again, (1) at the first IDR slice or (2) at
--  // the first slice after the recovery point SEI.
--  if (state_ == State::kDecoding)
-+  // If we have already parsed stream metadata, we can resume without processing
-+  // an SPS. The state becomes kDecoding again, (1) at the first IDR slice or
-+  // (2) at the first slice after the recovery point SEI.
-+  if (state_ != State::kNeedStreamMetadata && state_ != State::kError) {
-     state_ = State::kAfterReset;
-+  }
- }
- 
- void H264Decoder::PrepareRefPicLists() {
-   ConstructReferencePicListsP();
-   ConstructReferencePicListsB();
 @@ -1598,10 +1599,33 @@ H264Decoder::DecodeResult H264Decoder::Decode() {
          if (state_ == State::kEnsurePicture) {
            if (curr_pic_) {
@@ -54,34 +33,3 @@ diff a/media/gpu/h264_decoder.cc b/media/gpu/h264_decoder.cc	(rejected hunks)
              if (secure_handle_) {
                curr_pic_ = accelerator_->CreateH264PictureSecure(secure_handle_);
              } else {
-@@ -1636,30 +1660,15 @@ H264Decoder::DecodeResult H264Decoder::Decode() {
-         CHECK_ACCELERATOR_RESULT(FinishPrevFrameIfPresent());
-         par_res = parser_.ParseSPS(&sps_id);
-         if (par_res != H264Parser::kOk)
-           SET_ERROR_AND_RETURN();
- 
--        bool need_new_buffers = false;
--        if (!ProcessSPS(sps_id, &need_new_buffers)) {
--          SET_ERROR_AND_RETURN();
--        }
-         accelerator_->ProcessSPS(parser_.GetSPS(sps_id), curr_nalu_->data);
- 
-         if (state_ == State::kNeedStreamMetadata)
-           state_ = State::kAfterReset;
- 
--        if (need_new_buffers) {
--          curr_pic_ = nullptr;
--          curr_nalu_ = nullptr;
--          ref_pic_list_p0_.clear();
--          ref_pic_list_b0_.clear();
--          ref_pic_list_b1_.clear();
--        }
--        // Prefer config changes over color space changes.
--        if (need_new_buffers) {
--          return kConfigChange;
--        }
-         break;
-       }
- 
-       case H264NALU::kPPS: {
-         CHECK_ACCELERATOR_RESULT(FinishPrevFrameIfPresent());

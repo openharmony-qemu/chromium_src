@@ -1,16 +1,4 @@
 diff a/media/mojo/services/mojo_renderer_service.cc b/media/mojo/services/mojo_renderer_service.cc	(rejected hunks)
-@@ -14,10 +14,11 @@
- #include "media/base/cdm_context.h"
- #include "media/base/renderer.h"
- #include "media/mojo/common/media_type_converters.h"
- #include "media/mojo/services/media_resource_shim.h"
- #include "media/mojo/services/mojo_cdm_service_context.h"
-+#include "mojo/public/cpp/bindings/message.h"
- 
- namespace media {
- 
- // Time interval to update media time.
- constexpr auto kTimeUpdateInterval = base::Milliseconds(125);
 @@ -56,20 +57,40 @@ void MojoRendererService::Initialize(
      mojo::PendingAssociatedRemote<mojom::RendererClient> client,
      std::optional<std::vector<mojo::PendingRemote<mojom::DemuxerStream>>>

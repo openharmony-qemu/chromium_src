@@ -38,18 +38,6 @@ diff a/extensions/browser/BUILD.gn b/extensions/browser/BUILD.gn	(rejected hunks
      "//base:i18n",
      "//build:android_buildflags",
      "//build:chromeos_buildflags",
-@@ -1039,10 +1056,11 @@ source_set("unit_tests") {
-     "//components/safe_browsing/core/common",
-     "//components/safe_browsing/core/common/hashprefix_realtime:hash_realtime_utils",
-     "//components/safe_browsing/core/common/proto:crx_info_proto_gen",
-     "//components/services/unzip:in_process",
-     "//components/services/unzip/content",
-+    "//components/signin/public/identity_manager:test_support",
-     "//components/sync_preferences:test_support",
-     "//components/update_client",
-     "//components/url_matcher",
-     "//components/user_prefs",
-     "//components/value_store:test_support",
 @@ -1072,11 +1090,20 @@ source_set("unit_tests") {
      "//storage/browser:test_support",
      "//third_party/leveldatabase",

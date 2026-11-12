@@ -1,28 +1,4 @@
 diff a/media/parsers/h264_parser.cc b/media/parsers/h264_parser.cc	(rejected hunks)
-@@ -1076,10 +1076,11 @@ H264Parser::Result H264Parser::ParsePPS(int* pps_id) {
-   *pps_id = -1;
- 
-   std::unique_ptr<H264PPS> pps(new H264PPS());
- 
-   READ_UE_OR_RETURN(&pps->pic_parameter_set_id);
-+  IN_RANGE_OR_RETURN(pps->pic_parameter_set_id, 0, 255);
-   READ_UE_OR_RETURN(&pps->seq_parameter_set_id);
-   TRUE_OR_RETURN(pps->seq_parameter_set_id < 32);
- 
-   if (active_SPSes_.find(pps->seq_parameter_set_id) == active_SPSes_.end()) {
-     DVLOG(1) << "Invalid stream, no SPS id: " << pps->seq_parameter_set_id;
-@@ -1147,10 +1148,11 @@ H264Parser::Result H264Parser::ParsePPS(int* pps_id) {
-         if (res != kOk)
-           return res;
-       }
- 
-       READ_SE_OR_RETURN(&pps->second_chroma_qp_index_offset);
-+      IN_RANGE_OR_RETURN(pps->second_chroma_qp_index_offset, -12, 12);
-     }
-   }
- 
-   // If a PPS with the same id already exists, replace it.
-   *pps_id = pps->pic_parameter_set_id;
 @@ -1400,12 +1402,14 @@ H264Parser::Result H264Parser::ParseSliceHeader(const H264NALU& nalu,
        DVLOG(1) << "Interlaced streams not supported";
        return kUnsupportedStream;
@@ -39,58 +15,3 @@ diff a/media/parsers/h264_parser.cc b/media/parsers/h264_parser.cc	(rejected hun
    if (sps->pic_order_cnt_type == 0) {
      READ_BITS_OR_RETURN(sps->log2_max_pic_order_cnt_lsb_minus4 + 4,
                          &shdr->pic_order_cnt_lsb);
-@@ -1525,26 +1529,47 @@ H264Parser::Result H264Parser::ParseSEI(H264SEI* sei) {
-   //
-   // The spec doesn't provide any pattern to let us validate the
-   // the parsed SEI messages, so we have to set a limit here.
-   constexpr int kMaxParsedSEIMessages = 64;
-   do {
--    int type = 0;
-+    base::CheckedNumeric<int> type_checked = 0;
-     READ_BITS_OR_RETURN(8, &byte);
-     while (byte == 0xff) {
--      type += 255;
-+      type_checked += 255;
-       READ_BITS_OR_RETURN(8, &byte);
-     }
--    type += byte;
-+    type_checked += byte;
- 
--    int payload_size = 0;
-+    if (!type_checked.IsValid()) {
-+      DVLOG(1) << "SEI type overflow";
-+      return kInvalidStream;
-+    }
-+    int type = type_checked.ValueOrDie();
-+
-+    base::CheckedNumeric<int> payload_size_checked = 0;
-     READ_BITS_OR_RETURN(8, &byte);
-     while (byte == 0xff) {
--      payload_size += 255;
-+      payload_size_checked += 255;
-       READ_BITS_OR_RETURN(8, &byte);
-     }
--    payload_size += byte;
--    int num_bits_remain = payload_size * 8;
-+    payload_size_checked += byte;
-+
-+    if (!payload_size_checked.IsValid()) {
-+      DVLOG(1) << "SEI payload size overflow";
-+      return kInvalidStream;
-+    }
-+
-+    int payload_size = payload_size_checked.ValueOrDie();
-+    base::CheckedNumeric<int> num_bits_remain_checked =
-+        payload_size_checked * 8;
-+
-+    if (!num_bits_remain_checked.IsValid()) {
-+      DVLOG(1) << "SEI payload bits overflow";
-+      return kInvalidStream;
-+    }
-+
-+    int num_bits_remain = num_bits_remain_checked.ValueOrDie();
- 
-     DVLOG(4) << "Found SEI message type: " << type
-              << " payload size: " << payload_size;
- 
-     enum Type {

@@ -34,20 +34,3 @@ diff a/components/media_router/common/media_source.cc b/components/media_router/
                            base::CompareCase::INSENSITIVE_ASCII);
  }
  
-@@ -220,11 +244,15 @@ bool MediaSource::IsDesktopSourceWithAudio() const {
- bool MediaSource::IsDialSource() const {
-   return url_.SchemeIs(kCastDialPresentationUrlScheme);
- }
- 
- std::string MediaSource::AppNameFromDialSource() const {
--  return IsDialSource() ? url_.GetPath() : "";
-+  if (!IsDialSource()) {
-+    return "";
-+  }
-+  std::string app_name = url_.GetPath();
-+  return IsDialAppName(app_name) ? app_name : "";
- }
- 
- std::string MediaSource::TruncateForLogging(size_t max_length) const {
-   const std::string origin = url_.DeprecatedGetOriginAsURL().spec();
-   if (!origin.empty()) {

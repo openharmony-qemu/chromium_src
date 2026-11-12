@@ -1,17 +1,4 @@
 diff a/chrome/browser/devtools/device/devtools_device_discovery.cc b/chrome/browser/devtools/device/devtools_device_discovery.cc	(rejected hunks)
-@@ -25,10 +25,12 @@
- #include "content/public/browser/browser_task_traits.h"
- #include "content/public/browser/browser_thread.h"
- #include "content/public/browser/devtools_agent_host.h"
- #include "content/public/browser/devtools_external_agent_proxy.h"
- #include "content/public/browser/devtools_external_agent_proxy_delegate.h"
-+#include "net/base/url_util.h"
-+#include "url/gurl.h"
- 
- using content::BrowserThread;
- using content::DevToolsAgentHost;
- using RemoteBrowser = DevToolsDeviceDiscovery::RemoteBrowser;
- using RemoteDevice = DevToolsDeviceDiscovery::RemoteDevice;
 @@ -216,26 +218,10 @@ static std::string BuildUniqueTargetId(const std::string& serial,
                                         const base::Value::Dict& value) {
    return base::StringPrintf("%s:%s:%s", serial.c_str(), browser_id.c_str(),
@@ -39,21 +26,6 @@ diff a/chrome/browser/devtools/device/devtools_device_discovery.cc b/chrome/brow
  
    if (base::StartsWith(target_path, "ws://", base::CompareCase::SENSITIVE)) {
      size_t pos = target_path.find("/", 5);
-@@ -286,11 +272,13 @@ AgentHostDelegate::AgentHostDelegate(
-       browser_id_(browser_id),
-       local_id_(local_id),
-       target_path_(target_path),
-       remote_type_(type),
-       remote_id_(value ? GetStringProperty(*value, "id") : ""),
--      frontend_url_(value ? GetFrontendURLFromValue(*value, browser_version)
-+      frontend_url_(value ? DevToolsDeviceDiscovery::GetFrontendURLFromValue(
-+                                *value,
-+                                browser_version)
-                           : ""),
-       title_(value ? base::UTF16ToUTF8(base::UnescapeForHTML(
-                          base::UTF8ToUTF16(GetStringProperty(*value, "title"))))
-                    : ""),
-       description_(value ? GetStringProperty(*value, "description") : ""),
 @@ -672,10 +660,76 @@ void DevToolsDeviceDiscovery::SetScheduler(
      base::RepeatingCallback<void(base::OnceClosure)> scheduler) {
    DCHECK_CURRENTLY_ON(BrowserThread::UI);

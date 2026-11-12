@@ -23,19 +23,6 @@ diff a/extensions/browser/extension_frame_host.h b/extensions/browser/extension_
  
  namespace extensions {
  
-@@ -34,10 +38,12 @@ class ExtensionFrameHost : public mojom::LocalFrameHost {
- 
-   void BindLocalFrameHost(
-       mojo::PendingAssociatedReceiver<mojom::LocalFrameHost> receiver,
-       content::RenderFrameHost* render_frame_host);
- 
-+  void RenderFrameDeleted(content::RenderFrameHost* render_frame_host);
-+
-   content::RenderFrameHostReceiverSet<mojom::LocalFrameHost>&
-   receivers_for_testing() {
-     return receivers_;
-   }
- 
 @@ -78,10 +84,17 @@ class ExtensionFrameHost : public mojom::LocalFrameHost {
        const std::string& native_app_name,
        const PortId& port_id,
@@ -54,44 +41,3 @@ diff a/extensions/browser/extension_frame_host.h b/extensions/browser/extension_
        int32_t frame_id,
        const std::optional<std::string>& document_id,
        extensions::mojom::ChannelType channel_type,
-@@ -97,10 +110,40 @@ class ExtensionFrameHost : public mojom::LocalFrameHost {
- 
-   // This raw pointer is safe to use because ExtensionWebContentsObserver whose
-   // lifetime is tied to the WebContents owns this instance.
-   raw_ptr<content::WebContents> web_contents_;
-   content::RenderFrameHostReceiverSet<mojom::LocalFrameHost> receivers_;
-+
-+ private:
-+  // Data tracked for each active frame that has incremented keepalive count via
-+  // IPC. This structure allows `ExtensionFrameHost` to deduplicate multiple IPC
-+  // keepalives from the same frame into a single keepalive in `ProcessManager`,
-+  // preventing memory bloat and protecting against malicious counter
-+  // underflows.
-+  struct FrameIpcKeepaliveData {
-+    ExtensionId extension_id;
-+    // Unique string identifying the frame (e.g. "ipc:<child_id>:<routing_id>")
-+    // used to strictly match keepalive decrements in `ProcessManager`.
-+    std::string activity_data;
-+    // Number of active IPC keepalive requests from this frame.
-+    int count = 0;
-+  };
-+
-+  // Decrements the `ProcessManager` keepalive count for the specified data.
-+  void ReleaseIpcKeepaliveData(const FrameIpcKeepaliveData& data);
-+
-+  // Decrements the `ProcessManager` keepalive count if the specified frame has
-+  // any remaining IPC keepalive counts, then removes the tracking entry. Called
-+  // when a frame is deleted or when `ExtensionFrameHost` is destroyed.
-+  void ReleaseIpcKeepaliveForFrame(
-+      const content::GlobalRenderFrameHostId& frame_id);
-+
-+  raw_ptr<content::BrowserContext> browser_context_;
-+
-+  // Maps global frame IDs to their current keepalive tracking data.
-+  base::flat_map<content::GlobalRenderFrameHostId, FrameIpcKeepaliveData>
-+      frame_ipc_keepalives_;
- };
- 
- }  // namespace extensions
- 
- #endif  // EXTENSIONS_BROWSER_EXTENSION_FRAME_HOST_H_

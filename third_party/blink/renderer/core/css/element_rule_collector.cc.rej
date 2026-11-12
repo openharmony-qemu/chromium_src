@@ -57,31 +57,3 @@ diff a/third_party/blink/renderer/core/css/element_rule_collector.cc b/third_par
                ? attribute_name.LowerASCII()
                : attribute_name;
  
-@@ -934,19 +945,22 @@ DISABLE_CFI_PERF bool ElementRuleCollector::CollectMatchingRulesInternal(
-             bundle.rule_set->CanIgnoreEntireList(
-                 list, lower_name, attributes[attr_idx].Value())) {
-           continue;
-         }
-         if (CollectMatchingRulesForList<stop_at_first_match>(
--                bundle.rule_set->AttrRules(lower_name), match_request,
--                bundle.rule_set, bundle.style_sheet_index, checker, context) &&
-+                list, match_request, bundle.rule_set, bundle.style_sheet_index,
-+                checker, context) &&
-             stop_at_first_match) {
-           return true;
-         }
--      }
- 
--      const AttributeCollection collection = element.AttributesWithoutUpdate();
--      attributes = base::span(collection);
-+        // Refresh the attribute span, in case CollectMatchingRulesForList()
-+        // reallocated it.
-+        const AttributeCollection collection =
-+            element.AttributesWithoutUpdate();
-+        attributes = base::span(collection);
-+      }
-     }
-   }
- 
-   if (element.HasLocalName(html_names::kInputTag.LocalName())) {
-     if (const AtomicString& input_type =

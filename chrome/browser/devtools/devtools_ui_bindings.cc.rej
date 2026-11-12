@@ -45,15 +45,3 @@ diff a/chrome/browser/devtools/devtools_ui_bindings.cc b/chrome/browser/devtools
      // chrome-untrusted:// schemes if a custom devtools front-end was specified.
      const base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
      const bool allow_web_ui_scheme =
-@@ -1265,11 +1294,10 @@ void DevToolsUIBindings::LoadNetworkResource(DispatchCallback callback,
-       auto response = base::Value(std::move(response_dict));
-       std::move(callback).Run(&response);
-       return;
-     }
-   } else {
--    content::WebContents* target_tab = delegate_->GetInspectedWebContents();
-     if (target_tab) {
-       auto* partition =
-           target_tab->GetPrimaryMainFrame()->GetStoragePartition();
-       url_loader_factory = partition->GetURLLoaderFactoryForBrowserProcess();
-     } else {

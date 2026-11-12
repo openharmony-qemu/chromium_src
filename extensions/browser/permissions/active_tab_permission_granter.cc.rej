@@ -1,17 +1,4 @@
 diff a/extensions/browser/permissions/active_tab_permission_granter.cc b/extensions/browser/permissions/active_tab_permission_granter.cc	(rejected hunks)
-@@ -130,11 +130,11 @@ ActiveTabPermissionGranter::ActiveTabPermissionGranter(
- }
- 
- ActiveTabPermissionGranter::~ActiveTabPermissionGranter() = default;
- 
- void ActiveTabPermissionGranter::GrantIfRequested(const Extension* extension) {
--  if (granted_extensions_.Contains(extension->id())) {
-+  if (IsGranted(extension)) {
-     return;
-   }
- 
-   APIPermissionSet new_apis;
-   URLPatternSet new_hosts;
 @@ -178,42 +178,15 @@ void ActiveTabPermissionGranter::GrantIfRequested(const Extension* extension) {
    if (!new_apis.empty() || !new_hosts.is_empty()) {
      granted_extensions_.Insert(extension);

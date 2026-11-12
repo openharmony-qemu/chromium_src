@@ -26,19 +26,6 @@ diff a/third_party/blink/renderer/core/editing/ime/edit_context.cc b/third_party
      int composition_end,
      const std::vector<ui::ImeTextSpan>& ime_text_spans) {
    TRACE_EVENT1("ime", "EditContext::SetCompositionFromExistingText",
-@@ -630,10 +614,12 @@ bool EditContext::InsertText(const WebString& text) {
-                           selection_start_, selection_end_);
-   return true;
- }
- 
- void EditContext::DeleteCurrentSelection() {
-+  CHECK_LE(selection_start_, text_.length());
-+  CHECK_LE(selection_end_, text_.length());
-   if (selection_start_ == selection_end_)
-     return;
- 
-   StringBuilder stringBuilder;
-   stringBuilder.Append(StringView(text_, 0, OrderedSelectionStart()));
 @@ -648,55 +634,66 @@ void EditContext::DeleteCurrentSelection() {
  }
  

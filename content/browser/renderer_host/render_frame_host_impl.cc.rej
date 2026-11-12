@@ -407,26 +407,6 @@ diff a/content/browser/renderer_host/render_frame_host_impl.cc b/content/browser
                                   was_consumed, cloned_namespace.get());
  
    transient_allow_popup_.Deactivate();
-@@ -10039,15 +10184,15 @@ void RenderFrameHostImpl::CreateNewWindow(
-                                      std::move(params->frame_widget));
- 
-   bool wait_for_debugger =
-       devtools_instrumentation::ShouldWaitForDebuggerInWindowOpen();
- 
--  // NOTE: if the call to ShowCreatedWindow() below returns nullptr, then
-+  // NOTE: after the call to ShowCreatedWindow() below it's possible that
-   // new_frame_tree, new_main_rfh, and new_main_rwh will all have been destroyed
--  // and point to freed memory! To preserve legacy behavior, we still need to
--  // send a fully-populated reply along with kSuccess, so we construct the reply
--  // here prior to ShowCreatedWindow().
-+  // and point to freed memory! We still need to send a fully-populated reply
-+  // along with kSuccess, so we construct the reply here prior to
-+  // ShowCreatedWindow().
- 
-   blink::VisualProperties visual_properties;
-   // If we can't get an accurate set of VisualProperties after ShowCreatedWindow
-   // below, we at least want to transmit screen info based on the screen of the
-   // initiating frame, which is what new_rwh is constructed with.
 @@ -10064,29 +10209,38 @@ void RenderFrameHostImpl::CreateNewWindow(
        /*window_screen_rect=*/std::nullopt);
  
@@ -744,33 +724,3 @@ diff a/content/browser/renderer_host/render_frame_host_impl.cc b/content/browser
  
  // Called when the renderer navigates. For every frame loaded, we'll get this
  // notification containing parameters identifying the navigation.
-@@ -16665,12 +16915,27 @@ void RenderFrameHostImpl::DidCommitNavigation(
-   // with in-flight navigation requests in the back-forward cache and it's not
-   // possible to start/commit a new one after the RenderFrameHost is in the
-   // BackForwardCache (see the check IsInactiveAndDisallowActivation in
-   // RFH::DidCommitSameDocumentNavigation() and RFH::BeginNavigation()) so it
-   // isn't possible to get a DidCommitNavigation IPC from the renderer in
--  // kInBackForwardCache state.
--  DCHECK(!IsInBackForwardCache());
-+  // kInBackForwardCache state. Trigger a renderer kill if we receive an
-+  // unexpected DidCommit message.
-+  if (IsInBackForwardCache()) {
-+    if (render_view_host()->DidReceiveBackForwardCacheAck()) {
-+      bad_message::ReceivedBadMessage(
-+          GetProcess(), bad_message::RFH_DID_COMMIT_NAVIGATION_WHILE_BFCACHED);
-+    } else {
-+      // The renderer might not have realized that it's in BFCache when it sent
-+      // the DidCommitNavigation call, since we haven't received the BFCache
-+      // ACK. In this case, just evict from BFCache instead of killing the
-+      // renderer.
-+      IsInactiveAndDisallowActivation(
-+          DisallowActivationReasonId::kDidCommitNavigation);
-+    }
-+    // Return early in any case.
-+    return;
-+  }
- 
-   // TODO(https://crbug.com/445585641): Make this enforceable on Android.
- #if !BUILDFLAG(IS_ANDROID)
-   if (base::FeatureList::IsEnabled(kCheckDocumentSequenceNumber)) {
-     if (params->document_sequence_number == -1) {

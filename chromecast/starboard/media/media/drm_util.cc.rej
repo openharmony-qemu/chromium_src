@@ -1,17 +1,4 @@
 diff a/chromecast/starboard/media/media/drm_util.cc b/chromecast/starboard/media/media/drm_util.cc	(rejected hunks)
-@@ -7,10 +7,12 @@
- #include <utility>
- 
- #include "base/check.h"
- #include "base/containers/span.h"
- #include "base/logging.h"
-+#include "base/numerics/safe_conversions.h"
-+#include "base/numerics/safe_math.h"
- 
- namespace chromecast {
- namespace media {
- 
- // Rather than hard-coding values here, we simply read the length of the
 @@ -35,10 +37,38 @@ DrmInfoWrapper::~DrmInfoWrapper() = default;
  
  StarboardDrmSampleInfo* DrmInfoWrapper::GetDrmSampleInfo() {
@@ -51,37 +38,3 @@ diff a/chromecast/starboard/media/media/drm_util.cc b/chromecast/starboard/media
    if (!decrypt_config) {
      return DrmInfoWrapper();
    }
-@@ -95,12 +125,14 @@ DrmInfoWrapper DrmInfoWrapper::Create(const CastDecoderBuffer& buffer) {
-   auto subsample_mappings =
-       std::make_unique<std::vector<StarboardDrmSubSampleMapping>>();
-   subsample_mappings->reserve(decrypt_config->subsamples().size());
-   for (const SubsampleEntry& subsample : decrypt_config->subsamples()) {
-     StarboardDrmSubSampleMapping mapping;
--    mapping.clear_byte_count = subsample.clear_bytes;
--    mapping.encrypted_byte_count = subsample.cypher_bytes;
-+    mapping.clear_byte_count =
-+        base::checked_cast<int32_t>(subsample.clear_bytes);
-+    mapping.encrypted_byte_count =
-+        base::checked_cast<int32_t>(subsample.cypher_bytes);
-     subsample_mappings->push_back(std::move(mapping));
-   }
- 
-   if (subsample_mappings->empty()) {
-     LOG(ERROR) << "At least one subsample must be present for DRM info. DRM "
-@@ -183,12 +215,14 @@ DrmInfoWrapper DrmInfoWrapper::Create(const ::media::DecoderBuffer& buffer) {
-   auto subsample_mappings =
-       std::make_unique<std::vector<StarboardDrmSubSampleMapping>>();
-   subsample_mappings->reserve(decrypt_config.subsamples().size());
-   for (const ::media::SubsampleEntry& subsample : decrypt_config.subsamples()) {
-     StarboardDrmSubSampleMapping mapping;
--    mapping.clear_byte_count = subsample.clear_bytes;
--    mapping.encrypted_byte_count = subsample.cypher_bytes;
-+    mapping.clear_byte_count =
-+        base::checked_cast<int32_t>(subsample.clear_bytes);
-+    mapping.encrypted_byte_count =
-+        base::checked_cast<int32_t>(subsample.cypher_bytes);
-     subsample_mappings->push_back(std::move(mapping));
-   }
- 
-   if (subsample_mappings->empty()) {
-     // DecryptConfig may contain 0 subsamples if all content is encrypted. Map

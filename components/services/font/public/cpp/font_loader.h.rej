@@ -15,34 +15,6 @@ diff a/components/services/font/public/cpp/font_loader.h b/components/services/f
  #include "mojo/public/cpp/bindings/pending_remote.h"
  #include "pdf/buildflags.h"
  #include "third_party/skia/include/core/SkStream.h"
-@@ -35,12 +35,11 @@ struct SkFontConfigInterfaceFontIdentityHash {
- // out of the sandbox. This methods of this class (as imposed by blink
- // requirements) may be called on any thread. (Because of this restriction,
- // also see the FontServiceThread class.)
- //
- // This is the mojo equivalent to content/common/font_config_ipc_linux.h
--class FontLoader : public SkFontConfigInterface,
--                   public internal::MappedFontFile::Observer {
-+class FontLoader : public SkFontConfigInterface {
-  public:
-   explicit FontLoader(
-       mojo::PendingRemote<mojom::FontService> pending_font_service);
- 
-   FontLoader(const FontLoader&) = delete;
-@@ -52,12 +51,11 @@ class FontLoader : public SkFontConfigInterface,
-   bool matchFamilyName(const char family_name[],
-                        SkFontStyle requested,
-                        FontIdentity* out_font_identifier,
-                        SkString* out_family_name,
-                        SkFontStyle* out_style) override;
--  SkStreamAsset* openStream(const FontIdentity& identity) override
--      LOCKS_EXCLUDED(mapped_font_files_lock_);
-+  SkStreamAsset* openStream(const FontIdentity& identity) override;
-   sk_sp<SkTypeface> makeTypeface(const FontIdentity& identity,
-                                  sk_sp<SkFontMgr> mgr) override
-       LOCKS_EXCLUDED(typeface_cache_lock_);
- 
-   // Additional cross-thread accessible methods below.
 @@ -98,32 +96,23 @@ class FontLoader : public SkFontConfigInterface,
                               base::File* out_font_file_handle);
    std::vector<std::string> ListFamilies();

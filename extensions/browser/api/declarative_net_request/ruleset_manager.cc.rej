@@ -15,26 +15,6 @@ diff a/extensions/browser/api/declarative_net_request/ruleset_manager.cc b/exten
   public:
    ScopedEvaluateRequestTimer() = default;
    ~ScopedEvaluateRequestTimer() {
-@@ -358,10 +363,19 @@ std::optional<RequestAction> RulesetManager::GetAction(
-     const ExtensionRulesetData* ruleset = ruleset_and_access.first;
- 
-     CompositeMatcher::ActionInfo action_info =
-         ruleset->matcher->GetAction(params, stage, ruleset_and_access.second);
- 
-+    // Extensions may not redirect to a file:// URL without explicit local file
-+    // access. Drop the action if it does not have file access. Like matched
-+    // redirect rules that do not have host access to the request's URL, It will
-+    // still mask lower priority rules from the same ruleset.
-+    if (IsRedirectToFileUrl(action_info.action) &&
-+        !util::AllowFileAccess(ruleset->extension_id, browser_context_)) {
-+      action_info.action.reset();
-+    }
-+
-     DCHECK(!(action_info.action && action_info.notify_request_withheld));
-     if (action_info.notify_request_withheld) {
-       NotifyRequestWithheld(ruleset->extension_id, request);
-       continue;
-     }
 @@ -515,20 +529,31 @@ bool RulesetManager::ShouldEvaluateRequest(
  
    // Prevent extensions from modifying any resources on the chrome-extension
@@ -67,21 +47,3 @@ diff a/extensions/browser/api/declarative_net_request/ruleset_manager.cc b/exten
  
  bool RulesetManager::ShouldEvaluateRulesetForRequest(
      const ExtensionRulesetData& ruleset,
-@@ -558,10 +587,17 @@ bool RulesetManager::ShouldEvaluateRulesetForRequest(
-   if (is_incognito_context &&
-       !util::IsIncognitoEnabled(ruleset.extension_id, browser_context_)) {
-     return false;
-   }
- 
-+  // Extensions may not intercept file:// URLs without explicit local file
-+  // access.
-+  if (request.url.SchemeIsFile() &&
-+      !util::AllowFileAccess(ruleset.extension_id, browser_context_)) {
-+    return false;
-+  }
-+
-   const int tab_id = request.frame_data.tab_id;
- 
-   // `crosses_incognito` is used to ensure that a split mode extension process
-   // can't intercept requests from a cross browser context. Since declarative
-   // net request API doesn't use event listeners in a background process, it

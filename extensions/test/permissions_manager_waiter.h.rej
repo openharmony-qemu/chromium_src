@@ -1,22 +1,4 @@
 diff a/extensions/test/permissions_manager_waiter.h b/extensions/test/permissions_manager_waiter.h	(rejected hunks)
-@@ -3,13 +3,17 @@
- // found in the LICENSE file.
- 
- #ifndef EXTENSIONS_TEST_PERMISSIONS_MANAGER_WAITER_H_
- #define EXTENSIONS_TEST_PERMISSIONS_MANAGER_WAITER_H_
- 
-+#include <optional>
-+#include <set>
-+
- #include "base/run_loop.h"
- #include "base/scoped_observation.h"
- #include "extensions/browser/permissions_manager.h"
-+#include "extensions/common/extension_id.h"
- 
- namespace extensions {
- 
- class PermissionsManagerWaiter : public PermissionsManager::Observer {
-  public:
 @@ -28,25 +32,32 @@ class PermissionsManagerWaiter : public PermissionsManager::Observer {
    void WaitForExtensionPermissionsUpdate();
    // Waits until extension permissions change and then calls `callback`.

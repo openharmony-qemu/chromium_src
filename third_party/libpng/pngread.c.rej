@@ -1,40 +1,4 @@
 diff a/third_party/libpng/pngread.c b/third_party/libpng/pngread.c	(rejected hunks)
-@@ -961,25 +961,23 @@ png_read_destroy(png_structrp png_ptr)
-    png_ptr->palette_lookup = NULL;
-    png_free(png_ptr, png_ptr->quantize_index);
-    png_ptr->quantize_index = NULL;
- #endif
- 
--   if ((png_ptr->free_me & PNG_FREE_PLTE) != 0)
--   {
--      png_zfree(png_ptr, png_ptr->palette);
--      png_ptr->palette = NULL;
--   }
--   png_ptr->free_me &= ~PNG_FREE_PLTE;
-+   /* png_ptr->palette is always independently allocated (not aliased
-+    * with info_ptr->palette), so free it unconditionally.
-+    */
-+   png_free(png_ptr, png_ptr->palette);
-+   png_ptr->palette = NULL;
- 
- #if defined(PNG_tRNS_SUPPORTED) || \
-     defined(PNG_READ_EXPAND_SUPPORTED) || defined(PNG_READ_BACKGROUND_SUPPORTED)
--   if ((png_ptr->free_me & PNG_FREE_TRNS) != 0)
--   {
--      png_free(png_ptr, png_ptr->trans_alpha);
--      png_ptr->trans_alpha = NULL;
--   }
--   png_ptr->free_me &= ~PNG_FREE_TRNS;
-+   /* png_ptr->trans_alpha is always independently allocated (not aliased
-+    * with info_ptr->trans_alpha), so free it unconditionally.
-+    */
-+   png_free(png_ptr, png_ptr->trans_alpha);
-+   png_ptr->trans_alpha = NULL;
- #endif
- 
-    inflateEnd(&png_ptr->zstream);
- 
- #ifdef PNG_PROGRESSIVE_READ_SUPPORTED
 @@ -3264,10 +3262,58 @@ png_image_read_colormapped(png_voidp argument)
  
        return 1;
@@ -94,39 +58,6 @@ diff a/third_party/libpng/pngread.c b/third_party/libpng/pngread.c	(rejected hun
  png_image_read_composite(png_voidp argument)
  {
     png_image_read_control *display = png_voidcast(png_image_read_control*,
-@@ -3682,10 +3728,11 @@ png_image_read_direct(png_voidp argument)
- 
-    png_uint_32 format = image->format;
-    int linear = (format & PNG_FORMAT_FLAG_LINEAR) != 0;
-    int do_local_compose = 0;
-    int do_local_background = 0; /* to avoid double gamma correction bug */
-+   int do_local_scale = 0; /* for interlaced 16-to-8 bit conversion */
-    int passes = 0;
- 
-    /* Add transforms to ensure the correct output format is produced then check
-     * that the required implementation support is there.  Always expand; always
-     * need 8 bits minimum, no palette and expanded tRNS.
-@@ -3808,12 +3855,20 @@ png_image_read_direct(png_voidp argument)
-       {
-          if (linear != 0 /*16-bit output*/)
-             png_set_expand_16(png_ptr);
- 
-          else /* 8-bit output */
-+         {
-             png_set_scale_16(png_ptr);
- 
-+            /* For interlaced images, use local_row buffer to avoid overflow
-+             * in png_combine_row() which writes using IHDR bit-depth.
-+             */
-+            if (png_ptr->interlaced != 0)
-+               do_local_scale = 1;
-+         }
-+
-          change &= ~PNG_FORMAT_FLAG_LINEAR;
-       }
- 
-       /* Now the background/alpha channel changes. */
-       if ((change & PNG_FORMAT_FLAG_ALPHA) != 0)
 @@ -4085,10 +4140,28 @@ png_image_read_direct(png_voidp argument)
        png_free(png_ptr, row);
  

@@ -11,64 +11,6 @@ diff a/third_party/blink/renderer/core/scroll/scrollbar_theme.cc b/third_party/b
  #include "third_party/blink/renderer/core/scroll/scrollbar_theme_overlay_mock.h"
  #include "third_party/blink/renderer/platform/graphics/color.h"
  #include "third_party/blink/renderer/platform/graphics/graphics_context.h"
-@@ -93,14 +100,15 @@ ScrollbarPart ScrollbarTheme::HitTest(const Scrollbar& scrollbar,
- 
-   return kScrollbarBGPart;
- }
- 
- void ScrollbarTheme::PaintScrollCorner(
--    GraphicsContext& context,
-+    const PaintInfo& paint_info,
-     const ScrollableArea& scrollable_area,
-     const DisplayItemClient& display_item_client,
-     const gfx::Rect& corner_rect) {
-+  GraphicsContext& context = paint_info.context;
-   if (corner_rect.IsEmpty()) {
-     return;
-   }
- 
-   if (DrawingRecorder::UseCachedDrawingIfPossible(context, display_item_client,
-@@ -133,11 +141,11 @@ void ScrollbarTheme::PaintScrollCorner(
-       scrollbar->GetPreferredContrast(),
-       scrollbar->GetColorProvider(color_scheme));
- #endif
- }
- 
--void ScrollbarTheme::PaintTickmarks(GraphicsContext& context,
-+void ScrollbarTheme::PaintTickmarks(const PaintInfo& paint_info,
-                                     const Scrollbar& scrollbar,
-                                     const gfx::Rect& rect) {
- // Android paints tickmarks in the browser at FindResultBar.java.
- #if !BUILDFLAG(IS_ANDROID)
-   if (scrollbar.Orientation() != kVerticalScrollbar)
-@@ -148,10 +156,11 @@ void ScrollbarTheme::PaintTickmarks(GraphicsContext& context,
- 
-   Vector<gfx::Rect> tickmarks = scrollbar.GetTickmarks();
-   if (!tickmarks.size())
-     return;
- 
-+  GraphicsContext& context = paint_info.context;
-   if (DrawingRecorder::UseCachedDrawingIfPossible(
-           context, scrollbar, DisplayItem::kScrollbarTickmarks))
-     return;
- 
-   DrawingRecorder recorder(context, scrollbar, DisplayItem::kScrollbarTickmarks,
-@@ -289,13 +298,14 @@ ScrollbarTheme& ScrollbarTheme::GetTheme() {
-     return overlay_mock_theme;
-   }
-   return NativeTheme();
- }
- 
--void ScrollbarTheme::PaintTrackBackgroundAndButtons(GraphicsContext& context,
-+void ScrollbarTheme::PaintTrackBackgroundAndButtons(const PaintInfo& paint_info,
-                                                     const Scrollbar& scrollbar,
-                                                     const gfx::Rect& rect) {
-+  GraphicsContext& context = paint_info.context;
-   // CustomScrollbarTheme must override this method.
-   DCHECK(!scrollbar.IsCustomScrollbar());
-   gfx::Vector2d offset = rect.origin() - scrollbar.Location();
- 
-   if (DrawingRecorder::UseCachedDrawingIfPossible(
 @@ -305,31 +315,36 @@ void ScrollbarTheme::PaintTrackBackgroundAndButtons(GraphicsContext& context,
                             DisplayItem::kScrollbarTrackAndButtons, rect);
  

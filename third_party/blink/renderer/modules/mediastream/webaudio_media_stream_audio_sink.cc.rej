@@ -13,23 +13,3 @@ diff a/third_party/blink/renderer/modules/mediastream/webaudio_media_stream_audi
  
  // Size of the buffer that WebAudio processes each time, it is the same value
  // as AudioNode::ProcessingSizeInFrames in WebKit.
-@@ -43,12 +46,17 @@ WebAudioMediaStreamAudioSink::WebAudioMediaStreamAudioSink(
-   WebMediaStreamAudioSink::AddToAudioTrack(
-       this, WebMediaStreamTrack(component_.Get()));
- }
- 
- WebAudioMediaStreamAudioSink::~WebAudioMediaStreamAudioSink() {
--  if (audio_converter_.get())
--    audio_converter_->RemoveInput(this);
-+  // Use the lock to protect access to audio_converter_.
-+  {
-+    base::AutoLock auto_lock(lock_);
-+    if (audio_converter_.get()) {
-+      audio_converter_->RemoveInput(this);
-+    }
-+  }
- 
-   // If the track is still active, it is necessary to notify the track before
-   // the source provider goes away.
-   if (!track_stopped_) {
-     WebMediaStreamAudioSink::RemoveFromAudioTrack(

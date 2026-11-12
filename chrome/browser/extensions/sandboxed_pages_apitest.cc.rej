@@ -1,28 +1,4 @@
 diff a/chrome/browser/extensions/sandboxed_pages_apitest.cc b/chrome/browser/extensions/sandboxed_pages_apitest.cc	(rejected hunks)
-@@ -7,20 +7,23 @@
- #include "base/strings/stringprintf.h"
- #include "base/test/scoped_feature_list.h"
- #include "base/threading/thread_restrictions.h"
- #include "build/build_config.h"
- #include "chrome/browser/extensions/extension_apitest.h"
-+#include "chrome/browser/profiles/profile.h"
- #include "content/public/browser/web_contents.h"
- #include "content/public/test/browser_test.h"
- #include "content/public/test/browser_test_utils.h"
-+#include "extensions/browser/process_map.h"
- #include "extensions/buildflags/buildflags.h"
- #include "extensions/common/constants.h"
- #include "extensions/common/extension.h"
- #include "extensions/common/file_util.h"
- #include "extensions/test/result_catcher.h"
- #include "extensions/test/test_extension_dir.h"
- #include "net/dns/mock_host_resolver.h"
-+#include "services/network/public/cpp/web_sandbox_flags.h"
- #include "third_party/blink/public/common/features.h"
- 
- static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
- 
- namespace extensions {
 @@ -474,6 +477,106 @@ IN_PROC_BROWSER_TEST_P(SandboxedPagesTest, WebAccessibleResourcesTest) {
    // Sandboxed extension page fetching a web accessible resource.
    test_frame_with_fetch("sandboxed_page.html", "web_accessible_resource.html",

@@ -1,29 +1,4 @@
 diff a/third_party/blink/renderer/core/scroll/scrollbar_theme_mac.h b/third_party/blink/renderer/core/scroll/scrollbar_theme_mac.h	(rejected hunks)
-@@ -27,10 +27,11 @@
- #define THIRD_PARTY_BLINK_RENDERER_CORE_SCROLL_SCROLLBAR_THEME_MAC_H_
- 
- #include "third_party/blink/renderer/core/scroll/scrollbar_theme.h"
- 
- namespace blink {
-+struct PaintInfo;
- 
- class CORE_EXPORT ScrollbarThemeMac : public ScrollbarTheme {
-  public:
-   ScrollbarThemeMac();
-   ~ScrollbarThemeMac() override;
-@@ -52,11 +53,11 @@ class CORE_EXPORT ScrollbarThemeMac : public ScrollbarTheme {
-   bool BlinkControlsOverlayVisibility() const override { return false; }
- 
-   base::TimeDelta InitialAutoscrollTimerDelay() const override;
-   base::TimeDelta AutoscrollTimerDelay() const override;
- 
--  void PaintTickmarks(GraphicsContext&,
-+  void PaintTickmarks(const PaintInfo&,
-                       const Scrollbar&,
-                       const gfx::Rect&) override;
- 
-   bool ShouldCenterOnThumb(const Scrollbar&,
-                            const WebMouseEvent&) const override;
 @@ -72,11 +73,11 @@ class CORE_EXPORT ScrollbarThemeMac : public ScrollbarTheme {
                           EScrollbarWidth scrollbar_width) const override;
    bool UsesOverlayScrollbars() const override;
@@ -37,20 +12,3 @@ diff a/third_party/blink/renderer/core/scroll/scrollbar_theme_mac.h b/third_part
  
    float Opacity(const Scrollbar&) const override;
  
-@@ -103,14 +104,14 @@ class CORE_EXPORT ScrollbarThemeMac : public ScrollbarTheme {
- 
-   int MinimumThumbLength(const Scrollbar&) const override;
- 
-   int TickmarkBorderWidth() const override { return 1; }
- 
--  void PaintTrackBackground(GraphicsContext&,
-+  void PaintTrackBackground(const PaintInfo&,
-                             const Scrollbar&,
-                             const gfx::Rect&) override;
--  void PaintScrollCorner(GraphicsContext&,
-+  void PaintScrollCorner(const PaintInfo&,
-                          const ScrollableArea&,
-                          const DisplayItemClient&,
-                          const gfx::Rect& corner_rect) override;
- };
- }  // namespace blink

@@ -72,39 +72,6 @@ diff a/third_party/blink/renderer/core/dom/document.cc b/third_party/blink/rende
    new_url = fragment_directive_->ConsumeFragmentDirective(new_url);
  
    url_ = new_url;
-@@ -5113,25 +5129,20 @@ void Document::SetBaseURLOverride(const KURL& url) {
- void Document::ProcessBaseElement() {
-   UseCounter::Count(*this, WebFeature::kBaseElement);
- 
-   // Find the first href attribute in a base element and the first target
-   // attribute in a base element.
--  const AtomicString* href = nullptr;
--  const AtomicString* target = nullptr;
-+  AtomicString href;
-+  AtomicString target;
-   for (HTMLBaseElement* base = Traversal<HTMLBaseElement>::FirstWithin(*this);
--       base && (!href || !target);
-+       base && (href.IsNull() || target.IsNull());
-        base = Traversal<HTMLBaseElement>::Next(*base)) {
--    if (!href) {
--      const AtomicString& value = base->FastGetAttribute(html_names::kHrefAttr);
--      if (!value.IsNull())
--        href = &value;
-+    if (href.IsNull()) {
-+      href = base->FastGetAttribute(html_names::kHrefAttr);
-     }
--    if (!target) {
--      const AtomicString& value =
--          base->FastGetAttribute(html_names::kTargetAttr);
--      if (!value.IsNull())
--        target = &value;
-+    if (target.IsNull()) {
-+      target = base->FastGetAttribute(html_names::kTargetAttr);
-     }
-     if (GetExecutionContext() &&
-         GetExecutionContext()->GetContentSecurityPolicy()->IsActive()) {
-       UseCounter::Count(*this,
-                         WebFeature::kContentSecurityPolicyWithBaseElement);
 @@ -5139,12 +5150,12 @@ void Document::ProcessBaseElement() {
    }
  

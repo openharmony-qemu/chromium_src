@@ -77,37 +77,6 @@ diff a/content/browser/media/media_web_contents_observer_unittest.cc b/content/b
        bool has_audio,
        bool has_video) {
      observer->OnMediaMetadataChanged(has_audio, has_video, kContentType);
-@@ -103,18 +151,30 @@ class MediaWebContentsObserverTest : public RenderViewHostImplTestHarness {
-       blink::WebFullscreenVideoStatus status) {
-     observer->OnMediaEffectivelyFullscreenChanged(status);
-     observer.FlushForTesting();
-   }
- 
-+  void SetUseAudioService(
-+      mojo::AssociatedRemote<media::mojom::MediaPlayerObserver>& observer,
-+      bool uses_audio_service) {
-+    observer->OnUseAudioServiceChanged(uses_audio_service);
-+    observer.FlushForTesting();
-+  }
-+
-+  bool IsWebContentsAudible() { return contents()->IsCurrentlyAudible(); }
-+
-   MediaPlayerId CreatePlayerId(int32_t player_id) {
-     return MediaPlayerId(contents()->GetPrimaryMainFrame()->GetGlobalId(),
-                          player_id);
-   }
- 
-   MediaWebContentsObserver& media_web_contents_observer() {
-     return *contents()->media_web_contents_observer();
-   }
-+
-+ private:
-+  int32_t next_player_id_ = 0;
- };
- 
- TEST_F(MediaWebContentsObserverTest, GetCurrentlyPlayingVideoCount) {
-   auto player_host = SetupPlayerHost();
-   constexpr int32_t kAudioVideoPlayerId = 0;
 @@ -306,7 +366,93 @@ TEST_F(MediaWebContentsObserverTest, PlayerPausedWithStreamEnded) {
    // Test pause with stream ended.
    PauseMedia(test_player.observer, /*stream_ended=*/true);

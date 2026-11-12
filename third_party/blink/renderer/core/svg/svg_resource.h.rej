@@ -24,39 +24,3 @@ diff a/third_party/blink/renderer/core/svg/svg_resource.h b/third_party/blink/re
    Member<Element> target_;
  
    enum CycleState {
-@@ -139,10 +140,11 @@ class LocalSVGResource final : public SVGResource {
-       const QualifiedName& attribute);
- 
-   void Trace(Visitor*) const override;
- 
-  private:
-+  void UpdateContentLifecycleForUse() const override {}
-   void TargetChanged(const AtomicString& id);
- 
-   Member<TreeScope> tree_scope_;
-   Member<IdTargetObserver> id_observer_;
- };
-@@ -161,10 +163,11 @@ class ExternalSVGResourceDocumentContent final
-   void Trace(Visitor*) const override;
- 
-  private:
-   bool IsLoading() const override;
-   Element* ResolveTarget();
-+  void UpdateContentLifecycleForUse() const override;
- 
-   // SVGResourceDocumentObserver:
-   void ResourceNotifyFinished(SVGResourceDocumentContent*) override;
-   void ResourceContentChanged(SVGResourceDocumentContent*) override;
- 
-@@ -187,10 +190,11 @@ class ExternalSVGResourceImageContent final : public SVGResource,
-  private:
-   void Prefinalize();
- 
-   bool IsLoading() const override;
-   Element* ResolveTarget();
-+  void UpdateContentLifecycleForUse() const override;
- 
-   // ImageResourceObserver overrides
-   void ImageNotifyFinished(ImageResourceContent*) override;
-   String DebugName() const override;
- 

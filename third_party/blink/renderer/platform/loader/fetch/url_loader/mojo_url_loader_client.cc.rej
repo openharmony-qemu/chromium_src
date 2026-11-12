@@ -1,32 +1,4 @@
 diff a/third_party/blink/renderer/platform/loader/fetch/url_loader/mojo_url_loader_client.cc b/third_party/blink/renderer/platform/loader/fetch/url_loader/mojo_url_loader_client.cc	(rejected hunks)
-@@ -251,11 +256,12 @@ MojoURLLoaderClient::MojoURLLoaderClient(
-     bool bypass_redirect_checks,
-     const GURL& request_url,
-     base::OnceCallback<void(mojom::blink::RendererEvictionReason)>
-         evict_from_bfcache_callback,
-     base::RepeatingCallback<void(size_t)>
--        did_buffer_load_while_in_bfcache_callback)
-+        did_buffer_load_while_in_bfcache_callback,
-+    bool keepalive)
-     : back_forward_cache_timeout_(
-           base::Seconds(GetLoadingTasksUnfreezableParamAsInt(
-               "grace_period_to_finish_loading_in_seconds",
-               static_cast<int>(
-                   kGracePeriodToFinishLoadingWhileInBackForwardCache
-@@ -264,11 +270,12 @@ MojoURLLoaderClient::MojoURLLoaderClient(
-       task_runner_(std::move(task_runner)),
-       bypass_redirect_checks_(bypass_redirect_checks),
-       last_loaded_url_(request_url),
-       evict_from_bfcache_callback_(std::move(evict_from_bfcache_callback)),
-       did_buffer_load_while_in_bfcache_callback_(
--          std::move(did_buffer_load_while_in_bfcache_callback)) {}
-+          std::move(did_buffer_load_while_in_bfcache_callback)),
-+      keepalive_(keepalive) {}
- 
- MojoURLLoaderClient::~MojoURLLoaderClient() = default;
- 
- void MojoURLLoaderClient::Freeze(LoaderFreezeMode mode) {
-   freeze_mode_ = mode;
 @@ -381,21 +397,37 @@ void MojoURLLoaderClient::OnReceiveRedirect(
      const net::RedirectInfo& redirect_info,
      network::mojom::URLResponseHeadPtr response_head) {

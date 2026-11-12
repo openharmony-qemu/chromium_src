@@ -1,17 +1,4 @@
 diff a/third_party/blink/renderer/core/dom/container_node.cc b/third_party/blink/renderer/core/dom/container_node.cc	(rejected hunks)
-@@ -346,11 +361,11 @@ bool ContainerNode::EnsurePreInsertionValidity(
- // dispatched synchronous events (e.g. `blur`), whose handlers may have modified
- // the DOM tree.
- bool ContainerNode::RecheckNodeInsertionStructuralPrereq(
-     const NodeVector& new_children,
-     const Node* next,
--    ExceptionState& exception_state) {
-+    ExceptionState& exception_state) const {
-   for (const auto& child : new_children) {
-     if (child->parentNode()) {
-       // A new child was added to another parent before adding to this
-       // node.  Firefox and Edge don't throw in this case.
-       return false;
 @@ -1218,10 +1233,17 @@ void ContainerNode::ParserAppendChild(Node* new_child) {
    // newChild back into the page. Loop until the child is actually removed.
    // See: fast/parser/execute-script-during-adoption-agency-removal.html

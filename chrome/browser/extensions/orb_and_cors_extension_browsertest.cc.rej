@@ -1,28 +1,4 @@
 diff a/chrome/browser/extensions/orb_and_cors_extension_browsertest.cc b/chrome/browser/extensions/orb_and_cors_extension_browsertest.cc	(rejected hunks)
-@@ -59,10 +59,11 @@
- #include "extensions/browser/browsertest_util.h"
- #include "extensions/browser/disable_reason.h"
- #include "extensions/browser/extension_host.h"
- #include "extensions/browser/extension_registrar.h"
- #include "extensions/browser/extension_util.h"
-+#include "extensions/browser/permissions/active_tab_permission_granter.h"
- #include "extensions/browser/permissions_manager.h"
- #include "extensions/browser/service_worker/service_worker_test_utils.h"
- #include "extensions/browser/url_loader_factory_manager.h"
- #include "extensions/common/extension_features.h"
- #include "extensions/common/manifest_handlers/incognito_info.h"
-@@ -215,10 +216,11 @@ class OrbAndCorsExtensionBrowserTest : public OrbAndCorsExtensionTestBase {
-         {
-           "name": "CrossOriginReadBlockingTest - Extension",
-           "version": "1.0",
-           "manifest_version": 2,
-           "permissions": [
-+              "activeTab",
-               "tabs",
-               "*://fetch-initiator.com/*",
-               "*://127.0.0.1/*",
-               "*://cross-site.com/*",
-               "*://*.subdomain.com/*",
 @@ -3024,6 +3026,77 @@ IN_PROC_BROWSER_TEST_F(OrbAndCorsExtensionBrowserTest,
  
      // There is no separate incognito background page in "spanning" mode.

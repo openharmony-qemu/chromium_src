@@ -1,0 +1,34 @@
+diff a/ui/webui/resources/tools/bundle_js.py b/ui/webui/resources/tools/bundle_js.py	(rejected hunks)
+@@ -209,10 +209,16 @@ def _optimize(in_folder, args):
+     assert extension == '.js', f'Unexpected |excludes| entry: {exclude}.' + \
+         ' Only .js files can appear in |excludes|.'
+ 
+   external_paths = args.external_paths or []
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if "chrome/browser/resources/extensions" in in_folder:
++    excludes = [e for e in excludes if "chrome:" not in e]
++    external_paths = [p for p in external_paths if "chrome:" not in p]
++#endif
++
+   if args.rollup_config:
+     # Use configuration provided from the caller.
+     rollup_config_file = args.rollup_config
+   else:
+     # Use default configuration.
+@@ -249,11 +255,14 @@ def main(argv):
+   args.depfile = os.path.normpath(args.depfile)
+   args.input = os.path.normpath(args.input)
+   args.out_folder = os.path.normpath(args.out_folder)
+   scheme_end_index = args.host.find('://')
+   if (scheme_end_index == -1):
+-    args.host_url = 'chrome://%s/' % args.host
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++    args.host_url = 'arkweb://%s/' % args.host
++    # #else args.host_url = 'chrome://%s/' % args.host
++#endif
+   else:
+     args.host_url = args.host
+ 
+   optimize_output = _optimize(args.input, args)
+ 

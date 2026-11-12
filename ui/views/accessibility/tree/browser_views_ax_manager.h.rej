@@ -1,0 +1,21 @@
+diff a/ui/views/accessibility/tree/browser_views_ax_manager.h b/ui/views/accessibility/tree/browser_views_ax_manager.h
+--- a/ui/views/accessibility/tree/browser_views_ax_manager.h
++++ b/ui/views/accessibility/tree/browser_views_ax_manager.h
+@@ -87,10 +87,17 @@ class VIEWS_EXPORT BrowserViewsAXManager
+   bool AccessibilityIsWebContentSource() override;
+ 
+   // ui::AXModeObserver:
+   void OnAXModeAdded(ui::AXMode mode) override;
+ 
++#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
++  content::RenderFrameHostImpl* AccessibilityRenderFrameHost() override {
++    CHECK(false) << "Temporary stub for Chromium 141 adaptation. Internal implementation pending.";
++    return nullptr;
++  }
++#endif
++
+  private:
+   void Reset(bool reset_serializer) override;
+ 
+   // Holds the generated AXTree of AXNodes for the views-based tree.
+   std::unique_ptr<ui::BrowserAccessibilityManager> ax_tree_manager_;

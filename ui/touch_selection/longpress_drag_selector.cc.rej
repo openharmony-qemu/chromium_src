@@ -1,0 +1,43 @@
+diff a/ui/touch_selection/longpress_drag_selector.cc b/ui/touch_selection/longpress_drag_selector.cc	(rejected hunks)
+@@ -18,10 +18,13 @@ gfx::Vector2dF SafeNormalize(const gfx::Vector2dF& v) {
+ LongPressDragSelector::LongPressDragSelector(
+     LongPressDragSelectorClient* client)
+     : client_(client),
+       state_(INACTIVE),
+       has_longpress_drag_start_anchor_(false) {
++#if BUILDFLAG(IS_ARKWEB)
++  utils_ = std::make_unique<LongPressDragSelectorUtils>(this);
++#endif
+ }
+ 
+ LongPressDragSelector::~LongPressDragSelector() {
+ }
+ 
+@@ -35,10 +38,13 @@ bool LongPressDragSelector::WillHandleTouchEvent(const MotionEvent& event) {
+       return false;
+ 
+     case MotionEvent::Action::UP:
+     case MotionEvent::Action::CANCEL:
+       SetState(INACTIVE);
++#if BUILDFLAG(ARKWEB_MENU)
++      client_->UpdateSelectionChanged(*this);
++#endif
+       return false;
+ 
+     case MotionEvent::Action::MOVE:
+       break;
+ 
+@@ -50,10 +56,13 @@ bool LongPressDragSelector::WillHandleTouchEvent(const MotionEvent& event) {
+     return false;
+ 
+   gfx::PointF position(event.GetX(), event.GetY());
+   if (state_ == DRAGGING) {
+     gfx::PointF drag_position = position + longpress_drag_selection_offset_;
++#if BUILDFLAG(ARKWEB_MENU)
++    drag_position = position;
++#endif
+     client_->OnDragUpdate(*this, drag_position);
+     return true;
+   }
+ 
+   // We can't use |touch_down_position_| as the offset anchor, as

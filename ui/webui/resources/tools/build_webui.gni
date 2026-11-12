@@ -26,6 +26,12 @@ if (use_blink) {
   import("//chrome/common/features.gni")
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+if (arkweb_arkweb_extensions) {
+  import("//arkweb/chromium_ext/ui/webui/resources/tools/arkweb_replace_scheme.gni")
+}
+#endif
+
 if (is_chromeos) {
   # Folders hosting Ash-only WebUIs. Should be kept in sync with
   # //tools/typescript/path_utils.py. This is used later in this file to choose

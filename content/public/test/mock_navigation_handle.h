@@ -50,6 +50,11 @@ class MockNavigationHandle : public NavigationHandle {
 
   // NavigationHandle implementation:
   int64_t GetNavigationId() const override { return navigation_id_; }
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  const std::string& GetExtraHeaders() const override { return extra_headers_; }
+
+  std::string GetCompleteHeaders() const override { return all_headers_; }
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
   ukm::SourceId GetNextPageUkmSourceId() override {
     return ukm::ConvertToSourceId(navigation_id_,
                                   ukm::SourceIdObj::Type::NAVIGATION_ID);
@@ -260,6 +265,17 @@ class MockNavigationHandle : public NavigationHandle {
         emptyvector_result;
     return *emptyvector_result;
   }
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool NeedsReloadWithFallbackProxy() override { return false; }
+  ErrorPageReloadReason  GetCurrentReloadReason() override {
+    return ErrorPageReloadReason ::INVALID;
+  }
+  int GetOriginalNetErrorCode() override { return 0; }
+  bool HasBeenReloadedForThisReason(ErrorPageReloadReason  reason) override {
+    return false;
+  }
+#endif
   MOCK_METHOD(void,
               RegisterThrottleForTesting,
               (std::unique_ptr<NavigationThrottle>));
@@ -489,6 +505,10 @@ class MockNavigationHandle : public NavigationHandle {
   std::optional<base::UnguessableToken> same_document_metrics_token_;
 
   base::WeakPtrFactory<MockNavigationHandle> weak_factory_{this};
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  std::string extra_headers_;
+  std::string all_headers_;
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
 };
 
 }  // namespace content

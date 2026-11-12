@@ -1,0 +1,34 @@
+diff a/content/public/common/BUILD.gn b/content/public/common/BUILD.gn	(rejected hunks)
+@@ -118,20 +128,32 @@ source_set("switches") {
+   sources = [
+     "//content/common/content_export.h",
+     "content_switches.cc",
+   ]
+ 
++  if (is_arkweb) {
++    sources += arkweb_content_public_common_sources
++    visibility += [ "//storage:storage_unittests", "//base",
++      "//components/gwp_asan:gwp_asan_unittests"
++    ]
++  }
++
+   # Deps required by the above header.
+   deps = [
+     "//media:media_buildflags",
+     "//tools/v8_context_snapshot:buildflags",
+   ]
+ 
+   public_deps = [ ":buildflags" ]
+ 
+   configs += [ "//content:content_implementation" ]
+ 
++  if (use_libfuzzer) {
++    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
++    configs += [ "//build/config/gcc:symbol_visibility_default" ]
++  }
++
+   if (enable_ipc_fuzzer) {
+     configs += [ "//tools/ipc_fuzzer:ipc_fuzzer_config" ]
+   }
+ }
+ 

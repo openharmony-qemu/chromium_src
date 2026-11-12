@@ -1,0 +1,15 @@
+diff a/content/renderer/media/media_factory.cc b/content/renderer/media/media_factory.cc	(rejected hunks)
+@@ -477,10 +490,13 @@ std::unique_ptr<blink::WebMediaPlayer> MediaFactory::CreateMediaPlayer(
+   if (!media_player_builder_) {
+     media_player_builder_ = std::make_unique<blink::WebMediaPlayerBuilder>(
+         *web_frame,
+         /*network_task_runner=*/render_frame_->GetTaskRunner(
+             blink::TaskType::kNetworkingUnfreezable));
++#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
++    media_player_builder_->SetNewsFeedPageFitted(news_feed_page_fitted_);
++#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION            
+   }
+ 
+   return media_player_builder_->Build(
+       web_frame, client, encrypted_client, delegate,
+       std::move(factory_selector), std::move(submitter), std::move(media_log),

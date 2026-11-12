@@ -97,7 +97,7 @@ source_set("utility") {
     }
   }
 
-  if (is_linux || is_chromeos) {
+  if (!is_component_build && (is_linux || is_chromeos || is_ohos)) { # FIXME is_component_build
     deps += [
       "//content/utility/speech:speech_recognition_sandbox_hook",
       "//media/gpu/sandbox",

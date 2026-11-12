@@ -7,6 +7,7 @@
 #include <memory>
 #include <tuple>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/location.h"

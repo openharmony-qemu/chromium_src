@@ -43,7 +43,12 @@ RendererWebMediaPlayerDelegate::RendererWebMediaPlayerDelegate(
           content::GetContentClient()->renderer()->IsIdleMediaSuspendEnabled()),
       tick_clock_(base::DefaultTickClock::GetInstance()) {
   idle_cleanup_interval_ = base::Seconds(5);
+
+#ifdef BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  idle_timeout_ = base::Seconds(100000);
+#else
   idle_timeout_ = base::Seconds(15);
+#endif
 
   // This imposes drastic limits on the number of media players and is only
   // appropriate for true low end devices.

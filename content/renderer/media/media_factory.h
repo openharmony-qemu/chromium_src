@@ -35,6 +35,10 @@
 #include "media/mojo/mojom/remoting.mojom.h"  // nogncheck
 #endif  // BUILDFLAG(ENABLE_MEDIA_REMOTING)
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif // IS_ARKWEB_EXT
+
 namespace blink {
 class BrowserInterfaceBrokerProxy;
 class WebContentDecryptionModule;
@@ -45,6 +49,10 @@ class WebMediaPlayer;
 class WebMediaPlayerBuilder;
 class WebMediaPlayerClient;
 class WebMediaPlayerEncryptedMediaClient;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+class WebNativeBridge;
+class WebNativeClient;
+#endif
 }  // namespace blink
 
 #if BUILDFLAG(ENABLE_CAST_RECEIVER)
@@ -65,23 +73,45 @@ class MediaLog;
 class MediaObserver;
 class RemotePlaybackClientWrapper;
 class RendererWebMediaPlayerDelegate;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+class RendererWebNativeDelegate;
+#endif
 }  // namespace media
 
-namespace content {
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+namespace blink {
+  class WebVideoFrameSubmitter;
+}
 
+namespace content {
+  class RenderFrame;
+}
+#endif
+
+namespace content {
+class RenderFrame;
 class RenderFrameImpl;
 class MediaInterfaceFactory;
 struct RenderFrameMediaPlaybackOptions;
+class ArkwebMediaFactoryExt;
+class ArkwebMediaFactoryUtils;
 
 // Assist to RenderFrameImpl in creating various media clients.
 class MediaFactory {
  public:
+
+  friend class ArkwebMediaFactoryExt;
+  friend class ArkwebMediaFactoryUtils;
   // Create a MediaFactory to assist the |render_frame| with media tasks.
   // |request_routing_token_cb| bound to |render_frame| IPC functions for
   // obtaining overlay tokens.
   MediaFactory(RenderFrameImpl* render_frame,
                media::RequestRoutingTokenCallback request_routing_token_cb);
   ~MediaFactory();
+
+  virtual content::ArkwebMediaFactoryExt* AsArkwebMediaFactoryExt() {
+    return nullptr;
+  }
 
   // Instruct MediaFactory to establish Mojo channels as needed to perform its
   // factory duties. This should be called by RenderFrameImpl as soon as its own
@@ -118,6 +148,16 @@ class MediaFactory {
   // Returns `DecoderFactory`, which can be used to created decoders in WebRTC.
   // Can be dereferenced only on the media thread.
   base::WeakPtr<media::DecoderFactory> GetDecoderFactory();
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  std::unique_ptr<blink::WebVideoFrameSubmitter> CreateSubmitter(
+    scoped_refptr<base::SingleThreadTaskRunner>
+        main_thread_compositor_task_runner,
+    const cc::LayerTreeSettings& settings,
+    media::MediaLog* media_log);
+#endif
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  bool SetNewsFeedPageFitted();
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
  private:
   // Initializes `decoder_factory_` if it hasn't been initialized yet.
@@ -208,8 +248,15 @@ class MediaFactory {
   std::unique_ptr<cast_streaming::ResourceProvider>
       cast_streaming_resource_provider_;
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  bool news_feed_page_fitted_ = false;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+  std::unique_ptr<ArkwebMediaFactoryUtils> media_factory_utils_;
 };
 
 }  // namespace content
 
+#include "arkweb/chromium_ext/content/renderer/media/ohos/arkweb_media_factory_ext.h"
 #endif  // CONTENT_RENDERER_MEDIA_MEDIA_FACTORY_H_

@@ -1,0 +1,20 @@
+diff a/content/test/mock_clipboard_host.h b/content/test/mock_clipboard_host.h	(rejected hunks)
+@@ -74,10 +74,18 @@ class MockClipboardHost : public blink::mojom::ClipboardHost {
+       mojo::PendingRemote<blink::mojom::ClipboardListener> listener) override;
+ #if BUILDFLAG(IS_MAC)
+   void WriteStringToFindPboard(const std::u16string& text) override;
+   void GetPlatformPermissionState(
+       GetPlatformPermissionStateCallback callback) override;
++#endif
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++  void OnClipboardDataGuard(bool status,
++                            OnClipboardDataGuardCallback callback) override;
++  void UpdateClipboardData(UpdateClipboardDataCallback) override {}
++#endif
++#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
++  void HandlePasswordVault(HandlePasswordVaultCallback callback) override;
+ #endif
+  private:
+   std::vector<std::u16string> ReadStandardFormatNames();
+   void OnClipboardDataChanged();
+ 

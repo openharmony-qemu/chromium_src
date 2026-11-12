@@ -742,6 +742,10 @@ void ContentBrowserClient::AllowCertificateError(
     const GURL& request_url,
     bool is_primary_main_frame_request,
     bool strict_enforcement,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    const GURL& origin_url,
+    const std::string& referrer,
+#endif
     base::OnceCallback<void(CertificateRequestResultType)> callback) {
   std::move(callback).Run(CERTIFICATE_REQUEST_RESULT_TYPE_DENY);
 }
@@ -836,6 +840,19 @@ bool ContentBrowserClient::CanCreateWindow(
   *no_javascript_access = false;
   return true;
 }
+
+#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
+bool ContentBrowserClient::CanCreateWindow(
+    RenderFrameHost* opener,
+    const GURL& target_url,
+    WindowOpenDisposition disposition,
+    bool user_gesture,
+    const gfx::Rect& window_features,
+    content::mojom::FrameHost::GetCreateNewWindowCallback callback) {
+  std::move(callback).Run(mojom::CreateNewWindowStatus::kBlocked);
+  return false;
+}
+#endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
 
 SpeechRecognitionManagerDelegate*
 ContentBrowserClient::CreateSpeechRecognitionManagerDelegate() {
@@ -1067,7 +1084,12 @@ ContentBrowserClient::CreateURLLoaderThrottles(
     const base::RepeatingCallback<WebContents*()>& wc_getter,
     NavigationUIData* navigation_ui_data,
     FrameTreeNodeId frame_tree_node_id,
-    std::optional<int64_t> navigation_id) {
+    std::optional<int64_t> navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+    bool is_prerendering
+#endif
+) {
   return std::vector<std::unique_ptr<blink::URLLoaderThrottle>>();
 }
 
@@ -1233,6 +1255,24 @@ bool ContentBrowserClient::ShouldOverrideUrlLoading(
     ui::PageTransition transition,
     bool* ignore_navigation) {
   return true;
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+std::string ContentBrowserClient::OverrideErrorPage(
+    FrameTreeNodeId frame_tree_node_id,
+    bool browser_initiated,
+    const GURL& gurl,
+    const std::string& request_method,
+    bool has_user_gesture,
+    bool is_redirect,
+    bool is_outermost_main_frame,
+    int error_code,
+    const std::string& error_text,
+    bool is_prerendering,
+    ui::PageTransition transition,
+    std::string* html) {
+  return "";
 }
 #endif
 

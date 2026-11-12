@@ -1,0 +1,17 @@
+diff a/content/public/browser/web_contents_observer.h b/content/public/browser/web_contents_observer.h	(rejected hunks)
+@@ -988,10 +1002,15 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
+   virtual void PointerLockRequested() {}
+ 
+   // Called when WebContents received a request to vibrate the page.
+   virtual void VibrationRequested() {}
+ 
++#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
++  // Called when form editing state changed
++  virtual void OnFormEditingStateChanged(bool state, uint64_t form_id) {}
++#endif
++
+   // Called when a first contentful paint happened in the primary main frame.
+   virtual void OnFirstContentfulPaintInPrimaryMainFrame() {}
+ 
+   // Invoked when a fetch keepalive request is created in this WebContents.
+   //

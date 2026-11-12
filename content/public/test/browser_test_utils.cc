@@ -191,6 +191,10 @@
 #include "ui/events/event.h"
 #endif  // USE_AURA
 
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+#include "content/public/browser/web_contents_delegate.h"
+#endif
+
 namespace content {
 namespace {
 

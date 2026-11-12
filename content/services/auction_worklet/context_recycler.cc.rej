@@ -1,0 +1,20 @@
+diff a/content/services/auction_worklet/context_recycler.cc b/content/services/auction_worklet/context_recycler.cc
+--- a/content/services/auction_worklet/context_recycler.cc
++++ b/content/services/auction_worklet/context_recycler.cc
+@@ -188,10 +188,16 @@ v8::Local<v8::Context> ContextRecycler::GetContext() {
+ 
+   return context_.Get(isolate);
+ }
+ 
+ void ContextRecycler::ResetForReuse() {
++  // Make sure that microtasks get flushed as they would not on timeout.
++  {
++    AuctionV8Helper::TimeLimitScope time_scope(v8_helper_->GetTimeLimit());
++    v8_helper_->isolate()->PerformMicrotaskCheckpoint();
++  }
++
+   for (Bindings* bindings : bindings_list_) {
+     bindings->Reset();
+   }
+   if (bidding_browser_signals_lazy_filler_) {
+     bidding_browser_signals_lazy_filler_->Reset();

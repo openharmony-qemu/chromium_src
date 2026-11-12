@@ -1,0 +1,24 @@
+diff a/content/renderer/accessibility/render_accessibility_impl.cc b/content/renderer/accessibility/render_accessibility_impl.cc	(rejected hunks)
+@@ -391,16 +426,21 @@ void RenderAccessibilityImpl::PerformAction(const ui::AXActionData& data) {
+     case ax::mojom::Action::kScrollUp:
+     case ax::mojom::Action::kScrollDown:
+     case ax::mojom::Action::kScrollLeft:
+     case ax::mojom::Action::kScrollRight:
+     case ax::mojom::Action::kStitchChildTree:
++#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
++    case ax::mojom::Action::kReplaceSelectedText:
++#endif
+       target->PerformAction(data);
+       break;
+     case ax::mojom::Action::kCustomAction:
+     case ax::mojom::Action::kHitTest:
+-    case ax::mojom::Action::kReplaceSelectedText:
+     case ax::mojom::Action::kNone:
++#if !BUILDFLAG(ARKWEB_ACCESSIBILITY)
++    case ax::mojom::Action::kReplaceSelectedText:
++#endif
+       NOTREACHED();
+     case ax::mojom::Action::kGetTextLocation:
+       break;
+     case ax::mojom::Action::kAnnotatePageImages:
+       // Handle this in AXAnnotatorsManager.

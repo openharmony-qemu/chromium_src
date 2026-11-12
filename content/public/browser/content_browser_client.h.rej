@@ -1,0 +1,81 @@
+diff a/content/public/browser/content_browser_client.h b/content/public/browser/content_browser_client.h	(rejected hunks)
+@@ -14,10 +14,11 @@
+ #include <string>
+ #include <string_view>
+ #include <variant>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/flat_map.h"
+ #include "base/containers/flat_set.h"
+ #include "base/functional/callback_forward.h"
+ #include "base/memory/scoped_refptr.h"
+ #include "base/supports_user_data.h"
+@@ -445,10 +456,15 @@ class CONTENT_EXPORT ContentBrowserClient {
+   // The default implementation checks whether the transition was initiated via
+   // the address bar (rather than whether it was typed) to permit the pasting of
+   // debug URLs.
+   virtual bool IsExplicitNavigation(ui::PageTransition transition);
+ 
++  // Returns whether gesture fling events should use the mobile-behavior gesture
++  // curve for scrolling.
++#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
++  virtual bool ShouldUseMobileFlingCurve();
++#endif
+   // Returns whether all instances of the specified site URL should be
+   // rendered by the same process, rather than using process-per-site-instance.
+   virtual bool ShouldUseProcessPerSite(BrowserContext* browser_context,
+                                        const GURL& site_url);
+ 
+@@ -2311,11 +2346,11 @@ class CONTENT_EXPORT ContentBrowserClient {
+   // |GetNetConstants()| and passed to FileNetLogObserver - see documentation
+   // of |FileNetLogObserver::CreateBounded()| for more information.  The
+   // convention is to put new constants under a subdict at the key "clientInfo".
+   virtual base::Value::Dict GetNetLogConstants();
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_LOAD)
+   // Only used by Android WebView.
+   // Returns:
+   //   true  - The check was successfully performed without throwing a
+   //           Java exception. |*ignore_navigation| is set to the
+   //           result of the check in this case.
+@@ -3100,10 +3151,15 @@ class CONTENT_EXPORT ContentBrowserClient {
+   // Checks if `origin` should always receive a first-party StorageKey
+   // in RenderFrameHostImpl. Currently in Chrome, this is true for all
+   // extension origins.
+   virtual bool ShouldUseFirstPartyStorageKey(const url::Origin& origin);
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  virtual void UpdateAdBlockEnabledForSite(RenderFrameHost* rfh,
++                                           const GURL& gurl) {}
++#endif
++
+   // Checks if the BeforeUnload Dialog event should be skipped.
+   virtual bool ShouldSkipBeforeUnloadDialog(content::RenderFrameHost* rfh);
+ 
+   // Allows the embedder to return a delegate for the responsiveness calculator.
+   // The default implementation returns nullptr.
+@@ -3298,10 +3354,22 @@ class CONTENT_EXPORT ContentBrowserClient {
+   // swap, which used to fire those events at that timing.
+   virtual bool ShouldDispatchPagehideDuringCommit(
+       BrowserContext* browser_context,
+       const GURL& destination_url);
+ 
++#if BUILDFLAG(ARKWEB_USERAGENT)
++  virtual std::string GetUAStringForHost(const std::string& host);
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  virtual void OnReportNewNavigationInfo(
++      WebContents* web_contents,
++      const net::WebNavigationInfo& navigation_info) {}
++
++  virtual bool ShouldReportNewNavigationInfo() { return false; }
++#endif
++
+   // Called when the tracing service is started.
+   virtual void OnTracingServiceStarted() {}
+ 
+   // Called when the tracing service has stopped.
+   virtual void OnTracingServiceStopped() {}

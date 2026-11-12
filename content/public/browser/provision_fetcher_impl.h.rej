@@ -1,0 +1,18 @@
+diff a/content/public/browser/provision_fetcher_impl.h b/content/public/browser/provision_fetcher_impl.h	(rejected hunks)
+@@ -39,11 +39,15 @@ class CONTENT_EXPORT ProvisionFetcherImpl
+ 
+   // media::mojom::ProvisionFetcher implementation.
+   void Retrieve(const GURL& default_url,
+                 const std::string& request_data,
+                 RetrieveCallback callback) final;
+-
++#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
++  void RetrieveWiseplayLicense(const GURL& default_url,
++                const std::string& request_data,
++                RetrieveCallback callback) final;
++#endif
+  private:
+   // Callback for media::ProvisionFetcher::Retrieve().
+   void OnResponse(RetrieveCallback callback,
+                   bool success,
+                   const std::string& response);

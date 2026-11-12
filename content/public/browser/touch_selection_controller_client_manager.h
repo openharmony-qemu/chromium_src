@@ -7,6 +7,9 @@
 
 #include "base/observer_list_types.h"
 #include "content/common/content_export.h"
+#if BUILDFLAG(ARKWEB_PDF)
+#include "ui/gfx/geometry/rect.h"
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
 namespace gfx {
 class Point;
@@ -74,6 +77,17 @@ class CONTENT_EXPORT TouchSelectionControllerClientManager {
 
   // Used to request the active client to show a context menu at |location|.
   virtual void ShowContextMenu(const gfx::Point& location) {}
+
+#if BUILDFLAG(ARKWEB_PDF)
+  // Update the client clipped selection bounds in arkweb.
+  virtual void UpdateClientClippedSelectionBounds(const gfx::Rect& clipped_selection_bounds) {}
+  virtual void HideHandleAndQuickMenuIfNecessary(bool hide_handles) {}
+  virtual void ConvertClientClippedSelectionBounds(gfx::Rect& clipped_selection_bounds) {}
+  virtual void ResetResponsePendingInputEvent() {}
+  virtual void UpdateQuickMenu() {}
+  virtual void SetQuickMenuRequested(bool is_visible) {}
+  virtual void SetIsPdfDocument(bool is_pdf_document) {}
+#endif  // BUILDFLAG(ARKWEB_PDF)
 };
 
 }  // namespace content

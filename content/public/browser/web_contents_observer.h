@@ -35,6 +35,7 @@
 #include "third_party/blink/public/mojom/media/capture_handle_config.mojom-forward.h"
 #include "ui/base/page_transition_types.h"
 #include "ui/base/window_open_disposition.h"
+#include "arkweb/build/features/features.h"
 
 class GURL;
 
@@ -841,6 +842,11 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
   // Invoked when the WebContents is muted/unmuted.
   virtual void DidUpdateAudioMutingState(bool muted) {}
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  //Set whether to the HTML play can be used to control media
+  virtual void SetHtmlPlayEnabled(bool enabled) {}
+#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+
   // Invoked when the renderer process has toggled the tab into/out of
   // fullscreen mode.
   virtual void DidToggleFullscreenModeForTab(bool entered_fullscreen,
@@ -938,6 +944,14 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
       const MediaPlayerInfo& video_type,
       const MediaPlayerId& id,
       WebContentsObserver::MediaStoppedReason reason) {}
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+  virtual void MediaPlayerGone(
+      const MediaPlayerInfo& video_type,
+      const MediaPlayerId& id) {}
+#endif
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  virtual void OneShotMediaPlayerStopped() {}
+#endif
 
   // Invoked when the set of tracks in the media has changed. Possible reasons
   // include adding/removing a track via MediaStream.addTrack()/removeTrack().
@@ -1080,7 +1094,21 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
 
   WebContents* web_contents() const;
 
+#if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
+  virtual void OpenDateTimeChooser() {}
+  virtual void CloseDateTimeChooser() {}
+#endif
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+  virtual void OnBrowserForeground() {}
+  virtual void OnBrowserBackground() {}
+#endif
+
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  protected:
+#endif  // ARKWEB_TEST
   // Use this constructor when the object is tied to a single WebContents for
   // its entire lifetime.
   explicit WebContentsObserver(WebContents* web_contents);
@@ -1094,7 +1122,12 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
   // Start observing a different WebContents; used with the default constructor.
   void Observe(WebContents* web_contents);
 
+#if BUILDFLAG(ARKWEB_TEST)
+  public:
+#else
  private:
+#endif  // ARKWEB_TEST
+
   friend class WebContentsImpl;
 
   void ResetWebContents();

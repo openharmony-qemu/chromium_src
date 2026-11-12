@@ -91,6 +91,10 @@
 #include "mojo/public/cpp/bindings/lib/test_random_mojo_delays.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_FLING)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+
 namespace content {
 namespace {
 
@@ -240,6 +244,9 @@ int RendererMain(MainFunctionParams parameters) {
     bool need_sandbox =
         !command_line.HasSwitch(sandbox::policy::switches::kNoSandbox);
 
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+    need_sandbox = true;
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
     if (!need_sandbox) {
       // The post-sandbox actions still need to happen at some point.
       if (client) {

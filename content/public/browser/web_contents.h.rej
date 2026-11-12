@@ -1,0 +1,29 @@
+diff a/content/public/browser/web_contents.h b/content/public/browser/web_contents.h	(rejected hunks)
+@@ -64,10 +64,12 @@
+ #include "content/public/browser/android/child_process_importance.h"
+ #include "content/public/browser/android/selection_popup_delegate.h"
+ #include "third_party/jni_zero/jni_zero.h"
+ #endif
+ 
++#include "arkweb/chromium_ext/content/public/browser/web_contents_for_include_file.cc"
++
+ namespace base {
+ class FilePath;
+ }  // namespace base
+ 
+ namespace blink {
+@@ -338,10 +340,14 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
+     // loading requests over that specific network for the WebContents to be
+     // created. The value `kInvalidNetworkHandle` indicates that the current
+     // default network will be used.
+     net::handles::NetworkHandle target_network =
+         net::handles::kInvalidNetworkHandle;
++
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
++    std::string shared_render_process_token;
++#endif
+   };
+ 
+   // Token that causes input to be blocked on this WebContents for at least as
+   // long as it exists.
+   class CONTENT_EXPORT ScopedIgnoreInputEvents {

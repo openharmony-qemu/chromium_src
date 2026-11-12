@@ -3,8 +3,9 @@
 # found in the LICENSE file.
 
 import("//content/public/common/zygote/features.gni")
+import("//arkweb/build/features/features.gni")
 
-if (is_linux || is_chromeos) {
+if (is_linux || is_chromeos || arkweb_render_process_startup) {
   source_set("zygote") {
     sources = [
       "zygote_linux.cc",

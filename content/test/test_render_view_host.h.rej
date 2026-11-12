@@ -1,0 +1,31 @@
+diff a/content/test/test_render_view_host.h b/content/test/test_render_view_host.h	(rejected hunks)
+@@ -92,11 +93,11 @@ class TestRenderWidgetHostView : public RenderWidgetHostViewBase,
+       const std::vector<std::string>& file_paths,
+       blink::mojom::ShareService::ShareCallback callback) override;
+   uint64_t GetNSViewId() const override;
+ #endif  // BUILDFLAG(IS_MAC)
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+   bool IsTouchSequencePotentiallyActiveOnViz() override;
+ 
+   void RequestInputBackForDragAndDrop(
+       blink::mojom::DragDataPtr drag_data,
+       const url::Origin& source_origin,
+@@ -117,10 +118,16 @@ class TestRenderWidgetHostView : public RenderWidgetHostViewBase,
+ 
+   void OnUnconfirmedTapConvertedToTap() override;
+ 
+   void TakeFallbackContentFrom(RenderWidgetHostView* view) override;
+   void EnsureSurfaceSynchronizedForWebTest() override;
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  void EvictFrameBackBuffers() override {}
++  void SetDoubleTapSupportEnabled(bool enabled) {}
++  void SetMultiTouchZoomSupportEnabled(bool enabled) {}
++  bool GetScrollable() {return false;}
++#endif
+ 
+   // RenderWidgetHostViewBase:
+   uint32_t GetCaptureSequenceNumber() const override;
+   void InitAsPopup(RenderWidgetHostView* parent_host_view,
+                    const gfx::Rect& bounds,

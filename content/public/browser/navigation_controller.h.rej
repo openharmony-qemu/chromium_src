@@ -1,0 +1,64 @@
+diff a/content/public/browser/navigation_controller.h b/content/public/browser/navigation_controller.h	(rejected hunks)
+@@ -10,10 +10,14 @@
+ #include <memory>
+ #include <optional>
+ #include <string>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/time/time.h"
+ #include "build/build_config.h"
+ #include "content/common/content_export.h"
+ #include "content/public/browser/child_process_host.h"
+ #include "content/public/browser/global_request_id.h"
+@@ -47,10 +58,13 @@ namespace content {
+ class BackForwardCache;
+ class BrowserContext;
+ class NavigationEntry;
+ class RenderFrameHost;
+ class NavigationHandle;
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++class NavigationControllerDelegate;
++#endif
+ struct OpenURLParams;
+ 
+ // A NavigationController manages session history, i.e., a back-forward list
+ // of navigation entries.
+ //
+@@ -135,11 +157,17 @@ class NavigationController {
+       std::optional<GURL> initiator_base_url,
+       ui::PageTransition transition,
+       bool is_renderer_initiated,
+       const std::string& extra_headers,
+       BrowserContext* browser_context,
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++      scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory,
++      GURL* url_to_rewrite = nullptr,
++      NavigationControllerDelegate* delegate = nullptr);
++#else
+       scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory);
++#endif
+ 
+   // Extra optional parameters for LoadURLWithParams.
+   struct CONTENT_EXPORT LoadURLParams {
+     explicit LoadURLParams(const GURL& url);
+ 
+@@ -340,10 +373,15 @@ class NavigationController {
+     // True if the navigation should not be upgraded to HTTPS. This should only
+     // be set in very specific circumstances like navigations to captive portal
+     // login URLs which may be broken by HTTPS Upgrades due to the portal's
+     // unconventional handling of HTTPS URLs.
+     bool force_no_https_upgrade = false;
++
++#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
++    // HTTPS upgrade policy for this navigation.
++    HttpsUpgradesPolicy https_upgrades_policy = HttpsUpgradesPolicy::NONE;
++#endif
+   };
+ 
+   // Disables checking for a repost and prompting the user. This is used during
+   // testing.
+   CONTENT_EXPORT static void DisablePromptOnRepost();

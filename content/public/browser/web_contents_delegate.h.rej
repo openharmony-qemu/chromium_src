@@ -1,0 +1,68 @@
+diff a/content/public/browser/web_contents_delegate.h b/content/public/browser/web_contents_delegate.h	(rejected hunks)
+@@ -15,10 +15,11 @@
+ #include "base/functional/callback.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/scoped_refptr.h"
+ #include "base/types/expected.h"
+ #include "build/build_config.h"
++#include "components/autofill/core/browser/suggestions/suggestion.h"
+ #include "content/common/content_export.h"
+ #include "content/public/browser/eye_dropper.h"
+ #include "content/public/browser/fullscreen_types.h"
+ #include "content/public/browser/invalidate_type.h"
+ #include "content/public/browser/media_stream_request.h"
+@@ -109,10 +135,15 @@ class ColorChooser;
+ class EyeDropperListener;
+ class FileSelectListener;
+ class JavaScriptDialogManager;
+ class RenderFrameHost;
+ class RenderViewHostDelegateView;
++
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++// Forward declaration for ArkWeb extension tab update properties
++struct NWebExtensionTabUpdateProperties;
++#endif
+ class RenderWidgetHost;
+ class SessionStorageNamespace;
+ class SiteInstance;
+ class WebContents;
+ class WebContentsView;
+@@ -120,10 +151,23 @@ struct ContextMenuParams;
+ struct DropData;
+ struct MediaStreamRequest;
+ struct OpenURLParams;
+ struct Referrer;
+ 
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++class CustomMediaPlayer;
++class CustomMediaPlayerListener;
++struct MediaInfo;
++#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
++
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++class MediaPlayerController;
++class MediaPlayerListener;
++class VideoAssistant;
++struct MediaPlayerId;
++#endif  // ARKWEB_VIDEO_ASSISTANT
++
+ enum class KeyboardEventProcessingResult;
+ 
+ // Result of an EnterPictureInPicture request.
+ enum class PictureInPictureResult {
+   // The request was successful.
+@@ -929,10 +1010,14 @@ class CONTENT_EXPORT WebContentsDelegate {
+ 
+   // If this returns non-null, overrides the behavior of
+   // WebContents::GetResponsibleWebContents.
+   virtual WebContents* GetResponsibleWebContents(WebContents* web_contents);
+ 
++#if BUILDFLAG(ARKWEB_SAFEBROWSING)
++  virtual void OnSafeBrowsingCheckDetail(int code, int policy, int threat) {};
++#endif
++
+  protected:
+   virtual ~WebContentsDelegate();
+ 
+  private:
+   friend class WebContentsImpl;

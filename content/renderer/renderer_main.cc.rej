@@ -1,0 +1,27 @@
+diff a/content/renderer/renderer_main.cc b/content/renderer/renderer_main.cc	(rejected hunks)
+@@ -54,10 +54,11 @@
+ #include "third_party/blink/public/common/features.h"
+ #include "third_party/blink/public/platform/platform.h"
+ #include "third_party/blink/public/platform/scheduler/web_thread_scheduler.h"
+ #include "third_party/webrtc_overrides/init_webrtc.h"  // nogncheck
+ #include "ui/base/ui_base_switches.h"
++#include "arkweb/build/features/features.h"
+ 
+ #if BUILDFLAG(IS_WIN)
+ #include "components/startup_metric_utils/renderer/startup_metric_utils.h"
+ #endif  // BUILDFLAG(IS_WIN)
+ 
+@@ -142,10 +147,13 @@ void LogTimeToStartRunLoop(const base::CommandLine& command_line,
+ 
+ // mainline routine for running as the Renderer process
+ int RendererMain(MainFunctionParams parameters) {
+   // Don't use the TRACE_EVENT0 macro because the tracing infrastructure doesn't
+   // expect synchronous events around the main loop of a thread.
++#if BUILDFLAG(ARKWEB_PERFORMANCE_TRACE)
++    StartObserveTraceEnable();
++#endif
+   TRACE_EVENT_INSTANT0("startup", "RendererMain", TRACE_EVENT_SCOPE_THREAD);
+ 
+ #if BUILDFLAG(IS_MAC)
+   // Declare that this process has CPU security mitigations enabled (see
+   // RendererSandboxedProcessLauncherDelegate::EnableCpuSecurityMitigations).

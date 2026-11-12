@@ -14,6 +14,10 @@
 #include "media/mojo/mojom/renderer_extensions.mojom.h"
 #include "third_party/blink/public/platform/browser_interface_broker_proxy.h"
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#include "arkweb/chromium_ext/content/renderer/media_interface_factory_for_include.cc"
+#endif
+
 namespace content {
 
 MediaInterfaceFactory::MediaInterfaceFactory(

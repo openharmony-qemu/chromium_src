@@ -1,0 +1,18 @@
+diff a/content/public/browser/url_data_source.cc b/content/public/browser/url_data_source.cc	(rejected hunks)
+@@ -132,11 +132,15 @@ bool URLDataSource::ShouldDenyXFrameOptions() {
+ 
+ bool URLDataSource::ShouldServiceRequest(const GURL& url,
+                                          BrowserContext* browser_context,
+                                          int render_process_id) {
+   return url.SchemeIs(kChromeDevToolsScheme) || url.SchemeIs(kChromeUIScheme) ||
+-         url.SchemeIs(kChromeUIUntrustedScheme);
++         url.SchemeIs(kChromeUIUntrustedScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++         || url.SchemeIs(kArkWebUIScheme)
++#endif
++      ;
+ }
+ 
+ bool URLDataSource::ShouldServeMimeTypeAsContentTypeHeader() {
+   return false;
+ }

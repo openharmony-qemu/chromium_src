@@ -1,0 +1,26 @@
+diff a/content/public/browser/devtools_manager_delegate.h b/content/public/browser/devtools_manager_delegate.h	(rejected hunks)
+@@ -111,10 +111,24 @@ class CONTENT_EXPORT DevToolsManagerDelegate {
+   // windows that may be opened on Android, and this parameter may be ignored if
+   // new windows cannot be opened.
+   virtual scoped_refptr<DevToolsAgentHost>
+   CreateNewTarget(const GURL& url, TargetType target_type, bool new_window);
+ 
++#if BUILDFLAG(ARKWEB_DEVTOOLS)
++  // Async version of CreateNewTarget. Calls |callback| with (success, target_id).
++  // Note: This is only meaningful for ARKWEB builds.
++  // |browser_context| specifies the BrowserContext for the new target. If
++  // null, the delegate chooses a default context.
++  using CreateNewTargetCallback =
++      base::OnceCallback<void(bool success, const std::string& target_id)>;
++  virtual void CreateNewTargetAsync(const GURL& url,
++                                    TargetType target_type,
++                                    bool new_window,
++                                    BrowserContext* browser_context,
++                                    CreateNewTargetCallback callback) {}
++#endif
++
+   // Get all live browser contexts created by CreateBrowserContext() method.
+   virtual std::vector<BrowserContext*> GetBrowserContexts();
+ 
+   // Get default browser context. May return null if not supported.
+   virtual BrowserContext* GetDefaultBrowserContext();

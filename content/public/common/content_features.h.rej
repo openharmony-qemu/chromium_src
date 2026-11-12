@@ -1,0 +1,29 @@
+diff a/content/public/common/content_features.h b/content/public/common/content_features.h	(rejected hunks)
+@@ -377,10 +377,14 @@ CONTENT_EXPORT BASE_DECLARE_FEATURE(kEnableExclusiveAccessManager);
+ 
+ #if BUILDFLAG(IS_ANDROID)
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kKeyboardLockApiOnAndroid);
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++CONTENT_EXPORT BASE_DECLARE_FEATURE(kEnableNetworkPreload);
++#endif  // BUILDFLAG(ARKWEB_PRP_PRELOAD)
++
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kIOThreadInteractiveThreadType);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kBoostThreadsPriorityDuringInputScenario);
+ 
+ // Number of days to "store" IPH guardrails for navigation captured app launches
+ // till they are cleared.
+@@ -418,8 +422,12 @@ CONTENT_EXPORT extern const base::FeatureParam<int>
+ 
+ CONTENT_EXPORT bool IsVideoCaptureServiceEnabledForOutOfProcess();
+ CONTENT_EXPORT bool IsVideoCaptureServiceEnabledForBrowserProcess();
+ CONTENT_EXPORT bool IsPushSubscriptionChangeEventEnabled();
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++CONTENT_EXPORT BASE_DECLARE_FEATURE(kExtraHeaderOptEnable);
++#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
++
+ }  // namespace features
+ 
+ #endif  // CONTENT_PUBLIC_COMMON_CONTENT_FEATURES_H_

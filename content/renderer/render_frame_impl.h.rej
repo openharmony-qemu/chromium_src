@@ -1,0 +1,31 @@
+diff a/content/renderer/render_frame_impl.h b/content/renderer/render_frame_impl.h	(rejected hunks)
+@@ -1590,11 +1773,29 @@ class CONTENT_EXPORT RenderFrameImpl
+ 
+   // Used by DevTools to defer async client navigations for the duration of
+   // handling a CDP command.
+   ClientNavigationThrottler client_navigation_throttler_;
+ 
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  uint32_t nweb_id_ = 0;
++  uint64_t blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
++  uint64_t frame_sink_id_ = 0;
++  int64_t pref_hash_ = 0;
++#endif
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
++  viz::FrameSinkId cached_blank_screen_frame_sink_id_;
++#endif
++#if BUILDFLAG(ARKWEB_USERAGENT)
++  bool viewport_meta_enabled_{false};
++#endif
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  bool is_offscreen_{false};
++#endif
++  raw_ptr<RenderFrameImplUtils> implUtils;
++
+   base::WeakPtrFactory<RenderFrameImpl> weak_factory_{this};
+ };
+ 
+ }  // namespace content
+ 
++#include "arkweb/chromium_ext/content/renderer/media/ohos/arkweb_media_factory_ext.h"
+ #endif  // CONTENT_RENDERER_RENDER_FRAME_IMPL_H_

@@ -1,0 +1,13 @@
+diff a/content/public/browser/disallow_activation_reason.h b/content/public/browser/disallow_activation_reason.h	(rejected hunks)
+@@ -63,10 +63,11 @@ enum DisallowActivationReasonId : uint64_t {
+   kFileSystemAccessLockingContention = 39,
+   kIndexedDBTransactionIsStartingWhileBlockingOthers = 40,
+   kIndexedDBTransactionIsOngoingAndBlockingOthers = 41,
+   kBrowserInitiatedErrorPage = 42,
+   kDidChangeOpener = 43,
++  kDidCommitNavigation = 44,
+   // New entries go above here. New entries should be added to
+   // tools/metrics/histograms/enums.xml .
+   kMinEmbedderDisallowActivationReason = 2 << 16,
+ };
+ 

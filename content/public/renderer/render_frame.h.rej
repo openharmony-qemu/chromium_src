@@ -1,0 +1,17 @@
+diff a/content/public/renderer/render_frame.h b/content/public/renderer/render_frame.h	(rejected hunks)
+@@ -27,10 +27,15 @@
+ #include "third_party/blink/public/platform/web_url_request.h"
+ #include "third_party/blink/public/platform/web_url_response.h"
+ #include "third_party/blink/public/web/web_navigation_policy.h"
+ #include "ui/accessibility/ax_mode.h"
+ #include "ui/accessibility/ax_tree_update.h"
++#include "arkweb/build/features/features.h"
++
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ 
+ class GURL;
+ 
+ namespace blink {
+ namespace scheduler {

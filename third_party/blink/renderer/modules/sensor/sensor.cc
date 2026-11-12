@@ -297,6 +297,12 @@ void Sensor::Deactivate() {
 
   if (sensor_proxy_->IsInitialized()) {
     DCHECK(configuration_);
+#if BUILDFLAG(ARKWEB_SENSOR)
+    if (state_ == SensorState::kIdle) {
+      LOG(WARNING) << "Deactivate state is kIdle";
+      return;
+    }
+#endif
     sensor_proxy_->RemoveConfiguration(configuration_->Clone());
     last_reported_timestamp_ = 0.0;
   }

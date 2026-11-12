@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/modules/webaudio/audio_node.cc b/third_party/blink/renderer/modules/webaudio/audio_node.cc	(rejected hunks)
+@@ -77,11 +77,12 @@ void AudioNode::Dispose() {
+   // can be deleted at a safe point (in pre/post handler task).  If the graph is
+   // being processed, the handler must be added.  If the context is suspended,
+   // the handler still needs to be added in case the context is resumed.
+   DCHECK(context());
+   if (context()->IsPullingAudioGraph() ||
+-      context()->ContextState() == V8AudioContextState::Enum::kSuspended) {
++      context()->ContextState() == V8AudioContextState::Enum::kSuspended ||
++      context()->ContextState() == V8AudioContextState::Enum::kInterrupted) {
+     context()->GetDeferredTaskHandler().AddRenderingOrphanHandler(
+         std::move(handler_));
+   }
+ 
+   // Notify the inspector that this node is going away. The actual clean up

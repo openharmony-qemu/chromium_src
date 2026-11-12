@@ -1,0 +1,46 @@
+diff a/third_party/blink/renderer/modules/BUILD.gn b/third_party/blink/renderer/modules/BUILD.gn	(rejected hunks)
+@@ -8,10 +8,15 @@ import("//media/media_options.gni")
+ import("//services/device/public/cpp/compute_pressure/buildflags.gni")
+ import("//testing/libfuzzer/fuzzer_test.gni")
+ import("//third_party/blink/renderer/bindings/bindings.gni")
+ import("//third_party/blink/renderer/build/scripts/scripts.gni")
+ import("//third_party/blink/renderer/modules/modules.gni")
++import("//arkweb/build/features/features.gni")
++
++if (is_arkweb) {
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++}
+ 
+ if (is_android) {
+   import("//build/config/android/rules.gni")
+ }
+ 
+@@ -665,10 +670,14 @@ source_set("unit_tests") {
+       # preventing meaningful testing.
+       "mediastream/capture_controller_test.cc",
+     ]
+   }
+ 
++  if (is_arkweb && arkweb_ai) {
++    sources += arkweb_third_party_blink_renderer_modules_unittest_sources
++  }
++
+   configs += [
+     "//third_party/blink/renderer:config",
+     "//third_party/blink/renderer:inside_blink",
+     "//third_party/blink/renderer/core:blink_core_pch",
+   ]
+@@ -781,10 +794,13 @@ fuzzer_test("web_app_manifest_fuzzer") {
+   seed_corpus = "manifest/fuzzer_seed_corpus"
+ 
+   deps = [
+     ":modules",
+     "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
++    "//cef:libcef_static",
++    "//ohos_nweb:cef_nweb",
++    "//ohos_nweb:nweb_sources",
+   ]
+ }
+ 
+ fuzzer_test("media_capabilities_fuzzer") {
+   sources = [ "media_capabilities/media_capabilities_fuzzer.cc" ]

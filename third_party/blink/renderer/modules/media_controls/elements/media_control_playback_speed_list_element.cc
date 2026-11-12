@@ -36,6 +36,18 @@ struct PlaybackSpeed {
   const double playback_rate;
 };
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+constexpr auto kPlaybackSpeedsOhos = std::to_array<PlaybackSpeed>({
+    {IDS_HW_MEDIA_VIDEO_PLAYBACK_SPEED_VALUE, 0.5},
+    {IDS_HW_MEDIA_VIDEO_PLAYBACK_SPEED_VALUE, 0.75},
+    {IDS_HW_MEDIA_VIDEO_PLAYBACK_SPEED_VALUE, 1.0},
+    {IDS_HW_MEDIA_VIDEO_PLAYBACK_SPEED_VALUE, 1.25},
+    {IDS_HW_MEDIA_VIDEO_PLAYBACK_SPEED_VALUE, 1.5},
+    {IDS_HW_MEDIA_VIDEO_PLAYBACK_SPEED_VALUE, 2.0},
+    {IDS_HW_MEDIA_VIDEO_PLAYBACK_SPEED_VALUE, 3.0},
+});
+#endif
+
 constexpr auto kPlaybackSpeeds = std::to_array<PlaybackSpeed>({
     {IDS_MEDIA_OVERFLOW_MENU_PLAYBACK_SPEED_0_25X_TITLE, 0.25},
     {IDS_MEDIA_OVERFLOW_MENU_PLAYBACK_SPEED_0_5X_TITLE, 0.5},
@@ -97,13 +109,21 @@ void MediaControlPlaybackSpeedListElement::SetIsWanted(bool wanted) {
   if (wanted)
     RefreshPlaybackSpeedListMenu();
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (!GetMediaControls().ShouldShowVideoControlsHM()) {
+    if (!wanted && !GetMediaControls().OverflowMenuIsWanted())
+      GetMediaControls().CloseOverflowMenu();
+  }
+#else
   if (!wanted && !GetMediaControls().OverflowMenuIsWanted())
     GetMediaControls().CloseOverflowMenu();
+#endif
 
   MediaControlPopupMenuElement::SetIsWanted(wanted);
 }
 
 void MediaControlPlaybackSpeedListElement::DefaultEventHandler(Event& event) {
+  DefaultEventHandlerExt(event);
   if (event.type() == event_type_names::kClick) {
     // This handles the back button click. Clicking on a menu item triggers the
     // change event instead.
@@ -156,14 +176,34 @@ Element* MediaControlPlaybackSpeedListElement::CreatePlaybackSpeedListItem(
 
   // Set playback speed label into an aria-hidden span so that aria will not
   // repeat the contents twice.
-  auto playback_speed_label = GetLocale().QueryString(display_name);
+  String playback_speed_label;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  String playback_speed_label_hm;
+  if (GetMediaControls().ShouldShowVideoControlsHM()) {
+    playback_speed_label_hm = AsMediaControlPlaybackSpeedListElementExt()->
+      CreatePlaybackSpeedLabelContentHM(playback_rate);
+  } else {
+#endif
+  playback_speed_label = GetLocale().QueryString(display_name);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  }
+#endif
   auto* playback_speed_label_span =
       MakeGarbageCollected<HTMLSpanElement>(GetDocument());
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (GetMediaControls().ShouldShowVideoControlsHM()) {
+    playback_speed_label_span->setInnerText(playback_speed_label_hm);
+    playback_speed_item->setAttribute(html_names::kAriaLabelAttr,
+                                      AtomicString(playback_speed_label_hm));
+  } else {
+#endif
   playback_speed_label_span->setInnerText(playback_speed_label);
-  playback_speed_label_span->setAttribute(html_names::kAriaHiddenAttr,
-                                          keywords::kTrue);
   playback_speed_item->setAttribute(html_names::kAriaLabelAttr,
                                     AtomicString(playback_speed_label));
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  }
+#endif
+  playback_speed_label_span->setAttribute(html_names::kAriaHiddenAttr, keywords::kTrue);
   playback_speed_item->ParserAppendChild(playback_speed_label_span);
   playback_speed_item->ParserAppendChild(playback_speed_item_input);
 

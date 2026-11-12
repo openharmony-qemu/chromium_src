@@ -1,0 +1,21 @@
+diff a/third_party/blink/renderer/modules/accessibility/ax_node_object.cc b/third_party/blink/renderer/modules/accessibility/ax_node_object.cc	(rejected hunks)
+@@ -200,11 +200,18 @@
+ #include "ui/gfx/geometry/rect_f.h"
+ #include "ui/gfx/geometry/size.h"
+ #include "ui/gfx/geometry/size_f.h"
+ #include "ui/gfx/geometry/transform.h"
+ #include "ui/strings/grit/ax_strings.h"
+-
++#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
++#include "third_party/blink/public/web/web_autofill_client.h"
++#include "third_party/blink/renderer/core/frame/web_local_frame_impl.h"
++#include "third_party/blink/renderer/core/page/chrome_client_impl.h"
++#endif
++#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
++#include "arkweb/chromium_ext/third_party/blink/renderer/modules/accessibility/ax_node_object_for_include.cc"
++#endif  // BUILDFLAG(ARKWEB_ACCESSIBILITY)
+ namespace blink {
+ namespace {
+ 
+ const ScrollMarkerPseudoElement* GetScrollMarker(const Node* node) {
+   auto* element = DynamicTo<Element>(node);

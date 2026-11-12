@@ -54,6 +54,9 @@ namespace video_track_recorder {
 #if BUILDFLAG(IS_ANDROID)
 const int kVEAEncoderMinResolutionWidth = 176;
 const int kVEAEncoderMinResolutionHeight = 144;
+#elif BUILDFLAG(ARKWEB_MEDIA)
+const int kVEAEncoderMinResolutionWidth = 144;
+const int kVEAEncoderMinResolutionHeight = 144;
 #else
 const int kVEAEncoderMinResolutionWidth = 640;
 const int kVEAEncoderMinResolutionHeight = 480;

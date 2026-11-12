@@ -1,0 +1,41 @@
+diff a/third_party/blink/renderer/modules/canvas/BUILD.gn b/third_party/blink/renderer/modules/canvas/BUILD.gn	(rejected hunks)
+@@ -1,9 +1,10 @@
+ # Copyright 2016 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
++import("//arkweb/build/features/features.gni")
+ import("//testing/libfuzzer/fuzzer_test.gni")
+ import("//third_party/blink/renderer/modules/modules.gni")
+ 
+ blink_modules_sources("canvas") {
+   sources = [
+@@ -61,10 +62,14 @@ blink_modules_sources("canvas") {
+     "//third_party/blink/renderer/modules/webcodecs",
+     "//third_party/blink/renderer/modules/webgpu",
+   ]
+   allow_circular_includes_from =
+       [ "//third_party/blink/renderer/modules/webcodecs" ]
++
++  if (arkweb_canvas_commit) {
++    deps += [ "//arkweb/build/features" ]
++  }
+ }
+ 
+ fuzzer_test("canvas_fuzzer") {
+   sources = [ "canvas_fuzzer.cc" ]
+   seed_corpuses = [ "//third_party/blink/web_tests/fast/canvas" ]
+@@ -72,10 +77,13 @@ fuzzer_test("canvas_fuzzer") {
+     "../../platform:blink_fuzzer_test_support",
+     "//base/test:test_support",
+     "//third_party/blink/renderer/core",
+     "//third_party/blink/renderer/core:testing",
+     "//third_party/blink/renderer/platform:test_support",
++    "//cef:libcef_static",
++    "//ohos_nweb:cef_nweb",
++    "//ohos_nweb:nweb_sources",
+   ]
+ 
+   # Disabled due to many false positives (crbug.com/1124824).
+   additional_configs = [ "//testing/libfuzzer:no_clusterfuzz" ]
+ }

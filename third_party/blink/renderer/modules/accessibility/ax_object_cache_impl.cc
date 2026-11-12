@@ -3404,7 +3404,11 @@ int AXObjectCacheImpl::GetDeferredEventsDelay() const {
 int AXObjectCacheImpl::GetLocationSerializationDelay() {
   // The amount of time, in milliseconds, to wait in between location updates
   // when the changed nodes don't include the focused node.
+#if !BUILDFLAG(ARKWEB_ACCESSIBILITY)
   constexpr int kDelayForLocationUpdatesNonFocused = 500;
+#else
+  constexpr int kDelayForLocationUpdatesNonFocused = 150;
+#endif
 
   // The amount of time, in milliseconds, to wait in between location updates
   // when the changed nodes includes the focused node.
@@ -5119,6 +5123,13 @@ void AXObjectCacheImpl::HandleAttributeChanged(const QualifiedName& attr_name,
       MarkElementDirty(document_);
     }
   }
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  if (attr_name.LocalName() == "data-accessibilitydescription") {
+    LOG(DEBUG) << "AXObjectCacheImpl::HandleAttributeChanged case "
+                  "data-accessibilitydescription MarkElementDirty";
+    MarkElementDirty(element);
+  }
+#endif
 }
 
 void AXObjectCacheImpl::HandleUseMapAttributeChangedWithCleanLayout(
@@ -6335,6 +6346,12 @@ void AXObjectCacheImpl::AddDirtyObjectToSerializationQueue(
   CHECK(!IsFrozen());
   CHECK(lifecycle_.StateAllowsQueueingAXObjectsForSerialization()) << *this;
 
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  if (!obj) {
+    LOG(ERROR) << "AXObjectCacheImpl::AddDirtyObjectToSerializationQueue obj is null";
+    return;
+  }
+#endif
   // If not included, cannot be serialized, so there is no need to queue.
   if (!obj->IsIncludedInTree()) {
     return;
@@ -6824,8 +6841,10 @@ void AXObjectCacheImpl::HandleLoadComplete(Document* document) {
 
   // TODO(accessibility) Change this to a DCHECK, but that would fail right now
   // in navigation API tests.
+#if !BUILDFLAG(ARKWEB_ACCESSIBILITY)
   if (!document->IsLoadCompleted())
     return;
+#endif
 
   // Popups do not need to fire load start or load complete , because ATs do not
   // regard popups as documents -- that is an implementation detail of the

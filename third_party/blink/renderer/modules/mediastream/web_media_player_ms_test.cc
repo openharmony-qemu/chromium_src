@@ -566,6 +566,12 @@ class TestMediaPlayerClient final
   void PausePlayback(WebMediaPlayer::PauseReason) override {}
   void DidPlayerStartPlaying() override {}
   void DidPlayerPaused(bool) override {}
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+  void DidPlayerGone() override {}
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  void DidEndAVSession(bool is_hidden) override {}
+#endif // ARKWEB_MEDIA_AVSESSION
   void DidPlayerMutedStatusChange(bool muted) override {}
   void DidMediaMetadataChange(bool has_audio,
                               bool has_video,
@@ -675,6 +681,7 @@ class WebMediaPlayerMSTest
   MOCK_CONST_METHOD0(CouldPlayIfEnoughData, bool());
   MOCK_METHOD0(OnRequestVideoFrameCallback, void());
   MOCK_METHOD0(GetElementId, int());
+  MOCK_METHOD0(ScheduleVideoFreezeEvent, void());
 
   std::unique_ptr<WebSurfaceLayerBridge> CreateMockSurfaceLayerBridge(
       WebSurfaceLayerBridgeObserver*,

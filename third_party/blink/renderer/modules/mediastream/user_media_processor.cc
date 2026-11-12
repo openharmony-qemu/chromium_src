@@ -749,6 +749,12 @@ void UserMediaProcessor::ProcessRequest(UserMediaRequest* request,
                          current_request_info_->request()->Audio(),
                          current_request_info_->request()->Video()));
   // TODO(guidou): Set up audio and video in parallel.
+  LOG(INFO) << base::StringPrintf(
+      "ProcessRequest({request_id=%d}, {audio=%d}, "
+      "{video=%d})",
+      current_request_info_->request_id(),
+      current_request_info_->request()->Audio(),
+      current_request_info_->request()->Video());
   if (current_request_info_->request()->Audio()) {
     SetupAudioInput();
     return;
@@ -1934,6 +1940,27 @@ UserMediaProcessor::CreateAudioSource(
 
   StreamControls* stream_controls = current_request_info_->stream_controls();
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  if (device.type == mojom::blink::MediaStreamType::DISPLAY_AUDIO_CAPTURE) {
+    auto new_settings = current_request_info_->audio_capture_settings();
+    auto new_props = new_settings.audio_processing_properties();
+    new_props.echo_cancellation_mode = EchoCancellationMode::kBrowserDecides;
+    
+    AudioCaptureSettings updated_settings(
+        new_settings.device_id(),
+        new_settings.requested_buffer_size(),
+        new_settings.disable_local_echo(),
+        new_settings.render_to_associated_sink(),
+        new_settings.processing_type(),
+        new_props,
+        new_settings.num_channels()
+    );
+    current_request_info_->SetAudioCaptureSettings(
+        updated_settings,
+        !blink::IsDeviceMediaType(
+            current_request_info_->stream_controls()->audio.stream_type));
+  }
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
   // If the constraints/effects parameters indicate no audio processing is
   // needed, create an efficient, direct-path MediaStreamAudioSource instance.
   std::optional<MediaStreamAudioProcessingLayout> processing_layout =
@@ -2002,7 +2029,7 @@ UserMediaProcessor::CreateVideoSource(
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   DCHECK(current_request_info_);
   DCHECK(current_request_info_->video_capture_settings().HasValue());
-
+  LOG(INFO) << "UserMediaProcessor::CreateVideoSource ";
   return std::make_unique<blink::MediaStreamVideoCapturerSource>(
       frame_->GetTaskRunner(TaskType::kInternalMediaRealTime), frame_,
       std::move(stop_callback), device,

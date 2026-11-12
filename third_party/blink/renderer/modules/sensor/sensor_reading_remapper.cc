@@ -116,6 +116,12 @@ void SensorReadingRemapper::RemapToScreenCoords(
     device::SensorReading* reading) {
   DCHECK(reading);
   switch (type) {
+#if BUILDFLAG(ARKWEB_SENSOR)
+    case SensorType::PROXIMITY:
+    case SensorType::PRESSURE:
+      NOTREACHED() << "Remap must not be performed for the sensor type "
+                   << type;
+#endif
     case SensorType::AMBIENT_LIGHT:
       NOTREACHED() << "Remap must not be performed for the sensor type "
                    << type;

@@ -1,0 +1,31 @@
+diff a/third_party/blink/renderer/modules/filesystem/file_system_dispatcher.cc b/third_party/blink/renderer/modules/filesystem/file_system_dispatcher.cc	(rejected hunks)
+@@ -109,27 +109,24 @@ mojom::blink::FileSystemManager& FileSystemDispatcher::GetFileSystemManager() {
+   DCHECK(file_system_manager_.is_bound());
+   return *file_system_manager_.get();
+ }
+ 
+ void FileSystemDispatcher::OpenFileSystem(
+-    const SecurityOrigin* origin,
+     mojom::blink::FileSystemType type,
+     std::unique_ptr<FileSystemCallbacks> callbacks) {
+   GetFileSystemManager().Open(
+-      origin, type,
+-      blink::BindOnce(&FileSystemDispatcher::DidOpenFileSystem,
++      type, blink::BindOnce(&FileSystemDispatcher::DidOpenFileSystem,
+                       WrapWeakPersistent(this), std::move(callbacks)));
+ }
+ 
+ void FileSystemDispatcher::OpenFileSystemSync(
+-    const SecurityOrigin* origin,
+     mojom::blink::FileSystemType type,
+     std::unique_ptr<FileSystemCallbacks> callbacks) {
+   String name;
+   KURL root_url;
+   base::File::Error error_code = base::File::FILE_ERROR_FAILED;
+-  GetFileSystemManager().Open(origin, type, &name, &root_url, &error_code);
++  GetFileSystemManager().Open(type, &name, &root_url, &error_code);
+   DidOpenFileSystem(std::move(callbacks), std::move(name), root_url,
+                     error_code);
+ }
+ 
+ void FileSystemDispatcher::ResolveURL(

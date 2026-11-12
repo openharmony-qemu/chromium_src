@@ -876,6 +876,12 @@ void CanvasRenderingContext2D::PageVisibilityChanged() {
     }
   }
 
+#if BUILDFLAG(ARKWEB_CANVAS_COMMIT)
+  if (page_is_visible) {
+    element->SetNeedsCompositingUpdate();
+  }
+#endif
+
   // The impl tree may have dropped the transferable resource for this canvas
   // while it wasn't visible. Make sure that it gets pushed there again, now
   // that we've visible.

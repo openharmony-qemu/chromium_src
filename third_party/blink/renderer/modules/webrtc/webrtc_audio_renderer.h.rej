@@ -1,0 +1,29 @@
+diff a/third_party/blink/renderer/modules/webrtc/webrtc_audio_renderer.h b/third_party/blink/renderer/modules/webrtc/webrtc_audio_renderer.h	(rejected hunks)
+@@ -116,10 +116,14 @@ class MODULES_EXPORT WebRtcAudioRenderer
+ 
+   // Initialize function called by clients like WebRtcAudioDeviceImpl.
+   // Stop() has to be called before |source| is deleted.
+   bool Initialize(WebRtcAudioRendererSource* source);
+ 
++  // Called when the source is going away to clear the reference to the source
++  // and remove circular references.
++  void DisconnectSource();
++
+   // When sharing a single instance of WebRtcAudioRenderer between multiple
+   // users (e.g. WebMediaPlayerMS), call this method to create a proxy object
+   // that maintains the Play and Stop states per caller.
+   // The wrapper ensures that Play() won't be called when the caller's state
+   // is "playing", Pause() won't be called when the state already is "paused"
+@@ -322,11 +326,11 @@ class MODULES_EXPORT WebRtcAudioRenderer
+   String media_stream_descriptor_id_;
+ 
+   // Audio data source from the browser process.
+   //
+   // TODO(crbug.com/704136): Make it a Member.
+-  raw_ptr<WebRtcAudioRendererSource> source_;
++  raw_ptr<WebRtcAudioRendererSource> source_ GUARDED_BY(lock_);
+ 
+   // Protects access to |state_|, |source_|, |audio_fifo_|,
+   // |audio_delay_milliseconds_|, |fifo_delay_milliseconds_|, |current_time_|,
+   // |sink_params_|, |render_callback_count_|, |max_render_time_| and
+   // |audio_stream_tracker_|.

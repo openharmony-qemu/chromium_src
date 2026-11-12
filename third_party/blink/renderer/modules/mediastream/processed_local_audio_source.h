@@ -97,6 +97,10 @@ class MODULES_EXPORT ProcessedLocalAudioSource final
 
   void SetOutputDeviceForAec(const std::string& output_device_id);
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  void OnCapturePaused(bool is_paused) override;
+#endif // ARKWEB_MEDIA_CAPTURE
+
  protected:
   // MediaStreamAudioSource implementation.
   void* GetClassIdentifier() const final;

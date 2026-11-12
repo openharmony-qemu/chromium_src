@@ -1,0 +1,19 @@
+diff a/third_party/blink/renderer/modules/webaudio/media_stream_audio_destination_handler.h b/third_party/blink/renderer/modules/webaudio/media_stream_audio_destination_handler.h	(rejected hunks)
+@@ -39,10 +39,17 @@ class MODULES_EXPORT MediaStreamAudioDestinationHandler final
+   // This handler must release its reference to the consumer when the
+   // owning MediaStreamSource associated with this handler's node is garbage
+   // collected. Returns true when the removal is successful.
+   bool RemoveConsumer();
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
++  // Called when a connected source track's pause state changes.
++  // Propagates the state to the WebAudioDestinationConsumer (i.e.,
++  // WebAudioMediaStreamSource).
++  void OnSourcePausedChanged(bool is_paused);
++#endif // ARKWEB_MEDIA_CAPTURE
++
+  private:
+   friend class MediaStreamAudioDestinationHandlerTest;
+ 
+   MediaStreamAudioDestinationHandler(
+       AudioNode&, uint32_t number_of_channels, WebAudioDestinationConsumer*);

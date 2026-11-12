@@ -1,0 +1,14 @@
+diff a/third_party/blink/renderer/modules/canvas/canvas2d/canvas_path.h b/third_party/blink/renderer/modules/canvas/canvas2d/canvas_path.h	(rejected hunks)
+@@ -144,11 +144,11 @@ class MODULES_EXPORT CanvasPath : public GarbageCollectedMixin {
+     return high_entropy_path_op_types_;
+   }
+ 
+   virtual ExecutionContext* GetTopExecutionContext() const = 0;
+ 
+-  const Path& GetPath() const {
++  Path GetPath() const {
+     UpdatePathFromLineOrArcIfNecessary();
+     return path_builder_.CurrentPath();
+   }
+ 
+   // Returns true if the CanvasPath represents a line. In some cases (such as

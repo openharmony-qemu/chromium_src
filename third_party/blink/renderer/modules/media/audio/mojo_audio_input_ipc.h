@@ -87,6 +87,9 @@ class MODULES_EXPORT MojoAudioInputIPC
       const std::optional<base::UnguessableToken>& stream_id) override;
   void OnError(media::mojom::InputStreamErrorCode code) override;
   void OnMutedStateChanged(bool is_muted) override;
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  void OnPausedStateChanged(bool is_paused) override;
+#endif // ARKWEB_MEDIA_CAPTURE
 
   void OnDisconnect(uint32_t error, const std::string& reason);
 

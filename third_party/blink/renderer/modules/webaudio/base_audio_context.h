@@ -80,6 +80,9 @@ class SecurityOrigin;
 class StereoPannerNode;
 class WaveShaperNode;
 class WorkerThread;
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+class MediaStreamAudioDestinationNode;
+#endif // ARKWEB_MEDIA_CAPTURE
 
 // BaseAudioContext is the cornerstone of the web audio API and all AudioNodes
 // are created from it.  For thread safety between the audio thread and the main
@@ -240,6 +243,18 @@ class MODULES_EXPORT BaseAudioContext
   // When a source node has no more processing to do (has finished playing),
   // this method tells the context to release the corresponding node.
   void NotifySourceNodeFinishedProcessing(AudioHandler*);
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  // Registers/unregisters a MediaStreamAudioDestinationNode for pause
+  // state propagation from MediaStreamAudioSourceNodes.
+  void RegisterMediaStreamAudioDestinationNode(
+      MediaStreamAudioDestinationNode*);
+  void UnregisterMediaStreamAudioDestinationNode(
+      MediaStreamAudioDestinationNode*);
+
+  // Called when a source track's pause state changes. Propagates the
+  // pause/resume signal to all registered MediaStreamAudioDestinationNodes.
+  void OnMediaStreamSourcePausedChanged(bool is_paused);
+#endif // ARKWEB_MEDIA_CAPTURE
 
   // Called at the start of each render quantum.
   //
@@ -427,6 +442,12 @@ class MODULES_EXPORT BaseAudioContext
   scoped_refptr<AudioDestinationHandler> destination_handler_;
 
   Member<AudioWorklet> audio_worklet_;
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  // Registered MediaStreamAudioDestinationNodes for pause state propagation.
+  HeapHashSet<Member<MediaStreamAudioDestinationNode>>
+      media_stream_destination_nodes_;
+#endif // ARKWEB_MEDIA_CAPTURE
 
   // In order to update some information (e.g. current frame) in
   // AudioWorkletGlobalScope *synchronously*, the context needs to keep the

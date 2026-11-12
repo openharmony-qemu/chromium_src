@@ -1,0 +1,21 @@
+diff a/third_party/blink/renderer/modules/wake_lock/wake_lock_test_utils.cc b/third_party/blink/renderer/modules/wake_lock/wake_lock_test_utils.cc	(rejected hunks)
+@@ -254,10 +254,19 @@ void MockPermissionService::RequestPermission(
+     std::move(request_permission_callbacks_[pos]).Run();
+   std::move(callback).Run(permission_responses_[pos].value_or(
+       mojom::blink::PermissionStatus::DENIED));
+ }
+ 
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++void MockPermissionService::RequestPermissionSync(
++    PermissionDescriptorPtr permission,
++    bool user_gesture,
++    RequestPermissionCallback callback) {
++  RequestPermission(std::move(permission), user_gesture, std::move(callback));
++}
++#endif  // ARKWEB_CLIPBOARD
++
+ void MockPermissionService::RequestPermissions(
+     Vector<PermissionDescriptorPtr> permissions,
+     bool user_gesture,
+     mojom::blink::PermissionService::RequestPermissionsCallback) {
+   NOTREACHED();

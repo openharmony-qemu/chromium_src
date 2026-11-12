@@ -60,6 +60,9 @@ void AudioRendererMixer::AddMixerInput(
     playing_ = true;
     last_play_time_ = base::TimeTicks::Now();
     audio_sink_->Play();
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+    implUtils->AddMixerInputShareInit(audio_output_tid_, media_tid_);
+#endif
   }
 
   int input_sample_rate = input_params.sample_rate();

@@ -181,6 +181,23 @@ class TestInterfaceFactory : public media::mojom::InterfaceFactory {
       mojo::PendingReceiver<media::mojom::MediaFoundationRendererExtension>
           renderer_extension_receiver) override {}
 #endif  // BUILDFLAG(IS_WIN)
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+  void CreateMediaPlayerRenderer(
+      mojo::PendingRemote<media::mojom::MediaPlayerRendererClientExtension>
+          client_extension_remote,
+      mojo::PendingReceiver<media::mojom::Renderer> receiver,
+      int player_id,
+      const media::MediaPlayerUrlParams& params) override {}
+#endif  // BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  void CreateCustomMediaPlayerRenderer(
+      mojo::PendingRemote<media::mojom::CustomMediaPlayerRendererClientExtension>
+          client_extension_ptr,
+      mojo::PendingReceiver<media::mojom::Renderer> receiver,
+      int player_id,
+      const media::MediaPlayerUrlParams& params) override {}
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+
  private:
   mojo::Receiver<media::mojom::InterfaceFactory> receiver_{this};
   mojo::UniqueReceiverSet<media::mojom::AudioEncoder> audio_encoder_receivers_;
@@ -306,6 +323,10 @@ class MockAudioTrackRecorderCallbackInterface
               (media::EncoderStatus status),
               (override));
   MOCK_METHOD(void, OnSourceReadyStateChanged, (), (override));
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  MOCK_METHOD(void, OnSourcePaused, (), (override));
+  MOCK_METHOD(void, OnSourceResumed, (), (override));
+#endif // ARKWEB_MEDIA_CAPTURE
   void Trace(Visitor* v) const override { v->Trace(weak_factory_); }
   WeakCell<AudioTrackRecorder::CallbackInterface>* GetWeakCell() {
     return weak_factory_.GetWeakCell();

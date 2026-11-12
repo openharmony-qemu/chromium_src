@@ -1,0 +1,20 @@
+diff a/third_party/blink/renderer/modules/ai/on_device_translation/language_detector.cc b/third_party/blink/renderer/modules/ai/on_device_translation/language_detector.cc	(rejected hunks)
+@@ -365,14 +382,18 @@ ScriptPromise<IDLSequence<LanguageDetectionResult>> LanguageDetector::detect(
+ 
+   auto* resolver = MakeGarbageCollected<
+       ResolverWithAbortSignal<IDLSequence<LanguageDetectionResult>>>(
+       script_state, composite_signal);
+ 
++#if BUILDFLAG(ARKWEB_AI)
++  LanguageDetectorOHOS::Detect(script_state, input, composite_signal, task_runner_, resolver);
++#else
+   language_detection_model_->DetectLanguage(
+       task_runner_, input,
+       blink::BindOnce(LanguageDetector::OnDetectComplete,
+                       WrapPersistent(resolver)));
++#endif
+   return resolver->Promise();
+ }
+ 
+ void LanguageDetector::destroy(ScriptState* script_state) {
+   destruction_abort_controller_->abort(script_state);

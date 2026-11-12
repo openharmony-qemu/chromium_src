@@ -1088,6 +1088,17 @@ PeerConnectionDependencyFactory::CreatePortAllocator(
       // |request_multiple_routes|. Whether local IP addresses could be
       // collected depends on if mic/camera permission is granted for this
       // origin.
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+      bool isAdvancedSecurityMode =
+          OHOS::NWeb::NWebAdvancedSecurityHelper::Inst().IsSecFeatureEnabled(
+              OHOS::NWeb::NWebAdvancedSecurityHelper::Feature::ENABLE_WEBRTC) ||
+          base::CommandLine::ForCurrentProcess()->HasSwitch(
+              switches::kDisableNonProxyUDP);
+
+      if (isAdvancedSecurityMode) {
+        webrtc_ip_handling_policy = mojom::blink::WebRtcIpHandlingPolicy::kDisableNonProxiedUdp;
+      }
+#endif  // BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
       switch (webrtc_ip_handling_policy) {
         // TODO(guoweis): specify the flag of disabling local candidate
         // collection when webrtc is updated.

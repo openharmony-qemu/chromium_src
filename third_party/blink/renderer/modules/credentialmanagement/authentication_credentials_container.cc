@@ -2427,6 +2427,28 @@ void AuthenticationCredentialsContainer::ForwardRequestToAuthenticator(
     }
   }
 
+#if BUILDFLAG(ARKWEB_FIDO)
+  using PublicKeyCredentialMediationRequirement =
+      blink::mojom::blink::PublicKeyCredentialMediationRequirement;
+  if (options->mediation() == V8CredentialMediationRequirement::Enum::kSilent) {
+    get_credential_options->public_key->mediation =
+        PublicKeyCredentialMediationRequirement::SILENT;
+  } else if (options->mediation() == V8CredentialMediationRequirement::Enum::kOptional) {
+    get_credential_options->public_key->mediation =
+        PublicKeyCredentialMediationRequirement::OPTIONAL;
+  } else if (options->mediation() == V8CredentialMediationRequirement::Enum::kRequired) {
+    get_credential_options->public_key->mediation =
+        PublicKeyCredentialMediationRequirement::REQUIRED;
+  } else if (options->mediation() == V8CredentialMediationRequirement::Enum::kConditional) {
+    get_credential_options->public_key->mediation =
+        PublicKeyCredentialMediationRequirement::CONDITIONAL;
+  } else {
+    // "optional" as default value.
+    get_credential_options->public_key->mediation =
+        PublicKeyCredentialMediationRequirement::OPTIONAL;
+  }
+#endif  // BUILDFLAG(ARKWEB_FIDO)
+
   auto* authenticator =
       CredentialManagerProxy::From(script_state)->Authenticator();
   get_credential_options->password = options->password();

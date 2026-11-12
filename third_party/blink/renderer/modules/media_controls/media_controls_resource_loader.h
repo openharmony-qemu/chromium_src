@@ -5,6 +5,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_MEDIA_CONTROLS_MEDIA_CONTROLS_RESOURCE_LOADER_H_
 #define THIRD_PARTY_BLINK_RENDERER_MODULES_MEDIA_CONTROLS_MEDIA_CONTROLS_RESOURCE_LOADER_H_
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/css/css_default_style_sheets.h"
 
 namespace blink {
@@ -39,6 +40,11 @@ class MediaControlsResourceLoader
   // Returns the specific stylesheet used for media related interstitials.
   static String GetMediaInterstitialsStyleSheet();
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  static bool custom_media_player_enabled_;
+  static void SetCustomMediaPlayerEnabled(bool enable);
+#endif
+
   String GetUAStyleSheet() override;
 
   MediaControlsResourceLoader();
@@ -53,6 +59,10 @@ class MediaControlsResourceLoader
   String GetMediaControlsCSS() const;
 
   String GetMediaControlsAndroidCSS() const;
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+  String GetMediaControlsOHOSCSS() const;
+#endif
 };
 
 }  // namespace blink

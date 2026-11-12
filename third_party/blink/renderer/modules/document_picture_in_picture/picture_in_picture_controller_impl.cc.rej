@@ -1,0 +1,36 @@
+diff a/third_party/blink/renderer/modules/document_picture_in_picture/picture_in_picture_controller_impl.cc b/third_party/blink/renderer/modules/document_picture_in_picture/picture_in_picture_controller_impl.cc	(rejected hunks)
+@@ -132,22 +139,33 @@ void PictureInPictureControllerImpl::EnterPictureInPicture(
+       // TODO(crbug.com/1293949): Add an error message.
+       resolver->RejectWithDOMException(DOMExceptionCode::kInvalidStateError,
+                                        "");
+     }
+ 
++#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
++    std::string errorType = "pip play error";
++    std::string errorDesc = "get web media player fail";
++    ReportWebMediaPlayErrorInfo(errorType, DEFAULT_PIP_ERROR_CODE, errorDesc);
++#endif
+     return;
+   }
+ 
+   if (picture_in_picture_element_ == video_element) {
+     if (resolver)
+       resolver->Resolve(picture_in_picture_window_);
+ 
+     return;
+   }
+ 
+-  if (!EnsureService())
++  if (!EnsureService()) {
++#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
++    std::string errorType = "pip play error";
++    std::string errorDesc = "EnsureService is null";
++    ReportWebMediaPlayErrorInfo(errorType, DEFAULT_PIP_ERROR_CODE, errorDesc);
++#endif
+     return;
++  }
+ 
+   if (video_element->GetDisplayType() ==
+       WebMediaPlayer::DisplayType::kFullscreen) {
+     Fullscreen::ExitFullscreen(*document_);
+   }

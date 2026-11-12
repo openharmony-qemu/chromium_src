@@ -1,0 +1,14 @@
+diff a/third_party/blink/renderer/modules/webaudio/offline_audio_destination_handler.h b/third_party/blink/renderer/modules/webaudio/offline_audio_destination_handler.h	(rejected hunks)
+@@ -45,11 +45,11 @@ class OfflineAudioDestinationHandler final : public AudioDestinationHandler {
+   void StartRendering() override;
+   void StopRendering() override;
+   void Pause() override;
+   void Resume() override;
+   uint32_t MaxChannelCount() const override;
+-  void PrepareTaskRunnerForWorklet() override {}
++  void PrepareTaskRunnerForWorklet() override;
+ 
+   void RestartRendering() override;
+ 
+   double SampleRate() const override { return sample_rate_; }
+ 

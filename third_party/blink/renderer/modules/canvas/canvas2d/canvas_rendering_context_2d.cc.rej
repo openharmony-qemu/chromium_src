@@ -1,0 +1,13 @@
+diff a/third_party/blink/renderer/modules/canvas/canvas2d/canvas_rendering_context_2d.cc b/third_party/blink/renderer/modules/canvas/canvas2d/canvas_rendering_context_2d.cc	(rejected hunks)
+@@ -38,10 +38,11 @@
+ #include <memory>
+ #include <optional>
+ #include <string_view>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/check.h"
+ #include "base/check_op.h"
+ #include "base/feature_list.h"
+ #include "base/location.h"
+ #include "base/memory/scoped_refptr.h"

@@ -38,6 +38,13 @@ class MODULES_EXPORT ModulesInitializer : public CoreInitializer {
       WebMediaPlayerClient*) const override;
   RemotePlaybackClient* CreateRemotePlaybackClient(
       HTMLMediaElement&) const override;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  std::unique_ptr<WebNativeBridge> CreateWebNativeBridge(
+      WebLocalFrameClient*,
+      NativeLoader&,
+      WebNativeClient*) const override;
+  float GetDeviceScaleFactor(WebLocalFrameClient *web_frame_client) override;
+#endif
 
   void ProvideModulesToPage(Page&,
                             const SessionStorageNamespaceId&) const override;

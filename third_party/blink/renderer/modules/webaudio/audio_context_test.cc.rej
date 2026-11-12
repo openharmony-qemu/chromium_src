@@ -1,0 +1,18 @@
+diff a/third_party/blink/renderer/modules/webaudio/audio_context_test.cc b/third_party/blink/renderer/modules/webaudio/audio_context_test.cc	(rejected hunks)
+@@ -191,10 +191,16 @@ class MockPermissionService final : public mojom::blink::PermissionService {
+   void RequestPermissions(
+       Vector<mojom::blink::PermissionDescriptorPtr> permissions,
+       bool user_gesture,
+       RequestPermissionsCallback callback) override {}
+ 
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++  void RequestPermissionSync(mojom::blink::PermissionDescriptorPtr permission,
++                             bool user_gesture,
++                             RequestPermissionCallback) override {}
++#endif  // ARKWEB_CLIPBOARD
++
+   void RevokePermission(mojom::blink::PermissionDescriptorPtr permission,
+                         RevokePermissionCallback callback) override {}
+ 
+   void AddPermissionObserver(
+       mojom::blink::PermissionDescriptorPtr permission,

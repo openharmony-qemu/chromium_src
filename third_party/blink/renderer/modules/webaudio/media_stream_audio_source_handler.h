@@ -11,6 +11,9 @@
 #include "base/synchronization/lock.h"
 #include "third_party/blink/renderer/modules/webaudio/audio_node.h"
 #include "third_party/blink/renderer/platform/audio/audio_source_provider.h"
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "base/functional/callback.h"
+#endif // ARKWEB_MEDIA_CAPTURE
 
 namespace blink {
 
@@ -31,6 +34,11 @@ class MediaStreamAudioSourceHandler final : public AudioHandler {
   double TailTime() const override { return 0; }
   double LatencyTime() const override { return 0; }
   bool RequiresTailProcessing() const final { return false; }
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  // Sets a callback to invoke when the source pause state changes.
+  void SetOnSourcePausedChangedCallback(
+      base::RepeatingCallback<void(bool)> callback);
+#endif // ARKWEB_MEDIA_CAPTURE
 
  private:
   MediaStreamAudioSourceHandler(AudioNode&,

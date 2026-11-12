@@ -1,0 +1,26 @@
+diff a/third_party/blink/renderer/modules/mediastream/web_media_player_ms_test.cc b/third_party/blink/renderer/modules/mediastream/web_media_player_ms_test.cc	(rejected hunks)
+@@ -420,10 +420,11 @@ class MockWebVideoFrameSubmitter : public WebVideoFrameSubmitter {
+   MOCK_METHOD1(SetIsSurfaceVisible, void(bool));
+   MOCK_METHOD1(SetIsPageVisible, void(bool));
+   MOCK_METHOD1(SetForceSubmit, void(bool));
+   MOCK_METHOD1(SetForceBeginFrames, void(bool));
+   MOCK_CONST_METHOD0(IsDrivingFrameUpdates, bool());
++  MOCK_METHOD0(ResetDroppedFrameMetrics, void());
+ 
+   void Initialize(cc::VideoFrameProvider* provider,
+                   bool is_media_stream) override {
+     provider_ = provider;
+     MockInitialize(provider);
+@@ -607,11 +614,11 @@ class WebMediaPlayerMSTest
+   void StartRendering() override;
+   void StopRendering() override;
+   void DidReceiveFrame() override;
+   bool IsDrivingFrameUpdates() const override { return true; }
+   void OnPictureInPictureStateChange() override {}
+-
++  void UpdatePictureInPictureSurface() override {}
+   // For test use
+   void SetBackgroundRendering(bool background_rendering) {
+     background_rendering_ = background_rendering;
+   }
+ 

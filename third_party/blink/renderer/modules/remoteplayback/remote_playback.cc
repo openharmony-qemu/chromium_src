@@ -287,6 +287,11 @@ void RemotePlayback::PromptInternal() {
   if (!GetExecutionContext())
     return;
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  if (!media_element_) return;
+  media_element_->OnMediaCastEnter();
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
   PresentationController* controller =
       PresentationController::FromContext(GetExecutionContext());
   if (controller && !availability_urls_.empty()) {
@@ -580,6 +585,12 @@ void RemotePlayback::AvailabilityChanged(
 
   bool old_availability = RemotePlaybackAvailable();
   availability_ = availability;
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  if (media_element_ && media_element_->EnableMediaCastByUrlProtocol()) {
+    LOG(INFO) << "RemotePlayback::AvailabilityChanged update availability by UrlProtocol";
+    availability_ = mojom::ScreenAvailability::AVAILABLE;
+  }
+#endif // #if BUILDFLAG(ARKWEB_MEDIA_CAST)
   bool new_availability = RemotePlaybackAvailable();
   if (new_availability == old_availability)
     return;
@@ -678,6 +689,11 @@ void RemotePlayback::StopListeningForAvailability() {
     return;
 
   availability_ = mojom::ScreenAvailability::UNKNOWN;
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  if (media_element_ && std::isnan(media_element_->duration())) {
+    AvailabilityChanged(mojom::ScreenAvailability::AVAILABLE);
+  }
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
   PresentationController* controller =
       PresentationController::FromContext(GetExecutionContext());
   if (!controller)

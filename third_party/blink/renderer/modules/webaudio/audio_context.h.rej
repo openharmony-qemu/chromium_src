@@ -1,0 +1,42 @@
+diff a/third_party/blink/renderer/modules/webaudio/audio_context.h b/third_party/blink/renderer/modules/webaudio/audio_context.h	(rejected hunks)
+@@ -180,10 +180,40 @@ class MODULES_EXPORT AudioContext final
+       RequestVisibilityCallback request_visibility_cb) override {}
+   void RecordAutoPictureInPictureInfo(
+       const media::PictureInPictureEventsInfo::AutoPipInfo&
+           auto_picture_in_picture_info) override {}
+ 
++  void SetHtmlPlayEnabled(bool enabled) override {}
++  void RequestEnterFullscreen() override {}
++  void RequestExitFullscreen() override {}
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  void SetPlaybackRate(double playback_rate) override {}
++  void RequestAVCastStarted() override {}
++  void RequestDownloadUrl() override {}
++  void HidePlaybackSpeedList() override {}
++  void SetVideoSurface(int32_t widget_id) override {}
++  void SetVolume(double volume) override {}
++  void GetVolume(GetVolumeCallback callback) override {}
++#endif // ARKWEB_VIDEO_ASSISTANT
++#if BUILDFLAG(ARKWEB_PIP)
++  void PipEnable(bool enable) override {}
++  void PipDown(bool enable) override {}
++  void RequestExitPictureInPicture() override {}
++  void NotifyPipResize() override {}
++  void PipRequestPlay() override {}
++#endif // ARKWEB_PIP
++#if BUILDFLAG(ARKWEB_MEDIA_CAST)
++  void PullUpCastBackGround(const ::blink::String& device_name) override {}
++  void UpdateUiPlayState(bool is_playing) override {}
++  void UpdateUiPlayPosition(int64_t position) override {}
++  void MediaCastStopped() override {}
++  void MediaCastStopByNavigation() override {}
++  void GetMediaCastCurrentTime(GetMediaCastCurrentTimeCallback callback) override {}
++  void NotifyRemoteExitFullScreen() override {}
++  void NotifyCastControlShow(bool is_show) override {}
++#endif // ARKWEB_UNITTESTS
++
+   // https://webaudio.github.io/web-audio-api/#AudioContext
+   double baseLatency() const;
+   double outputLatency() const;
+   V8UnionAudioSinkInfoOrString* sinkId() const { return v8_sink_id_.Get(); }
+   DEFINE_ATTRIBUTE_EVENT_LISTENER(sinkchange, kSinkchange)

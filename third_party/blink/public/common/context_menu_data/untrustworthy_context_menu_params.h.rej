@@ -1,0 +1,24 @@
+diff a/third_party/blink/public/common/context_menu_data/untrustworthy_context_menu_params.h b/third_party/blink/public/common/context_menu_data/untrustworthy_context_menu_params.h	(rejected hunks)
+@@ -10,17 +10,22 @@
+ #include <map>
+ #include <optional>
+ #include <string>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "build/build_config.h"
+ #include "services/network/public/mojom/referrer_policy.mojom.h"
+ #include "third_party/blink/public/common/navigation/impression.h"
+ #include "third_party/blink/public/mojom/annotation/annotation.mojom-forward.h"
+ #include "third_party/blink/public/mojom/context_menu/context_menu.mojom-forward.h"
+ #include "third_party/blink/public/mojom/forms/form_control_type.mojom-shared.h"
+ #include "ui/base/mojom/menu_source_type.mojom-forward.h"
++#include "ui/base/ui_base_types.h"
+ #include "ui/gfx/geometry/rect.h"
+ #include "url/gurl.h"
+ 
+ namespace blink {
+ 

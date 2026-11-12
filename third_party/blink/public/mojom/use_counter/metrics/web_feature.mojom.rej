@@ -1,0 +1,14 @@
+diff a/third_party/blink/public/mojom/use_counter/metrics/web_feature.mojom b/third_party/blink/public/mojom/use_counter/metrics/web_feature.mojom	(rejected hunks)
+@@ -1388,11 +1388,11 @@ enum WebFeature {
+   kViewportFixedPositionUnderFilter = 1961,
+   kRequestMIDIAccessWithSysExOption_ObscuredByFootprinting = 1962,
+   kRequestMIDIAccessIframeWithSysExOption_ObscuredByFootprinting = 1963,
+   kGamepadAxes = 1964,
+   kGamepadButtons = 1965,
+-  kOBSOLETE_DispatchMouseEventOnDisabledFormControl = 1967,
++  kDispatchMouseEventOnDisabledFormControl = 1967,
+   kElementNameDOMInvalidHTMLParserValid = 1968,
+   kElementNameDOMValidHTMLParserInvalid = 1969,
+   kGATTServerDisconnectedEvent = 1970,
+   kAnchorClickDispatchForNonConnectedNode = 1971,
+   kHTMLParseErrorNestedForm = 1972,

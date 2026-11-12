@@ -24,6 +24,11 @@ class BLINK_PLATFORM_EXPORT WebMediaStreamSink {
   virtual void OnContentHintChanged(
       WebMediaStreamTrack::ContentHintType content_hint) {}
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  // Called when the audio source is paused or resumed by the capturer.
+  virtual void OnSourcePausedChanged(bool is_paused) {}
+#endif // ARKWEB_MEDIA_CAPTURE
+
   // OnVideoConstraintsChanged is called when constraints set on the source
   // MediaStreamVideoTrack change. Never called in case the sink isn't connected
   // to a video track.

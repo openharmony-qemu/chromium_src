@@ -110,6 +110,24 @@ struct BLINK_COMMON_EXPORT
     return r.is_editable;
   }
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  static bool is_selectable(const blink::UntrustworthyContextMenuParams& r) {
+    return r.is_selectable;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  static const gfx::Rect& image_rect(
+      const blink::UntrustworthyContextMenuParams& r) {
+    return r.image_rect;
+  }
+
+  static bool is_ai_link(const blink::UntrustworthyContextMenuParams& r) {
+    LOG(INFO)<<"is_ai_link = " << r.is_ai_link;
+    return r.is_ai_link;
+  }
+#endif
+
   static int writing_direction_default(
       const blink::UntrustworthyContextMenuParams& r) {
     return r.writing_direction_default;

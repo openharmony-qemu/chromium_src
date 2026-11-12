@@ -111,6 +111,16 @@ struct BLINK_COMMON_EXPORT UntrustworthyContextMenuParams {
   // Whether context is editable.
   bool is_editable;
 
+  // Whether inner can selectable.
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  bool is_selectable;
+#endif
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  gfx::Rect image_rect;
+  bool is_ai_link;
+#endif
+
   // Writing direction menu items.
   int writing_direction_default;
   int writing_direction_left_to_right;

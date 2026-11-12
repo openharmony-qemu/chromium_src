@@ -1,0 +1,15 @@
+diff a/third_party/blink/public/mojom/input/input_event.mojom b/third_party/blink/public/mojom/input/input_event.mojom	(rejected hunks)
+@@ -145,5 +160,12 @@ enum EventType {
+   kPointerCausedUaAction,
+   kPointerTypeLast = kPointerCausedUaAction,
+ 
+   kTypeLast = kPointerTypeLast
+ };
++// input focus event for notify kKeyboard
++enum RequestKeyboardReason {
++  NONE,          // no event reason
++  MOUSE,         // user triggered mouse event
++  TOUCH,         // user triggered touch event
++  OTHER = 20     // other reason
++};
+\ No newline at end of file

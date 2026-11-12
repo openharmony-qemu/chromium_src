@@ -1,0 +1,14 @@
+diff a/third_party/blink/public/mojom/scheduler/web_scheduler_tracked_feature.mojom b/third_party/blink/public/mojom/scheduler/web_scheduler_tracked_feature.mojom	(rejected hunks)
+@@ -163,7 +163,12 @@ enum WebSchedulerTrackedFeature {
+   kWebAuthentication = 70,
+ 
+   // The back/forward cache is disabled when pages receive a message from shared
+   // worker.
+   kSharedWorkerMessage = 71,
++
++  [EnableIf=arkweb_bfcache]
++  kEnableCacheNativeEmbed = 72,
++  [EnableIf=arkweb_bfcache]
++  kEnableCacheMediaTakeOver = 73,
+ };
+ // LINT.ThenChange(//tools/metrics/histograms/metadata/navigation/enums.xml:WebSchedulerTrackedFeature)

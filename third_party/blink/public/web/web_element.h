@@ -285,6 +285,7 @@ class BLINK_EXPORT WebElement : public WebNode {
  private:
   LayoutBox* GetScrollingBox() const;
   Image* GetImage();
+  raw_ptr<WebElementUtils> utils_;
 };
 
 DECLARE_WEB_NODE_TYPE_CASTS(WebElement);

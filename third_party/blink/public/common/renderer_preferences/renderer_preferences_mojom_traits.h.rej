@@ -1,0 +1,38 @@
+diff a/third_party/blink/public/common/renderer_preferences/renderer_preferences_mojom_traits.h b/third_party/blink/public/common/renderer_preferences/renderer_preferences_mojom_traits.h	(rejected hunks)
+@@ -292,10 +292,36 @@ struct BLINK_COMMON_EXPORT
+     return data.view_source_line_wrap_enabled;
+   }
+ 
+   static bool Read(blink::mojom::RendererPreferencesDataView,
+                    ::blink::RendererPreferences* out);
++
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  static const bool& is_global_adblock_enabled(
++      const ::blink::RendererPreferences& data) {
++    return data.is_global_adblock_enabled;
++  }
++#endif
++
++#if BUILDFLAG(ARKWEB_READER_MODE)
++  static const bool& is_reader_mode_enabled(
++      const ::blink::RendererPreferences& data) {
++    return data.is_reader_mode_enabled;
++  }
++
++  static const bool& is_custom_reader_mode_enabled(
++      const ::blink::RendererPreferences& data) {
++    return data.is_custom_reader_mode_enabled;
++  }
++#endif
++
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
++  static const bool& blank_screen_monitor_enabled(
++      const ::blink::RendererPreferences& data) {
++    return data.blank_screen_monitor_enabled;
++  }
++#endif
+ };
+ 
+ }  // namespace mojo
+ 
+ #endif  // THIRD_PARTY_BLINK_PUBLIC_COMMON_RENDERER_PREFERENCES_RENDERER_PREFERENCES_MOJOM_TRAITS_H_

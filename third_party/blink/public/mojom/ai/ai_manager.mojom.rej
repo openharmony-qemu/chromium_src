@@ -1,0 +1,27 @@
+diff a/third_party/blink/public/mojom/ai/ai_manager.mojom b/third_party/blink/public/mojom/ai/ai_manager.mojom	(rejected hunks)
+@@ -9,10 +9,12 @@ import "third_party/blink/public/mojom/ai/ai_language_model.mojom";
+ import "third_party/blink/public/mojom/ai/ai_proofreader.mojom";
+ import "third_party/blink/public/mojom/ai/ai_rewriter.mojom";
+ import "third_party/blink/public/mojom/ai/ai_summarizer.mojom";
+ import "third_party/blink/public/mojom/ai/ai_writer.mojom";
+ import "third_party/blink/public/mojom/ai/model_download_progress_observer.mojom";
++[EnableIf=arkweb_ai]
++import "arkweb/chromium_ext/third_party/blink/public/mojom/ai/ai_language_detector.mojom";
+ 
+ // LINT.IfChange(ModelAvailabilityCheckResult)
+ enum ModelAvailabilityCheckResult {
+   // The model is readily available and the text session can be created.
+   kAvailable = 0,
+@@ -119,10 +121,12 @@ interface AIManagerCreateProofreaderClient {
+   OnError(AIManagerCreateClientError error, QuotaErrorInfo? quota_error_info);
+ };
+ 
+ // The manager that could create a new session for the model.
+ interface AIManager {
++  [EnableIf=arkweb_ai]
++  CreateLanguageDetector() => (pending_remote<blink.mojom.AILanguageDetector>? language_detector);
+   // Returns language model availability info from the underlying service.
+   CanCreateLanguageModel(AILanguageModelCreateOptions options) =>
+       (ModelAvailabilityCheckResult result);
+   // Creates a language model, passing the result or error to the client.
+   // Creation will be aborted if the client is disconnected.

@@ -1,0 +1,36 @@
+diff a/third_party/blink/public/common/input/web_menu_source_type.h b/third_party/blink/public/common/input/web_menu_source_type.h
+--- a/third_party/blink/public/common/input/web_menu_source_type.h
++++ b/third_party/blink/public/common/input/web_menu_source_type.h
+@@ -3,10 +3,15 @@
+ // found in the LICENSE file.
+ 
+ #ifndef THIRD_PARTY_BLINK_PUBLIC_COMMON_INPUT_WEB_MENU_SOURCE_TYPE_H_
+ #define THIRD_PARTY_BLINK_PUBLIC_COMMON_INPUT_WEB_MENU_SOURCE_TYPE_H_
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
++
+ namespace blink {
+ 
+ enum WebMenuSourceType {
+   kMenuSourceNone,
+   kMenuSourceMouse,
+@@ -17,11 +22,16 @@ enum WebMenuSourceType {
+   kMenuSourceLongTap,
+   kMenuSourceTouchHandle,
+   kMenuSourceStylus,
+   kMenuSourceAdjustSelection,
+   kMenuSourceAdjustSelectionReset,
++#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
++  kMenuSourceShowFreeCopyMenu,
++  kMenuSourceTypeLast = kMenuSourceShowFreeCopyMenu
++#else
+   kMenuSourceTypeLast = kMenuSourceAdjustSelectionReset
++#endif
+ };
+ 
+ }  // namespace blink
+ 
+ #endif  // THIRD_PARTY_BLINK_PUBLIC_COMMON_INPUT_WEB_MENU_SOURCE_TYPE_H_

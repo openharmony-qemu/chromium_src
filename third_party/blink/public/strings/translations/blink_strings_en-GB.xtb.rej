@@ -1,0 +1,12 @@
+diff a/third_party/blink/public/strings/translations/blink_strings_en-GB.xtb b/third_party/blink/public/strings/translations/blink_strings_en-GB.xtb	(rejected hunks)
+@@ -100,6 +100,9 @@
+ <translation id="8845239796550121995">Now casting to your TV</translation>
+ <translation id="8875657656876809964">Video playback error</translation>
+ <translation id="8901569739625249689"><ph name="QUANTITY" /> KB</translation>
+ <translation id="9132465097189459683">Other...</translation>
+ <translation id="916607977885256133">Picture-in-picture</translation>
++<translation id="IDS_MEDIA_REMOTING_CAST_CASTING">Casting…</translation>
++<translation id="IDS_MEDIA_REMOTING_CAST_STOP_CAST">End</translation>
++<translation id="IDS_MEDIA_REMOTING_CAST_SWITCH_DEVICE">Switch devices</translation>
+ </translationbundle>
+\ No newline at end of file

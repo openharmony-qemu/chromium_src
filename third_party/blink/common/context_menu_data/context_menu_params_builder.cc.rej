@@ -1,0 +1,14 @@
+diff a/third_party/blink/common/context_menu_data/context_menu_params_builder.cc b/third_party/blink/common/context_menu_data/context_menu_params_builder.cc	(rejected hunks)
+@@ -95,9 +95,12 @@ UntrustworthyContextMenuParams ContextMenuParamsBuilder::Build(
+   params.form_renderer_id = data.form_renderer_id;
+ 
+   // TODO(crbug.com/373340199): Remove `WebMenuSourceType` and static_cast
+   params.source_type = static_cast<ui::mojom::MenuSourceType>(data.source_type);
+ 
++#if BUILDFLAG(IS_ARKWEB)
++  blink::ContextMenuParamsBuilderUtils::SetOHOSContextMenuParam(params, data);
++#endif
+   return params;
+ }
+ 
+ }  // namespace blink

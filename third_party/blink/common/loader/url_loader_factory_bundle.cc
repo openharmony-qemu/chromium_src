@@ -14,6 +14,12 @@
 #include "third_party/blink/public/mojom/loader/local_resource_loader_config.mojom.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
+#include "net/base/net_errors.h"
+#endif
+
 namespace blink {
 
 namespace {
@@ -103,6 +109,15 @@ network::mojom::URLLoaderFactory* URLLoaderFactoryBundle::GetFactory(
     // via RenderViewTest).  This most likely indicates a bug somewhere else.
     DUMP_WILL_BE_NOTREACHED();
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    // [ARKWEB] Return nullptr instead of s_fallback_factory. The fallback
+    // factory's mojo::Remote is not thread-safe and causes a
+    // CHECK(!pending_association) crash in InterfaceEndpointClient::SendMessage
+    // when BackgroundURLLoader uses it from a background thread during early
+    // render process initialization. The caller (CreateLoaderAndStart) handles
+    // nullptr by failing the request with ERR_ABORTED.
+    return nullptr;
+#else
     // TODO(https://crbug.com/1300973): Once known issues are fixed, remove the
     // NotImplementedURLLoaderFactory (i.e. trust the NOTREACHED above, replace
     // it with an equivalent DCHECK, and accept crashing if a nullptr is
@@ -111,6 +126,7 @@ network::mojom::URLLoaderFactory* URLLoaderFactoryBundle::GetFactory(
         mojo::Remote<network::mojom::URLLoaderFactory>>
         s_fallback_factory(network::NotImplementedURLLoaderFactory::Create());
     return s_fallback_factory->get();
+#endif
   }
 
   return default_factory_.get();
@@ -124,6 +140,24 @@ void URLLoaderFactoryBundle::CreateLoaderAndStart(
     mojo::PendingRemote<network::mojom::URLLoaderClient> client,
     const net::MutableNetworkTrafficAnnotationTag& traffic_annotation) {
   network::mojom::URLLoaderFactory* factory_ptr = GetFactory(request);
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (!factory_ptr) {
+    // [ARKWEB] The default URLLoaderFactory is not bound yet. This can happen
+    // when BackgroundURLLoader starts a request on a background thread during
+    // early render process initialization, before the browser process has sent
+    // the Mojo pipe. Notify the client with ERR_ABORTED instead of crashing
+    // with a pending_association CHECK in InterfaceEndpointClient::SendMessage.
+    LOG_FEEDBACK(WARNING, kNavigation)
+        << __func__
+        << " message: default_factory_ not bound, aborting request for "
+        << url::LogUtils::ConvertUrlWithMask(request.url.spec());
+    network::URLLoaderCompletionStatus status;
+    status.error_code = net::ERR_ABORTED;
+    mojo::Remote<network::mojom::URLLoaderClient>(std::move(client))
+        ->OnComplete(status);
+    return;
+  }
+#endif
   factory_ptr->CreateLoaderAndStart(std::move(loader), request_id, options,
                                     request, std::move(client),
                                     traffic_annotation);

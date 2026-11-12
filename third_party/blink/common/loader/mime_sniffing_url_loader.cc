@@ -368,4 +368,8 @@ void MimeSniffingURLLoader::Abort() {
   // has already been destroyed by some reason.
 }
 
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+#include "arkweb/chromium_ext/third_party/blink/common/loader/mime_sniffing_url_loader_for_include.cc"
+#endif
+
 }  // namespace blink

@@ -1,0 +1,16 @@
+diff a/third_party/blink/public/web/web_navigation_params.h b/third_party/blink/public/web/web_navigation_params.h	(rejected hunks)
+@@ -211,10 +216,14 @@ struct BLINK_EXPORT WebNavigationInfo {
+ 
+   // Whether this navigation was initiated by the container, e.g. iframe changed
+   // src. Only container-initiated navigation report resource timing to the
+   // parent.
+   bool is_container_initiated = false;
++
++#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
++  bool is_triggered_by_js = false;
++#endif
+ };
+ 
+ // This structure holds all information provided by the embedder that is
+ // needed for blink to load a Document. This is hence different from
+ // WebDocumentLoader::ExtraData, which is an opaque structure stored in the

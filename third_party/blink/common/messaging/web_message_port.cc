@@ -15,6 +15,11 @@
 #include "third_party/blink/public/mojom/blob/blob.mojom.h"
 #include "third_party/blink/public/mojom/messaging/transferable_message.mojom.h"
 
+#if BUILDFLAG(ARKWEB_MSGPORT)
+#include "arkweb/chromium_ext/third_party/blink/public/common/messaging/string_message_codec_ext.h"
+#include "base/logging.h"
+#endif
+
 namespace blink {
 
 WebMessagePort::Message::Message() = default;
@@ -24,6 +29,11 @@ WebMessagePort::Message& WebMessagePort::Message::operator=(Message&&) =
 WebMessagePort::Message::~Message() = default;
 
 WebMessagePort::Message::Message(const std::u16string& data) : data(data) {}
+
+#if BUILDFLAG(ARKWEB_MSGPORT)
+WebMessagePort::Message::Message(std::vector<uint8_t> array_buffer)
+    : array_buffer(std::move(array_buffer)) {}
+#endif
 
 WebMessagePort::Message::Message(std::vector<WebMessagePort> ports)
     : ports(std::move(ports)) {}
@@ -147,6 +157,9 @@ bool WebMessagePort::CanPostMessage() const {
 }
 
 bool WebMessagePort::PostMessage(Message&& message) {
+#if BUILDFLAG(ARKWEB_MSGPORT)
+  LOG(INFO) << "WebMessagePort::PostMessage start";
+#endif
   if (!CanPostMessage())
     return false;
 
@@ -165,7 +178,12 @@ bool WebMessagePort::PostMessage(Message&& message) {
   // TODO(chrisha): Finally kill off MessagePortChannel, once
   // MessagePortDescriptor more thoroughly plays that role.
   blink::TransferableMessage transferable_message =
+#if BUILDFLAG(ARKWEB_MSGPORT)
+      blink::EncodeWebMessagePayload(message);
+#else
       blink::EncodeWebMessagePayload(std::move(message.data));
+#endif
+
   transferable_message.ports =
       blink::MessagePortChannel::CreateFromHandles(std::move(ports));
 
@@ -241,6 +259,12 @@ bool WebMessagePort::Accept(mojo::Message* mojo_message) {
   auto ports = std::move(transferable_message.ports);
   // Decode the string portion of the message.
   Message message;
+#if BUILDFLAG(ARKWEB_MSGPORT)
+  if (!blink::DecodeToWebMessagePayload(transferable_message, message)) {
+    LOG(ERROR) << "WebMessagePort::Accept DecodeToWebMessagePayload failed";
+    return true;
+  }
+#else
   std::optional<WebMessagePayload> optional_payload =
       blink::DecodeToWebMessagePayload(std::move(transferable_message));
   if (!optional_payload)
@@ -251,6 +275,7 @@ bool WebMessagePort::Accept(mojo::Message* mojo_message) {
   } else {
     return false;
   }
+#endif
 
   // Convert raw handles to MessagePorts.
   // TODO(chrisha): Kill off MessagePortChannel entirely!

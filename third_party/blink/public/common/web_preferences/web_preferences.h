@@ -36,6 +36,12 @@ typedef base::flat_map<std::string, std::u16string> ScriptFontFamilyMap;
 // specified.
 BLINK_COMMON_EXPORT extern const char kCommonScript[];
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+BLINK_COMMON_EXPORT extern const char kObjectTag[];
+BLINK_COMMON_EXPORT extern const char kEmbedTag[];
+BLINK_COMMON_EXPORT extern const char kNativeType[];
+#endif
+
 // A struct for managing blink's settings.
 //
 // Adding new values to this class probably involves updating
@@ -95,9 +101,50 @@ struct BLINK_COMMON_EXPORT WebPreferences {
   bool privileged_webgl_extensions_enabled = false;
   bool webgl_errors_to_console_enabled = true;
   bool hide_scrollbars = false;
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  mojom::CopyOptionMode copy_option;
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  bool contextmenu_customization_enabled;
+#endif
+#if BUILDFLAG(ARKWEB_FOCUS)
+  int gesture_focus_mode = 0;
+#endif
   // If true, ignore ::-webkit-scrollbar-* CSS pseudo-elements in stylesheets
   // and use default values for `ScrollbarWidth` and `ScrollbarColor`
   // CSS properties.
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
+  double border_radius_top_left = 0.0;
+  double border_radius_top_right = 0.0;
+  double border_radius_bottom_left = 0.0;
+  double border_radius_bottom_right = 0.0;
+#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+  bool is_autofill_enabled = true;
+#endif  // BUILDFLAG(ARKWEB_AUTOFILL)
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  bool is_drag_enabled = true;
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+#if BUILDFLAG(ARKWEB_MENU)
+  bool touch_handle_exist = false;
+  bool click_ext_enabled = false;
+  bool viewport_scale = false;
+  bool smart_edge_state = false;
+#endif  // BUILDFLAG(ARKWEB_MENU)
+#if BUILDFLAG(ARKWEB_AI)
+  bool image_analyzer_enabled = true;
+  bool arkweb_agent_enabled = false;
+  bool agent_need_highlight = true;
+#endif
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  bool hide_vertical_scrollbars = false;
+  bool hide_horizontal_scrollbars = false;
+  bool scroll_enabled = true;
+  mojom::ScrollbarLayoutPolicy scrollbar_layout_policy =
+      mojom::ScrollbarLayoutPolicy::kContent;
+  bool is_system_rtl_enabled = false;
+  bool is_compatible_converting_enabled = false;
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool prefers_default_scrollbar_styles = false;
   bool accelerated_2d_canvas_enabled = false;
   bool canvas_2d_layers_enabled = false;
@@ -127,6 +174,22 @@ struct BLINK_COMMON_EXPORT WebPreferences {
   bool prefers_reduced_transparency = false;
   bool inverted_colors = false;
   bool touch_event_feature_detection_enabled = false;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool native_embed_mode_enabled;
+  bool intrinsic_size_enabled;
+  bool css_display_change_enabled;
+  bool transform_rotate_and_skew_enabled;
+  std::string embed_tag;
+  std::string embed_tag_type;
+#endif
+
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  int draw_mode = 0;
+#endif  // BUILDFLAG(IS_OHOS)
+
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+  float font_weight_scale;
+#endif
   int pointer_events_max_touch_points = 0;
   int available_pointer_types = 0;
   blink::mojom::PointerType primary_pointer_type =

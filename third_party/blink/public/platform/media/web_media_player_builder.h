@@ -20,6 +20,10 @@
 #include "third_party/blink/public/platform/web_common.h"
 #include "third_party/blink/public/platform/web_media_player.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif // IS_ARKWEB_EXT
+
 namespace base {
 class SingleThreadTaskRunner;
 class SequencedTaskRunner;

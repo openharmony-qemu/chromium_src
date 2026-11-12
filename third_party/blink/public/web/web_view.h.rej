@@ -1,0 +1,38 @@
+diff a/third_party/blink/public/web/web_view.h b/third_party/blink/public/web/web_view.h	(rejected hunks)
+@@ -453,15 +463,36 @@ class BLINK_EXPORT WebView {
+   virtual int32_t HistoryForwardListCount() const = 0;
+ 
+   // Returns whether this WebView represents a fenced frame root or not.
+   virtual bool IsFencedFrameRoot() const = 0;
+ 
++#if BUILDFLAG(ARKWEB_PAGE_UP_DOWN)
++  virtual gfx::PointF GetScrollOffset() = 0;
++  virtual float GetScrollBottom() = 0;
++#endif  // #if BUILDFLAG(ARKWEB_PAGE_UP_DOWN)
++
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  virtual void SetScrollOffset(const gfx::PointF point) = 0;
++#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
++
++#if BUILDFLAG(ARKWEB_SYNC_RENDER)
++  void UpdateDrawRect() {}
++#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
++
++#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
++  virtual bool ApplyCachedViewportMetaEnabled() = 0;
++#endif
+   // Misc -------------------------------------------------------------
+ 
+   // Returns the number of live WebView instances in this process.
+   static size_t GetWebViewCount();
+ 
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++  BLINK_EXPORT static void SetStrictLogMode(bool);
++  BLINK_EXPORT static bool IsStrictLogMode();
++#endif
++
+   // Sets whether web or OS-level Attribution Reporting is supported. See
+   // https://github.com/WICG/attribution-reporting-api/blob/main/app_to_web.md
+   virtual void SetPageAttributionSupport(
+       network::mojom::AttributionSupport support) = 0;
+ 

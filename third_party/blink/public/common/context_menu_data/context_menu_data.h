@@ -116,6 +116,16 @@ struct ContextMenuData {
   // Alt attribute of the selection in context.
   std::string alt_text;
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  // Whether can be selectable.
+  bool is_selectable;
+#endif
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  gfx::Rect image_rect;
+  bool is_ai_link;
+#endif
+
   // Whether spell checking is enabled.
   bool is_spell_checking_enabled;
 

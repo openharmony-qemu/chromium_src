@@ -1,0 +1,61 @@
+diff a/third_party/blink/public/common/BUILD.gn b/third_party/blink/public/common/BUILD.gn	(rejected hunks)
+@@ -10,10 +10,14 @@ import("//skia/features.gni")
+ import("//testing/test.gni")
+ import("//third_party/blink/public/public_features.gni")
+ import("//third_party/blink/renderer/build/scripts/scripts.gni")
+ import("//third_party/protobuf/proto_library.gni")
+ import("//third_party/webrtc/webrtc.gni")
++if (is_arkweb) {
++  import("//arkweb/build/features/features.gni")
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++}
+ 
+ if (is_android) {
+   import("//build/config/android/rules.gni")
+ }
+ 
+@@ -362,21 +366,30 @@ source_set("headers") {
+     "//mojo/public/mojom/base",
+     "//net",
+     "//ui/base",
+   ]
+ 
++  if (arkweb_msgport) {
++    sources += arkweb_string_message_codec_h_sources
++  }
++
++  if (is_arkweb) {
++    sources += arkweb_context_memu_params_builder_h_sources
++    deps += [ "//arkweb/build/features" ]
++  }
++
+   # Chromium without blink doesn't use and must not depend on //media
+   if (use_blink) {
+     deps += [
+       "//media",
+       "//media/capture:capture_base",
+       "//media/capture:capture_lib",
+     ]
+     public_deps += [ "//media/mojo/mojom" ]
+   }
+ 
+-  if (is_android || is_win) {
++  if (is_android || is_win || (is_arkweb && arkweb_wpt)) {
+     sources += [
+       "font_unique_name_lookup/font_table_matcher.h",
+       "font_unique_name_lookup/font_table_persistence.h",
+       "font_unique_name_lookup/icu_fold_case_util.h",
+     ]
+@@ -390,11 +403,11 @@ source_set("headers") {
+   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and
+   # enable the diagnostic by removing this line.
+   configs += [ "//build/config/compiler:no_exit_time_destructors" ]
+ }
+ 
+-if (is_android || is_win) {
++if (is_android || is_win || (is_arkweb && arkweb_wpt)) {
+   proto_library("font_unique_name_table_proto") {
+     sources = [ "font_unique_name_lookup/font_unique_name_table.proto" ]
+   }
+ }
+ 

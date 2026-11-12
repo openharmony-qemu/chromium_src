@@ -1,0 +1,26 @@
+diff a/third_party/blink/public/BUILD.gn b/third_party/blink/public/BUILD.gn	(rejected hunks)
+@@ -10,16 +10,24 @@ import("//third_party/blink/renderer/build/scripts/scripts.gni")
+ import("//third_party/blink/renderer/config.gni")
+ import("//third_party/blink/renderer/core/core.gni")
+ import("//third_party/webrtc/webrtc.gni")
+ import("//tools/grit/grit_rule.gni")
+ import("//tools/grit/repack.gni")
++import("//arkweb/build/features/features.gni")
++if (is_arkweb_ext) {
++  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
++}
+ 
+ if (is_android) {
+   import("//build/config/android/config.gni")
+   import("//build/config/android/rules.gni")
+ }
+ 
++if (is_arkweb) {
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++}
++
+ blink_public_output_dir = "$root_gen_dir/third_party/blink/public"
+ 
+ group("blink") {
+   public_deps = [ ":blink_headers" ]
+   deps = [

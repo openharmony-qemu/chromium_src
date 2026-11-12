@@ -255,6 +255,12 @@ struct IframeAttributes {
   string? src;
 };
 
+struct CacheOptions {
+  map<string, string> response_headers;
+  bool is_module;
+  bool is_top_level;
+};
+
 // Code location for an enterprise legacy technology event. The data will be
 // uploaded to the enterprise management server without being parsed by the
 // browser process.

@@ -1,0 +1,36 @@
+diff a/third_party/blink/public/platform/web_runtime_features.h b/third_party/blink/public/platform/web_runtime_features.h	(rejected hunks)
+@@ -29,16 +29,17 @@
+  */
+ 
+ #ifndef THIRD_PARTY_BLINK_PUBLIC_PLATFORM_WEB_RUNTIME_FEATURES_H_
+ #define THIRD_PARTY_BLINK_PUBLIC_PLATFORM_WEB_RUNTIME_FEATURES_H_
+ 
++#include <string>
++
++#include "arkweb/build/features/features.h"
+ #include "third_party/blink/public/platform/web_common.h"
+ #include "third_party/blink/public/platform/web_runtime_features_base.h"
+ #include "third_party/blink/public/platform/web_string.h"
+ 
+-#include <string>
+-
+ namespace blink {
+ 
+ // This class is used to enable runtime features of Blink.
+ // Stable features are enabled by default.
+ class BLINK_PLATFORM_EXPORT WebRuntimeFeatures : public WebRuntimeFeaturesBase {
+@@ -65,10 +66,14 @@ class BLINK_PLATFORM_EXPORT WebRuntimeFeatures : public WebRuntimeFeaturesBase {
+   // Update runtime features status from blink::features features status.
+   static void UpdateStatusFromBaseFeatures();
+ 
+   static void EnableOverlayScrollbars(bool);
+   static void EnableFluentScrollbars(bool);
++#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
++  // advanced security mode feature
++  static void EnableNonAdvancedSecurityMode(bool);
++#endif
+   static void EnableFluentOverlayScrollbars(bool);
+ 
+   static void EnableLocalNetworkAccessWebRTC(bool);
+ 
+   WebRuntimeFeatures() = delete;

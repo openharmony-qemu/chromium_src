@@ -1,0 +1,101 @@
+diff a/third_party/blink/common/features.cc b/third_party/blink/common/features.cc	(rejected hunks)
+@@ -2,10 +2,11 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "third_party/blink/public/common/features.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/command_line.h"
+ #include "base/feature_list.h"
+ #include "base/features.h"
+ #include "base/time/time.h"
+ #include "build/android_buildflags.h"
+@@ -639,11 +640,15 @@ BASE_FEATURE_ENUM_PARAM(
+     &enable_lazy_load_image_for_invisible_page_types);
+ 
+ // Prevents an opener from being returned when a BlobURL is cross-site to the
+ // window's top-level site.
+ BASE_FEATURE(kEnforceNoopenerOnBlobURLNavigation,
++#if BUILDFLAG(ARKWEB_NETWORK_BASE)
++             base::FEATURE_DISABLED_BY_DEFAULT);
++#else
+              base::FEATURE_ENABLED_BY_DEFAULT);
++#endif
+ 
+ BASE_FEATURE(kEventTimingIgnorePresentationTimeFromUnexpectedFrameSource,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kExpandCompositedCullRect, base::FEATURE_ENABLED_BY_DEFAULT);
+@@ -946,10 +951,20 @@ BASE_FEATURE(kGMSCoreEmoji, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // If enabled, then display audio track permission failures are ignored.
+ BASE_FEATURE(kGetDisplayMediaIgnoreAudioPermissionFailures,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ 
++#if BUILDFLAG(IS_OHOS)
++BASE_FEATURE(kEnableOcrTextRecognition,
++             "EnableOcrTextRecognition",
++             base::FEATURE_DISABLED_BY_DEFAULT);
++
++bool IsEnableOcrTextRecognition() {
++  return base::FeatureList::IsEnabled(kEnableOcrTextRecognition);
++}
++#endif  // BUILDFLAG(IS_OHOS)
++
+ BASE_FEATURE_PARAM(std::string,
+                    kHTMLParserYieldEventNameForPause,
+                    &kHTMLParserYieldByUserTiming,
+                    "pause_event_name",
+                    "");
+@@ -972,10 +987,21 @@ BASE_FEATURE(kIgnoreInputWhileHidden,
+              // breaks them. Disabling until the root cause can be identified.
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kImageLoadingPrioritizationFix, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
++#if BUILDFLAG(ARKWEB_OHOS_MEM_USAGE_REPORT)
++BASE_FEATURE(kMemUsageReport,
++             "kMemUsageReport",
++             base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE_PARAM(int,
++                   kMemUsageReportCount,
++                   &kMemUsageReport,
++                   "mur_count",
++                   2);
++#endif // ARKWEB_OHOS_MEM_USAGE_REPORT
++
+ #if !BUILDFLAG(IS_ANDROID)
+ BASE_FEATURE(kInitialWebUIWithoutExtensions, base::FEATURE_DISABLED_BY_DEFAULT);
+ #endif  // !BUILDFLAG(IS_ANDROID)
+ 
+ BASE_FEATURE(kIndexedDBCompressValuesWithSnappy,
+@@ -1542,11 +1568,11 @@ BASE_FEATURE(kLowLatencyWebGLImageChromium,
+ #endif
+ );
+ 
+ BASE_FEATURE(kLowPriorityAsyncScriptExecution,
+ // TODO(crbug/429069717): Fix the high power consumption on ChromeOS.
+-#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+              base::FEATURE_DISABLED_BY_DEFAULT
+ #else
+              base::FEATURE_ENABLED_BY_DEFAULT
+ #endif
+ );
+@@ -2152,11 +2178,15 @@ BASE_FEATURE(kSecPurposePrefetchHeaderRelPrefetch,
+ BASE_FEATURE(kSendCnameAliasesToSubresourceFilterFromRenderer,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // If enabled, calling setInterval(..., 0) will not clamp to 1ms.
+ // Tracking bug: https://crbug.com/402694.
++#if BUILDFLAG(IS_ARKWEB)
++BASE_FEATURE(kSetIntervalWithoutClamp, base::FEATURE_DISABLED_BY_DEFAULT);
++#else
+ BASE_FEATURE(kSetIntervalWithoutClamp, base::FEATURE_ENABLED_BY_DEFAULT);
++#endif
+ 
+ BASE_FEATURE(kSharedStorageWorkletSharedBackingThreadImplementation,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kSharedStorageCreateWorkletCustomDataOrigin,

@@ -1,0 +1,41 @@
+diff a/third_party/blink/public/common/renderer_preferences/renderer_preferences.h b/third_party/blink/public/common/renderer_preferences/renderer_preferences.h	(rejected hunks)
+@@ -17,10 +17,14 @@
+ #include "third_party/blink/public/common/peerconnection/webrtc_ip_handling_url_entry.h"
+ #include "third_party/blink/public/common/user_agent/user_agent_metadata.h"
+ #include "third_party/blink/public/mojom/peerconnection/webrtc_ip_handling_policy.mojom.h"
+ #include "ui/gfx/font_render_params.h"
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
++
+ namespace blink {
+ 
+ // Note: these must match the values in renderer_preferences.mojom.
+ constexpr uint32_t kDefaultActiveSelectionBgColor = 0xFF1967D2;
+ constexpr uint32_t kDefaultActiveSelectionFgColor = 0xFFFFFFFF;
+@@ -93,10 +97,24 @@ struct BLINK_COMMON_EXPORT RendererPreferences {
+ #endif
+   bool plugin_fullscreen_allowed{true};
+   bool caret_browsing_enabled{false};
+   bool uses_platform_autofill{false};
+   std::vector<uint16_t> explicitly_allowed_network_ports;
++
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  bool is_global_adblock_enabled{false};
++#endif
++
++#if BUILDFLAG(ARKWEB_READER_MODE)
++  bool is_reader_mode_enabled{false};
++  bool is_custom_reader_mode_enabled{false};
++#endif
++
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_MONITOR)
++  bool blank_screen_monitor_enabled{false};
++#endif
++
+   // The default value must be false to avoid performance problems on very large
+   // source pages.
+   bool view_source_line_wrap_enabled{false};
+ 
+   RendererPreferences();

@@ -101,6 +101,21 @@ enum EventType {
   // Sent as soon as the long-press timeout fires, while the finger is still
   // down.
   kGestureLongPress,
+
+  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
+  // Sent as soon as the drag-long-press timeout fires, while the finger is
+  // still done. Directly drag image by touch long press.
+  [EnableIf=arkweb_drag_drop]
+  kGestureDragLongPress,
+  // #endif BUILDFLAG(ARKWEB_DRAG_DROP)
+
+  // #if BUILDFLAG(ARKWEB_AI)
+  // Sent as soon as the create-overlay timeout fires, while the finger is
+  // still done. Directly create overlay by touch long press.
+  [EnableIf=arkweb_ai]
+  kGestureCreateOverlay,
+  // #endif BUILDFLAG(ARKWEB_AI)
+
   // Sent when the finger is lifted following a GestureLongPress.
   kGestureLongTap,
   // Sent on finger lift when two fingers tapped at the same time without

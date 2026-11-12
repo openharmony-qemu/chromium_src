@@ -402,7 +402,12 @@ struct BLINK_COMMON_EXPORT StructTraits<blink::mojom::WebPreferencesDataView,
       const blink::web_pref::WebPreferences& r) {
     return r.auto_zoom_focused_editable_to_legible_scale;
   }
-
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  static bool is_desktop(
+      const blink::web_pref::WebPreferences& r) {
+    return r.is_desktop;
+  }
+#endif
   static bool shrinks_viewport_contents_to_fit(
       const blink::web_pref::WebPreferences& r) {
     return r.shrinks_viewport_contents_to_fit;
@@ -839,6 +844,201 @@ struct BLINK_COMMON_EXPORT StructTraits<blink::mojom::WebPreferencesDataView,
   static bool modal_context_menu(const blink::web_pref::WebPreferences& r) {
     return r.modal_context_menu;
   }
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  static bool native_embed_mode_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.native_embed_mode_enabled;
+  }
+
+  static bool intrinsic_size_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.intrinsic_size_enabled;
+  }
+
+  static bool css_display_change_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.css_display_change_enabled;
+  }
+
+  static bool transform_rotate_and_skew_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.transform_rotate_and_skew_enabled;
+  }
+
+  static const std::string& embed_tag(
+      const blink::web_pref::WebPreferences& r) {
+    return r.embed_tag;
+  }
+
+  static const std::string& embed_tag_type(
+      const blink::web_pref::WebPreferences& r) {
+    return r.embed_tag_type;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
+  static double border_radius_top_left(
+      const blink::web_pref::WebPreferences& r) {
+    return r.border_radius_top_left;
+  }
+
+  static double border_radius_top_right(
+      const blink::web_pref::WebPreferences& r) {
+    return r.border_radius_top_right;
+  }
+
+  static double border_radius_bottom_left(
+      const blink::web_pref::WebPreferences& r) {
+    return r.border_radius_bottom_left;
+  }
+
+  static double border_radius_bottom_right(
+      const blink::web_pref::WebPreferences& r) {
+    return r.border_radius_bottom_right;
+  }
+#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+  static bool is_autofill_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.is_autofill_enabled;
+  }
+#endif  // BUILDFLAG(ARKWEB_AUTOFILL)
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  static bool is_drag_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.is_drag_enabled;
+  }
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+
+#if BUILDFLAG(ARKWEB_MENU)
+  static bool touch_handle_exist(
+      const blink::web_pref::WebPreferences &r) {
+    return r.touch_handle_exist;
+  }
+
+  static bool click_ext_enabled(
+      const blink::web_pref::WebPreferences &r) {
+    return r.click_ext_enabled;
+  }
+
+  static bool viewport_scale(
+      const blink::web_pref::WebPreferences &r) {
+    return r.viewport_scale;
+  }
+
+  static bool smart_edge_state (
+      const blink::web_pref::WebPreferences& r) {
+    return r.smart_edge_state;
+  }
+#endif  // BUILDFLAG(ARKWEB_MENU)
+
+#if BUILDFLAG(ARKWEB_AI)
+  static bool image_analyzer_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.image_analyzer_enabled;
+  }
+
+  static bool arkweb_agent_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.arkweb_agent_enabled;
+  }
+
+  static bool agent_need_highlight(
+      const blink::web_pref::WebPreferences& r) {
+    return r.agent_need_highlight;
+  }
+#endif  // BUILDFLAG(ARKWEB_AI)
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  static bool hide_vertical_scrollbars(
+      const blink::web_pref::WebPreferences& r) {
+    return r.hide_vertical_scrollbars;
+  }
+
+  static bool hide_horizontal_scrollbars(
+      const blink::web_pref::WebPreferences& r) {
+    return r.hide_horizontal_scrollbars;
+  }
+
+  static blink::mojom::ScrollbarLayoutPolicy
+  scrollbar_layout_policy(
+      const blink::web_pref::WebPreferences& r) {
+    return static_cast<blink::mojom::ScrollbarLayoutPolicy>(
+        r.scrollbar_layout_policy);
+  }
+
+  static bool is_system_rtl_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.is_system_rtl_enabled;
+  }
+
+  static bool is_compatible_converting_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.is_compatible_converting_enabled;
+  }
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+#if BUILDFLAG(ARKWEB_ZOOM)
+  static float text_zoom_factor(const blink::web_pref::WebPreferences& r) {
+    return r.text_zoom_factor;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
+  static bool pinch_smooth_mode(const blink::web_pref::WebPreferences& r) {
+    return r.pinch_smooth_mode;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  static uint32_t draw_mode(const blink::web_pref::WebPreferences& r) {
+    return r.draw_mode;
+  }
+#endif  // BUILDFLAG(IS_OHOS)
+
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+  static float font_weight_scale(const blink::web_pref::WebPreferences& r) {
+    return r.font_weight_scale;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  static bool scroll_enabled(const blink::web_pref::WebPreferences& r) {
+    return r.scroll_enabled;
+  }
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  static uint32_t scrollbar_color(const blink::web_pref::WebPreferences& r) {
+    return r.scrollbar_color;
+  }
+#endif  // defined(ARKWEB_SCROLLBAR)
+
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  static bool night_mode_enabled(const blink::web_pref::WebPreferences& r) {
+    return r.night_mode_enabled;
+  }
+
+  static bool turn_image_gray(const blink::web_pref::WebPreferences& r) {
+    return r.turn_image_gray;
+  }
+
+  static bool turn_all_gray(const blink::web_pref::WebPreferences& r) {
+    return r.turn_all_gray;
+  }
+
+  static bool not_process_images(const blink::web_pref::WebPreferences& r) {
+    return r.not_process_images;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  static bool cast_enabled(const blink::web_pref::WebPreferences& r) {
+    return r.cast_enabled;
+  }
+#endif  // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
   static bool dynamic_safe_area_insets_enabled(
       const blink::web_pref::WebPreferences& r) {

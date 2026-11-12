@@ -7,6 +7,10 @@
 
 #include "base/containers/span.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif // IS_ARKWEB_EXT
+
 namespace blink {
 
 class WebURL;
@@ -26,6 +30,10 @@ class WebAssociatedURLLoaderClient {
   virtual void DidReceiveData(base::span<const char> data) {}
   virtual void DidFinishLoading() {}
   virtual void DidFail(const WebURLError&) {}
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  virtual void DidReStart() {}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
  protected:
   virtual ~WebAssociatedURLLoaderClient() = default;

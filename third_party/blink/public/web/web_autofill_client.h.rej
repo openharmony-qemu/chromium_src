@@ -1,0 +1,16 @@
+diff a/third_party/blink/public/web/web_autofill_client.h b/third_party/blink/public/web/web_autofill_client.h	(rejected hunks)
+@@ -92,11 +92,13 @@ class WebAutofillClient {
+   // Called when the focused node has changed. This is not called if the focus
+   // moves outside the frame.
+   virtual void DidCompleteFocusChangeInFrame() {}
+ 
+   virtual void DidReceiveLeftMouseDownOrGestureTapInNode(const WebNode&) {}
+-
++#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
++  virtual void PreSuppressKeyboardIfNeed(const WebNode&) {}
++#endif
+   // Called when the given form element is reset.
+   virtual void FormElementReset(const WebFormElement&) {}
+ 
+   // Called when DevTools is connected or disconnect to the frame.
+   // The document is not fired again when the document changes.

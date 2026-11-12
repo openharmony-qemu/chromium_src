@@ -1,0 +1,15 @@
+diff a/mojo/public/tools/bindings/mojom.gni b/mojo/public/tools/bindings/mojom.gni	(rejected hunks)
+@@ -1627,10 +1643,13 @@ template("mojom") {
+       }
+       visibility = output_visibility + [
+                      ":$output_target_name",
+                      ":${target_name}_mojolpm",
+                    ]
++      if (is_arkweb) {
++        visibility += [ "//arkweb/build:arkweb_prebuild_mojom" ]
++      }
+       if (defined(invoker.testonly)) {
+         testonly = invoker.testonly
+       }
+       defines = export_defines
+       configs += [ "//build/config/compiler:wexit_time_destructors" ]

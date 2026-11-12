@@ -532,6 +532,12 @@ bool Connector::DispatchMessage(ScopedMessageHandle handle) {
   base::WeakPtr<Connector> weak_self = weak_self_;
   std::optional<ActiveDispatchTracker> dispatch_tracker;
   if (!is_dispatching_ && nesting_observer_) {
+#if BUILDFLAG(ARKWEB_MOJO_CONNECTOR_TEARDOWN_GUARD)
+    if (!weak_self) {
+      HandleError(/*force_pipe_reset=*/true, /*force_async_handler=*/false);
+      return false;
+    }
+#endif
     is_dispatching_ = true;
     dispatch_tracker.emplace(weak_self);
   }

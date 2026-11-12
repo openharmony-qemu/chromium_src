@@ -1,0 +1,15 @@
+diff a/mojo/public/tools/fuzzers/BUILD.gn b/mojo/public/tools/fuzzers/BUILD.gn	(rejected hunks)
+@@ -63,10 +67,13 @@ fuzzer_test("mojo_parse_message_proto_fuzzer") {
+     ":mojo_fuzzer_proto",
+     ":test_support",
+     "//mojo/core/embedder",
+     "//third_party/libprotobuf-mutator",
+   ]
++  if (arkweb_fuzz_compile_error_fix) {
++    deps += [ "//content/public/common:static_switches" ]
++  }
+   seed_corpus = "//mojo/public/tools/fuzzers/mojo_parse_message_proto_corpus"
+ }
+ 
+ proto_library("mojo_fuzzer_proto") {
+   sources = [ "mojo_fuzzer.proto" ]

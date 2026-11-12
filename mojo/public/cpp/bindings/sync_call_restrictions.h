@@ -132,6 +132,9 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) SyncCallRestrictions {
 #if BUILDFLAG(IS_WIN)
   friend class content::DCOMPTextureFactory;
 #endif
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  friend class content::NativeTextureFactory;
+#endif
 #if BUILDFLAG(IS_MAC)
   friend class web_app::WebAppShortcutCopierSyncCallHelper;
 #endif

@@ -569,6 +569,72 @@ TEST_F(ConnectorTest, DestroyOnDifferentThreadAfterClose) {
   run_loop.Run();
 }
 
+// Regression test for ArkWeb mojo Connector concurrent teardown.
+// Scenario A: incoming_receiver_->Accept() invalidates the Connector's weak
+// pointers by calling CloseMessagePipe() (which calls PassMessagePipe() →
+// weak_factory_.InvalidateWeakPtrs()). The dispatch loop must not crash when
+// it continues past the receiver callback; the message being dispatched is
+// dropped silently. Covered by arkweb_mojo_connector_teardown_guard.
+class ClosePipeInAcceptAccumulator : public MessageAccumulator {
+ public:
+  explicit ClosePipeInAcceptAccumulator(Connector* connector)
+      : connector_(connector) {}
+
+  bool Accept(Message* message) override {
+    MessageAccumulator::Accept(message);
+    // Invalidate weak pointers on the same sequence, simulating the
+    // PassMessagePipe() path that races in the field.
+    connector_->CloseMessagePipe();
+    return true;
+  }
+
+ private:
+  RAW_PTR_EXCLUSION Connector* connector_;
+};
+
+TEST_F(ConnectorTest, CloseMessagePipeInReceiverAcceptDoesNotCrash) {
+  Connector connector0(std::move(handle0_), Connector::SINGLE_THREADED_SEND,
+                       base::SingleThreadTaskRunner::GetCurrentDefault());
+  Connector* connector1 =
+      new Connector(std::move(handle1_), Connector::SINGLE_THREADED_SEND,
+                    base::SingleThreadTaskRunner::GetCurrentDefault());
+
+  const char kText[] = "hello world";
+  Message message = CreateMessage(kText);
+  connector0.Accept(&message);
+
+  ClosePipeInAcceptAccumulator accumulator(connector1);
+  connector1->set_incoming_receiver(&accumulator);
+
+  // Must not crash: the guard drops the dispatch path cleanly once the weak
+  // pointer has been invalidated by CloseMessagePipe().
+  connector1->WaitForIncomingMessage();
+
+  // The first message was delivered to the accumulator before the pipe was
+  // closed; the Connector is still alive because the accumulator only closed
+  // the pipe, it did not delete the Connector.
+  ASSERT_FALSE(accumulator.IsEmpty());
+
+  delete connector1;
+}
+
+// Regression test for ArkWeb mojo Connector concurrent teardown.
+// Scenario B: a Connector is destroyed before StartReceiving() has been called
+// (task_runner_ never assigned). The ActiveDispatchTracker constructor must
+// tolerate a null/invalid weak pointer without crashing. Covered by
+// arkweb_mojo_connector_teardown_guard.
+TEST_F(ConnectorTest, DestroyBeforeStartReceivingDoesNotCrash) {
+  std::unique_ptr<Connector> connector(
+      new Connector(std::move(handle0_), Connector::SINGLE_THREADED_SEND,
+                    base::SingleThreadTaskRunner::GetCurrentDefault()));
+
+  // Close the pipe so weak_factory_.InvalidateWeakPtrs() runs, then destroy
+  // the Connector. No dispatch occurs; this exercises the destruction path
+  // only and must not crash regardless of the guard.
+  connector->CloseMessagePipe();
+  connector.reset();
+}
+
 }  // namespace
 }  // namespace test
 }  // namespace mojo

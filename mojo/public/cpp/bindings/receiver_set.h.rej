@@ -1,0 +1,82 @@
+diff a/mojo/public/cpp/bindings/receiver_set.h b/mojo/public/cpp/bindings/receiver_set.h	(rejected hunks)
+@@ -74,12 +74,11 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) ReceiverSetState {
+     virtual ~ReceiverState() = default;
+     virtual const void* GetContext() const = 0;
+     virtual void* GetContext() = 0;
+     virtual void InstallDispatchHooks(
+         std::unique_ptr<MessageFilter> filter,
+-        RepeatingConnectionErrorWithReasonAndResultCallback
+-            disconnect_handler) = 0;
++        RepeatingConnectionErrorWithReasonCallback disconnect_handler) = 0;
+     virtual void FlushForTesting() = 0;
+     virtual void ResetWithReason(uint32_t custom_reason_code,
+                                  const std::string& description) = 0;
+   };
+ 
+@@ -148,18 +144,15 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) ReceiverSetState {
+                         const std::string& description);
+   void FlushForTesting();
+   void SetDispatchContext(void* context, ReceiverId receiver_id);
+   void OnDisconnect(ReceiverId id,
+                     uint32_t custom_reason_code,
+-                    const std::string& description,
+-                    MojoResult error_result);
++                    const std::string& description);
+ 
+  private:
+   base::RepeatingClosure disconnect_handler_;
+   RepeatingConnectionErrorWithReasonCallback disconnect_with_reason_handler_;
+-  RepeatingConnectionErrorWithReasonAndResultCallback
+-      disconnect_with_reason_and_result_handler_;
+   ReceiverId next_receiver_id_ = 0;
+   EntryMap entries_;
+   raw_ptr<void, DanglingUntriaged> current_context_ = nullptr;
+   ReceiverId current_receiver_;
+   base::WeakPtrFactory<ReceiverSetState> weak_ptr_factory_{this};
+@@ -97,12 +96,11 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) ReceiverSetState {
+     class DispatchFilter;
+ 
+     void WillDispatch();
+     void DidDispatchOrReject();
+     void OnDisconnect(uint32_t custom_reason_code,
+-                      const std::string& description,
+-                      MojoResult error_result);
++                      const std::string& description);
+ 
+     // RAW_PTR_EXCLUSION: Binary size increase.
+     RAW_PTR_EXCLUSION ReceiverSetState& state_;
+     const ReceiverId id_;
+     const std::unique_ptr<ReceiverState> receiver_;
+@@ -134,12 +132,10 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) ReceiverSetState {
+   }
+ 
+   void set_disconnect_handler(base::RepeatingClosure handler);
+   void set_disconnect_with_reason_handler(
+       RepeatingConnectionErrorWithReasonCallback handler);
+-  void set_disconnect_with_reason_and_result_handler(
+-      RepeatingConnectionErrorWithReasonAndResultCallback handler);
+ 
+   ReportBadMessageCallback GetBadMessageCallback();
+   ReceiverId Add(std::unique_ptr<ReceiverState> receiver,
+                  std::unique_ptr<MessageFilter> filter);
+   bool Remove(ReceiverId id);
+@@ -518,16 +511,15 @@ class ReceiverSetBase {
+ 
+     // ReceiverSetState::ReceiverState:
+     const void* GetContext() const override { return &context_; }
+     void* GetContext() override { return &context_; }
+ 
+-    void InstallDispatchHooks(
+-        std::unique_ptr<MessageFilter> filter,
+-        RepeatingConnectionErrorWithReasonAndResultCallback
++    void InstallDispatchHooks(std::unique_ptr<MessageFilter> filter,
++                              RepeatingConnectionErrorWithReasonCallback
+             disconnect_handler) override {
+       receiver_.SetFilter(std::move(filter));
+-      receiver_.set_disconnect_with_reason_and_result_handler(
++      receiver_.set_disconnect_with_reason_handler(
+           std::move(disconnect_handler));
+     }
+ 
+     void FlushForTesting() override { receiver_.FlushForTesting(); }
+ 

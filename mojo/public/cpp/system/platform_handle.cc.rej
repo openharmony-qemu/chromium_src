@@ -1,0 +1,14 @@
+diff a/mojo/public/cpp/system/platform_handle.cc b/mojo/public/cpp/system/platform_handle.cc	(rejected hunks)
+@@ -135,11 +135,11 @@ base::subtle::PlatformSharedMemoryRegion UnwrapPlatformSharedMemoryRegion(
+   if (num_platform_handles != 1)
+     return base::subtle::PlatformSharedMemoryRegion();
+   if (platform_handles[0].type != MOJO_PLATFORM_HANDLE_TYPE_MACH_PORT)
+     return base::subtle::PlatformSharedMemoryRegion();
+   region_handle.reset(static_cast<mach_port_t>(platform_handles[0].value));
+-#elif BUILDFLAG(IS_ANDROID)
++#elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+   if (num_platform_handles != 1)
+     return base::subtle::PlatformSharedMemoryRegion();
+   if (platform_handles[0].type != MOJO_PLATFORM_HANDLE_TYPE_FILE_DESCRIPTOR)
+     return base::subtle::PlatformSharedMemoryRegion();
+   region_handle.reset(static_cast<int>(platform_handles[0].value));

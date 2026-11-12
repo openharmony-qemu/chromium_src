@@ -24,6 +24,11 @@
 #include "extensions/browser/extension_registry.h"
 #include "extensions/browser/extension_registry_observer.h"
 #include "extensions/browser/warning_set.h"
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "ohos_nweb/src/capi/browser_service/nweb_extension_downloads_types.h"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 #include "extensions/buildflags/buildflags.h"
 
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
@@ -36,6 +41,9 @@ class Profile;
 // https://docs.google.com/document/d/12rNimeeGaA8jEV60PPKtT4pmJYmY9ae_edl3hJyoXYE/
 
 namespace extensions {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/downloads/downloads_api_for_include_file.cc"
+#endif
 
 class DownloadedByExtension : public base::SupportsUserData::Data {
  public:
@@ -232,6 +240,7 @@ class DownloadsShowDefaultFolderFunction : public ExtensionFunction {
  public:
   DECLARE_EXTENSION_FUNCTION(
       "downloads.showDefaultFolder", DOWNLOADS_SHOWDEFAULTFOLDER)
+                             
   DownloadsShowDefaultFolderFunction();
 
   DownloadsShowDefaultFolderFunction(
@@ -317,6 +326,7 @@ class DownloadsGetFileIconFunction : public DownloadsFunction {
   base::FilePath path_;
   std::unique_ptr<DownloadFileIconExtractor> icon_extractor_;
 };
+#endif
 
 // Observes a single DownloadManager and many DownloadItems and dispatches
 // onCreated and onErased events.

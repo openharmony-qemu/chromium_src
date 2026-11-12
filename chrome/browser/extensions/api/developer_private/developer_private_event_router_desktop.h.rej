@@ -1,0 +1,19 @@
+diff a/chrome/browser/extensions/api/developer_private/developer_private_event_router_desktop.h b/chrome/browser/extensions/api/developer_private/developer_private_event_router_desktop.h
+--- a/chrome/browser/extensions/api/developer_private/developer_private_event_router_desktop.h
++++ b/chrome/browser/extensions/api/developer_private/developer_private_event_router_desktop.h
+@@ -30,10 +30,15 @@ class DeveloperPrivateEventRouter : public DeveloperPrivateEventRouterShared,
+  private:
+   // AppWindowRegistry::Observer:
+   void OnAppWindowAdded(AppWindow* window) override;
+   void OnAppWindowRemoved(AppWindow* window) override;
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  void OnExtensionStateChanged(const ExtensionId& extension_id,
++                               bool state) override;
++#endif
++
+   // ToolbarActionsModel::Observer:
+   void OnToolbarActionAdded(const ToolbarActionsModel::ActionId& id) override {}
+   void OnToolbarActionRemoved(
+       const ToolbarActionsModel::ActionId& id) override {}
+   void OnToolbarActionUpdated(

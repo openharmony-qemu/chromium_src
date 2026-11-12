@@ -101,6 +101,10 @@
 #include "services/service_manager/public/cpp/test/test_connector_factory.h"
 #include "ui/shell_dialogs/selected_file_info.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/drag_drop/drag_drop_ohos_adapter.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 #include "base/test/android/content_uri_test_utils.h"
 #include "chrome/browser/ui/android/extensions/extension_util_bridge.h"
@@ -1926,6 +1930,9 @@ TEST_F(DeveloperPrivateApiUnitTest, InstallDroppedFileCrx) {
   std::unique_ptr<content::WebContents> web_contents(
       content::WebContentsTester::CreateTestWebContents(profile(), nullptr));
   SetDraggedFile(web_contents.get(), crx_path);
+#if BUILDFLAG(IS_OHOS)
+  SetDraggedExtensionFileName(crx_path.value());
+#endif
 
   auto function =
       base::MakeRefCounted<api::DeveloperPrivateInstallDroppedFileFunction>();
@@ -2387,6 +2394,9 @@ TEST_F(DeveloperPrivateApiZipFileUnitTest, InstallDroppedFileZip) {
   std::unique_ptr<content::WebContents> web_contents(
       content::WebContentsTester::CreateTestWebContents(profile(), nullptr));
   SetDraggedFile(web_contents.get(), zip_path);
+#if BUILDFLAG(IS_OHOS)
+  SetDraggedExtensionFileName(zip_path.value());
+#endif
 
   auto function =
       base::MakeRefCounted<api::DeveloperPrivateInstallDroppedFileFunction>();

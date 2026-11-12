@@ -1,0 +1,39 @@
+diff a/chrome/browser/extensions/api/browsing_data/browsing_data_api.cc b/chrome/browser/extensions/api/browsing_data/browsing_data_api.cc	(rejected hunks)
+@@ -109,10 +109,11 @@ bool IsRemovalPermitted(uint64_t removal_mask, PrefService* prefs) {
+   return true;
+ }
+ 
+ }  // namespace
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ bool BrowsingDataSettingsFunction::isDataTypeSelected(
+     BrowsingDataType data_type,
+     ClearBrowsingDataTab tab) {
+   if (data_type == BrowsingDataType::PASSWORDS
+ #if !BUILDFLAG(IS_ANDROID)
+@@ -262,10 +264,13 @@ ExtensionFunction::ResponseAction BrowsingDataRemoverFunction::Run() {
+ 
+   // Grab the initial |options| parameter, and parse out the arguments.
+   EXTENSION_FUNCTION_VALIDATE(args().size() >= 1);
+   EXTENSION_FUNCTION_VALIDATE(args()[0].is_dict());
+   const base::Value::Dict& options = args()[0].GetDict();
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  options_ = options.Clone();
++#endif
+ 
+   EXTENSION_FUNCTION_VALIDATE(ParseOriginTypeMask(options, &origin_type_mask_));
+ 
+   // If |ms_since_epoch| isn't set, default it to 0.
+   double ms_since_epoch =
+@@ -388,10 +394,11 @@ void BrowsingDataRemoverFunction::StartRemoving() {
+                                       removal_mask_, origin_type_mask_,
+                                       std::move(filter_builder), this);
+   }
+   OnTaskFinished();
+ }
++#endif
+ 
+ bool BrowsingDataRemoverFunction::ParseOriginTypeMask(
+     const base::Value::Dict& options,
+     uint64_t* origin_type_mask) {
+   // Parse the |options| dictionary to generate the origin set mask. Default to

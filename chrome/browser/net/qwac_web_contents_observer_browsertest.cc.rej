@@ -1,0 +1,24 @@
+diff a/chrome/browser/net/qwac_web_contents_observer_browsertest.cc b/chrome/browser/net/qwac_web_contents_observer_browsertest.cc	(rejected hunks)
+@@ -265,19 +265,21 @@ class QwacWebContentsObserverBrowserTest
+     auto* additional_cert = root_store_proto.add_additional_certs();
+     additional_cert->set_der(base::as_string_view(eutl_cert->cert_span()));
+     additional_cert->set_eutl(true);
+ 
+     base::RunLoop update_run_loop;
++#if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
+     content::GetCertVerifierServiceFactory()->UpdateChromeRootStore(
+         mojo_base::ProtoWrapper(root_store_proto),
+         update_run_loop.QuitClosure());
+     update_run_loop.Run();
++#endif  // BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
+   }
+ 
+  private:
+   base::test::ScopedFeatureList scoped_feature_list_{
+-      net::features::kVerifyQWACs};
++      net::features::kSelfSignedLocalNetworkInterstitial};
+ 
+   int64_t crs_version_ = net::CompiledChromeRootStoreVersion();
+ };
+ 
+ IN_PROC_BROWSER_TEST_F(QwacWebContentsObserverBrowserTest,

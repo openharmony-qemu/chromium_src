@@ -1,0 +1,69 @@
+diff a/chrome/browser/extensions/api/autofill_private/autofill_private_api.cc b/chrome/browser/extensions/api/autofill_private/autofill_private_api.cc	(rejected hunks)
+@@ -776,11 +776,11 @@ AutofillPrivateGetPayOverTimeIssuerListFunction::Run() {
+ ////////////////////////////////////////////////////////////////////////////////
+ // AutofillPrivateAuthenticateUserAndFlipMandatoryAuthToggleFunction
+ 
+ ExtensionFunction::ResponseAction
+ AutofillPrivateAuthenticateUserAndFlipMandatoryAuthToggleFunction::Run() {
+-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
++#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+   PaymentsDataManager* paydm = payments_data_manager();
+   if (!paydm || !paydm->is_payments_data_loaded()) {
+     return RespondNow(Error(kErrorDataUnavailable));
+   }
+ 
+@@ -808,18 +808,18 @@ AutofillPrivateAuthenticateUserAndFlipMandatoryAuthToggleFunction::Run() {
+               this));
+ 
+   return RespondNow(NoArguments());
+ #else
+   return RespondNow(Error(kErrorDeviceAuthUnavailable));
+-#endif  // BUILDFLAG (IS_MAC) || BUILDFLAG(IS_WIN)
++#endif  // BUILDFLAG (IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+ }
+ 
+ // Update the Mandatory auth toggle pref and log whether the auth was successful
+ // or not.
+ void AutofillPrivateAuthenticateUserAndFlipMandatoryAuthToggleFunction::
+     UpdateMandatoryAuthTogglePref(bool reauth_succeeded) {
+-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
++#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+   PaymentsDataManager* paydm = payments_data_manager();
+   if (!paydm) {
+     return;
+   }
+ 
+@@ -853,11 +853,11 @@ ExtensionFunction::ResponseAction AutofillPrivateGetLocalCardFunction::Run() {
+     base::RecordAction(base::UserMetricsAction(
+         "PaymentsUserAuthTriggeredToShowEditLocalCardDialog"));
+     LogMandatoryReauthSettingsPageEditCardEvent(
+         MandatoryReauthAuthenticationFlowEvent::kFlowStarted);
+ 
+-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
++#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+     // Based on the result of the auth, we will be asynchronously returning the
+     // card if the user can edit the local card.
+     autofill_client()
+         ->GetPaymentsAutofillClient()
+         ->GetOrCreatePaymentsMandatoryReauthManager()
+@@ -918,18 +918,18 @@ void AutofillPrivateGetLocalCardFunction::ReturnCreditCard() {
+ ////////////////////////////////////////////////////////////////////////////////
+ // AutofillPrivateCheckIfDeviceAuthAvailableFunction
+ 
+ ExtensionFunction::ResponseAction
+ AutofillPrivateCheckIfDeviceAuthAvailableFunction::Run() {
+-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
++#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+   autofill::ContentAutofillClient* client =
+       autofill::ContentAutofillClient::FromWebContents(GetSenderWebContents());
+   if (client) {
+     return RespondNow(WithArguments(autofill::IsDeviceAuthAvailable(
+         client->GetDeviceAuthenticator().get())));
+   }
+-#endif  // BUILDFLAG (IS_MAC) || BUILDFLAG(IS_WIN)
++#endif  // BUILDFLAG (IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+   return RespondNow(Error(kErrorDeviceAuthUnavailable));
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ // AutofillPrivateBulkDeleteAllCvcsFunction

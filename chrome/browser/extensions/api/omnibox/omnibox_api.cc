@@ -459,6 +459,7 @@ void OmniboxSendSuggestionsFunction::OnParsedDescriptionsAndStyles(
   Respond(NoArguments());
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void OmniboxSendSuggestionsFunction::NotifySuggestionsReady() {
   Profile* profile =
       Profile::FromBrowserContext(browser_context())->GetOriginalProfile();
@@ -466,6 +467,7 @@ void OmniboxSendSuggestionsFunction::NotifySuggestionsReady() {
       ->NotifySuggestionsReady(extension_suggestions_, request_id_,
                                extension_id());
 }
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 ExtensionFunction::ResponseAction OmniboxSetDefaultSuggestionFunction::Run() {
   std::optional<SetDefaultSuggestion::Params> params =
@@ -510,6 +512,7 @@ void OmniboxSetDefaultSuggestionFunction::OnParsedDescriptionAndStyles(
   Respond(NoArguments());
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void OmniboxSetDefaultSuggestionFunction::SetDefaultSuggestion(
     const omnibox::DefaultSuggestResult& suggestion) {
   Profile* profile = Profile::FromBrowserContext(browser_context());
@@ -519,6 +522,7 @@ void OmniboxSetDefaultSuggestionFunction::SetDefaultSuggestion(
         ->NotifyDefaultSuggestionChanged();
   }
 }
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 // This function converts style information populated by the JSON schema
 // compiler into an ACMatchClassifications object.

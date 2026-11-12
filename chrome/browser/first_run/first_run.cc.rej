@@ -1,0 +1,15 @@
+diff a/chrome/browser/first_run/first_run.cc b/chrome/browser/first_run/first_run.cc	(rejected hunks)
+@@ -320,11 +320,12 @@ void SetupInitialPrefsFromInstallPrefs(
+ #endif  // BUILDFLAG(IS_MAC)
+ }
+ 
+ // -- Platform-specific functions --
+ 
+-#if !BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_BSD)
++#if !BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_BSD) && \
++    !BUILDFLAG(IS_OHOS)
+ bool IsOrganicFirstRun() {
+   std::string brand;
+   google_brand::GetBrand(&brand);
+   return google_brand::IsOrganicFirstRun(brand);
+ }

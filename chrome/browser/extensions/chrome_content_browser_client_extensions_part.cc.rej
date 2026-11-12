@@ -1,0 +1,83 @@
+diff a/chrome/browser/extensions/chrome_content_browser_client_extensions_part.cc b/chrome/browser/extensions/chrome_content_browser_client_extensions_part.cc	(rejected hunks)
+@@ -116,11 +116,15 @@ namespace {
+ // If non-null, a scope of a service worker to always allow to be unregistered.
+ const GURL* g_allow_service_worker_unregistration_scope = nullptr;
+ 
+ const Extension* GetEnabledExtensionFromSiteURL(BrowserContext* context,
+                                                 const GURL& site_url) {
+-  if (!site_url.SchemeIs(kExtensionScheme))
++  if (!site_url.SchemeIs(kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      && !site_url.SchemeIs(kArkwebExtensionScheme)
++#endif
++  )
+     return nullptr;
+ 
+   ExtensionRegistry* registry = ExtensionRegistry::Get(context);
+   if (!registry)
+     return nullptr;
+@@ -253,11 +261,15 @@ std::optional<GURL> ChromeContentBrowserClientExtensionsPart::GetEffectiveURL(
+   // extension's disabled and enabled extension URLs to the same SiteInstance.
+   // This is important to prevent the SiteInstance and (unprivileged) process
+   // hosting a disabled extension URL from incorrectly getting reused after
+   // re-enabling the extension, which would lead to renderer kills
+   // (https://crbug.com/1197360).
+-  if (url.SchemeIs(kExtensionScheme) &&
++  if ((url.SchemeIs(kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++       || url.SchemeIs(extensions::kArkwebExtensionScheme)
++#endif
++           ) &&
+       !registry->enabled_extensions().GetExtensionOrAppByURL(url)) {
+     return GURL(extensions::kExtensionInvalidRequestURL);
+   }
+ 
+   // Don't translate to effective URLs in all other cases.
+@@ -714,11 +734,15 @@ bool ChromeContentBrowserClientExtensionsPart::IsBuiltinComponent(
+     content::BrowserContext* browser_context,
+     const url::Origin& origin) {
+ #if !BUILDFLAG(ENABLE_EXTENSIONS_CORE)
+   return false;
+ #else
+-  if (origin.scheme() != kExtensionScheme) {
++  if (origin.scheme() != kExtensionScheme
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      && origin.scheme() != extensions::kArkwebExtensionScheme
++#endif
++  ) {
+     return false;
+   }
+ 
+   const auto& extension_id = origin.host();
+ 
+@@ -829,11 +853,15 @@ bool ChromeContentBrowserClientExtensionsPart::
+   // of an installed extension would get the wrong preferences.
+   // TODO(crbug.com/40265045): Once the `web_prefs` have been set based on
+   // `extension` below, they are not unset when navigating a tab from an
+   // extension page to a regular web page. We should clear extension settings in
+   // this case.
+-  if (!main_frame_site.GetSiteURL().SchemeIs(kExtensionScheme)) {
++  if (!main_frame_site.GetSiteURL().SchemeIs(kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      && !main_frame_site.GetSiteURL().SchemeIs(kArkwebExtensionScheme)
++#endif
++  ) {
+     return false;
+   }
+ 
+ #if BUILDFLAG(ENABLE_GUEST_VIEW)
+   // If a webview navigates to a webview accessible resource, extension
+@@ -883,10 +911,13 @@ void ChromeContentBrowserClientExtensionsPart::BrowserURLHandlerCreated(
+ 
+ void ChromeContentBrowserClientExtensionsPart::
+     GetAdditionalAllowedSchemesForFileSystem(
+         std::vector<std::string>* additional_allowed_schemes) {
+   additional_allowed_schemes->push_back(kExtensionScheme);
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  additional_allowed_schemes->push_back(kArkwebExtensionScheme);
++#endif
+ }
+ 
+ void ChromeContentBrowserClientExtensionsPart::GetURLRequestAutoMountHandlers(
+     std::vector<storage::URLRequestAutoMountHandler>* handlers) {
+ #if BUILDFLAG(ENABLE_EXTENSIONS)

@@ -1,0 +1,44 @@
+diff a/chrome/browser/extensions/api/permissions/permissions_api.h b/chrome/browser/extensions/api/permissions/permissions_api.h
+--- a/chrome/browser/extensions/api/permissions/permissions_api.h
++++ b/chrome/browser/extensions/api/permissions/permissions_api.h
+@@ -11,10 +11,14 @@
+ #include "extensions/browser/extension_function.h"
+ #include "extensions/buildflags/buildflags.h"
+ #include "extensions/common/permissions/permission_set.h"
+ #include "ui/gfx/native_ui_types.h"
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "ohos_nweb/src/capi/browser_service/nweb_extension_prompt_types.h"
++#endif  // ARKWEB_ARKWEB_EXTENSIONS
++
+ static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
+ 
+ namespace extensions {
+ 
+ // chrome.permissions.contains
+@@ -52,10 +56,13 @@ class PermissionsRemoveFunction : public ExtensionFunction {
+   // ExtensionFunction:
+   ResponseAction Run() override;
+ };
+ 
+ // chrome.permissions.request
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "cef/ohos_cef_ext/libcef/browser/extensions/api/permissions/permissions_api_for_include_file.cc"
++#else
+ class PermissionsRequestFunction : public ExtensionFunction {
+  public:
+   // An action to take for a permissions prompt, if any. This allows tests to
+   // override prompt behavior.
+   enum class DialogAction {
+@@ -120,10 +127,11 @@ class PermissionsRequestFunction : public ExtensionFunction {
+   // The permissions, if any, that Chrome would prompt the user for. This will
+   // be recorded if and only if the prompt is being bypassed for a test (see
+   // also SetAutoConfirmForTests()).
+   std::unique_ptr<const PermissionSet> prompted_permissions_for_testing_;
+ };
++#endif  // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ // chrome.permissions.addHostAccessRequest
+ class PermissionsAddHostAccessRequestFunction : public ExtensionFunction {
+  public:
+   DECLARE_EXTENSION_FUNCTION("permissions.addHostAccessRequest",

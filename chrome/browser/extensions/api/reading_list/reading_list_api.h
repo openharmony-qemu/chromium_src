@@ -12,10 +12,17 @@
 #include "extensions/browser/extension_function.h"
 #include "extensions/buildflags/buildflags.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "ohos_nweb/src/cef_delegate/nweb_extension_reading_list_cef_delegate.h"
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace extensions {
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/reading_list/reading_list_api_for_include_file.cc"
+#else
 class ReadingListAddEntryFunction : public ExtensionFunction,
                                     public ReadingListModelObserver {
  public:
@@ -131,6 +138,7 @@ class ReadingListQueryFunction : public ExtensionFunction,
   std::optional<std::string> title_;
   std::optional<bool> has_been_read_;
 };
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 }  // namespace extensions
 

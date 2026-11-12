@@ -1,0 +1,40 @@
+diff a/chrome/browser/extensions/api/sessions/sessions_api.h b/chrome/browser/extensions/api/sessions/sessions_api.h	(rejected hunks)
+@@ -16,10 +16,14 @@
+ #include "components/sessions/core/tab_restore_service_observer.h"
+ #include "extensions/browser/browser_context_keyed_api_factory.h"
+ #include "extensions/browser/event_router.h"
+ #include "extensions/browser/extension_function.h"
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "libcef/browser/extensions/api/sessions/sessions_api_h_for_include.cc"
++#endif
++
+ class Browser;
+ class Profile;
+ 
+ namespace sync_sessions {
+ struct SyncedSession;
+@@ -27,10 +31,11 @@ struct SyncedSession;
+ 
+ namespace extensions {
+ 
+ class SessionId;
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ class SessionsGetRecentlyClosedFunction : public ExtensionFunction {
+  protected:
+   ~SessionsGetRecentlyClosedFunction() override = default;
+   ResponseAction Run() override;
+   DECLARE_EXTENSION_FUNCTION("sessions.getRecentlyClosed",
+@@ -81,10 +86,11 @@ class SessionsRestoreFunction : public ExtensionFunction {
+   ResponseValue RestoreLocalSession(const SessionId& session_id,
+                                     Browser* browser);
+   ResponseValue RestoreForeignSession(const SessionId& session_id,
+                                       Browser* browser);
+ };
++#endif
+ 
+ class SessionsEventRouter : public sessions::TabRestoreServiceObserver {
+  public:
+   explicit SessionsEventRouter(Profile* profile);
+ 

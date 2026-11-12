@@ -1,0 +1,102 @@
+diff a/chrome/browser/extensions/extension_action_dispatcher.cc b/chrome/browser/extensions/extension_action_dispatcher.cc	(rejected hunks)
+@@ -15,10 +15,18 @@
+ #include "extensions/browser/extension_event_histogram_value.h"
+ #include "extensions/browser/extension_prefs.h"
+ #include "extensions/buildflags/buildflags.h"
+ #include "extensions/common/mojom/context_type.mojom.h"
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/chrome/browser/extensions/extension_action_dispatcher_ext.cc"
++#endif
++
++#if BUILDFLAG(ARKWEB_NWEB_EX)
++#include "ohos_nweb_ex/core/arkweb/nweb_extension_manager_delegate_impl.h"
++#endif
++
+ static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
+ 
+ namespace extensions {
+ 
+ static base::LazyInstance<
+@@ -94,14 +102,16 @@ void ExtensionActionDispatcher::DispatchExtensionActionClicked(
+                                                   scrub_tab_behavior, extension)
+                     .ToValue());
+ 
+     DispatchEventToExtension(web_contents->GetBrowserContext(),
+                              extension_action.extension_id(), histogram_value,
+-                             event_name, std::move(args));
++                             event_name, std::move(args),
++                             EventRouter::UserGestureState::kEnabled);
+   }
+ }
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ void ExtensionActionDispatcher::ClearAllValuesForTab(
+     content::WebContents* web_contents) {
+   DCHECK(web_contents);
+   const SessionID tab_id = sessions::SessionTabHelper::IdForTab(web_contents);
+   content::BrowserContext* browser_context = web_contents->GetBrowserContext();
+@@ -117,10 +127,11 @@ void ExtensionActionDispatcher::ClearAllValuesForTab(
+       extension_action->ClearAllValuesForTab(tab_id.id());
+       NotifyChange(extension_action, web_contents, browser_context);
+     }
+   }
+ }
++#endif
+ 
+ ExtensionPrefs* ExtensionActionDispatcher::GetExtensionPrefs() {
+   // This lazy initialization is more than just an optimization, because it
+   // allows tests to associate a new ExtensionPrefs with the browser context
+   // before we access it.
+@@ -129,25 +140,27 @@ ExtensionPrefs* ExtensionActionDispatcher::GetExtensionPrefs() {
+   }
+ 
+   return extension_prefs_;
+ }
+ 
++// Forwards events to the `context`'s event router.
+ void ExtensionActionDispatcher::DispatchEventToExtension(
+     content::BrowserContext* context,
+     const ExtensionId& extension_id,
+     events::HistogramValue histogram_value,
+     const std::string& event_name,
+-    base::Value::List event_args) {
+-  if (!EventRouter::Get(context)) {
++    base::Value::List event_args,
++    EventRouter::UserGestureState user_gesture_state) {
++  auto* event_router = EventRouter::Get(context);
++  if (!event_router) {
+     return;
+   }
+ 
+   auto event = std::make_unique<Event>(histogram_value, event_name,
+                                        std::move(event_args), context);
+-  event->user_gesture = EventRouter::UserGestureState::kEnabled;
+-  EventRouter::Get(context)->DispatchEventToExtension(extension_id,
+-                                                      std::move(event));
++  event->user_gesture = user_gesture_state;
++  event_router->DispatchEventToExtension(extension_id, std::move(event));
+ }
+ 
+ void ExtensionActionDispatcher::Shutdown() {
+   for (auto& observer : observers_) {
+     observer.OnShuttingDown();
+@@ -161,12 +174,17 @@ void ExtensionActionDispatcher::OnActionPinnedStateChanged(
+   // Unfortunately, this means we miss out on the compiled types, which would be
+   // rather helpful here.
+   base::Value::List args;
+   base::Value::Dict change;
+   change.Set("isOnToolbar", is_pinned);
++
++#if BUILDFLAG(ARKWEB_NWEB_EX)
++  nweb_ex::NWebExtensionManagerDelegateImpl::GetInstance().OnExtensionChangePinStatusCallBack(extension_id, is_pinned);
++#endif
+   args.Append(std::move(change));
+   DispatchEventToExtension(browser_context_, extension_id,
+                            events::ACTION_ON_USER_SETTINGS_CHANGED,
+-                           "action.onUserSettingsChanged", std::move(args));
++                           "action.onUserSettingsChanged", std::move(args),
++                           EventRouter::UserGestureState::kNotEnabled);
+ }
+ 
+ }  // namespace extensions

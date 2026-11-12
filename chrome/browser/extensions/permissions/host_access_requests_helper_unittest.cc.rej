@@ -1,0 +1,15 @@
+diff a/chrome/browser/extensions/permissions/host_access_requests_helper_unittest.cc b/chrome/browser/extensions/permissions/host_access_requests_helper_unittest.cc	(rejected hunks)
+@@ -400,11 +400,13 @@ TEST_F(HostAccessRequestsHelperUnittest,
+   // Grant tab permission to extension.
+   ActiveTabPermissionGranter* active_tab_permission_granter =
+       ActiveTabPermissionGranter::FromWebContents(
+           browser()->tab_strip_model()->GetActiveWebContents());
+   ASSERT_TRUE(active_tab_permission_granter);
++  PermissionsManagerWaiter waiter(PermissionsManager::Get(profile()));
+   active_tab_permission_granter->GrantIfRequested(extension.get());
++  waiter.WaitForActiveTabPermissionGranted(extension->id());
+ 
+   // Request should be removed since extension has granted host access.
+   // Even though the extension was only granted activeTab (and not persistent
+   // host access, as would be the case if the user accepted the request), we no
+   // longer show the host access request. This is to avoid a user seeing a

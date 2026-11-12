@@ -1,0 +1,41 @@
+diff a/chrome/browser/extensions/api/side_panel/side_panel_api.cc b/chrome/browser/extensions/api/side_panel/side_panel_api.cc	(rejected hunks)
+@@ -4,14 +4,25 @@
+ 
+ #include "chrome/browser/extensions/api/side_panel/side_panel_api.h"
+ 
+ #include <optional>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/types/expected.h"
+ #include "base/values.h"
+ #include "chrome/browser/extensions/api/side_panel/side_panel_service.h"
++#if !BUILDFLAG(IS_ARKWEB)
+ #include "chrome/common/extensions/api/side_panel.h"
++#endif
++
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/chrome/browser/extensions/api/side_panel/side_panel_api_for_include.cc"
++#include "arkweb/ohos_nweb/src/nweb_common.h"
++#endif
+ 
+ namespace extensions {
+ 
+ SidePanelApiFunction::SidePanelApiFunction() = default;
+ SidePanelApiFunction::~SidePanelApiFunction() = default;
+@@ -84,10 +105,13 @@ ExtensionFunction::ResponseAction SidePanelOpenFunction::RunFunction() {
+   if (!params->options.tab_id && !params->options.window_id) {
+     return RespondNow(
+         Error("At least one of `tabId` and `windowId` must be provided"));
+   }
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  return RunOpenFunctionForInclude(params);
++#else
+   SidePanelService* service = GetService();
+   base::expected<bool, std::string> open_panel_result;
+   if (params->options.tab_id) {
+     open_panel_result = service->OpenSidePanelForTab(
+         *extension(), browser_context(), *params->options.tab_id,

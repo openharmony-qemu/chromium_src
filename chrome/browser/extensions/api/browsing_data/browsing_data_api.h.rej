@@ -1,0 +1,19 @@
+diff a/chrome/browser/extensions/api/browsing_data/browsing_data_api.h b/chrome/browser/extensions/api/browsing_data/browsing_data_api.h	(rejected hunks)
+@@ -99,10 +106,17 @@ class BrowsingDataSettingsFunction : public ExtensionFunction {
+   // Returns whether `data_type` is currently selected for deletion on `tab`.
+   bool isDataTypeSelected(browsing_data::BrowsingDataType data_type,
+                           browsing_data::ClearBrowsingDataTab tab);
+ 
+   raw_ptr<PrefService> prefs_ = nullptr;
++ #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  static void OnGetSettings(const base::WeakPtr<BrowsingDataSettingsFunction>& function,
++                            const NWebExtensionBrowsingDataSettings& settings,
++                            const std::optional<std::string>& error);
++  bool call_get_settings_ = false;
++  base::WeakPtrFactory<BrowsingDataSettingsFunction> weak_ptr_factory_settings_{this};
++#endif
+ };
+ 
+ // This serves as a base class from which the browsing data API removal
+ // functions will inherit. Each needs to be an observer of BrowsingDataRemover
+ // events, and each will handle those events in the same way (by calling the

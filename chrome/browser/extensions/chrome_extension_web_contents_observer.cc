@@ -181,6 +181,10 @@ void ChromeExtensionWebContentsObserver::SetUpRenderFrameHost(
         process_id, url::Origin::Create(GURL(blink::kChromeUIResourcesURL)));
     policy->GrantRequestOrigin(
         process_id, url::Origin::Create(GURL(chrome::kChromeUIThemeURL)));
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    policy->GrantRequestOrigin(
+        process_id, url::Origin::Create(GURL(content::kArkWebUIResourcesURL)));
+#endif
   }
 
   // Extensions, legacy packaged apps, and component platform apps are allowed

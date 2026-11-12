@@ -10,12 +10,27 @@
 #include "base/gtest_prod_util.h"
 #include "content/public/common/buildflags.h"
 #include "extensions/browser/extension_function.h"
+#include "extensions/browser/browser_context_keyed_api_factory.h"
+#include "extensions/browser/event_router.h"
+
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "ohos_nweb/src/capi/browser_service/nweb_extension_content_settings_types.h"
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 namespace content {
 struct WebPluginInfo;
 }
 
+namespace base {
+class FilePath;
+}
+
 namespace extensions {
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/content_settings/content_settings_api_for_include_file.cc"
+#else
 
 class ContentSettingsContentSettingClearFunction : public ExtensionFunction {
  public:
@@ -49,6 +64,7 @@ class ContentSettingsContentSettingSetFunction : public ExtensionFunction {
   // ExtensionFunction:
   ResponseAction Run() override;
 };
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 class ContentSettingsContentSettingGetResourceIdentifiersFunction
     : public ExtensionFunction {

@@ -349,8 +349,14 @@ GURL ExtensionManagement::GetEffectiveUpdateURL(const Extension& extension) {
 }
 
 bool ExtensionManagement::UpdatesFromWebstore(const Extension& extension) {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   const bool is_webstore_url = extension_urls::IsWebstoreUpdateUrl(
       GURL(GetEffectiveUpdateURL(extension)));
+#else
+  int webstore_type = CustomData::GetStoreType(&extension);
+  const bool is_webstore_url = extension_urls::IsWebstoreUpdateUrl(
+      webstore_type, GURL(GetEffectiveUpdateURL(extension)));
+#endif
   if (is_webstore_url) {
     DCHECK(!IsUpdateUrlOverridden(extension.id()))
         << "An extension's update URL cannot be overridden to the webstore.";

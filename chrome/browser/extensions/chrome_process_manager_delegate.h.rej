@@ -1,0 +1,15 @@
+diff a/chrome/browser/extensions/chrome_process_manager_delegate.h b/chrome/browser/extensions/chrome_process_manager_delegate.h	(rejected hunks)
+@@ -52,10 +52,13 @@ class ChromeProcessManagerDelegate : public ProcessManagerDelegate,
+ 
+   // ProfileObserver:
+   void OnOffTheRecordProfileCreated(Profile* off_the_record_profile) override;
+   void OnProfileWillBeDestroyed(Profile* profile) override;
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  void OnOtrProfileAdded(Profile* profile) override;
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+  private:
+   base::ScopedObservation<ProfileManager, ProfileManagerObserver>
+       profile_manager_observation_{this};
+ 
+   base::ScopedMultiSourceObservation<Profile, ProfileObserver>

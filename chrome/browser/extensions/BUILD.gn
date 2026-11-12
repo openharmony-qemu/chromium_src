@@ -21,6 +21,7 @@ import("//rlz/buildflags/buildflags.gni")
 import("//services/screen_ai/buildflags/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/protobuf/proto_library.gni")
+import("//arkweb/chromium_ext/chrome/browser/extensions/arkweb_ui_views_extension.gni")
 
 assert(enable_extensions_core)
 assert(enable_supervised_users)

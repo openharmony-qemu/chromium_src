@@ -189,6 +189,11 @@ class ExtensionService : public ExtensionServiceInterface,
   bool UserCanDisableInstalledExtension(
       const std::string& extension_id) override;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void SetForbidDisplayInSettings(const ExtensionIdSet& extension_ids);
+  void RemoveForbidDisplayInSettings(const ExtensionId& extension_id);
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
   //////////////////////////////////////////////////////////////////////////////
   // Simple Accessors
 
@@ -209,6 +214,12 @@ class ExtensionService : public ExtensionServiceInterface,
   // TODO(crbug.com/404941806): Delete this method and use the KeyedService
   // directly.
   ExtensionAllowlist* allowlist() { return allowlist_; }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  ExtensionIdSet& forbid_display_in_settings() {
+    return forbid_display_in_settings_;
+  }
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
   //////////////////////////////////////////////////////////////////////////////
   // For Testing
@@ -315,6 +326,10 @@ class ExtensionService : public ExtensionServiceInterface,
   // other disable reasons associated with them.
   void OnDeveloperModePrefChanged();
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void LoadForbidDisplayInSettingsExtensions();
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
   // Logs a warning if --extensions-on-chrome-urls switch is used in Google
   // Chrome.
   void LogExtensionsOnChromeUrlsSwitchWarningIfNeeded();
@@ -419,6 +434,10 @@ class ExtensionService : public ExtensionServiceInterface,
   raw_ptr<DelayedInstallManager> delayed_install_manager_;
 
   PrefChangeRegistrar pref_change_registrar_;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  ExtensionIdSet forbid_display_in_settings_;
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
   base::WeakPtrFactory<ExtensionService> weak_ptr_factory_{this};
 

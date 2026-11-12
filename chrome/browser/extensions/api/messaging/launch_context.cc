@@ -182,6 +182,7 @@ LaunchContext::BackgroundLaunchResult LaunchContext::LaunchInBackground(
     return BackgroundLaunchResult(NativeProcessLauncher::RESULT_INVALID_NAME);
   }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   std::string error_message;
   base::FilePath manifest_path =
       FindManifest(native_host_name, allow_user_level_hosts, error_message);

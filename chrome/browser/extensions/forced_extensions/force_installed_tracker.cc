@@ -162,8 +162,15 @@ void ForceInstalledTracker::OnForcedExtensionsPrefReady() {
         entry.second.is_dict() ? entry.second.GetDict().FindString(
                                      ExternalProviderImpl::kExternalUpdateUrl)
                                : nullptr;
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
     bool is_from_store =
         update_url && *update_url == extension_urls::kChromeWebstoreUpdateURL;
+#else
+    bool is_from_store =
+        update_url &&
+        (*update_url == extension_urls::kChromeWebstoreUpdateURL ||
+         *update_url == extension_urls::GetDefaultWebstoreUpdateUrl());
+#endif
 
     ExtensionStatus status = ExtensionStatus::kPending;
     if (registry_->enabled_extensions().Contains(extension_id)) {

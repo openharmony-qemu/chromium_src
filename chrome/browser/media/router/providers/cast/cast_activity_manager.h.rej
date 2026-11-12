@@ -1,0 +1,15 @@
+diff a/chrome/browser/media/router/providers/cast/cast_activity_manager.h b/chrome/browser/media/router/providers/cast/cast_activity_manager.h	(rejected hunks)
+@@ -147,10 +147,13 @@ class CastActivityManager : public CastActivityManagerBase,
+       const MediaRoute::Id& route_id,
+       std::unique_ptr<MirroringActivity> mirroring_activity);
+ 
+  private:
+   friend class CastActivityManagerTest;
++  FRIEND_TEST_ALL_PREFIXES(CastActivityManagerTest, AddAppActivityCollision);
++  FRIEND_TEST_ALL_PREFIXES(CastActivityManagerTest,
++                           AddMirroringActivityCollision);
+   FRIEND_TEST_ALL_PREFIXES(CastActivityManagerWithTerminatingTest,
+                            LaunchSessionTerminatesExistingSessionOnSink);
+   FRIEND_TEST_ALL_PREFIXES(CastActivityManagerTest,
+                            LaunchSessionTerminatesExistingSessionFromTab);
+   FRIEND_TEST_ALL_PREFIXES(CastActivityManagerTest,

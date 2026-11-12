@@ -1,0 +1,142 @@
+diff a/chrome/browser/flag_descriptions.h b/chrome/browser/flag_descriptions.h	(rejected hunks)
+@@ -338,11 +338,15 @@ inline constexpr char kClickToCallDescription[] =
+     "Enable the click-to-call feature.";
+ 
+ inline constexpr char kClipboardChangeEventName[] = "ClipboardChangeEvent";
+ inline constexpr char kClipboardChangeEventDescription[] =
+     "Enables the `clipboardchange` event API. See: "
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++    "https://***";
++#else
+     "https://chromestatus.com/feature/5085102657503232";
++#endif
+ 
+ inline constexpr char kClipboardMaximumAgeName[] = "Clipboard maximum age";
+ inline constexpr char kClipboardMaximumAgeDescription[] =
+     "Limit the maximum age for recent clipboard content";
+ 
+@@ -1903,16 +1907,27 @@ inline constexpr char kEnableNtpBrowserPromosDescription[] =
+     "Shows suggestions to explore browser capabilities (eg. signing in) on the "
+     "new tab page.";
+ 
+ inline constexpr char kSoftNavigationHeuristicsName[] =
+     "Soft Navigation Heuristics";
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++inline constexpr char kSoftNavigationHeuristicsDescription[] =
++    "Enables the soft navigation heuristics, including support for "
++    "PerformanceObserver. This setting overrides other experimental settings. "
++    "See the documentation for our earlier experiment at "
++    "https://x.x.x/docs/web-platform/soft-navigations-experiment"
++    " (to be updated soon).";
++#else
++// The URL for providing more information about Google nameservers.
+ inline constexpr char kSoftNavigationHeuristicsDescription[] =
+     "Enables the soft navigation heuristics, including support for "
+     "PerformanceObserver. This setting overrides other experimental settings. "
+     "See the documentation for our earlier experiment at "
+     "https://developer.chrome.com/docs/web-platform/soft-navigations-experiment"
+     " (to be updated soon).";
++#endif
++
+ 
+ inline constexpr char kEnableSiteSearchAllowUserOverridePolicyName[] =
+     "Enable allow_user_override field for SiteSearchSettings policy";
+ inline constexpr char kEnableSiteSearchAllowUserOverridePolicyDescription[] =
+     "Enable the field that allows organizations to set a Site Search engine "
+@@ -3612,14 +3627,25 @@ inline constexpr char kPrivacySandboxAdsApiUxEnhancementsDescription[] =
+     "Enables UI and text updates to the Privacy Sandbox Ads APIs Notice and "
+     "Consent UX, and settings pages to improve user comprehension";
+ 
+ inline constexpr char kPrivacySandboxEnrollmentOverridesName[] =
+     "Privacy Sandbox Enrollment Overrides";
++
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++inline constexpr char kPrivacySandboxEnrollmentOverridesDescription[] =
++    "Allows a list of sites to use Privacy Sandbox features without them being "
++    "enrolled and attested into the Privacy Sandbox experiment. See: "
++    "https://x.x.x/en/docs/privacy-sandbox/enroll/";
++#else
++// The URL for providing more information about Google nameservers.
+ inline constexpr char kPrivacySandboxEnrollmentOverridesDescription[] =
+     "Allows a list of sites to use Privacy Sandbox features without them being "
+     "enrolled and attested into the Privacy Sandbox experiment. See: "
+     "https://developer.chrome.com/en/docs/privacy-sandbox/enroll/";
++#endif
++
++
+ 
+ inline constexpr char kPrivacySandboxInternalsName[] =
+     "Privacy Sandbox Internals Page";
+ inline constexpr char kPrivacySandboxInternalsDescription[] =
+     "Enables the chrome://privacy-sandbox-internals debugging page.";
+@@ -4396,13 +4422,21 @@ inline constexpr char kUiPartialSwapName[] = "Partial swap";
+ inline constexpr char kUiPartialSwapDescription[] =
+     "Sets partial swap behavior.";
+ 
+ inline constexpr char kTPCPhaseOutFacilitatedTestingName[] =
+     "Third-party Cookie Phase Out Facilitated Testing";
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++inline constexpr char kTPCPhaseOutFacilitatedTestingDescription[] =
++    "Enables third-party cookie phase out for facilitated testing described in "
++    "https://x.x.x/en/docs/privacy-sandbox/chrome-testing/";
++#else
++// The URL for providing more information about Google nameservers.
+ inline constexpr char kTPCPhaseOutFacilitatedTestingDescription[] =
+     "Enables third-party cookie phase out for facilitated testing described in "
+     "https://developer.chrome.com/en/docs/privacy-sandbox/chrome-testing/";
++#endif
++
+ 
+ inline constexpr char kTpcdHeuristicsGrantsName[] =
+     "Third-party Cookie Grants Heuristics Testing";
+ inline constexpr char kTpcdHeuristicsGrantsDescription[] =
+     "Enables temporary storage access grants for certain user behavior "
+@@ -8323,32 +8357,48 @@ inline constexpr char kZeroCopyVideoCaptureDescription[] =
+ 
+ inline constexpr char kLocalNetworkAccessChecksName[] =
+     "Local Network Access Checks";
+ inline constexpr char kLocalNetworkAccessChecksDescription[] =
+     "Enables Local Network Access checks. "
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++    "See: https://***";
++#else
+     "See: https://chromestatus.com/feature/5152728072060928";
++#endif
+ 
+ inline constexpr char kLocalNetworkAccessChecksWebRTCName[] =
+     "Local Network Access Checks for WebRTC";
+ inline constexpr char kLocalNetworkAccessChecksWebRTCDescription[] =
+     "Enable Local Network Access checks for WebRTC. Requires the "
+     "#local-network-access-check flag to also be enabled "
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++    "See: https://***";
++#else
+     "See: https://chromestatus.com/feature/5065884686876672";
++#endif
+ 
+ inline constexpr char kLocalNetworkAccessChecksWebSocketsName[] =
+     "Local Network Access Checks for WebSockets";
+ inline constexpr char kLocalNetworkAccessChecksWebSocketsDescription[] =
+     "Enable Local Network Access checks for WebSockets. Requires the "
+     "#local-network-access-check flag to also be enabled "
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++    "See: https://***";
++#else
+     "See: https://chromestatus.com/feature/5197681148428288";
++#endif
+ 
+ inline constexpr char kLocalNetworkAccessChecksWebTransportName[] =
+     "Local Network Access Checks for WebTransport";
+ inline constexpr char kLocalNetworkAccessChecksWebTransportDescription[] =
+     "Enable Local Network Access checks for WebTransport. Requires the "
+     "#local-network-access-check flag to also be enabled "
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++    "See: https://***";
++#else
+     "See: https://chromestatus.com/feature/5126430912544768";
++#endif
+ 
+ inline constexpr char kTaskManagerDesktopRefreshName[] =
+     "Task Manager Desktop Refresh";
+ inline constexpr char kTaskManagerDesktopRefreshDescription[] =
+     "Enables a refreshed design for the Task Manager on Desktop platforms.";

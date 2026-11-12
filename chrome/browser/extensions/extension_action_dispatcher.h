@@ -12,6 +12,12 @@
 #include "extensions/browser/browser_context_keyed_api_factory.h"
 #include "extensions/buildflags/buildflags.h"
 #include "extensions/common/extension_id.h"
+#include "extensions/browser/event_router.h"
+#include "extensions/browser/extension_event_histogram_value.h"
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "ohos_nweb/src/capi/web_extension_tab_items.h"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 

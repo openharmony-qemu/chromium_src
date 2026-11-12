@@ -1,0 +1,40 @@
+diff a/chrome/browser/extensions/chrome_extensions_browser_client.cc b/chrome/browser/extensions/chrome_extensions_browser_client.cc	(rejected hunks)
+@@ -6,10 +6,11 @@
+ 
+ #include <memory>
+ #include <optional>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/command_line.h"
+ #include "base/logging.h"
+ #include "base/memory/scoped_refptr.h"
+ #include "base/strings/string_util.h"
+ #include "base/strings/utf_string_conversions.h"
+@@ -120,10 +121,14 @@
+ #include "components/user_manager/user_manager.h"
+ #else
+ #include "extensions/browser/updater/null_extension_cache.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "chrome/browser/extensions/chrome_extensions_browser_client_ext.cc"
++#endif
++
+ namespace extensions {
+ 
+ namespace {
+ 
+ constexpr std::string_view kCrxUrlPath = "/service/update2/crx";
+@@ -632,10 +641,11 @@ bool ChromeExtensionsBrowserClient::IsActivityLoggingEnabled(
+     content::BrowserContext* context) {
+   ActivityLog* activity_log = ActivityLog::GetInstance(context);
+   return activity_log && activity_log->is_active();
+ }
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ void ChromeExtensionsBrowserClient::GetTabAndWindowIdForWebContents(
+     content::WebContents* web_contents,
+     int* tab_id,
+     int* window_id) {
+   sessions::SessionTabHelper* session_tab_helper =

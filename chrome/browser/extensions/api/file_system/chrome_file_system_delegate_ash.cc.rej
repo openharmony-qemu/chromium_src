@@ -1,0 +1,18 @@
+diff a/chrome/browser/extensions/api/file_system/chrome_file_system_delegate_ash.cc b/chrome/browser/extensions/api/file_system/chrome_file_system_delegate_ash.cc	(rejected hunks)
+@@ -85,11 +85,15 @@ void OnConsentReceived(content::BrowserContext* browser_context,
+   if (!volume.get()) {
+     std::move(error_callback).Run(file_system_api::kVolumeNotFoundError);
+     return;
+   }
+ 
+-  DCHECK_EQ(origin.scheme(), kExtensionScheme);
++  DCHECK(origin.scheme() == kExtensionScheme
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++         || origin.scheme() == kArkwebExtensionScheme
++#endif
++  );
+   scoped_refptr<storage::FileSystemContext> file_system_context =
+       util::GetStoragePartitionForExtensionId(origin.host(), browser_context)
+           ->GetFileSystemContext();
+   auto* const backend = ash::FileSystemBackend::Get(*file_system_context);
+   DCHECK(backend);

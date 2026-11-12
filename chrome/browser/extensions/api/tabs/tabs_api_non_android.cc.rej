@@ -1,0 +1,119 @@
+diff a/chrome/browser/extensions/api/tabs/tabs_api_non_android.cc b/chrome/browser/extensions/api/tabs/tabs_api_non_android.cc
+--- a/chrome/browser/extensions/api/tabs/tabs_api_non_android.cc
++++ b/chrome/browser/extensions/api/tabs/tabs_api_non_android.cc
+@@ -224,11 +224,11 @@ class ScopedPinBrowserAtFront {
+ };
+ 
+ }  // namespace
+ 
+ // Windows ---------------------------------------------------------------------
+-
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction WindowsCreateFunction::Run() {
+   std::optional<windows::Create::Params> params =
+       windows::Create::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+   std::vector<GURL> urls;
+@@ -713,12 +713,14 @@ void WindowsCreateFunction::OnWindowCreatedAsynchronously(
+       *browser, extension(), WindowController::kPopulateTabs,
+       source_context_type())));
+ }
+ #endif  // BUILDFLAG(IS_CHROMEOS)
+ 
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ // Tabs ------------------------------------------------------------------------
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction TabsCreateFunction::Run() {
+   std::optional<tabs::Create::Params> params =
+       tabs::Create::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+   return RespondNow([&] {
+@@ -821,10 +823,11 @@ ExtensionFunction::ResponseAction TabsHighlightFunction::Run() {
+   return RespondNow(
+       WithArguments(window_controller->CreateWindowValueForExtension(
+           extension(), WindowController::kPopulateTabs,
+           source_context_type())));
+ }
++#endif  // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ bool TabsHighlightFunction::HighlightTab(TabStripModel* tabstrip,
+                                          ui::ListSelectionModel* selection,
+                                          std::optional<size_t>* active_index,
+                                          int index,
+@@ -845,10 +848,11 @@ bool TabsHighlightFunction::HighlightTab(TabStripModel* tabstrip,
+   return true;
+ }
+ 
+ TabsUpdateFunction::TabsUpdateFunction() = default;
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
+   std::optional<tabs::Update::Params> params =
+       tabs::Update::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+ 
+@@ -956,12 +960,11 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
+   // -favIconUrl
+ 
+   // Navigate the tab to a new location if the url is different.
+   if (params->update_properties.url) {
+     std::string updated_url = *params->update_properties.url;
+-    auto* profile = Profile::FromBrowserContext(browser_context());
+-    if (profile->IsIncognitoProfile() &&
++    if (browser->profile()->IsIncognitoProfile() &&
+         !IsURLAllowedInIncognito(GURL(updated_url))) {
+       return RespondNow(Error(ErrorUtils::FormatErrorMessage(
+           tabs_constants::kURLsNotAllowedInIncognitoError, updated_url)));
+     }
+ 
+@@ -1191,11 +1194,13 @@ ExtensionFunction::ResponseAction TabsGroupFunction::Run() {
+ 
+   DCHECK_GT(group_id, 0);
+ 
+   return RespondNow(WithArguments(group_id));
+ }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction TabsUngroupFunction::Run() {
+   std::optional<tabs::Ungroup::Params> params =
+       tabs::Ungroup::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+ 
+@@ -1215,10 +1220,11 @@ ExtensionFunction::ResponseAction TabsUngroupFunction::Run() {
+     }
+   }
+ 
+   return RespondNow(NoArguments());
+ }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ bool TabsUngroupFunction::UngroupTab(int tab_id, std::string* error) {
+   WindowController* window = nullptr;
+   int tab_index = -1;
+   if (!tabs_internal::GetTabById(tab_id, browser_context(),
+@@ -1254,10 +1260,11 @@ bool TabsUngroupFunction::UngroupTab(int tab_id, std::string* error) {
+   }
+ 
+   return true;
+ }
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction TabsDiscardFunction::Run() {
+   std::optional<tabs::Discard::Params> params =
+       tabs::Discard::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+ 
+@@ -1295,10 +1302,11 @@ ExtensionFunction::ResponseAction TabsDiscardFunction::Run() {
+ 
+   return RespondNow(ArgumentList(
+       tabs::Discard::Results::Create(tabs_internal::CreateTabObjectHelper(
+           contents, extension(), source_context_type(), nullptr, -1))));
+ }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ TabsDiscardFunction::TabsDiscardFunction() = default;
+ TabsDiscardFunction::~TabsDiscardFunction() = default;
+ 
+ }  // namespace extensions

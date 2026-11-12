@@ -1,0 +1,16 @@
+diff a/chrome/browser/extensions/extension_management.cc b/chrome/browser/extensions/extension_management.cc	(rejected hunks)
+@@ -77,10 +77,14 @@
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
+ #include "chrome/browser/extensions/management/management_util.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "arkweb/chromium_ext/extensions/browser/custom_handler.h"
++#endif
++
+ static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
+ 
+ namespace extensions {
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)

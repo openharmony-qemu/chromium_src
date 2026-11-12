@@ -1,0 +1,134 @@
+diff a/chrome/browser/extensions/api/webstore_private/webstore_private_api.cc b/chrome/browser/extensions/api/webstore_private/webstore_private_api.cc
+--- a/chrome/browser/extensions/api/webstore_private/webstore_private_api.cc
++++ b/chrome/browser/extensions/api/webstore_private/webstore_private_api.cc
+@@ -78,10 +78,14 @@
+ 
+ #if BUILDFLAG(SAFE_BROWSING_AVAILABLE)
+ #include "chrome/browser/safe_browsing/safe_browsing_service.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
++#endif
++
+ static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
+ 
+ using safe_browsing::SafeBrowsingNavigationObserverManager;
+ 
+ namespace extensions {
+@@ -211,10 +215,16 @@ const char kIncognitoError[] =
+     "Apps cannot be installed in guest/incognito mode";
+ 
+ const char kParentBlockedExtensionInstallError[] =
+     "Parent has blocked extension/app installation";
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++const char kWebstoreInvalidTypeError[] = "Invalid type";
++const char kWebstoreDeviceTypeError[] =
++    "Feature not supported on the current device type";
++#endif
++
+ #if BUILDFLAG(SAFE_BROWSING_AVAILABLE)
+ // The number of user gestures to trace back for the referrer chain.
+ const int kExtensionReferrerUserGestureLimit = 2;
+ #endif
+ 
+@@ -421,10 +431,18 @@ std::u16string WebstorePrivateBeginInstallWithManifest3Function::
+   return blocked_by_policy_error_message_;
+ }
+ 
+ ExtensionFunction::ResponseAction
+ WebstorePrivateBeginInstallWithManifest3Function::Run() {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if (!base::ohos::IsPcDevice()) {
++    LOG(INFO) << "Install aborted: device type not supported";
++    return RespondNow(
++        BuildResponse(api::webstore_private::Result::kFeatureDisabled,
++                      kWebstoreDeviceTypeError));
++  }
++#endif
+   params_ = Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params_);
+ 
+   profile_ = Profile::FromBrowserContext(browser_context());
+ 
+@@ -503,10 +521,23 @@ void WebstorePrivateBeginInstallWithManifest3Function::OnWebstoreParseSuccess(
+                            WebstoreInstallHelper::Delegate::kManifestError,
+                            kWebstoreInvalidManifestError);
+     return;
+   }
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  // ArkWeb currently doesn't support installing non-extension applications from
++  // web store.
++  if (!dummy_extension_->is_extension()) {
++    LOG(INFO) << "Install aborted: non-extension applications not supported";
++    Respond(
++        BuildResponse(api::webstore_private::Result::kUnsupportedExtensionType,
++                      kWebstoreInvalidTypeError));
++    Release();
++    return;
++  }
++#endif
++
+   content::WebContents* web_contents = GetSenderWebContents();
+   if (!web_contents) {
+     // The browser window has gone away.
+     Respond(BuildResponse(api::webstore_private::Result::kUserCancelled,
+                           kWebstoreUserCancelledError));
+@@ -538,11 +569,15 @@ void WebstorePrivateBeginInstallWithManifest3Function::OnWebstoreParseSuccess(
+         dummy_extension_.get(), &icon_,
+         std::make_unique<ExtensionInstallPrompt::Prompt>(
+             install_status == kCanRequest
+                 ? ExtensionInstallPrompt::EXTENSION_REQUEST_PROMPT
+                 : ExtensionInstallPrompt::EXTENSION_PENDING_REQUEST_PROMPT),
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++        ExtensionInstallPrompt::GetOhosShowDialogCallback());
++#else
+         ExtensionInstallPrompt::GetDefaultShowDialogCallback());
++#endif
+   } else {
+     ReportWebStoreInstallEsbAllowlistParameter(details().esb_allowlist);
+ 
+     if (ShouldShowFrictionDialog(profile_)) {
+       ShowInstallFrictionDialog(web_contents);
+@@ -893,12 +928,23 @@ void WebstorePrivateBeginInstallWithManifest3Function::
+                      this));
+ }
+ 
+ void WebstorePrivateBeginInstallWithManifest3Function::ShowInstallDialog(
+     content::WebContents* contents) {
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+   auto prompt = std::make_unique<ExtensionInstallPrompt::Prompt>(
+       ExtensionInstallPrompt::INSTALL_PROMPT);
++#else
++  bool is_from_huawei_webstore = false;
++  if (contents) {
++    auto url = contents->GetURL();
++    is_from_huawei_webstore =
++        extension_urls::GetWebStoreTypeByUrl(true, url) == kWebStoreTypeHuawei;
++  }
++  auto prompt = std::make_unique<ExtensionInstallPrompt::Prompt>(
++      ExtensionInstallPrompt::INSTALL_PROMPT, is_from_huawei_webstore);
++#endif
+ 
+   if (!dummy_extension_->is_theme()) {
+     const bool requires_parent_permission =
+         supervised_user::AreExtensionsPermissionsEnabled(profile_) &&
+         !supervised_user::SupervisedUserCanSkipExtensionParentApprovals(
+@@ -935,11 +981,15 @@ void WebstorePrivateBeginInstallWithManifest3Function::ShowInstallDialog(
+   install_prompt_->ShowDialog(
+       base::BindOnce(&WebstorePrivateBeginInstallWithManifest3Function::
+                          OnInstallPromptDone,
+                      this),
+       dummy_extension_.get(), &icon_, std::move(prompt),
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      ExtensionInstallPrompt::GetOhosShowDialogCallback());
++#else
+       ExtensionInstallPrompt::GetDefaultShowDialogCallback());
++#endif
+ }
+ 
+ void WebstorePrivateBeginInstallWithManifest3Function::
+     ShowBlockedByPolicyDialog(const Extension* extension,
+                               const SkBitmap& icon,

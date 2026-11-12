@@ -1,0 +1,17 @@
+diff a/chrome/browser/new_tab_page/modules/file_suggestion/drive_service.cc b/chrome/browser/new_tab_page/modules/file_suggestion/drive_service.cc	(rejected hunks)
+@@ -227,11 +231,15 @@ constexpr char kFakeDataWithSixFiles[] = R"({
+     }
+   ]
+ })";
+ 
+ const char kBaseFileIconUrl[] =
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++    "https://***/";
++#else
+     "https://drive-thirdparty.googleusercontent.com/32/type/";
++#endif
+ }  // namespace
+ 
+ // static
+ const char DriveService::kLastDismissedTimePrefName[] =
+     "NewTabPage.Drive.LastDimissedTime";

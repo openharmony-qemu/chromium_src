@@ -1,0 +1,12 @@
+diff a/chrome/browser/extensions/api/bookmarks/bookmarks_api.h b/chrome/browser/extensions/api/bookmarks/bookmarks_api.h	(rejected hunks)
+@@ -270,9 +277,10 @@ class BookmarksUpdateFunction : public BookmarksFunction {
+   ~BookmarksUpdateFunction() override = default;
+ 
+   // BookmarksFunction:
+   ResponseValue RunOnReady() override;
+ };
++#endif  // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ }  // namespace extensions
+ 
+ #endif  // CHROME_BROWSER_EXTENSIONS_API_BOOKMARKS_BOOKMARKS_API_H_

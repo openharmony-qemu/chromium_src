@@ -1,0 +1,14 @@
+diff a/chrome/browser/media/webrtc/webrtc_log_uploader.cc b/chrome/browser/media/webrtc/webrtc_log_uploader.cc	(rejected hunks)
+@@ -109,10 +109,12 @@ std::string GetLogUploadProduct() {
+ #endif
+ #elif BUILDFLAG(IS_ANDROID)
+   const char product[] = "Chrome_Android";
+ #elif BUILDFLAG(IS_CHROMEOS)
+   const char product[] = "Chrome_ChromeOS";
++#elif BUILDFLAG(IS_OHOS)
++  const char product[] = "Chrome_OHOS";
+ #else
+ #error Platform not supported.
+ #endif
+   if (base::FeatureList::IsEnabled(kWebRTCLogUploadSuffix)) {
+     return base::StrCat({product, "_webrtc"});

@@ -1,0 +1,38 @@
+diff a/chrome/browser/extensions/extension_action_dispatcher.h b/chrome/browser/extensions/extension_action_dispatcher.h	(rejected hunks)
+@@ -91,22 +97,30 @@ class ExtensionActionDispatcher : public BrowserContextKeyedAPI {
+ 
+   void set_prefs_for_testing(ExtensionPrefs* prefs) {
+     extension_prefs_ = prefs;
+   }
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "arkweb/chromium_ext/chrome/browser/extensions/extension_action_dispatcher_for_include_file.cc"
++#endif // ARKWEB_ARKWEB_EXTENSIONS
++
+  private:
+   friend class BrowserContextKeyedAPIFactory<ExtensionActionDispatcher>;
+ 
+   // Returns the associated extension prefs.
+   ExtensionPrefs* GetExtensionPrefs();
+ 
+-  // The DispatchEvent methods forward events to the `context`'s event router.
+-  void DispatchEventToExtension(content::BrowserContext* context,
+-                                const ExtensionId& extension_id,
+-                                events::HistogramValue histogram_value,
+-                                const std::string& event_name,
+-                                base::Value::List event_args);
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++// Forwards events to the context's event router.
++void DispatchEventToExtension(
++    content::BrowserContext* context,
++    const ExtensionId& extension_id,
++    events::HistogramValue histogram_value,
++    const std::string& event_name,
++    base::Value::List event_args,
++    EventRouter::UserGestureState user_gesture_state);
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
+   // BrowserContextKeyedAPI implementation.
+   void Shutdown() override;
+   static const char* service_name() { return "ExtensionActionDispatcher"; }
+   static const bool kServiceRedirectedInIncognito = true;

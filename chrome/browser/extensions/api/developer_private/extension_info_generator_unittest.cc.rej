@@ -1,0 +1,23 @@
+diff a/chrome/browser/extensions/api/developer_private/extension_info_generator_unittest.cc b/chrome/browser/extensions/api/developer_private/extension_info_generator_unittest.cc	(rejected hunks)
+@@ -530,14 +530,21 @@ TEST_F(ExtensionInfoGeneratorUnitTest, ExtensionInfoGenerateSafetyHubData) {
+       CreateExtension("test", base::Value::List(), ManifestLocation::kInternal);
+   {
+     // Test that an offstore extension returns the proper information.
+     std::unique_ptr<developer::ExtensionInfo> info =
+         GenerateExtensionInfo(extension->id());
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++    EXPECT_EQ(l10n_util::GetStringUTF8(IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_V2),
++              info->safety_check_text->detail_string);
++    EXPECT_EQ(l10n_util::GetStringUTF8(IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_ON_V2),
++              info->safety_check_text->panel_string);
++#else
+     EXPECT_EQ(l10n_util::GetStringUTF8(IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE),
+               info->safety_check_text->detail_string);
+     EXPECT_EQ(l10n_util::GetStringUTF8(IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_ON),
+               info->safety_check_text->panel_string);
++#endif
+     EXPECT_EQ(developer::SafetyCheckWarningReason::kOffstore,
+               info->safety_check_warning_reason);
+   }
+   {
+     // Test that a acknowledged extension does not return any warnings.

@@ -266,6 +266,7 @@ HistoryFunctionWithCallback::HistoryFunctionWithCallback() = default;
 
 HistoryFunctionWithCallback::~HistoryFunctionWithCallback() = default;
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction HistoryGetVisitsFunction::Run() {
   std::optional<GetVisits::Params> params = GetVisits::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
@@ -472,5 +473,6 @@ void HistoryDeleteAllFunction::DeleteComplete() {
   Respond(NoArguments());
   Release();  // Balanced in Run().
 }
+#endif
 
 }  // namespace extensions

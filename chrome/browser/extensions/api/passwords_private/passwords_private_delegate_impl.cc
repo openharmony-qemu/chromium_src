@@ -137,6 +137,20 @@ std::u16string GetReauthPurpose(
     case extensions::api::passwords_private::PlaintextReason::kNone:
       NOTREACHED();
   }
+#elif BUILDFLAG(IS_OHOS)
+  switch (reason) {
+    case extensions::api::passwords_private::PlaintextReason::kView:
+      return l10n_util::GetStringUTF16(
+          IDS_PASSWORDS_PAGE_AUTHENTICATION_PROMPT_BIOMETRIC_SUFFIX);
+    case extensions::api::passwords_private::PlaintextReason::kCopy:
+      return l10n_util::GetStringUTF16(
+          IDS_PASSWORDS_PAGE_COPY_AUTHENTICATION_PROMPT_BIOMETRIC_SUFFIX);
+    case extensions::api::passwords_private::PlaintextReason::kEdit:
+      return l10n_util::GetStringUTF16(
+          IDS_PASSWORDS_PAGE_EDIT_AUTHENTICATION_PROMPT_BIOMETRIC_SUFFIX);
+    case extensions::api::passwords_private::PlaintextReason::kNone:
+      NOTREACHED();
+  }
 #else
   return std::u16string();
 #endif
@@ -207,7 +221,8 @@ extensions::api::passwords_private::ImportResults ConvertImportResults(
   return private_results;
 }
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
 
 using password_manager::prefs::kBiometricAuthenticationBeforeFilling;
 

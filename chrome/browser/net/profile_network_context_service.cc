@@ -160,6 +160,16 @@
 #include "components/server_certificate_database/server_certificate_database_service.h"  // nogncheck
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+#include "cef/ohos_cef_ext/libcef//browser/net_service/arkweb_proxy_config_monitor.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+
 #if BUILDFLAG(ENTERPRISE_CACHE_ENCRYPTION)
 #include "components/enterprise/encryption/cache/utils.h"
 #endif
@@ -1140,6 +1150,10 @@ ProfileNetworkContextService::CreateCookieManagerParams(
       extensions::kExtensionScheme);
   out->third_party_cookies_allowed_schemes.push_back(
       content::kChromeDevToolsScheme);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  out->third_party_cookies_allowed_schemes.push_back(
+      extensions::kArkwebExtensionScheme);
+#endif
 #endif
 
   HostContentSettingsMap* host_content_settings_map =
@@ -1313,6 +1327,10 @@ ProfileNetworkContextService::CreateClientCertStore() {
   // the OS as part of the call to show the cert selection dialog.
   return GetWrappedCertStore(profile_,
                              std::make_unique<net::ClientCertStoreEmpty>());
+#elif BUILDFLAG(IS_OHOS)
+  LOG(ERROR)
+      << "ProfileNetworkContextService::CreateClientCertStore TODO for OS_OHOS";
+  return nullptr;
 #else
 #error Unknown platform.
 #endif
@@ -1478,7 +1496,18 @@ void ProfileNetworkContextService::ConfigureNetworkContextParamsInternal(
     network_context_params->hsts_policy_bypass_list.push_back(*string_value);
   }
 
+  #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (command_line != nullptr && command_line->HasSwitch(
+      switches::kEnableNwebEx) && base::ohos::IsPcDevice()) {
   proxy_config_monitor_->AddToNetworkContextParams(network_context_params);
+  } else {
+    // Add proxy settings
+    NWEB::ProxyConfigMonitor::GetInstance()->AddProxyToNetworkContextParams(
+        network_context_params);
+  }
+#else
+  proxy_config_monitor_->AddToNetworkContextParams(network_context_params);
+#endif
 
   network_context_params->enable_certificate_reporting = true;
 

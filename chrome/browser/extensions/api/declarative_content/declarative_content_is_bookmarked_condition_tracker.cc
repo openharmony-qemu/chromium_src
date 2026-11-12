@@ -14,6 +14,10 @@
 #include "extensions/common/api/declarative/declarative_constants.h"
 #include "extensions/common/permissions/permissions_data.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/api/declarative_content/declarative_content_is_bookmarked_condition_tracker_for_include.cc"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace extensions {

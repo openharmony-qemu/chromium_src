@@ -1,0 +1,98 @@
+diff a/chrome/browser/extensions/api/tabs/tabs_api.h b/chrome/browser/extensions/api/tabs/tabs_api.h	(rejected hunks)
+@@ -28,10 +28,15 @@
+ #include "extensions/common/extension_resource.h"
+ #include "extensions/common/user_script.h"
+ #include "ui/base/mojom/window_show_state.mojom-forward.h"
+ #include "url/gurl.h"
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++struct WebExtensionWindow;
++struct NWebExtensionTab;
++#endif // ARKWEB_ARKWEB_EXTENSIONS
++
+ #if BUILDFLAG(FULL_SAFE_BROWSING)
+ #include "chrome/browser/safe_browsing/extension_telemetry/tabs_api_signal.h"
+ #endif
+ 
+ static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
+@@ -170,10 +175,14 @@ int MoveTabToWindow(ExtensionFunction* function,
+ 
+ // Converts a ZoomMode to its ZoomSettings representation.
+ void ZoomModeToZoomSettings(zoom::ZoomController::ZoomMode zoom_mode,
+                             api::tabs::ZoomSettings* zoom_settings);
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "cef/ohos_cef_ext/libcef/browser/extensions/api/tabs/tabs_api_for_include_file.cc"
++#endif // ARKWEB_ARKWEB_EXTENSIONS
++
+ // Windows
+ class WindowsGetFunction : public ExtensionFunction {
+   ~WindowsGetFunction() override = default;
+   ResponseAction Run() override;
+   DECLARE_EXTENSION_FUNCTION("windows.get", WINDOWS_GET)
+@@ -191,10 +200,11 @@ class WindowsGetLastFocusedFunction : public ExtensionFunction {
+ class WindowsGetAllFunction : public ExtensionFunction {
+   ~WindowsGetAllFunction() override = default;
+   ResponseAction Run() override;
+   DECLARE_EXTENSION_FUNCTION("windows.getAll", WINDOWS_GETALL)
+ };
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ class WindowsCreateFunction : public ExtensionFunction {
+   ~WindowsCreateFunction() override = default;
+   ResponseAction Run() override;
+   DECLARE_EXTENSION_FUNCTION("windows.create", WINDOWS_CREATE)
+ 
+@@ -235,10 +245,11 @@ class WindowsUpdateFunction : public ExtensionFunction {
+ class WindowsRemoveFunction : public ExtensionFunction {
+   ~WindowsRemoveFunction() override = default;
+   ResponseAction Run() override;
+   DECLARE_EXTENSION_FUNCTION("windows.remove", WINDOWS_REMOVE)
+ };
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ // Tabs
+ class TabsGetFunction : public ExtensionFunction {
+   ~TabsGetFunction() override = default;
+   ResponseAction Run() override;
+@@ -289,10 +300,11 @@ class TabsQueryFunction : public ExtensionFunction {
+                   const URLPatternSet& target_url_patterns);
+ 
+   // The query parameters passed by the extension.
+   api::tabs::Query::Params::QueryInfo query_info_;
+ };
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ class TabsCreateFunction : public ExtensionFunction {
+   ~TabsCreateFunction() override = default;
+   ResponseAction Run() override;
+   DECLARE_EXTENSION_FUNCTION("tabs.create", TABS_CREATE)
+ };
+@@ -357,15 +369,17 @@ class TabsMoveFunction : public ExtensionFunction {
+                base::Value::List& tab_values,
+                const std::optional<int>& window_id,
+                std::string* error);
+   DECLARE_EXTENSION_FUNCTION("tabs.move", TABS_MOVE)
+ };
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ class TabsReloadFunction : public ExtensionFunction {
+   ~TabsReloadFunction() override = default;
+   ResponseAction Run() override;
+   DECLARE_EXTENSION_FUNCTION("tabs.reload", TABS_RELOAD)
+ };
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ class TabsRemoveFunction : public ExtensionFunction {
+  public:
+   TabsRemoveFunction();
+   void TabDestroyed();
+ 
+@@ -392,10 +406,11 @@ class TabsUngroupFunction : public ExtensionFunction {
+   ~TabsUngroupFunction() override = default;
+   ResponseAction Run() override;
+   bool UngroupTab(int tab_id, std::string* error);
+   DECLARE_EXTENSION_FUNCTION("tabs.ungroup", TABS_UNGROUP)
+ };
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ class TabsDetectLanguageFunction
+     : public ExtensionFunction,
+       public content::WebContentsObserver,
+       public translate::TranslateDriver::LanguageDetectionObserver {
+  private:

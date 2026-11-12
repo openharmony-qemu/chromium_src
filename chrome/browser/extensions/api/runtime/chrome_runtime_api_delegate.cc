@@ -16,6 +16,7 @@
 #include "base/location.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/notimplemented.h"
+#include "base/strings/stringprintf.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/tick_clock.h"
 #include "base/time/time.h"
@@ -344,6 +345,8 @@ bool ChromeRuntimeAPIDelegate::GetPlatformInfo(PlatformInfo* info) {
     info->os = extensions::api::runtime::PlatformOs::kLinux;
   } else if (os == "openbsd") {
     info->os = extensions::api::runtime::PlatformOs::kOpenbsd;
+  } else if (os == "ohos") {
+    info->os = extensions::api::runtime::PlatformOs::kOhos;
   } else if (os == "android") {
     info->os = extensions::api::runtime::PlatformOs::kAndroid;
   } else {

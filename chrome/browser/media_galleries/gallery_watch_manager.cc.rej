@@ -1,0 +1,31 @@
+diff a/chrome/browser/media_galleries/gallery_watch_manager.cc b/chrome/browser/media_galleries/gallery_watch_manager.cc	(rejected hunks)
+@@ -202,10 +202,14 @@ GalleryWatchManager::GalleryWatchManager()
+ 
+ GalleryWatchManager::~GalleryWatchManager() {
+   weak_factory_.InvalidateWeakPtrs();
+ 
+   if (storage_monitor_observed_) {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++    if (!storage_monitor::StorageMonitor::GetInstance())
++      return;
++#endif
+     DCHECK(storage_monitor::StorageMonitor::GetInstance());
+     storage_monitor::StorageMonitor::GetInstance()->RemoveObserver(this);
+   }
+ 
+   watch_manager_task_runner_->DeleteSoon(FROM_HERE, watch_manager_.release());
+@@ -284,10 +288,14 @@ void GalleryWatchManager::AddWatch(BrowserContext* browser_context,
+   base::FilePath path =
+       preferences->known_galleries().find(gallery_id)->second.AbsolutePath();
+ 
+   if (!storage_monitor_observed_) {
+     storage_monitor_observed_ = true;
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++    if (!storage_monitor::StorageMonitor::GetInstance())
++      return;
++#endif
+     storage_monitor::StorageMonitor::GetInstance()->AddObserver(this);
+   }
+ 
+   // Observe the preferences if we haven't already.
+   if (!base::Contains(observed_preferences_, preferences)) {

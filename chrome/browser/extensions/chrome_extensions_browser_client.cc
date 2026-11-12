@@ -683,7 +683,11 @@ void ChromeExtensionsBrowserClient::AttachExtensionTaskManagerTag(
 scoped_refptr<update_client::UpdateClient>
 ChromeExtensionsBrowserClient::CreateUpdateClient(
     scoped_refptr<update_client::Configurator> configurator) {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   return update_client::UpdateClientFactory(configurator);
+#else
+  return update_client::UpdateClientFactory(configurator, true);
+#endif
 }
 
 scoped_refptr<update_client::Configurator>
@@ -741,6 +745,7 @@ void ChromeExtensionsBrowserClient::GetTabAndWindowIdForWebContents(
     *window_id = -1;
   }
 }
+#endif
 
 KioskDelegate* ChromeExtensionsBrowserClient::GetKioskDelegate() {
   if (!kiosk_delegate_) {

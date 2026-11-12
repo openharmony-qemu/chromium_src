@@ -47,6 +47,10 @@ class TabsWindowsAPI : public BrowserContextKeyedAPI,
   // EventRouter::Observer implementation.
   void OnListenerAdded(const extensions::EventListenerInfo& details) override;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/tabs/tabs_windows_api_for_include_file.cc"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
  private:
   friend class BrowserContextKeyedAPIFactory<TabsWindowsAPI>;
 

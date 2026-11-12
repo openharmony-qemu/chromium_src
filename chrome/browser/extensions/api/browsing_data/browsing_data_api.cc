@@ -218,6 +218,7 @@ void BrowsingDataSettingsFunction::SetDetails(base::DictValue* selected_dict,
   selected_dict->Set(data_type, is_selected && is_permitted);
   permitted_dict->Set(data_type, is_permitted);
 }
+#endif
 
 BrowsingDataRemoverFunction::BrowsingDataRemoverFunction() = default;
 
@@ -333,6 +334,7 @@ bool BrowsingDataRemoverFunction::IsRemovalDeprecated() {
   return false;
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void BrowsingDataRemoverFunction::StartRemoving() {
   Profile* profile = Profile::FromBrowserContext(browser_context());
   content::BrowsingDataRemover* remover = profile->GetBrowsingDataRemover();

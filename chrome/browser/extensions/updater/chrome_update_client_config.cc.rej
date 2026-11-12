@@ -1,0 +1,43 @@
+diff a/chrome/browser/extensions/updater/chrome_update_client_config.cc b/chrome/browser/extensions/updater/chrome_update_client_config.cc	(rejected hunks)
+@@ -281,11 +287,25 @@ ChromeUpdateClientConfig::GetNetworkFetcherFactory() {
+                 ->GetURLLoaderFactoryForBrowserProcess(),
+             // Only extension updates that require authentication are served
+             // from chrome.google.com, so send cookies if and only if that is
+             // the download domain.
+             base::BindRepeating([](const GURL& url) {
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+               return url.DomainIs("chrome.google.com");
++#else
++              if (url.DomainIs("chrome.google.com")) {
++                return true;
++              }
++ 
++              auto domains = extension_urls::GetWebstoreUpdateDomains();
++              for (const auto& domain : domains) {
++                if (url.DomainIs(domain)) {
++                  return true;
++                }
++              }
++              return false;
++#endif
+             }));
+   }
+   return network_fetcher_factory_;
+ }
+ 
+@@ -303,11 +323,15 @@ scoped_refptr<update_client::UnzipperFactory>
+ ChromeUpdateClientConfig::GetUnzipperFactory() {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+   if (!unzip_factory_) {
+     unzip_factory_ = base::MakeRefCounted<update_client::UnzipChromiumFactory>(
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++        base::BindRepeating(&unzip::LaunchInProcessUnzipper));
++#else
+         base::BindRepeating(&unzip::LaunchUnzipper));
++#endif
+   }
+   return unzip_factory_;
+ }
+ 
+ scoped_refptr<update_client::PatcherFactory>

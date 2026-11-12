@@ -1,0 +1,16 @@
+diff a/chrome/browser/extensions/api/messaging/launch_context_posix.cc b/chrome/browser/extensions/api/messaging/launch_context_posix.cc	(rejected hunks)
+@@ -17,10 +17,14 @@
+ #include "build/build_config.h"
+ #include "build/chromeos_buildflags.h"
+ #include "chrome/common/chrome_paths.h"
+ #include "net/base/file_stream.h"
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "arkweb/ohos_nweb/src/cef_delegate/nweb_extension_connect_native.h"
++#endif
++
+ namespace extensions {
+ 
+ namespace {
+ 
+ base::FilePath FindManifestInDir(int dir_key, const std::string& host_name) {

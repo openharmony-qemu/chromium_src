@@ -1,0 +1,19 @@
+diff a/chrome/browser/extensions/browser_extension_window_controller.cc b/chrome/browser/extensions/browser_extension_window_controller.cc	(rejected hunks)
+@@ -335,16 +335,16 @@ bool BrowserExtensionWindowController::OpenOptionsPage(
+   // We need to respect path differences because we don't want opening the
+   // options page to close a page that might be open to extension content.
+   // However, if the options page opens inside the chrome://extensions page, we
+   // can override an existing page.
+   // Note: ref behavior is to ignore.
++  // Follow-up Processing
+   ShowSingletonTabOverwritingNTP(browser_to_use, url,
+                                  open_in_tab
+                                      ? NavigateParams::RESPECT
+                                      : NavigateParams::IGNORE_AND_NAVIGATE);
+ #endif
+-
+   return true;
+ }
+ 
+ bool BrowserExtensionWindowController::SupportsTabs() {
+   return window_type_ != api::tabs::WindowType::kDevtools;

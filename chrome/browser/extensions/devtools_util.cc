@@ -17,17 +17,30 @@
 #include "extensions/common/extension.h"
 #include "extensions/common/manifest_handlers/background_info.h"
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+#include "content/public/browser/web_contents.h"
+#include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
+#include "cef/ohos_cef_ext/libcef/browser/devtools/arkweb/request_open_devtools_handler.h"
+#endif // ARKWEB_DEVTOOLS
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace extensions {
 namespace devtools_util {
-
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+void OnRequestOpenDevToolsWithContext(std::unique_ptr<LazyContextTaskQueue::ContextInfo>& context_info);
+#endif // ARKWEB_DEVTOOLS
 namespace {
 
 // Helper to inspect an ExtensionHost after it has been loaded.
 void InspectExtensionHost(
     DevToolsOpenedByAction opened_by,
     std::unique_ptr<LazyContextTaskQueue::ContextInfo> context_info) {
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  LOG(INFO) << " func:" << __func__;
+  OnRequestOpenDevToolsWithContext(context_info);
+  return;
+#endif // ARKWEB_DEVTOOLS
   if (context_info != nullptr)
     DevToolsWindow::OpenDevToolsWindow(context_info->web_contents, opened_by);
 }
@@ -65,6 +78,10 @@ void InspectServiceWorkerBackground(const Extension* extension,
         host->GetURL() ==
             BackgroundInfo::GetBackgroundServiceWorkerScriptURL(extension) &&
         host->GetBrowserContext() == profile) {
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+      OnRequestOpenDevTools(host, extension);
+      break;
+#endif // ARKWEB_DEVTOOLS
       DevToolsWindow::OpenDevToolsWindow(host, profile, opened_by);
       break;
     }
@@ -101,3 +118,7 @@ void InspectBackgroundPage(const Extension* extension,
 
 }  // namespace devtools_util
 }  // namespace extensions
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/chrome/browser/extensions/devtools_util_for_include.cc"
+#endif // IS_ARKWEB

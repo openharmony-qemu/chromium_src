@@ -414,6 +414,7 @@ class TabsGetZoomSettingsFunction : public ExtensionFunction {
   DECLARE_EXTENSION_FUNCTION("tabs.getZoomSettings", TABS_GETZOOMSETTINGS)
 };
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 class TabsDiscardFunction : public ExtensionFunction {
  public:
   DECLARE_EXTENSION_FUNCTION("tabs.discard", TABS_DISCARD)
@@ -429,6 +430,7 @@ class TabsDiscardFunction : public ExtensionFunction {
   // ExtensionFunction:
   ExtensionFunction::ResponseAction Run() override;
 };
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 class TabsGoForwardFunction : public ExtensionFunction {
  public:

@@ -95,6 +95,14 @@
 #include "chrome/browser/defaults.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "base/base_switches.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_PDF) && !defined(COMPONENT_BUILD)
+#include "arkweb/ohos_nweb/src/nweb_advanced_security.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 using content::BrowserThread;
@@ -695,8 +703,20 @@ void ComponentLoader::AddDefaultComponentExtensions(
     AddChromeApp();
 #endif  // BUILDFLAG(IS_CHROMEOS)
 #if BUILDFLAG(ENABLE_PDF)
+#if BUILDFLAG(ARKWEB_PDF) && !defined(COMPONENT_BUILD)
+    using ASHelper = OHOS::NWeb::NWebAdvancedSecurityHelper;
+    // If in advanced security mode, PDF preview is prohibited
+    bool isAdvancedSecurityMode = ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_PDFVIEWER)
+                                  || base::CommandLine::ForCurrentProcess()->HasSwitch(
+      switches::kDisablePdfViewer);
+    LOG(DEBUG) << "pdf in advanced security mode: " << isAdvancedSecurityMode;
+    if (!isAdvancedSecurityMode) {
+#endif  // BUILDFLAG(ARKWEB_PDF) && !defined(COMPONENT_BUILD)
     Add(pdf_extension_util::GetManifest(),
         base::FilePath(FILE_PATH_LITERAL("pdf")));
+#if BUILDFLAG(ARKWEB_PDF) && !defined(COMPONENT_BUILD)
+    }
+#endif  // BUILDFLAG(ARKWEB_PDF) && !defined(COMPONENT_BUILD)        
 #endif  // BUILDFLAG(ENABLE_PDF)
   }
 

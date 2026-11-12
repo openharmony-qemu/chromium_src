@@ -1,0 +1,44 @@
+diff a/chrome/browser/extensions/api/context_menus/context_menus_api.cc b/chrome/browser/extensions/api/context_menus/context_menus_api.cc	(rejected hunks)
+@@ -15,10 +15,11 @@
+ #include "chrome/common/extensions/api/context_menus.h"
+ #include "extensions/common/error_utils.h"
+ #include "extensions/common/manifest_handlers/background_info.h"
+ #include "extensions/common/url_pattern_set.h"
+ 
++
+ using extensions::ErrorUtils;
+ 
+ namespace {
+ 
+ const char kIdRequiredError[] =
+@@ -110,17 +111,30 @@ ExtensionFunction::ResponseAction ContextMenusRemoveFunction::Run() {
+                             context_menu_helpers::GetIDString(id)));
+   }
+ 
+   if (!manager->RemoveContextMenuItem(id))
+     return RespondNow(Error("Cannot remove menu item."));
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  content::BrowserContext* ctx = browser_context();
++  if (params->menu_item_id.as_string) {
++    CefWebExtensionMenuManager::OnContextMenusRemove(
++        ctx, extension_id(), *params->menu_item_id.as_string);
++  } else {
++    CefWebExtensionMenuManager::OnContextMenusRemove(
++        ctx, extension_id(), *params->menu_item_id.as_integer);
++  }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+   manager->WriteToStorage(extension(), id.extension_key);
+   return RespondNow(NoArguments());
+ }
+ 
+ ExtensionFunction::ResponseAction ContextMenusRemoveAllFunction::Run() {
+   MenuManager* manager = MenuManager::Get(browser_context());
+   manager->RemoveAllContextItems(MenuItem::ExtensionKey(extension()->id()));
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  CefWebExtensionMenuManager::OnContextMenusRemoveAll(extension_id());
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+   manager->WriteToStorage(extension(),
+                           MenuItem::ExtensionKey(extension()->id()));
+   return RespondNow(NoArguments());
+ }
+ 

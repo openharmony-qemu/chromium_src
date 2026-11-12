@@ -1,0 +1,42 @@
+diff a/chrome/browser/extensions/api/permissions/permissions_api.cc b/chrome/browser/extensions/api/permissions/permissions_api.cc
+--- a/chrome/browser/extensions/api/permissions/permissions_api.cc
++++ b/chrome/browser/extensions/api/permissions/permissions_api.cc
+@@ -298,23 +298,26 @@ void PermissionsRequestFunction::ResolvePendingDialogForTests(
+                     : ExtensionInstallPrompt::Result::USER_CANCELED);
+   pending_function->OnInstallPromptDone(result);
+   pending_function->Release();  // Balanced in Run().
+ }
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ // static
+ void PermissionsRequestFunction::SetIgnoreUserGestureForTests(
+     bool ignore) {
+   ignore_user_gesture_for_tests = ignore;
+ }
++#endif
+ 
+ PermissionsRequestFunction::PermissionsRequestFunction() = default;
+ 
+ PermissionsRequestFunction::~PermissionsRequestFunction() {
+   CHECK_NE(g_pending_request_function, this)
+       << "Pending request function was never resolved!";
+ }
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction PermissionsRequestFunction::Run() {
+   if (!user_gesture() && !ignore_user_gesture_for_tests &&
+       extension_->location() != mojom::ManifestLocation::kComponent) {
+     return RespondNow(Error(kUserGestureRequiredError));
+   }
+@@ -484,10 +487,11 @@ ExtensionFunction::ResponseAction PermissionsRequestFunction::Run() {
+       ExtensionInstallPrompt::GetDefaultShowDialogCallback());
+ 
+   // ExtensionInstallPrompt::ShowDialog() can call the response synchronously.
+   return did_respond() ? AlreadyResponded() : RespondLater();
+ }
++#endif
+ 
+ bool PermissionsRequestFunction::ShouldKeepWorkerAliveIndefinitely() {
+   // `permissions.request()` may trigger a user prompt. In this case, we allow
+   // the extension service worker to be kept alive past the typical 5 minute
+   // limit per-task, since it may be blocked on user action.

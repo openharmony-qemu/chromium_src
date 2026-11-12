@@ -1,0 +1,16 @@
+diff a/chrome/browser/media/router/discovery/dial/dial_app_discovery_service_unittest.cc b/chrome/browser/media/router/discovery/dial/dial_app_discovery_service_unittest.cc	(rejected hunks)
+@@ -84,12 +84,13 @@ class DialAppDiscoveryServiceTest : public ::testing::Test {
+   // |dial_app_discovery_service_|. Guaranteed to live until either
+   // |OnDialAppInfoFetchComplete()| or |OnDialAppInfoFetchError()| is called.
+   DialAppDiscoveryService::PendingRequest* AddFetchRequest(
+       const MediaSinkInternal& sink,
+       const std::string& app_name) {
++    GURL app_url = GetDialAppUrl(sink.dial_data().app_url, app_name);
+     auto request = std::make_unique<DialAppDiscoveryService::PendingRequest>(
+-        sink, app_name,
++        sink, app_name, app_url,
+         base::BindOnce(&DialAppDiscoveryServiceTest::OnAppInfo,
+                        base::Unretained(this)),
+         &dial_app_discovery_service_);
+     auto* request_ptr = request.get();
+     dial_app_discovery_service_.pending_requests_.push_back(std::move(request));

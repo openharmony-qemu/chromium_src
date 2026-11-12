@@ -38,6 +38,10 @@
 #include "net/base/net_errors.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/ohos_nweb/src/cef_delegate/nweb_extension_connect_native.h"
+#endif
+
 namespace {
 
 // Maximum message size in bytes for messages received from Native Messaging

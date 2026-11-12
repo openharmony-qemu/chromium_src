@@ -1,0 +1,159 @@
+diff a/chrome/browser/extensions/api/tabs/tabs_api.cc b/chrome/browser/extensions/api/tabs/tabs_api.cc	(rejected hunks)
+@@ -396,10 +396,11 @@ void ZoomModeToZoomSettings(zoom::ZoomController::ZoomMode zoom_mode,
+       zoom_settings->scope = api::tabs::ZoomSettingsScope::kPerTab;
+       break;
+   }
+ }
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction WindowsGetFunction::Run() {
+   std::optional<windows::Get::Params> params =
+       windows::Get::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+ 
+@@ -742,10 +743,11 @@ ExtensionFunction::ResponseAction TabsGetSelectedFunction::Run() {
+   return RespondNow(ArgumentList(
+       tabs::Get::Results::Create(tabs_internal::CreateTabObjectHelper(
+           tab->GetContents(), extension(), source_context_type(), browser,
+           tab_list->GetActiveIndex()))));
+ }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ ExtensionFunction::ResponseAction TabsGetAllInWindowFunction::Run() {
+   std::optional<tabs::GetAllInWindow::Params> params =
+       tabs::GetAllInWindow::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+@@ -825,10 +828,11 @@ ExtensionFunction::ResponseAction TabsQueryFunction::Run() {
+       BuildTabList(current_browser, last_active_browser, url_patterns,
+                    window_type, window_id, index);
+ 
+   return RespondNow(WithArguments(std::move(result)));
+ }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ base::Value::List TabsQueryFunction::BuildTabList(
+     BrowserWindowInterface* current_browser,
+     BrowserWindowInterface* last_active_browser,
+     const URLPatternSet& url_patterns,
+@@ -1054,10 +1058,11 @@ bool TabsQueryFunction::MatchesTab(::tabs::TabInterface* candidate_tab,
+   }
+ 
+   return true;
+ }
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction TabsDuplicateFunction::Run() {
+   std::optional<tabs::Duplicate::Params> params =
+       tabs::Duplicate::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+   if (!ExtensionTabUtil::IsTabStripEditable()) {
+@@ -1122,10 +1127,11 @@ ExtensionFunction::ResponseAction TabsDuplicateFunction::Run() {
+   return RespondNow(
+       ArgumentList(tabs::Get::Results::Create(ExtensionTabUtil::CreateTabObject(
+           new_contents, scrub_tab_behavior, extension(), new_tab_list,
+           new_tab_index))));
+ }
++#endif // !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ 
+ // TabsUpdateFunction has a production implementation in tabs_api_non_android.cc
+ // and a stub implementation in tabs_api_android.cc, but these utility functions
+ // are shared (and will stay here when there's finally a single implementation).
+ bool TabsUpdateFunction::UpdateURL(content::WebContents* web_contents,
+@@ -1172,10 +1178,11 @@ bool TabsUpdateFunction::UpdateURL(content::WebContents* web_contents,
+             web_contents->GetController().GetPendingEntry()->GetVirtualURL());
+ 
+   return true;
+ }
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseValue TabsUpdateFunction::GetResult(
+     content::WebContents* web_contents) {
+   if (!has_callback()) {
+     return NoArguments();
+   }
+@@ -1229,10 +1236,12 @@ ExtensionFunction::ResponseAction TabsMoveFunction::Run() {
+ 
+   // Return the results as an array if there are multiple tabs.
+   return RespondNow(WithArguments(std::move(tab_values)));
+ }
+ 
++#endif // !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++
+ bool TabsMoveFunction::MoveTab(int tab_id,
+                                int* new_index,
+                                base::Value::List& tab_values,
+                                const std::optional<int>& window_id,
+                                std::string* error) {
+@@ -1419,10 +1431,11 @@ ExtensionFunction::ResponseAction TabsRemoveFunction::Run() {
+   if (remaining_tabs_count_ == 0) {
+     return RespondNow(NoArguments());
+   }
+   return RespondLater();
+ }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ bool TabsRemoveFunction::RemoveTab(int tab_id, std::string* error) {
+   WindowController* window = nullptr;
+   content::WebContents* contents = nullptr;
+   if (!tabs_internal::GetTabById(tab_id, browser_context(),
+@@ -1480,10 +1493,11 @@ void TabsRemoveFunction::TabDestroyed() {
+     Respond(NoArguments());
+   }
+   Release();
+ }
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction TabsDetectLanguageFunction::Run() {
+   std::optional<tabs::DetectLanguage::Params> params =
+       tabs::DetectLanguage::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+ 
+@@ -1605,16 +1620,17 @@ TabsCaptureVisibleTabFunction::TabsCaptureVisibleTabFunction()
+     : chrome_details_(this) {}
+ 
+ WebContentsCaptureClient::ScreenshotAccess
+ TabsCaptureVisibleTabFunction::GetScreenshotAccess(
+     content::WebContents* web_contents) const {
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+   PrefService* service =
+       Profile::FromBrowserContext(browser_context())->GetPrefs();
+   if (service->GetBoolean(prefs::kDisableScreenshots)) {
+     return ScreenshotAccess::kDisabledByPreferences;
+   }
+-
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+   if (ExtensionsBrowserClient::Get()->IsScreenshotRestricted(web_contents)) {
+     return ScreenshotAccess::kDisabledByDlp;
+   }
+ 
+   return ScreenshotAccess::kEnabled;
+@@ -1914,11 +1934,15 @@ ScriptExecutor* ExecuteCodeInTabFunction::GetScriptExecutor(
+ 
+   bool success =
+       tabs_internal::GetTabById(execute_tab_id_, browser_context(),
+                                 include_incognito_information(), &window,
+                                 &contents, nullptr, error) &&
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      contents;
++#else
+       contents && window;
++#endif
+ 
+   if (!success) {
+     return nullptr;
+   }
+ 
+@@ -2090,11 +2115,13 @@ ExtensionFunction::ResponseAction TabsGetZoomSettingsFunction::Run() {
+       blink::ZoomLevelToZoomFactor(zoom_controller->GetDefaultZoomLevel());
+ 
+   return RespondNow(
+       ArgumentList(api::tabs::GetZoomSettings::Results::Create(zoom_settings)));
+ }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction TabsGoForwardFunction::Run() {
+   std::optional<tabs::GoForward::Params> params =
+       tabs::GoForward::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+ 

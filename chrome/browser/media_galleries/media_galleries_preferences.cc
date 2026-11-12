@@ -464,6 +464,10 @@ void MediaGalleriesPreferences::EnsureInitialized(base::OnceClosure callback) {
   // We determine the freshness of the profile here, before any of the finders
   // return and add media galleries to it (hence why the APIHasBeenUsed check
   // needs to happen here rather than inside OnStorageMonitorInit itself).
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!StorageMonitor::GetInstance())
+    return;
+#endif
   StorageMonitor::GetInstance()->EnsureInitialized(
       base::BindOnce(&MediaGalleriesPreferences::OnStorageMonitorInit,
                      weak_factory_.GetWeakPtr(), APIHasBeenUsed(profile_)));

@@ -295,7 +295,27 @@ class TestWebFrameWidget : public WebFrameWidgetImpl {
   void RequestDecode(const cc::DrawImage&,
                      base::OnceCallback<void(bool)>,
                      bool speculative) override;
-
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  gfx::Vector2dF GetOverScrollOffset() override {};
+  void OnTextRecognized(Vector<::blink::mojom::blink::TextRecognizeResultPtr> res, float scale)  override {};
+  void GetImageRect(GetImageRectCallback callback) override {};
+  void OnTextSelected(bool flag) override {};
+  void OnDestroyImageAnalyzerOverlay() override {};
+  void OnFoldStatusChanged(uint32_t foldstatus) override {};
+  void NotifyOverlayStateChanged() override {};
+  void OnDataDetectorSelectText() override {};
+  void SelectRangeV2(const ::gfx::Point& position, bool is_base) override {};
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  void ShowFreeCopyMenu() override {};
+#endif
+  void RegisterClippedVisualViewportSelectionBounds(
+      gfx::Rect clipped_selection_bounds) override {};
+  void CleanFocusCache() override {};
+  void TouchHitTest(const WebPointerEvent& event, size_t i) override {};
+  void MouseHitTest(const WebMouseEvent& event, int32_t button) override {};
+  void GetInputElementAttributes(
+      HashMap<String, String>& attributes) const override {};
+#endif
   using WebFrameWidgetImpl::GetOriginalScreenInfo;
 
  protected:
@@ -525,7 +545,11 @@ class WebViewHelper : public ScopedMockOverlayScrollbars {
 // Minimal implementation of WebLocalFrameClient needed for unit tests that load
 // frames. Tests that load frames and need further specialization of
 // WebLocalFrameClient behavior should subclass this.
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+class TestWebFrameClient : public WebLocalFrameClientExt {
+#else
 class TestWebFrameClient : public WebLocalFrameClient {
+#endif
  public:
   TestWebFrameClient();
   ~TestWebFrameClient() override;

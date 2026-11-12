@@ -1,0 +1,50 @@
+diff a/third_party/blink/renderer/core/frame/build.gni b/third_party/blink/renderer/core/frame/build.gni	(rejected hunks)
+@@ -1,10 +1,14 @@
+ # Copyright 2020 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//third_party/blink/renderer/config.gni")
++import("//arkweb/build/features/features.gni")
++if (is_arkweb) {
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++}
+ 
+ blink_core_sources_frame = [
+   "ad_tracker.cc",
+   "ad_tracker.h",
+   "ad_script_identifier.cc",
+@@ -250,10 +254,13 @@ blink_core_sources_frame = [
+   "window_properties.cc",
+   "window_properties.h",
+   "window_or_worker_global_scope.cc",
+   "window_or_worker_global_scope.h",
+ ]
++if (is_arkweb) {
++  blink_core_sources_frame += arkweb_third_patry_blink_renderer_core_frame_resources
++}
+ 
+ blink_core_tests_frame = [
+   "ad_tracker_test.cc",
+   "attribution_src_loader_test.cc",
+   "browser_controls_test.cc",
+@@ -294,5 +301,18 @@ blink_core_tests_frame = [
+   "visual_viewport_test.cc",
+   "web_frame_test.cc",
+   "web_frame_widget_test.cc",
+   "web_local_frame_client_test.cc",
+ ]
++
++if (arkweb_scrollbar_avoid_area) {
++  blink_core_sources_frame += [
++    "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/ark_web.cc",
++    "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/ark_web.h",
++  ]
++}
++
++if (arkweb_test && defined(enable_arkweb_ext) && enable_arkweb_ext) {
++  blink_core_tests_frame += [
++    "//arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_url_loader_manager_unittest.cc",
++  ]
++}
+\ No newline at end of file

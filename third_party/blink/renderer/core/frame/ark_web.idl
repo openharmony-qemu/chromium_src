@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+
+[
+    Exposed=Window
+] interface ArkWeb {
+    // Get or set the scrollbarAvoidAreaTop in Browser.
+    [RaisesException] attribute double scrollbarAvoidAreaTop;
+    // Get or set the scrollbarAvoidAreaBottom in Browser.
+    [RaisesException] attribute double scrollbarAvoidAreaBottom;
+};

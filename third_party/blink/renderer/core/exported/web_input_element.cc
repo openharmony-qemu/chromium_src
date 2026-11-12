@@ -30,6 +30,7 @@
 
 #include "third_party/blink/public/web/web_input_element.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/to_vector.h"
 #include "build/build_config.h"
 #include "third_party/blink/public/platform/web_string.h"
@@ -55,6 +56,17 @@ bool WebInputElement::IsTextField() const {
 void WebInputElement::MaybeSetHasBeenPasswordField() {
   Unwrap<HTMLInputElement>()->MaybeSetHasBeenPasswordField();
 }
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+bool WebInputElement::IsPasswordFieldForAutofill() const {
+  if (ConstUnwrap<HTMLInputElement>()->IsTextField() &&
+      ConstUnwrap<HTMLInputElement>()->HasBeenPasswordField()) {
+    return true;
+  }
+
+  return ConstUnwrap<HTMLInputElement>()->type() == input_type_names::kPassword;
+}
+#endif
 
 void WebInputElement::SetActivatedSubmit(bool activated) {
   Unwrap<HTMLInputElement>()->SetActivatedSubmit(activated);

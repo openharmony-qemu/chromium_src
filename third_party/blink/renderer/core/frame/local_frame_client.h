@@ -34,6 +34,10 @@
 #include <memory>
 #include <optional>
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 #include "base/time/time.h"
 #include "base/unguessable_token.h"
 #include "mojo/public/cpp/bindings/pending_associated_receiver.h"
@@ -79,6 +83,7 @@
 #include "third_party/blink/renderer/platform/wtf/forward.h"
 #include "third_party/blink/renderer/platform/wtf/vector.h"
 #include "v8/include/v8.h"
+#include "third_party/blink/renderer/core/frame/local_frame_client_ext.h"
 
 namespace network {
 class SharedURLLoaderFactory;
@@ -121,7 +126,8 @@ namespace scheduler {
 class TaskAttributionId;
 }  // namespace scheduler
 
-class CORE_EXPORT LocalFrameClient : public FrameClient {
+class CORE_EXPORT LocalFrameClient : public FrameClient,
+                                     public LocalFrameClientExt {
  public:
   ~LocalFrameClient() override = default;
 

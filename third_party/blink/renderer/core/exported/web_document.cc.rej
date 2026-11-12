@@ -1,0 +1,36 @@
+diff a/third_party/blink/renderer/core/exported/web_document.cc b/third_party/blink/renderer/core/exported/web_document.cc	(rejected hunks)
+@@ -74,10 +74,15 @@
+ #include "third_party/blink/renderer/core/speculation_rules/document_speculation_rules.h"
+ #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+ #include "third_party/blink/renderer/platform/loader/fetch/resource_fetcher.h"
+ #include "third_party/blink/renderer/platform/weborigin/security_origin.h"
+ #include "third_party/blink/renderer/platform/wtf/casting.h"
++
++#if BUILDFLAG(ARKWEB_READER_MODE)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/dom/document_recognise_util.h"
++#endif
++
+ #include "ui/accessibility/ax_mode.h"
+ 
+ namespace {
+ 
+ static const blink::WebStyleSheetKey GenerateStyleSheetKey() {
+@@ -306,10 +319,18 @@ std::vector<WebDraggableRegion> WebDocument::DraggableRegions() const {
+ 
+ WebDistillabilityFeatures WebDocument::DistillabilityFeatures() {
+   return DocumentStatisticsCollector::CollectStatistics(*Unwrap<Document>());
+ }
+ 
++#if BUILDFLAG(ARKWEB_READER_MODE)
++WebDistillabilityMatchInfo WebDocument::DistillabilityMatchInfo(
++    const blink::mojom::UrlHostDistillerInfoPtr& distiller_info) {
++  return DocumentRecogniseUtil::DocDistillMatch(*Unwrap<Document>(),
++                                                distiller_info);
++}
++#endif
++
+ void WebDocument::SetShowBeforeUnloadDialog(bool show_dialog) {
+   if (!IsHTMLDocument())
+     return;
+ 
+   Document* doc = Unwrap<Document>();

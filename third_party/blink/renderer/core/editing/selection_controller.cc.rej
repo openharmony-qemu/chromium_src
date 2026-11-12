@@ -1,0 +1,60 @@
+diff a/third_party/blink/renderer/core/editing/selection_controller.cc b/third_party/blink/renderer/core/editing/selection_controller.cc	(rejected hunks)
+@@ -27,10 +27,11 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
+ #include "third_party/blink/renderer/core/editing/selection_controller.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/auto_reset.h"
+ #include "base/trace_event/trace_event.h"
+ #include "third_party/blink/public/common/input/web_menu_source_type.h"
+ #include "third_party/blink/public/platform/web_input_event_result.h"
+ #include "third_party/blink/renderer/core/annotation/annotation_agent_impl.h"
+@@ -63,10 +64,14 @@
+ #include "third_party/blink/renderer/core/page/page.h"
+ #include "third_party/blink/renderer/core/paint/paint_layer.h"
+ #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
+ #include "ui/gfx/geometry/point_conversions.h"
+ 
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/selection_controller_header_for_include.cc"
++#endif
++
+ namespace blink {
+ 
+ SelectionController::SelectionController(LocalFrame& frame)
+     : ExecutionContextLifecycleObserver(frame.DomWindow()),
+       frame_(&frame),
+@@ -1046,11 +1104,16 @@ bool SelectionController::HandleDoubleClick(
+     // from setting caret selection.
+     selection_state_ = SelectionState::kExtendedSelection;
+     return true;
+   }
+   if (!SelectClosestWordFromMouseEvent(&event.Event(),
+-                                       event.GetHitTestResult()))
++                                       event.GetHitTestResult()
++#if BUILDFLAG(ARKWEB_AI)
++                                       ,
++                                       true
++#endif
++                                       ))
+     return true;
+   if (!Selection().IsHandleVisible())
+     return true;
+   frame_->GetEventHandler().ShowNonLocatedContextMenu(nullptr,
+                                                       kMenuSourceTouch);
+@@ -1120,10 +1183,13 @@ bool SelectionController::HandleMousePressEvent(
+   mouse_down_may_start_select_ = (CanMouseDownStartSelect(event.InnerNode()) ||
+                                   IsSelectionOverLink(event)) &&
+                                  !event.GetScrollbar();
+   mouse_down_was_single_click_on_caret_ = false;
+   mouse_down_was_single_click_in_selection_ = false;
++#if BUILDFLAG(ARKWEB_MENU)
++  mouse_click_down_allows_ = !event.Event().FromTouch();
++#endif
+   if (!Selection().IsAvailable()) {
+     // "gesture-tap-frame-removed.html" reaches here.
+     mouse_down_allows_multi_click_ = !event.Event().FromTouch();
+   } else {
+     // Avoid double-tap touch gesture confusion by restricting multi-click side

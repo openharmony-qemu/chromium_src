@@ -1,0 +1,30 @@
+diff a/third_party/blink/renderer/core/fragment_directive/text_fragment_anchor.cc b/third_party/blink/renderer/core/fragment_directive/text_fragment_anchor.cc	(rejected hunks)
+@@ -137,10 +145,14 @@ bool TextFragmentAnchor::GenerateNewToken(const DocumentLoader& loader) {
+ // static
+ bool TextFragmentAnchor::GenerateNewTokenForSameDocument(
+     const DocumentLoader& loader,
+     WebFrameLoadType load_type,
+     mojom::blink::SameDocumentNavigationType same_document_navigation_type) {
++#if BUILDFLAG(ARKWEB_AI)
++  if (TextFragmentAnchorUtils::ShouldIgnoreToken(loader))
++    return true;
++#endif
+   if ((load_type != WebFrameLoadType::kStandard &&
+        load_type != WebFrameLoadType::kReplaceCurrentItem) ||
+       same_document_navigation_type !=
+           mojom::blink::SameDocumentNavigationType::kFragment)
+     return false;
+@@ -224,10 +236,13 @@ TextFragmentAnchor::TextFragmentAnchor(
+       metrics_(MakeGarbageCollected<TextFragmentAnchorMetrics>(
+           frame_->GetDocument())) {
+   TRACE_EVENT("blink", "TextFragmentAnchor::TextFragmentAnchor");
+   DCHECK(!text_directives.empty());
+   DCHECK(frame_->View());
++#if BUILDFLAG(ARKWEB_AI)
++  utils_ = MakeGarbageCollected<TextFragmentAnchorUtils>(frame, should_scroll, this);
++#endif
+ 
+   metrics_->DidCreateAnchor(text_directives.size());
+ 
+   AnnotationAgentContainerImpl* annotation_container =
+       AnnotationAgentContainerImpl::CreateIfNeeded(*frame_->GetDocument());

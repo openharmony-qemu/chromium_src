@@ -1,0 +1,14 @@
+diff a/third_party/blink/renderer/bindings/core/v8/v8_initializer.cc b/third_party/blink/renderer/bindings/core/v8/v8_initializer.cc	(rejected hunks)
+@@ -154,11 +160,11 @@ mojom::ConsoleMessageLevel MessageLevelFromNonFatalErrorLevel(int error_level) {
+ String ToBlinkString(v8::Local<v8::Context> context,
+                      v8::Local<v8::String> source,
+                      size_t max_length) {
+   uint32_t source_length = source->Length();
+   size_t len = max_length == 0 ? source_length
+-                                : std::min<size_t>(max_length, source_length);
++                               : std::min<size_t>(max_length, source_length);
+   if (len == 0) {
+     return String();
+   }
+   base::span<UChar> buffer;
+   String result = String::CreateUninitialized(len, buffer);

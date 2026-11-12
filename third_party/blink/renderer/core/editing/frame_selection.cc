@@ -392,7 +392,11 @@ void FrameSelection::DidSetSelectionDeprecated(
   }
 
   if (!new_selection.IsNone() && !options.DoNotSetFocus()) {
+#if BUILDFLAG(ARKWEB_FOCUS)
+    SetFocusedNodeIfNeeded(options.IsSkipFocusCheck());
+#else
     SetFocusedNodeIfNeeded();
+#endif
     // |setFocusedNodeIfNeeded()| dispatches sync events "FocusOut" and
     // "FocusIn", |frame_| may associate to another document.
     if (!IsAvailable() || GetDocument() != current_document) {
@@ -972,6 +976,11 @@ bool FrameSelection::Contains(const PhysicalOffset& point) {
   const PositionInFlatTree& start = visible_start.DeepEquivalent();
   const PositionInFlatTree& end = visible_end.DeepEquivalent();
   const PositionInFlatTree& pos = pos_with_affinity.GetPosition();
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  if (!contains_boundaries) {
+    return start.CompareTo(pos) < 0 && pos.CompareTo(end) < 0;
+  }
+#endif
   return start.CompareTo(pos) <= 0 && pos.CompareTo(end) <= 0;
 }
 
@@ -1122,6 +1131,9 @@ void FrameSelection::SelectAll(SetSelectionBy set_selection_by,
                    .SetShouldCloseTyping(true)
                    .SetShouldClearTypingStyle(true)
                    .SetShouldShowHandle(IsHandleVisible())
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+                   .SetIsSelectAll(true)
+#endif  // ARKWEB_CLIPBOARD
                    .Build());
 
   SelectFrameElementInParentIfFullySelected();
@@ -1251,6 +1263,18 @@ void FrameSelection::SetFrameIsFocused(bool flag) {
 }
 
 bool FrameSelection::FrameIsFocusedAndActive() const {
+#if BUILDFLAG(ARKWEB_MENU)
+  if (frame_ && frame_->Client() && frame_->Client()->GetWebFrame() &&
+      frame_->Client()->GetWebFrame()->View() &&
+      frame_->Client()->GetWebFrame()->View()->GetSettings() &&
+      frame_->Client()
+          ->GetWebFrame()
+          ->View()
+          ->GetSettings()
+          ->GetSmartEdgeState()) {
+    return true;
+  }
+#endif
   return focused_ && frame_->GetPage() &&
          frame_->GetPage()->GetFocusController().IsActive();
 }
@@ -1594,6 +1618,9 @@ void FrameSelection::MoveRangeSelectionExtent(
           .SetSetSelectionBy(SetSelectionBy::kUser)
           .SetShouldShowHandle(true)
           .Build());
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  AsFrameSelectionExt()->ScrollRectToVisualIfClosestEdge(contents_point);
+#endif
 }
 
 void FrameSelection::MoveRangeSelection(const gfx::Point& base_point,
@@ -1797,7 +1824,6 @@ EphemeralRange FrameSelection::GetSelectionRangeAroundPosition(
 
   return EphemeralRange(start, end);
 }
-
 }  // namespace blink
 
 #if DCHECK_IS_ON()

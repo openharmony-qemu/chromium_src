@@ -1,0 +1,34 @@
+diff a/third_party/blink/renderer/core/editing/commands/clipboard_commands.cc b/third_party/blink/renderer/core/editing/commands/clipboard_commands.cc	(rejected hunks)
+@@ -57,10 +57,14 @@
+ #include "third_party/blink/renderer/core/loader/resource/image_resource_observer.h"
+ #include "third_party/blink/renderer/platform/loader/fetch/fetch_parameters.h"
+ #include "third_party/blink/renderer/platform/loader/fetch/resource_fetcher.h"
+ #include "third_party/blink/renderer/platform/loader/fetch/resource_request.h"
+ 
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++#include "base/trace_event/trace_event.h"
++#endif
++
+ namespace blink {
+ 
+ // This class holds some state relevant to current clipboard event dispatch. It
+ // helps `ClipboardCommands` to know whether a given `ExecutionContext` is
+ // currently handling a copy/paste command.
+@@ -524,10 +532,17 @@ void ClipboardCommands::Paste(LocalFrame& frame, EditorCommandSource source) {
+   // implies multiple IPC calls to the ClipboardHost in the browaser process.
+   // SystemClipboard snapshotting tells SystemClipboard to cache results from
+   // the ClipboardHost so that at most one IPC is made for each type.
+   ScopedSystemClipboardSnapshot snapshot(*frame.GetSystemClipboard());
+ 
++#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
++  if (frame.GetSystemClipboard()->HandlePasswordVault()) {
++    LOG(INFO) << "skip this paste operation.";
++    return;
++  }
++#endif
++
+   if (!DispatchPasteEvent(frame, PasteMode::kAllMimeTypes, source))
+     return;
+   if (!frame.GetEditor().CanPaste())
+     return;
+ 

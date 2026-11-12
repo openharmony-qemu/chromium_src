@@ -33,12 +33,13 @@ void DisplayCutoutClientImpl::BindMojoReceiver(
 }
 
 void DisplayCutoutClientImpl::SetSafeArea(const gfx::Insets& safe_area) {
-  frame_->GetDocument()->GetPage()->SetMaxSafeAreaInsets(frame_, safe_area);
+  utils_->SetSafeArea(safe_area);
 }
 
 void DisplayCutoutClientImpl::Trace(Visitor* visitor) const {
   visitor->Trace(frame_);
   visitor->Trace(receiver_);
+  visitor->Trace(utils_);
 }
 
 }  // namespace blink

@@ -784,6 +784,13 @@ class CORE_EXPORT LocalDOMWindow final : public DOMWindow,
 
   // Used to indicate if the DOM window is reused or not.
   bool is_dom_window_reused_ = false;
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+  mutable Member<ArkWeb> arkWeb_;
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
+
+#if BUILDFLAG(IS_ARKWEB)
+  Member<DetectSimulatedClickRiskEnhancedImpl> detect_simulated_click_risk_enhanced_impl_;
+#endif // IS_ARKWEB
 };
 
 template <>

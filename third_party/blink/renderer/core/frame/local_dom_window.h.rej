@@ -1,0 +1,53 @@
+diff a/third_party/blink/renderer/core/frame/local_dom_window.h b/third_party/blink/renderer/core/frame/local_dom_window.h	(rejected hunks)
+@@ -149,10 +149,16 @@ class GlobalCacheStorageImpl;
+ template <typename T>
+ class GlobalCookieStoreImpl;
+ template <typename T, typename P>
+ class GlobalPerformanceImpl;
+ 
++#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
++class ArkWeb;
++#endif // ARKWEB_SCROLLBAR_AVOID_AREA
++#if BUILDFLAG(IS_ARKWEB)
++class DetectSimulatedClickRiskEnhancedImpl;
++#endif // IS_ARKWEB
+ namespace scheduler {
+ class TaskAttributionInfo;
+ }
+ 
+ enum PageTransitionEventPersistence {
+@@ -322,11 +328,13 @@ class CORE_EXPORT LocalDOMWindow final : public DOMWindow,
+   BarProp* scrollbars();
+   BarProp* statusbar();
+   BarProp* toolbar();
+   Navigator* navigator();
+   Navigator* clientInformation() { return navigator(); }
+-
++#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
++  ArkWeb* arkWeb();
++#endif // ARKWEB_SCROLLBAR_AVOID_AREA
+   bool offscreenBuffering() const;
+ 
+   int outerHeight() const;
+   int outerWidth() const;
+   int innerHeight() const;
+@@ -996,10 +1004,19 @@ class CORE_EXPORT LocalDOMWindow final : public DOMWindow,
+   void SetWindowSharedStorageImpl(ForwardDeclaredMember<WindowSharedStorageImpl>
+                                       window_shared_storage_impl) {
+     window_shared_storage_impl_ = window_shared_storage_impl;
+   }
+ 
++#if BUILDFLAG(IS_ARKWEB)
++  // Non-standard API for business risk intelligent detection
++  ScriptPromise<IDLString> detectSimulatedClickRiskEnhanced(
++      ScriptState* script_state,
++      int32_t algorithm,
++      const Vector<int32_t>& nonce,
++      int32_t version,
++      ExceptionState& exception_state);
++#endif // IS_ARKWEB
+  protected:
+   // EventTarget overrides.
+   void AddedEventListener(const AtomicString& event_type,
+                           RegisteredEventListener&) override;
+   void RemovedEventListener(const AtomicString& event_type,

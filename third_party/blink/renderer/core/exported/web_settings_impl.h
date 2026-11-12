@@ -286,4 +286,8 @@ class CORE_EXPORT WebSettingsImpl final : public WebSettings {
 
 }  // namespace blink
 
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/exported/web_settings_impl_ext.h"
+#endif
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_EXPORTED_WEB_SETTINGS_IMPL_H_

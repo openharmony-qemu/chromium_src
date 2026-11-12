@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/core/css/parser/css_parser_impl_test.cc b/third_party/blink/renderer/core/css/parser/css_parser_impl_test.cc	(rejected hunks)
+@@ -1307,11 +1307,12 @@ TEST(CSSParserImplTest, AllPropertiesCanParseImportant) {
+                     computed_value->CssText() + " !important;";
+     EXPECT_EQ(RoundTripProperty(*document, property_text), property_text);
+   }
+ 
+   // So that we don't introduce more, or break the entire test inadvertently.
+-  EXPECT_EQ(broken_properties, 15);
++  // revert pr 6576943
++  EXPECT_EQ(broken_properties, 16);
+ }
+ 
+ TEST(CSSParserImplTest, ParseSupportsBlinkFeature) {
+   test::TaskEnvironment task_environment;
+   String sheet_text = R"CSS(

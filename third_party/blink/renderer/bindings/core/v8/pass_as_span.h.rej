@@ -1,0 +1,13 @@
+diff a/third_party/blink/renderer/bindings/core/v8/pass_as_span.h b/third_party/blink/renderer/bindings/core/v8/pass_as_span.h	(rejected hunks)
+@@ -210,11 +210,10 @@ template <PassAsSpanMarkerBase::Flags flags =
+           typename T = void>
+ struct PassAsSpan : public PassAsSpanMarkerBase {
+   static constexpr bool allow_shared = flags & Flags::kAllowShared;
+   static constexpr bool allow_sequence = flags & Flags::kAllowSequence;
+   static constexpr bool support_reentry = flags & Flags::kSupportReentry;
+-
+   static constexpr bool is_typed = !std::is_same_v<T, void>;
+ 
+   static_assert(is_typed || !allow_sequence);
+ 
+   using ElementType = T;

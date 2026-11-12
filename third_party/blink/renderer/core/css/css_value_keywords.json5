@@ -1758,6 +1758,8 @@
 
     // color-scheme
     "only",
+    // arkweb_night_mode
+    "night",
 
     // (prefers-reduced-motion:) media feature
     // (prefers-reduced-data:) media feature

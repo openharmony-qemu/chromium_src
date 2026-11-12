@@ -78,4 +78,6 @@
     [CEReactions, PerWorldBindings, RaisesException, RuntimeCallStatsCounter=NodeAppendChild] Node appendChild(Node node);
     [CEReactions, PerWorldBindings, RaisesException] Node replaceChild(Node node, Node child);
     [CEReactions, RaisesException, RuntimeCallStatsCounter=NodeRemoveChild] Node removeChild(Node child);
+    // arkweb_ai
+    long getArkWebDomNodeId();
 };

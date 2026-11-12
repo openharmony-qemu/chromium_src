@@ -94,6 +94,17 @@
 #include "ui/base/mojom/attributed_string.mojom-blink.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/script/classic_script_utils.h"
+#include "gin/converter.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/command_line.h"
+#include "base/logging.h"
+#endif
+
 namespace blink {
 
 namespace {

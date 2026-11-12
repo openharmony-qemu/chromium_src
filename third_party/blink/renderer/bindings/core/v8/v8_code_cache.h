@@ -164,6 +164,16 @@ class CORE_EXPORT V8CodeCache final {
 
   static void RecordCacheSetStatistics(SetMetadataType metadata_type);
 
+  static void ProduceCacheUtils(v8::Isolate* isolate,
+                                CodeCacheHost* code_cache_host,
+                                v8::Local<v8::UnboundScript> unbound_script,
+                                ScriptCachedMetadataHandler* cache_handler,
+                                size_t source_text_length,
+                                const KURL& source_url,
+                                const blink::TextPosition& source_start_position,
+                                const char* trace_name,
+                                V8CodeCache::ProduceCacheOptions produce_cache_options);
+
  private:
   static std::tuple<v8::ScriptCompiler::CompileOptions,
                     ProduceCacheOptions,

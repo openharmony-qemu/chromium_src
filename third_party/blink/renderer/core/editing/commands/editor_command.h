@@ -45,6 +45,10 @@ class LocalFrame;
 enum class EditingTriState;
 enum class EditorCommandSource;
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+enum class EditingCommandType;
+#endif  // ARKWEB_CLIPBOARD
+
 class CORE_EXPORT EditorCommand {
   STACK_ALLOCATED();
 

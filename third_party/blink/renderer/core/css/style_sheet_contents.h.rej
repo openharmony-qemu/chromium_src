@@ -1,0 +1,18 @@
+diff a/third_party/blink/renderer/core/css/style_sheet_contents.h b/third_party/blink/renderer/core/css/style_sheet_contents.h	(rejected hunks)
+@@ -281,10 +286,16 @@ class CORE_EXPORT StyleSheetContents final
+     return render_blocking_behavior_;
+   }
+ 
+   void Trace(Visitor*) const;
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  void SetStyleSheetType(WebDocument::StyleSheetType type);
++  bool IsForAdBlock() const { return is_for_adblock_; }
++  bool IsForUserAdBlock() const { return is_for_user_adblock_; }
++#endif
++
+  private:
+   StyleSheetContents& operator=(const StyleSheetContents&) = delete;
+   void NotifyRemoveFontFaceRule(const StyleRuleFontFace*);
+ 
+   Document* ClientSingleOwnerDocument() const;

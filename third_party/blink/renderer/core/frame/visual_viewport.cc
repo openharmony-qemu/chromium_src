@@ -84,6 +84,13 @@
 #include "ui/gfx/geometry/size_conversions.h"
 #include "ui/gfx/geometry/size_f.h"
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "cc/layers/solid_color_scrollbar_layer_impl.h"
+#include "base/feature_list.h"
+#include "third_party/blink/public/common/features.h"
+#endif
+
 namespace blink {
 
 namespace {
@@ -233,6 +240,9 @@ VisualViewport::VisualViewport(Page& owner)
       unique_id, CompositorElementIdNamespace::kPrimary);
   scroll_element_id_ = CompositorElementIdFromUniqueObjectId(
       unique_id, CompositorElementIdNamespace::kScroll);
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  arkweb_utils_= MakeGarbageCollected<ArkWebVisualViewportUtils>(this);
+#endif  // BUILDFLAG(ARKWEB_SCROLLBAR)
   Reset();
 }
 
@@ -506,6 +516,9 @@ void VisualViewport::Trace(Visitor* visitor) const {
   visitor->Trace(scroll_node_);
   visitor->Trace(horizontal_scrollbar_effect_node_);
   visitor->Trace(vertical_scrollbar_effect_node_);
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  visitor->Trace(arkweb_utils_);
+#endif  // BUILDFLAG(ARKWEB_SCROLLBAR)
   ScrollableArea::Trace(visitor);
 }
 
@@ -654,6 +667,16 @@ void VisualViewport::SetScaleAndLocation(float scale,
     // constraints.
     DCHECK(IsActiveViewport());
     NotifyRootFrameViewport();
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+    if (is_pinch_gesture_active) {
+      LocalFrameView* view = LocalMainFrame().View();
+      if (view) {
+        view->LayoutViewport()
+            ->AsPaintLayerScrollableAreaExt()
+            ->UpdateScrollbarLengthOrCreateWidthScale();
+      }
+    }
+#endif  // ARKWEB_SCROLLBAR
   }
 }
 

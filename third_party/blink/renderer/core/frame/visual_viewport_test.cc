@@ -2850,3 +2850,7 @@ TEST_F(VisualViewportSimTest, PreferredOverlayScrollbarColorTheme) {
 
 }  // namespace
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "third_party/blink/renderer/core/frame/arkweb_visual_viewport_utils_unittest.cc"
+#endif

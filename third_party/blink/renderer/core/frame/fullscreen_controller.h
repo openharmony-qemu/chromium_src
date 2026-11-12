@@ -63,7 +63,15 @@ class CORE_EXPORT FullscreenController {
   // fullscreen.
   void EnterFullscreen(LocalFrame&,
                        const FullscreenOptions*,
-                       FullscreenRequestType request_type);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                       bool overlay_fullscreen,
+#endif // ARKWEB_VIDEO_ASSISTANT
+                       FullscreenRequestType request_type
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+                       ,
+                       const absl::optional<gfx::Size>& video_natural_size
+#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
+  );
   void ExitFullscreen(LocalFrame&);
 
   // Called by content::RenderWidget (via WebWidget) to notify that we've

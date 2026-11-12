@@ -6396,6 +6396,11 @@ CSSValueList* ConsumeNonGenericFamilyNameList(CSSParserTokenStream& stream) {
 }
 
 CSSValue* ConsumeGenericFamily(CSSParserTokenStream& stream) {
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  if (Cssutils::IsMathFormulaDisabledMode()) {
+    return ConsumeIdentRange(stream, CSSValueID::kSerif, CSSValueID::kWebkitBody);
+  }
+#endif
   return ConsumeIdentRange(stream, CSSValueID::kSerif, CSSValueID::kMath);
 }
 

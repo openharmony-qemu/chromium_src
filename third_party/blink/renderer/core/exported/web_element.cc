@@ -211,20 +211,23 @@ void WebElement::SetAttribute(const WebString& attr_name,
 }
 
 unsigned WebElement::AttributeCount() const {
-  if (!ConstUnwrap<Element>()->hasAttributes())
+  if (!ConstUnwrap<Element>()->hasAttributes()) {
     return 0;
+  }
   return ConstUnwrap<Element>()->Attributes().size();
 }
 
 WebString WebElement::AttributeLocalName(unsigned index) const {
-  if (index >= AttributeCount())
+  if (index >= AttributeCount()) {
     return WebString();
+  }
   return ConstUnwrap<Element>()->Attributes().at(index).LocalName();
 }
 
 WebString WebElement::AttributeValue(unsigned index) const {
-  if (index >= AttributeCount())
+  if (index >= AttributeCount()) {
     return WebString();
+  }
   return ConstUnwrap<Element>()->Attributes().at(index).Value();
 }
 
@@ -461,7 +464,11 @@ void WebElement::PasteText(const WebString& text,
                                 DataObject::CreateFromString(text));
   };
   // Fires "paste" event.
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  if (!suppress_paste_event && target->DispatchEvent(*ClipboardEvent::Create(
+#else
   if (target->DispatchEvent(*ClipboardEvent::Create(
+#endif
           event_type_names::kPaste, create_data_transfer(text))) !=
       DispatchEventResult::kNotCanceled) {
     return;
@@ -740,7 +747,9 @@ WebString WebElement::GetComputedValue(const WebString& property_name) {
   return computed_style->GetPropertyCSSValue(property_id)->CssText();
 }
 
-WebElement::WebElement(Element* elem) : WebNode(elem) {}
+WebElement::WebElement(Element* elem) : WebNode(elem) {
+  utils_ = new WebElementUtils();
+}
 
 DEFINE_WEB_NODE_TYPE_CASTS(WebElement, IsElementNode())
 

@@ -1,0 +1,20 @@
+diff a/third_party/blink/renderer/core/editing/build.gni b/third_party/blink/renderer/core/editing/build.gni	(rejected hunks)
+@@ -357,10 +361,18 @@ blink_core_sources_editing = [
+   "visible_units_paragraph.cc",
+   "visible_units_sentence.cc",
+   "visible_units_word.cc",
+ ]
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  blink_core_sources_editing += arkweb_third_party_blink_renderer_core_ohos_adblock_util_sources
++#endif
++
++if (arkweb_menu) {
++  blink_core_sources_editing += arkweb_third_patry_blink_renderer_core_editing_frame_selection_sources
++}
++
+ if (is_mac) {
+   blink_core_sources_editing += [
+     "commands/smart_replace_cf.cc",
+     "kill_ring_mac.mm",
+     "substring_util.h",

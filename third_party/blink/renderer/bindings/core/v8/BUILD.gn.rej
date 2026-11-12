@@ -1,0 +1,22 @@
+diff a/third_party/blink/renderer/bindings/core/v8/BUILD.gn b/third_party/blink/renderer/bindings/core/v8/BUILD.gn	(rejected hunks)
+@@ -3,10 +3,11 @@
+ # found in the LICENSE file.
+ 
+ import("//testing/libfuzzer/fuzzer_test.gni")
+ import("//third_party/blink/renderer/bindings/generated_in_core.gni")
+ import("//third_party/blink/renderer/core/core.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ visibility = [ "//third_party/blink/renderer/*" ]
+ 
+ blink_core_sources("v8") {
+   visibility = []
+@@ -75,7 +80,8 @@ fuzzer_test("v8_serialized_script_value_fuzzer") {
+     "//base/test:test_support",
+     "//third_party/blink/public/common",
+     "//third_party/blink/renderer/core",
+     "//third_party/blink/renderer/core:testing",
+     "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
++    "//cef:libcef_static",
+   ]
+ }

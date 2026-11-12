@@ -1,0 +1,27 @@
+diff a/third_party/blink/renderer/core/dom/node.cc b/third_party/blink/renderer/core/dom/node.cc	(rejected hunks)
+@@ -2532,11 +2532,11 @@ Node::InsertionNotificationRequest Node::InsertedInto(
+   DCHECK(!NeedsStyleInvalidation());
+   DCHECK(insertion_point.isConnected() || insertion_point.IsInShadowTree() ||
+          IsContainerNode() || GetDOMParts());
+   if (insertion_point.isConnected()) {
+     SetFlag(kIsConnectedFlag);
+-#if DCHECK_IS_ON()
++#if DCHECK_IS_ON() || BUILDFLAG(IS_ARKWEB)
+     insertion_point.GetDocument().IncrementNodeCount();
+ #endif
+   }
+   if (ParentOrShadowHostNode()->IsInShadowTree())
+     SetFlag(kIsInShadowTreeFlag);
+@@ -2559,11 +2559,11 @@ void Node::RemovedFrom(ContainerNode& insertion_point) {
+       ClearChildNeedsStyleRecalc();
+       ClearNeedsStyleInvalidation();
+       ClearChildNeedsStyleInvalidation();
+     }
+     ClearFlag(kIsConnectedFlag);
+-#if DCHECK_IS_ON()
++#if DCHECK_IS_ON() || BUILDFLAG(IS_ARKWEB)
+     insertion_point.GetDocument().DecrementNodeCount();
+ #endif
+   }
+   if (IsInShadowTree() && !GetTreeScope().RootNode().IsShadowRoot()) {
+     ClearFlag(kIsInShadowTreeFlag);

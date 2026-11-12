@@ -75,6 +75,11 @@ class SystemClipboardTest : public testing::Test {
     controller_ = MakeGarbageCollected<MockPlatformEventController>(
         *page_holder_->GetFrame().DomWindow());
   }
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  LocalFrame& local_frame() {
+    return page_holder_.get()->GetFrame();
+  }
+#endif
 
  protected:
   MockClipboardHost* mock_clipboard_host() {

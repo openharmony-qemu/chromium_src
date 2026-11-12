@@ -283,7 +283,12 @@ WebStyleSheetKey WebDocument::InsertStyleSheet(
     const WebString& source_code,
     const WebStyleSheetKey* key,
     WebCssOrigin origin,
-    BackForwardCacheAware back_forward_cache_aware) {
+    BackForwardCacheAware back_forward_cache_aware
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    ,
+    const StyleSheetType type
+#endif
+) {
   Document* document = Unwrap<Document>();
   DCHECK(document);
   if (back_forward_cache_aware == BackForwardCacheAware::kPossiblyDisallow) {
@@ -293,6 +298,9 @@ WebStyleSheetKey WebDocument::InsertStyleSheet(
   }
   auto* parsed_sheet = MakeGarbageCollected<StyleSheetContents>(
       MakeGarbageCollected<CSSParserContext>(*document));
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  parsed_sheet->SetStyleSheetType(type);
+#endif
   parsed_sheet->ParseString(source_code);
   const WebStyleSheetKey& injection_key =
       key && !key->IsNull() ? *key : GenerateStyleSheetKey();

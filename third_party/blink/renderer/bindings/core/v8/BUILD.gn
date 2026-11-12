@@ -28,6 +28,10 @@ blink_core_sources("v8") {
     "//third_party/blink/renderer/platform",
     "//v8",
   ]
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb//build/features" ]
+  }
 }
 
 source_set("testing") {

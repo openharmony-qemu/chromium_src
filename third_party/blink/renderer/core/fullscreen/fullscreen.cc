@@ -67,6 +67,12 @@
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 #include "third_party/blink/renderer/platform/scheduler/public/event_loop.h"
 
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+#include "third_party/blink/renderer/core/html/html_collection.h"
+#include "third_party/blink/renderer/core/html/media/html_video_element.h"
+#include "third_party/blink/renderer/core/layout/layout_object.h"
+#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
+
 namespace blink {
 
 namespace {
@@ -77,13 +83,38 @@ void FullscreenElementChanged(Document& document,
                               FullscreenRequestType new_request_type,
                               const FullscreenOptions* new_options) {
   DCHECK_NE(old_element, new_element);
-
+#if BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+  bool overlay_fullscreen = false;
   if (new_element) {
+    if (auto* video_element = DynamicTo<HTMLVideoElement>(new_element)) {
+      overlay_fullscreen = video_element->IsFullscreenVideoOverlayEnabled();
+    }
+  }
+#endif // BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+
+#if BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+  // When the new fullscreen element is a video element with fullscreen video overlay enabled,
+  // we should not apply fullscreen styles to it to avoid unexpected layout changes.
+  if (new_element && !overlay_fullscreen) {
+#else
+  if (new_element) {
+#endif // BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
     document.GetStyleEngine().EnsureUAStyleForFullscreen(*new_element);
   }
 
   if (old_element) {
     DCHECK_NE(old_element, Fullscreen::FullscreenElementFrom(document));
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    // A custom-media-player video is leaving the fullscreen slot (exit, or
+    // swap to a container). Reset render_video_view so the inline view
+    // presents again. This chokepoint is hit per-document for every teardown
+    // (Unfullscreen in all exit paths), so it covers iframe / OOPIF /
+    // container-swap / direct-exit uniformly — old_element is exactly the
+    // element leaving, no per-doc iteration and no stored state needed.
+    auto* old_video = DynamicTo<HTMLVideoElement>(old_element);
+    if (old_video && old_video->IsCustomMediaPlayerEnabled())
+      old_video->SetRenderVideoView(false);
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
     old_element->PseudoStateChanged(CSSSelector::kPseudoFullScreen);
     old_element->PseudoStateChanged(CSSSelector::kPseudoFullscreen);
@@ -94,7 +125,11 @@ void FullscreenElementChanged(Document& document,
         false);
   }
 
+#if BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+  if (new_element && !overlay_fullscreen) {
+#else
   if (new_element) {
+#endif // BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
     DCHECK_EQ(new_element, Fullscreen::FullscreenElementFrom(document));
     // FullscreenOptions should be provided for incoming fullscreen element.
     CHECK(new_options);
@@ -378,8 +413,21 @@ RequestFullscreenError FullscreenElementReadyCheck(
     return RequestFullscreenError::kElementNotConnected;
 
   // `element`'s node document is allowed to use the "fullscreen" feature.
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (!AllowedToUseFullscreen(element.GetDocument(), report_on_failure)) {
+    if (auto* video_element = DynamicTo<HTMLVideoElement>(element)) {
+      if (!video_element->IsCustomMediaPlayerEnabled() &&
+          !video_element->IsFullscreenVideoOverlayEnabled()) {
+        return RequestFullscreenError::kDisallowedByPermissionsPolicy;
+      }
+    } else {
+      return RequestFullscreenError::kDisallowedByPermissionsPolicy;
+    }
+  }
+#else
   if (!AllowedToUseFullscreen(element.GetDocument(), report_on_failure))
     return RequestFullscreenError::kDisallowedByPermissionsPolicy;
+#endif
 
   // `element` namespace is not the HTML namespace or `element`’s popover
   // visibility state is hidden.
@@ -657,6 +705,19 @@ ScriptPromise<IDLUndefined> Fullscreen::RequestFullscreen(
     FullscreenRequestType request_type,
     ScriptState* script_state,
     ExceptionState* exception_state) {
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+  LOG(WARNING) << "OhMedia::RequestFullscreen localName = "
+               << pending.localName() << ", CountFullscreenInTopLayer = "
+               << CountFullscreenInTopLayer(pending.GetDocument());
+#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(WARNING) << "OhMedia::RequestFullscreen localName = "
+                        << pending.localName()
+                        << ", CountFullscreenInTopLayer = "
+                        << CountFullscreenInTopLayer(pending.GetDocument());
+#endif
+
   RequestFullscreenScope scope;
 
   // 1. Let `pendingDoc` be `this`'s node document.
@@ -670,6 +731,9 @@ ScriptPromise<IDLUndefined> Fullscreen::RequestFullscreen(
   // 3. If `pendingDoc` is not fully active, then reject `promise` with a
   // TypeError exception and return `promise`.
   if (!document.IsActive() || !document.GetFrame()) {
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+    LOG(ERROR) << "RequestFullscreen document isn't active or getframe failed.";
+#endif // BUILDFLAG(ARKWEB_FULLSCREEN)
     if (!exception_state)
       return EmptyPromise();
     exception_state->ThrowTypeError("Document not active");
@@ -856,6 +920,17 @@ void Fullscreen::ContinueRequestFullscreenAfterConditionsEnforcement(
     RequestFullscreenError error) {
   CHECK(pending);
   Document& document = pending->GetDocument();
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  if (request_type & FullscreenRequestType::kForCustomMediaPlayer) {
+    if (!pending->isConnected()) {
+      error = RequestFullscreenError::kElementNotConnected;
+    } else {
+      error = RequestFullscreenError::kNone;
+    }
+  }
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
   if (error != RequestFullscreenError::kNone) {
     // TODO: Surface more errors in the console with added precision.
     if (error == RequestFullscreenError::kPermissionCheckFailed) {
@@ -888,7 +963,45 @@ void Fullscreen::ContinueRequestFullscreenAfterConditionsEnforcement(
   From(window).pending_requests_.push_back(MakeGarbageCollected<PendingRequest>(
       pending, request_type, options, resolver));
   LocalFrame& frame = *window.GetFrame();
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+  HTMLVideoElement* video_element = nullptr;
+  absl::optional<gfx::Size> video_natural_size = absl::nullopt;
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  bool overlay_fullscreen = false;
+#endif // ARKWEB_VIDEO_ASSISTANT
+
+  if (auto* element = DynamicTo<HTMLVideoElement>(pending)) {
+    video_element = element;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    overlay_fullscreen  = true;
+#endif // ARKWEB_VIDEO_ASSISTANT
+  } else {
+    AtomicString video_tag = AtomicString("video");
+    HTMLCollection* children = pending->getElementsByTagName(video_tag);
+    for (unsigned int i = 0; children && i < children->length(); i++) {
+      Element* child_element = children->item(i);
+      if (child_element->GetLayoutObject() &&
+          child_element->GetLayoutObject()->IsVideo()) {
+        video_element = DynamicTo<HTMLVideoElement>(*child_element);
+        break;
+      }
+    }
+  }
+  if (video_element) {
+    video_natural_size =
+        gfx::Size(video_element->videoWidth(), video_element->videoHeight());
+  }
+
+  frame.GetChromeClient().EnterFullscreen(frame, options,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                          overlay_fullscreen,
+#endif // ARKWEB_VIDEO_ASSISTANT
+                                          request_type,
+                                          video_natural_size);
+#else
   frame.GetChromeClient().EnterFullscreen(frame, options, request_type);
+#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
 
   // 6. If `error` is false, then consume user activation given `pendingDoc`’s
   // relevant global object.
@@ -1086,6 +1199,14 @@ ScriptPromise<IDLUndefined> Fullscreen::ExitFullscreen(
     exception_state->ThrowTypeError("Document not active");
     return EmptyPromise();
   }
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(FullscreenElementFrom(doc))) {
+    if (video_element->IsCustomMediaPlayerEnabled()) {
+      video_element->SetRenderVideoView(false);
+    }
+  }
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   if (script_state) {
     resolver =

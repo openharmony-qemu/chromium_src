@@ -1167,6 +1167,12 @@ void LocalDOMWindow::Reset() {
   media_ = nullptr;
   custom_elements_ = nullptr;
   trusted_types_map_.clear();
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+  arkWeb_ = nullptr;
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
+#if BUILDFLAG(IS_ARKWEB)
+  detect_simulated_click_risk_enhanced_impl_ = nullptr;
+#endif // IS_ARKWEB
 }
 
 void LocalDOMWindow::SendOrientationChangeEvent() {
@@ -2959,5 +2965,42 @@ void LocalDOMWindow::requestResize(ExceptionState& state) {
     document_->RequestResizeResponsiveIframe(&state);
   }
 }
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+ArkWeb* LocalDOMWindow::arkWeb() {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  if (!arkWeb_)
+    arkWeb_ = MakeGarbageCollected<ArkWeb>(this);
+  return arkWeb_.Get();
+}
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
+
+#if BUILDFLAG(IS_ARKWEB)
+ScriptPromise<IDLString> LocalDOMWindow::detectSimulatedClickRiskEnhanced(
+    ScriptState* script_state,
+    int32_t algorithm,
+    const Vector<int32_t>& nonce,
+    int32_t version,
+    ExceptionState& exception_state) {
+  if (!detect_simulated_click_risk_enhanced_impl_) {
+    detect_simulated_click_risk_enhanced_impl_ =
+        MakeGarbageCollected<DetectSimulatedClickRiskEnhancedImpl>(this);
+  }
+
+  if (!detect_simulated_click_risk_enhanced_impl_) {
+    LOG(ERROR) << "DetectSimulatedClickRiskEnhancedImpl init failed!";
+    exception_state.ThrowDOMException(DOMExceptionCode::kUnknownError,
+                                      "Interface initialization failed.");
+    return ScriptPromise<IDLString>();
+  }
+
+  return detect_simulated_click_risk_enhanced_impl_->DetectSimulatedClickRiskEnhanced(
+      script_state,
+      algorithm,
+      nonce,
+      version,
+      exception_state);
+}
+#endif // IS_ARKWEB
 
 }  // namespace blink

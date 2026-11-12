@@ -72,6 +72,9 @@
 #if !BUILDFLAG(TARGET_OS_IS_ANDROID)
 #include "third_party/blink/renderer/core/frame/picture_in_picture_controller.h"
 #endif  // !BUILDFLAG(TARGET_OS_IS_ANDROID)
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/blank_screen_detector.h"
+#endif
 
 namespace blink {
 
@@ -944,6 +947,15 @@ bool Frame::SwapImpl(
   // Clone the state of the current Frame into the one being swapped in.
   if (auto* new_local_frame = DynamicTo<LocalFrame>(new_frame)) {
     TRACE_EVENT0("navigation", "Frame::SwapImpl.CloneState");
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+    if (auto* local_frame = DynamicTo<LocalFrame>(this)) {
+        BlankScreenDetector* blank_screen_detector = local_frame->GetBlankScreenDetector(true);
+        if (blank_screen_detector) {
+            new_local_frame->SetBlankScreenDetector(blank_screen_detector);
+            blank_screen_detector->SetLocalFrame(new_local_frame);
+        }
+    }
+#endif
     base::ScopedUmaHistogramTimer clone_state_timer(
         "Navigation.Frame.SwapImpl.CloneState");
     // A `LocalFrame` being swapped in is created provisionally, so

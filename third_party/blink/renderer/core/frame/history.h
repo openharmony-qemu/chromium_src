@@ -82,6 +82,10 @@ class CORE_EXPORT History final : public ScriptWrappable,
 
   void Trace(Visitor*) const override;
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void OnStateChanged(const std::string& state_desc, const std::string& url);
+#endif
+
  private:
   KURL UrlForState(const String& url);
 

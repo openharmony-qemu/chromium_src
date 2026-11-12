@@ -1,0 +1,85 @@
+diff a/third_party/blink/renderer/core/frame/fullscreen_controller.cc b/third_party/blink/renderer/core/frame/fullscreen_controller.cc	(rejected hunks)
+@@ -28,10 +28,11 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
+ #include "third_party/blink/renderer/core/frame/fullscreen_controller.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/memory/ptr_util.h"
+ #include "third_party/blink/public/mojom/frame/fullscreen.mojom-blink.h"
+ #include "third_party/blink/public/web/web_local_frame_client.h"
+ #include "third_party/blink/renderer/bindings/core/v8/v8_fullscreen_options.h"
+ #include "third_party/blink/renderer/core/dom/document.h"
+@@ -73,10 +82,30 @@ mojom::blink::FullscreenOptionsPtr ToMojoOptions(
+   fullscreen_options->is_xr_overlay =
+       request_type & FullscreenRequestType::kForXrOverlay;
+   fullscreen_options->prefers_status_bar =
+       request_type & FullscreenRequestType::kForXrArWithCamera;
+ 
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++  fullscreen_options->is_custom_media_player =
++      request_type & FullscreenRequestType::kForCustomMediaPlayer;
++#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
++
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++  fullscreen_options->is_custom_media_player =
++      request_type & FullscreenRequestType::kForCustomMediaPlayer;
++#endif  // BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++
++#if BUILDFLAG(ARKWEB_FULLSCREEN)
++  if (video_natural_size.has_value()) {
++    fullscreen_options->video_natural_size = video_natural_size.value();
++  }
++#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
++
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++   fullscreen_options->overlay_fullscreen = overlay_fullscreen;
++#endif // ARKWEB_VIDEO_ASSISTANT
++
+   return fullscreen_options;
+ }
+ 
+ }  // namespace
+ 
+@@ -141,13 +170,22 @@ void FullscreenController::DidExitFullscreen() {
+       next_frame = next_frame->Tree().TraverseNext();
+     frame = next_frame;
+   }
+ }
+ 
+-void FullscreenController::EnterFullscreen(LocalFrame& frame,
++void FullscreenController::EnterFullscreen(
++    LocalFrame& frame,
+                                            const FullscreenOptions* options,
+-                                           FullscreenRequestType request_type) {
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++    bool overlay_fullscreen,
++#endif // ARKWEB_VIDEO_ASSISTANT
++    FullscreenRequestType request_type
++#if BUILDFLAG(ARKWEB_FULLSCREEN)
++    ,
++    const absl::optional<gfx::Size>& video_natural_size
++#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
++) {
+   const auto& screen_info = frame.GetChromeClient().GetScreenInfo(frame);
+ 
+   const bool requesting_other_screen =
+       options->hasScreen() &&
+       options->screen()->DisplayId() != Screen::kInvalidDisplayId &&
+@@ -244,11 +291,14 @@ void FullscreenController::FullscreenElementChanged(
+   if (old_video_element)
+     RestoreBackgroundColorOverride();
+ 
+   if (new_element) {
+     DCHECK(Fullscreen::IsFullscreenElement(*new_element));
+-
++#if BUILDFLAG(ARKWEB_FULLSCREEN)
++    LOG(WARNING) << "OhMedia::FullscreenElementChanged new_element = "
++                 << new_element->localName();
++#endif // BUILDFLAG(ARKWEB_FULLSCREEN)
+     if (auto* video_element = DynamicTo<HTMLVideoElement>(*new_element)) {
+       video_element->DidEnterFullscreen();
+     }
+   }
+ 

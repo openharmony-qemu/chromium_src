@@ -1,0 +1,27 @@
+diff a/third_party/blink/renderer/core/css/resolver/style_builder_converter.cc b/third_party/blink/renderer/core/css/resolver/style_builder_converter.cc	(rejected hunks)
+@@ -28,10 +28,11 @@
+ #include <algorithm>
+ #include <memory>
+ #include <optional>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/adapters.h"
+ #include "base/notreached.h"
+ #include "build/build_config.h"
+ #include "third_party/blink/renderer/core/css/basic_shape_functions.h"
+ #include "third_party/blink/renderer/core/css/css_alternate_value.h"
+@@ -103,10 +104,13 @@
+ #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+ #include "third_party/blink/renderer/platform/instrumentation/use_counter.h"
+ #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
+ #include "third_party/blink/renderer/platform/wtf/hash_map.h"
+ #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
++#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
++  #include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
++#endif
+ 
+ namespace blink {
+ 
+ const double kFinalStatePercentage = 100.0;
+ const double kMiddleStatePercentage = 50.0;

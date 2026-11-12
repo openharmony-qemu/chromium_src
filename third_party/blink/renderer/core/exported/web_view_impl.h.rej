@@ -1,0 +1,59 @@
+diff a/third_party/blink/renderer/core/exported/web_view_impl.h b/third_party/blink/renderer/core/exported/web_view_impl.h	(rejected hunks)
+@@ -30,10 +30,13 @@
+ 
+ #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_EXPORTED_WEB_VIEW_IMPL_H_
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_EXPORTED_WEB_VIEW_IMPL_H_
+ 
+ #include <memory>
++
++#include "absl/types/optional.h"
++#include "arkweb/build/features/features.h"
+ #include <vector>
+ 
+ #include "base/debug/stack_trace.h"
+ #include "base/gtest_prod_util.h"
+ #include "base/memory/scoped_refptr.h"
+@@ -337,10 +340,14 @@ class CORE_EXPORT WebViewImpl final : public WebView,
+ 
+   void DispatchPersistedPageshow(base::TimeTicks navigation_start);
+   void DispatchPagehide(mojom::blink::PagehideDispatch pagehide_dispatch);
+   void HookBackForwardCacheEviction(bool hook);
+ 
++#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
++  bool ApplyCachedViewportMetaEnabled() override;
++#endif
++
+   float DefaultMinimumPageScaleFactor() const;
+   float DefaultMaximumPageScaleFactor() const;
+   float ClampPageScaleFactorToLimits(float) const;
+   void ResetScaleStateImmediately();
+   std::optional<display::mojom::blink::ScreenOrientation>
+@@ -643,10 +666,13 @@ class CORE_EXPORT WebViewImpl final : public WebView,
+ 
+   // Called once a paint happens after the first non empty layout. In other
+   // words, after the frame has painted something.
+   void DidFirstVisuallyNonEmptyPaint();
+ 
++#if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
++  void SetDelayDurationForBackgroundTabFreezing(int64_t millisecond);
++#endif
+   // Called once the first contentful paint happens on the main frame.
+   void OnFirstContentfulPaint(const base::TimeDelta& duration);
+ 
+   scheduler::WebAgentGroupScheduler& GetWebAgentGroupScheduler();
+ 
+@@ -674,10 +712,14 @@ class CORE_EXPORT WebViewImpl final : public WebView,
+   FRIEND_TEST_ALL_PREFIXES(WebViewTest, ContextMenuAndDrag);
+ 
+   friend class frame_test_helpers::WebViewHelper;
+   friend class SimCompositor;
+   friend class WebView;  // So WebView::Create can call our constructor
++#if BUILDFLAG(ARKWEB_TEST)
++  friend class WebViewImplTest; // For testing purposes
++  friend class WebLocalFrameImplTest;
++#endif
+ 
+   void AcceptLanguagesChanged();
+   void ThemeChanged();
+ 
+   // Update the target url locally and tell the browser that the target URL has

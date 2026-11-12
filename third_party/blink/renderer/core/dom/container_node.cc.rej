@@ -1,0 +1,58 @@
+diff a/third_party/blink/renderer/core/dom/container_node.cc b/third_party/blink/renderer/core/dom/container_node.cc	(rejected hunks)
+@@ -346,11 +361,11 @@ bool ContainerNode::EnsurePreInsertionValidity(
+ // dispatched synchronous events (e.g. `blur`), whose handlers may have modified
+ // the DOM tree.
+ bool ContainerNode::RecheckNodeInsertionStructuralPrereq(
+     const NodeVector& new_children,
+     const Node* next,
+-    ExceptionState& exception_state) {
++    ExceptionState& exception_state) const {
+   for (const auto& child : new_children) {
+     if (child->parentNode()) {
+       // A new child was added to another parent before adding to this
+       // node.  Firefox and Edge don't throw in this case.
+       return false;
+@@ -1218,10 +1233,17 @@ void ContainerNode::ParserAppendChild(Node* new_child) {
+   // newChild back into the page. Loop until the child is actually removed.
+   // See: fast/parser/execute-script-during-adoption-agency-removal.html
+   while (ContainerNode* parent = new_child->parentNode())
+     parent->ParserRemoveChild(*new_child);
+ 
++#if BUILDFLAG(ARKWEB_MEDIA)
++  if (IsDocumentInactive()) {
++    LOG(ERROR) << "Document is inactive.";
++    return;
++  }
++#endif
++
+   if (GetDocument() != new_child->GetDocument())
+     GetDocument().adoptNode(new_child, ASSERT_NO_EXCEPTION);
+ 
+   {
+     EventDispatchForbiddenScope assert_no_event_dispatch;
+@@ -324,10 +324,25 @@ bool ContainerNode::EnsurePreInsertionValidity(
+     for (const Node* child : *new_children) {
+       if (!is_child_allowed(child)) {
+         return false;
+       }
+     }
++
++    // Node::ConvertNodeUnionsIntoNodes behaves differently depending on
++    // whether there is one node or more than one, since it simulates
++    // insertion into a DocumentFragment for the latter case.  If it handled
++    // more than one node, then it already removed the children from their old
++    // parent.  Check here that those removals didn't do anything bad.  (We
++    // could potentially make this faster by using a DOMMutationDetector in
++    // ConvertNodeUnionsIntoNodes and storing whether we need to do this.)
++    if (new_children->size() != 1u &&
++        RuntimeEnabledFeatures::
++            RecheckParentDuringNodeVectorInsertionEnabled() &&
++        !RecheckNodeInsertionStructuralPrereq(*new_children, next,
++                                              exception_state)) {
++      return false;
++    }
+   } else if (auto* child_fragment = DynamicTo<DocumentFragment>(new_child)) {
+     for (Node* node = child_fragment->firstChild(); node;
+          node = node->nextSibling()) {
+       if (!is_child_allowed(node)) {
+         return false;

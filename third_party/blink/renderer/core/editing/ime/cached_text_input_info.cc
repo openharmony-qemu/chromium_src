@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/core/editing/ime/cached_text_input_info.h"
 
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "third_party/blink/renderer/core/editing/editing_utilities.h"
 #include "third_party/blink/renderer/core/editing/ephemeral_range.h"
@@ -20,8 +21,25 @@ namespace {
 EphemeralRange ComputeWholeContentRange(const ContainerNode& container) {
   const auto& range = EphemeralRange::RangeOfContents(container);
   auto* const text_control_element = EnclosingTextControl(&container);
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (!text_control_element) {
+    // ArkWeb: For contentEditable, skip placeholder <br> when the container has
+    // only a single <br> child (empty editor state). Without this, TextIterator
+    // emits U+000A for the <br>, making GetText() return non-empty even when
+    // all visible text has been deleted. This extends the existing textarea
+    // placeholder <br> handling (crbug.com/1194349) to contentEditable.
+    auto* const last_child = container.lastChild();
+    if (IsA<HTMLBRElement>(last_child) && !last_child->previousSibling()) {
+      // <div contenteditable><br></div> — empty editor
+      return EphemeralRange(Position::FirstPositionInNode(container),
+                            Position::FirstPositionInNode(container));
+    }
+    return range;
+  }
+#else
   if (!text_control_element)
     return range;
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   auto* const inner_editor = text_control_element->InnerEditorElement();
   if (container != inner_editor)
     return range;

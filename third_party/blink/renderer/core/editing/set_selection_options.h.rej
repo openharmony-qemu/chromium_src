@@ -1,0 +1,57 @@
+diff a/third_party/blink/renderer/core/editing/set_selection_options.h b/third_party/blink/renderer/core/editing/set_selection_options.h	(rejected hunks)
+@@ -37,10 +37,18 @@ class CORE_EXPORT SetSelectionOptions final {
+   bool ShouldCloseTyping() const { return should_close_typing_; }
+   bool ShouldShowHandle() const { return should_show_handle_; }
+   bool ShouldShrinkNextTap() const { return should_shrink_next_tap_; }
+   bool IsDirectional() const { return is_directional_; }
+ 
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++  bool IsSelectAll() const { return is_select_all_; }
++#endif  // ARKWEB_CLIPBOARD
++
++#if BUILDFLAG(ARKWEB_FOCUS)
++  bool IsSkipFocusCheck() const { return is_skip_focus_check_; }
++#endif
++
+  private:
+   CursorAlignOnScroll cursor_align_on_scroll_ = CursorAlignOnScroll::kIfNeeded;
+   bool do_not_clear_strategy_ = false;
+   bool do_not_set_focus_ = false;
+   TextGranularity granularity_ = TextGranularity::kCharacter;
+@@ -48,10 +56,18 @@ class CORE_EXPORT SetSelectionOptions final {
+   bool should_clear_typing_style_ = false;
+   bool should_close_typing_ = false;
+   bool should_show_handle_ = false;
+   bool should_shrink_next_tap_ = false;
+   bool is_directional_ = false;
++
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++  bool is_select_all_ = false;
++#endif  // ARKWEB_CLIPBOARD
++
++#if BUILDFLAG(ARKWEB_FOCUS)
++  bool is_skip_focus_check_ = false;
++#endif
+ };
+ 
+ // This class is used for building |SelectionData| object.
+ class CORE_EXPORT SetSelectionOptions::Builder final {
+   STACK_ALLOCATED();
+@@ -73,10 +89,17 @@ class CORE_EXPORT SetSelectionOptions::Builder final {
+   Builder& SetShouldCloseTyping(bool);
+   Builder& SetShouldShowHandle(bool);
+   Builder& SetShouldShrinkNextTap(bool);
+   Builder& SetIsDirectional(bool);
+ 
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++  Builder& SetIsSelectAll(bool);
++#endif  // ARKWEB_CLIPBOARD
++#if BUILDFLAG(ARKWEB_FOCUS)
++  Builder& SetSkipFocusCheck(bool);
++#endif
++
+  private:
+   SetSelectionOptions data_;
+ };
+ 
+ }  // namespace blink

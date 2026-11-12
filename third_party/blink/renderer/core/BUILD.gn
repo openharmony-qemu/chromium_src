@@ -146,6 +146,9 @@ buildflag_header("buildflags") {
     "TARGET_OS_IS_ANDROID=$target_os_is_android",
     "USE_EXTERNAL_POPUP_MENU=$use_external_popup_menu",
   ]
+  if (is_arkweb) {
+    visibility += [ "//arkweb/build:arkweb_prebuild_buildflags" ]
+  }  
 }
 
 import("//build/config/pch.gni")
@@ -336,6 +339,7 @@ component("core") {
   sources += rebase_path(blink_core_sources_overscroll, "", "overscroll")
   sources += rebase_path(blink_core_sources_page, "", "page")
   sources += rebase_path(blink_core_sources_paint, "", "paint")
+  sources += rebase_path(blink_core_sources_rendermojom, "", "render_mojom")
   sources +=
       rebase_path(blink_core_sources_resize_observer, "", "resize_observer")
   sources +=
@@ -563,6 +567,12 @@ blink_core_sources("core_hot") {
     "//third_party/blink/renderer/core/probe",
   ]
 
+  if (enable_arkweb && defined(arkweb_media_capabilities_enhance) && arkweb_media_capabilities_enhance) {
+    deps += [
+      "//arkweb/chromium_ext/third_party/blink/public/mojom/media:mojom_blink"
+    ]
+  }
+
   if (enable_vectorized_html_scanning) {
     deps += [ "//third_party/highway:libhwy" ]
     defines += [ "BLINK_ENABLE_VECTORIZED_HTML_SCANNING=1" ]
@@ -577,6 +587,22 @@ blink_core_sources("core_hot") {
 
 source_set("testing") {
   testonly = true
+
+  if (arkweb_fuzz_compile_error_fix) {
+    visibility = []
+    visibility = [
+      "//third_party/blink/public/*",
+      "//third_party/blink/renderer/*",
+    ]
+    visibility += [ 
+      "//arkweb/chromium_ext/ohos_test/fuzztest/chromium_ext/third_party/blink/renderer/core/editing/ime/arkweb_input_method_controller_fuzzer:arkweb_input_method_controller_fuzzer",
+      "//arkweb/chromium_ext/ohos_test/fuzztest/chromium_ext/third_party/blink/renderer/core/frame/detect_simulated_click_risk_fuzzer:detect_simulated_click_risk_fuzzer"
+    ]
+  }
+
+  if (is_arkweb && use_libfuzzer) {
+    visibility += ["//arkweb/chromium_ext/ohos_test/*"]
+  }
 
   configs += [
     ":blink_core_pch",
@@ -1711,6 +1737,20 @@ source_set("unit_tests") {
     ]
   }
 
+  if (arkweb_unittests){
+    deps += [
+      "//base/test:test_trace_processor"
+    ]
+  }
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
+  if (is_arkweb) {
+    deps += arkweb_fuzzer_test_sources
+  }
+
   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and
   # enable the diagnostic by removing this line.
   configs += [ "//build/config/compiler:no_exit_time_destructors" ]
@@ -1780,6 +1820,9 @@ source_set("perf_tests") {
 
 source_set("unit_test_support") {
   testonly = true
+  if (is_arkweb && use_libfuzzer) {
+    visibility += ["//arkweb/chromium_ext/ohos_test/*"]
+  }
   sources = [
     "css/css_test_helpers.cc",
     "css/css_test_helpers.h",

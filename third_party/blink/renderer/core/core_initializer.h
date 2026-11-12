@@ -33,13 +33,14 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "third_party/blink/public/common/dom_storage/session_storage_namespace_id.h"
 #include "third_party/blink/public/mojom/dom_storage/storage_area.mojom-blink-forward.h"
 #include "third_party/blink/public/mojom/filesystem/file_system.mojom-blink-forward.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
-
+#include "third_party/blink/renderer/core/core_initializer_ext.h"
 namespace display {
 struct ScreenInfos;
 }
@@ -70,7 +71,7 @@ class WebMediaPlayerClient;
 class WebMediaPlayerSource;
 class WorkerGlobalScope;
 
-class CORE_EXPORT CoreInitializer {
+class CORE_EXPORT CoreInitializer : public CoreInitializerExt {
   USING_FAST_MALLOC(CoreInitializer);
 
  public:

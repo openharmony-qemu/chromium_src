@@ -24,6 +24,7 @@
  */
 
 #include "third_party/blink/renderer/bindings/core/v8/v8_initializer.h"
+#include "arkweb/build/features/features.h"
 
 #include <algorithm>
 #include <limits>
@@ -115,6 +116,10 @@
 #include "gin/public/v8_snapshot_file_type.h"
 #endif
 
+#if defined(OHOS_MEM_USAGE_REPORT) && BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/overrides/chromium/third_party/blink/renderer/bindings/core/v8/v8_initializer_mur_nweb_ex.h"
+#endif  // defined(OHOS_MEM_USAGE_REPORT) && BUILDFLAG(IS_ARKWEB_EXT)
+
 namespace blink {
 
 #if BUILDFLAG(IS_WIN)
@@ -123,6 +128,7 @@ v8::FilterETWSessionByURLResult FilterETWSessionByURLCallback(
     v8::Local<v8::Context> context,
     const std::string& json_payload);
 #endif  // BUILDFLAG(IS_WIN)
+
 
 namespace {
 
@@ -893,6 +899,10 @@ void V8Initializer::InitializeV8Common(v8::Isolate* isolate) {
   isolate->SetFilterETWSessionByURL2Callback(FilterETWSessionByURLCallback);
 #endif  // BUILDFLAG(IS_WIN)
 
+#if defined(OHOS_MEM_USAGE_REPORT) && BUILDFLAG(IS_ARKWEB_EXT)
+  InitMUR();
+  isolate->SetMURCallback(GetMURCallback());
+#endif  // defined(OHOS_MEM_USAGE_REPORT) && BUILDFLAG(IS_ARKWEB_EXT)
   V8ContextSnapshot::EnsureInterfaceTemplates(isolate);
 
   WasmResponseExtensions::Initialize(isolate);

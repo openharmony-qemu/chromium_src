@@ -5,10 +5,10 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_EDITING_SET_SELECTION_OPTIONS_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_EDITING_SET_SELECTION_OPTIONS_H_
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/editing/text_granularity.h"
 #include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
-
 namespace blink {
 
 enum class CursorAlignOnScroll { kIfNeeded, kAlways };

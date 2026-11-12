@@ -40,7 +40,16 @@
 #include "third_party/blink/renderer/core/page/chrome_client.h"
 #include "third_party/blink/renderer/core/page/page.h"
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+
 namespace blink {
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+constexpr float zero = 0.0f;
+#endif
 
 ViewportStyleResolver::ViewportStyleResolver(Document& document)
     : document_(document) {

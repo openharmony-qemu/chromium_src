@@ -1,0 +1,18 @@
+diff a/third_party/blink/renderer/core/frame/location.h b/third_party/blink/renderer/core/frame/location.h	(rejected hunks)
+@@ -111,10 +111,16 @@ class CORE_EXPORT Location final : public ScriptWrappable {
+                    ExceptionState* = nullptr,
+                    SetLocationPolicy = SetLocationPolicy::kNormal);
+ 
+   const KURL& Url() const;
+ 
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++  void OnLocationChanged(const FrameLoadRequest* request,
++                         WebFrameLoadType frame_load_type,
++                         bool is_reload);
++#endif
++
+   const Member<DOMWindow> dom_window_;
+ };
+ 
+ }  // namespace blink
+ 

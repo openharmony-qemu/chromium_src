@@ -1,0 +1,75 @@
+diff a/third_party/blink/renderer/core/frame/web_frame_widget_impl.cc b/third_party/blink/renderer/core/frame/web_frame_widget_impl.cc	(rejected hunks)
+@@ -31,10 +31,12 @@
+ #include "third_party/blink/renderer/core/frame/web_frame_widget_impl.h"
+ 
+ #include <memory>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
++#include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils.h"
+ #include "base/auto_reset.h"
+ #include "base/containers/to_vector.h"
+ #include "base/debug/crash_logging.h"
+ #include "base/debug/dump_without_crashing.h"
+ #include "base/functional/callback_helpers.h"
+@@ -1763,15 +1782,23 @@ void WebFrameWidgetImpl::DidCompletePageScaleAnimation() {
+     std::move(page_scale_animation_for_testing_callback_).Run();
+ }
+ 
+ void WebFrameWidgetImpl::ScheduleAnimation(bool urgent) {
+   if (!View()->does_composite()) {
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++    TRACE_EVENT0(
++      "blink", "WebFrameWidgetImpl::ScheduleAnimation non_composited_client_");
++#endif
+     non_composited_client_->ScheduleNonCompositedAnimation();
+     return;
+   }
+ 
+   if (widget_base_->WillBeDestroyed()) {
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++    TRACE_EVENT0(
++      "blink", "WebFrameWidgetImpl::ScheduleAnimation WillBeDestroyed");
++#endif
+     return;
+   }
+ 
+   widget_base_->LayerTreeHost()->SetNeedsAnimate(urgent);
+ }
+@@ -3928,11 +3968,24 @@ bool WebFrameWidgetImpl::SetComposition(
+     int selection_start,
+     int selection_end) {
+   WebInputMethodController* controller = GetActiveWebInputMethodController();
+   if (!controller)
+     return false;
+-
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  if (!replacement_range.IsValid() || replacement_range.start() > static_cast<size_t>(INT_MAX) ||
++      replacement_range.length() > static_cast<size_t>(INT_MAX)) {
++    if (replacement_range.IsValid()) {
++      LOG(ERROR) << "SetComposition text:[" << text.Utf8() << "] ime_text_spans.size:" << ime_text_spans.size()
++              << " replacement_range:(" << replacement_range.start() << "," << replacement_range.end()
++              << ") IsValid:" << replacement_range.IsValid()
++              << " selection_start:" << selection_start << " selection_end:" << selection_end;
++    }
++    return controller->SetComposition(
++        text, base::ToVector(ime_text_spans), WebRange(),
++        selection_start, selection_end);
++  }
++#endif
+   return controller->SetComposition(
+       text, base::ToVector(ime_text_spans),
+       replacement_range.IsValid()
+           ? WebRange(base::checked_cast<int>(replacement_range.start()),
+                      base::checked_cast<int>(replacement_range.length()))
+@@ -5364,5 +5426,9 @@ void WebFrameWidgetImpl::OnFirstContentfulPaint(
+     const base::TimeTicks& first_paint_time) {
+   widget_base_->OnFirstContentfulPaint(first_paint_time);
+ }
+ 
+ }  // namespace blink
++
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/web_frame_widget_impl_for_include.cc"
++#endif
+\ No newline at end of file

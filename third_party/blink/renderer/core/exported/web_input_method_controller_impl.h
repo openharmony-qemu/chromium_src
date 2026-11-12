@@ -57,6 +57,9 @@ class CORE_EXPORT WebInputMethodControllerImpl
   WebTextInputInfo TextInputInfo() override;
   int ComputeWebTextInputNextPreviousFlags() override;
   WebTextInputType TextInputType() override;
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void GetInputElementAttributes(HashMap<String, String>& attributes) override;
+#endif
   WebRange CompositionRange() const override;
   bool GetCompositionCharacterBounds(std::vector<gfx::Rect>& bounds) override;
 

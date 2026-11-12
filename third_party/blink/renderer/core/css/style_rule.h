@@ -101,6 +101,15 @@ class CORE_EXPORT StyleRuleBase : public GarbageCollected<StyleRuleBase> {
 
   RuleType GetType() const { return static_cast<RuleType>(type_); }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void SetForAdBlock(bool is_for_adblock) { is_for_adblock_ = is_for_adblock; }
+  bool IsForAdBlock() const { return is_for_adblock_; }
+  void SetForUserAdBlock(bool is_for_user_adblock) {
+    is_for_user_adblock_ = is_for_user_adblock;
+  }
+  bool IsForUserAdBlock() const { return is_for_user_adblock_; }
+#endif
+
   bool IsCharsetRule() const { return GetType() == kCharset; }
   bool IsContainerRule() const { return GetType() == kContainer; }
   bool IsCounterStyleRule() const { return GetType() == kCounterStyle; }

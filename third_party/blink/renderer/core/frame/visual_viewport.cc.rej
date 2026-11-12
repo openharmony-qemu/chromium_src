@@ -1,0 +1,153 @@
+diff a/third_party/blink/renderer/core/frame/visual_viewport.cc b/third_party/blink/renderer/core/frame/visual_viewport.cc	(rejected hunks)
+@@ -412,11 +425,13 @@ void VisualViewport::SetSize(const gfx::Size& size) {
+     DCHECK(scrollbar_layer_vertical_);
+     UpdateScrollbarLayer(kHorizontalScrollbar);
+     UpdateScrollbarLayer(kVerticalScrollbar);
+     LocalMainFrame().View()->SetVisualViewportOrOverlayNeedsRepaint();
+   }
+-
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++  arkweb_utils_->TriggerUpdateAfterLayoutForNonOverlayScrollbar();
++#endif  // ARKWEB_SCROLLBAR
+   EnqueueResizeEvent();
+ }
+ 
+ void VisualViewport::Reset() {
+   SetScaleAndLocation(1, is_pinch_gesture_active_, gfx::PointF());
+@@ -655,11 +680,17 @@ void VisualViewport::InitializeScrollbars() {
+ 
+   scrollbar_layer_horizontal_ = nullptr;
+   scrollbar_layer_vertical_ = nullptr;
+   if (VisualViewportSuppliesScrollbars() &&
+       !GetPage().GetSettings().GetHideScrollbars()) {
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++    if (!GetPage().GetSettings().GetHorizontalHideScrollbars())
++#endif
+     UpdateScrollbarLayer(kHorizontalScrollbar);
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++    if (!GetPage().GetSettings().GetVerticalHideScrollbars())
++#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+     UpdateScrollbarLayer(kVerticalScrollbar);
+   }
+ 
+   // Ensure existing LocalFrameView scrollbars are removed if the visual
+   // viewport scrollbars are now supplied, or created if the visual viewport no
+@@ -718,20 +749,31 @@ void VisualViewport::UpdateScrollbarLayer(ScrollbarOrientation orientation) {
+             : cc::ScrollbarOrientation::kVertical;
+     scrollbar_layer = cc::SolidColorScrollbarLayer::Create(
+         cc_orientation, thumb_thickness, scrollbar_margin,
+         /*is_left_side_vertical_scrollbar*/ false);
+     scrollbar_layer->SetElementId(GetScrollbarElementId(orientation));
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++    arkweb_utils_->SetupOverlayVisualScrollbarLayer(*scrollbar_layer,
++                                                    scroll_layer_.get());
++#else
+     scrollbar_layer->SetScrollElementId(scroll_layer_->element_id());
+     scrollbar_layer->SetIsDrawable(true);
++#endif  // ARKWEB_SCROLLBAR
+   }
+ 
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++  scrollbar_layer->SetBounds(
++      arkweb_utils_->GetScrollbarLayerBounds(orientation == kHorizontalScrollbar,
++                                    ScrollbarThickness()));
++#else
+   scrollbar_layer->SetBounds(
+       orientation == kHorizontalScrollbar
+           ? gfx::Size(size_.width() - ScrollbarThickness(),
+                       ScrollbarThickness())
+           : gfx::Size(ScrollbarThickness(),
+                       size_.height() - ScrollbarThickness()));
++#endif
+ 
+   UpdateScrollbarColor(*scrollbar_layer);
+ }
+ 
+ bool VisualViewport::VisualViewportSuppliesScrollbars() const {
+@@ -1181,50 +1223,86 @@ void VisualViewport::Paint(GraphicsContext& context) const {
+     RecordForeignLayer(context, *client,
+                        DisplayItem::kForeignLayerViewportScroll, scroll_layer_,
+                        gfx::Point(), &state);
+   }
+ 
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  if (scrollbar_layer_horizontal_ &&
++      !GetPage().GetSettings().GetHorizontalHideScrollbars()) {
++#else
+   if (scrollbar_layer_horizontal_) {
++#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+     PropertyTreeStateOrAlias state(parent_property_tree_state_);
+     state.SetEffect(*horizontal_scrollbar_effect_node_);
+     DEFINE_STATIC_DISPLAY_ITEM_CLIENT(client,
+                                       "Inner Viewport Horizontal Scrollbar");
++
+     RecordForeignLayer(
+         context, *client, DisplayItem::kForeignLayerViewportScrollbar,
+         scrollbar_layer_horizontal_,
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++        arkweb_utils_->GetScrollbarLayerOrigin(true, ScrollbarThickness()),
++        &state);
++#else
+         gfx::Point(0, size_.height() - ScrollbarThickness()), &state);
++#endif
+   }
+ 
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  if (scrollbar_layer_vertical_ &&
++      !GetPage().GetSettings().GetVerticalHideScrollbars()) {
++#else
+   if (scrollbar_layer_vertical_) {
++#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+     PropertyTreeStateOrAlias state(parent_property_tree_state_);
+     state.SetEffect(*vertical_scrollbar_effect_node_);
+     DEFINE_STATIC_DISPLAY_ITEM_CLIENT(client,
+                                       "Inner Viewport Vertical Scrollbar");
++
+     RecordForeignLayer(
+         context, *client, DisplayItem::kForeignLayerViewportScrollbar,
+         scrollbar_layer_vertical_,
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++        arkweb_utils_->GetScrollbarLayerOrigin(false, ScrollbarThickness()),
++        &state);
++#else
+         gfx::Point(size_.width() - ScrollbarThickness(), 0), &state);
++#endif
+   }
+ }
+ 
+ void VisualViewport::UsedColorSchemeChanged() {
+   DCHECK(IsActiveViewport());
+   // The scrollbar overlay color theme depends on the used color scheme.
+   RecalculateOverlayScrollbarColorScheme();
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++  ScrollbarColorChanged();
++#endif
+ }
+ 
+ void VisualViewport::ScrollbarColorChanged() {
+   DCHECK(IsActiveViewport());
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  if (scrollbar_layer_horizontal_)
++    UpdateScrollbarColor(*scrollbar_layer_horizontal_);
++  if (scrollbar_layer_vertical_)
++    UpdateScrollbarColor(*scrollbar_layer_vertical_);
++#else
+   if (scrollbar_layer_horizontal_) {
+     DCHECK(scrollbar_layer_vertical_);
+     UpdateScrollbarColor(*scrollbar_layer_horizontal_);
+     UpdateScrollbarColor(*scrollbar_layer_vertical_);
+   }
++#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+ }
+ 
+ void VisualViewport::UpdateScrollbarColor(cc::SolidColorScrollbarLayer& layer) {
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++  arkweb_utils_->UpdateScrollbarColorForLayer(layer);
++#else
+   auto& theme = ScrollbarThemeOverlayMobile::GetInstance();
+   layer.SetColor(
+       CSSScrollbarThumbColor().value_or(theme.DefaultColor()).toSkColor4f());
++#endif
+ }
+ 
+ }  // namespace blink

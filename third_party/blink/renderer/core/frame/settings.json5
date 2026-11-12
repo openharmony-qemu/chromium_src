@@ -95,6 +95,16 @@
       initial: 1,
       type: "double",
     },
+    {
+      name: "drawMode",
+      initial: 0,
+      type: "int",
+    },
+    {
+      name: "textZoomFactor",
+      initial: 1,
+      type: "float",
+    },
 
     // Sets the magnification value for validation message timer.  If the
     // magnification value is N, a validation message disappears automatically after

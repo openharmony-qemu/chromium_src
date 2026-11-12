@@ -1,0 +1,13 @@
+diff a/third_party/blink/renderer/core/exported/web_input_method_controller_impl.h b/third_party/blink/renderer/core/exported/web_input_method_controller_impl.h	(rejected hunks)
+@@ -3,10 +3,11 @@
+ // found in the LICENSE file.
+ 
+ #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_EXPORTED_WEB_INPUT_METHOD_CONTROLLER_IMPL_H_
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_EXPORTED_WEB_INPUT_METHOD_CONTROLLER_IMPL_H_
+ 
++#include "arkweb/build/features/features.h"
+ #include "third_party/blink/public/web/web_input_method_controller.h"
+ #include "third_party/blink/renderer/core/core_export.h"
+ #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+ #include "third_party/blink/renderer/platform/heap/member.h"
+ #include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"

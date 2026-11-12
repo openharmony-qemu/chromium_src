@@ -1315,6 +1315,12 @@ WebInputEventResult WebFrameWidgetImpl::HandleGestureEvent(
         break;
       case WebInputEvent::Type::kGestureShortPress:
       case WebInputEvent::Type::kGestureLongPress:
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      case WebInputEvent::Type::kGestureDragLongPress:
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+      case WebInputEvent::Type::kGestureCreateOverlay:
+#endif
       case WebInputEvent::Type::kGestureTapCancel:
       case WebInputEvent::Type::kGestureTap:
         GetPage()->GetLinkHighlight().UpdateOpacityAndRequestAnimation();
@@ -1346,6 +1352,12 @@ WebInputEventResult WebFrameWidgetImpl::HandleGestureEvent(
     }
     case WebInputEvent::Type::kGestureTwoFingerTap:
     case WebInputEvent::Type::kGestureLongPress:
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    case WebInputEvent::Type::kGestureDragLongPress:
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+    case WebInputEvent::Type::kGestureCreateOverlay:
+#endif
     case WebInputEvent::Type::kGestureLongTap:
       if (scaled_event.GetType() == WebInputEvent::Type::kGestureLongTap) {
         if (LocalFrame* inner_frame =
@@ -1356,8 +1368,13 @@ WebInputEventResult WebFrameWidgetImpl::HandleGestureEvent(
           break;
         }
       }
-
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      if (scaled_event.GetType() != WebInputEvent::Type::kGestureDragLongPress) {
+        GetPage()->GetContextMenuController().ClearContextMenu();
+      }
+#else
       GetPage()->GetContextMenuController().ClearContextMenu();
+#endif
       {
         ContextMenuAllowedScope scope;
         event_result =
@@ -2677,7 +2694,14 @@ bool WebFrameWidgetImpl::ScrollFocusedEditableElementIntoView() {
   TouchAction action = touch_action_util::ComputeEffectiveTouchAction(*element);
   params->for_focused_editable->can_zoom =
       static_cast<int>(action) & static_cast<int>(TouchAction::kPinchZoom);
-
+#if BUILDFLAG(IS_ARKWEB)
+  WebViewImpl* web_view = View();
+  if (web_view && web_view->SettingsImpl() &&
+      params->for_focused_editable->can_zoom) {
+    params->for_focused_editable->can_zoom =
+        !web_view->SettingsImpl()->AsWebSettingsImplExt()->NativeEmbedModeEnabled();
+  }
+#endif
   PhysicalRect absolute_element_bounds;
   PhysicalRect absolute_caret_bounds;
 
@@ -3488,6 +3512,9 @@ WebInputEventResult WebFrameWidgetImpl::HandleInputEvent(
   DCHECK(!WebInputEvent::IsTouchEventType(input_event.GetType()));
   CHECK(LocalRootImpl());
 
+#if BUILDFLAG(IS_ARKWEB)
+  AsWebFrameWidgetImplExt()->ArkWebHandleTouchEvent(input_event);
+#endif
   // Clients shouldn't be dispatching events to a provisional frame but this
   // can happen. Ensure that event handling can assume we're in a committed
   // frame.
@@ -3837,6 +3864,9 @@ void WebFrameWidgetImpl::DidMeaningfulLayout(WebMeaningfulLayout layout_type) {
       local_root_->GetFrame(), [layout_type](WebLocalFrameImpl* local_frame) {
         local_frame->Client()->DidMeaningfulLayout(layout_type);
       });
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  AsWebFrameWidgetImplExt()->ParseLanguage();
+#endif
 }
 
 void WebFrameWidgetImpl::PresentationCallbackForMeaningfulLayout(
@@ -4514,7 +4544,8 @@ void WebFrameWidgetImpl::SetPanAction(mojom::blink::PanAction pan_action) {
 }
 
 void WebFrameWidgetImpl::DidHandleGestureEvent(const WebGestureEvent& event) {
-#if BUILDFLAG(IS_ANDROID) || defined(USE_AURA) || BUILDFLAG(IS_IOS)
+#if BUILDFLAG(IS_ANDROID) || defined(USE_AURA) || BUILDFLAG(IS_IOS) || \
+    BUILDFLAG(IS_ARKWEB)
   if (event.GetType() == WebInputEvent::Type::kGestureTap) {
     widget_base_->ShowVirtualKeyboard();
   } else if (event.GetType() == WebInputEvent::Type::kGestureLongPress) {
@@ -5029,7 +5060,15 @@ void WebFrameWidgetImpl::CollapseSelection() {
   const blink::WebRange& range =
       focused_frame->GetInputMethodController()->GetSelectionOffsets();
   if (range.IsNull())
+#if BUILDFLAG(ARKWEB_MENU)
+  {
+    if (AsWebFrameWidgetImplExt())
+      AsWebFrameWidgetImplExt()->NotifySelectionRangeEmpty(range, focused_frame);
     return;
+  }
+#else
+    return;
+#endif
 
   focused_frame->SelectRange(blink::WebRange(range.EndOffset(), 0),
                              blink::WebLocalFrame::kHideSelectionHandle,

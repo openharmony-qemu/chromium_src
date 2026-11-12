@@ -194,6 +194,10 @@ class SessionsAPI : public BrowserContextKeyedAPI,
   // EventRouter::Observer implementation.
   void OnListenerAdded(const extensions::EventListenerInfo& details) override;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  SessionsEventRouter* event_router() { return sessions_event_router_.get(); }
+#endif
+
  private:
   friend class BrowserContextKeyedAPIFactory<SessionsAPI>;
 

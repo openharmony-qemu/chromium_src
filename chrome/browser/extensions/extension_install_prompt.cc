@@ -291,6 +291,12 @@ void ExtensionInstallPrompt::ShowConfirmation() {
   if (AutoConfirmPromptIfEnabled())
     return;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (show_dialog_callback_.is_null()) {
+    show_dialog_callback_ = BindRepeating(&ohos::ShowExtensionInstallDialogImpl);
+  }
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+
   if (show_dialog_callback_.is_null())
     show_dialog_callback_ = GetDefaultShowDialogCallback();
   // TODO(crbug.com/40625151): Use OnceCallback and eliminate the need for

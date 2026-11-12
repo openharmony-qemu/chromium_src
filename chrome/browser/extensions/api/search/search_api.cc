@@ -71,6 +71,7 @@ TabModel* GetLastActiveTabModel(Profile* profile, bool include_incognito) {
 
 using extensions::api::search::Disposition;
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction SearchQueryFunction::Run() {
   std::optional<api::search::Query::Params> params =
       api::search::Query::Params::Create(args());

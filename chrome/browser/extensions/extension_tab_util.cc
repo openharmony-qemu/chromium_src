@@ -95,7 +95,12 @@
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 #if BUILDFLAG(ENABLE_CEF)
+#include "cef/ohos_cef_ext/libcef/browser/chrome/extensions/arkweb_chrome_extension_util_ext.h"
 #include "cef/libcef/browser/chrome/extensions/chrome_extension_util.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/extension_tab_util_for_include.cc"
 #endif
 
 using content::NavigationEntry;
@@ -349,7 +354,11 @@ int ExtensionTabUtil::GetWindowId(BrowserWindowInterface* browser) {
 }
 
 int ExtensionTabUtil::GetTabId(const WebContents* web_contents) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  return cef::GetTabIdForWebContents(web_contents);
+#else
   return sessions::SessionTabHelper::IdForTab(web_contents).id();
+#endif
 }
 
 int ExtensionTabUtil::GetWindowIdOfTab(const WebContents* web_contents) {

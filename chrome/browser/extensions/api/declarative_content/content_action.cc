@@ -108,6 +108,9 @@ class ShowExtensionAction : public ContentAction {
     action->DeclarativeShow(ExtensionTabUtil::GetTabId(apply_info.tab));
     ExtensionActionDispatcher::Get(apply_info.browser_context)
         ->NotifyChange(action, apply_info.tab, apply_info.browser_context);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    ContentActionShowExtension(action, apply_info, true);
+#endif // ARKWEB_ARKWEB_EXTENSIONS
   }
   // The page action is already showing, so nothing needs to be done here.
   void Reapply(const ApplyInfo& apply_info) const override {}
@@ -117,6 +120,9 @@ class ShowExtensionAction : public ContentAction {
       action->UndoDeclarativeShow(ExtensionTabUtil::GetTabId(apply_info.tab));
       ExtensionActionDispatcher::Get(apply_info.browser_context)
           ->NotifyChange(action, apply_info.tab, apply_info.browser_context);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    ContentActionShowExtension(action, apply_info, false);
+#endif // ARKWEB_ARKWEB_EXTENSIONS
     }
   }
 
@@ -156,6 +162,9 @@ class SetIcon : public ContentAction {
       ExtensionActionDispatcher::Get(profile)->NotifyChange(
           action, apply_info.tab, profile);
     }
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    ContentActionSetIcon(action, apply_info);
+#endif // ARKWEB_ARKWEB_EXTENSIONS
   }
 
   void Reapply(const ApplyInfo& apply_info) const override {}
@@ -172,6 +181,9 @@ class SetIcon : public ContentAction {
       ExtensionActionDispatcher::Get(apply_info.browser_context)
           ->NotifyChange(action, apply_info.tab, profile);
     }
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    ContentActionSetIcon(action, apply_info);
+#endif // ARKWEB_ARKWEB_EXTENSIONS
   }
 
  private:

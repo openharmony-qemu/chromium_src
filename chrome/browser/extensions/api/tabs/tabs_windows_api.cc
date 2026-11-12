@@ -22,6 +22,10 @@ namespace extensions {
 
 TabsWindowsAPI::TabsWindowsAPI(content::BrowserContext* context)
     : browser_context_(context) {
+#if BUILDFLAG(IS_OHOS)
+  tabs_event_router_ = std::make_unique<TabsEventRouter>(
+      Profile::FromBrowserContext(browser_context_));
+#endif
   windows_event_router_ = std::make_unique<WindowsEventRouter>(
       Profile::FromBrowserContext(browser_context_));
   EventRouter* event_router = EventRouter::Get(browser_context_);

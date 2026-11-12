@@ -1,0 +1,64 @@
+diff a/chrome/browser/extensions/extension_install_prompt.h b/chrome/browser/extensions/extension_install_prompt.h	(rejected hunks)
+@@ -99,10 +99,14 @@ class ExtensionInstallPrompt {
+   // that logic.
+   class Prompt {
+    public:
+     explicit Prompt(PromptType type);
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++    Prompt(PromptType type, bool is_from_webstore);
++#endif
++
+     Prompt(const Prompt&) = delete;
+     Prompt& operator=(const Prompt&) = delete;
+ 
+     ~Prompt();
+ 
+@@ -160,10 +164,17 @@ class ExtensionInstallPrompt {
+     int rating_count() const { return rating_count_; }
+     const std::string& localized_rating_count() const {
+       return localized_rating_count_;
+     }
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++    bool is_from_webstore() const { return is_from_webstore_; }
++    void set_is_from_webstore(bool is_from_webstore) {
++      is_from_webstore_ = is_from_webstore;
++    }
++#endif
++
+     bool has_webstore_data() const { return has_webstore_data_; }
+ 
+     void AddObserver(Observer* observer);
+     void RemoveObserver(Observer* observer);
+ 
+@@ -212,10 +223,14 @@ class ExtensionInstallPrompt {
+ 
+     // Whether we should display the user count (we anticipate this will be
+     // false if localized_user_count_ represents the number zero).
+     bool show_user_count_;
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++    bool is_from_webstore_ = false;
++#endif
++
+     // Whether or not this prompt has been populated with data from the
+     // webstore.
+     bool has_webstore_data_;
+ 
+     base::ObserverList<Observer> observers_;
+@@ -248,11 +263,13 @@ class ExtensionInstallPrompt {
+       std::unique_ptr<ExtensionInstallPrompt::Prompt>)>;
+ 
+   // Callback to show the default extension install dialog.
+   // The implementations of this function are platform-specific.
+   static ShowDialogCallback GetDefaultShowDialogCallback();
+-
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  static ShowDialogCallback GetOhosShowDialogCallback();
++#endif
+   // Returns the appropriate prompt type for the given `extension`.
+   // TODO(devlin): This method is yucky - callers probably only care about one
+   // prompt type. We just need to comb through and figure out what it is.
+   static PromptType GetReEnablePromptTypeForExtension(
+       content::BrowserContext* context,

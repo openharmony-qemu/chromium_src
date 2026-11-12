@@ -1,0 +1,33 @@
+diff a/chrome/browser/extensions/api/debugger/debugger_api.cc b/chrome/browser/extensions/api/debugger/debugger_api.cc	(rejected hunks)
+@@ -139,11 +139,15 @@ void DebuggeeFromDebuggerSession(Debuggee& dst, const DebuggerSession& src) {
+ }
+ 
+ #if BUILDFLAG(ENABLE_PDF)
+ // Returns whether `url` is the URL for the built-in PDF extension.
+ bool IsPdfExtensionUrl(const GURL& url) {
+-  return url.GetScheme() == kExtensionScheme &&
++  return (url.GetScheme() == kExtensionScheme
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++          || url.GetScheme() == kArkwebExtensionScheme
++#endif
++          ) &&
+          url.GetHost() == extension_misc::kPdfExtensionId;
+ }
+ #endif  // BUILDFLAG(ENABLE_PDF)
+ 
+ bool ExtensionMayAttachToTargetProfile(Profile* extension_profile,
+@@ -492,10 +501,14 @@ bool ExtensionDevToolsClientHost::Attach() {
+         extension_id(), extension_->name(),
+         base::BindOnce(&ExtensionDevToolsClientHost::InfoBarDestroyed,
+                        base::Unretained(this)));
+   }
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  NotifyShowConfirmInfoBar();
++#endif // ARKWEB_ARKWEB_EXTENSIONS
++
+   if (extension_service_worker_id_) {
+     ProcessManager* process_manager = ProcessManager::Get(profile_);
+     CHECK(process_manager);
+     // The service worker should definitely be registered at this point.
+     CHECK(process_manager->HasServiceWorker(*extension_service_worker_id_));

@@ -171,7 +171,11 @@ const Extension* GetServiceWorkerBasedExtensionForScope(
     const GURL& scope,
     BrowserContext* browser_context) {
   // We only care about extension urls.
-  if (!scope.SchemeIs(kExtensionScheme)) {
+  if (!scope.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !scope.SchemeIs(kArkwebExtensionScheme)
+#endif
+  ) {
     return nullptr;
   }
 
@@ -332,7 +336,11 @@ bool ChromeContentBrowserClientExtensionsPart::ShouldUseSpareRenderProcessHost(
   // command-line flag (switches::kExtensionProcess) to the renderer process
   // when it launches. A spare process is launched earlier, before it is known
   // which navigation will use it, so it lacks this flag.
-  return !site_url.SchemeIs(kExtensionScheme);
+  return !site_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         && !site_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+      ;
 }
 
 // static
@@ -618,7 +626,11 @@ bool ChromeContentBrowserClientExtensionsPart::AllowServiceWorker(
     const GURL& script_url,
     content::BrowserContext* context) {
   // We only care about extension urls.
-  if (!first_party_url.SchemeIs(kExtensionScheme))
+  if (!first_party_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !first_party_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  )
     return true;
 
   const Extension* extension = ExtensionRegistry::Get(context)

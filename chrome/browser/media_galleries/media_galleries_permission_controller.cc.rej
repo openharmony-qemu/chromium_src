@@ -1,0 +1,36 @@
+diff a/chrome/browser/media_galleries/media_galleries_permission_controller.cc b/chrome/browser/media_galleries/media_galleries_permission_controller.cc	(rejected hunks)
+@@ -80,10 +80,14 @@ MediaGalleriesPermissionController::MediaGalleriesPermissionController(
+       base::BindRepeating(&MediaGalleriesPermissionController::DidForgetEntry,
+                           base::Unretained(this)));
+ }
+ 
+ void MediaGalleriesPermissionController::OnPreferencesInitialized() {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if (!StorageMonitor::GetInstance())
++    return;
++#endif
+   DCHECK(StorageMonitor::GetInstance());
+   StorageMonitor::GetInstance()->AddObserver(this);
+ 
+   // |preferences_| may be NULL in tests.
+   if (preferences_) {
+@@ -106,12 +110,19 @@ MediaGalleriesPermissionController::MediaGalleriesPermissionController(
+       create_dialog_callback_(std::move(create_dialog_callback)) {
+   OnPreferencesInitialized();
+ }
+ 
+ MediaGalleriesPermissionController::~MediaGalleriesPermissionController() {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if (StorageMonitor::GetInstance()) {
++  DCHECK(StorageMonitor::GetInstance());
++  StorageMonitor::GetInstance()->RemoveObserver(this);
++  }
++#else
+   DCHECK(StorageMonitor::GetInstance());
+   StorageMonitor::GetInstance()->RemoveObserver(this);
++#endif
+ 
+   // |preferences_| may be NULL in tests.
+   if (preferences_)
+     preferences_->RemoveGalleryChangeObserver(this);
+ 

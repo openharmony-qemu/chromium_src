@@ -1046,7 +1046,7 @@ ExtensionFunction::ResponseAction AutofillPrivateGetLocalCardFunction::Run() {
     // IsPaymentMethodsMandatoryReauthEnabled() ensures that it's only enabled
     // for MacOS and Windows.
     NOTREACHED();
-#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   } else {
     ReturnCreditCard();
   }

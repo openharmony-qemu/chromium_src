@@ -1,0 +1,16 @@
+diff a/chrome/browser/net/profile_network_context_service.cc b/chrome/browser/net/profile_network_context_service.cc	(rejected hunks)
+@@ -133,10 +133,14 @@
+ 
+ #if BUILDFLAG(IS_MAC)
+ #include "net/ssl/client_cert_store_mac.h"
+ #endif  // BUILDFLAG(IS_MAC)
+ 
++#if BUILDFLAG(IS_OHOS)
++#include "net/ssl/client_cert_store_ohos.h"
++#endif  // BUILDFLAG(IS_OHOS)
++
+ #if BUILDFLAG(IS_ANDROID)
+ #include "net/ssl/client_cert_store_empty.h"
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
+ #if BUILDFLAG(ENABLE_EXTENSIONS)

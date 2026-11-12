@@ -553,6 +553,7 @@ ExtensionFunction::ResponseAction TabsGetAllInWindowFunction::Run() {
       window_controller->CreateTabList(extension(), source_context_type())));
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction TabsQueryFunction::Run() {
   std::optional<tabs::Query::Params> params =
       tabs::Query::Params::Create(args());
@@ -1941,6 +1942,7 @@ bool TabsMoveFunction::MoveTab(int tab_id,
   return true;
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction TabsReloadFunction::Run() {
   std::optional<tabs::Reload::Params> params =
       tabs::Reload::Params::Create(args());
@@ -1987,6 +1989,7 @@ ExtensionFunction::ResponseAction TabsReloadFunction::Run() {
 
   return RespondNow(NoArguments());
 }
+#endif // !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
 class TabsRemoveFunction::WebContentsDestroyedObserver
     : public content::WebContentsObserver {
@@ -2011,6 +2014,7 @@ class TabsRemoveFunction::WebContentsDestroyedObserver
 TabsRemoveFunction::TabsRemoveFunction() = default;
 TabsRemoveFunction::~TabsRemoveFunction() = default;
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction TabsRemoveFunction::Run() {
   std::optional<tabs::Remove::Params> params =
       tabs::Remove::Params::Create(args());
@@ -2527,6 +2531,7 @@ TabsDetectLanguageFunction::StartLanguageDetection(
   is_observing_ = true;
   return RespondLater();
 }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 void TabsDetectLanguageFunction::NavigationEntryCommitted(
     const content::LoadCommittedDetails& load_details) {
@@ -2622,6 +2627,7 @@ content::WebContents* TabsCaptureVisibleTabFunction::GetWebContentsForID(
   return contents;
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction TabsCaptureVisibleTabFunction::Run() {
   using api::extension_types::ImageDetails;
 
@@ -2667,6 +2673,7 @@ ExtensionFunction::ResponseAction TabsCaptureVisibleTabFunction::Run() {
 
   return RespondNow(Error(CaptureResultToErrorMessage(capture_result)));
 }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 void TabsCaptureVisibleTabFunction::GetQuotaLimitHeuristics(
     QuotaLimitHeuristics* heuristics) const {
@@ -2744,6 +2751,7 @@ std::string TabsCaptureVisibleTabFunction::CaptureResultToErrorMessage(
 ExecuteCodeInTabFunction::ExecuteCodeInTabFunction() = default;
 ExecuteCodeInTabFunction::~ExecuteCodeInTabFunction() = default;
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExecuteCodeFunction::InitResult ExecuteCodeInTabFunction::Init() {
   if (init_result_) {
     return init_result_.value();
@@ -2799,6 +2807,7 @@ ExecuteCodeFunction::InitResult ExecuteCodeInTabFunction::Init() {
       mojom::HostID(mojom::HostID::HostType::kExtensions, extension()->id()));
   return set_init_result(SUCCESS);
 }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 bool ExecuteCodeInTabFunction::ShouldInsertCSS() const {
   return false;
@@ -2905,6 +2914,7 @@ bool TabsRemoveCSSFunction::ShouldRemoveCSS() const {
   return true;
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction TabsSetZoomFunction::Run() {
   std::optional<tabs::SetZoom::Params> params =
       tabs::SetZoom::Params::Create(args());
@@ -3169,5 +3179,6 @@ ExtensionFunction::ResponseAction TabsGoBackFunction::Run() {
   controller.GoBack();
   return RespondNow(NoArguments());
 }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 }  // namespace extensions

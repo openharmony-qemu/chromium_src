@@ -1,0 +1,22 @@
+diff a/chrome/browser/extensions/api/bookmarks/bookmarks_api.cc b/chrome/browser/extensions/api/bookmarks/bookmarks_api.cc	(rejected hunks)
+@@ -311,10 +311,11 @@ void BookmarksAPI::OnListenerAdded(const EventListenerInfo& details) {
+   bookmark_event_router_ = std::make_unique<BookmarkEventRouter>(
+       Profile::FromBrowserContext(browser_context_));
+   EventRouter::Get(browser_context_)->UnregisterObserver(this);
+ }
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseValue BookmarksGetFunction::RunOnReady() {
+   std::optional<api::bookmarks::Get::Params> params =
+       api::bookmarks::Get::Params::Create(args());
+   if (!params) {
+     return BadMessage();
+@@ -759,7 +760,8 @@ ExtensionFunction::ResponseValue BookmarksUpdateFunction::RunOnReady() {
+       GetBookmarkModel(), GetManagedBookmarkService(), node,
+       /*recurse=*/false,
+       /*only_folders=*/false);
+   return ArgumentList(api::bookmarks::Update::Results::Create(tree_node));
+ }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ }  // namespace extensions

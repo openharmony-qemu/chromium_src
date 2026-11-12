@@ -160,6 +160,10 @@ class ChromeExtensionSystem : public ExtensionSystem {
   raw_ptr<Profile> profile_;
 
   raw_ptr<Shared> shared_;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  std::unique_ptr<ExtensionRegistryInfoManager> extension_registry_info_manager_;
+#endif
 };
 
 }  // namespace extensions

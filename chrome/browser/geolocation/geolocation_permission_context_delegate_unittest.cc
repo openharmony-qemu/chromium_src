@@ -51,6 +51,11 @@ class GeolocationPermissionContextDelegateTests
                                                           GRANTED);
     MockLocationSettings::ClearHasShownLocationSettingsDialog();
 #endif
+
+#if BUILDFLAG(IS_OHOS)
+    PermissionManagerFactory::GetInstance()->SetTestingFactory(
+        profile(), base::BindRepeating(&CreateTestingPermissionManagerOHOS));
+#endif
   }
 
   void RequestPermissionFromCurrentDocument(

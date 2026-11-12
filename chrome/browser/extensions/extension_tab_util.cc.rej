@@ -1,0 +1,77 @@
+diff a/chrome/browser/extensions/extension_tab_util.cc b/chrome/browser/extensions/extension_tab_util.cc	(rejected hunks)
+@@ -10,10 +10,11 @@
+ #include <cmath>
+ #include <memory>
+ #include <optional>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/fixed_flat_set.h"
+ #include "base/hash/hash.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "base/notimplemented.h"
+ #include "base/strings/stringprintf.h"
+@@ -168,11 +174,15 @@ int GetTabIdForExtensions(const WebContents* web_contents) {
+   Browser* browser = chrome::FindBrowserWithTab(web_contents);
+   if (browser && !ExtensionTabUtil::BrowserSupportsTabs(browser)) {
+     return -1;
+   }
+ #endif
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  return cef::GetTabIdForWebContents(web_contents);
++#else
+   return sessions::SessionTabHelper::IdForTab(web_contents).id();
++#endif 
+ }
+ 
+ bool IsFileUrl(const GURL& url) {
+   return url.SchemeIsFile() || (url.SchemeIs(content::kViewSourceScheme) &&
+                                 GURL(url.GetContent()).SchemeIsFile());
+@@ -263,11 +273,15 @@ std::optional<GURL> GetOptionsPageUrlToNavigate(const Extension* extension) {
+     // Options page tab is Extension settings pointed at that Extension's ID,
+     // e.g. chrome://extensions?options=...
+     GURL::Replacements replacements;
+     const std::string query = base::StringPrintf("options=%s", extension->id());
+     replacements.SetQueryStr(query);
++#if BUILDFLAG(ARKWEB_NWEB_EX)
++    return GURL("hwbrowser://extensions/").ReplaceComponents(replacements);
++#else
+     return GURL(chrome::kChromeUIExtensionsURL).ReplaceComponents(replacements);
++#endif
+   }
+ }
+ 
+ }  // namespace
+ 
+@@ -350,11 +364,15 @@ base::expected<base::Value::Dict, std::string> ExtensionTabUtil::OpenTab(
+   // will override this default.
+   bool pinned = params.pinned.value_or(false);
+ 
+   // We can't load extension URLs into incognito windows unless the extension
+   // uses split mode. Special case to fall back to a tabbed window.
+-  if (url.SchemeIs(kExtensionScheme) &&
++  if ((url.SchemeIs(kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++       || url.SchemeIs(kArkwebExtensionScheme)
++#endif
++           ) &&
+       (!extension || !IncognitoInfo::IsSplitMode(extension)) &&
+       browser->GetProfile()->IsOffTheRecord()) {
+     Profile* original_profile = browser->GetProfile()->GetOriginalProfile();
+ 
+     browser = chrome::FindTabbedBrowser(original_profile, false);
+@@ -629,10 +651,14 @@ api::tabs::Tab ExtensionTabUtil::CreateTabObject(
+       tab_object.opener_tab_id = GetTabIdForExtensions(opener->GetContents());
+     }
+   }
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  UpdateWithNWebExtensionTabInfo(tab_object);
++#endif
++
+   ScrubTabForExtension(extension, contents, &tab_object, scrub_tab_behavior);
+   return tab_object;
+ }
+ 
+ // static

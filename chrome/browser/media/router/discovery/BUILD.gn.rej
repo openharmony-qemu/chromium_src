@@ -1,0 +1,14 @@
+diff a/chrome/browser/media/router/discovery/BUILD.gn b/chrome/browser/media/router/discovery/BUILD.gn	(rejected hunks)
+@@ -79,11 +79,11 @@ static_library("discovery") {
+     "//services/network/public/cpp",
+     "//third_party/openscreen/src/cast/common/channel/proto:channel_proto",
+   ]
+   configs += [ "//build/config/compiler:wexit_time_destructors" ]
+ 
+-  if (is_linux || is_chromeos) {
++  if (is_linux || is_chromeos || is_ohos) {
+     sources += [ "discovery_network_list_wifi_linux.cc" ]
+   }
+ 
+   if (is_chromeos) {
+     deps += [ "//chromeos/ash/components/network" ]

@@ -1,0 +1,14 @@
+diff a/chrome/browser/intranet_redirect_detector.h b/chrome/browser/intranet_redirect_detector.h	(rejected hunks)
+@@ -24,11 +24,11 @@ class SimpleURLLoader;
+ }
+ 
+ class PrefRegistrySimple;
+ 
+ #if !(BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || \
+-      BUILDFLAG(IS_CHROMEOS))
++      BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS))
+ #error "IntranetRedirectDetector should only be built on Desktop platforms."
+ #endif
+ 
+ // This object is responsible for determining whether the user is on a network
+ // that redirects requests for intranet hostnames to another site, and if so,

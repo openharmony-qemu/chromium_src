@@ -381,7 +381,11 @@ bool ChromeHidDelegate::IsServiceWorkerAllowedForOrigin(
 #if BUILDFLAG(ENABLE_EXTENSIONS)
   // WebHID is only available on extension service workers with feature flag
   // enabled for now.
-  if (origin.scheme() == extensions::kExtensionScheme) {
+  if ((origin.scheme() == extensions::kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       || origin.scheme() == extensions::kArkwebExtensionScheme
+#endif
+       )) {
     return true;
   }
 #endif  // BUILDFLAG(ENABLE_EXTENSIONS)

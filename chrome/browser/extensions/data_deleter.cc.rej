@@ -1,0 +1,18 @@
+diff a/chrome/browser/extensions/data_deleter.cc b/chrome/browser/extensions/data_deleter.cc	(rejected hunks)
+@@ -48,11 +48,15 @@ void DeleteOrigin(Profile* profile,
+                   base::OnceClosure done_callback) {
+   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+   DCHECK(profile);
+   DCHECK(partition);
+ 
+-  if (origin.SchemeIs(kExtensionScheme)) {
++  if (origin.SchemeIs(kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      || origin.SchemeIs(kArkwebExtensionScheme)
++#endif
++  ) {
+     auto subtask_done_callback =
+         base::BarrierClosure(2, std::move(done_callback));
+ 
+     // TODO(ajwong): Cookies are not properly isolated for
+     // chrome-extension:// scheme.  (http://crbug.com/158386).

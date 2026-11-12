@@ -1,0 +1,295 @@
+diff a/chrome/browser/extensions/crx_installer.cc b/chrome/browser/extensions/crx_installer.cc
+--- a/chrome/browser/extensions/crx_installer.cc
++++ b/chrome/browser/extensions/crx_installer.cc
+@@ -83,10 +83,17 @@
+ 
+ #if BUILDFLAG(IS_CHROMEOS)
+ #include "components/user_manager/user_manager.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
++#include "arkweb/chromium_ext/extensions/browser/custom_handler.h"
++#include "arkweb/chromium_ext/extensions/browser/extension_log_reporter.h"
++#include "base/task/thread_pool.h"
++#endif
++
+ static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
+ 
+ using content::BrowserThread;
+ 
+ namespace extensions {
+@@ -138,10 +145,20 @@ CrxInstaller::CrxInstaller(content::BrowserContext* context,
+       install_flags_(kInstallFlagNone) {
+   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+   CHECK(!profile_->IsOffTheRecord());
+   profile_observation_.Observe(profile_);
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if (client_) {
++    client_->install_ui()->SetSkipPostInstallUI(true);
++  }
++
++  if (!base::ohos::IsPcDevice()) {
++    webstore_type_ = kWebStoreTypeHuawei;
++  }
++#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++
+   // Observe for browser shutdown. Unretained is safe because the callback
+   // subscription is owned by this object.
+   on_browser_terminating_subscription_ =
+       browser_shutdown::AddAppTerminatingCallback(base::BindOnce(
+           &CrxInstaller::OnBrowserTerminating, base::Unretained(this)));
+@@ -153,10 +170,15 @@ CrxInstaller::CrxInstaller(content::BrowserContext* context,
+   if (client_) {
+     client_->install_ui()->SetUseAppInstalledBubble(
+         approval->use_app_installed_bubble);
+     client_->install_ui()->SetSkipPostInstallUI(approval->skip_post_install_ui);
+   }
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if (client_) {
++    client_->install_ui()->SetSkipPostInstallUI(true);
++  }
++#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ 
+   if (approval->skip_install_dialog) {
+     // Mark the extension as approved, but save the expected manifest and ID
+     // so we can check that they match the CRX's.
+     approved_ = true;
+@@ -179,10 +201,31 @@ CrxInstaller::~CrxInstaller() {
+   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+   // Ensure |client_| and |install_checker_| data members are destroyed on the
+   // UI thread. The |client_| dialog has a weak reference as |this| is its
+   // delegate, and |install_checker_| owns WeakPtrs, so must be destroyed on the
+   // same thread that created it.
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  const base::FilePath temp = temp_dir_;
++  const base::FilePath src = (delete_source_ ? source_file_ : base::FilePath());
++
++  if (!temp.empty() || !src.empty()) {
++    base::ThreadPool::PostTask(
++        FROM_HERE,
++        {base::MayBlock(), base::TaskPriority::BEST_EFFORT,
++         base::TaskShutdownBehavior::BLOCK_SHUTDOWN},
++        base::BindOnce(
++            [](base::FilePath t, base::FilePath s) {
++              if (!t.empty()) {
++                base::DeletePathRecursively(t);
++              }
++              if (!s.empty()) {
++                base::DeleteFile(s);
++              }
++            },
++            temp, src));
++  }
++#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ }
+ 
+ void CrxInstaller::InstallCrx(const base::FilePath& source_file) {
+   crx_file::VerifierFormat format =
+       off_store_install_allow_reason_ == OffStoreInstallDisallowed
+@@ -191,12 +234,24 @@ void CrxInstaller::InstallCrx(const base::FilePath& source_file) {
+                     ::switches::kAppsGalleryURL))
+           : GetExternalVerifierFormat();
+   InstallCrxFile(CRXFileInfo(source_file, format));
+ }
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++void CrxInstaller::set_webstore_type(int webstore_type) {
++  webstore_type_ = webstore_type;
++}
++#endif
++
+ void CrxInstaller::InstallCrxFile(const CRXFileInfo& source_file) {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  LOG(INFO) << "CrxInstaller::InstallCrxFile";
++#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+   if (!profile_ || browser_terminating_) {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++    LOG(INFO) << "exit CrxInstaller::InstallCrxFile, !service";
++#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+     return;
+   }
+ 
+   NotifyCrxInstallBegin();
+ 
+@@ -204,10 +259,14 @@ void CrxInstaller::InstallCrxFile(const CRXFileInfo& source_file) {
+ 
+   auto unpacker = base::MakeRefCounted<SandboxedUnpacker>(
+       install_source_, creation_flags_, install_directory_,
+       GetUnpackerTaskRunner(), this);
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  unpacker->set_webstore_type(webstore_type_);
++#endif
++
+   if (!GetUnpackerTaskRunner()->PostTask(
+           FROM_HERE, base::BindOnce(&SandboxedUnpacker::StartWithCrx, unpacker,
+                                     source_file))) {
+     NOTREACHED();
+   }
+@@ -226,10 +285,14 @@ void CrxInstaller::InstallUnpackedCrx(const ExtensionId& extension_id,
+ 
+   auto unpacker = base::MakeRefCounted<SandboxedUnpacker>(
+       install_source_, creation_flags_, install_directory_,
+       GetUnpackerTaskRunner(), this);
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  unpacker->set_webstore_type(webstore_type_);
++#endif
++
+   if (!GetUnpackerTaskRunner()->PostTask(
+           FROM_HERE,
+           base::BindOnce(&SandboxedUnpacker::StartWithDirectory, unpacker,
+                          extension_id, public_key, unpacked_dir))) {
+     NOTREACHED();
+@@ -296,10 +359,14 @@ void CrxInstaller::UpdateExtensionFromUnpackedCrx(
+                   CrxInstallErrorDetail::UPDATE_NON_EXISTING_EXTENSION)));
+     }
+     return;
+   }
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  webstore_type_ = CustomData::GetStoreType(extension);
++#endif
++
+   expected_id_ = extension_id;
+   install_source_ = extension->location();
+   InitializeCreationFlagsForUpdate(extension, Extension::NO_FLAGS);
+ 
+   const ExtensionPrefs* extension_prefs = ExtensionPrefs::Get(profile_);
+@@ -434,16 +501,24 @@ std::optional<CrxInstallError> CrxInstaller::AllowInstall(
+     if (!is_gallery_install() && client_) {
+       // For apps with a gallery update URL, require that they be installed
+       // from the gallery.
+       // TODO(erikkay) Apply this rule for paid extensions and themes as well.
+       if (UpdatesFromWebstore(*extension)) {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++        return CrxInstallError(
++            CrxInstallErrorType::OTHER,
++            CrxInstallErrorDetail::NOT_INSTALLED_FROM_GALLERY,
++            l10n_util::GetStringUTF16(
++                IDS_EXTENSIONS_LOAD_ERROR_HEADING));
++#else
+         return CrxInstallError(
+             CrxInstallErrorType::OTHER,
+             CrxInstallErrorDetail::NOT_INSTALLED_FROM_GALLERY,
+             l10n_util::GetStringFUTF16(
+                 IDS_EXTENSION_INSTALL_GALLERY_ONLY,
+                 l10n_util::GetStringUTF16(IDS_EXTENSION_WEB_STORE_TITLE)));
++#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       }
+ 
+       // For self-hosted apps, verify that the entire extent is on the same
+       // host (or a subdomain of the host) the download happened from.  There's
+       // no way for us to verify that the app controls any other hosts.
+@@ -607,10 +682,13 @@ void CrxInstaller::OnStageChanged(InstallationStage stage) {
+   ReportInstallationStage(stage);
+ }
+ 
+ void CrxInstaller::OnProfileWillBeDestroyed(Profile* profile) {
+   DCHECK_EQ(profile, profile_);
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  CleanupTempFiles();
++#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)  
+   profile_keep_alive_.reset();
+   profile_observation_.Reset();
+   profile_ = nullptr;
+   // The registrar will be deleted shortly.
+   registrar_ = nullptr;
+@@ -802,11 +880,15 @@ void CrxInstaller::ConfirmInstall() {
+       (!allow_silent_install_ || !approved_) &&
+       !update_from_settings_page_) {
+     AddRef();  // Balanced in OnInstallPromptDone().
+     client_->ShowDialog(
+         base::BindOnce(&CrxInstaller::OnInstallPromptDone, this), extension(),
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++        nullptr, ExtensionInstallPrompt::GetOhosShowDialogCallback());
++#else
+         nullptr, ExtensionInstallPrompt::GetDefaultShowDialogCallback());
++#endif
+   } else {
+     UpdateCreationFlagsAndCompleteInstall(kDontWithholdPermissions);
+   }
+ }
+ 
+@@ -846,16 +928,22 @@ void CrxInstaller::OnInstallPromptDone(
+ 
+     case ExtensionInstallPrompt::Result::USER_CANCELED:
+       if (!update_from_settings_page_) {
+         NotifyCrxInstallComplete(CrxInstallError(
+             CrxInstallErrorType::OTHER, CrxInstallErrorDetail::USER_CANCELED));
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++        CleanupTempFiles();
++#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       }
+       break;
+     case ExtensionInstallPrompt::Result::ABORTED:
+       if (!update_from_settings_page_) {
+         NotifyCrxInstallComplete(CrxInstallError(
+             CrxInstallErrorType::OTHER, CrxInstallErrorDetail::USER_ABORTED));
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++        CleanupTempFiles();
++#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       }
+       break;
+   }
+ 
+   Release();  // balanced in ConfirmInstall() or ConfirmReEnable().
+@@ -1097,10 +1185,21 @@ void CrxInstaller::NotifyCrxInstallComplete(
+       InstallStageTracker::Get(profile_);
+   install_stage_tracker->ReportInstallationStage(
+       extension_id, InstallStageTracker::Stage::COMPLETE);
+   const bool success = !error.has_value();
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if (!error) {
++    ExtensionLogReporter::ReportInstallationSuccess(
++        InstallerType::INSTALLER_TYPE_CRX, extension_id, install_directory_);
++  } else {
++    ExtensionLogReporter::ReportInstallationFailure(
++        InstallerType::INSTALLER_TYPE_CRX, extension_id, install_directory_,
++        base::UTF16ToUTF8(error->message()));
++  }
++#endif
++
+   if (extension()) {
+     install_stage_tracker->ReportExtensionType(extension_id,
+                                                extension()->GetType());
+   }
+ 
+@@ -1120,10 +1219,18 @@ void CrxInstaller::NotifyCrxInstallComplete(
+         install_stage_tracker->ReportCrxInstallError(
+             extension_id,
+             InstallStageTracker::FailureReason::CRX_INSTALL_ERROR_OTHER,
+             error->detail());
+         break;
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      case CrxInstallErrorType::UNRECOGNIZED_INSTALL_SOURCE:
++        install_stage_tracker->ReportCrxInstallError(
++            extension_id,
++            InstallStageTracker::FailureReason::CRX_INSTALL_ERROR_OTHER,
++            error->detail());
++        break;
++#endif
+       case CrxInstallErrorType::NONE:
+         NOTREACHED();
+     }
+   }
+ 
+@@ -1201,11 +1308,15 @@ void CrxInstaller::ConfirmReEnable() {
+         ExtensionInstallPrompt::GetReEnablePromptTypeForExtension(profile_,
+                                                                   extension());
+     client_->ShowDialog(
+         base::BindOnce(&CrxInstaller::OnInstallPromptDone, this), extension(),
+         nullptr, std::make_unique<ExtensionInstallPrompt::Prompt>(type),
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++        ExtensionInstallPrompt::GetOhosShowDialogCallback());
++#else
+         ExtensionInstallPrompt::GetDefaultShowDialogCallback());
++#endif
+   }
+ }
+ 
+ base::SequencedTaskRunner* CrxInstaller::GetUnpackerTaskRunner() {
+   if (!unpacker_task_runner_) {

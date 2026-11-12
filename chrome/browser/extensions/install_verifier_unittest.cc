@@ -20,6 +20,10 @@
 #include "extensions/common/manifest.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/browser/extension_registry.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 using extensions::mojom::ManifestLocation;
@@ -131,6 +135,10 @@ TEST_F(InstallVerifierTest, TestIsFromStoreAndMustRemainDisabled) {
                                                &disable_reason));
   }
 }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/install_verifier_unittest_for_include.cc"
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
 // Test the behavior of the InstallVerifier when an extension is

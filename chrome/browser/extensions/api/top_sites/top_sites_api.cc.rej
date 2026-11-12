@@ -1,0 +1,13 @@
+diff a/chrome/browser/extensions/api/top_sites/top_sites_api.cc b/chrome/browser/extensions/api/top_sites/top_sites_api.cc	(rejected hunks)
+@@ -35,10 +36,11 @@ ExtensionFunction::ResponseAction TopSitesGetFunction::Run() {
+ 
+   // GetMostVisitedURLs() will invoke the callback synchronously if the URLs are
+   // already populated.
+   return did_respond() ? AlreadyResponded() : RespondLater();
+ }
++#endif
+ 
+ void TopSitesGetFunction::OnMostVisitedURLsAvailable(
+     const history::MostVisitedURLList& data) {
+   base::Value::List pages_value;
+   for (const auto& url : data) {

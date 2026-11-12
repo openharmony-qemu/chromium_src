@@ -277,12 +277,34 @@ void ExtensionActionFunction::SetVisible(bool visible) {
 ExtensionFunction::ResponseAction
 ExtensionActionShowFunction::RunExtensionAction() {
   SetVisible(true);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  std::optional<int> tab_id;
+  if (tab_id_ != ExtensionAction::kDefaultTabId) {
+    tab_id = tab_id_;
+  }
+  LOG(INFO) << "ExtensionActionShowFunction::RunExtensionAction";
+  OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnEnable(
+      extension()->id(), tab_id,
+      OHOS::NWeb::GetExtensionContextType(browser_context()),
+      include_incognito_information());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
   return RespondNow(NoArguments());
 }
 
 ExtensionFunction::ResponseAction
 ExtensionActionHideFunction::RunExtensionAction() {
   SetVisible(false);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  std::optional<int> tab_id;
+  if (tab_id_ != ExtensionAction::kDefaultTabId) {
+    tab_id = tab_id_;
+  }
+  LOG(INFO) << "ExtensionActionHideFunction::RunExtensionAction";
+  OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnDisable(
+      extension()->id(), tab_id,
+      OHOS::NWeb::GetExtensionContextType(browser_context()),
+      include_incognito_information());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
   return RespondNow(NoArguments());
 }
 
@@ -325,6 +347,14 @@ ExtensionActionSetIconFunction::RunExtensionAction() {
     }
 
     extension_action_->SetIcon(tab_id_, icon_image);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    LOG(INFO) << "ExtensionActionSetIconFunction::RunExtensionAction";
+    OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnSetIcon(
+        extension()->id(), icon_image, tab_id_,
+        OHOS::NWeb::GetExtensionContextType(browser_context()),
+        include_incognito_information());
+#endif
   } else if (details_->FindInt("iconIndex")) {
     // Obsolete argument: ignore it.
     return RespondNow(NoArguments());
@@ -370,6 +400,17 @@ ExtensionActionSetPopupFunction::RunExtensionAction() {
 
   extension_action_->SetPopupUrl(tab_id_, popup_url);
   NotifyChange();
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  NWebExtensionActionSetPopupDetails details;
+  if (tab_id_ != ExtensionAction::kDefaultTabId) {
+    details.tabId = tab_id_;
+  }
+  details.popup = *popup_string;
+  OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnSetPopup(
+      extension()->id(), details,
+      OHOS::NWeb::GetExtensionContextType(browser_context()),
+      include_incognito_information());
+#endif
   return RespondNow(NoArguments());
 }
 
@@ -406,6 +447,19 @@ ExtensionActionSetBadgeBackgroundColorFunction::RunExtensionAction() {
   }
   extension_action_->SetBadgeBackgroundColor(tab_id_, color);
   NotifyChange();
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  NWebExtensionActionSetBadgeBackgroundColorDetails details;
+  if (tab_id_ != ExtensionAction::kDefaultTabId) {
+    details.tabId = tab_id_;
+  }
+  details.color = {SkColorGetR(color), SkColorGetG(color), SkColorGetB(color),
+                   SkColorGetA(color)};
+  OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()
+      ->OnSetBadgeBackgroundColor(
+          extension()->id(), details,
+          OHOS::NWeb::GetExtensionContextType(browser_context()),
+          include_incognito_information());
+#endif
   return RespondNow(NoArguments());
 }
 
@@ -424,6 +478,19 @@ ActionSetBadgeTextColorFunction::RunExtensionAction() {
   }
   extension_action_->SetBadgeTextColor(tab_id_, color);
   NotifyChange();
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  NWebExtensionActionSetBadgeTextColorDetails details;
+  if (tab_id_ != ExtensionAction::kDefaultTabId) {
+    details.tabId = tab_id_;
+  }
+  details.color = {SkColorGetR(color), SkColorGetG(color), SkColorGetB(color),
+                   SkColorGetA(color)};
+  OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()
+      ->OnSetBadgeTextColor(
+          extension()->id(), details,
+          OHOS::NWeb::GetExtensionContextType(browser_context()),
+          include_incognito_information());
+#endif
   return RespondNow(NoArguments());
 }
 

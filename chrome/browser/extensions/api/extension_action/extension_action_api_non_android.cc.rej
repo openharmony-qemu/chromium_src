@@ -1,0 +1,53 @@
+diff a/chrome/browser/extensions/api/extension_action/extension_action_api_non_android.cc b/chrome/browser/extensions/api/extension_action/extension_action_api_non_android.cc
+--- a/chrome/browser/extensions/api/extension_action/extension_action_api_non_android.cc
++++ b/chrome/browser/extensions/api/extension_action/extension_action_api_non_android.cc
+@@ -110,10 +110,11 @@ bool OpenPopupInBrowser(Browser& browser,
+ }  // namespace
+ 
+ ActionOpenPopupFunction::ActionOpenPopupFunction() = default;
+ ActionOpenPopupFunction::~ActionOpenPopupFunction() = default;
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction ActionOpenPopupFunction::Run() {
+   // TODO(crbug.com/360916928): Unfortunately, the action API types aren't
+   // compiled. However, the bindings should still valid the form of the
+   // arguments.
+   EXTENSION_FUNCTION_VALIDATE(args().size() == 1u);
+@@ -173,10 +174,11 @@ ExtensionFunction::ResponseAction ActionOpenPopupFunction::Run() {
+ 
+   // The function responds in OnShowPopupComplete(). Note that the function is
+   // kept alive by the ref-count owned by the ShowPopupCallback.
+   return RespondLater();
+ }
++#endif  // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ void ActionOpenPopupFunction::OnShowPopupComplete(ExtensionHost* popup_host) {
+   DCHECK(!did_respond());
+ 
+   if (popup_host) {
+@@ -196,10 +198,13 @@ void ActionOpenPopupFunction::OnShowPopupComplete(ExtensionHost* popup_host) {
+ 
+ BrowserActionOpenPopupFunction::BrowserActionOpenPopupFunction() = default;
+ BrowserActionOpenPopupFunction::~BrowserActionOpenPopupFunction() = default;
+ 
+ ExtensionFunction::ResponseAction BrowserActionOpenPopupFunction::Run() {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  return RespondNow(NoArguments());
++#else
+   // We only allow the popup in the active window.
+   Profile* profile = Profile::FromBrowserContext(browser_context());
+   Browser* browser =
+       FindLastActiveBrowserWindow(profile, include_incognito_information());
+ 
+@@ -231,10 +236,11 @@ ExtensionFunction::ResponseAction BrowserActionOpenPopupFunction::Run() {
+   base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(
+       FROM_HERE,
+       base::BindOnce(&BrowserActionOpenPopupFunction::OpenPopupTimedOut, this),
+       base::Seconds(10));
+   return RespondLater();
++#endif
+ }
+ 
+ void BrowserActionOpenPopupFunction::OnBrowserContextShutdown() {
+   // No point in responding at this point (the context is gone). However, we
+   // need to explicitly remove the ExtensionHostRegistry observation, since the

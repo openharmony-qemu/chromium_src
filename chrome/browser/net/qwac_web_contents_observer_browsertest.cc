@@ -203,7 +203,7 @@ class QwacWebContentsObserverDisabledBrowserTest
     : public QwacWebContentsObserverTestBase {
  public:
   QwacWebContentsObserverDisabledBrowserTest() {
-    scoped_feature_list_.InitAndDisableFeature(net::features::kVerifyQWACs);
+    scoped_feature_list_.InitAndDisableFeature(net::features::kSelfSignedLocalNetworkInterstitial);
   }
 
  private:

@@ -1,0 +1,30 @@
+diff a/chrome/browser/extensions/chrome_component_extension_resource_manager.cc b/chrome/browser/extensions/chrome_component_extension_resource_manager.cc	(rejected hunks)
+@@ -9,10 +9,11 @@
+ 
+ #include "base/check.h"
+ #include "base/containers/contains.h"
+ #include "base/containers/span.h"
+ #include "base/files/file_path.h"
++#include "base/logging.h"
+ #include "base/path_service.h"
+ #include "base/values.h"
+ #include "build/build_config.h"
+ #include "build/chromeos_buildflags.h"
+ #include "chrome/common/chrome_paths.h"
+@@ -171,11 +172,16 @@ bool ChromeComponentExtensionResourceManager::IsComponentExtensionResource(
+   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+ 
+   base::FilePath directory_path = extension_path;
+   base::FilePath resources_dir;
+   base::FilePath relative_path;
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if (!base::PathService::Get(base::DIR_OHOS_APP_INSTALLATION,
++                              &resources_dir) ||
++#else
+   if (!base::PathService::Get(chrome::DIR_RESOURCES, &resources_dir) ||
++#endif
+       !resources_dir.AppendRelativePath(directory_path, &relative_path)) {
+     return false;
+   }
+   relative_path = relative_path.Append(resource_path);
+   relative_path = relative_path.NormalizePathSeparators();

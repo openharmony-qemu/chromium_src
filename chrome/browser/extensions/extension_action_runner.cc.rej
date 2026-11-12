@@ -1,0 +1,79 @@
+diff a/chrome/browser/extensions/extension_action_runner.cc b/chrome/browser/extensions/extension_action_runner.cc	(rejected hunks)
+@@ -48,10 +48,14 @@
+ #include "extensions/common/manifest.h"
+ #include "extensions/common/permissions/permission_set.h"
+ #include "extensions/common/permissions/permissions_data.h"
+ #include "url/origin.h"
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "chrome/browser/extensions/extension_tab_util.h"
++#endif
++
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
+ #include "chrome/browser/extensions/api/side_panel/side_panel_service.h"
+ #include "chrome/browser/ui/browser_finder.h"
+ #include "chrome/browser/ui/browser_window.h"
+ #include "chrome/browser/ui/extensions/extensions_dialogs.h"
+@@ -159,16 +163,17 @@ void ExtensionActionRunner::GrantTabPermissions(
+             GetBlockedActions(extension->id()));
+       });
+ 
+   // If a refresh is required this prevents blocked actions (that wouldn't run
+   // at the right time) from running until the user refreshes the page.
+-  base::AutoReset<bool> ignore_active_tab(&ignore_active_tab_granted_,
+-                                          refresh_required);
+   // Immediately grant permissions to every extension.
++  auto* granter = ActiveTabPermissionGranter::FromWebContents(web_contents());
+   for (auto* extension : extensions) {
+-    ActiveTabPermissionGranter::FromWebContents(web_contents())
+-        ->GrantIfRequested(extension);
++    if (refresh_required && !granter->IsGranted(extension)) {
++      extensions_to_ignore_active_tab_granted_.insert(extension->id());
++    }
++    granter->GrantIfRequested(extension);
+   }
+ 
+   if (!refresh_required) {
+     return;
+   }
+@@ -187,11 +192,11 @@ void ExtensionActionRunner::GrantTabPermissions(
+   ShowReloadPageBubble(extensions);
+ }
+ 
+ void ExtensionActionRunner::OnActiveTabPermissionGranted(
+     const Extension* extension) {
+-  if (ignore_active_tab_granted_) {
++  if (extensions_to_ignore_active_tab_granted_.erase(extension->id())) {
+     return;
+   }
+ 
+   if (WantsToRun(extension)) {
+     RunBlockedActions(extension);
+@@ -440,10 +450,11 @@ void ExtensionActionRunner::DidFinishNavigation(
+   for (auto& scripts : pending_scripts_) {
+     RunCallbackOnPendingScript(scripts.second, false);
+   }
+   pending_scripts_.clear();
+   web_request_blocked_.clear();
++  extensions_to_ignore_active_tab_granted_.clear();
+   was_used_on_page_ = false;
+ 
+   // Note: This needs to be called *after* the maps have been updated, so that
+   // when the UI updates, this object returns the proper result for "wants to
+   // run".
+@@ -458,10 +469,15 @@ void ExtensionActionRunner::DidFinishNavigation(
+                                           navigation_handle->GetNavigationId());
+   }
+ }
+ 
+ void ExtensionActionRunner::WebContentsDestroyed() {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if (!web_contents() || ExtensionTabUtil::GetTabId(web_contents()) < 0) {
++    return;
++  }
++#endif
+   ExtensionActionDispatcher::Get(browser_context_)
+       ->ClearAllValuesForTab(web_contents());
+ 
+   declarative_net_request::RulesMonitorService* rules_monitor_service =
+       declarative_net_request::RulesMonitorService::Get(browser_context_);

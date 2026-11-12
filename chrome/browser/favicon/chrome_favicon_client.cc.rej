@@ -1,0 +1,18 @@
+diff a/chrome/browser/favicon/chrome_favicon_client.cc b/chrome/browser/favicon/chrome_favicon_client.cc	(rejected hunks)
+@@ -41,11 +41,15 @@ ChromeFaviconClient::ChromeFaviconClient(Profile* profile) : profile_(profile) {
+ 
+ ChromeFaviconClient::~ChromeFaviconClient() = default;
+ 
+ bool ChromeFaviconClient::IsNativeApplicationURL(const GURL& url) {
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
+-  if (url.SchemeIs(extensions::kExtensionScheme))
++  if (url.SchemeIs(extensions::kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      || url.SchemeIs(extensions::kArkwebExtensionScheme)
++#endif
++  )
+     return true;
+ #endif
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+     BUILDFLAG(IS_CHROMEOS)

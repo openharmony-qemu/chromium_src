@@ -1,0 +1,71 @@
+diff a/chrome/browser/extensions/api/extension_action/extension_action_api.cc b/chrome/browser/extensions/api/extension_action/extension_action_api.cc	(rejected hunks)
+@@ -37,10 +37,16 @@
+ #include "third_party/skia/include/core/SkBitmap.h"
+ #include "ui/gfx/image/image.h"
+ #include "ui/gfx/image/image_skia.h"
+ #include "url/origin.h"
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "base/logging.h"
++#include "ohos_nweb/src/cef_delegate/nweb_extension_action_cef_delegate.h"
++#include "ohos_nweb/src/capi/nweb_extension_action_icon.h"
++#endif
++
+ using content::WebContents;
+ 
+ namespace extensions {
+ 
+ namespace {
+@@ -249,10 +285,21 @@ ExtensionActionSetTitleFunction::RunExtensionAction() {
+   EXTENSION_FUNCTION_VALIDATE(details_);
+   const std::string* title = details_->FindString("title");
+   EXTENSION_FUNCTION_VALIDATE(title);
+   extension_action_->SetTitle(tab_id_, *title);
+   NotifyChange();
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  NWebExtensionActionSetTitleDetails details;
++  if (tab_id_ != ExtensionAction::kDefaultTabId) {
++    details.tabId = tab_id_;
++  }
++  details.title = *title;
++  OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnSetTitle(
++      extension()->id(), details,
++      OHOS::NWeb::GetExtensionContextType(browser_context()),
++      include_incognito_information());
++#endif
+   return RespondNow(NoArguments());
+ }
+ 
+ ExtensionFunction::ResponseAction
+ ExtensionActionSetPopupFunction::RunExtensionAction() {
+@@ -382,10 +466,18 @@ ActionGetBadgeTextColorFunction::RunExtensionAction() {
+ ActionGetUserSettingsFunction::ActionGetUserSettingsFunction() = default;
+ ActionGetUserSettingsFunction::~ActionGetUserSettingsFunction() = default;
+ 
+ ExtensionFunction::ResponseAction ActionGetUserSettingsFunction::Run() {
+   DCHECK(extension());
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  std::optional<NWebExtensionActionUserSettings> user_settings =
++      OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnGetUserSettings(extension()->id());
++  bool is_pinned = false;
++  if (user_settings) {
++    is_pinned = user_settings->isOnToolbar;
++  }
++#else
+   ExtensionActionManager* const action_manager =
+       ExtensionActionManager::Get(browser_context());
+   ExtensionAction* const action =
+       action_manager->GetExtensionAction(*extension());
+ 
+@@ -399,10 +491,11 @@ ExtensionFunction::ResponseAction ActionGetUserSettingsFunction::Run() {
+           ->IsActionPinned(extension_id());
+ 
+   // TODO(crbug.com/360916928): Today, no action APIs are compiled.
+   // Unfortunately, this means we miss out on the compiled types, which would be
+   // rather helpful here.
++#endif
+   base::Value::Dict ui_settings;
+   ui_settings.Set("isOnToolbar", is_pinned);
+ 
+   return RespondNow(WithArguments(std::move(ui_settings)));
+ }

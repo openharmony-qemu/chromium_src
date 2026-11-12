@@ -1,0 +1,72 @@
+diff a/chrome/browser/extensions/unpacked_installer.cc b/chrome/browser/extensions/unpacked_installer.cc
+--- a/chrome/browser/extensions/unpacked_installer.cc
++++ b/chrome/browser/extensions/unpacked_installer.cc
+@@ -53,10 +53,14 @@
+ #include "extensions/common/manifest_handlers/chrome_url_overrides_handler.h"
+ #include "extensions/common/manifest_handlers/shared_module_info.h"
+ #include "extensions/common/mojom/manifest.mojom-shared.h"
+ #include "extensions/common/permissions/permissions_data.h"
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "arkweb/chromium_ext/extensions/browser/extension_log_reporter.h"
++#endif
++
+ static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
+ 
+ using content::BrowserThread;
+ using extensions::Extension;
+ using extensions::SharedModuleInfo;
+@@ -314,11 +318,20 @@ bool UnpackedInstaller::IsLoadingUnpackedAllowed() const {
+   return !ExtensionManagementFactory::GetForBrowserContext(profile_)
+               ->BlocklistedByDefault();
+ }
+ 
+ void UnpackedInstaller::GetAbsolutePathOnFileThread() {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  base::FilePath temp = base::MakeAbsoluteFilePath(extension_path_);
++  if (temp.empty()) {
++    LOG(ERROR) << "GetAbsolutePath error";
++  } else {
++    extension_path_ = temp;
++  }
++#else
+   extension_path_ = base::MakeAbsoluteFilePath(extension_path_);
++#endif
+ 
+   // Set priority explicitly to avoid unwanted task priority inheritance.
+   content::GetUIThreadTaskRunner({base::TaskPriority::USER_BLOCKING})
+       ->PostTask(
+           FROM_HERE,
+@@ -371,10 +384,16 @@ void UnpackedInstaller::ReportExtensionLoadError(const std::string &error) {
+   }
+ 
+   if (!callback_.is_null())
+     std::move(callback_).Run(nullptr, extension_path_,
+                              base::UTF8ToUTF16(error));
++
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  auto id = extension_ ? extension_->id() : "";
++  ExtensionLogReporter::ReportInstallationFailure(
++      InstallerType::INSTALLER_TYPE_DIR, id, extension_path_, error);
++#endif
+ }
+ 
+ void UnpackedInstaller::InstallExtension() {
+   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+ 
+@@ -407,10 +426,15 @@ void UnpackedInstaller::InstallExtension() {
+   // Record metrics here since the registry would contain the extension by now.
+   RecordCommandLineMetrics();
+ 
+   if (!callback_.is_null())
+     std::move(callback_).Run(extension(), extension_path_, std::u16string());
++
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  ExtensionLogReporter::ReportInstallationSuccess(
++      InstallerType::INSTALLER_TYPE_DIR, extension_->id(), extension_path_);
++#endif
+ }
+ 
+ void UnpackedInstaller::RecordCommandLineMetrics() {
+   if (!extension()->is_extension() ||
+       extension()->location() != mojom::ManifestLocation::kCommandLine) {

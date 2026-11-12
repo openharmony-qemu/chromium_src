@@ -1,0 +1,16 @@
+diff a/chrome/browser/extensions/api/downloads/downloads_api.cc b/chrome/browser/extensions/api/downloads/downloads_api.cc	(rejected hunks)
+@@ -90,10 +90,14 @@
+ #include "chrome/browser/download/download_danger_prompt.h"
+ #include "chrome/browser/ui/browser.h"
+ #include "chrome/browser/ui/browser_window.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "base/uuid.h"
++#endif  // ARKWEB_ARKWEB_EXTENSIONS
++
+ static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
+ 
+ using content::BrowserContext;
+ using content::BrowserThread;
+ using content::DownloadManager;

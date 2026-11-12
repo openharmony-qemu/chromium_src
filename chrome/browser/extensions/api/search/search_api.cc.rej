@@ -1,0 +1,10 @@
+diff a/chrome/browser/extensions/api/search/search_api.cc b/chrome/browser/extensions/api/search/search_api.cc	(rejected hunks)
+@@ -155,7 +156,7 @@ ExtensionFunction::ResponseAction SearchQueryFunction::Run() {
+       break;
+   }
+ 
+   return RespondNow(NoArguments());
+ }
+-
++#endif  // ARKWEB_ARKWEB_EXTENSIONS
+ }  // namespace extensions

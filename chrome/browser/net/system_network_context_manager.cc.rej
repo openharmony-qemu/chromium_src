@@ -1,0 +1,16 @@
+diff a/chrome/browser/net/system_network_context_manager.cc b/chrome/browser/net/system_network_context_manager.cc	(rejected hunks)
+@@ -862,12 +863,14 @@ void SystemNetworkContextManager::OnNetworkServiceCreated(
+ #if !BUILDFLAG(IS_WIN)
+     network_service->SetEncryptionKey(OSCrypt::GetRawEncryptionKey());
+ #endif  // !BUILDFLAG(IS_WIN)
+   }
+ 
++#if !BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+   // Configure SCT Auditing in the NetworkService.
+   SCTReportingService::ReconfigureAfterNetworkRestart();
++#endif
+ 
+   component_updater::PKIMetadataComponentInstallerService::GetInstance()
+       ->ReconfigureAfterNetworkRestart();
+ 
+   UpdateExplicitlyAllowedNetworkPorts();

@@ -1,0 +1,161 @@
+diff a/chrome/browser/extensions/extension_install_prompt.cc b/chrome/browser/extensions/extension_install_prompt.cc	(rejected hunks)
+@@ -45,10 +45,16 @@
+ #include "ui/base/resource/resource_scale_factor.h"
+ #include "ui/base/ui_base_types.h"
+ #include "ui/gfx/image/image_skia.h"
+ #include "ui/gfx/image/image_skia_rep.h"
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "arkweb/chromium_ext/chrome/browser/extensions/extension_install_prompt_ext.h"
++#include "arkweb/chromium_ext/chrome/browser/ui/extensions/installation_error_infobar_delegate_ohos.h"
++#include "arkweb/chromium_ext/extensions/browser/custom_handler.h"
++#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++
+ static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
+ 
+ using extensions::Extension;
+ using extensions::Manifest;
+ using extensions::PermissionMessage;
+@@ -77,10 +83,11 @@ SkBitmap GetDefaultIconBitmapForMaxScaleFactor(bool is_app) {
+ 
+ ExtensionInstallPrompt::PromptType
+ ExtensionInstallPrompt::g_last_prompt_type_for_tests =
+     ExtensionInstallPrompt::UNSET_PROMPT_TYPE;
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionInstallPrompt::Prompt::Prompt(PromptType type)
+     : type_(type),
+       is_requesting_host_permissions_(false),
+       extension_(nullptr),
+       average_rating_(0.0),
+@@ -88,10 +95,26 @@ ExtensionInstallPrompt::Prompt::Prompt(PromptType type)
+       show_user_count_(false),
+       has_webstore_data_(false) {
+   DCHECK_NE(type_, UNSET_PROMPT_TYPE);
+   DCHECK_NE(type_, NUM_PROMPT_TYPES);
+ }
++#else
++ExtensionInstallPrompt::Prompt::Prompt(PromptType type) : Prompt(type, false) {}
++
++ExtensionInstallPrompt::Prompt::Prompt(PromptType type, bool is_from_webstore)
++    : type_(type),
++      is_requesting_host_permissions_(false),
++      extension_(nullptr),
++      average_rating_(0.0),
++      rating_count_(0),
++      show_user_count_(false),
++      is_from_webstore_(is_from_webstore),
++      has_webstore_data_(false) {
++  DCHECK_NE(type_, UNSET_PROMPT_TYPE);
++  DCHECK_NE(type_, NUM_PROMPT_TYPES);
++}
++#endif
+ 
+ ExtensionInstallPrompt::Prompt::~Prompt() = default;
+ 
+ void ExtensionInstallPrompt::Prompt::AddPermissionSet(
+     const PermissionSet& permissions) {
+@@ -137,11 +160,15 @@ std::u16string ExtensionInstallPrompt::Prompt::GetDialogTitle() const {
+       break;
+     case RE_ENABLE_PROMPT:
+       id = IDS_EXTENSION_RE_ENABLE_PROMPT_TITLE;
+       break;
+     case PERMISSIONS_PROMPT:
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      id = IDS_EXTENSION_PERMISSIONS_PROMPT_TITLE_V2;
++#else
+       id = IDS_EXTENSION_PERMISSIONS_PROMPT_TITLE;
++#endif
+       break;
+     case EXTERNAL_INSTALL_PROMPT:
+       if (extension_->is_app()) {
+         id = IDS_EXTENSION_EXTERNAL_INSTALL_PROMPT_TITLE_APP;
+       } else if (extension_->is_theme()) {
+@@ -248,11 +275,15 @@ std::u16string ExtensionInstallPrompt::Prompt::GetAbortButtonLabel() const {
+     case INSTALL_PROMPT:
+     case RE_ENABLE_PROMPT:
+     case REMOTE_INSTALL_PROMPT:
+     case REPAIR_PROMPT:
+     case EXTENSION_REQUEST_PROMPT:
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      id = IDS_CANCEL_V2;
++#else
+       id = IDS_CANCEL;
++#endif
+       break;
+     case PERMISSIONS_PROMPT:
+       id = IDS_EXTENSION_PROMPT_PERMISSIONS_ABORT_BUTTON;
+       break;
+     case EXTERNAL_INSTALL_PROMPT:
+@@ -281,11 +312,15 @@ std::u16string ExtensionInstallPrompt::Prompt::GetPermissionsHeading() const {
+       break;
+     case RE_ENABLE_PROMPT:
+       id = IDS_EXTENSION_PROMPT_WILL_NOW_HAVE_ACCESS_TO;
+       break;
+     case PERMISSIONS_PROMPT:
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      id = IDS_EXTENSION_PROMPT_WANTS_ACCESS_TO_V2;
++#else
+       id = IDS_EXTENSION_PROMPT_WANTS_ACCESS_TO;
++#endif
+       break;
+     case REPAIR_PROMPT:
+       id = IDS_EXTENSION_PROMPT_CAN_ACCESS;
+       break;
+     case UNSET_PROMPT_TYPE:
+@@ -411,10 +446,18 @@ ExtensionInstallPrompt::DoneCallbackPayload::DoneCallbackPayload(Result result)
+ ExtensionInstallPrompt::DoneCallbackPayload::DoneCallbackPayload(
+     Result result,
+     std::string justification)
+     : result(result), justification(std::move(justification)) {}
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++// static
++ExtensionInstallPrompt::ShowDialogCallback
++ExtensionInstallPrompt::GetOhosShowDialogCallback() {
++  return base::BindRepeating(&ohos::ShowExtensionInstallDialogImpl);
++}
++#endif
++
+ // static
+ ExtensionInstallPrompt::PromptType
+ ExtensionInstallPrompt::GetReEnablePromptTypeForExtension(
+     content::BrowserContext* context,
+     const extensions::Extension* extension) {
+@@ -506,10 +549,21 @@ void ExtensionInstallPrompt::ShowDialog(
+     SetIcon(icon);
+   prompt_ = std::move(prompt);
+   custom_permissions_ = std::move(custom_permissions);
+   show_dialog_callback_ = show_dialog_callback;
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  /*If it has already been set to be from huawei webstore, there is no need to
++   * set it again. Otherwise, it is necessary to determine whether it is from
++   * huawei webstore based on the extension information.*/
++  if (!prompt_->is_from_webstore()) {
++    bool is_from_huawei_webstore =
++        extensions::CustomData::IsFromHuaweiWebStore(extension);
++    prompt_->set_is_from_webstore(is_from_huawei_webstore);
++  }
++#endif
++
+   // We special-case themes to not show any confirm UI. Instead they are
+   // immediately installed, and then we show an infobar (see OnInstallSuccess)
+   // to allow the user to revert if they don't like it.
+   if (extension->is_theme() && extension->from_webstore() &&
+       prompt_->type() != EXTENSION_REQUEST_PROMPT &&
+@@ -531,10 +585,14 @@ void ExtensionInstallPrompt::OnInstallSuccess(
+ }
+ 
+ void ExtensionInstallPrompt::OnInstallFailure(
+     const extensions::CrxInstallError& error) {
+   install_ui_->OnInstallFailure(error);
++
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  ohos::InstallationErrorInfoBarDelegate::ShowInfoBar(error);
++#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ }
+ 
+ std::unique_ptr<ExtensionInstallPrompt::Prompt>
+ ExtensionInstallPrompt::GetPromptForTesting() {
+   return std::move(prompt_);

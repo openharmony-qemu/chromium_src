@@ -399,7 +399,8 @@ const PrefsUtil::TypedPrefMap& PrefsUtil::GetAllowlistedKeys() {
   (*s_allowlist)
       [password_manager::prefs::kPasswordDismissCompromisedAlertEnabled] =
           settings_api::PrefType::kBoolean;
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
   (*s_allowlist)
       [password_manager::prefs::kBiometricAuthenticationBeforeFilling] =
           settings_api::PrefType::kBoolean;
@@ -1315,8 +1316,12 @@ const PrefsUtil::TypedPrefMap& PrefsUtil::GetAllowlistedKeys() {
 #endif  // BUILDFLAG(GOOGLE_CHROME_BRANDING)
 
   // Media Remoting settings.
-  (*s_allowlist)[media_router::prefs::kMediaRouterMediaRemotingEnabled] =
-      settings_api::PrefType::kBoolean;
+  // todo
+  // #if !(BUILDFLAG(IS_OHOS) && BUILDFLAG(ARKWEB_ASAN)) ||
+  // BUILDFLAG(OHOS_ENABLE_MEDIA_ROUTER)
+  //   (*s_allowlist)[media_router::prefs::kMediaRouterMediaRemotingEnabled] =
+  //       settings_api::PrefType::kBoolean;
+  // #endif
 
   // Performance settings.
   (*s_allowlist)

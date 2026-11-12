@@ -320,6 +320,10 @@ class ExtensionGalleriesHost {
     if (!StorageInfo::IsRemovableDevice(device_id))
       return std::string();
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)    
+    if (!StorageMonitor::GetInstance())
+      return std::string();
+#endif
     return StorageMonitor::GetInstance()->GetTransientIdForDeviceId(device_id);
   }
 

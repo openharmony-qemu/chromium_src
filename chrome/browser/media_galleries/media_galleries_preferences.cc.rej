@@ -1,0 +1,16 @@
+diff a/chrome/browser/media_galleries/media_galleries_preferences.cc b/chrome/browser/media_galleries/media_galleries_preferences.cc	(rejected hunks)
+@@ -524,10 +528,14 @@ void MediaGalleriesPreferences::OnStorageMonitorInit(
+   DCHECK(!IsInitialized());
+ 
+   initialized_ = true;
+ 
+   StorageMonitor* monitor = StorageMonitor::GetInstance();
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if (!monitor)
++    return;
++#endif
+   DCHECK(monitor->IsInitialized());
+ 
+   InitFromPrefs();
+ 
+   StorageMonitor::GetInstance()->AddObserver(this);

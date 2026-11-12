@@ -1,0 +1,22 @@
+diff a/chrome/browser/extensions/api/tab_groups/tab_groups_api.cc b/chrome/browser/extensions/api/tab_groups/tab_groups_api.cc	(rejected hunks)
+@@ -75,10 +75,11 @@ bool IndexSupportsGroupMove(TabStripModel* tab_strip,
+   return true;
+ }
+ 
+ }  // namespace
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction TabGroupsGetFunction::Run() {
+   std::optional<api::tab_groups::Get::Params> params =
+       api::tab_groups::Get::Params::Create(args());
+   DCHECK(params.has_value());
+ 
+@@ -425,7 +426,7 @@ bool TabGroupsMoveFunction::MoveTabGroupBetweenBrowsers(
+   target_tab_strip->InsertDetachedTabGroupAt(std::move(detached_group),
+                                              new_index);
+ 
+   return true;
+ }
+-
++#endif
+ }  // namespace extensions

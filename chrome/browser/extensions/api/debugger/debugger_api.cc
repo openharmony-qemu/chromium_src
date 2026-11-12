@@ -525,6 +525,11 @@ class ExtensionDevToolsClientHost : public content::DevToolsAgentHostClient,
 
   void OnAppTerminating();
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void NotifyShowConfirmInfoBar();
+  void NotifyHideConfirmInfoBar();
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
   // ExtensionRegistryObserver implementation.
   void OnExtensionUnloaded(content::BrowserContext* browser_context,
                            const Extension* extension,
@@ -701,6 +706,9 @@ void ExtensionDevToolsClientHost::AgentHostClosed(
 }
 
 void ExtensionDevToolsClientHost::Close() {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  NotifyHideConfirmInfoBar();
+#endif // ARKWEB_ARKWEB_EXTENSIONS
   agent_host_->DetachClient(this);
   delete this;
 }
@@ -1326,3 +1334,7 @@ ExtensionFunction::ResponseAction DebuggerGetTargetsFunction::Run() {
 }
 
 }  // namespace extensions
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/api/debugger/debugger_api_for_include.cc"
+#endif // ARKWEB_ARKWEB_EXTENSIONS

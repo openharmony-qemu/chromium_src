@@ -1,0 +1,17 @@
+diff a/chrome/browser/extensions/api/page_capture/page_capture_api.cc b/chrome/browser/extensions/api/page_capture/page_capture_api.cc	(rejected hunks)
+@@ -117,11 +117,15 @@ bool PageCaptureSaveAsMHTMLFunction::CanCaptureCurrentPage(
+     std::string unused_error;
+     // TODO(tjudkins): We should change CanCaptureVisiblePage to take the
+     // url::Origin directly, as it converts the GURL to an origin itself anyway.
+     can_capture_page = extension()->permissions_data()->CanCaptureVisiblePage(
+         origin.GetURL(),
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++        params_->details.tab_id, &unused_error,
++#else
+         sessions::SessionTabHelper::IdForTab(&web_contents).id(), &unused_error,
++#endif
+         extensions::CaptureRequirement::kPageCapture);
+   }
+ 
+   if (!can_capture_page) {
+     *error = kPageCaptureNotAllowed;

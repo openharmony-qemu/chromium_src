@@ -1,0 +1,45 @@
+diff a/chrome/browser/extensions/api/developer_private/developer_private_api_unittest.cc b/chrome/browser/extensions/api/developer_private/developer_private_api_unittest.cc	(rejected hunks)
+@@ -397,10 +401,18 @@ void ItemStatePrefsChangedObserver::OnWillDispatchEvent(const Event& event) {
+       run_loop_->Quit();
+     }
+   }
+ }
+ 
++#if BUILDFLAG(IS_OHOS)
++void SetDraggedExtensionFileName(const std::string& file_name) {
++  ohos::adapter::DragDropOhosAdapter::GetInstance().SetDraggedExtensionFileName(
++      file_name);
++}
++#endif
++
++
+ // On Android, the returned FilePath points to a temporary file managed
+ // by `temp_dir`. The caller MUST ensure `temp_dir` is not destroyed before
+ // they are finished using the FilePath, as its destruction will delete the
+ // underlying file, resulting in a broken path.
+ // TODO(crbug.com/448823672): Refactor TestExtensionDir to use or compatible
+@@ -1895,10 +1910,13 @@ TEST_F(DeveloperPrivateApiUnitTest, InstallDroppedFileUserScript) {
+   ScopedTestDialogAutoConfirm auto_confirm(ScopedTestDialogAutoConfirm::ACCEPT);
+ 
+   std::unique_ptr<content::WebContents> web_contents(
+       content::WebContentsTester::CreateTestWebContents(profile(), nullptr));
+   SetDraggedFile(web_contents.get(), script_path);
++#if BUILDFLAG(IS_OHOS)
++  SetDraggedExtensionFileName(script_path.value());
++#endif
+ 
+   auto function =
+       base::MakeRefCounted<api::DeveloperPrivateInstallDroppedFileFunction>();
+   function->SetRenderFrameHost(web_contents->GetPrimaryMainFrame());
+ 
+@@ -3985,6 +4006,10 @@ TEST_F(DeveloperPrivateApiTransportModeUnitTest,
+   EXPECT_FALSE(info.can_upload_as_account_extension);
+   EXPECT_FALSE(CanUploadToAccount(*extension));
+ }
+ #endif  // !BUILDFLAG(IS_CHROMEOS)
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "arkweb/chromium_ext/chrome/browser/extensions/api/developer_private/developer_private_api_unittest_for_include.cc"
++#endif  // ARKWEB_ARKWEB_EXTENSIONS
++
+ }  // namespace extensions

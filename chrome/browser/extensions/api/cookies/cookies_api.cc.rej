@@ -1,0 +1,27 @@
+diff a/chrome/browser/extensions/api/cookies/cookies_api.cc b/chrome/browser/extensions/api/cookies/cookies_api.cc
+--- a/chrome/browser/extensions/api/cookies/cookies_api.cc
++++ b/chrome/browser/extensions/api/cookies/cookies_api.cc
+@@ -839,10 +839,11 @@ ExtensionFunction::ResponseAction CookiesGetPartitionKeyFunction::Run() {
+       api::cookies::GetPartitionKey::Results::Details();
+   details.partition_key = partition_key.Clone();
+   return RespondNow(WithArguments(details.ToValue()));
+ }
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction CookiesGetAllCookieStoresFunction::Run() {
+   Profile* original_profile = Profile::FromBrowserContext(browser_context());
+   DCHECK(original_profile);
+   base::Value::List original_tab_ids;
+   Profile* incognito_profile = nullptr;
+@@ -875,10 +876,11 @@ ExtensionFunction::ResponseAction CookiesGetAllCookieStoresFunction::Run() {
+         incognito_profile, std::move(incognito_tab_ids)));
+   }
+   return RespondNow(ArgumentList(
+       api::cookies::GetAllCookieStores::Results::Create(cookie_stores)));
+ }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ CookiesAPI::CookiesAPI(content::BrowserContext* context)
+     : browser_context_(context) {
+   EventRouter::Get(browser_context_)
+       ->RegisterObserver(this, api::cookies::OnChanged::kEventName);

@@ -1,0 +1,17 @@
+diff a/chrome/browser/extensions/api/management/chrome_management_api_delegate.cc b/chrome/browser/extensions/api/management/chrome_management_api_delegate.cc	(rejected hunks)
+@@ -44,11 +44,15 @@ class ManagementSetEnabledFunctionInstallPromptDelegate
+         base::BindOnce(&ManagementSetEnabledFunctionInstallPromptDelegate::
+                            OnInstallPromptDone,
+                        weak_factory_.GetWeakPtr()),
+         extension, nullptr,
+         std::make_unique<ExtensionInstallPrompt::Prompt>(type),
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++        ExtensionInstallPrompt::GetOhosShowDialogCallback());
++#else
+         ExtensionInstallPrompt::GetDefaultShowDialogCallback());
++#endif
+   }
+ 
+   ManagementSetEnabledFunctionInstallPromptDelegate(
+       const ManagementSetEnabledFunctionInstallPromptDelegate&) = delete;
+   ManagementSetEnabledFunctionInstallPromptDelegate& operator=(

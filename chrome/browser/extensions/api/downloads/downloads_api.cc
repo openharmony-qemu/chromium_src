@@ -1252,6 +1252,9 @@ ExtensionFunction::ResponseAction DownloadsDownloadFunction::RunInternal() {
   // Prevent login prompts for 401/407 responses.
   download_params->set_do_not_prompt_for_login(true);
   download_params->set_download_source(download::DownloadSource::EXTENSION_API);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  download_params->set_guid(base::Uuid::GenerateRandomV4().AsLowercaseString());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
   DownloadManager* manager = browser_context()->GetDownloadManager();
   manager->DownloadUrl(std::move(download_params));
@@ -1259,6 +1262,7 @@ ExtensionFunction::ResponseAction DownloadsDownloadFunction::RunInternal() {
   return RespondLater();
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void DownloadsDownloadFunction::OnStarted(
     const base::FilePath& creator_suggested_filename,
     downloads::FilenameConflictAction creator_conflict_action,
@@ -1884,6 +1888,7 @@ void DownloadsGetFileIconFunction::OnIconURLExtracted(const std::string& url) {
   RecordApiFunctions(DownloadsFunctionName::kDownloadsFunctionGetFileIcon);
   Respond(WithArguments(url));
 }
+#endif
 
 ExtensionDownloadsEventRouter::ExtensionDownloadsEventRouter(
     Profile* profile,

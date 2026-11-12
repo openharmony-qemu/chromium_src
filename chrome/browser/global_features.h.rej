@@ -1,0 +1,57 @@
+diff a/chrome/browser/global_features.h b/chrome/browser/global_features.h	(rejected hunks)
+@@ -14,11 +14,12 @@
+ #include "ui/base/unowned_user_data/user_data_factory.h"
+ 
+ namespace system_permission_settings {
+ class PlatformHandle;
+ }  // namespace system_permission_settings
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
++    BUILDFLAG(ARKWEB_ASAN) || BUILDFLAG(ARKWEB_TEST)
+ namespace whats_new {
+ class WhatsNewRegistry;
+ }  // namespace whats_new
+ 
+ namespace default_browser {
+@@ -89,11 +90,12 @@ class GlobalFeatures {
+ 
+   system_permission_settings::PlatformHandle*
+   system_permissions_platform_handle() {
+     return system_permissions_platform_handle_.get();
+   }
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
++    BUILDFLAG(ARKWEB_ASAN) || BUILDFLAG(ARKWEB_TEST)
+   whats_new::WhatsNewRegistry* whats_new_registry() {
+     return whats_new_registry_.get();
+   }
+ 
+   default_browser::DefaultBrowserManager* default_browser_manager() {
+@@ -156,11 +158,12 @@ class GlobalFeatures {
+   // testing. e.g.
+   // virtual std::unique_ptr<FooFeature> CreateFooFeature();
+ 
+   virtual std::unique_ptr<system_permission_settings::PlatformHandle>
+   CreateSystemPermissionsPlatformHandle();
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
++    BUILDFLAG(ARKWEB_ASAN) || BUILDFLAG(ARKWEB_TEST)
+   virtual std::unique_ptr<whats_new::WhatsNewRegistry> CreateWhatsNewRegistry();
+ #endif
+ 
+  private:
+   static ui::UserDataFactoryWithOwner<BrowserProcess>& GetUserDataFactory();
+@@ -168,11 +171,12 @@ class GlobalFeatures {
+   // Features will each have a controller. e.g.
+   // std::unique_ptr<FooFeature> foo_feature_;
+ 
+   std::unique_ptr<system_permission_settings::PlatformHandle>
+       system_permissions_platform_handle_;
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
++    BUILDFLAG(ARKWEB_ASAN) || BUILDFLAG(ARKWEB_TEST)
+   std::unique_ptr<whats_new::WhatsNewRegistry> whats_new_registry_;
+ 
+   std::unique_ptr<default_browser::DefaultBrowserManager>
+       default_browser_manager_;
+ #endif

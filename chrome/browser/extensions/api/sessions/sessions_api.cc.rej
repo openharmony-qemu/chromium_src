@@ -1,0 +1,33 @@
+diff a/chrome/browser/extensions/api/sessions/sessions_api.cc b/chrome/browser/extensions/api/sessions/sessions_api.cc	(rejected hunks)
+@@ -148,16 +148,19 @@ api::sessions::Session CreateSessionModelHelper(
+     NOTREACHED();
+   }
+   return session_struct;
+ }
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ bool is_window_entry(const sessions::tab_restore::Entry& entry) {
+   return entry.type == sessions::tab_restore::Type::WINDOW;
+ }
++#endif
+ 
+ }  // namespace
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ api::tabs::Tab SessionsGetRecentlyClosedFunction::CreateTabModel(
+     const sessions::tab_restore::Tab& tab,
+     bool active) {
+   return CreateTabModelHelper(tab.navigations[tab.current_navigation_index],
+                               base::NumberToString(tab.id.id()),
+@@ -634,10 +637,11 @@ SessionsEventRouter::SessionsEventRouter(Profile* profile)
+   if (tab_restore_service_) {
+     tab_restore_service_->LoadTabsFromLastSession();
+     tab_restore_service_->AddObserver(this);
+   }
+ }
++#endif  // !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ 
+ SessionsEventRouter::~SessionsEventRouter() {
+   if (tab_restore_service_)
+     tab_restore_service_->RemoveObserver(this);
+ }

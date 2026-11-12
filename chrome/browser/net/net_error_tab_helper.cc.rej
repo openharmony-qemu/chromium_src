@@ -1,0 +1,17 @@
+diff a/chrome/browser/net/net_error_tab_helper.cc b/chrome/browser/net/net_error_tab_helper.cc	(rejected hunks)
+@@ -254,11 +254,15 @@ void NetErrorTabHelper::InitializePref(WebContents* contents) {
+ bool NetErrorTabHelper::ProbesAllowed() const {
+   if (testing_state_ != TESTING_DEFAULT)
+     return testing_state_ == TESTING_FORCE_ENABLED;
+ 
+   // TODO(juliatuttle): Disable on mobile?
++#if BUILDFLAG(IS_ARKWEB)
++  return false;
++#else
+   return *resolve_errors_with_web_service_;
++#endif
+ }
+ 
+ void NetErrorTabHelper::SendInfo() {
+   DCHECK_NE(error_page::DNS_PROBE_POSSIBLE, dns_probe_status_);
+   DCHECK(dns_error_page_committed_);

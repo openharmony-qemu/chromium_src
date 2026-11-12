@@ -1,0 +1,32 @@
+diff a/chrome/browser/extensions/api/tab_capture/tab_capture_api.cc b/chrome/browser/extensions/api/tab_capture/tab_capture_api.cc	(rejected hunks)
+@@ -207,22 +208,30 @@ ExtensionFunction::ResponseAction TabCaptureCaptureFunction::Run() {
+   // allow the Chrome platform implementation for getUserMedia() to start the
+   // virtual audio/video capture devices and set up all the data flows.  The
+   // custom JS bindings can be found here:
+   // chrome/renderer/resources/extensions/tab_capture_custom_bindings.js
+   return RespondNow(WithArguments(params->options.ToValue()));
++#else
++  return RespondNow(NoArguments());
++#endif  // ARKWEB_ARKWEB_EXTENSIONS
+ }
+ 
+ ExtensionFunction::ResponseAction TabCaptureGetCapturedTabsFunction::Run() {
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+   TabCaptureRegistry* registry = TabCaptureRegistry::Get(browser_context());
+   base::Value::List list;
+   if (registry) {
+     registry->GetCapturedTabs(extension()->id(), &list);
+   }
+   return RespondNow(WithArguments(std::move(list)));
++#else
++  return RespondNow(NoArguments());
++#endif  // ARKWEB_ARKWEB_EXTENSIONS
+ }
+ 
+ ExtensionFunction::ResponseAction TabCaptureGetMediaStreamIdFunction::Run() {
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+   std::optional<api::tab_capture::GetMediaStreamId::Params> params =
+       TabCapture::GetMediaStreamId::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+ 
+   content::WebContents* target_contents = nullptr;

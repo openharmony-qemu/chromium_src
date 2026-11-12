@@ -1,0 +1,29 @@
+diff a/chrome/browser/global_features.cc b/chrome/browser/global_features.cc	(rejected hunks)
+@@ -30,11 +30,12 @@
+ #include "chrome/browser/glic/glic_profile_manager.h"               // nogncheck
+ #include "chrome/browser/glic/host/glic_synthetic_trial_manager.h"  // nogncheck
+ #include "chrome/browser/glic/public/glic_enabling.h"               // nogncheck
+ #endif
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
++    BUILDFLAG(ARKWEB_ASAN) || BUILDFLAG(ARKWEB_TEST)
+ // This causes a gn error on Android builds, because gn does not understand
+ // buildflags, so we include it only on platforms where it is used.
+ #include "chrome/browser/default_browser/default_browser_manager.h"
+ #include "chrome/browser/ui/webui/whats_new/whats_new_registrar.h"
+ #include "components/user_education/common/user_education_features.h"  // nogncheck
+@@ -103,11 +104,12 @@ void GlobalFeatures::Init() {
+   InitCoreFeatures();
+ }
+ 
+ void GlobalFeatures::InitCoreFeatures() {
+   system_permissions_platform_handle_ = CreateSystemPermissionsPlatformHandle();
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
++    BUILDFLAG(ARKWEB_ASAN) || BUILDFLAG(ARKWEB_TEST)
+   // TODO(crbug.com/463742800): Migrate WhatsNewRegistry (and other non-core
+   // features) to Init().
+   whats_new_registry_ = CreateWhatsNewRegistry();
+ 
+   default_browser_manager_ =

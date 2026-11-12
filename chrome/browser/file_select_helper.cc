@@ -65,6 +65,10 @@
 #include "chrome/browser/picture_in_picture/scoped_tuck_picture_in_picture.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+#include "arkweb/chromium_ext/base/datashare_uri_utils.h"
+#endif
+
 using blink::mojom::FileChooserFileInfo;
 using blink::mojom::FileChooserFileInfoPtr;
 using blink::mojom::FileChooserParams;

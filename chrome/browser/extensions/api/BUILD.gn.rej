@@ -1,0 +1,16 @@
+diff a/chrome/browser/extensions/api/BUILD.gn b/chrome/browser/extensions/api/BUILD.gn	(rejected hunks)
+@@ -78,10 +78,14 @@ group("api_implementations") {
+       "//chrome/browser/extensions/api/tab_groups",
+       "//chrome/browser/extensions/api/web_view",
+       "//chrome/browser/extensions/api/webrtc_desktop_capture_private",
+     ]
+ 
++    if (enable_mdns) {
++      public_deps += [ "//chrome/browser/extensions/api/mdns" ]
++    }
++
+     if (enable_pdf) {
+       public_deps += [ "//chrome/browser/extensions/api/pdf_viewer_private" ]
+     }
+ 
+     if (is_chromeos) {

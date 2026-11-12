@@ -174,6 +174,14 @@ void ChromeFeatureListCreator::CreatePrefService() {
       browser_policy_connector_->GetPolicyService(), std::move(pref_registry),
       browser_policy_connector_.get());
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  OHOS::adblock::AdBlockConfig::GetInstance()->SetPrefService(
+      local_state_.get());
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  nweb_ex::GlobalReaderModeDataManager::GetInstance()->Init(local_state_.get());
+#endif
   // Apply local test policies from the kLocalTestPoliciesForNextStartup pref if
   // there are any.
   browser_policy_connector_->MaybeApplyLocalTestPolicies(local_state_.get());

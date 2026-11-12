@@ -1,0 +1,18 @@
+diff a/chrome/browser/media/webrtc/media_stream_device_permission_context.h b/chrome/browser/media/webrtc/media_stream_device_permission_context.h	(rejected hunks)
+@@ -58,10 +58,16 @@ class MediaStreamDevicePermissionContext
+       const GURL& embedding_origin,
+       permissions::BrowserPermissionCallback callback,
+       bool permission_granted);
+ #endif
+ 
++#if BUILDFLAG(IS_OHOS)
++  void RequestReply(permissions::PermissionRequestData request_data,
++                    permissions::BrowserPermissionCallback callback,
++                    bool reply_success);
++#endif
++
+   ContentSettingsType content_settings_type_;
+ 
+   // Must be the last member.
+   base::WeakPtrFactory<MediaStreamDevicePermissionContext> weak_ptr_factory_{
+       this};

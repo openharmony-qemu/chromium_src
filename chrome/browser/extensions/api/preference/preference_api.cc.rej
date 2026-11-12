@@ -1,0 +1,33 @@
+diff a/chrome/browser/extensions/api/preference/preference_api.cc b/chrome/browser/extensions/api/preference/preference_api.cc	(rejected hunks)
+@@ -353,10 +358,15 @@ ExtensionFunction::ResponseAction SetPreferenceFunction::Run() {
+   EXTENSION_FUNCTION_VALIDATE(args().size() >= 2);
+   EXTENSION_FUNCTION_VALIDATE(args()[0].is_string());
+   EXTENSION_FUNCTION_VALIDATE(args()[1].is_dict());
+ 
+   std::string pref_key = args()[0].GetString();
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if (pref_key == "animationPolicy") {
++    return RespondNow(NoArguments());
++  }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+   const base::Value::Dict& details = args()[1].GetDict();
+ 
+   const base::Value* value = details.Find(kValue);
+   EXTENSION_FUNCTION_VALIDATE(value);
+ 
+@@ -471,10 +481,15 @@ ExtensionFunction::ResponseAction ClearPreferenceFunction::Run() {
+   EXTENSION_FUNCTION_VALIDATE(args().size() >= 2);
+   EXTENSION_FUNCTION_VALIDATE(args()[0].is_string());
+   EXTENSION_FUNCTION_VALIDATE(args()[1].is_dict());
+ 
+   std::string pref_key = args()[0].GetString();
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if (pref_key == "animationPolicy") {
++    return RespondNow(NoArguments());
++  }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+   const base::Value::Dict& details = args()[1].GetDict();
+ 
+   ChromeSettingScope scope = ChromeSettingScope::kRegular;
+   if (const std::string* scope_str = details.FindString(kScopeKey)) {
+     EXTENSION_FUNCTION_VALIDATE(StringToScope(*scope_str, scope));

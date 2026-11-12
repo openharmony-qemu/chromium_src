@@ -35,6 +35,10 @@
 #include "net/cookies/cookie_util.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "base/debug/dump_without_crashing.h"
+#endif
+
 namespace {
 #if BUILDFLAG(IS_ANDROID)
 const char kCCTClientDataHeader[] = "X-CCT-Client-Data";
@@ -332,8 +336,16 @@ void GoogleURLLoaderThrottle::WillProcessResponse(
     // TODO(mkwst): Consider shifting this to a NavigationThrottle rather than
     // relying on implicit ordering between this check and the time at which
     // ParsedHeaders is created.
+#if BUILDFLAG(IS_ARKWEB)
+    if (!response_head || !response_head->parsed_headers) {
+      LOG(ERROR) << "parsed_headers is empty";
+      base::debug::DumpWithoutCrashing();
+      return;
+    }
+#else
     CHECK(response_head);
     CHECK(response_head->parsed_headers);
+#endif
     if (response_head->parsed_headers->xfo !=
         network::mojom::XFrameOptionsValue::kDeny) {
       response_head->headers->SetHeader("X-Frame-Options", "SAMEORIGIN");

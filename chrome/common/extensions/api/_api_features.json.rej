@@ -1,0 +1,33 @@
+diff a/chrome/common/extensions/api/_api_features.json b/chrome/common/extensions/api/_api_features.json	(rejected hunks)
+@@ -55,11 +55,13 @@
+     "contexts": ["privileged_extension"]
+   }, {
+     "channel": "stable",
+     "contexts": ["webui"],
+     "matches": [
+-      "chrome://extensions/*"
++      "chrome://extensions/*",
++      // ARKWEB_ARKWEB_EXTENSIONS
++      "arkweb://extensions/*"      
+     ]
+   }],
+   "experimentalActor": {
+     "contexts": ["privileged_extension"],
+     "dependencies": ["permission:experimentalActor"]
+@@ -530,11 +536,15 @@
+   },
+   "extensionOptionsInternal": {
+     "internal": true,
+     "channel": "stable",
+     "contexts": ["webui"],
+-    "matches": ["chrome://extensions/*"]
++    "matches": [
++      "chrome://extensions/*",
++      // ARKWEB_ARKWEB_EXTENSIONS
++      "arkweb://extensions/*"
++    ]
+   },
+   // This is not a real API, only here for documentation purposes.
+   // See http://crbug.com/275944 for background.
+   "extensionsManifestTypes": {
+     "internal": true,

@@ -1,0 +1,34 @@
+diff a/chrome/services/file_util/public/cpp/sandboxed_rar_analyzer_unittest.cc b/chrome/services/file_util/public/cpp/sandboxed_rar_analyzer_unittest.cc
+--- a/chrome/services/file_util/public/cpp/sandboxed_rar_analyzer_unittest.cc
++++ b/chrome/services/file_util/public/cpp/sandboxed_rar_analyzer_unittest.cc
+@@ -437,10 +437,30 @@ TEST_F(SandboxedRarAnalyzerTest, InvalidPath) {
+   EXPECT_FALSE(results.success);
+   EXPECT_EQ(results.analysis_result,
+             safe_browsing::ArchiveAnalysisResult::kFailedToOpen);
+ }
+ 
++TEST_F(SandboxedRarAnalyzerTest, AnalyzeRarWithAsterisk) {
++  base::FilePath path;
++  ASSERT_NO_FATAL_FAILURE(path = GetFilePath("bypass.rar"));
++
++  safe_browsing::ArchiveAnalyzerResults results;
++  AnalyzeFile(path, &results);
++
++  ASSERT_TRUE(results.success);
++  EXPECT_TRUE(results.has_executable);
++  EXPECT_THAT(
++      results.archived_binary,
++      testing::UnorderedElementsAre(
++          testing::Property(
++              &safe_browsing::ClientDownloadRequest_ArchivedBinary::file_path,
++              testing::Eq("*")),
++          testing::Property(
++              &safe_browsing::ClientDownloadRequest_ArchivedBinary::file_path,
++              testing::Eq("evil.exe"))));
++}
++
+ TEST_F(SandboxedRarAnalyzerTest, HeaderEncryptionCorrectPassword) {
+   base::FilePath path;
+   ASSERT_NO_FATAL_FAILURE(path =
+                               GetFilePath("header_encryption_passwd1234.rar"));
+ 

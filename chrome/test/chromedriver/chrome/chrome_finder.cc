@@ -76,6 +76,11 @@ void GetApplicationDirs(std::vector<base::FilePath>* locations) {
 void GetApplicationDirs(std::vector<base::FilePath>* locations) {
   // On Android we won't be able to find Chrome executable
 }
+#elif BUILDFLAG(IS_OHOS)
+void GetApplicationDirs(std::vector<base::FilePath>* locations) {
+  // On OHOS we won't be able to find Chrome executable
+  NOTIMPLEMENTED();
+}
 #endif
 
 void GetPathsFromEnvironment(std::vector<base::FilePath>* paths) {

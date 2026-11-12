@@ -1,0 +1,28 @@
+diff a/chrome/browser/web_applications/web_app.cc b/chrome/browser/web_applications/web_app.cc	(rejected hunks)
+@@ -750,17 +750,20 @@ void WebApp::SetCurrentOsIntegrationStates(
+     proto::os_state::WebAppOsIntegration current_os_integration_states) {
+   current_os_integration_states_ = std::move(current_os_integration_states);
+ }
+ 
+ void WebApp::SetIsolationData(IsolationData isolation_data) {
+-  CHECK(manifest_id_.is_valid()
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
++#if BUILDFLAG(IS_OHOS)
++  CHECK(manifest_id_.is_valid() &&
++        manifest_id_.SchemeIs(webapps::kIsolatedAppScheme));
++#elif BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+     BUILDFLAG(IS_CHROMEOS)
+-        && manifest_id_.SchemeIs(webapps::kIsolatedAppScheme))
+-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) ||
+-        // BUILDFLAG(IS_CHROMEOS)
+-      ;
++  CHECK(manifest_id_.is_valid() &&
++        manifest_id_.SchemeIs(webapps::kIsolatedAppScheme));
++#else
++  CHECK(manifest_id_.is_valid());
++#endif  // BUILDFLAG(IS_OHOS)
+   if (isolation_data.pending_update_info().has_value()) {
+     DCHECK_EQ(isolation_data.location().dev_mode(),
+               isolation_data.pending_update_info()->location.dev_mode())
+         << "IsolationData dev_mode mismatch between current location and "
+            "pending update location.";

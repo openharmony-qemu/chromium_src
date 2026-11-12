@@ -12,6 +12,10 @@
 #include <string_view>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/gtest_prod_util.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/task/single_thread_task_runner.h"
@@ -94,6 +98,14 @@ class ChromeContentRendererClient
       delete;
 
   ~ChromeContentRendererClient() override;
+
+#if BUILDFLAG(IS_ARKWEB)
+  friend class ArkWebChromeContentRendererClientExt;
+  virtual ArkWebChromeContentRendererClientExt*
+  AsArkWebChromeContentRendererClientExt() {
+    return nullptr;
+  }
+#endif
 
   void RenderThreadStarted() override;
   void ExposeInterfacesToBrowser(mojo::BinderMap* binders) override;

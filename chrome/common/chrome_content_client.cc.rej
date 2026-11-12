@@ -1,0 +1,45 @@
+diff a/chrome/common/chrome_content_client.cc b/chrome/common/chrome_content_client.cc	(rejected hunks)
+@@ -208,20 +215,26 @@ void ChromeContentClient::AddAdditionalSchemes(Schemes* schemes) {
+   schemes->referrer_schemes.push_back(content::kAndroidAppScheme);
+ #endif
+ 
+ #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
+   schemes->extension_schemes.push_back(extensions::kExtensionScheme);
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  schemes->extension_schemes.push_back(extensions::kArkwebExtensionScheme);
++#endif
+ #endif
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+     BUILDFLAG(IS_CHROMEOS)
+   schemes->isolated_app_schemes.push_back(webapps::kIsolatedAppScheme);
+ #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) ||
+         // BUILDFLAG(IS_CHROMEOS)
+ 
+ #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
+   schemes->savable_schemes.push_back(extensions::kExtensionScheme);
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  schemes->savable_schemes.push_back(extensions::kArkwebExtensionScheme);
++#endif
+ #endif
+   schemes->savable_schemes.push_back(chrome::kChromeSearchScheme);
+   schemes->savable_schemes.push_back(dom_distiller::kDomDistillerScheme);
+ 
+   // chrome-search: resources shouldn't trigger insecure content warnings.
+@@ -336,10 +357,16 @@ blink::OriginTrialPolicy* ChromeContentClient::GetOriginTrialPolicy() {
+ media::MediaDrmBridgeClient* ChromeContentClient::GetMediaDrmBridgeClient() {
+   return new ChromeMediaDrmBridgeClient();
+ }
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
++#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
++media::OHOSMediaDrmBridgeClient* ChromeContentClient::GetMediaDrmBridgeClient() {
++  return new ChromeMediaDrmBridgeClientOHOS();
++}
++#endif  // BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
++
+ void ChromeContentClient::ExposeInterfacesToBrowser(
+     scoped_refptr<base::SequencedTaskRunner> io_task_runner,
+     mojo::BinderMap* binders) {
+   // Sets up the client side of the multi-process heap profiler service.
+   // TODO(crbug.com/40915258): Hook up chrome://memory-internals to the

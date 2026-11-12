@@ -1,0 +1,36 @@
+diff a/chrome/common/url_constants.h b/chrome/common/url_constants.h	(rejected hunks)
+@@ -963,14 +963,19 @@ inline constexpr char kRecoveryLearnMoreURL[] =
+ 
+ // The URL for the learn more link about extended automatic updates for
+ // ChromeOS devices.
+ inline constexpr char16_t kDeviceExtendedUpdatesLearnMoreURL[] =
+     u"https://www.google.com/chromebook/autoupdates-opt-in/";
+-
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++// The URL for the YoutTube Music Premium signup page.
++inline constexpr char kYoutubeMusicPremiumURL[] =
++    "https://x.x.x.x/";
++#else
+ // The URL for the YoutTube Music Premium signup page.
+ inline constexpr char kYoutubeMusicPremiumURL[] =
+     "https://music.youtube.com/music_premium";
++#endif
+ 
+ // The URL for the Chromebook Perks page for YouTube.
+ inline constexpr char kChromebookPerksYouTubePage[] =
+     "https://www.google.com/chromebook/perks/?id=youtube.2020";
+ 
+@@ -1013,11 +1018,12 @@ inline constexpr char kOutdatedPluginLearnMoreURL[] =
+ // "Learn more" URL for the phone hub notifications and apps access setup.
+ // TODO (b/184137843): Use real link to phone hub notifications and apps access.
+ inline constexpr char kPhoneHubPermissionLearnMoreURL[] =
+     "https://support.google.com/chromebook?p=multidevice";
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
++    BUILDFLAG(IS_OHOS)
+ // "Learn more" URL for the chrome apps deprecation dialog.
+ inline constexpr char kChromeAppsDeprecationLearnMoreURL[] =
+     "https://support.google.com/chrome?p=chrome_app_deprecation";
+ #endif
+ 

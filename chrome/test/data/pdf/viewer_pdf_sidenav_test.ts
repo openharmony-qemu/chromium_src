@@ -28,8 +28,8 @@ const tests = [
 
     // Add some dummy bookmarks and attachments so that all 3 tabs appear.
     sidenav.bookmarks = [
-      {title: 'Foo', page: 1, children: []},
-      {title: 'Bar', page: 2, children: []},
+      {title: 'Foo', id:'0', page: 1, children: []},
+      {title: 'Bar', id:'1', page: 2, children: []},
     ];
     sidenav.attachments = [
       {name: 'attachment1', size: 10, readable: true},
@@ -386,8 +386,8 @@ const tests = [
 
     // Add dummy bookmarks so that the buttons appear.
     sidenav.bookmarks = [
-      {title: 'Foo', page: 1, children: []},
-      {title: 'Bar', page: 2, children: []},
+      {title: 'Foo', id:'0', page: 1, children: []},
+      {title: 'Bar', id:'1', page: 2, children: []},
     ];
 
     await microtasksFinished();

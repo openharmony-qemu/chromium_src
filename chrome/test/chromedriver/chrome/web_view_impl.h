@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "base/memory/raw_ptr.h"
 #include "base/values.h"
 #include "chrome/test/chromedriver/chrome/devtools_event_listener.h"

@@ -1,0 +1,58 @@
+diff a/chrome/common/pref_names.h b/chrome/common/pref_names.h	(rejected hunks)
+@@ -20,10 +20,11 @@
+ #include "content/public/common/buildflags.h"
+ #include "extensions/buildflags/buildflags.h"
+ #include "pdf/buildflags.h"
+ #include "printing/buildflags/buildflags.h"
+ #include "rlz/buildflags/buildflags.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace prefs {
+ 
+ // *************** PROFILE PREFS ***************
+ // These are attached to the user profile
+@@ -2170,20 +2171,29 @@ inline constexpr char kTaskManagerEndProcessEnabled[] =
+ 
+ // A collection of position, size, and other data relating to app windows to
+ // restore on startup.
+ inline constexpr char kAppWindowPlacement[] = "browser.app_window_placement";
+ 
++#if BUILDFLAG(IS_OHOS)
++inline const char kPromptForDownloadOhos[] =
++    "download.prompt_for_download_ohos";
++inline const char kDownloadDefaultDirectoryOhos[] =
++    "download.default_directory_ohos";
++inline const char kDownloadDefaultDirectoryOhosConfirmed[] =
++    "download.default_directory_ohos_confirmed";
++#endif
++
+ // String which specifies where to download files to by default.
+ inline constexpr char kDownloadDefaultDirectory[] =
+     "download.default_directory";
+ 
+ // Boolean that records if the download directory was changed by an
+ // upgrade a unsafe location to a safe location.
+ inline constexpr char kDownloadDirUpgraded[] = "download.directory_upgrade";
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+-    BUILDFLAG(IS_MAC)
++    BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
+ inline constexpr char kOpenPdfDownloadInSystemReader[] =
+     "download.open_pdf_in_system_reader";
+ #endif
+ 
+ #if BUILDFLAG(IS_ANDROID)
+@@ -4040,11 +4050,12 @@ inline constexpr char kLensRegionSearchEnabled[] =
+ // if supported.
+ inline constexpr char kLensDesktopNTPSearchEnabled[] =
+     "policy.lens_desktop_ntp_search_enabled";
+ #endif
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || \
++    BUILDFLAG(ARKWEB_ASAN) || BUILDFLAG(ARKWEB_TEST)
+ // A dict mapping the edition name with the major version it was shown.
+ inline constexpr char kWhatsNewEditionUsed[] = "browser.whats_new.edition_used";
+ // A list containing the features of each module in order of when they
+ // were first enabled.
+ inline constexpr char kWhatsNewFirstEnabledOrder[] =

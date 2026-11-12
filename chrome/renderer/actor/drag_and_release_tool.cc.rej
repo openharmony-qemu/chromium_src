@@ -1,0 +1,114 @@
+diff a/chrome/renderer/actor/drag_and_release_tool.cc b/chrome/renderer/actor/drag_and_release_tool.cc	(rejected hunks)
+@@ -83,17 +83,24 @@ void DragAndReleaseTool::Execute(ToolFinishedCallback callback) {
+   CHECK(widget);
+ 
+   // TODO(crbug.com/409333494): How should partial success be returned.
+ 
+   // Move and press down the mouse on the from_point.
++  base::WeakPtr<DragAndReleaseTool> weak_this = weak_ptr_factory_.GetWeakPtr();
+   if (!InjectMouseEvent(*widget, from_target.widget_point,
+                         EventType::kMouseMove,
+                         WebMouseEvent::Button::kNoButton)) {
++    if (!weak_this) {
++      return;
++    }
+     std::move(callback).Run(
+         MakeResult(mojom::ActionResultCode::kDragAndReleaseFromMoveSuppressed));
+     return;
+   }
++  if (!weak_this) {
++    return;
++  }
+ 
+   // Re-check widget after each input since it could be destroyed as part of
+   // input handling.
+   widget = from_target.GetWidget(*this);
+   if (!widget) {
+@@ -102,15 +109,21 @@ void DragAndReleaseTool::Execute(ToolFinishedCallback callback) {
+     return;
+   }
+ 
+   if (!InjectMouseEvent(*widget, from_target.widget_point,
+                         EventType::kMouseDown, WebMouseEvent::Button::kLeft)) {
++    if (!weak_this) {
++      return;
++    }
+     std::move(callback).Run(
+         MakeResult(mojom::ActionResultCode::kDragAndReleaseDownSuppressed,
+                    /*requires_page_stabilization=*/true));
+     return;
+   }
++  if (!weak_this) {
++    return;
++  }
+ 
+   // We need a time delay between the click and first move for some pages.
+   task_runner_ = base::SequencedTaskRunner::GetCurrentDefault();
+   task_runner_->PostDelayedTask(
+       FROM_HERE,
+@@ -121,10 +134,11 @@ void DragAndReleaseTool::Execute(ToolFinishedCallback callback) {
+ }
+ 
+ void DragAndReleaseTool::ProcessDrag(ResolvedTarget from,
+                                      ResolvedTarget to,
+                                      ToolFinishedCallback callback) {
++  base::WeakPtr<DragAndReleaseTool> weak_this = weak_ptr_factory_.GetWeakPtr();
+   WebWidget* widget = from.GetWidget(*this);
+   if (!widget) {
+     std::move(callback).Run(
+         MakeResult(mojom::ActionResultCode::kFrameWentAway));
+     return;
+@@ -148,15 +162,21 @@ void DragAndReleaseTool::ProcessDrag(ResolvedTarget from,
+     drag_point = to.widget_point;
+   }
+ 
+   if (!InjectMouseEvent(*widget, drag_point, EventType::kMouseMove,
+                         WebMouseEvent::Button::kLeft)) {
++    if (!weak_this) {
++      return;
++    }
+     std::move(callback).Run(
+         MakeResult(mojom::ActionResultCode::kDragAndReleaseToMoveSuppressed,
+                    /*requires_page_stabilization=*/true));
+     return;
+   }
++  if (!weak_this) {
++    return;
++  }
+   if (!done) {
+     task_runner_->PostDelayedTask(
+         FROM_HERE,
+         base::BindOnce(&DragAndReleaseTool::ProcessDrag,
+                        weak_ptr_factory_.GetWeakPtr(),
+@@ -177,24 +197,31 @@ void DragAndReleaseTool::ProcessDrag(ResolvedTarget from,
+   }
+ }
+ 
+ void DragAndReleaseTool::ProcessRelease(ResolvedTarget to_target,
+                                         ToolFinishedCallback callback) {
++  base::WeakPtr<DragAndReleaseTool> weak_this = weak_ptr_factory_.GetWeakPtr();
+   WebWidget* widget = to_target.GetWidget(*this);
+   if (!widget) {
+     std::move(callback).Run(
+         MakeResult(mojom::ActionResultCode::kFrameWentAway));
+     return;
+   }
+ 
+   if (!InjectMouseEvent(*widget, to_target.widget_point, EventType::kMouseUp,
+                         WebMouseEvent::Button::kLeft)) {
++    if (!weak_this) {
++      return;
++    }
+     std::move(callback).Run(
+         MakeResult(mojom::ActionResultCode::kDragAndReleaseUpSuppressed,
+                    /*requires_page_stabilization=*/true));
+     return;
+   }
++  if (!weak_this) {
++    return;
++  }
+ 
+   std::move(callback).Run(MakeOkResult());
+ }
+ 
+ std::string DragAndReleaseTool::DebugString() const {

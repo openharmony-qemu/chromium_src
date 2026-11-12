@@ -1,0 +1,33 @@
+diff a/chrome/common/chrome_constants.cc b/chrome/common/chrome_constants.cc	(rejected hunks)
+@@ -99,11 +99,15 @@ const base::FilePath::CharType kBrowserResourcesDll[] =
+ const base::FilePath::CharType kElfDll[] = FPL("chrome_elf.dll");
+ const base::FilePath::CharType kStatusTrayWindowClass[] =
+     FPL("Chrome_StatusTrayWindow");
+ #endif  // BUILDFLAG(IS_WIN)
+ 
++#if BUILDFLAG(IS_ARKWEB)
++const char kInitialProfile[] = ".";
++#else
+ const char kInitialProfile[] = "Default";
++#endif
+ const char kMultiProfileDirPrefix[] = "Profile ";
+ const base::FilePath::CharType kGuestProfileDir[] = FPL("Guest Profile");
+ const base::FilePath::CharType kSystemProfileDir[] = FPL("System Profile");
+ 
+ // filenames
+@@ -140,11 +144,15 @@ const base::FilePath::CharType kOfflinePageMetadataDirname[] =
+     FPL("Offline Pages/metadata");
+ const base::FilePath::CharType kOfflinePagePrefetchStoreDirname[] =
+     FPL("Offline Pages/prefech_store");
+ const base::FilePath::CharType kOfflinePageRequestQueueDirname[] =
+     FPL("Offline Pages/request_queue");
++#if BUILDFLAG(IS_ARKWEB)
++const base::FilePath::CharType kPreferencesFilename[] = FPL("UserPrefs.json");
++#else
+ const base::FilePath::CharType kPreferencesFilename[] = FPL("Preferences");
++#endif
+ const base::FilePath::CharType kPreviewsOptOutDBFilename[] =
+     FPL("previews_opt_out.db");
+ const base::FilePath::CharType kQueryTileStorageDirname[] = FPL("Query Tiles");
+ const base::FilePath::CharType kReadmeFilename[] = FPL("README");
+ const base::FilePath::CharType kSCTAuditingPendingReportsFileName[] =

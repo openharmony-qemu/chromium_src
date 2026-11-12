@@ -1,0 +1,18 @@
+diff a/chrome/browser/web_applications/web_app_launch_queue_delegate_impl.cc b/chrome/browser/web_applications/web_app_launch_queue_delegate_impl.cc	(rejected hunks)
+@@ -18,11 +18,15 @@ namespace web_app {
+ namespace {
+ 
+ // TODO(crbug.com/40169582): Consider adding an {extension, pwa} enum to
+ // `launch_params` instead of checking the scheme specifically for extensions?
+ bool IsExtensionURL(const GURL& gurl) {
+-  return gurl.SchemeIs(extensions::kExtensionScheme);
++  return gurl.SchemeIs(extensions::kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++         || gurl.SchemeIs(extensions::kArkwebExtensionScheme)
++#endif
++      ;
+ }
+ 
+ }  // namespace
+ 
+ LaunchQueueDelegateImpl::LaunchQueueDelegateImpl(

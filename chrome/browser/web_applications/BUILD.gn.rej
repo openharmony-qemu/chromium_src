@@ -1,0 +1,33 @@
+diff a/chrome/browser/web_applications/BUILD.gn b/chrome/browser/web_applications/BUILD.gn	(rejected hunks)
+@@ -4,12 +4,14 @@
+ 
+ import("//chrome/browser/buildflags.gni")
+ import("//extensions/buildflags/buildflags.gni")
+ import("//mojo/public/tools/bindings/mojom.gni")
+ import("//testing/test.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ assert(!is_fuchsia, "Fuchsia shouldn't use anything in //chrome")
++
+ assert(!is_android,
+        "Android shouldn't use anything in //chrome/web_applications")
+ 
+ source_set("web_applications") {
+   sources = [
+@@ -411,11 +413,15 @@ source_set("web_applications") {
+       "jobs/link_capturing.cc",
+       "jobs/link_capturing.h",
+     ]
+   }
+ 
+-  if (is_linux) {
++  if (is_ohos && !arkweb_asan) {
++    sources += [ "os_integration/web_app_stubs.cc" ]
++  }
++
++  if (is_linux || arkweb_asan) {
+     # Desktop linux, doesn't count ChromeOS.
+     sources += [
+       "os_integration/web_app_file_handler_registration_linux.cc",
+       "os_integration/web_app_run_on_os_login_linux.cc",
+       "os_integration/web_app_shortcut_linux.cc",

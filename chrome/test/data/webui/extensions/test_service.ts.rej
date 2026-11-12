@@ -1,0 +1,15 @@
+diff a/chrome/test/data/webui/extensions/test_service.ts b/chrome/test/data/webui/extensions/test_service.ts	(rejected hunks)
+@@ -66,10 +69,13 @@ export class TestService extends TestBrowserProxy implements ServiceInterface {
+       'setItemAllowedUserScripts',
+       'setItemAllowedOnFileUrls',
+       'setItemCollectsErrors',
+       'setItemEnabled',
+       'setItemHostAccess',
++      // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      'setItemOptionalPermission',
++      // #endif
+       'setItemPinnedToToolbar',
+       'setItemSafetyCheckWarningAcknowledged',
+       'setProfileInDevMode',
+       'setShortcutHandlingSuspended',
+       'setShowAccessRequestsInToolbar',

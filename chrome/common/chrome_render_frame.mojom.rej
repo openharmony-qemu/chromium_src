@@ -1,0 +1,14 @@
+diff a/chrome/common/chrome_render_frame.mojom b/chrome/common/chrome_render_frame.mojom	(rejected hunks)
+@@ -140,6 +140,12 @@ interface ChromeRenderFrame {
+   // page stability heuristics.
+   [EnableIfNot=is_android]
+   CreatePageStabilityMonitor(
+     pending_receiver<actor.mojom.PageStabilityMonitor> monitor,
+     actor.mojom.TaskId task_id, bool supports_paint_stability);
++
++  // ArkWeb: request the renderer to re-run CapturePageText for translate
++  // language detection. Used by GetWebLanguageAsync when the browser-side
++  // cache is empty.
++  [EnableIf=arkweb_composite_render]
++  CapturePageTextForTranslate();
+ };

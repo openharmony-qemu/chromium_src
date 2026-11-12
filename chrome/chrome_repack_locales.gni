@@ -8,6 +8,11 @@ import("//cef/libcef/features/features.gni")
 import("//extensions/buildflags/buildflags.gni")
 import("//tools/grit/repack.gni")
 
+import("//arkweb/build/features/features.gni")
+if (is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+ 
 assert(!is_ios, "Chromium/iOS shouldn't use anything in //chrome")
 
 # Wraps repack_locales(), setting the source_patterns and deps required for

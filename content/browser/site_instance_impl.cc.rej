@@ -1,0 +1,14 @@
+diff a/content/browser/site_instance_impl.cc b/content/browser/site_instance_impl.cc	(rejected hunks)
+@@ -913,12 +913,10 @@ bool SandboxConfigurationsMatch(const SiteInfo& site_info,
+ }
+ 
+ }  // namespace
+ 
+ bool SiteInstanceImpl::IsSuitableForUrlInfo(const UrlInfo& url_info) {
+-  TRACE_EVENT2("navigation", "SiteInstanceImpl::IsSuitableForUrlInfo",
+-               ChromeTrackEvent::kSiteInstance, this, "url_info", url_info);
+   const GURL& url = url_info.url;
+   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+   // If the URL to navigate to can be associated with any site instance,
+   // we want to keep it in the same process.
+   if (blink::IsRendererDebugURL(url))

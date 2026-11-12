@@ -397,8 +397,13 @@ void RenderWidgetHostViewBase::SetBackgroundColor(SkColor color) {
   // TODO(danakj): OPAQUE colors only make sense for main frame widgets,
   // as child frames are always transparent background. We should move this to
   // `blink::WebView` instead.
+  #if BUILDFLAG(ARKWEB_BACKGROUND_COLOR)
+  DCHECK(SkColorGetA(color) == SK_AlphaOPAQUE ||
+        SkColorGetA(color) == SK_AlphaTRANSPARENT);
+  #else
   CHECK(SkColorGetA(color) == SK_AlphaOPAQUE ||
         SkColorGetA(color) == SK_AlphaTRANSPARENT);
+  #endif
   if (default_background_color_ == color)
     return;
 

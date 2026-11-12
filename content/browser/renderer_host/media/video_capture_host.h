@@ -7,7 +7,7 @@
 
 #include <map>
 #include <string>
-
+#include "arkweb/chromium_ext/content/browser/renderer_host/media/video_capture_host_utils.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
@@ -24,6 +24,7 @@
 
 namespace content {
 class MediaStreamManager;
+class VideoCaptureHostUtils;
 
 // VideoCaptureHost is the IO thread browser process communication endpoint
 // between a render frame (which can initiate and receive a video capture

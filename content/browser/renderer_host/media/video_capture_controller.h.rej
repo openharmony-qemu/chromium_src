@@ -1,0 +1,16 @@
+diff a/content/browser/renderer_host/media/video_capture_controller.h b/content/browser/renderer_host/media/video_capture_controller.h	(rejected hunks)
+@@ -22,10 +22,14 @@
+ #include "content/public/browser/video_capture_device_launcher.h"
+ #include "media/capture/mojom/video_capture_types.mojom-forward.h"
+ #include "media/capture/video/video_frame_receiver.h"
+ #include "media/capture/video_capture_types.h"
+ #include "third_party/blink/public/common/mediastream/media_stream_request.h"
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
++#include "video_capture_manager.h"
++#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+ 
+ namespace content {
+ 
+ class VideoCaptureDeviceLaunchObserver;
+ 

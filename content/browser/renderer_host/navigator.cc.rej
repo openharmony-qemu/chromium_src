@@ -1,0 +1,69 @@
+diff a/content/browser/renderer_host/navigator.cc b/content/browser/renderer_host/navigator.cc	(rejected hunks)
+@@ -1,10 +1,11 @@
+ // Copyright 2013 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "content/browser/renderer_host/navigator.h"
++#include "arkweb/chromium_ext/content/browser/renderer_host/navigator_utils.h"
+ 
+ #include <utility>
+ 
+ #include "base/check_op.h"
+ #include "base/debug/dump_without_crashing.h"
+@@ -485,10 +493,17 @@ void Navigator::DidNavigate(
+     const mojom::DidCommitProvisionalLoadParams& params,
+     std::unique_ptr<NavigationRequest> navigation_request,
+     bool was_within_same_document) {
+   DCHECK(navigation_request);
+   FrameTreeNode* frame_tree_node = render_frame_host->frame_tree_node();
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  if (navigation_request) {
++    const net::NetworkAnonymizationKey networkAnonymizationKey =
++        implUtils_->GetNetworkAnonymizationKey(frame_tree_node, navigation_request.get());
++    navigation_request->nav_request_utils_->StartPage(networkAnonymizationKey, reinterpret_cast<int64_t>(this));
++  }
++#endif
+   FrameTree& frame_tree = frame_tree_node->frame_tree();
+   DCHECK_EQ(&frame_tree, &controller_.frame_tree());
+ 
+   base::WeakPtr<RenderFrameHostImpl> old_frame_host =
+       frame_tree_node->render_manager()->current_frame_host()->GetWeakPtr();
+@@ -1636,20 +1667,37 @@ Navigator::GetNavigationEntryForRendererInitiatedNavigation(
+   // If `frame_tree_node` is the outermost main frame, it rewrites a virtual
+   // url in order to adjust the original input url if needed. For inner frames
+   // such as fenced frames or subframes, they don't rewrite urls as the urls
+   // are not input urls by users.
+   bool rewrite_virtual_urls = frame_tree_node->IsOutermostMainFrame();
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  content::Referrer referrer;
++  referrer.url = common_params.referrer.get() ? common_params.referrer.get()->url : GURL();
++  GURL url_to_rewrite = common_params.url;
++#endif // ARKWEB_NETWORK_LOAD
+   std::unique_ptr<NavigationEntryImpl> entry =
+       NavigationEntryImpl::FromNavigationEntry(
+           NavigationControllerImpl::CreateNavigationEntry(
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++              common_params.url, referrer,
++#else
+               common_params.url, content::Referrer(),
++#endif
+               common_params.initiator_origin, common_params.initiator_base_url,
+               source_process_site_url, ui::PAGE_TRANSITION_LINK,
+               true /* is_renderer_initiated */,
+               std::string() /* extra_headers */,
+               controller_.GetBrowserContext(),
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++              nullptr /* blob_url_loader_factory */, rewrite_virtual_urls, &url_to_rewrite, controller_.delegate()));
++#else
+               nullptr /* blob_url_loader_factory */, rewrite_virtual_urls));
++#endif
++
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++    common_params.url = url_to_rewrite;
++#endif
+ 
+   entry->set_reload_type(NavigationRequest::NavigationTypeToReloadType(
+       common_params.navigation_type));
+   entry->SetIsOverridingUserAgent(override_user_agent);
+ 

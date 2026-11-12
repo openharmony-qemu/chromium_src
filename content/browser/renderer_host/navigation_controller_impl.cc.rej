@@ -1,0 +1,177 @@
+diff a/content/browser/renderer_host/navigation_controller_impl.cc b/content/browser/renderer_host/navigation_controller_impl.cc	(rejected hunks)
+@@ -56,10 +56,11 @@
+ #include "base/trace_event/optional_trace_event.h"
+ #include "base/trace_event/trace_event.h"
+ #include "base/types/optional_util.h"
+ #include "build/build_config.h"
+ #include "cc/base/switches.h"
++#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+ #include "content/browser/bad_message.h"
+ #include "content/browser/blob_storage/chrome_blob_storage_context.h"
+ #include "content/browser/browser_context_impl.h"
+ #include "content/browser/browser_url_handler_impl.h"
+ #include "content/browser/devtools/devtools_instrumentation.h"
+@@ -108,10 +109,13 @@
+ #include "services/metrics/public/cpp/ukm_recorder.h"
+ #include "services/metrics/public/cpp/ukm_source_id.h"
+ #include "services/network/public/mojom/fetch_api.mojom.h"
+ #include "services/network/public/mojom/url_response_head.mojom-shared.h"
+ #include "skia/ext/platform_canvas.h"
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++#include "third_party/abseil-cpp/absl/types/optional.h"
++#endif
+ #include "third_party/blink/public/common/blob/blob_utils.h"
+ #include "third_party/blink/public/common/chrome_debug_urls.h"
+ #include "third_party/blink/public/common/history/session_history_constants.h"
+ #include "third_party/blink/public/common/mime_util/mime_util.h"
+ #include "third_party/blink/public/common/navigation/navigation_params.h"
+@@ -1479,10 +1599,13 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::LoadURL(
+     const std::string& extra_headers) {
+   LoadURLParams params(url);
+   params.referrer = referrer;
+   params.transition_type = transition;
+   params.extra_headers = extra_headers;
++#if BUILDFLAG(IS_ARKWEB)
++  params.override_user_agent = NavigationController::UA_OVERRIDE_TRUE;
++#endif
+   return LoadURLWithParams(params);
+ }
+ 
+ base::WeakPtr<NavigationHandle> NavigationControllerImpl::LoadURLWithParams(
+     const LoadURLParams& params) {
+@@ -1501,10 +1624,13 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::LoadURLWithParams(
+   }
+ 
+   TRACE_EVENT1("browser,navigation",
+                "NavigationControllerImpl::LoadURLWithParams", "url",
+                params.url.possibly_invalid_spec());
++#if BUILDFLAG(ARKWEB_NETWORK_DFX) && !defined(COMPONENT_BUILD) //FIXME
++  OhPageLoadMetricsObserver::OnNavigationStart();
++#endif
+ 
+   if (IsDebugURL(params.url)) {
+     // Browser-debug URLs won't go through NavigationThrottles so we have to
+     // check them explicitly. See crbug.com/40605746.
+     ContentBrowserClient* client = GetContentClient()->browser();
+@@ -1586,10 +1728,24 @@ bool NavigationControllerImpl::RendererDidNavigate(
+     bool was_on_initial_empty_document,
+     bool previous_document_had_history_intervention_activation,
+     NavigationRequest* navigation_request) {
+   DCHECK(navigation_request);
+ 
++#if BUILDFLAG(ARKWEB_SAFEBROWSING)
++  NavigationEntry* last_entry = GetLastCommittedEntry();
++  std::vector<GURL> previous_redirect_chain;
++  base::flat_map<GURL, ohos_safe_browsing::OhosSbBlockingPageInfo> previous_blocking_page_info_cache;
++  bool previous_is_js_redirect = false;
++  if (last_entry) {
++    ohos_safe_browsing::NavigationEntrySafeBrowsingData* last_entry_safe_browsing_data =
++        ohos_safe_browsing::NavigationEntrySafeBrowsingData::GetOrCreate(last_entry);
++    previous_redirect_chain = last_entry_safe_browsing_data->GetRedirectChain();
++    previous_blocking_page_info_cache = last_entry_safe_browsing_data->GetSbBlockingPageInfoCache();
++    previous_is_js_redirect = last_entry_safe_browsing_data->is_js_redirect();
++  }
++#endif // ARKWEB_SAFEBROWSING
++
+   // Create a scoped object that will ensure at most one NavigationStateChanged
+   // notification is sent (if any) at the end of RendererDidNavigate. This
+   // avoids redundant notifications (which can be expensive) without risking a
+   // missed notification (which can cause URL spoof vulnerabilities if the
+   // address bar is stale).
+@@ -4059,10 +4257,14 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::NavigateWithoutEntry(
+   // "Open link in new tab"). If the navigation must wait on the current
+   // RenderFrameHost to execute its BeforeUnload event, the navigation start
+   // will be updated when the BeforeUnload ack is received.
+   const auto navigation_start_time = base::TimeTicks::Now();
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_DFX)
++  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
++               "navigationStart", navigation_start_time);
++#endif
+   std::unique_ptr<NavigationRequest> request =
+       CreateNavigationRequestFromLoadParams(
+           node, params, override_user_agent, should_replace_current_entry,
+           params.has_user_gesture, network::mojom::SourceLocation::New(),
+           reload_type, pending_entry_, pending_entry_->GetFrameEntry(node),
+@@ -4073,10 +4275,14 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::NavigateWithoutEntry(
+   if (!request) {
+     DiscardPendingEntry(false);
+     return nullptr;
+   }
+ 
++#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
++  request->load_ignore_cache_params = params.load_ignore_cache_params;
++#endif
++
+ #if DCHECK_IS_ON()
+   // Safety check that NavigationRequest and NavigationEntry match.
+   ValidateRequestMatchesEntry(request.get(), pending_entry_);
+ #endif
+ 
+@@ -4380,11 +4606,19 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
+           params.started_from_context_menu, has_user_gesture,
+           false /* has_text_fragment_token */,
+           network::mojom::CSPDisposition::CHECK, std::vector<int>(),
+           params.href_translate,
+           false /* is_history_navigation_in_new_child_frame */,
+-          params.input_start, network::mojom::RequestDestination::kEmpty);
++#if BUILDFLAG(ARKWEB_NETWORK_BASE)
++          params.input_start, network::mojom::RequestDestination::kEmpty, ""
++#else
++          params.input_start, network::mojom::RequestDestination::kEmpty
++#endif
++#if BUILDFLAG(ARKWEB_ERROR_PAGE)
++          , false
++#endif
++          );
+ 
+   blink::mojom::CommitNavigationParamsPtr commit_params =
+       blink::mojom::CommitNavigationParams::New(
+           url::Origin(),
+           // The correct storage key will be computed before committing the
+@@ -4440,16 +4674,22 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
+           net::StorageAccessApiStatus::kNone,
+           /*browsing_context_group_info=*/std::nullopt,
+           /*lcpp_hint=*/nullptr, blink::CreateDefaultRendererContentSettings(),
+           /*visited_link_salt=*/std::nullopt,
+           /*local_surface_id=*/std::nullopt,
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++          false, /* site_adblock_enabled */
++#endif
++#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
++           0, /* custom_viewport_width */
++#endif   
+           node->current_frame_host()->GetCachedPermissionStatuses(),
+           /*should_skip_screentshot=*/false,
+           /*force_new_document_sequence_number=*/false,
+           /*navigation_metrics_token=*/base::UnguessableToken::Create(),
+           /*commit_target_frame_token=*/std::nullopt);
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
+   if (ValidateDataURLAsString(params.data_url_as_string)) {
+     commit_params->data_url_as_string = params.data_url_as_string->as_string();
+   }
+ #endif
+ 
+@@ -4477,13 +4717,21 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
+   navigation_request->set_from_download_cross_origin_redirect(
+       params.from_download_cross_origin_redirect);
+   navigation_request->set_force_new_browsing_instance(
+       params.force_new_browsing_instance);
+   navigation_request->set_force_new_compositor(params.force_new_compositor);
++
+   if (params.force_no_https_upgrade) {
+     navigation_request->set_force_no_https_upgrade();
+   }
++
++#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
++  if (params.https_upgrades_policy != content::HttpsUpgradesPolicy::NONE) {
++    navigation_request->set_https_upgrades_policy(params.https_upgrades_policy);
++  }
++#endif
++
+   return navigation_request;
+ }
+ 
+ std::unique_ptr<NavigationRequest>
+ NavigationControllerImpl::CreateNavigationRequestFromEntry(

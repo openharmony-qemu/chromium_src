@@ -1,0 +1,71 @@
+diff a/content/common/features.cc b/content/common/features.cc	(rejected hunks)
+@@ -2,10 +2,11 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "content/common/features.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/feature_list.h"
+ #include "base/metrics/field_trial_params.h"
+ #include "base/time/time.h"
+ #include "third_party/blink/public/common/features.h"
+ 
+@@ -161,13 +162,27 @@ BASE_FEATURE(kCopyFromSurfaceAlwaysCallCallback,
+ 
+ // Enables support for the `Critical-CH` response header.
+ // https://github.com/WICG/client-hints-infrastructure/blob/master/reliability.md#critical-ch
+ BASE_FEATURE(kCriticalClientHint, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
++// This feature enables the fix for double releases of
++// WorkerOrWorkletDevToolsAgentHost to prevent UAF.
++BASE_FEATURE(kWorkerOrWorkletAgentDoubleReleaseFix,
++             base::FEATURE_ENABLED_BY_DEFAULT);
++
+ // Enable document policy negotiation mechanism.
+ BASE_FEATURE(kDocumentPolicyNegotiation, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
++// When enabled, DumpWithoutCrashing() is called if a renderer process provides
++// an Origin header on a navigation request that doesn't match the expected
++// origin.
++BASE_FEATURE(kDumpOnOriginHeaderMismatch, base::FEATURE_ENABLED_BY_DEFAULT);
++
++// When enabled, DumpWithoutCrashing() is called if a renderer process provides
++// an Origin header on a navigation request that shouldn't have one.
++BASE_FEATURE(kDumpOnUnexpectedOriginHeader, base::FEATURE_ENABLED_BY_DEFAULT);
++
+ // Requires documents embedded via <iframe>, etc, to explicitly opt-into the
+ // embedding: https://github.com/mikewest/embedding-requires-opt-in.
+ BASE_FEATURE(kEmbeddingRequiresOptIn, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Enables error reporting for JS errors inside DevTools frontend host
+@@ -362,10 +381,14 @@ BASE_FEATURE(kIOSurfaceCapturer, base::FEATURE_ENABLED_BY_DEFAULT);
+ #endif
+ 
+ // When enabled, child process will not terminate itself when IPC is reset.
+ BASE_FEATURE(kKeepChildProcessAfterIPCReset, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
++// When enabled, the renderer process will be killed if it provides
++// invalid (non-allowlisted) headers in a navigation request.
++BASE_FEATURE(kKillOnInvalidNavigationHeaders, base::FEATURE_ENABLED_BY_DEFAULT);
++
+ // Enables Local Network Access checks for all types of web workers.
+ //
+ // The exact checks run are the same as for other document subresources, and
+ // depends on the state of the main Local Network Access feature flags
+ //`kLocalNetworkAccessChecks`.
+@@ -653,10 +676,14 @@ BASE_FEATURE(kServiceWorkerStaticRouterStartServiceWorker,
+ // When disabled the ServiceWorker Client.url property will be the document URL
+ // including changes to history.pushState().
+ BASE_FEATURE(kServiceWorkerClientUrlIsCreationUrl,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ 
++// Kill switch for crbug.com/499449324.
++BASE_FEATURE(kServiceWorkerOptionalTimeoutIterator,
++             base::FEATURE_ENABLED_BY_DEFAULT);
++
+ // Handles blocking the file picker when a visible but inactive tab in a split
+ // triggers it. This serves as a kill switch for crbug.com/444653104.
+ BASE_FEATURE(kSideBySideFilePickerCancelling, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // Enables skipping the early call to CommitPending when navigating away from a

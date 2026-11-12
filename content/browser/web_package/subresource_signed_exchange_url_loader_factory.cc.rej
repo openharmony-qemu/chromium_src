@@ -1,0 +1,81 @@
+diff a/content/browser/web_package/subresource_signed_exchange_url_loader_factory.cc b/content/browser/web_package/subresource_signed_exchange_url_loader_factory.cc	(rejected hunks)
+@@ -9,12 +9,10 @@
+ #include <memory>
+ #include <utility>
+ 
+ #include "base/functional/bind.h"
+ #include "base/functional/callback.h"
+-#include "base/notreached.h"
+-#include "base/time/time.h"
+ #include "content/browser/web_package/signed_exchange_inner_response_url_loader.h"
+ #include "mojo/public/cpp/bindings/message.h"
+ #include "mojo/public/cpp/bindings/remote.h"
+ #include "mojo/public/cpp/bindings/self_owned_receiver.h"
+ #include "net/base/net_errors.h"
+@@ -35,34 +33,21 @@ bool IsValidRequestInitiator(const network::ResourceRequest& request,
+   // that validate non-initiator-related parts of a ResourceRequest).
+   network::InitiatorLockCompatibility initiator_lock_compatibility =
+       network::VerifyRequestInitiatorLock(request_initiator_origin_lock,
+                                           request.request_initiator);
+   switch (initiator_lock_compatibility) {
+-    case network::InitiatorLockCompatibility::kBrowserProcess:
+-      // kBrowserProcess cannot happen outside of NetworkService.
+-      NOTREACHED();
+-
+-    case network::InitiatorLockCompatibility::kNoLock:
+-    case network::InitiatorLockCompatibility::kNoInitiator:
+-      // Only browser-initiated navigations can specify no initiator and we only
+-      // expect subresource requests (i.e. non-navigations) to go through
+-      // SubresourceSignedExchangeURLLoaderFactory::CreateLoaderAndStart.
+-      NOTREACHED();
+-
+     case network::InitiatorLockCompatibility::kCompatibleLock:
+       return true;
+ 
++    case network::InitiatorLockCompatibility::kBrowserProcess:
++    case network::InitiatorLockCompatibility::kNoLock:
++    case network::InitiatorLockCompatibility::kNoInitiator:
+     case network::InitiatorLockCompatibility::kIncorrectLock:
+-      // This branch indicates that either 1) the CreateLoaderAndStart IPC was
+-      // forged by a malicious/compromised renderer process or 2) there are
+-      // renderer-side bugs.
+-      NOTREACHED();
++      return false;
+   }
+ 
+-  // Failing safely for an unrecognied `network::InitiatorLockCompatibility`
+-  // enum value.
+-  NOTREACHED();
++  return false;
+ }
+ 
+ }  // namespace
+ 
+ SubresourceSignedExchangeURLLoaderFactory::
+@@ -96,14 +81,24 @@ void SubresourceSignedExchangeURLLoaderFactory::CreateLoaderAndStart(
+         "SubresourceSignedExchangeURLLoaderFactory: "
+         "lock VS initiator mismatch");
+     mojo::Remote<network::mojom::URLLoaderClient>(std::move(client))
+         ->OnComplete(
+             network::URLLoaderCompletionStatus(net::ERR_INVALID_ARGUMENT));
+-    NOTREACHED();
++    return;
++  }
++
++  if (request.url != entry_->inner_url()) {
++    network::debug::ScopedResourceRequestCrashKeys request_crash_keys(request);
++    mojo::ReportBadMessage(
++        "SubresourceSignedExchangeURLLoaderFactory: "
++        "request.url does not match inner_url");
++    mojo::Remote<network::mojom::URLLoaderClient>(std::move(client))
++        ->OnComplete(
++            network::URLLoaderCompletionStatus(net::ERR_INVALID_ARGUMENT));
++    return;
+   }
+ 
+-  DCHECK_EQ(request.url, entry_->inner_url());
+   mojo::MakeSelfOwnedReceiver(
+       std::make_unique<SignedExchangeInnerResponseURLLoader>(
+           request, entry_->inner_response().Clone(),
+           std::make_unique<const storage::BlobDataHandle>(
+               *entry_->blob_data_handle()),

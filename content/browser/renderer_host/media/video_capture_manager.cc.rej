@@ -1,0 +1,92 @@
+diff a/content/browser/renderer_host/media/video_capture_manager.cc b/content/browser/renderer_host/media/video_capture_manager.cc	(rejected hunks)
+@@ -36,10 +36,11 @@
+ #include "media/base/media_switches.h"
+ #include "media/base/video_facing.h"
+ #include "media/capture/mojom/video_capture_types.mojom.h"
+ #include "media/capture/video/video_capture_device.h"
+ #include "third_party/blink/public/common/mediastream/media_stream_request.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace {
+ 
+ void LogVideoCaptureError(media::VideoCaptureError error) {
+   base::UmaHistogramEnumeration("Media.VideoCapture.Error", error);
+@@ -223,10 +224,18 @@ void VideoCaptureManager::Close(
+     }
+   } else {
+     DCHECK(!locked_sessions_.contains(session_it->first));
+   }
+   sessions_.erase(session_it);
++#if BUILDFLAG(ARKWEB_WEBRTC)
++  std::lock_guard<std::mutex> lock(NWebIdMutex_);
++  auto nWebId_it = nWebId_.find(capture_session_id);
++  if (nWebId_it == nWebId_.end()) {
++    return;
++  }
++  nWebId_.erase(nWebId_it);
++#endif  // BUILDFLAG(ARKWEB_WEBRTC)
+ }
+ 
+ void VideoCaptureManager::ApplySubCaptureTarget(
+     const base::UnguessableToken& session_id,
+     media::mojom::SubCaptureTargetType type,
+@@ -253,12 +262,16 @@ void VideoCaptureManager::QueueStartDevice(
+     const media::VideoCaptureParams& params) {
+   DCHECK_CURRENTLY_ON(BrowserThread::IO);
+   DCHECK(lock_time_.is_null());
+   device_start_request_queue_.push_back(
+       CaptureDeviceStartRequest(std::move(controller), session_id, params));
+-  if (device_start_request_queue_.size() == 1)
++  if (device_start_request_queue_.size() == 1) {
++#if BUILDFLAG(ARKWEB_WEBRTC)
++    EmitLogMessage("VideoCaptureManager::QueueStartDevice", 1);
++#endif // BUILDFLAG(ARKWEB_WEBRTC)
+     ProcessDeviceStartRequestQueue();
++  }
+ }
+ 
+ void VideoCaptureManager::DoStopDevice(VideoCaptureController* controller) {
+   DCHECK_CURRENTLY_ON(BrowserThread::IO);
+   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("video_and_image_capture"),
+@@ -457,13 +484,27 @@ void VideoCaptureManager::ConnectClient(
+                        *first_client_origin == *origin;
+     base::UmaHistogramBoolean("Media.VideoCapture.StreamSharedSameOrigin",
+                               same_origin);
+   }
+ 
++#if BUILDFLAG(ARKWEB_WEBRTC)
++  std::ostringstream log_stream;
++  log_stream << "VideoCaptureManager  HasActiveClient: "
++                << controller->HasActiveClient()
++                << ", HasPausedClient: " << controller->HasPausedClient()
++                << ", lock_time_: " << lock_time_.is_null();
++  EmitLogMessage(log_stream.str(), 1);
++#endif // BUILDFLAG(ARKWEB_WEBRTC)
++
+   // First client starts the device. Device can't be started while the screen is
+   // locked.
++#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
++  if ((!client_exist || (!is_session_reuse_ && controller->stream_type() !=
++       blink::mojom::MediaStreamType::DEVICE_VIDEO_CAPTURE)) && lock_time_.is_null()) {
++#else
+   if (!client_exist && lock_time_.is_null()) {
++#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+     std::ostringstream string_stream;
+     string_stream
+         << "VideoCaptureManager queueing device start for device_id = "
+         << controller->device_id();
+     EmitLogMessage(string_stream.str(), 1);
+@@ -945,10 +986,13 @@ VideoCaptureManager::GetOrCreateController(
+   scoped_refptr<VideoCaptureController> new_controller =
+       base::MakeRefCounted<VideoCaptureController>(
+           device_info.id, device_info.type, params,
+           video_capture_provider_->CreateDeviceLauncher(),
+           emit_log_message_cb_);
++#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
++  new_controller->SetScreenCaptureListener(this);
++#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+   controllers_.push_back(new_controller);
+   return new_controller;
+ }
+ 
+ #if BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_DESKTOP_ANDROID)

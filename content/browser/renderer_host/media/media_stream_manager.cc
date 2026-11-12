@@ -87,6 +87,7 @@
 #include "third_party/blink/public/mojom/mediastream/media_stream.mojom.h"
 #include "url/gurl.h"
 #include "url/origin.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "base/win/scoped_com_initializer.h"
@@ -104,6 +105,10 @@
 #if !BUILDFLAG(IS_ANDROID)
 #include "content/browser/media/captured_surface_controller.h"
 #endif
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+#include "content/browser/web_contents/web_contents_impl.h"
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
 using ::blink::mojom::MediaDeviceType;
 
@@ -585,6 +590,12 @@ class MediaStreamManager::DeviceRequest {
 
   MediaStreamType video_type() const { return video_type_; }
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  int GetTargetProcessId() const { return target_process_id_; }
+  int GetTargetFrameId() const { return target_frame_id_; }
+  GlobalRenderFrameHostId GetTargetRenderFrameHostId() const { return target_render_frame_host_id_; }
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
+
   void SetAudioRawId(std::string id) { audio_raw_id_ = std::move(id); }
   const std::optional<std::string>& audio_raw_id() const {
     return audio_raw_id_;
@@ -1020,6 +1031,8 @@ class MediaStreamManager::DeviceRequest {
   MediaStreamType video_type_ = MediaStreamType::NO_SERVICE;
   std::optional<std::string> video_raw_id_;
   GlobalRenderFrameHostId target_render_frame_host_id_;
+  int target_process_id_;
+  int target_frame_id_;
   std::string label_;
 #if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
   std::unique_ptr<CapturedSurfaceController> captured_surface_controller_;
@@ -1557,7 +1570,12 @@ void MediaStreamManager::SendMessageToNativeLog(const std::string& message) {
         base::BindOnce(&MediaStreamManager::SendMessageToNativeLog, message));
     return;
   }
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  LOG(INFO) << message;
+#else
   VLOG(1) << message;
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
 
   if (!media_stream_manager) {
     // MediaStreamManager hasn't been initialized. This is allowed in tests.
@@ -3412,7 +3430,7 @@ void MediaStreamManager::InitializeMaybeAsync(
   // and the device managers.
   base::CurrentThread::Get()->AddDestructionObserver(this);
 
-  video_capture_manager_ = base::MakeRefCounted<VideoCaptureManager>(
+  video_capture_manager_ = base::MakeRefCounted<VideoCaptureManagerExt>(
       std::move(video_capture_provider),
       base::BindRepeating(&SendVideoCaptureLogMessage));
   video_capture_manager_->RegisterListener(this);
@@ -3797,6 +3815,27 @@ void MediaStreamManager::HandleAccessRequestResponse(
         }
       }
       device.set_session_id(GetDeviceManager(device.type)->Open(device));
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+      int nweb_id = AsMediaStreamManagerExt()->GetNWebIdMatchStreamType(request->GetTargetRenderFrameHostId());
+      if (device.type == MediaStreamType::DEVICE_VIDEO_CAPTURE ||
+        device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE) {
+          video_capture_manager()->AsVideoCaptureManagerExt()->BindSessionIdToNWebId(device.session_id(), nweb_id);
+      }
+
+      if (blink::IsAudioInputMediaType(device.type)) {
+        audio_input_device_manager()->BindSessionIdToNWebId(device.session_id(), nweb_id);
+      }
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
+
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+      if (device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE ||
+          device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE_THIS_TAB ||
+          device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE_SET) {
+        AsMediaStreamManagerExt()->AddNWebIdBySession(nweb_id, device.session_id());
+      }
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+
       if (device.type == request->audio_type()) {
         request->SetAudioRawId(device.id);
       } else if (device.type == request->video_type()) {

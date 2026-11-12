@@ -1,0 +1,40 @@
+diff a/content/common/features.h b/content/common/features.h	(rejected hunks)
+@@ -64,11 +64,14 @@ CONTENT_EXPORT BASE_DECLARE_FEATURE(kCompositeClipPathAnimation);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kCodeCacheDeletionWithoutFilter);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kCommittedOriginEnforcements);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kCommittedOriginTracking);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kCopyFromSurfaceAlwaysCallCallback);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kCriticalClientHint);
++CONTENT_EXPORT BASE_DECLARE_FEATURE(kWorkerOrWorkletAgentDoubleReleaseFix);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kDocumentPolicyNegotiation);
++CONTENT_EXPORT BASE_DECLARE_FEATURE(kDumpOnOriginHeaderMismatch);
++CONTENT_EXPORT BASE_DECLARE_FEATURE(kDumpOnUnexpectedOriginHeader);
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kEnableDevToolsJsErrorReporting);
+ #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kEnforceSameDocumentOriginInvariants);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kEmbeddingRequiresOptIn);
+@@ -136,10 +139,11 @@ CONTENT_EXPORT BASE_DECLARE_FEATURE(kInterestGroupUpdateIfOlderThan);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kInitialWebUISyncNavStartToCommit);
+ #if BUILDFLAG(IS_MAC)
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kIOSurfaceCapturer);
+ #endif
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kKeepChildProcessAfterIPCReset);
++CONTENT_EXPORT BASE_DECLARE_FEATURE(kKillOnInvalidNavigationHeaders);
+ 
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kLocalNetworkAccessForWorkers);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kLocalNetworkAccessForWorkersWarningOnly);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kLocalNetworkAccessForNavigations);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(
+@@ -207,10 +211,11 @@ CONTENT_EXPORT extern const base::FeatureParam<std::string>
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kServiceWorkerSrcdocSupport);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kServiceWorkerStaticRouterRaceRequestFix2);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(
+     kServiceWorkerStaticRouterStartServiceWorker);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kServiceWorkerClientUrlIsCreationUrl);
++CONTENT_EXPORT BASE_DECLARE_FEATURE(kServiceWorkerOptionalTimeoutIterator);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kSideBySideFilePickerCancelling);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kSkipEarlyCommitPendingForCrashedFrame);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kSkipRedundantNavigationStateNotification);
+ CONTENT_EXPORT BASE_DECLARE_FEATURE(kSkipRendererCancellationThrottle);
+ #if BUILDFLAG(IS_ANDROID)

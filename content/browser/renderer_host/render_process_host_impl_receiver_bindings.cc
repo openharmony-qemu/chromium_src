@@ -93,6 +93,31 @@
 #include "content/browser/hyphenation/hyphenation_impl.h"
 #endif
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_WPT)
+#include "content/browser/font_unique_name_lookup/font_unique_name_lookup_service.h"
+#include "third_party/blink/public/mojom/android_font_lookup/android_font_lookup.mojom.h"
+#endif  // BUILDFLAG(ARKWEB_WPT)
+
+#if BUILDFLAG(ARKWEB_CUSTOM_FONTS)
+#include "arkweb/chromium_ext/content/browser/font_unique_name_lookup/arkweb_custom_font_lookup_service.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+#include "arkweb/chromium_ext/services/device/public/mojom/res_sched_report.mojom.h"
+#include "arkweb/chromium_ext/services/device/public/mojom/sysprop_render_observer.mojom.h"
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+#include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils.h"
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "services/device/business_risk_intelligent_detection/business_risk_intelligent_detection_host_impl.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+#include "arkweb/chromium_ext/components/services/font_data/font_data_service_impl.h"
+#include "arkweb/chromium_ext/components/services/font_data/public/mojom/font_data_service.mojom.h"
+#endif
+
 namespace content {
 
 namespace {

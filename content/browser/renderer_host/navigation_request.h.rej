@@ -1,0 +1,164 @@
+diff a/content/browser/renderer_host/navigation_request.h b/content/browser/renderer_host/navigation_request.h	(rejected hunks)
+@@ -89,10 +89,22 @@
+ #if BUILDFLAG(IS_ANDROID)
+ #include "base/android/scoped_java_ref.h"
+ #include "content/browser/android/navigation_handle_proxy.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++#include "arkweb/chromium_ext/content/public/browser/error_page_reload_reason.h"
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
++#include "arkweb/chromium_ext/content/public/browser/https_upgrades_policy.h"
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++#include "arkweb/chromium_ext/net/base/web_navigation_info.h"
++#endif
++
+ namespace network {
+ struct IntegrityPolicy;
+ struct URLLoaderCompletionStatus;
+ }  // namespace network
+ 
+@@ -111,10 +123,11 @@ class NavigatorDelegate;
+ class PrefetchedSignedExchangeCache;
+ class PrerenderHostRegistry;
+ class RenderFrameHostCSPContext;
+ class ServiceWorkerMainResourceHandle;
+ class SubframeHistoryNavigationThrottle;
++class NavigationRequestUtils;
+ 
+ // The primary implementation of NavigationHandle.
+ //
+ // Lives from navigation start until the navigation has been committed.
+ class CONTENT_EXPORT NavigationRequest
+@@ -126,10 +139,16 @@ class CONTENT_EXPORT NavigationRequest
+       private RenderProcessHostObserver,
+       private network::mojom::TrustTokenAccessObserver,
+       private network::mojom::SharedDictionaryAccessObserver,
+       public network::mojom::DeviceBoundSessionAccessObserver {
+  public:
++  friend class NavigationRequestUtils;
++  std::unique_ptr<NavigationRequestUtils> nav_request_utils_;
++#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
++  // True if ignoring Cache-Control: no-store
++  bool load_ignore_cache_params = false;
++#endif
+   // Keeps track of the various stages of a NavigationRequest.
+   // To see what state transitions are allowed, see |SetState|.
+   enum NavigationState {
+     // Initial state.
+     NOT_STARTED = 0,
+@@ -365,12 +384,21 @@ class CONTENT_EXPORT NavigationRequest
+   // for eligible COOP header values, this function also verifies other
+   // criteria, such as whether this feature is enabled on the device (e.g.,
+   // above memory threshold) or whether the site is already isolated.
+   bool ShouldRequestSiteIsolationForCOOP();
+ 
++#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
++  void SetCustomViewportWidth(int32_t width) override;
++#endif
++
+   // NavigationHandle implementation:
+   int64_t GetNavigationId() const override;
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  // Get extra headers for this navigation.
++  const std::string& GetExtraHeaders() const override;
++  std::string GetCompleteHeaders() const override;
++#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
+   ukm::SourceId GetNextPageUkmSourceId() override;
+   const GURL& GetURL() override;
+   SiteInstanceImpl* GetStartingSiteInstance() override;
+   SiteInstanceImpl* GetSourceSiteInstance() override;
+   bool IsInMainFrame() const override;
+@@ -508,15 +536,27 @@ class CONTENT_EXPORT NavigationRequest
+   // End of mojom::NavigationRendererCancellationListener implementation.
+ 
+   void RegisterCommitDeferringConditionForTesting(
+       std::unique_ptr<CommitDeferringCondition> condition);
+ 
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++  bool NeedsReloadWithFallbackProxy() override;
++  ErrorPageReloadReason  GetCurrentReloadReason() override;
++  int GetOriginalNetErrorCode() override;
++  bool HasBeenReloadedForThisReason(ErrorPageReloadReason  reason) override;
++#endif      
++
+   // Used by tests that want to control the timing of cookie access
+   // notifications.
+   void SetCookieAccessObserversForTesting(
+       std::unique_ptr<CookieAccessObservers> cookie_access_observers);
+ 
++#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
++  bool IsAutoReload() override;
++  void OnReportNewNavigationInfo(const std::string& page_trace_id) override;
++#endif
++
+   // Called on the UI thread by the Navigator to start the navigation.
+   // The NavigationRequest can be deleted while BeginNavigation() is called.
+   void BeginNavigation();
+ 
+   const blink::mojom::CommonNavigationParams& common_params() const {
+@@ -564,11 +608,11 @@ class CONTENT_EXPORT NavigationRequest
+ 
+   NavigationURLLoader* loader_for_testing() const { return loader_.get(); }
+ 
+   NavigationState state() const { return state_; }
+ 
+-  FrameTreeNode* frame_tree_node() const { return frame_tree_node_; }
++  FrameTreeNode* frame_tree_node() const { return frame_tree_node_.get(); }
+ 
+   bool is_synchronous_renderer_commit() const {
+     return is_synchronous_renderer_commit_;
+   }
+ 
+@@ -1729,10 +1788,13 @@ class CONTENT_EXPORT NavigationRequest
+       std::optional<base::SafeRef<RenderFrameHostImpl>>
+           rfh_restored_from_back_forward_cache,
+       int initiator_process_id,
+       bool was_opener_suppressed,
+       bool is_pdf,
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++      const std::string& extra_headers,
++#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
+       bool is_embedder_initiated_fenced_frame_navigation = false,
+       mojo::PendingReceiver<mojom::NavigationRendererCancellationListener>
+           renderer_cancellation_listener = mojo::NullReceiver(),
+       std::optional<std::u16string> embedder_shared_storage_context =
+           std::nullopt);
+@@ -2448,14 +2516,14 @@ class CONTENT_EXPORT NavigationRequest
+   //
+   // See https://crbug.com/41487933 for more background on the types of bugs
+   // this protects against.
+   void ValidateCommitOrigin(const url::Origin& origin_to_commit);
+ 
+-  // Never null. The pointee node owns this navigation request instance.
+-  // This field is not a raw_ptr because of incompatibilities with tracing
+-  // (TRACE_EVENT*), perfetto::TracedDictionary::Add and gmock/EXPECT_THAT.
+-  RAW_PTR_EXCLUSION FrameTreeNode* const frame_tree_node_;
++  // Never null, and intended to outlive this NavigationRequest. Initially, this
++  // NavigationRequest instance is owned by this FrameTreeNode, until ownership
++  // is transferred to the committing RenderFrameHost.
++  raw_ptr<FrameTreeNode> const frame_tree_node_;
+ 
+   // Returns true if navigation timeline UKMs should be recorded.
+   // This is also used in `MaybeRecordTraceEventsAndHistograms()`, which should
+   // eventually be replaced with the navigation timeline metrics.
+   bool ShouldRecordNavigationTimelineUkm() const;
+@@ -3059,10 +3127,14 @@ class CONTENT_EXPORT NavigationRequest
+   // Indicates that this navigation is for PDF content in a renderer. On
+   // Android, this can only be true when a PDF NativePage is created for
+   // a main frame navigation.
+   bool is_pdf_ = false;
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  std::string extra_headers_;
++#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
++
+   // Indicates that this navigation is an embedder-initiated navigation of a
+   // fenced frame root. That is to say, the navigation is caused by a `src`
+   // attribute mutation on the <fencedframe> element, which cannot be performed
+   // from inside the fenced frame tree.
+   // TODO(crbug.com/40202462): Make this `const` again once ShadowDOM is gone.

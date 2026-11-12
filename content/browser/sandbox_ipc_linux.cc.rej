@@ -1,0 +1,13 @@
+diff a/content/browser/sandbox_ipc_linux.cc b/content/browser/sandbox_ipc_linux.cc	(rejected hunks)
+@@ -10,10 +10,11 @@
+ #include <string.h>
+ #include <sys/poll.h>
+ #include <sys/socket.h>
+ #include <sys/stat.h>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/command_line.h"
+ #include "base/compiler_specific.h"
+ #include "base/containers/span.h"
+ #include "base/files/scoped_file.h"
+ #include "base/linux_util.h"

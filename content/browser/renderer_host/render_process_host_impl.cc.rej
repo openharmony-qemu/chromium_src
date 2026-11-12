@@ -1,0 +1,508 @@
+diff a/content/browser/renderer_host/render_process_host_impl.cc b/content/browser/renderer_host/render_process_host_impl.cc	(rejected hunks)
+@@ -15,10 +15,11 @@
+ #include <memory>
+ #include <set>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils.h"
+ #include "base/base_switches.h"
+ #include "base/clang_profiling_buildflags.h"
+ #include "base/command_line.h"
+ #include "base/containers/adapters.h"
+ #include "base/containers/contains.h"
+@@ -282,17 +285,35 @@
+ 
+ #if BUILDFLAG(CLANG_PROFILING_INSIDE_SANDBOX)
+ #include "content/public/common/profiling_utils.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++#include "base/ohos/logger.h"
++#include "content/public/common/content_switches.h"
++#endif
++
++#if BUILDFLAG(ARKWEB_CACHE)
++#include "base/path_service.h"
++#include "base/files/file_path.h"
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
++#include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_video_load_optimization_config.h"
++#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
++
+ // VLOG additional statements in Fuchsia release builds.
+ #if BUILDFLAG(IS_FUCHSIA)
+ #define MAYBEVLOG VLOG
+ #else
+ #define MAYBEVLOG DVLOG
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
++size_t g_max_renderer_count_override = 0;
++#endif
++
+ namespace features {
+ 
+ // When enabled, the IPC channel will not be paused when launching non-guest
+ // renderer processes. This makes it possible for all kinds of mojo calls
+ // to be sent to the renderer process before OnProcessLaunched fires. When the
+@@ -1582,12 +1639,17 @@ RenderProcessHost* RenderProcessHostImpl::CreateRenderProcessHost(
+       flags |= RenderProcessFlags::kForInitialWebUI;
+     }
+   }
+ #endif  // !BUILDFLAG(IS_ANDROID)
+ 
++#if BUILDFLAG(IS_ARKWEB)
++  return new ArkwebRenderProcessHostImplExt(browser_context, storage_partition_impl,
++                                   flags, is_spare_renderer);
++#else
+   return new RenderProcessHostImpl(browser_context, storage_partition_impl,
+                                    flags, is_spare_renderer);
++#endif
+ }
+ 
+ // static
+ RenderProcessHost* RenderProcessHostImpl::CreateRenderProcessHost(
+     BrowserContext* browser_context,
+@@ -1624,10 +1686,13 @@ RenderProcessHostImpl::RenderProcessHostImpl(
+                 false /* boost_for_discard */,
+ #if BUILDFLAG(IS_ANDROID)
+                 is_spare_renderer,
+                 ChildProcessImportance::NORMAL
+ #else
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
++                base::TimeTicks::Now(),
++#endif
+                 std::nullopt
+ #endif
+                 ),
+       id_(ChildProcessHostImpl::GenerateChildProcessUniqueId()),
+       browser_context_(browser_context),
+@@ -1640,10 +1705,13 @@ RenderProcessHostImpl::RenderProcessHostImpl(
+ #endif
+       tracing_track_(
+           perfetto::NamedTrack::FromPointer("RenderProcessHostImpl",
+                                             this,
+                                             GetChildProcessTracingTrack(id_))) {
++#if BUILDFLAG(IS_ARKWEB)
++  arkweb_render_process_host_impl_utils_ = std::make_unique<ArkwebRenderProcessHostImplUtils>(this);
++#endif
+   CHECK(!browser_context->ShutdownStarted());
+   TRACE_EVENT("shutdown", "RenderProcessHostImpl",
+               ChromeTrackEvent::kRenderProcessHost, *this);
+   TRACE_EVENT_BEGIN("shutdown", "Browser.RenderProcessHostImpl", tracing_track_,
+                     ChromeTrackEvent::kRenderProcessHost, *this);
+@@ -1741,12 +1809,17 @@ void RenderProcessHostImpl::SetBadMojoMessageCallbackForTesting(
+ void RenderProcessHostImpl::SetForGuestsOnlyForTesting() {
+   flags_ |= RenderProcessFlags::kForGuestsOnly;
+ }
+ 
+ RenderProcessHostImpl::~RenderProcessHostImpl() {
++#if BUILDFLAG(IS_ARKWEB) || BUILDFLAG(ARKWEB_DFX_TRACING)
++  TRACE_EVENT("shutdown", "~RenderFrameHostImpl()",
++              "kRenderProcessHost", "RenderProcessHostImpl");
++#else
+   TRACE_EVENT("shutdown", "~RenderProcessHostImpl",
+               ChromeTrackEvent::kRenderProcessHost, *this);
++#endif
+   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+ #ifndef NDEBUG
+   DCHECK(is_self_deleted_)
+       << "RenderProcessHostImpl is destroyed by something other than itself";
+ #endif
+@@ -1776,16 +1849,23 @@ RenderProcessHostImpl::~RenderProcessHostImpl() {
+ 
+   base::UmaHistogramCounts1000(
+       "BrowserRenderProcessHost.MaxOutermostMainFrames",
+       max_outermost_main_frames_);
+ 
++#if BUILDFLAG(IS_ARKWEB) || BUILDFLAG(ARKWEB_DFX_TRACING)
++  TRACE_EVENT_END("shutdown", tracing_track_,
++                  "kRenderProcessHost", "RenderProcessHostImpl");
++  TRACE_EVENT_END("shutdown", tracing_track_,
++                  "kRenderProcessHost", "RenderProcessHostImpl");
++#else
+   // "Cleanup in progress"
+   TRACE_EVENT_END("shutdown", tracing_track_,
+                   ChromeTrackEvent::kRenderProcessHost, *this);
+   // "Browser.RenderProcessHostImpl"
+   TRACE_EVENT_END("shutdown", tracing_track_,
+                   ChromeTrackEvent::kRenderProcessHost, *this);
++#endif
+ }
+ 
+ bool RenderProcessHostImpl::Init() {
+   // calling Init() more than once does nothing, this makes it more convenient
+   // for the view host which may not be sure in some cases
+@@ -3014,10 +3108,32 @@ ProcessLock RenderProcessHostImpl::GetProcessLock() const {
+   return ChildProcessSecurityPolicyImpl::GetInstance()->GetProcessLock(
+       GetDeprecatedID());
+ }
+ 
+ bool RenderProcessHostImpl::MayReuseHost() {
++#if BUILDFLAG(IS_ARKWEB)
++  if (is_dead_) {
++    LOG(ERROR) << "RenderProcessHostImpl is dead";
++    return false;
++  }
++  // Reject RPHs that have no process launcher at all (Init() never completed
++  // successfully, or launcher was reset after process death). Also reject RPHs
++  // where the launcher exists but the launch has completed without producing a
++  // valid handle - this indicates an abnormal state (e.g. process launch
++  // failed silently). Do NOT reject RPHs where the launcher is still starting
++  // (IsStarting()=true), as that is a normal transient state.
++  if (child_process_launcher_.get() && !child_process_launcher_->IsStarting() && !GetProcess().Handle()) {
++    LOG(ERROR) << "RenderProcessHostImpl has no valid process (launcher="
++               << !!child_process_launcher_.get()
++               << ", starting="
++               << (child_process_launcher_.get()
++                       ? child_process_launcher_->IsStarting()
++                       : false)
++               << ", handle=" << GetProcess().Handle() << ")";
++    return false;
++  }
++#endif
+   return GetContentClient()->browser()->MayReuseHost(this);
+ }
+ 
+ bool RenderProcessHostImpl::IsUnused() {
+   return is_unused_;
+@@ -3836,10 +3969,34 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
+       switches::kIpcDumpDirectory,
+       switches::kIpcFuzzerTestcase,
+ #endif
+ #if BUILDFLAG(IS_CHROMEOS)
+       switches::kSchedulerBoostUrgent,
++#endif
++#if BUILDFLAG(IS_OHOS)
++      switches::kBundleInstallationDir,
++#endif
++#if BUILDFLAG(IS_ARKWEB)
++      switches::kBundleName,
++      switches::kPixelRatio,
++      switches::kOhSchemeHandlerCustomScheme,
++      switches::kOhosEnableVulkan,
++      switches::kDisableMobileStyleSheet,
++      switches::kDisableNextPreviousFlag,
++#endif
++#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
++      switches::kAdSecValue,
++      switches::kDisableMathml,
++      switches::kDisablePdfExtension,
++      switches::kDisableServiceWorker,
++      switches::kDisableNonProxyUDP,
++#endif
++#if BUILDFLAG(ARKWEB_GWP_ASAN)
++      switches::kOhosEnableGwpAsanType,
++#endif
++#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
++      switches::kEnableReportThreadPoolForeg,
+ #endif
+   };
+   renderer_cmd->CopySwitchesFrom(browser_cmd, kSwitchNames);
+ 
+   // |switches::kGaiaConfig| can be set via browser command-line arguments,
+@@ -4002,21 +4159,24 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
+   base::UmaHistogramBoolean(
+       "BrowserRenderProcessHost.FastShutdownIfPossible.Total", true);
+   // Do not shut down the process if there are active or pending views other
+   // than the ones we're shutting down.
+   if (page_count && page_count != (GetActiveViewCount() + pending_views_)) {
++    LOG(INFO) << "Discard failed; there are active or pending views";
+     LogDelayReasonForFastShutdown(
+         DelayShutdownReason::kOtherActiveOrPendingViews);
+     return false;
+   }
+ 
+   if (run_renderer_in_process()) {
++    LOG(INFO) << "Discard failed; Single process mode";
+     LogDelayReasonForFastShutdown(DelayShutdownReason::kSingleProcess);
+     return false;  // Single process mode never shuts down the renderer.
+   }
+ 
+   if (!child_process_launcher_.get()) {
++    LOG(INFO) << "Discard failed; Render process hasn't started or is probably crashed";
+     LogDelayReasonForFastShutdown(DelayShutdownReason::kNoProcess);
+     return false;  // Render process hasn't started or is probably crashed.
+   }
+ 
+   // Test if there's an unload listener.
+@@ -4057,27 +4217,30 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
+   }
+ 
+   // TODO(crbug.com/40236167): Remove this block once the migration is launched.
+   if (!ignore_keep_alive && keep_alive_ref_count_ != 0) {
+     CHECK(IsKeepAliveRefCountAllowed());
++    LOG(INFO) << "Discard failed; keep_alive_ref_count_ != 0";
+     LogDelayReasonForFastShutdown(DelayShutdownReason::kFetchKeepAlive);
+     return false;
+   }
+ 
+   if (!ignore_workers && worker_ref_count_ != 0) {
+     LogDelayReasonForFastShutdown(DelayShutdownReason::kWorker);
+     return false;
+   }
+ 
+   if (pending_reuse_ref_count_ != 0) {
++    LOG(INFO) << "Discard failed; pending_reuse_ref_count_ != 0";
+     LogDelayReasonForFastShutdown(DelayShutdownReason::kPendingReuse);
+     return false;
+   }
+ 
+   // TODO(wjmaclean): This is probably unnecessary, but let's remove it in a
+   // separate CL to be safe.
+   if (shutdown_delay_ref_count_ != 0) {
++    LOG(INFO) << "Discard failed; shutdown_delay_ref_count_ != 0";
+     LogDelayReasonForFastShutdown(DelayShutdownReason::kShutdownDelay);
+     return false;
+   }
+ 
+   FastShutdown();
+@@ -4095,10 +4258,14 @@ void RenderProcessHostImpl::OnAssociatedInterfaceRequest(
+   }
+ }
+ 
+ void RenderProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
+   channel_connected_ = true;
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
++  ArkwebRenderProcessHostImplExt* implExt = static_cast<ArkwebRenderProcessHostImplExt*>(this);
++  implExt->CancelChannelConnectedCheckTask(implExt);
++#endif
+ 
+   // Propagate the pseudonymization salt to all the child processes.
+   //
+   // Doing this as the first step in this method helps to minimize scenarios
+   // where child process runs code that depends on the pseudonymization salt
+@@ -4117,25 +4284,65 @@ void RenderProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
+ 
+   if (IsReady()) {
+     DCHECK(!sent_render_process_ready_);
+     sent_render_process_ready_ = true;
+     // Send RenderProcessReady only if we already received the process handle.
++    LOG(INFO) << "[RenderPipeline] RenderProcessReady (from channel connected): pid="
++ 	            << GetProcess().Pid() << ", GetID()=" << GetID();
+     for (auto& observer : observers_)
+       observer.RenderProcessReady(this);
+ 
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+     // Provide /proc/{renderer pid}/status and statm files for
+     // MemoryUsageMonitor in blink.
+     ProvideStatusFileForRenderer();
+ #endif
+ 
+     ProvideSwapFileForRenderer();
++#if BUILDFLAG(ARKWEB_THEME_FONT)
++    if (auto* theme_font = ArkwebRenderProcessHostImplUtils::EnsureThemeFont()) {
++      std::vector<base::File> font_files(theme_font->font_files.size());
++      std::transform(theme_font->font_files.begin(), theme_font->font_files.end(), font_files.begin(),
++            [] (const base::File& f) { return f.Duplicate(); });
++      ArkwebRenderProcessHostImplUtils::UpdateThemeFontFile(this, std::move(font_files));
++    }
++#endif
+   }
+ 
+ #if BUILDFLAG(CLANG_PROFILING_INSIDE_SANDBOX)
+   child_process_->SetProfilingFile(OpenProfilingFile());
+ #endif
++
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
++          switches::kEnableLoggerReport)) {
++    // LOG(URL) only be called at no privacy mode.The variable of whether the
++    // mode is private or not named g_is_strict_log_mode_ is passed to the
++    // child process to help child process judge whether the LOG(URL) can be
++    // called.
++    child_process_->SetStrictLogMode(GetBrowserContext()->IsOffTheRecord());
++  }
++#endif
++
++#if BUILDFLAG(ARKWEB_READER_MODE) && !defined(COMPONENT_BUILD)
++  if (AsArkwebRenderProcessHostImplExt()) {
++    AsArkwebRenderProcessHostImplExt()->UpdateReaderModeConfig(
++        nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()
++            ->GetReaderModeConfigData());
++  }
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION) && !defined(COMPONENT_BUILD)
++  if (AsArkwebRenderProcessHostImplExt()) {
++    bool is_init = false;
++    nweb_ex::AlloyVideoLoadOptimizationData config_data = 
++      nweb_ex::AlloyVideoLoadOptimizationConfig::GetInstance()->GetVideoLoadOptimizationConfigData(is_init);
++    if (is_init) {
++      AsArkwebRenderProcessHostImplExt()->UpdateVideoLoadOptimizationConfig(config_data);
++    }
++  }
++#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+ }
+ 
+ void RenderProcessHostImpl::OnChannelError() {
+   ChildProcessTerminationInfo info =
+       GetChildTerminationInfo(true /* already_dead */);
+@@ -4691,10 +4901,14 @@ RenderProcessHost::FilterURLResult RenderProcessHostImpl::FilterURL(
+ // static
+ bool RenderProcessHostImpl::IsSuitableHost(
+     RenderProcessHost* host,
+     const IsolationContext& isolation_context,
+     const SiteInfo& site_info) {
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
++  if (base::ohos::IsWearableDevice())
++    return true;
++#endif
+   BrowserContext* browser_context = isolation_context.browser_context();
+   DCHECK(browser_context);
+   if (run_renderer_in_process()) {
+     DCHECK_EQ(host->GetBrowserContext(), browser_context)
+         << " Single-process mode does not support multiple browser contexts.";
+@@ -4724,10 +4938,13 @@ bool RenderProcessHostImpl::IsSuitableHost(
+ 
+   // PDF and non-PDF content cannot share processes.
+   if (host->IsPdf() != site_info.is_pdf())
+     return false;
+ 
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
++  if (ArkwebRenderProcessHostImplUtils::IsSuitableHostForArkweb(host, site_info)) return true;
++#endif  // ARKWEB_RENDER_PROCESS_MODE
+   // Check whether the given host and the intended site_info will be using the
+   // same StoragePartition, since a RenderProcessHost can only support a
+   // single StoragePartition.  This is relevant for packaged apps.
+   StoragePartition* dest_partition = browser_context->GetStoragePartition(
+       site_info.storage_partition_config());
+@@ -4787,10 +5004,16 @@ bool RenderProcessHostImpl::IsSuitableHost(
+     if (!host_has_web_ui_bindings && url_is_for_web_ui &&
+         !IsUnusedAndTiedToBrowsingInstance(host, isolation_context)) {
+       return false;
+     }
+ 
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
++    if (url_is_for_web_ui) {
++      return host->special_render_numbers_[RenderType::kWebUI] > 0;
++    }
++#endif
++
+     if (process_lock.IsLockedToSite()) {
+       // If this process is locked to a site, it cannot be reused for a
+       // destination that doesn't require a dedicated process, even for the
+       // same site. This can happen with dynamic isolated origins (see
+       // https://crbug.com/950453).
+@@ -5212,15 +5444,29 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
+ 
+     // Pass a null StoragePartition. Tests with TestBrowserContext using a
+     // RenderProcessHostFactory may not instantiate a StoragePartition, and
+     // creating one here with GetStoragePartition() can run into cross-thread
+     // issues as TestBrowserContext initialization is done on the main thread.
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
++    size_t count = RenderProcessHostImpl::GetProcessCountForLimit();
++    LOG(INFO) << "Request to create a new rendering process, current count: "
++              << count << " Max: "
++              << RenderProcessHostImpl::GetMaxRendererProcessCount();
++#endif  // BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+     render_process_host =
+         CreateRenderProcessHost(browser_context, site_instance);
+ 
+     site_instance->set_process_assignment(
+         SiteInstanceProcessAssignment::CREATED_NEW_PROCESS);
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
++  ArkwebRenderProcessHostImplUtils::GetProcessHostForSiteInstanceArkweb(
++    render_process_host,
++    site_info,
++    browser_context,
++    count,
++    site_instance);
++#endif  // ARKWEB_RENDER_PROCESS_MODE
+   }
+ 
+   // It is important to call PrepareForFutureRequests *after* potentially
+   // creating a process a few statements earlier - doing this avoids violating
+   // the process limit.
+@@ -5372,12 +5622,24 @@ void RenderProcessHostImpl::ProcessDied(
+ 
+   // It should not be possible for a process death notification to come in
+   // while we are dying.
+   DCHECK(!deleting_soon_);
+ 
++#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
++  base::ProcessId process_id = GetProcess().IsValid() ? GetProcess().Pid() : base::kNullProcessHandle;
++  OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
++      OHOS::NWeb::ResSchedStatusAdapter::THREAD_DESTROYED, process_id,
++      process_id, OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
++#endif
+   child_process_launcher_.reset();
+   is_dead_ = true;
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
++  RenderProcessHost* host = GetAllHosts().Lookup(GetID());
++  if (host) {
++    ArkwebRenderProcessHostImplUtils::RemoveFromSharedRenderProcessMap(host);
++  }
++#endif
+   // Make sure no IPCs or mojo calls from the old process get dispatched after
+   // it has died.
+   ResetIPC();
+ 
+   // Make sure we can call update the setting for the renderer process
+@@ -5680,10 +5946,13 @@ void RenderProcessHostImpl::UpdateProcessPriority() {
+       boost_for_loading_count_ > 0, is_discarding_,
+ #if BUILDFLAG(IS_ANDROID)
+       spare_renderer_priority_status_ == SpareRendererPriorityStatus::kSpare,
+       GetEffectiveImportance()
+ #else
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
++      base::TimeTicks::Now(),
++#endif
+       priority_override_
+ #endif
+   );
+ 
+   if (priority_ == priority) {
+@@ -5781,17 +6050,22 @@ void RenderProcessHostImpl::OnProcessLaunched() {
+   // especially don't want to send the OnRenderProcessHostCreated notification,
+   // since some clients might expect a RenderProcessHostDestroyed() afterwards
+   // to properly cleanup.
+   if (deleting_soon_)
+     return;
+-
++  LOG(INFO) << "[RenderPipeline] OnProcessLaunched: pid="
++ 	             << (child_process_launcher_ ? child_process_launcher_->GetProcess().Pid() : -1)
++ 	             << ", GetID()=" << GetID();
+   if (child_process_launcher_) {
+     DCHECK(child_process_launcher_->GetProcess().IsValid());
+     // TODO(crbug.com/40590142): This should be based on
+     // |priority_.GetProcessPriority()|, see similar check below.
+     DCHECK_EQ(blink::kLaunchingProcessIsBackgrounded, !priority_.visible);
+-
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
++    ArkwebRenderProcessHostImplExt* implExt = static_cast<ArkwebRenderProcessHostImplExt*>(this);
++    implExt->StartChannelConnectedCheckTask(implExt);
++#endif
+     // Unpause the channel now that the process is launched. We don't flush it
+     // yet to ensure that any initialization messages sent here (e.g., things
+     // done in response to OnRenderProcessHostCreated; see below) preempt
+     // already queued messages.
+     if (ShouldPauseChannelUntilProcessLaunched()) {
+@@ -5876,10 +6150,12 @@ void RenderProcessHostImpl::OnProcessLaunched() {
+ 
+   if (IsReady()) {
+     DCHECK(!sent_render_process_ready_);
+     sent_render_process_ready_ = true;
+     // Send RenderProcessReady only if the channel is already connected.
++    LOG(INFO) << "[RenderPipeline] RenderProcessReady (from OnProcessLaunched): pid="
++ 	            << GetProcess().Pid() << ", GetID()=" << GetID();
+     for (auto& observer : observers_)
+       observer.RenderProcessReady(this);
+ 
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+     // Provide /proc/{renderer pid}/status and statm files for
+@@ -6153,11 +6429,11 @@ void RenderProcessHostImpl::ProvideSwapFileForRenderer() {
+               allocator->ProvideTemporaryFile(std::move(file));
+           },
+           std::move(allocator)));
+ }
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+ 
+ void RenderProcessHostImpl::NotifyMemoryPressureToRenderer(
+     base::MemoryPressureLevel level) {
+   child_process_->OnMemoryPressure(level);
+ }

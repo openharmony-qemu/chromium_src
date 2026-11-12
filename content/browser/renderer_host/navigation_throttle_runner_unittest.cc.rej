@@ -1,0 +1,14 @@
+diff a/content/browser/renderer_host/navigation_throttle_runner_unittest.cc b/content/browser/renderer_host/navigation_throttle_runner_unittest.cc	(rejected hunks)
+@@ -192,11 +192,11 @@ class NavigationThrottleRunnerTest : public RenderViewHostTestHarness,
+ 
+  private:
+   // NavigationThrottleRegistry:
+   NavigationHandle& GetNavigationHandle() override { return handle_; }
+   void AddThrottle(
+-      std::unique_ptr<NavigationThrottle> navigation_throttle) override {
++      std::unique_ptr<NavigationThrottle> navigation_throttle, bool first = false) override {
+     throttles_.push_back(std::move(navigation_throttle));
+   }
+   bool IsHTTPOrHTTPS() override {
+     return handle_.GetURL().SchemeIsHTTPOrHTTPS();
+   }

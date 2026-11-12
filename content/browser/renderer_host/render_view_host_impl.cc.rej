@@ -1,0 +1,29 @@
+diff a/content/browser/renderer_host/render_view_host_impl.cc b/content/browser/renderer_host/render_view_host_impl.cc	(rejected hunks)
+@@ -17,10 +17,11 @@
+ #include "base/functional/bind.h"
+ #include "base/functional/callback.h"
+ #include "base/hash/hash.h"
+ #include "base/i18n/rtl.h"
+ #include "base/json/json_reader.h"
++#include "base/logging.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/metrics/field_trial.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "base/metrics/histogram_macros.h"
+ #include "base/metrics/user_metrics.h"
+@@ -609,10 +622,15 @@ bool RenderViewHostImpl::CreateRenderView(
+   // might be a leftover from a crash.
+   page_broadcast_.reset();
+   params->blink_page_broadcast =
+       page_broadcast_.BindNewEndpointAndPassReceiver();
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && !defined(COMPONENT_BUILD)
++  params->is_offscreen =
++      extensions::GetViewType(WebContents::FromRenderFrameHost(main_rfh)) ==
++      extensions::mojom::ViewType::kOffscreenDocument;
++#endif
+   if (base::FeatureList::IsEnabled(features::kSetHistoryInfoOnViewCreation)) {
+     params->history_index =
+         frame_tree()->controller().GetLastCommittedEntryIndex();
+     params->history_length = frame_tree()->controller().GetEntryCount();
+   }

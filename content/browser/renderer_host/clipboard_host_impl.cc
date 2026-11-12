@@ -1424,5 +1424,4 @@ void ClipboardHostImpl::StopObservingClipboard() {
   }
   clipboard_listener_.reset();
 }
-
 }  // namespace content

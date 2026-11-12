@@ -1,0 +1,64 @@
+diff a/content/browser/renderer_host/media/in_process_video_capture_device_launcher.cc b/content/browser/renderer_host/media/in_process_video_capture_device_launcher.cc	(rejected hunks)
+@@ -34,10 +34,11 @@
+ #include "media/capture/video/video_capture_buffer_tracker_factory_impl.h"
+ #include "media/capture/video/video_capture_device_client.h"
+ #include "media/capture/video/video_frame_receiver.h"
+ #include "media/capture/video/video_frame_receiver_on_task_runner.h"
+ #include "third_party/blink/public/common/mediastream/media_stream_request.h"
++#include "arkweb/build/features/features.h"
+ 
+ #if BUILDFLAG(ENABLE_SCREEN_CAPTURE)
+ #include "content/browser/media/capture/desktop_capture_device_uma_types.h"
+ #include "content/browser/media/capture/web_contents_video_capture_device.h"
+ #if !BUILDFLAG(IS_IOS)
+@@ -174,10 +175,14 @@ void ReportDesktopCaptureImplementationAndType(
+ }
+ 
+ DesktopCaptureImplementation CreatePlatformDependentVideoCaptureDevice(
+     NativeScreenCapturePicker* picker,
+     const DesktopMediaID& desktop_id,
++#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
++    bool is_picker_show,
++    int nweb_id,
++#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+     std::unique_ptr<PipScreenCaptureCoordinatorProxy>
+         pip_screen_capture_coordinator_proxy,
+     std::unique_ptr<media::VideoCaptureDevice>& device_out,
+     media::VideoCaptureDeviceClient* device_client) {
+   DCHECK_EQ(device_out.get(), nullptr);
+@@ -239,10 +248,13 @@ void InProcessVideoCaptureDeviceLauncher::LaunchDeviceAsync(
+     Callbacks* callbacks,
+     base::OnceClosure done_cb) {
+   DCHECK_CURRENTLY_ON(BrowserThread::IO);
+   DCHECK(state_ == State::READY_TO_LAUNCH);
+ 
++#if BUILDFLAG(ARKWEB_WEBRTC)
++  LOG(INFO) << "InProcessVideoCaptureDeviceLauncher::LaunchDeviceAsync";
++#endif // BUILDFLAG(ARKWEB_WEBRTC)
+   if (receiver_on_io_thread) {
+     std::ostringstream string_stream;
+     string_stream
+         << "InProcessVideoCaptureDeviceLauncher::LaunchDeviceAsync: Posting "
+            "start request to device thread for device_id = "
+@@ -535,14 +550,21 @@ void InProcessVideoCaptureDeviceLauncher::
+         std::unique_ptr<PipScreenCaptureCoordinatorProxy>
+             pip_screen_capture_coordinator_proxy) {
+   DCHECK(device_task_runner_->BelongsToCurrentThread());
+   std::unique_ptr<media::VideoCaptureDevice> video_capture_device;
+   DesktopCaptureImplementation implementation =
++#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
++      CreatePlatformDependentVideoCaptureDevice(
++          native_screen_capture_picker_, desktop_id, params.is_picker_show, params.nweb_id,
++          std::move(pip_screen_capture_coordinator_proxy), video_capture_device,
++          device_client.get());
++#else
+       CreatePlatformDependentVideoCaptureDevice(
+           native_screen_capture_picker_, desktop_id,
+           std::move(pip_screen_capture_coordinator_proxy), video_capture_device,
+           device_client.get());
++#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+   std::ostringstream string_stream;
+   string_stream << "InProcessVideoCaptureDeviceLauncher::"
+                    "DoStartDesktopCaptureOnDeviceThread: implementation = "
+                 << implementation << ", type = " << desktop_id.type;
+   DVLOG(1) << string_stream.str();

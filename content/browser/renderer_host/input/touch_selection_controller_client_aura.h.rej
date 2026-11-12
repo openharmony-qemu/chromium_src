@@ -1,0 +1,17 @@
+diff a/content/browser/renderer_host/input/touch_selection_controller_client_aura.h b/content/browser/renderer_host/input/touch_selection_controller_client_aura.h	(rejected hunks)
+@@ -87,11 +87,15 @@ class CONTENT_EXPORT TouchSelectionControllerClientAura
+   class EnvEventObserver;
+   class EnvPreTargetHandler;
+ 
+   bool IsQuickMenuAvailable() const;
+   void ShowQuickMenu();
++#if BUILDFLAG(ARKWEB_PDF)
++  void UpdateQuickMenu() override;
++#else
+   void UpdateQuickMenu();
++#endif  // BUILDFLAG(ARKWEB_PDF)
+   void ShowMagnifier();
+   void HideMagnifier();
+ 
+   // ui::TouchSelectionControllerClient:
+   bool SupportsAnimation() const override;

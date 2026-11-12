@@ -104,6 +104,9 @@ class SyntheticGestureTarget;
 // Basic implementation shared by concrete RenderWidgetHostView subclasses.
 class CONTENT_EXPORT RenderWidgetHostViewBase
     : public RenderWidgetHostView,
+#if BUILDFLAG(IS_ARKWEB)
+      public RenderWidgetHostViewBaseInterface,
+#endif
       public input::RenderWidgetHostViewInput {
  public:
   // The TooltipObserver is used in browser tests only.
@@ -229,6 +232,12 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
       const gfx::Rect& keyboard_rect) override {}
   void ShowInterestInElement(int) override {}
   bool IsHTMLFormPopup() const override;
+
+#if BUILDFLAG(ARKWEB_EX_TOPCONTROLS)
+  float GetTopControlsOffset() const override;
+  float GetTopContentOffset() const override;
+  float GetBottomContentOffset() const override;
+#endif
 
   // This only needs to be overridden by RenderWidgetHostViewBase subclasses
   // that handle content embedded within other RenderWidgetHostViews.
@@ -609,7 +618,6 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
   TextInputManager* GetTextInputManager();
 
   virtual void DidNavigate();
-
   // Called when the RenderWidgetHostImpl establishes a connection to the
   // renderer process Widget.
   virtual void OnRendererWidgetCreated() {}

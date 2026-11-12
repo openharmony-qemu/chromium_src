@@ -383,6 +383,16 @@
 #include "content/browser/renderer_host/render_view_host_delegate_view.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "content/browser/web_contents/web_contents_impl.h"
+#include "content/public/browser/web_contents.h"
+#include "url/ohos/log_utils.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/renderer_host/render_frame_host_impl_for_include.cc"
+#endif
+
 #if AX_FAIL_FAST_BUILD()
 #include "content/public/browser/ax_inspect_factory.h"
 #include "ui/accessibility/accessibility_switches.h"
@@ -2063,6 +2073,10 @@ class RenderFrameHostImpl::SubresourceLoaderFactoriesConfig {
   static SubresourceLoaderFactoriesConfig ForPendingNavigation(
       NavigationRequest& navigation_request) {
     SubresourceLoaderFactoriesConfig result;
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+    result.main_url_ = navigation_request.common_params().url;
+    result.addr_web_handle_ = navigation_request.nav_request_utils_->GetAddrWebHandle();
+#endif
     result.origin_ = navigation_request.GetOriginToCommit().value();
     result.client_security_state_ =
         navigation_request.BuildClientSecurityStateForCommittedDocument();
@@ -2170,6 +2184,10 @@ class RenderFrameHostImpl::SubresourceLoaderFactoriesConfig {
       const SubresourceLoaderFactoriesConfig&) = delete;
 
   const url::Origin& origin() const { return origin_; }
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  const GURL& main_url() const { return main_url_; }
+  uint64_t addr_web_handle() const { return addr_web_handle_; }
+#endif
   const net::IsolationInfo& isolation_info() const { return isolation_info_; }
 
   network::mojom::ClientSecurityStatePtr GetClientSecurityState() const {
@@ -2222,6 +2240,10 @@ class RenderFrameHostImpl::SubresourceLoaderFactoriesConfig {
   // Private constructor - please go through the static For... methods.
   SubresourceLoaderFactoriesConfig() = default;
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  GURL main_url_;
+  uint64_t addr_web_handle_;
+#endif
   url::Origin origin_;
   net::IsolationInfo isolation_info_;
   network::mojom::ClientSecurityStatePtr client_security_state_;
@@ -3175,6 +3197,12 @@ void RenderFrameHostImpl::DidEnterBackForwardCacheInternal() {
 #if BUILDFLAG(IS_P2P_ENABLED)
   GetProcess()->PauseSocketManagerForRenderFrameHost(GetGlobalId());
 #endif  // BUILDFLAG(IS_P2P_ENABLED)
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER) || BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  if (delegate_) {
+    delegate_->OnRenderFrameHostEnterBackForwardCache(GetGlobalId());
+  }
+#endif  // BUILDFLAG(ARKWEB_SAME_LAYER) || BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
   if (auto* permission_service_context =
           PermissionServiceContext::GetForCurrentDocument(this)) {
@@ -4950,7 +4978,7 @@ void RenderFrameHostImpl::RenderFrameCreated() {
 
 void RenderFrameHostImpl::RendererWidgetCreated() {
   if (GetLocalRenderWidgetHost()) {
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
     GetLocalRenderWidgetHost()->SetForceEnableZoom(
         delegate_->GetOrCreateWebPreferences().force_enable_zoom);
 #endif  // BUILDFLAG(IS_ANDROID)
@@ -5160,7 +5188,11 @@ void RenderFrameHostImpl::DidAddMessageToConsole(
   if (source_id.has_value()) {
     updated_source_id = *source_id;
   }
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+  if (delegate_->DidAddMessageToConsole(this, log_level, blink::mojom::ConsoleMessageSource::kOther, message, line_no,
+#else  
   if (delegate_->DidAddMessageToConsole(this, log_level, message, line_no,
+#endif
                                         updated_source_id,
                                         untrusted_stack_trace)) {
     return;
@@ -6965,6 +6997,12 @@ void RenderFrameHostImpl::DetachFromProxy() {
   // Start pending deletion on this frame and its children.
   DeleteRenderFrame(mojom::FrameDeleteIntention::kNotMainFrame);
   StartPendingDeletionOnSubtree(PendingDeletionReason::kFrameDetach);
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  if (!frame_tree()) {
+    return;
+  }
+#endif
+
   frame_tree()->FrameUnloading(GetFrameTreeNodeForUnload());
 
   // Some children with no unload handler may be eligible for immediate
@@ -7981,6 +8019,9 @@ void RenderFrameHostImpl::DownloadURL(
   // TODO(crbug.com/40180431): We should defer the download until the
   // prerendering page is activated, and it will comply with the prerendering
   // spec.
+#if BUILDFLAG(IS_ARKWEB)
+  LOG(INFO) << "RenderFrameHostImpl::DownloadURL";
+#endif
   if (CancelPrerendering(
           PrerenderCancellationReason(PrerenderFinalStatus::kDownload))) {
     return;
@@ -16169,6 +16210,12 @@ bool RenderFrameHostImpl::DidCommitNavigationInternal(
     base::debug::DumpWithoutCrashing();
   }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  OnDidCommitNavigationInternal(params->url, is_same_document_navigation,
+                                navigation_request.get(),
+                                params->navigation_token);
+#endif
+
   // For same-document navigations, the committed origin and insecure-request
   // policy must be identical to the values that were already present in the
   // FrameTreeNode / RenderFrameHost before this commit.
@@ -18622,7 +18669,7 @@ void RenderFrameHostImpl::
   SCOPED_CRASH_KEY_STRING32(
       "VerifyDidCommit", "base_url_fdu_type",
       GetURLTypeForCrashKey(request->common_params().base_url_for_data_url));
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
   SCOPED_CRASH_KEY_BOOL("VerifyDidCommit", "data_url_empty",
                         request->commit_params().data_url_as_string.empty());
 #endif
@@ -20442,5 +20489,22 @@ void RenderFrameHostImpl::SetPrerenderStateChangedCallback(
   CHECK(!prerender_state_callback_);
   prerender_state_callback_ = prerender_state_callback;
 }
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+bool RenderFrameHostImpl::IsUrlTrustListBlocked(int64_t navigation_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  WebContents* web_contents = WebContents::FromRenderFrameHost(this);
+  if (!web_contents) {
+    return false;
+  }
+#if !defined(COMPONENT_BUILD)
+  auto* helper = security_interstitials::SecurityInterstitialTabHelper::FromWebContents(web_contents);
+  if (helper) {
+    return helper->IsUrlTrustListBlockedForNavigation(navigation_id);
+  }
+#endif
+  return false;
+}
+#endif
 
 }  // namespace content

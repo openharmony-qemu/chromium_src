@@ -2,7 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#include "ohos_sdk/openharmony/native/llvm/bin/../include/libcxx-ohos/include/c++/v1/__ranges/lazy_split_view.h"
+#define private public
 #include "content/browser/renderer_host/media/video_capture_controller.h"
+#undef private
+#else
+#include "content/browser/renderer_host/media/video_capture_controller.h"
+#endif // ARKWEB_TEST
 
 #include <stdint.h>
 #include <string.h>

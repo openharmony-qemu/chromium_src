@@ -153,6 +153,7 @@ AgentSchedulingGroupHost::AgentSchedulingGroupHost(RenderProcessHost& process)
   // reset and reinitialized, we'll be notified so that we can reset and
   // reinitialize ours as well.
   SetUpIPC();
+  implUtils = std::make_unique<AgentSchedulingGroupHostUtils>(this);
 }
 
 // DO NOT USE |process_| HERE! At this point it (or at least parts of it) is no

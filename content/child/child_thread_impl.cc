@@ -89,6 +89,10 @@
 #endif  // !BUILDFLAG(IS_ANDROID)
 #endif  // BUILDFLAG(IS_POSIX)
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#include "arkweb/chromium_ext/content/child/child_thread_impl_for_include.cc"
+#endif
+
 #if BUILDFLAG(IS_APPLE)
 #include "base/apple/mach_port_rendezvous.h"
 #endif
@@ -335,6 +339,9 @@ class ChildThreadImpl::IOThreadState
     for (auto& receiver : pending_requests)
       BindReceiver(std::move(receiver));
   }
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+  void SetWebkitInited() { webkit_inited_ = true; }
+#endif
 
  private:
   friend class base::RefCountedThreadSafe<IOThreadState>;
@@ -478,6 +485,10 @@ class ChildThreadImpl::IOThreadState
         base::BindOnce(&ChildThreadImpl::SetBatterySaverMode, weak_main_thread_,
                        battery_saver_mode_enabled));
   }
+
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+#include "arkweb/chromium_ext/content/child/child_thread_impl_public_for_include.cc"
+#endif
 
   const scoped_refptr<base::SequencedTaskRunner> main_thread_task_runner_;
   const base::WeakPtr<ChildThreadImpl> weak_main_thread_;

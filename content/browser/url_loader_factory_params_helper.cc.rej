@@ -1,0 +1,71 @@
+diff a/content/browser/url_loader_factory_params_helper.cc b/content/browser/url_loader_factory_params_helper.cc	(rejected hunks)
+@@ -5,10 +5,11 @@
+ #include "content/browser/url_loader_factory_params_helper.h"
+ 
+ #include <optional>
+ #include <string_view>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/command_line.h"
+ #include "base/containers/lru_cache.h"
+ #include "base/no_destructor.h"
+ #include "content/browser/devtools/network_service_devtools_observer.h"
+ #include "content/browser/renderer_host/frame_tree_node.h"
+@@ -76,11 +77,17 @@ network::mojom::URLLoaderFactoryParamsPtr CreateParams(
+         trust_token_redemption_policy,
+     net::CookieSettingOverrides cookie_setting_overrides,
+     std::string_view debug_tag,
+     bool require_cross_site_request_for_cookies,
+     bool is_for_service_worker,
+-    const std::optional<base::UnguessableToken>& network_restrictions_id) {
++    const std::optional<base::UnguessableToken>& network_restrictions_id
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++,
++    const GURL& main_url = GURL(),
++    uint64_t addr_web_handle = 0
++#endif
++    ) {
+   DCHECK(process);
+ 
+   network::mojom::URLLoaderFactoryParamsPtr params =
+       network::mojom::URLLoaderFactoryParams::New();
+ 
+@@ -169,11 +185,17 @@ URLLoaderFactoryParamsHelper::CreateForFrame(
+         trust_token_issuance_policy,
+     network::mojom::TrustTokenOperationPolicyVerdict
+         trust_token_redemption_policy,
+     net::CookieSettingOverrides cookie_setting_overrides,
+     const std::optional<base::UnguessableToken>& network_restrictions_id,
+-    std::string_view debug_tag) {
++    std::string_view debug_tag
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++,
++    const GURL& main_url,
++    uint64_t addr_web_handle
++#endif
++    ) {
+   return CreateParams(
+       process,
+       frame_origin,  // origin
+       frame_origin,  // request_initiator_origin_lock
+       false,         // is_trusted
+@@ -189,11 +211,18 @@ URLLoaderFactoryParamsHelper::CreateForFrame(
+       frame->CreateURLLoaderNetworkObserver(),
+       NetworkServiceDevToolsObserver::MakeSelfOwned(frame->frame_tree_node()),
+       frame->CreateDeviceBoundSessionObserver(), trust_token_issuance_policy,
+       trust_token_redemption_policy, cookie_setting_overrides, debug_tag,
+       /*require_cross_site_request_for_cookies=*/false,
+-      /*is_for_service_worker=*/false, network_restrictions_id);
++      /*is_for_service_worker=*/false,
++      network_restrictions_id
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++,
++      main_url,
++      addr_web_handle
++#endif
++      );
+ }
+ 
+ // static
+ network::mojom::URLLoaderFactoryParamsPtr
+ URLLoaderFactoryParamsHelper::CreateForIsolatedWorld(

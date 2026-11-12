@@ -1,0 +1,20 @@
+diff a/content/browser/url_loader_factory_params_helper.h b/content/browser/url_loader_factory_params_helper.h	(rejected hunks)
+@@ -68,11 +72,17 @@ class URLLoaderFactoryParamsHelper {
+           trust_token_issuance_policy,
+       network::mojom::TrustTokenOperationPolicyVerdict
+           trust_token_redemption_policy,
+       net::CookieSettingOverrides cookie_setting_overrides,
+       const std::optional<base::UnguessableToken>& network_restrictions_id,
+-      std::string_view debug_tag);
++      std::string_view debug_tag
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++,
++      const GURL& main_url = GURL(),
++      uint64_t addr_web_handle = 0
++#endif
++      );
+ 
+   // Creates URLLoaderFactoryParams to be used by |isolated_world_origin| hosted
+   // within the |frame|.
+   //
+   // TODO(crbug.com/40137011): Remove the CreateForIsolatedWorld method

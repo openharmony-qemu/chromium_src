@@ -1,0 +1,39 @@
+diff a/content/browser/service_worker/service_worker_internals_ui.cc b/content/browser/service_worker/service_worker_internals_ui.cc	(rejected hunks)
+@@ -15,10 +15,14 @@
+ #include "base/functional/bind.h"
+ #include "base/functional/callback_helpers.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "base/strings/string_number_conversions.h"
+ #include "base/values.h"
++#if BUILDFLAG(ARKWEB_DEVTOOLS)
++#include "chrome/browser/ui/webui/inspect/inspect_ui.h"
++#include "cef/ohos_cef_ext/libcef/browser/devtools/arkweb/request_open_devtools_handler.h"
++#endif // ARKWEB_DEVTOOLS
+ #include "content/browser/devtools/devtools_agent_host_impl.h"
+ #include "content/browser/devtools/service_worker_devtools_agent_host.h"
+ #include "content/browser/devtools/service_worker_devtools_manager.h"
+ #include "content/browser/service_worker/service_worker_context_core.h"
+ #include "content/browser/service_worker/service_worker_context_core_observer.h"
+@@ -639,11 +647,22 @@ void ServiceWorkerInternalsHandler::HandleInspectWorker(
+                                           *devtools_agent_route_id));
+   if (!agent_host.get()) {
+     std::move(callback).Run(blink::ServiceWorkerStatusCode::kErrorNotFound);
+     return;
+   }
++#if BUILDFLAG(ARKWEB_DEVTOOLS)
++  RequestOpenDevToolsParams params = {
++    .type = InspectUI::GetTypeFromHost(agent_host->GetType()),
++    .source_id = agent_host->GetURL().spec(),
++    .target_id = agent_host->GetId(),
++    .extension_id = "",
++    .panel = "source"
++  };
++  RequestOpenDevToolsHandler::GetInstance()->OnRequestOpenDevTools(params);
++#else
+   agent_host->Inspect();
++#endif // ARKWEB_DEVTOOLS
+   std::move(callback).Run(blink::ServiceWorkerStatusCode::kOk);
+ }
+ 
+ void ServiceWorkerInternalsHandler::HandleUnregister(const Value::List& args) {
+   DCHECK_CURRENTLY_ON(BrowserThread::UI);

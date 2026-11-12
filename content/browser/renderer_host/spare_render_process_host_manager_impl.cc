@@ -719,6 +719,13 @@ RenderProcessHost* SpareRenderProcessHostManagerImpl::MaybeTakeSpare(
 
     returned_process = next_spare_rph;
     previous_taken_context_ = allocation_context;
+
+#if BUILDFLAG(ARKWEB_WARMUP_SPARE_RENDER_PROCESS)
+    if (OHOS::NWeb::SpareRenderProcessManagerOhos::GetInstance().IsWarmupEnabled()) {
+      OHOS::NWeb::SpareRenderProcessManagerOhos::GetInstance().OnSpareTaken();
+    }
+#endif
+
     ReleaseSpare(next_spare_rph, SpareRendererDispatchResult::kUsed);
   } else if (!RenderProcessHostImpl::IsSpareProcessKeptAtAllTimes()) {
     // If the spare shouldn't be kept around, then discard it as soon as we

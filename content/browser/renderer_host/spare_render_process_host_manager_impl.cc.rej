@@ -1,0 +1,16 @@
+diff a/content/browser/renderer_host/spare_render_process_host_manager_impl.cc b/content/browser/renderer_host/spare_render_process_host_manager_impl.cc	(rejected hunks)
+@@ -22,10 +22,14 @@
+ #include "content/public/browser/browser_main_runner.h"
+ #include "content/public/browser/render_process_host.h"
+ #include "content/public/common/content_client.h"
+ #include "content/public/common/content_features.h"
+ 
++#if BUILDFLAG(ARKWEB_WARMUP_SPARE_RENDER_PROCESS)
++#include "arkweb/chromium_ext/content/public/browser/spare_render_process_manager_ohos.h"
++#endif
++
+ namespace content {
+ 
+ using performance_scenarios::LoadingScenario;
+ using performance_scenarios::PerformanceScenarioObserverList;
+ using performance_scenarios::ScenarioScope;

@@ -1,0 +1,52 @@
+diff a/content/browser/webauth/authenticator_common_impl.cc b/content/browser/webauth/authenticator_common_impl.cc	(rejected hunks)
+@@ -877,10 +892,13 @@ AuthenticatorCommonImpl::MaybeCreateRequestDelegate() {
+     delegate->SetVirtualEnvironment(true);
+     if (!virtual_authenticator_manager->is_ui_enabled()) {
+       DisableUI();
+     }
+   }
++#if BUILDFLAG(ARKWEB_FIDO)
++  DisableUI();
++#endif  // BUILDFLAG(ARKWEB_FIDO)
+   return delegate;
+ }
+ 
+ void AuthenticatorCommonImpl::StartMakeCredentialRequest(
+     bool allow_skipping_pin_touch) {
+@@ -1882,10 +1914,16 @@ void AuthenticatorCommonImpl::ContinueGetAssertionAfterIsUvpaaOverrideCheck(
+ }
+ 
+ void AuthenticatorCommonImpl::GetClientCapabilities(
+     url::Origin caller_origin,
+     blink::mojom::Authenticator::GetClientCapabilitiesCallback callback) {
++#if BUILDFLAG(ARKWEB_FIDO)
++  if (device::OhosWebAuthnApi::Instance()->IsAvailable()) {
++    GetClientCapabilitiesExt(caller_origin, std::move(callback));
++    return;
++  }
++#endif // BUILDFLAG(ARKWEB_FIDO)
+   // IsPPAA is computed based on the results of IsUVPAA and HybridTransport.
+   auto completion_callback =
+       base::BindOnce(&InsertIsPPAACapability).Then(std::move(callback));
+ 
+   bool immediate_get_enabled =
+@@ -3111,11 +3223,19 @@ void AuthenticatorCommonImpl::CompleteReportRequest(
+   Cleanup();
+ }
+ 
+ void AuthenticatorCommonImpl::Cleanup() {
+   CHECK(!req_state_ || req_state_->request_key.value() == next_request_key_);
++  // `req_state_.reset()` destroys the embedder request delegate which can
++  // synchronously close UI which (via activation observers) may destroy the
++  // hosting WebContents and therefore `this`. See https://crbug.com/521495992.
++  base::WeakPtr<AuthenticatorCommonImpl> weak_this = weak_factory_.GetWeakPtr();
+   req_state_.reset();
++  if (!weak_this) {
++    return;
++  }
++
+   next_request_key_++;
+   CHECK(next_request_key_);  // crash on overflow. Only 2^64 WebAuthn requests
+                              // per instance of this object are supported.
+ }
+ 

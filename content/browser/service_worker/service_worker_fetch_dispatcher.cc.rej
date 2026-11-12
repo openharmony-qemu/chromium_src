@@ -1,0 +1,15 @@
+diff a/content/browser/service_worker/service_worker_fetch_dispatcher.cc b/content/browser/service_worker/service_worker_fetch_dispatcher.cc	(rejected hunks)
+@@ -152,10 +152,13 @@ class DelegatingURLLoaderClient final : public network::mojom::URLLoaderClient {
+                          std::move(deep_copied_response)));
+     }
+     client_->OnReceiveResponse(std::move(head), std::move(body),
+                                std::move(cached_metadata));
+   }
++#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
++  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
++#endif
+   void OnReceiveRedirect(const net::RedirectInfo& redirect_info,
+                          network::mojom::URLResponseHeadPtr head) override {
+     if (devtools_enabled_) {
+       // Make a deep copy of URLResponseHead before posting it to a task.
+       auto deep_copied_response = head.Clone();

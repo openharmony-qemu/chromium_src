@@ -1,0 +1,40 @@
+diff a/content/browser/renderer_host/render_widget_host_view_child_frame.h b/content/browser/renderer_host/render_widget_host_view_child_frame.h	(rejected hunks)
+@@ -34,10 +34,11 @@
+ #include "third_party/blink/public/mojom/frame/viewport_intersection_state.mojom-forward.h"
+ #include "third_party/blink/public/mojom/input/input_event_result.mojom-shared.h"
+ #include "third_party/blink/public/mojom/widget/record_content_to_visible_time_request.mojom-forward.h"
+ #include "ui/gfx/geometry/rect.h"
+ #include "ui/gfx/native_ui_types.h"
++#include "arkweb/build/features/features.h"
+ 
+ #if BUILDFLAG(IS_MAC)
+ #include "third_party/blink/public/mojom/webshare/webshare.mojom.h"
+ #endif  // BUILDFLAG(IS_MAC)
+ 
+@@ -49,10 +50,13 @@ namespace content {
+ class CrossProcessFrameConnector;
+ class RenderWidgetHost;
+ class RenderWidgetHostViewChildFrameTest;
+ class TouchSelectionControllerClientChildFrame;
+ 
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++class RenderWidgetHostViewChildFrameExt;
++#endif
+ // RenderWidgetHostViewChildFrame implements the view for a RenderWidgetHost
+ // associated with content being rendered in a separate process from
+ // content that is embedding it. This is not a platform-specific class; rather,
+ // the embedding renderer process implements the platform containing the
+ // widget, and the top-level frame's RenderWidgetHostView will ultimately
+@@ -106,11 +117,11 @@ class CONTENT_EXPORT RenderWidgetHostViewChildFrame
+   gfx::NativeViewAccessible GetNativeViewAccessible() override;
+   bool IsPointerLocked() override;
+   void TakeFallbackContentFrom(RenderWidgetHostView* view) override;
+ 
+   // RenderWidgetHostViewBase implementation.
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+   bool IsTouchSequencePotentiallyActiveOnViz() override;
+   void RequestInputBackForDragAndDrop(
+       blink::mojom::DragDataPtr drag_data,
+       const url::Origin& source_origin,
+       blink::DragOperationsMask drag_operations_mask,

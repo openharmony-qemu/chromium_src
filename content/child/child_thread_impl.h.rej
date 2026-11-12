@@ -1,0 +1,38 @@
+diff a/content/child/child_thread_impl.h b/content/child/child_thread_impl.h	(rejected hunks)
+@@ -145,16 +153,20 @@ class ChildThreadImpl : public IPC::Listener, virtual public ChildThread {
+   void OnChannelError() override;
+   bool on_channel_error_called() const { return on_channel_error_called_; }
+ 
+   bool IsInBrowserProcess() const;
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+   // Received memory pressure signal sent by the browser process.
+   virtual void OnMemoryPressureFromBrowserReceived(
+       base::MemoryPressureLevel level);
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
++  void SetWebkitInited();
++#endif
++
+  private:
+   class IOThreadState;
+ 
+   void Init(const Options& options);
+ 
+@@ -205,10 +217,14 @@ class ChildThreadImpl : public IPC::Listener, virtual public ChildThread {
+ 
+   // ChildThreadImpl state which lives on the IO thread, including its
+   // implementation of the mojom ChildProcess interface.
+   scoped_refptr<IOThreadState> io_thread_state_;
+ 
++#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
++  bool webkit_inited_ = false;
++#endif
++
+   std::unique_ptr<ChildPerformanceCoordinator> performance_coordinator_;
+ 
+   base::WeakPtrFactory<ChildThreadImpl> weak_factory_{this};
+ };
+ 

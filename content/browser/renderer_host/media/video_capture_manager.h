@@ -56,6 +56,8 @@ class CONTENT_EXPORT VideoCaptureManager
       public VideoCaptureDeviceLaunchObserver,
       public ScreenlockObserver {
  public:
+  friend class VideoCaptureManagerExt;
+
   using VideoCaptureDevice = media::VideoCaptureDevice;
 
   // Callback used to signal the completion of a controller lookup.
@@ -271,7 +273,15 @@ class CONTENT_EXPORT VideoCaptureManager
     set_desktop_capture_window_id_callback_for_testing_ = callback;
   }
 
+  virtual VideoCaptureManagerExt* AsVideoCaptureManagerExt() {
+    return nullptr;
+  }
+
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif // ARKWEB_TEST
   class CaptureDeviceStartRequest;
 
   using SessionMap =
@@ -279,6 +289,9 @@ class CONTENT_EXPORT VideoCaptureManager
   using DeviceStartQueue = base::circular_deque<CaptureDeviceStartRequest>;
   using VideoCaptureDeviceDescriptor = media::VideoCaptureDeviceDescriptor;
   using VideoCaptureDeviceDescriptors = media::VideoCaptureDeviceDescriptors;
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  using NWebIdMap = std::map<media::VideoCaptureSessionId, int>;
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
   ~VideoCaptureManager() override;
 

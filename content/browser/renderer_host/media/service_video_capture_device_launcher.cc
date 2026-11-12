@@ -19,6 +19,7 @@
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 #include "services/video_capture/public/cpp/receiver_media_to_mojo_adapter.h"
 #include "services/video_capture/public/mojom/video_frame_handler.mojom.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "media/base/media_switches.h"

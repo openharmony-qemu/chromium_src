@@ -1,0 +1,13 @@
+diff a/content/browser/renderer_host/media/video_capture_controller_unittest.cc b/content/browser/renderer_host/media/video_capture_controller_unittest.cc	(rejected hunks)
+@@ -1026,7 +1034,11 @@ TEST_F(VideoCaptureControllerTest, DeviceClientWithColorSpace) {
+   device_client_.reset();
+   base::RunLoop().RunUntilIdle();
+   Mock::VerifyAndClearExpectations(client_a_.get());
+ }
+ 
++#if BUILDFLAG(ARKWEB_TEST)
++#include "arkweb/chromium_ext/content/browser/renderer_host/media/video_capture_controller_for_include_unittest.cc"
++#endif // ARKWEB_TEST
++
+ }  // namespace
+ }  // namespace content

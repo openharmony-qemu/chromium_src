@@ -2390,7 +2390,6 @@ RenderFrameHostManager::GetFrameHostForNavigation(
                    << request->GetUrlInfo().is_sandboxed;
     }
   }
-
   TRACE_EVENT_INSTANT("navigation",
                       "RenderFrameHostManager::GetFrameHostForNavigation",
                       "reason", reason);

@@ -1,0 +1,13 @@
+diff a/content/browser/renderer_host/media/audio_input_device_manager.cc b/content/browser/renderer_host/media/audio_input_device_manager.cc	(rejected hunks)
+@@ -134,11 +134,10 @@ base::UnguessableToken AudioInputDeviceManager::Open(
+ 
+     audio_system_->GetInputDeviceInfo(
+         device.id, base::BindOnce(&AudioInputDeviceManager::OpenedOnIOThread,
+                                   base::Unretained(this), session_id, device));
+   }
+-
+   return session_id;
+ }
+ 
+ void AudioInputDeviceManager::Close(const base::UnguessableToken& session_id) {
+   DCHECK_CURRENTLY_ON(BrowserThread::IO);

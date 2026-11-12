@@ -1,0 +1,15 @@
+diff a/content/browser/web_contents/web_contents_view_aura.cc b/content/browser/web_contents/web_contents_view_aura.cc	(rejected hunks)
+@@ -259,11 +260,12 @@ void PrepareDragData(const DropData& drop_data,
+   // Put download before file contents to prefer the download of a image over
+   // its thumbnail link.
+   if (!drop_data.download_metadata.empty())
+     PrepareDragForDownload(drop_data, provider, web_contents);
+ #endif
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_WIN)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_WIN) || \
++    BUILDFLAG(IS_OHOS)
+   // We set the file contents before the URL because the URL also sets file
+   // contents (to a .URL shortcut).  We want to prefer file content data over
+   // a shortcut so we add it first.
+   if (!drop_data.file_contents.empty())
+     PrepareDragForFileContents(drop_data, provider);

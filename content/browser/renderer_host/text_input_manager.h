@@ -26,12 +26,24 @@ namespace content {
 
 class RenderWidgetHostImpl;
 class RenderWidgetHostViewBase;
-
+#if BUILDFLAG(ARKWEB_MENU)
+class TextInputManagerUtils;
+#endif
+#if BUILDFLAG(ARKWEB_TEST)
+class TextInputManagerUtilsTest;
+#endif
 // A class which receives updates of TextInputState from multiple sources and
 // decides what the new TextInputState is. It also notifies the observers when
 // text input state is updated.
 class CONTENT_EXPORT TextInputManager {
  public:
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class TextInputManagerUtilsTest;
+#endif
+#if BUILDFLAG(ARKWEB_MENU)
+  friend class TextInputManagerUtils;
+  std::unique_ptr<TextInputManagerUtils> imp_utils_ = nullptr;
+#endif
   // The tab's top-level RWHV should be an observer of TextInputManager to get
   // notifications about changes in TextInputState or other IME related state
   // for child frames.

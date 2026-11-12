@@ -1,0 +1,17 @@
+diff a/content/browser/speech/network_speech_recognition_engine_impl.cc b/content/browser/speech/network_speech_recognition_engine_impl.cc	(rejected hunks)
+@@ -33,11 +33,15 @@
+ 
+ namespace content {
+ namespace {
+ 
+ const char kWebServiceBaseUrl[] =
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++    "https://***";
++#else
+     "https://www.google.com/speech-api/full-duplex/v1";
++#endif
+ const char kDownstreamUrl[] = "/down?";
+ const char kUpstreamUrl[] = "/up?";
+ 
+ constexpr char kWebSpeechAudioDuration[] = "Accessibility.WebSpeech.Duration";
+ 

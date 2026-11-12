@@ -1,0 +1,16 @@
+diff a/content/browser/renderer_host/render_widget_host_delegate.h b/content/browser/renderer_host/render_widget_host_delegate.h	(rejected hunks)
+@@ -58,11 +58,13 @@ class RenderWidgetHostImpl;
+ class RenderWidgetHostViewBase;
+ class RenderViewHostDelegateView;
+ class TextInputManager;
+ class VisibleTimeRequestTrigger;
+ enum class KeyboardEventProcessingResult;
+-
++#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
++enum class RendererIsUnresponsiveReason;
++#endif
+ //
+ // RenderWidgetHostDelegate
+ //
+ //  An interface implemented by an object interested in knowing about the state
+ //  of the RenderWidgetHost.

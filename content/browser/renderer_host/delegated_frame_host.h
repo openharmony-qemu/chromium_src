@@ -111,6 +111,20 @@ class CONTENT_EXPORT DelegatedFrameHost
   void OnFrameTokenChanged(uint32_t frame_token,
                            base::TimeTicks activation_time) override;
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  static cc::DeadlinePolicy FirstFrameDeadlinePolicy();
+  void SetUseSpecifiedDeadlinePolicy(bool shouldUse) override;
+  static bool evictUnlockFrameEnabled_;
+#endif
+
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  void RestoreRenderFit() override;
+#endif // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_ROTATE_RESIZE)
+  void ModifyRenderFit(int32_t fitType) override;
+#endif // ARKWEB_ROTATE_RESIZE
+
   // Public interface exposed to RenderWidgetHostView.
 
   // kOccluded means the native window for the host was
@@ -272,6 +286,10 @@ class CONTENT_EXPORT DelegatedFrameHost
   const raw_ptr<DelegatedFrameHostClient> client_;
   const bool should_register_frame_sink_id_;
   raw_ptr<ui::Compositor> compositor_ = nullptr;
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  bool shouldUseSpecifiedPolicy_ = false;
+#endif
 
   // The LocalSurfaceId of the currently embedded surface.
   //

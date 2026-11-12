@@ -210,7 +210,11 @@ DesktopCaptureImplementation CreatePlatformDependentVideoCaptureDevice(
 #endif  // BUILDFLAG(IS_MAC)
 
 #if !BUILDFLAG(IS_IOS)
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  if ((device_out = DesktopCaptureDevice::Create(desktop_id, is_picker_show, nweb_id))) {
+#else
   if ((device_out = DesktopCaptureDevice::Create(desktop_id, device_client))) {
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
     return kLegacyDesktopCaptureDevice;
   }
 #endif  // !BUILDFLAG(IS_IOS)
@@ -407,6 +411,9 @@ InProcessVideoCaptureDeviceLauncher::CreateDeviceClient(
           requested_buffer_type, buffer_pool_max_buffer_count);
 #endif
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  LOG(ERROR) << "CreateDeviceClient ";
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
 #if BUILDFLAG(IS_CHROMEOS)
   return std::make_unique<media::VideoCaptureDeviceClient>(
       std::move(receiver), std::move(buffer_pool),

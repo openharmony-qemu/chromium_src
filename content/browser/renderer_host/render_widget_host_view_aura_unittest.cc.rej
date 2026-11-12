@@ -1,0 +1,52 @@
+diff a/content/browser/renderer_host/render_widget_host_view_aura_unittest.cc b/content/browser/renderer_host/render_widget_host_view_aura_unittest.cc	(rejected hunks)
+@@ -145,10 +145,14 @@
+ 
+ #if BUILDFLAG(IS_OZONE)
+ #include "ui/ozone/public/ozone_platform.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++#include "arkweb/chromium_ext/content/browser/renderer_host/render_widget_host_impl_ext.h"
++#endif
++
+ using testing::_;
+ 
+ using blink::WebGestureEvent;
+ using blink::WebInputEvent;
+ using blink::WebMouseEvent;
+@@ -3277,12 +3304,17 @@ TEST_F(RenderWidgetHostViewAuraTest, DiscardDelegatedFrames) {
+       FrameEvictionManager::GetInstance()->GetMaxNumberOfSavedFrames();
+   ASSERT_LE(2u, max_renderer_frames);
+   size_t renderer_count = max_renderer_frames + 1;
+   gfx::Rect view_rect(100, 100);
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  std::unique_ptr<RenderWidgetHostImplExt* []> hosts(
++      new RenderWidgetHostImplExt*[renderer_count]);
++#else
+   std::unique_ptr<RenderWidgetHostImpl* []> hosts(
+       new RenderWidgetHostImpl*[renderer_count]);
++#endif
+   std::unique_ptr<FakeRenderWidgetHostViewAura* []> views(
+       new FakeRenderWidgetHostViewAura*[renderer_count]);
+ 
+   // Create a bunch of renderers.
+   for (size_t i = 0; i < renderer_count; ++i) {
+@@ -3398,12 +3430,17 @@ TEST_F(RenderWidgetHostViewAuraTest, DiscardDelegatedFramesWithMemoryPressure) {
+       kMaxRendererFrames);
+ 
+   size_t renderer_count = kMaxRendererFrames;
+   gfx::Rect view_rect(100, 100);
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  std::unique_ptr<RenderWidgetHostImplExt* []> hosts(
++      new RenderWidgetHostImplExt*[renderer_count]);
++#else
+   std::unique_ptr<RenderWidgetHostImpl* []> hosts(
+       new RenderWidgetHostImpl*[renderer_count]);
++#endif      
+   std::unique_ptr<FakeRenderWidgetHostViewAura* []> views(
+       new FakeRenderWidgetHostViewAura*[renderer_count]);
+ 
+   // Create a bunch of renderers.
+   for (size_t i = 0; i < renderer_count; ++i) {

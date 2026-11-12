@@ -68,6 +68,13 @@ class CONTENT_EXPORT RenderWidgetHostViewChildFrame
       public RenderFrameMetadataProvider::Observer,
       public viz::HostFrameSinkClient {
  public:
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  friend class RenderWidgetHostViewChildFrameExt;
+  virtual RenderWidgetHostViewChildFrameExt*
+  AsWebRenderWidgetHostViewChildFrameExt() {
+    return nullptr;
+  }
+#endif
   // TODO(crbug.com/40170974): Pass multi-screen info from the parent.
   static RenderWidgetHostViewChildFrame* Create(
       RenderWidgetHost* widget,
@@ -425,5 +432,7 @@ class CONTENT_EXPORT RenderWidgetHostViewChildFrame
 };
 
 }  // namespace content
-
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "arkweb/chromium_ext/content/browser/renderer_host/render_widget_host_view_child_frame_ext.h"
+#endif
 #endif  // CONTENT_BROWSER_RENDERER_HOST_RENDER_WIDGET_HOST_VIEW_CHILD_FRAME_H_

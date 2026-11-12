@@ -156,6 +156,8 @@ std::string GetPlatformString() {
   // Default BSD and SOLARIS to Linux to not break those builds, although these
   // platforms are not officially supported by Chrome.
   return "linux";
+#elif BUILDFLAG(IS_OHOS)
+  return "ohos";
 #else
 #error Unknown platform
 #endif
@@ -636,6 +638,13 @@ void VariationsService::EnsureLocaleEquals(const std::string& locale) {
   }
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  if (locale.empty()) {
+    LOG(ERROR) << "param locale is null";
+    return;
+  }
+#endif
+
   // Uses a CHECK rather than a DCHECK to ensure that issues are caught since
   // problems in this area may only appear in the wild due to official builds
   // and end user machines.
@@ -648,6 +657,9 @@ void VariationsService::EnsureLocaleEquals(const std::string& locale) {
     base::debug::ScopedCrashKeyString scoped_lhs(lhs_key, locale);
     base::debug::ScopedCrashKeyString scoped_rhs(
         rhs_key, field_trial_creator_.application_locale());
+#if BUILDFLAG(IS_OHOS)
+    LOG(ERROR) << "locale: " << locale << " application_locale: " << field_trial_creator_.application_locale();
+#endif
     CHECK_EQ(locale, field_trial_creator_.application_locale());
   }
 #endif

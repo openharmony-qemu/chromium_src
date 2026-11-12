@@ -1,0 +1,18 @@
+diff a/components/translate/core/browser/translate_script.cc b/components/translate/core/browser/translate_script.cc	(rejected hunks)
+@@ -30,12 +30,16 @@ namespace {
+ 
+ const int kExpirationDelayDays = 1;
+ 
+ }  // namespace
+ 
++#if BUILDFLAG(IS_ARKWEB)
++const char TranslateScript::kScriptURL[] = "https://x.x.x.x";
++#else
+ const char TranslateScript::kScriptURL[] =
+     "https://translate.googleapis.com/translate_a/element.js";
++#endif // BUILDFLAG(IS_ARKWEB)
+ 
+ const char TranslateScript::kRequestHeaderName[] =
+     "Google-Translate-Element-Mode";
+ const char TranslateScript::kRequestHeaderValue[] = "library";
+ const char TranslateScript::kAlwaysUseSslQueryName[] = "aus";

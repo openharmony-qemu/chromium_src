@@ -1,0 +1,21 @@
+diff a/components/subresource_filter/content/shared/browser/ruleset_publisher_unittest.cc b/components/subresource_filter/content/shared/browser/ruleset_publisher_unittest.cc
+--- a/components/subresource_filter/content/shared/browser/ruleset_publisher_unittest.cc
++++ b/components/subresource_filter/content/shared/browser/ruleset_publisher_unittest.cc
+@@ -45,10 +45,17 @@ namespace subresource_filter {
+ namespace {
+ 
+ using MockClosureTarget =
+     ::testing::StrictMock<::testing::MockFunction<void()>>;
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++class MockRulesetServiceClient : public RulesetServiceClient {
++ public:
++  void OnDeleteRulesetFile() override {}
++};
++#endif
++
+ class NotifyingMockRenderProcessHost : public content::MockRenderProcessHost {
+  public:
+   explicit NotifyingMockRenderProcessHost(
+       content::BrowserContext* browser_context,
+       content::RenderProcessHostCreationObserver* observer)

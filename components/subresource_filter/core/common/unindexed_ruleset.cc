@@ -7,6 +7,7 @@
 #include "base/check.h"
 #include "base/check_op.h"
 #include "base/numerics/safe_conversions.h"
+#include "arkweb/chromium_ext/components/subresource_filter/core/common/unindexed_ruleset_for_include.cc"
 #include "components/url_pattern_index/proto/rules.pb.h"
 #include "third_party/protobuf/src/google/protobuf/io/coded_stream.h"
 #include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream.h"

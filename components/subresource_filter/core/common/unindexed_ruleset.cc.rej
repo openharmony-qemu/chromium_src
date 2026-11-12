@@ -1,0 +1,32 @@
+diff a/components/subresource_filter/core/common/unindexed_ruleset.cc b/components/subresource_filter/core/common/unindexed_ruleset.cc	(rejected hunks)
+@@ -58,20 +59,30 @@ bool UnindexedRulesetWriter::AddUrlRule(const proto::UrlRule& rule) {
+   return true;
+ }
+ 
+ bool UnindexedRulesetWriter::Finish() {
+   CHECK(!had_error());
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  const bool success =
++      (!pending_chunk_.url_rules_size() && !pending_chunk_.css_rules_size()) ||
++      WritePendingChunk();
++#else
+   const bool success = !pending_chunk_.url_rules_size() || WritePendingChunk();
++#endif
+   if (success) {
+     coded_stream_.Trim();
+   }
+   return success;
+ }
+ 
+ bool UnindexedRulesetWriter::WritePendingChunk() {
+   CHECK(!had_error());
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  DCHECK_GT(pending_chunk_.url_rules_size() || pending_chunk_.css_rules_size(), 0);
++#else
+   CHECK_GT(pending_chunk_.url_rules_size(), 0);
++#endif
+ 
+   proto::FilteringRules chunk;
+   chunk.Swap(&pending_chunk_);
+   coded_stream_.WriteVarint32(
+       base::checked_cast<uint32_t>(chunk.ByteSizeLong()));

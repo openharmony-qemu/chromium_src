@@ -1,0 +1,15 @@
+diff a/components/ukm/ukm_recorder_impl.cc b/components/ukm/ukm_recorder_impl.cc	(rejected hunks)
+@@ -81,10 +81,13 @@ bool IsAllowlistedSourceId(SourceId source_id) {
+ // Returns whether |url| has one of the schemes supported for logging to UKM.
+ // URLs with other schemes will not be logged.
+ bool HasSupportedScheme(const GURL& url) {
+   return url.SchemeIsHTTPOrHTTPS() || url.SchemeIs(url::kAboutScheme) ||
+          url.SchemeIs(kChromeUIScheme) || url.SchemeIs(kExtensionScheme) ||
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++         url.SchemeIs(kArkwebExtensionScheme) ||
++#endif
+          url.SchemeIs(kAppScheme);
+ }
+ 
+ void RecordDroppedSource(DroppedDataReason reason) {
+   UMA_HISTOGRAM_ENUMERATION(

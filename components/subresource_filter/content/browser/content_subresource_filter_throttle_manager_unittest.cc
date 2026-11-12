@@ -9,6 +9,7 @@
 #include <tuple>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
@@ -1686,3 +1687,7 @@ TEST_P(ContentSubresourceFilterThrottleManagerFencedFrameTest,
 //   NavigationSimulator currently.
 
 }  // namespace subresource_filter
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/components/subresource_filter/content/browser/arkweb_content_subresource_filter_throttle_manager_ext_unittest.cc"
+#endif

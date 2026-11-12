@@ -1,0 +1,17 @@
+diff a/components/translate/core/common/translate_util.cc b/components/translate/core/common/translate_util.cc	(rejected hunks)
+@@ -11,11 +11,15 @@
+ #include "build/build_config.h"
+ #include "components/translate/core/common/translate_switches.h"
+ 
+ namespace translate {
+ 
++#if BUILDFLAG(IS_ARKWEB)
++const char kSecurityOrigin[] = "https://x.x.x.x";
++#else
+ const char kSecurityOrigin[] = "https://translate.googleapis.com/";
++#endif // BUILDFLAG(IS_ARKWEB)
+ 
+ // The feature is explicitly disabled on WebView.
+ // TODO(crbug.com/40819484): Enable the feature on WebView.
+ BASE_FEATURE(kTFLiteLanguageDetectionEnabled,
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_WIN) || \

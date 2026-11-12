@@ -51,6 +51,11 @@ struct TestRulesetPair {
 
   TestRuleset unindexed;
   TestRuleset indexed;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  TestRuleset unindexedCss;
+  TestRuleset indexedCss;
+#endif
 };
 
 // Helper class to create subresource filtering rulesets for testing.

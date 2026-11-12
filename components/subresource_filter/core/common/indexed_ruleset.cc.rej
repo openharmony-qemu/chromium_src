@@ -1,0 +1,18 @@
+diff a/components/subresource_filter/core/common/indexed_ruleset.cc b/components/subresource_filter/core/common/indexed_ruleset.cc	(rejected hunks)
+@@ -97,12 +97,16 @@ bool RulesetIndexer::AddUrlRule(const proto::UrlRule& rule) {
+ void RulesetIndexer::Finish() {
+   auto blocklist_offset = blocklist_.Finish();
+   auto allowlist_offset = allowlist_.Finish();
+   auto deactivation_offset = deactivation_.Finish();
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  auto url_rules_index_offset = AsArkWebRulesetIndexerExt()->CallCreateIndexedRuleset();
++#else
+   auto url_rules_index_offset = flat::CreateIndexedRuleset(
+       builder_, blocklist_offset, allowlist_offset, deactivation_offset);
++#endif
+   builder_.Finish(url_rules_index_offset);
+ }
+ 
+ int RulesetIndexer::GetChecksum() const {
+   return LocalGetChecksum(data());

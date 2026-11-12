@@ -305,6 +305,12 @@ bool VariationsFieldTrialCreator::SetUpFieldTrials(
       command_line->GetSwitchValueASCII(::switches::kEnableFeatures),
       command_line->GetSwitchValueASCII(::switches::kDisableFeatures));
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  feature_list->InitFromCommandLine(
+      command_line->GetSwitchValueASCII(::switches::kEnableBlinkFeatures),
+      command_line->GetSwitchValueASCII(::switches::kDisableBlinkFeatures));
+#endif
+
   // This needs to happen here: After the InitFromCommandLine() call,
   // because the explicit cmdline --disable-features and --enable-features
   // should take precedence over these extra overrides. Before the call to

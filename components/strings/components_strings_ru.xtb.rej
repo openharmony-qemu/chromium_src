@@ -1,0 +1,13 @@
+diff a/components/strings/components_strings_ru.xtb b/components/strings/components_strings_ru.xtb	(rejected hunks)
+@@ -2149,10 +2149,11 @@
+ <translation id="4432792777822557199">Страницы на этом языке (<ph name="SOURCE_LANGUAGE" />) будут автоматически переводиться на <ph name="TARGET_LANGUAGE" /></translation>
+ <translation id="4433642172056592619">Игнорируется, так как пользователь не связан с управлением этой машиной или она не находится под управлением.</translation>
+ <translation id="4434017585895599560">Аренда жилой недвижимости</translation>
+ <translation id="4434045419905280838">Всплывающие окна и переадресация</translation>
+ <translation id="443673843213245140">Прокси-сервер отключен, но при этом его конфигурация задана явным образом.</translation>
++<translation id="4437124607000705911">Отмена</translation>
+ <translation id="4438821706955556403">Средняя цена</translation>
+ <translation id="444116852243722675">Открыть все (<ph name="ITEMS" />)</translation>
+ <translation id="4441832193888514600">Игнорируется, так как правило может быть настроено только на уровне облака.</translation>
+ <translation id="4445133368066241428">Популярные темы</translation>
+ <translation id="4445694043187340808"><ph name="STARTER_PACK_TABS_FOCUSED_FRIENDLY_MATCH_TEXT" />. Чтобы найти нужные вкладки, нажмите Ввод.</translation>

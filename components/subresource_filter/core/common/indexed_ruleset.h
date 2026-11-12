@@ -64,6 +64,11 @@ enum class VerifyStatus {
 // FlatBufferBuilder storing the structures.
 class RulesetIndexer {
  public:
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+   friend class ArkWebRulesetIndexerExt;
+   virtual ArkWebRulesetIndexerExt *AsArkWebRulesetIndexerExt() { return nullptr; }
+#endif
+
   // The current binary format version of the indexed ruleset.
   //
   // Increase this value when introducing an incompatible change in

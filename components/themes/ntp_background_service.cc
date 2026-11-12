@@ -32,10 +32,19 @@ namespace {
 constexpr char kCollectionsBaseUrlCmdlineSwitch[] = "collections-base-url";
 
 // The default base URL to download prod collections.
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr char kCollectionsBaseUrl[] = "https://***";
+#else
 constexpr char kCollectionsBaseUrl[] = "https://clients3.google.com";
+#endif
+
 
 // The default base URL to download alpha collections.
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr char kAlphaCollectionsBaseUrl[] = "https://***";
+#else
 constexpr char kAlphaCollectionsBaseUrl[] = "https://clients5.google.com";
+#endif
 
 // The MIME type of the POST data sent to the server.
 constexpr char kProtoMimeType[] = "application/x-protobuf";

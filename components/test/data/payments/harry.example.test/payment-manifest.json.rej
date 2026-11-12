@@ -1,0 +1,8 @@
+diff a/components/test/data/payments/harry.example.test/payment-manifest.json b/components/test/data/payments/harry.example.test/payment-manifest.json	(rejected hunks)
+@@ -1,3 +1,3 @@
+ {
+-  "default_applications": ["https://harry.example.test/app.json"]
+-}
++  "default_applications": ["./app.json"]
++}
+\ No newline at end of file

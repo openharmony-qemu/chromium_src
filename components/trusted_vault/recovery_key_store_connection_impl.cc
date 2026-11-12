@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/barrier_closure.h"
 #include "base/functional/bind.h"
 #include "base/notreached.h"
@@ -34,11 +35,20 @@ namespace {
 
 // The "/0" suffix is required but ignored.
 constexpr char kUpdateVaultUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://***";
+#else
     "https://cryptauthvault.googleapis.com/v1/vaults/0";
+#endif
 
 constexpr char kListVaultsUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://***/"
+    "***";
+#else
     "https://cryptauthvault.googleapis.com/v1/"
     "vaults?use_case=13&challenge_not_required=1";
+#endif
 
 constexpr char kRecoveryKeyStoreCertFileUrl[] =
     "https://www.gstatic.com/cryptauthvault/v0/cert.xml";

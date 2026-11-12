@@ -1,0 +1,13 @@
+diff a/components/strings/components_strings_th.xtb b/components/strings/components_strings_th.xtb	(rejected hunks)
+@@ -2149,10 +2149,11 @@
+ <translation id="4432792777822557199">จากนี้ไประบบจะแปลหน้าภาษา<ph name="SOURCE_LANGUAGE" />เป็นภาษา<ph name="TARGET_LANGUAGE" /></translation>
+ <translation id="4433642172056592619">ละเว้นเนื่องจากผู้ใช้ไม่ได้เชื่อมโยงกับการจัดการเครื่อง หรือเครื่องไม่มีการจัดการ</translation>
+ <translation id="4434017585895599560">บริการเช่าที่อยู่อาศัย</translation>
+ <translation id="4434045419905280838">ป๊อปอัปและการเปลี่ยนเส้นทาง</translation>
+ <translation id="443673843213245140">การใช้พร็อกซีถูกปิดใช้งาน แต่มีการระบุการกำหนดค่าพร็อกซีอย่างชัดเจน</translation>
++<translation id="4437124607000705911">ยกเลิก</translation>
+ <translation id="4438821706955556403">ราคาปกติ</translation>
+ <translation id="444116852243722675">เปิดทั้งหมด (<ph name="ITEMS" />)</translation>
+ <translation id="4441832193888514600">ถูกละเว้นเนื่องจากนโยบายจะต้องตั้งค่าเป็นนโยบายผู้ใช้ระบบคลาวด์เท่านั้น</translation>
+ <translation id="4445133368066241428">หัวข้อยอดนิยม</translation>
+ <translation id="4445694043187340808"><ph name="STARTER_PACK_TABS_FOCUSED_FRIENDLY_MATCH_TEXT" /> กด Enter เพื่อค้นหาแท็บ</translation>

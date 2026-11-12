@@ -1,0 +1,16 @@
+diff a/components/sync_preferences/pref_service_syncable.h b/components/sync_preferences/pref_service_syncable.h	(rejected hunks)
+@@ -103,10 +103,14 @@ class PrefServiceSyncable : public PrefService,
+   void AddObserver(PrefServiceSyncableObserver* observer);
+   void RemoveObserver(PrefServiceSyncableObserver* observer);
+ 
+   syncer::SyncableService* GetSyncableService(const syncer::DataType& type);
+ 
++#if BUILDFLAG(ARKWEB_PREFS)
++  user_prefs::PrefRegistrySyncable* GetPrefRegistrySyncable();
++#endif // ARKWEB_PREFS
++
+   // Do not call this after having derived an incognito or per tab pref service.
+   void UpdateCommandLinePrefStore(PrefStore* cmd_line_store) override;
+ 
+   void AddSyncedPrefObserver(const std::string& name,
+                              SyncedPrefObserver* observer);

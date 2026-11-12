@@ -1,0 +1,14 @@
+diff a/components/sync_device_info/local_device_info_util.cc b/components/sync_device_info/local_device_info_util.cc	(rejected hunks)
+@@ -82,11 +82,11 @@ void OnMachineStatisticsLoaded(LocalDeviceNameInfo* name_info_ptr,
+ }  // namespace
+ 
+ sync_pb::SyncEnums::DeviceType GetLocalDeviceType() {
+ #if BUILDFLAG(IS_CHROMEOS)
+   return sync_pb::SyncEnums_DeviceType_TYPE_CROS;
+-#elif BUILDFLAG(IS_LINUX)
++#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+   return sync_pb::SyncEnums_DeviceType_TYPE_LINUX;
+ #elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+   switch (ui::GetDeviceFormFactor()) {
+     case ui::DEVICE_FORM_FACTOR_TABLET:
+       return sync_pb::SyncEnums_DeviceType_TYPE_TABLET;

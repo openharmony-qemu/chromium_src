@@ -1,0 +1,20 @@
+diff a/components/supervised_user/core/common/supervised_user_constants.cc b/components/supervised_user/core/common/supervised_user_constants.cc	(rejected hunks)
+@@ -110,12 +110,18 @@ const char kSupervisedUserTopLevelURLFilteringResult2HistogramName[] =
+     "ManagedUsers.TopLevelFilteringResult2";
+ 
+ const char kLocalWebApprovalResultHistogramName[] =
+     "FamilyLinkUser.LocalWebApprovalResult";
+ 
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++const char kManagedByParentUiMoreInfoUrl[] =
++    "https://x.x.x"; 
++#else
++// The URL for providing more information about Google nameservers.
+ const char kManagedByParentUiMoreInfoUrl[] =
+     "https://familylink.google.com/setting/resource/94";
++#endif
+ 
+ const char kFamilyManagementUrl[] =
+     "https://myaccount.google.com/family/details";
+ 
+ const char kDefaultEmptyFamilyMemberRole[] = "not_in_family";

@@ -1,0 +1,21 @@
+diff a/components/subresource_filter/content/browser/profile_interaction_manager.cc b/components/subresource_filter/content/browser/profile_interaction_manager.cc	(rejected hunks)
+@@ -46,12 +50,19 @@ void ProfileInteractionManager::OnReloadRequested() {
+   CHECK(page_);
+   CHECK(page_->IsPrimary());
+ 
+   ContentSubresourceFilterThrottleManager::LogAction(
+       SubresourceFilterAction::kAllowlistedSite);
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  if (profile_context_ && page_) {
++    profile_context_->settings_manager()->AllowlistSite(
++        page_->GetMainDocument().GetLastCommittedURL());
++  }
++#else
+   profile_context_->settings_manager()->AllowlistSite(
+       page_->GetMainDocument().GetLastCommittedURL());
++#endif
+ 
+   // Since the reload comes from the primary page, the use of WebContents here
+   // is correct.
+   GetWebContents()->GetController().Reload(content::ReloadType::NORMAL, true);
+ }

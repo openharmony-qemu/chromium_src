@@ -6,6 +6,7 @@
 #define COMPONENTS_UKM_SCHEME_CONSTANTS_H_
 
 #include "base/component_export.h"
+#include "base/feature_list.h"
 
 namespace ukm {
 

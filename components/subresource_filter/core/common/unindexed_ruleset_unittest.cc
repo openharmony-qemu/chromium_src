@@ -255,4 +255,56 @@ TEST(UnindexedRulesetTest, ReadCorruptedInput) {
   }
 }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+bool IsCssRulesetValid(const std::string& ruleset_contents,
+                       const std::vector<proto::CssRule>& expected_css_rules) {
+  google::protobuf::io::ArrayInputStream array_input(ruleset_contents.data(),
+                                                     ruleset_contents.size());
+  UnindexedRulesetReader reader(&array_input);
+  proto::FilteringRules chunk;
+  std::vector<proto::CssRule> read_rules;
+  while (reader.ReadNextChunk(&chunk)) {
+    read_rules.insert(read_rules.end(), chunk.css_rules().begin(),
+                      chunk.css_rules().end());
+  }
+  if (base::checked_cast<size_t>(reader.num_bytes_read()) !=
+      ruleset_contents.size()) {
+    return false;
+  }
+  if (expected_css_rules.size() != read_rules.size())
+    return false;
+
+  for (size_t i = 0, size = read_rules.size(); i != size; ++i) {
+    if (expected_css_rules[i].SerializeAsString() !=
+        read_rules[i].SerializeAsString())
+      return false;
+  }
+  return true;
+}
+
+TEST(UnindexedRulesetTest, OneCssRule) {
+  UnindexedRulesetTestBuilder builder;
+  EXPECT_TRUE(builder.AddCssRule(".advertisement"));
+  EXPECT_TRUE(builder.Finish());
+  EXPECT_TRUE(
+      IsCssRulesetValid(builder.ruleset_contents(), builder.css_rules()));
+}
+
+TEST(UnindexedRulesetTest, ExactlyMaxCssRulesPerChunk) {
+  UnindexedRulesetTestBuilder builder;
+  EXPECT_TRUE(builder.AddCssRules(builder.max_rules_per_chunk()));
+  EXPECT_TRUE(builder.Finish());
+  EXPECT_TRUE(
+      IsCssRulesetValid(builder.ruleset_contents(), builder.css_rules()));
+}
+
+TEST(UnindexedRulesetTest, MaxCssRulesPerChunkPlusOne) {
+  UnindexedRulesetTestBuilder builder;
+  EXPECT_TRUE(builder.AddCssRules(builder.max_rules_per_chunk() + 1));
+  EXPECT_TRUE(builder.Finish());
+  EXPECT_TRUE(
+      IsCssRulesetValid(builder.ruleset_contents(), builder.css_rules()));
+}
+#endif
+
 }  // namespace subresource_filter

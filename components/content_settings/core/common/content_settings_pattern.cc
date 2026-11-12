@@ -42,6 +42,9 @@ constexpr auto kSchemeNames = std::to_array<const char*>({
     url::kHttpsScheme,
     url::kFileScheme,
     "chrome-extension",
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    "arkweb-extension",
+#endif
     "chrome-search",
     "chrome",
     "chrome-untrusted",

@@ -2,6 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
+if (is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+
 import("//base/debug/debug.gni")
 import("//build/config/cast.gni")
 import("//build/config/chrome_build.gni")
@@ -75,6 +80,7 @@ if (is_ios) {
   }
 }
 
+if (!arkweb_unittests) {
 disallowed_extension_deps_ = [
   # Components should largely not depend on //extensions. Since // extensions
   # is not a component target and is linked with //chrome, depending on most
@@ -429,6 +435,17 @@ test("components_unittests") {
     deps += [
       "//components/allocation_recorder/crash_client:unit_tests",
       "//components/allocation_recorder/crash_handler:unit_tests",
+    ]
+  }
+
+  if (arkweb_unittests) {
+    sources = [ "//arkweb/chromium_ext/chrome/browser/password_manager/keyboard_suppressor_ohos_unittest.cc" ]
+
+    deps += [
+      "//cef:libcef_static",
+      "//chrome/browser",
+      "//components/autofill/content/browser:test_support",
+      "//components/autofill/core/common:test_support",
     ]
   }
 
@@ -1001,8 +1018,11 @@ test("components_unittests") {
   # No components should depend on Chrome.
   # Since //chrome depends on //extensions, we also only assert_no_deps on
   # extensions targets.
-  assert_no_deps = [ "//chrome/*" ]
+  assert_no_deps = []
+  if (!arkweb_unittests) {
+    assert_no_deps += "//chrome/*"
   assert_no_deps += disallowed_extension_deps_
+  }
 
   if (is_ios) {
     assert_no_deps += ios_assert_no_deps
@@ -1161,6 +1181,7 @@ if (use_blink) {
       "//base/test:test_support",
       "//components/autofill/content/browser",
       "//components/autofill/content/browser:browser_tests",
+      "//components/autofill/content/browser:test_support",
       "//components/autofill/content/renderer",
       "//components/autofill/content/renderer:browser_tests",
       "//components/autofill/content/renderer:test_support",
@@ -1344,8 +1365,10 @@ if (use_blink) {
     # No components should depend on Chrome.
     # Since //chrome depends on //extensions, we also only assert_no_deps on
     # extensions targets.
+    if (!arkweb_unittests) {
     assert_no_deps = [ "//chrome/*" ]
     assert_no_deps += disallowed_extension_deps_
+    }
 
     if (is_fuchsia) {
       additional_manifest_fragments = [

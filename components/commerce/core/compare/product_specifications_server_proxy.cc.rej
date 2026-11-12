@@ -1,0 +1,31 @@
+diff a/components/commerce/core/compare/product_specifications_server_proxy.cc b/components/commerce/core/compare/product_specifications_server_proxy.cc
+--- a/components/commerce/core/compare/product_specifications_server_proxy.cc
++++ b/components/commerce/core/compare/product_specifications_server_proxy.cc
+@@ -5,10 +5,11 @@
+ #include "components/commerce/core/compare/product_specifications_server_proxy.h"
+ 
+ #include <optional>
+ #include <string>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/command_line.h"
+ #include "base/json/json_reader.h"
+ #include "base/strings/string_number_conversions.h"
+ #include "base/strings/utf_string_conversions.h"
+ #include "base/time/time.h"
+@@ -29,11 +30,15 @@ using endpoint_fetcher::EndpointResponse;
+ namespace commerce {
+ 
+ namespace {
+ 
+ const char kEndpointUrl[] =
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++    "https://x.x.x";
++#else
+     "https://memex-pa.googleapis.com/v1/shopping/products:specifications";
++#endif
+ 
+ const char kAltTextKey[] = "alternativeText";
+ const char kBuyingOptionsURLKey[] = "buyingOptionsUrl";
+ const char kDescriptionKey[] = "description";
+ const char kFaviconUrlKey[] = "faviconUrl";

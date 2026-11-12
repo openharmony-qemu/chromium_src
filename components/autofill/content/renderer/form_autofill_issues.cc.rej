@@ -1,0 +1,19 @@
+diff a/components/autofill/content/renderer/form_autofill_issues.cc b/components/autofill/content/renderer/form_autofill_issues.cc	(rejected hunks)
+@@ -212,11 +212,16 @@ void EmitFormControlIssues(const WebDocument& document,
+                            std::vector<WebFormControlElement> elements,
+                            EmitCallback emit) {
+   if (elements.size() == 0) {
+     return;
+   }
+-
++  // TODO(arkweb): https://chromium-review.googlesource.com/c/chromium/src/+/7183576
++  // #if BUILDFLAG(IS_OHOS)
++  // std::erase_if(elements, [](const WebFormControlElement& e) {
++  //   return e.IsNull();
++  // });
++  // #endif
+   const WebString label_attr = WebString::FromUTF8(kLabel);
+   WebElementCollection labels =
+       elements[0].GetDocument().GetElementsByHTMLTagName(label_attr);
+   CHECK(labels);
+ 

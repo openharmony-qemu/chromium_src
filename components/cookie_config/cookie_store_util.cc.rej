@@ -1,0 +1,14 @@
+diff a/components/cookie_config/cookie_store_util.cc b/components/cookie_config/cookie_store_util.cc	(rejected hunks)
+@@ -14,11 +14,11 @@
+ #include "net/extras/sqlite/cookie_crypto_delegate.h"
+ 
+ namespace cookie_config {
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+-    BUILDFLAG(IS_CHROMEOS)
++    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ARKWEB)
+ namespace {
+ 
+ void OnOsCryptReadyOnUi(
+     base::OnceCallback<void(os_crypt_async::Encryptor)> callback,
+     scoped_refptr<base::SequencedTaskRunner> task_runner,

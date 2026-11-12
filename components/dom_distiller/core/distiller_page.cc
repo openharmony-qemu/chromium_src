@@ -93,9 +93,20 @@ void DistillerPage::OnDistillationDone(const GURL& page_url,
             *value, distiller_result.get());
         break;
       case DistillerType::kDOMDistiller:
+#if BUILDFLAG(ARKWEB_READER_MODE)
+        if (value->is_dict() && value->GetDict().FindDict(kResultKey) != nullptr) {
+          parsed_successfully = dom_distiller::proto::json::DomDistillerResult::ReadFromValue(
+                base::Value(value->GetDict().FindDict(kResultKey)->Clone()), distiller_result.get());
+        } else {
+          parsed_successfully =
+              dom_distiller::proto::json::DomDistillerResult::ReadFromValue(
+                  *value, distiller_result.get());
+        }
+#else
         parsed_successfully =
             dom_distiller::proto::json::DomDistillerResult::ReadFromValue(
                 *value, distiller_result.get());
+#endif
         break;
     }
 

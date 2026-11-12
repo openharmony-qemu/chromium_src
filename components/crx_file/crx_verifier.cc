@@ -110,6 +110,32 @@ bool ReadHashAndVerifyArchive(base::File* file,
   return len.has_value() && len.value() == 0;
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+using ByteVec = std::vector<uint8_t>;
+
+struct VectorHash {
+  size_t operator()(const ByteVec& v) const noexcept {
+    uint64_t h = 1469598103934665603ull;
+    for (auto b : v) {
+      h ^= b;
+      h *= 1099511628211ull;
+    }
+    return h;
+  }
+};
+
+std::unordered_set<ByteVec, VectorHash> BuildAllowedPublisherSet() {
+  auto hashes = CrxKeyService::GetInstance()->GetCrx3PublicKeyHashes();
+  if (hashes.empty()) {
+    hashes.emplace_back(std::begin(kPublisherKeyHash),
+                        std::end(kPublisherKeyHash));
+    hashes.emplace_back(std::begin(kHuaweiPublisherKeyHash),
+                        std::end(kHuaweiPublisherKeyHash));
+  }
+  return std::unordered_set<ByteVec, VectorHash>(hashes.begin(), hashes.end());
+}
+#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+
 // The remaining contents of a Crx3 file are [header-size][header][archive].
 // [header] is an encoded protocol buffer and contains both a signed and
 // unsigned section. The unsigned section contains a set of key/signature pairs,

@@ -1,0 +1,45 @@
+diff a/components/download/internal/common/base_file.cc b/components/download/internal/common/base_file.cc	(rejected hunks)
+@@ -129,14 +131,26 @@ DownloadInterruptReason BaseFile::Initialize(
+     bool is_sparse_file,
+     int64_t* const bytes_wasted) {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+   DCHECK(!detached_);
+ 
++#if BUILDFLAG(ARKWEB_DOWNLOAD)
++  base::FilePath save_directory =
++      AsArkWebBaseFileExt()->GetSaveDirectory(default_directory);
++#endif
++
+   if (full_path.empty()) {
+     base::FilePath temp_file;
+-    if ((default_directory.empty() ||
+-         !base::CreateTemporaryFileInDir(default_directory, &temp_file)) &&
++    if ((
++#if BUILDFLAG(ARKWEB_DOWNLOAD)
++            save_directory.empty() ||
++            !base::CreateTemporaryFileInDir(save_directory, &temp_file)
++#else
++            default_directory.empty() ||
++            !base::CreateTemporaryFileInDir(default_directory, &temp_file)
++#endif
++                ) &&
+         !base::CreateTemporaryFile(&temp_file)) {
+       return LogInterruptReason("Unable to create", 0,
+                                 DOWNLOAD_INTERRUPT_REASON_FILE_FAILED);
+     }
+     full_path_ = temp_file;
+@@ -461,10 +475,14 @@ DownloadInterruptReason BaseFile::Open(const std::string& hash_so_far,
+       logging::SystemErrorCode error = logging::GetLastSystemErrorCode();
+       *bytes_wasted = file_size;
+       ClearFile();
+       return LogSystemError("Truncating to last known offset", error);
+     }
++
++    if (bytes_so_far_ == 0) {
++      secure_hash_ = crypto::SecureHash::Create(crypto::SecureHash::SHA256);
++    }
+   } else if (file_size < bytes_so_far_) {
+     // The file is shorter than we expected.  Our hashes won't be valid.
+     *bytes_wasted = bytes_so_far_;
+     ClearFile();
+     return LogInterruptReason("Unable to seek to last written point", 0,

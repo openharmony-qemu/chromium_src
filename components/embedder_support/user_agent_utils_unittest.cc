@@ -161,6 +161,8 @@ class UserAgentUtilsTest : public testing::Test {
         "Macintosh; Intel Mac OS X 10_15_7";
 #elif BUILDFLAG(IS_WIN)
         "Windows NT 10.0; Win64; x64";
+#elif BUILDFLAG(IS_OHOS)
+        "OHOS; OHOS x86_64";
 #elif BUILDFLAG(IS_ANDROID)
         "Linux; Android 10; K";
 #elif BUILDFLAG(IS_IOS)

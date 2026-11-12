@@ -1,0 +1,30 @@
+diff a/components/autofill/content/renderer/BUILD.gn b/components/autofill/content/renderer/BUILD.gn	(rejected hunks)
+@@ -1,9 +1,13 @@
+ # Copyright 2014 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
++if (is_arkweb) {
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++}
++
+ static_library("renderer") {
+   sources = [
+     "a11y_utils.cc",
+     "a11y_utils.h",
+     "autofill_agent.cc",
+@@ -63,10 +67,14 @@ static_library("renderer") {
+     "//third_party/re2",
+     "//ui/base",
+   ]
+ 
+   configs += [ "//build/config/compiler:wexit_time_destructors" ]
++
++if (arkweb_autofill) {
++  sources += arkweb_components_autofill_content_render_sources
++}
+ }
+ 
+ static_library("test_support") {
+   testonly = true
+   sources = [

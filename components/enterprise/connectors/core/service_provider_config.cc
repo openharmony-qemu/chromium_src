@@ -89,7 +89,11 @@ constexpr AnalysisConfig kTrellixAnalysisConfig = {
 };
 
 constexpr ReportingConfig kGoogleReportingConfig = {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    .url = "https://x.x.x",
+#else
     .url = "https://chromereporting-pa.googleapis.com/v1/events",
+#endif
 };
 
 }  // namespace

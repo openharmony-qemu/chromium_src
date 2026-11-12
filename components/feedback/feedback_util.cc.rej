@@ -1,0 +1,20 @@
+diff a/components/feedback/feedback_util.cc b/components/feedback/feedback_util.cc	(rejected hunks)
+@@ -32,14 +32,14 @@ constexpr char kMultilineEndString[] = "---------- END ----------\n\n";
+ namespace feedback_util {
+ 
+ std::optional<std::string> ZipString(const base::FilePath& filename,
+                                      std::string_view data) {
+   std::optional<base::SafeBaseName> safe_name = 
+- 	    base::SafeBaseName::Create(filename);
+- 	if (!safe_name || safe_name->path() != filename) {
+- 	  return std::nullopt;
+- 	}
++      base::SafeBaseName::Create(filename);
++  if (!safe_name || safe_name->path() != filename) {
++    return std::nullopt;
++  }
+ 
+   base::ScopedTempDir temp_dir;
+   base::FilePath zip_file;
+ 
+   // Create a temporary directory, put the logs into a file in it. Create

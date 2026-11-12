@@ -1,0 +1,42 @@
+diff a/components/autofill/content/renderer/autofill_agent.h b/components/autofill/content/renderer/autofill_agent.h	(rejected hunks)
+@@ -10,10 +10,11 @@
+ #include <set>
+ #include <string>
+ #include <variant>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/compiler_specific.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/raw_ref.h"
+ #include "base/memory/weak_ptr.h"
+ #include "base/time/time.h"
+@@ -258,10 +271,14 @@ class AutofillAgent : public content::RenderFrameObserver,
+ 
+   void DidCommitProvisionalLoad(ui::PageTransition transition) override;
+   void DidCreateDocumentElement() override;
+   void DidDispatchDOMContentLoadedEvent() override;
+   void DidChangeScrollOffset() override;
++#if BUILDFLAG(ARKWEB_AUTOFILL)
++  void OnMainFrameViewportRectangleChanged(
++      const gfx::Rect& main_frame_viewport_rect) override;
++#endif
+   void AccessibilityModeChanged(const ui::AXMode& mode) override;
+   void OnDestruct() override;
+ 
+   // This function fires `FocusOnFormField()` xor `FocusOnNonFormField()`:
+   // - It calls `FocusOnFormField()` iff the newly focused element is a non-null
+@@ -322,10 +339,13 @@ class AutofillAgent : public content::RenderFrameObserver,
+                               const blink::WebString& old_value,
+                               bool was_autofilled) override;
+   void DidCompleteFocusChangeInFrame() override;
+   void DidReceiveLeftMouseDownOrGestureTapInNode(
+       const blink::WebNode& node) override;
++#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
++  void PreSuppressKeyboardIfNeed(const blink::WebNode& node) override;
++#endif
+   void SelectFieldOptionsChanged(
+       const blink::WebFormControlElement& element) override;
+   void SelectControlSelectionChanged(
+       const blink::WebFormControlElement& element) override;
+   void FormElementReset(const blink::WebFormElement& form) override;

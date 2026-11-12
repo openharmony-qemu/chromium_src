@@ -1,0 +1,48 @@
+diff a/components/enterprise/buildflags/buildflags.gni b/components/enterprise/buildflags/buildflags.gni	(rejected hunks)
+@@ -3,40 +3,41 @@
+ # found in the LICENSE file.
+ 
+ import("//build/config/cast.gni")
+ import("//build/config/chromeos/args.gni")
+ import("//build/config/ui.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ declare_args() {
+   # Indicates support for content analysis against a cloud agent for Enterprise
+   # Connector policies.
+   enterprise_cloud_content_analysis =
+-      is_win || is_mac || is_linux || is_chromeos
++      is_win || is_mac || is_linux || is_chromeos || is_ohos
+ 
+   # Indicates support for content analysis against a cloud agent for Enterprise
+   # Connector policies.
+   enterprise_local_content_analysis = is_win || is_mac || is_linux
+ 
+   # Indicates support for Data Control rules.
+   enterprise_data_controls =
+-      is_win || is_mac || is_linux || is_chromeos || is_android || is_ios
++      is_win || is_mac || is_linux || is_chromeos || is_android || is_ios || is_ohos
+ 
+   # Indicates support for client certificates provisioning.
+-  enterprise_client_certificates = is_win || is_mac || is_linux || is_android
++  enterprise_client_certificates = is_win || is_mac || is_linux || is_android || arkweb_asan
+ 
+   # The watermark is currently implemented using the views framework.
+   enterprise_watermark =
+-      toolkit_views && (is_win || is_mac || is_linux || is_chromeos) &&
++      toolkit_views && (is_win || is_mac || is_linux || is_chromeos || is_ohos) &&
+       !is_castos
+ 
+   enterprise_screenshot_protection = is_win || is_mac
+ 
+   enterprise_telomere_reporting = is_win || is_mac || is_linux
+ 
+   # Support on all platforms except for iOS since it uses `WKWebView` cache.
+   enterprise_cache_encryption =
+-      is_win || is_mac || is_linux || is_chromeos || is_android
++      is_win || is_mac || is_linux || is_chromeos || is_android || is_ohos
+ }
+ 
+ declare_args() {
+   # Indicates if any content analysis support is present, whether local or
+   # cloud. This is used to improve readability of code and avoid relying on

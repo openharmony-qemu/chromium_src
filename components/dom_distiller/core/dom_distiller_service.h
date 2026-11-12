@@ -15,6 +15,8 @@
 #include "components/dom_distiller/core/distiller_page.h"
 #include "components/dom_distiller/core/distiller_ui_handle.h"
 
+#include "arkweb/chromium_ext/components/dom_distiller/core/dom_distiller_service_utils.h"
+
 class GURL;
 
 namespace dom_distiller {
@@ -25,6 +27,7 @@ class DistillerPageFactory;
 class TaskTracker;
 class ViewerHandle;
 class ViewRequestDelegate;
+class DomDistillerServiceUtils;
 
 // Service for interacting with the Dom Distiller.
 // Construction, destruction, and usage of this service must happen on the same
@@ -138,6 +141,8 @@ class DomDistillerService : public DomDistillerServiceInterface {
 
   typedef std::vector<std::unique_ptr<TaskTracker>> TaskList;
   TaskList tasks_;
+
+  std::unique_ptr<DomDistillerServiceUtils> service_utils_;
 
   base::WeakPtrFactory<DomDistillerService> weak_ptr_factory_;
 };

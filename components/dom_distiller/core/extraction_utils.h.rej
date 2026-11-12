@@ -1,0 +1,30 @@
+diff a/components/dom_distiller/core/extraction_utils.h b/components/dom_distiller/core/extraction_utils.h	(rejected hunks)
+@@ -6,18 +6,28 @@
+ #define COMPONENTS_DOM_DISTILLER_CORE_EXTRACTION_UTILS_H_
+ 
+ #include <string>
+ 
+ #include "third_party/dom_distiller_js/dom_distiller.pb.h"
++#include "build/buildflag.h"
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ 
+ namespace dom_distiller {
+ 
+ // Returns the DomDistiller JavaScript web page distillation script with
+ // selected distallation `options`.
+ std::string GetDistillerScriptWithOptions(
+     const dom_distiller::proto::DomDistillerOptions& options);
+ 
++#if BUILDFLAG(ARKWEB_READER_MODE)
++std::string GetDistillerScriptWithOptionsOhos(
++    const dom_distiller::proto::DomDistillerOptions& options, bool is_distill_catalog);
++#endif
++
+ // Returns the Readability JavaScript web page distillation script.
+ std::string GetReadabilityDistillerScript();
+ 
+ // Returns the Javascript heuristic to determine if web pages are suitable for
+ // reader mode.

@@ -1,0 +1,13 @@
+diff a/components/autofill/core/browser/BUILD.gn b/components/autofill/core/browser/BUILD.gn	(rejected hunks)
+@@ -105,10 +105,11 @@ executable("country_native_names_generator") {
+     "//base",
+     "//base:i18n",
+     "//components/autofill/core/browser:country_data",
+     "//third_party/icu",
+   ]
++  ldflags = [ "-lgcc_s" ]
+ }
+ 
+ compiled_action("generate_country_native_names") {
+   tool = ":country_native_names_generator"
+   outputs = [ "$target_gen_dir/geo/country_native_names_inl.h" ]

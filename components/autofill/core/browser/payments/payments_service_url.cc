@@ -21,7 +21,24 @@
 
 namespace autofill {
 namespace {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kProdPaymentsServiceUrl[] = "https://x.x.x.x/";
+const char kSandboxPaymentsSecureServiceUrl[] = "https://x.x.x.x/";
 
+const char kProdGooglePayScriptOrigin[] = "https://x.x.x.x/";
+const char kSandboxGooglePayScriptOrigin[] = "https://x.x.x.x/";
+
+const char kProdPaymentsManageCardsUrl[] = "https://x.x.x.x/";
+const char kSandboxPaymentsManageCardsUrl[] = "https://x.x.x.x/";
+
+const char kManageLoyaltyCardsUrl[] = "https://x.x.x.x/";
+
+const char kVirtualCardEnrollmentSupportUrl[] = "https://x.x.x.x/";
+
+constexpr char kBnplAffirmTermsUrl[] = "https://x.x.x.x/";
+constexpr char kBnplZipTermsUrl[] = "https://x.x.x.x/";
+constexpr char kBnplKlarnaTermsUrl[] = "https://x.x.x.x/";
+#else
 // Service URLs used for calls to Google Payments endpoints.
 const char kProdPaymentsServiceUrl[] = "https://payments.google.com/";
 const char kSandboxPaymentsSecureServiceUrl[] =
@@ -79,6 +96,7 @@ constexpr char kBnplZipTermsUrl[] =
     "https://support.google.com/googlepay?p=bnpl_autofill_chrome";
 constexpr char kBnplKlarnaTermsUrl[] =
     "https://support.google.com/googlepay?p=bnpl_autofill_chrome";
+#endif
 }  // namespace
 
 namespace payments {

@@ -37,12 +37,23 @@
 #include "components/enterprise/obfuscation/core/download_obfuscator.h"  // nogncheck
 #endif  // BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
 
+#include "base/functional/callback_forward.h"
+
 namespace download {
 
 class DownloadDestinationObserver;
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+class ArkWebDownloadFileImplExt;
+#endif
 
 class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
  public:
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  friend class ArkWebDownloadFileImplExt;
+  ArkWebDownloadFileImplExt* AsArkWebDownloadFileImplExt() override {
+    return nullptr;
+  }
+#endif
   // Takes ownership of the object pointed to by |save_info|.
   // |net_log| will be used for logging the download file's events.
   // May be constructed on any thread.  All methods besides the constructor
@@ -229,6 +240,10 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
                         // |new_path|, try to create a unique file by appending
                         // a uniquifier.
     ANNOTATE_WITH_SOURCE_INFORMATION = 1 << 1
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+    ,
+    OVERWRITE = 10 << 1 // Don’t uniquify and annotate.
+#endif  // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   };
 
   struct RenameParameters {
@@ -336,7 +351,11 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
   void DebugStates() const;
 
   // The base file instance.
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  ArkWebBaseFileExt file_;
+#else
   BaseFile file_;
+#endif
 
   // DownloadSaveInfo provided during construction. Since the DownloadFileImpl
   // can be created on any thread, this holds the save_info_ until it can be
@@ -400,5 +419,9 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
 };
 
 }  // namespace download
+
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+#include "arkweb/chromium_ext/components/download/public/common/arkweb_download_file_impl_ext.h"
+#endif
 
 #endif  // COMPONENTS_DOWNLOAD_PUBLIC_COMMON_DOWNLOAD_FILE_IMPL_H_

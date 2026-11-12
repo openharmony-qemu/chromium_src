@@ -101,4 +101,5 @@ void DownloadFileWithCopy::PublishDownload(RenameCompletionCallback callback) {
   DCHECK(false);
 }
 #endif  // BUILDFLAG(IS_ANDROID)
+
 }  //  namespace download

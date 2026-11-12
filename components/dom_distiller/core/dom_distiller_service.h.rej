@@ -1,0 +1,18 @@
+diff a/components/dom_distiller/core/dom_distiller_service.h b/components/dom_distiller/core/dom_distiller_service.h	(rejected hunks)
+@@ -87,11 +90,16 @@ class DomDistillerService : public DomDistillerServiceInterface {
+   DistillerUIHandle* GetDistillerUIHandle() override;
+   base::WeakPtr<DomDistillerService> GetWeakPtr();
+ 
+   bool HasTaskTrackerForTesting(const GURL& url) const;
+ 
++  DomDistillerServiceUtils* utils() {
++    return service_utils_.get();
++  }
++
+  private:
++  friend DomDistillerServiceUtils;
+   void CancelTask(TaskTracker* task);
+ 
+   TaskTracker* CreateTaskTracker(const ArticleEntry& entry);
+ 
+   TaskTracker* GetTaskTrackerForUrl(const GURL& url) const;

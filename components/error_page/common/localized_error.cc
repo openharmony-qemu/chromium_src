@@ -50,7 +50,11 @@ const char kChromeUIScheme[] = "chrome";
 const char kChromeUIDinoHost[] = "dino";
 
 static const char kRedirectLoopLearnMoreUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://***";
+#else
     "https://support.google.com/chrome?p=rl_error";
+#endif
 
 enum NAV_SUGGESTIONS {
   SUGGEST_NONE = 0,

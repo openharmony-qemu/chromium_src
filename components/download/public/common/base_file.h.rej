@@ -1,0 +1,44 @@
+diff a/components/download/public/common/base_file.h b/components/download/public/common/base_file.h	(rejected hunks)
+@@ -9,10 +9,14 @@
+ #include <stdint.h>
+ 
+ #include <memory>
+ #include <string>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/check.h"
+ #include "base/files/file.h"
+ #include "base/files/file_path.h"
+ #include "base/functional/callback.h"
+ #include "base/functional/callback_forward.h"
+@@ -31,17 +35,27 @@
+ #include "url/gurl.h"
+ #include "url/origin.h"
+ 
+ namespace download {
+ 
++#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
++void InitializeFile(base::File* file, const base::FilePath& file_path);
++class ArkWebBaseFileExt;
++#endif
++
+ // File being downloaded and saved to disk. This is a base class
+ // for DownloadFile and SaveFile, which keep more state information. BaseFile
+ // considers itself the owner of the physical file and will delete it when the
+ // BaseFile object is destroyed unless the ownership is revoked via a call to
+ // Detach().
+ class COMPONENTS_DOWNLOAD_EXPORT BaseFile {
+  public:
++#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
++  friend class ArkWebBaseFileExt;
++  virtual ArkWebBaseFileExt* AsArkWebBaseFileExt() { return nullptr; }
++#endif
++
+   // Given a source and a referrer, determines the "safest" URL that can be used
+   // to determine the authority of the download source. Returns an empty URL if
+   // no HTTP/S URL can be determined for the <|source_url|, |referrer_url|>
+   // pair.
+   static GURL GetEffectiveAuthorityURL(const GURL& source_url,

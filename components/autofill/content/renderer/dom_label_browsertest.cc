@@ -164,7 +164,7 @@ INSTANTIATE_TEST_SUITE_P(,
                          DomLabelTest,
                          testing::ValuesIn(GetTests()),
                          GenerateTestName);
-
+#endif  // !BUILDFLAG(ARKWEB_UNITTESTS)
 }  // namespace
 
 }  // namespace autofill

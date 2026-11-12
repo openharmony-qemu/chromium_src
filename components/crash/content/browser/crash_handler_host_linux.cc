@@ -40,7 +40,7 @@
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ARKWEB_CRASHPAD)
 #include "third_party/breakpad/breakpad/src/client/linux/handler/exception_handler.h"  // nogncheck
 #include "third_party/breakpad/breakpad/src/client/linux/minidump_writer/linux_dumper.h"  // nogncheck
 #include "third_party/breakpad/breakpad/src/client/linux/minidump_writer/minidump_writer.h"  // nogncheck
@@ -50,7 +50,7 @@
 #define SYS_read __NR_read
 #endif
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_CRASHPAD)
 #include "components/crash/core/app/crashpad.h"
 #include "third_party/crashpad/crashpad/client/crashpad_client.h"  // nogncheck
 #include "third_party/crashpad/crashpad/util/posix/signals.h"      // nogncheck
@@ -58,7 +58,7 @@
 
 using content::BrowserThread;
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ARKWEB_CRASHPAD)
 
 using google_breakpad::ExceptionHandler;
 
@@ -526,7 +526,6 @@ int CrashHandlerHost::GetDeathSignalSocket() {
       FROM_HERE,
       base::BindOnce(&CrashHandlerHost::Init, base::Unretained(this)));
   DCHECK(initialized);
-
   return process_socket_.get();
 }
 

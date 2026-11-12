@@ -84,7 +84,11 @@ class DistillerImpl : public Distiller {
   DistillerImpl(const DistillerImpl&) = delete;
   DistillerImpl& operator=(const DistillerImpl&) = delete;
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void AbortDistill() override;
+#endif // ARKWEB_READER_MODE
  private:
+  friend class DistillerImplUtils;
   // In case of multiple pages, the Distiller maintains state of multiple pages
   // as page numbers relative to the page number where distillation started.
   // E.g. if distillation starts at page 2 for a 3 page article. The relative

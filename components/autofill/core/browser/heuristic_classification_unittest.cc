@@ -763,5 +763,7 @@ INSTANTIATE_TEST_SUITE_P(AllForms,
                          testing::ValuesIn(GetTestFiles()),
                          GenerateTestName);
 
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(HeuristicClassificationTests);
+
 }  // namespace
 }  // namespace autofill

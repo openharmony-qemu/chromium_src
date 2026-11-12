@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/observer_list.h"
 #include "base/strings/stringprintf.h"

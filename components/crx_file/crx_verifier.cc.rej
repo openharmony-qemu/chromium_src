@@ -1,0 +1,74 @@
+diff a/components/crx_file/crx_verifier.cc b/components/crx_file/crx_verifier.cc	(rejected hunks)
+@@ -26,10 +26,14 @@
+ #include "components/crx_file/id_util.h"
+ #include "crypto/hash.h"
+ #include "crypto/secure_util.h"
+ #include "crypto/signature_verifier.h"
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "arkweb/chromium_ext/components/crx_file/crx_key_service.h"
++#endif // ARKWEB_ARKWEB_EXTENSIONS
++
+ namespace crx_file {
+ 
+ namespace {
+ 
+ using KeyHash = std::array<uint8_t, crypto::hash::kSha256Size>;
+@@ -44,10 +48,17 @@ constexpr KeyHash kPublisherKeyHash = {
+ constexpr KeyHash kPublisherTestKeyHash = {
+     0x6c, 0x46, 0x41, 0x3b, 0x00, 0xd0, 0xfa, 0x0e, 0x72, 0xc8, 0xd2,
+     0x5f, 0x64, 0xf3, 0xa6, 0x17, 0x03, 0x0d, 0xde, 0x21, 0x61, 0xbe,
+     0xb7, 0x95, 0x91, 0x95, 0x83, 0x68, 0x12, 0xe9, 0x78, 0x1e};
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++constexpr KeyHash kHuaweiPublisherKeyHash = {
++    0x37, 0x7e, 0x82, 0x7c, 0x2c, 0x1a, 0xb6, 0x90, 0xe7, 0x89, 0x48,
++    0x08, 0x25, 0xdb, 0x59, 0xf1, 0xed, 0xb0, 0x0d, 0xde, 0xc8, 0xa4,
++    0xa3, 0xca, 0xe5, 0xaf, 0xf1, 0x00, 0x76, 0x63, 0xee, 0xc0};
++#endif
++
+ constexpr auto kEocd = std::to_array<uint8_t>({'P', 'K', 0x05, 0x06});
+ constexpr auto kEocd64 = std::to_array<uint8_t>({'P', 'K', 0x06, 0x07});
+ 
+ using VerifierCollection =
+     std::vector<std::unique_ptr<crypto::SignatureVerifier>>;
+@@ -175,10 +212,14 @@ VerifierResult VerifyCrx3(
+       std::pair<ProofFetcher, crypto::SignatureVerifier::SignatureAlgorithm>>
+       proof_types = {
+           std::make_pair(rsa, crypto::SignatureVerifier::RSA_PKCS1_SHA256),
+           std::make_pair(ecdsa, crypto::SignatureVerifier::ECDSA_SHA256)};
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  const auto allowed_set = BuildAllowedPublisherSet();
++#endif
++
+   bool found_publisher_key = false;
+ 
+   // Initialize all verifiers and update them with
+   // [prefix][signed-header-size][signed-header].
+   // Clear any elements of required_key_set that are encountered, and watch for
+@@ -188,15 +229,22 @@ VerifierResult VerifyCrx3(
+       const std::string& key = proof.public_key();
+       const std::string& sig = proof.signature();
+       if (id_util::GenerateId(key) == declared_crx_id) {
+         public_key_bytes = key;
+       }
+-      auto key_hash = crypto::hash::Sha256(key);
+-      required_key_set.erase(key_hash);
++      auto key_hash_array = crypto::hash::Sha256(key);
++      ByteVec key_hash(key_hash_array.begin(), key_hash_array.end());
++      required_key_set.erase(key_hash_array);
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      found_publisher_key = found_publisher_key ||
++                            (allowed_set.find(key_hash) != allowed_set.end());
++#else
++      DCHECK_EQ(accept_publisher_test_key, publisher_test_key.has_value());
+       found_publisher_key =
+           found_publisher_key || key_hash == kPublisherKeyHash ||
+           (accept_publisher_test_key && key_hash == kPublisherTestKeyHash);
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+       auto v = std::make_unique<crypto::SignatureVerifier>();
+       if (!v->VerifyInit(proof_type.second, base::as_byte_span(sig),
+                          base::as_byte_span(key))) {
+         return VerifierResult::ERROR_SIGNATURE_INITIALIZATION_FAILED;
+       }

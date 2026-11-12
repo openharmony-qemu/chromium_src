@@ -1,0 +1,14 @@
+diff a/components/feature_engagement/public/event_constants.cc b/components/feature_engagement/public/event_constants.cc	(rejected hunks)
+@@ -47,11 +47,11 @@ const char kExtensionsRequestAccessButtonClicked[] =
+     "extensions_request_access_button_clicked";
+ 
+ const char kCookieControlsBubbleShown[] = "cookie_controls_bubble_shown";
+ 
+ #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) ||
+-        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
++        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+ 
+ #if BUILDFLAG(IS_IOS)
+ const char kChromeOpened[] = "chrome_opened";
+ const char kIncognitoTabOpened[] = "incognito_tab_opened";
+ const char kClearedBrowsingData[] = "cleared_browsing_data";

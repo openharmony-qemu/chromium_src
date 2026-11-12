@@ -1,0 +1,22 @@
+diff a/components/dom_distiller/core/dom_distiller_service.cc b/components/dom_distiller/core/dom_distiller_service.cc	(rejected hunks)
+@@ -66,13 +71,19 @@ std::unique_ptr<ViewerHandle> DomDistillerService::ViewUrl(
+     std::unique_ptr<DistillerPage> distiller_page,
+     const GURL& url) {
+   if (!url.is_valid()) {
+     return nullptr;
+   }
+-
++#if BUILDFLAG(ARKWEB_READER_MODE)
++  if (service_utils_->ShouldViewUrl(url, distiller_page)) return nullptr;
++#endif // ARKWEB_READER_MODE
+   TaskTracker* task_tracker = nullptr;
++#if BUILDFLAG(ARKWEB_READER_MODE)
++  bool was_created = service_utils_->ViewUrl(task_tracker, distiller_page);
++#else
+   bool was_created = GetOrCreateTaskTrackerForUrl(url, &task_tracker);
++#endif // ARKWEB_READER_MODE
+   std::unique_ptr<ViewerHandle> viewer_handle =
+       task_tracker->AddViewer(delegate);
+   // If a distiller is already running for one URL, don't start another.
+   if (was_created) {
+     task_tracker->StartDistiller(distiller_factory_.get(),

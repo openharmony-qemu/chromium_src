@@ -1,0 +1,87 @@
+diff a/components/download/internal/common/download_item_impl.cc b/components/download/internal/common/download_item_impl.cc	(rejected hunks)
+@@ -26,10 +26,13 @@
+ #include <memory>
+ #include <optional>
+ #include <utility>
+ #include <vector>
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/check_is_test.h"
+ #include "base/files/file_util.h"
+ #include "base/format_macros.h"
+ #include "base/functional/bind.h"
+ #include "base/functional/callback_helpers.h"
+@@ -75,14 +78,23 @@
+ 
+ #if BUILDFLAG(IS_MAC)
+ #include "base/mac/mac_util.h"
+ #endif  // BUILDFLAG(IS_MAC)
+ 
++#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
++#include "base/command_line.h"
++#include "content/public/common/content_switches.h"
++#endif
++
+ namespace download {
+ 
+ namespace {
+ 
++#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
++const char kRequestMethod[] = "request_method";
++#endif
++
+ void DeleteDownloadedFileDone(base::WeakPtr<DownloadItemImpl> item,
+                               base::OnceCallback<void(bool)> callback,
+                               bool success) {
+   if (success && item.get())
+     item->OnDownloadedFileRemoved();
+@@ -475,11 +493,20 @@ DownloadItemImpl::DownloadItemImpl(DownloadItemImplDelegate* delegate,
+       download_source_(info.download_source)
+ #if BUILDFLAG(IS_ANDROID)
+       ,
+       allow_auto_open_after_completion_(info.allow_auto_open_after_completion)
+ #endif  // BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
++      ,
++      request_method_(info.method)
++#endif
+ {
++#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
++  SetUserData(kRequestMethod,
++              std::make_unique<ArkWebDownloadItemImplExt::RequestMethodData>(
++                  info.method));
++#endif
+   delegate_->Attach();
+   Init(true /* actively downloading */, TYPE_ACTIVE_DOWNLOAD);
+   allow_metered_ |= delegate_->IsActiveNetworkMetered();
+ 
+   TRACE_EVENT_INSTANT0("download", "DownloadStarted", TRACE_EVENT_SCOPE_THREAD);
+@@ -1719,11 +1789,13 @@ void DownloadItemImpl::Start(
+         GetMaxContiguousDataBlockSizeFromBeginning(received_slices_);
+     received_slices_.clear();
+   }
+ 
+   TransitionTo(TARGET_PENDING_INTERNAL);
+-
++#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
++  LOG(INFO) << "DownloadItemImpl::Start";
++#endif // BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+   job_->Start(download_file_.get(),
+               base::BindRepeating(&DownloadItemImpl::OnDownloadFileInitialized,
+                                   weak_ptr_factory_.GetWeakPtr()),
+               GetReceivedSlices());
+ 
+@@ -2619,10 +2710,11 @@ void DownloadItemImpl::ResumeInterruptedDownload(
+                                   validation_length);
+     } else {
+       // There is not enough data for validation, simply overwrites the
+       // existing data from the beginning.
+       download_params->set_offset(0);
++      download_params->set_hash_state(nullptr);
+     }
+   }
+ 
+   // TODO(xingliu): Read |fetch_error_body| and |request_headers_| from the
+   // cache, and don't copy them into DownloadItemImpl.

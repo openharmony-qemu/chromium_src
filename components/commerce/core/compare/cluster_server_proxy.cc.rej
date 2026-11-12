@@ -1,0 +1,31 @@
+diff a/components/commerce/core/compare/cluster_server_proxy.cc b/components/commerce/core/compare/cluster_server_proxy.cc
+--- a/components/commerce/core/compare/cluster_server_proxy.cc
++++ b/components/commerce/core/compare/cluster_server_proxy.cc
+@@ -5,10 +5,11 @@
+ #include "components/commerce/core/compare/cluster_server_proxy.h"
+ 
+ #include <optional>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/json/json_reader.h"
+ #include "base/json/values_util.h"
+ #include "base/strings/string_number_conversions.h"
+ #include "base/values.h"
+ #include "components/commerce/core/account_checker.h"
+@@ -34,11 +35,15 @@ namespace {
+ // RPC timeout duration.
+ const int kTimeoutMs = 5000;
+ 
+ // URL to get compare result.
+ const char kDefaultServiceBaseUrl[] =
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++    "https://x.x.x";
++#else
+     "https://memex-pa.googleapis.com/v1/shopping/products:related";
++#endif
+ const char kBaseUrlParam[] = "cluster_service_base_url";
+ constexpr base::FeatureParam<std::string> kServiceBaseUrl{
+     &commerce::kProductSpecifications, kBaseUrlParam, kDefaultServiceBaseUrl};
+ 
+ // lowerCamelCase JSON proto message keys.

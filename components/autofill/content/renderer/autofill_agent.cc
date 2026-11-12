@@ -638,6 +638,9 @@ void AutofillAgent::DidChangeScrollOffsetImpl() {
 
   // Ignore subsequent scroll offset changes.
   HidePopup();
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+  AsAutofillAgentExt()->SetIsNeedToCreatedPopup(false);
+#endif
 }
 
 CallTimerState AutofillAgent::GetCallTimerState(
@@ -684,6 +687,13 @@ void AutofillAgent::FocusedElementChanged(
           !base::FeatureList::IsEnabled(
               features::kAutofillAndroidDisableSuggestionsOnJSFocus) ||
           !config_.focus_requires_scroll;
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+      if (AsAutofillAgentExt()->MaybeDeferFocusedElementRequest(
+              focused_node_was_last_clicked,
+              /*restart_if_sent=*/false)) {
+        return;
+      }
+#endif
       HandleFocusChangeComplete(
           /*focused_node_was_last_clicked=*/focused_node_was_last_clicked,
           extracted_form && GetDocument() &&
@@ -2103,6 +2113,14 @@ void AutofillAgent::DidCompleteFocusChangeInFrame() {
        base::FeatureList::IsEnabled(
            features::kAutofillAndroidKeyboardAccessoryDynamicPositioning)) &&
       config_.focus_requires_scroll) {
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+    if (AsAutofillAgentExt()->MaybeDeferFocusedElementRequest(
+            last_left_mouse_down_or_gesture_tap_in_node_caused_focus_,
+            /*restart_if_sent=*/false)) {
+      last_left_mouse_down_or_gesture_tap_in_node_caused_focus_ = false;
+      return;
+    }
+#endif
     HandleFocusChangeComplete(
         /*focused_node_was_last_clicked=*/
         last_left_mouse_down_or_gesture_tap_in_node_caused_focus_,
@@ -2284,6 +2302,13 @@ void AutofillAgent::HandleFocusChangeComplete(
   // TODO(crbug.com/40284726): This seems to be redundant. Remove call to
   // ShowSuggestionsForContentEditable.
   if (focused_node_was_last_clicked) {
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+    if (focused_element.IsContentEditable() &&
+        AsAutofillAgentExt()->MaybeDeferPositionRequest(
+            focused_element, focused_node_was_last_clicked)) {
+      return;
+    }
+#endif
     ShowSuggestionsForContentEditable(
         focused_element,
         AutofillSuggestionTriggerSource::kContentEditableClicked);

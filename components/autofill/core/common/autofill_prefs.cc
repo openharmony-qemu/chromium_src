@@ -132,7 +132,7 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
   }
   registry->RegisterIntegerPref(
       kAutofillPaymentMethodsMandatoryReauthPromoShownCounter, 0);
-#elif BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#elif BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   registry->RegisterBooleanPref(kAutofillPaymentMethodsMandatoryReauth, false);
   registry->RegisterIntegerPref(
       kAutofillPaymentMethodsMandatoryReauthPromoShownCounter, 0);

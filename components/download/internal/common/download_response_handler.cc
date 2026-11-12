@@ -253,7 +253,12 @@ void DownloadResponseHandler::OnReceiveRedirect(
     }
   }
 
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  if (is_partial_request_ &&
+      !base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableNwebExDownload)) {
+#else
   if (is_partial_request_) {
+#endif
     // A redirect while attempting a partial resumption indicates a potential
     // middle box. Trigger another interruption so that the
     // DownloadItem can retry.
@@ -285,6 +290,9 @@ void DownloadResponseHandler::OnTransferSizeUpdated(
 
 void DownloadResponseHandler::OnComplete(
     const network::URLLoaderCompletionStatus& status) {
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  LOG(INFO) << "on compelte " << status.error_code;
+#endif  //  ARKWEB_EX_DOWNLOAD
   if (completed_)
     return;
 

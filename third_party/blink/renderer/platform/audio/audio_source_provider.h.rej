@@ -1,0 +1,19 @@
+diff a/third_party/blink/renderer/platform/audio/audio_source_provider.h b/third_party/blink/renderer/platform/audio/audio_source_provider.h	(rejected hunks)
+@@ -55,10 +58,17 @@ class AudioSourceProvider {
+   // changes.
+   virtual void SetClient(AudioSourceProviderClient*) = 0;
+ 
+   // Connect to the destination node.
+   virtual void ConnectToDestinationReady() {}
++
++#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
++  // Sets a callback to invoke when the source pause state changes.
++  // Default implementation does nothing.
++  virtual void SetOnSourcePausedChangedCallback(
++      base::RepeatingCallback<void(bool)> callback) {}
++#endif // ARKWEB_MEDIA_CAPTURE
+ };
+ 
+ }  // namespace blink
+ 
+ #endif  // THIRD_PARTY_BLINK_RENDERER_PLATFORM_AUDIO_AUDIO_SOURCE_PROVIDER_H_

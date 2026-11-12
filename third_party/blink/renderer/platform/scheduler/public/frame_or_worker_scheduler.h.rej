@@ -1,0 +1,33 @@
+diff a/third_party/blink/renderer/platform/scheduler/public/frame_or_worker_scheduler.h b/third_party/blink/renderer/platform/scheduler/public/frame_or_worker_scheduler.h	(rejected hunks)
+@@ -259,14 +259,14 @@ class PLATFORM_EXPORT FrameOrWorkerScheduler {
+   virtual base::WeakPtr<FrameOrWorkerScheduler>
+   GetFrameOrWorkerSchedulerWeakPtr() = 0;
+ 
+  private:
+   void RemoveLifecycleObserver(LifecycleObserverHandle*);
+- 	base::ObserverList<LifecycleObserverHandle,
+- 	                  /*check_empty=*/false,
+- 	                  false>
+- 	    lifecycle_observers_{base::ObserverListPolicy::EXISTING_ONLY};
++  base::ObserverList<LifecycleObserverHandle,
++                    /*check_empty=*/false,
++                    false>
++      lifecycle_observers_{base::ObserverListPolicy::EXISTING_ONLY};
+   base::WeakPtrFactory<FrameOrWorkerScheduler> weak_factory_{this};
+ };
+ 
+ }  // namespace blink
+ 
+@@ -54,11 +54,11 @@ class PLATFORM_EXPORT FrameOrWorkerScheduler {
+     LifecycleObserverHandle& operator=(const LifecycleObserverHandle&) = delete;
+     ~LifecycleObserverHandle() override;
+ 
+    private:
+     friend class FrameOrWorkerScheduler;
+-
++ 	 
+     LifecycleObserverHandle(FrameOrWorkerScheduler* scheduler,
+                             ObserverType type,
+                             OnLifecycleStateChangedCallback callback);
+ 
+     base::WeakPtr<FrameOrWorkerScheduler> scheduler_;

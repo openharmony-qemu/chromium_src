@@ -1,0 +1,154 @@
+diff a/third_party/blink/renderer/platform/widget/input/elastic_overscroll_controller_exponential_unittest.cc b/third_party/blink/renderer/platform/widget/input/elastic_overscroll_controller_exponential_unittest.cc	(rejected hunks)
+@@ -182,15 +182,15 @@ TEST_F(ElasticOverscrollControllerExponentialTest, Axis) {
+   // If we push equally in the X and Y directions, we should see a stretch
+   // in the Y direction.
+   SendGestureScrollBegin(NonMomentumPhase);
+   SendGestureScrollUpdate(NonMomentumPhase, Vector2dF(10, 10),
+                           Vector2dF(10, 10));
+-  EXPECT_EQ(1, helper_.set_stretch_amount_count());
++  EXPECT_EQ(0, helper_.set_stretch_amount_count());
+   EXPECT_EQ(0.f, helper_.StretchAmount(cc::ElementId()).x());
+-  EXPECT_LT(0.f, helper_.StretchAmount(cc::ElementId()).y());
++  EXPECT_EQ(0.f, helper_.StretchAmount(cc::ElementId()).y());
+   helper_.SetStretchAmount(cc::ElementId(), Vector2dF());
+-  EXPECT_EQ(2, helper_.set_stretch_amount_count());
++  EXPECT_EQ(1, helper_.set_stretch_amount_count());
+   SendGestureScrollEnd();
+   EXPECT_EQ(0, helper_.request_begin_frame_count());
+ 
+   // If we push more in the X direction than the Y direction, we should see a
+   // stretch  in the X direction. This decision should be based on the actual
+@@ -285,63 +285,58 @@ TEST_F(ElasticOverscrollControllerExponentialTest, MomentumAnimate) {
+   EXPECT_EQ(0, helper_.animation_finished_count());
+ 
+   // Take another step, this time going over the threshold. This should update
+   // the stretch amount, and then switch to the animating mode.
+   SendGestureScrollUpdate(MomentumPhase, Vector2dF(0, -80), Vector2dF(0, -80));
+-  EXPECT_EQ(1, helper_.set_stretch_amount_count());
+-  EXPECT_EQ(1, helper_.request_begin_frame_count());
+-  EXPECT_GT(-1.f, helper_.StretchAmount(cc::ElementId()).y());
++  EXPECT_EQ(0, helper_.set_stretch_amount_count());
++  EXPECT_EQ(0, helper_.request_begin_frame_count());
++  EXPECT_EQ(0.f, helper_.StretchAmount(cc::ElementId()).y());
+ 
+   // Subsequent momentum events should do nothing.
+   SendGestureScrollUpdate(MomentumPhase, Vector2dF(0, -80), Vector2dF(0, -80));
+   SendGestureScrollUpdate(MomentumPhase, Vector2dF(0, -80), Vector2dF(0, -80));
+   SendGestureScrollUpdate(MomentumPhase, Vector2dF(0, -80), Vector2dF(0, -80));
+   SendGestureScrollEnd();
+-  EXPECT_EQ(1, helper_.set_stretch_amount_count());
+-  EXPECT_EQ(1, helper_.request_begin_frame_count());
++  EXPECT_EQ(0, helper_.set_stretch_amount_count());
++  EXPECT_EQ(0, helper_.request_begin_frame_count());
+ 
+   // Subsequent animate events should update the stretch amount and request
+   // another frame.
+   TickCurrentTimeAndAnimate();
+-  EXPECT_EQ(2, helper_.set_stretch_amount_count());
+-  EXPECT_EQ(2, helper_.request_begin_frame_count());
+-  EXPECT_GT(-1.f, helper_.StretchAmount(cc::ElementId()).y());
++  EXPECT_EQ(0, helper_.set_stretch_amount_count());
++  EXPECT_EQ(0, helper_.request_begin_frame_count());
++  EXPECT_EQ(0.f, helper_.StretchAmount(cc::ElementId()).y());
+ 
+   // Touching the trackpad (a PhaseMayBegin event) should disable animation.
+   SendGestureScrollBegin(NonMomentumPhase);
+   TickCurrentTimeAndAnimate();
+-  EXPECT_EQ(2, helper_.set_stretch_amount_count());
+-  EXPECT_EQ(2, helper_.request_begin_frame_count());
++  EXPECT_EQ(0, helper_.set_stretch_amount_count());
++  EXPECT_EQ(0, helper_.request_begin_frame_count());
+ 
+   // Releasing the trackpad should re-enable animation.
+   SendGestureScrollEnd();
+-  EXPECT_EQ(2, helper_.set_stretch_amount_count());
+-  EXPECT_EQ(3, helper_.request_begin_frame_count());
++  EXPECT_EQ(0, helper_.set_stretch_amount_count());
++  EXPECT_EQ(0, helper_.request_begin_frame_count());
+   TickCurrentTimeAndAnimate();
+-  EXPECT_EQ(3, helper_.set_stretch_amount_count());
+-  EXPECT_EQ(4, helper_.request_begin_frame_count());
++  EXPECT_EQ(0, helper_.set_stretch_amount_count());
++  EXPECT_EQ(0, helper_.request_begin_frame_count());
+ 
+   // Keep animating frames until the stretch returns to rest.
+-  int stretch_count = 3;
+-  int begin_frame_count = 4;
++  int begin_frame_count = 0;
+   while (true) {
+     TickCurrentTimeAndAnimate();
+     if (helper_.StretchAmount(cc::ElementId()).IsZero()) {
+-      stretch_count += 1;
+-      EXPECT_EQ(stretch_count, helper_.set_stretch_amount_count());
+       EXPECT_EQ(begin_frame_count, helper_.request_begin_frame_count());
+       break;
+     }
+-    stretch_count += 1;
+     begin_frame_count += 1;
+-    EXPECT_EQ(stretch_count, helper_.set_stretch_amount_count());
+     EXPECT_EQ(begin_frame_count, helper_.request_begin_frame_count());
+   }
+ 
+   // After coming to rest, no subsequent animate calls change anything.
+   TickCurrentTimeAndAnimate();
+-  EXPECT_EQ(stretch_count, helper_.set_stretch_amount_count());
++  EXPECT_EQ(0, helper_.set_stretch_amount_count());
+   EXPECT_EQ(begin_frame_count, helper_.request_begin_frame_count());
+   EXPECT_EQ(1, helper_.animation_finished_count());
+ }
+ 
+ // Verify that a stretch opposing a scroll is correctly resolved.
+@@ -494,45 +489,45 @@ TEST_F(ElasticOverscrollControllerExponentialTest, OverscrollBehavior) {
+   SendGestureScrollBegin(NonMomentumPhase);
+   SendGestureScrollUpdate(
+       NonMomentumPhase, Vector2dF(0, 10), Vector2dF(0, 10),
+       cc::OverscrollBehavior(cc::OverscrollBehavior::Type::kNone,
+                              cc::OverscrollBehavior::Type::kAuto));
+-  EXPECT_EQ(2, helper_.set_stretch_amount_count());
++  EXPECT_EQ(1, helper_.set_stretch_amount_count());
+   EXPECT_EQ(0.f, helper_.StretchAmount(cc::ElementId()).x());
+-  EXPECT_LT(0.f, helper_.StretchAmount(cc::ElementId()).y());
++  EXPECT_EQ(0.f, helper_.StretchAmount(cc::ElementId()).y());
+   helper_.SetStretchAmount(cc::ElementId(), Vector2dF());
+-  EXPECT_EQ(3, helper_.set_stretch_amount_count());
++  EXPECT_EQ(2, helper_.set_stretch_amount_count());
+   SendGestureScrollEnd();
+   EXPECT_EQ(0, helper_.request_begin_frame_count());
+ 
+   // If we set OverscrollBehaviorTypeNone on y, we should not see a stretch
+   // in the Y direction.
+   SendGestureScrollBegin(NonMomentumPhase);
+   SendGestureScrollUpdate(
+       NonMomentumPhase, Vector2dF(0, 10), Vector2dF(0, 10),
+       cc::OverscrollBehavior(cc::OverscrollBehavior::Type::kAuto,
+                              cc::OverscrollBehavior::Type::kNone));
+-  EXPECT_EQ(3, helper_.set_stretch_amount_count());
++  EXPECT_EQ(2, helper_.set_stretch_amount_count());
+   EXPECT_EQ(0.f, helper_.StretchAmount(cc::ElementId()).x());
+   EXPECT_EQ(0.f, helper_.StretchAmount(cc::ElementId()).y());
+   helper_.SetStretchAmount(cc::ElementId(), Vector2dF());
+-  EXPECT_EQ(4, helper_.set_stretch_amount_count());
++  EXPECT_EQ(3, helper_.set_stretch_amount_count());
+   SendGestureScrollEnd();
+   EXPECT_EQ(0, helper_.request_begin_frame_count());
+ 
+   // If we set OverscrollBehaviorTypeNone on y, we could still see a stretch
+   // in the X direction.
+   SendGestureScrollBegin(NonMomentumPhase);
+   SendGestureScrollUpdate(
+       NonMomentumPhase, Vector2dF(10, 0), Vector2dF(10, 0),
+       cc::OverscrollBehavior(cc::OverscrollBehavior::Type::kAuto,
+                              cc::OverscrollBehavior::Type::kNone));
+-  EXPECT_EQ(5, helper_.set_stretch_amount_count());
+-  EXPECT_LT(0.f, helper_.StretchAmount(cc::ElementId()).x());
++  EXPECT_EQ(3, helper_.set_stretch_amount_count());
++  EXPECT_EQ(0.f, helper_.StretchAmount(cc::ElementId()).x());
+   EXPECT_EQ(0.f, helper_.StretchAmount(cc::ElementId()).y());
+   helper_.SetStretchAmount(cc::ElementId(), Vector2dF());
+-  EXPECT_EQ(6, helper_.set_stretch_amount_count());
++  EXPECT_EQ(4, helper_.set_stretch_amount_count());
+   SendGestureScrollEnd();
+   EXPECT_EQ(0, helper_.request_begin_frame_count());
+ }
+ 
+ // Test overscroll in non-scrollable direction.

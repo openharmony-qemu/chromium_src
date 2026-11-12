@@ -95,7 +95,13 @@ class PLATFORM_EXPORT FontPalette : public RefCounted<FontPalette> {
       Color::ColorSpace color_interpolation_space,
       std::optional<Color::HueInterpolationMethod> hue_interpolation_method) {
     return base::AdoptRef(new FontPalette(
+#if defined(__clang__) && (__clang_major__ < 17)
+        start, end,
+        NonNormalizedPercentages({start_percentage, end_percentage}),
+#else
         start, end, NonNormalizedPercentages(start_percentage, end_percentage),
+#endif
+
         normalized_percentage, alpha_multiplier, color_interpolation_space,
         hue_interpolation_method));
   }
@@ -164,7 +170,11 @@ class PLATFORM_EXPORT FontPalette : public RefCounted<FontPalette> {
       double normalized_percentage) {
     double end_percentage = normalized_percentage * 100.0;
     double start_percentage = 100.0 - end_percentage;
+#if defined(__clang__) && (__clang_major__ < 17)
+    return NonNormalizedPercentages({start_percentage, end_percentage});
+#else
     return NonNormalizedPercentages(start_percentage, end_percentage);
+#endif
   }
 
   double GetAlphaMultiplier() const {

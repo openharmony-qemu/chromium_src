@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/platform/graphics/image_decoder_wrapper.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/system/sys_info.h"
 #include "base/trace_event/trace_event.h"
 #include "third_party/blink/public/platform/platform.h"
@@ -72,7 +73,9 @@ ImageDecoderWrapper::ImageDecoderWrapper(
     SegmentReader* data,
     const SkPixmap& pixmap,
     ColorBehavior decoder_color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
     cc::AuxImage aux_image,
+#endif
     wtf_size_t index,
     bool all_data_received,
     cc::PaintImage::GeneratorClientId client_id)
@@ -80,10 +83,13 @@ ImageDecoderWrapper::ImageDecoderWrapper(
       data_(data),
       pixmap_(pixmap),
       decoder_color_behavior_(decoder_color_behavior),
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
       aux_image_(aux_image),
+#endif
       frame_index_(index),
       all_data_received_(all_data_received),
-      client_id_(client_id) {}
+      client_id_(client_id) {
+}
 
 ImageDecoderWrapper::~ImageDecoderWrapper() = default;
 

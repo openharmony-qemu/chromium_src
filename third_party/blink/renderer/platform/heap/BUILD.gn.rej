@@ -1,0 +1,13 @@
+diff a/third_party/blink/renderer/platform/heap/BUILD.gn b/third_party/blink/renderer/platform/heap/BUILD.gn	(rejected hunks)
+@@ -74,10 +75,11 @@ blink_platform_sources("heap") {
+     "weak_cell.h",
+     "write_barrier.h",
+   ]
+ 
+   deps = [
++    "//arkweb/build/features",
+     ":blink_heap_buildflags",
+     "//base",
+     "//gin",
+     "//third_party/blink/renderer/platform:make_platform_generated",
+     "//third_party/icu",

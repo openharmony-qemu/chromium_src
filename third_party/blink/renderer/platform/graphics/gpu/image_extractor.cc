@@ -4,6 +4,8 @@
 
 #include "third_party/blink/renderer/platform/graphics/gpu/image_extractor.h"
 
+#include "arkweb/build/features/features.h"
+#include "base/logging.h"
 #include "third_party/blink/public/platform/platform.h"
 #include "third_party/blink/renderer/platform/graphics/skia/skia_utils.h"
 #include "third_party/blink/renderer/platform/image-decoders/image_decoder.h"
@@ -116,7 +118,10 @@ ImageExtractor::ImageExtractor(Image* image,
       // Decode the image here on the main thread.
       std::unique_ptr<ImageDecoder> decoder(ImageDecoder::Create(
           image->Data(), data_complete, alpha_option, bit_depth, color_behavior,
-          cc::AuxImage::kDefault, Platform::GetMaxDecodedImageBytes()));
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+          cc::AuxImage::kDefault,
+#endif
+          Platform::GetMaxDecodedImageBytes()));
       if (!decoder || !decoder->FrameCount()) {
         return;
       }

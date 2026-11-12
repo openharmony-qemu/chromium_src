@@ -1,0 +1,48 @@
+diff a/third_party/blink/renderer/platform/widget/input/main_thread_event_queue.cc b/third_party/blink/renderer/platform/widget/input/main_thread_event_queue.cc	(rejected hunks)
+@@ -10,10 +10,11 @@
+ 
+ #include "base/containers/circular_deque.h"
+ #include "base/feature_list.h"
+ #include "base/functional/bind.h"
+ #include "base/metrics/histogram_macros.h"
++#include "base/strings/stringprintf.h"
+ #include "base/task/single_thread_task_runner.h"
+ #include "base/time/time.h"
+ #include "base/trace_event/trace_event.h"
+ #include "cc/base/features.h"
+ #include "cc/metrics/event_metrics.h"
+@@ -932,13 +945,20 @@ void MainThreadEventQueue::SetNeedsMainFrame(bool urgent) {
+     if (raf_fallback_timer_) {
+       raf_fallback_timer_->Start(
+           FROM_HERE, kMaxRafDelay,
+           base::BindOnce(&MainThreadEventQueue::RafFallbackTimerFired, this));
+     }
++  #if BUILDFLAG(ARKWEB_DFX_TRACING)
+     if (client_) {
+       client_->SetNeedsMainFrame(urgent);
++    } else {
++      TRACE_EVENT0("input", "MainThreadEventQueue::SetNeedsMainFrame failed");
+     }
++#else
++    if (client_)
++      client_->SetNeedsMainFrame(urgent);
++#endif
+     return;
+   }
+ 
+   main_task_runner_->PostTask(
+       FROM_HERE,
+@@ -964,10 +988,13 @@ void MainThreadEventQueue::SetHasPointerRawUpdateEventHandlers(
+     bool has_handlers) {
+   has_pointerrawupdate_handlers_.store(has_handlers, std::memory_order_relaxed);
+ }
+ 
+ void MainThreadEventQueue::RequestUnbufferedInputEvents() {
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  TRACE_EVENT0("input", "MainThreadEventQueue::RequestUnbufferedInputEvents");
++#endif
+   needs_low_latency_until_pointer_up_.store(true, std::memory_order_relaxed);
+ }
+ 
+ void MainThreadEventQueue::UnblockQueuedBlockingTouchMovesIfNeeded(
+     const WebInputEvent& dispatched_event,

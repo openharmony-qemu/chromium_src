@@ -1,0 +1,16 @@
+diff a/third_party/blink/renderer/platform/loader/BUILD.gn b/third_party/blink/renderer/platform/loader/BUILD.gn	(rejected hunks)
+@@ -4,11 +4,13 @@
+ 
+ import("//testing/test.gni")
+ import("//third_party/blink/renderer/build/scripts/scripts.gni")
+ import("//third_party/blink/renderer/platform/platform.gni")
+ import("//third_party/blink/renderer/platform/platform_generated.gni")
+-
++if (is_arkweb) {
++  import("//arkweb/build/features/features.gni")
++}
+ make_names("make_platform_loader_generated_fetch_initiator_type_names") {
+   in_files = [ "fetch/fetch_initiator_type_names.json5" ]
+   output_dir = "$blink_platform_output_dir/loader/fetch"
+ }
+ 

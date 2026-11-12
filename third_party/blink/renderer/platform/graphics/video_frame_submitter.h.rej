@@ -1,0 +1,17 @@
+diff a/third_party/blink/renderer/platform/graphics/video_frame_submitter.h b/third_party/blink/renderer/platform/graphics/video_frame_submitter.h	(rejected hunks)
+@@ -68,11 +69,14 @@ class PLATFORM_EXPORT VideoFrameSubmitter
+   void EnableSubmission(viz::SurfaceId) override;
+   void SetIsSurfaceVisible(bool is_visible) override;
+   void SetIsPageVisible(bool is_visible) override;
+   void SetForceBeginFrames(bool force_begin_frames) override;
+   void SetForceSubmit(bool) override;
+-
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  void SetHasNativeLayer(bool has_native_layer) override;
++  void SetDeviceScaleFactor(float device_scale_factor) override;
++#endif
+   // viz::ContextLostObserver implementation.
+   void OnContextLost() override;
+ 
+   // gpu::GpuChannelLostObserver implementation.
+   void OnGpuChannelLost() override;

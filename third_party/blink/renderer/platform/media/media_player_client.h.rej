@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/platform/media/media_player_client.h b/third_party/blink/renderer/platform/media/media_player_client.h	(rejected hunks)
+@@ -206,10 +206,13 @@ class PLATFORM_EXPORT MediaPlayerClient : public WebMediaPlayerClient {
+   virtual void OnRequestVideoFrameCallback() {}
+ 
+   // Notify the client that the RemotePlayback has been disabled/enabled.
+   virtual void OnRemotePlaybackDisabled(bool disabled) = 0;
+ 
++#if BUILDFLAG(ARKWEB_PIP)
++  virtual void UpdatePictureInPictureSurface() = 0;
++#endif
+  protected:
+   ~MediaPlayerClient() = default;
+ };
+ 
+ }  // namespace blink

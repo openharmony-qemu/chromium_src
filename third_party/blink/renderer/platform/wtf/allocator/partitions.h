@@ -72,6 +72,9 @@ class WTF_EXPORT Partitions {
   }
 
   ALWAYS_INLINE static partition_alloc::PartitionRoot* BufferPartition() {
+    if (!initialized_) {
+      Initialize();
+    }
     DCHECK(initialized_);
     return buffer_root_;
   }

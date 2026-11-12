@@ -67,8 +67,12 @@ class ImageFrameGeneratorTest : public testing::Test,
  public:
   void SetUp() override {
     ImageDecodingStore::Instance().SetCacheLimitInBytes(1024 * 1024);
-    generator_ = ImageFrameGenerator::Create(
-        FullSize(), false, ColorBehavior::kIgnore, cc::AuxImage::kDefault, {});
+    generator_ =
+        ImageFrameGenerator::Create(FullSize(), false, ColorBehavior::kIgnore,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+                                    cc::AuxImage::kDefault,
+#endif
+                                    {});
     data_ = SharedBuffer::Create();
     segment_reader_ = SegmentReader::CreateFromSharedBuffer(data_);
     UseMockImageDecoderFactory();
@@ -122,8 +126,12 @@ class ImageFrameGeneratorTest : public testing::Test,
     frame_count_ = count;
     if (count > 1) {
       generator_ = nullptr;
-      generator_ = ImageFrameGenerator::Create(
-          FullSize(), true, ColorBehavior::kIgnore, cc::AuxImage::kDefault, {});
+      generator_ =
+          ImageFrameGenerator::Create(FullSize(), true, ColorBehavior::kIgnore,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+                                      cc::AuxImage::kDefault,
+#endif
+                                      {});
       UseMockImageDecoderFactory();
     }
   }
@@ -131,7 +139,10 @@ class ImageFrameGeneratorTest : public testing::Test,
     generator_ = nullptr;
     generator_ =
         ImageFrameGenerator::Create(FullSize(), true, ColorBehavior::kIgnore,
-                                    cc::AuxImage::kDefault, std::move(sizes));
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+                                    cc::AuxImage::kDefault,
+#endif
+                                    std::move(sizes));
     UseMockImageDecoderFactory();
   }
 

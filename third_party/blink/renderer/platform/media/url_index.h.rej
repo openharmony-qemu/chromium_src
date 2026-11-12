@@ -1,0 +1,36 @@
+diff a/third_party/blink/renderer/platform/media/url_index.h b/third_party/blink/renderer/platform/media/url_index.h	(rejected hunks)
+@@ -266,10 +297,19 @@ class PLATFORM_EXPORT UrlData : public RefCounted<UrlData> {
+   std::string etag_;
+ 
+   ResourceMultiBuffer multibuffer_;
+   Vector<RedirectCB> redirect_callbacks_;
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++  MediaWebURLErrorCB media_url_error_cb_;
++#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
++
++#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
++  bool use_video_load_opt_ = false;
++  bool need_fall_back_ = false;
++#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
++
+   THREAD_CHECKER(thread_checker_);
+ };
+ 
+ // The UrlIndex lets you look up UrlData instances by url.
+ class PLATFORM_EXPORT UrlIndex : public base::MemoryPressureListener {
+@@ -337,10 +382,14 @@ class PLATFORM_EXPORT UrlIndex : public base::MemoryPressureListener {
+ 
+   // log2 of block size in multibuffer cache. Defaults to kBlockSizeShift.
+   // Currently only changed for testing purposes.
+   const int block_shift_;
+ 
++#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
++  std::atomic<bool> news_feed_page_fitted_ {false};
++#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
++
+   // Must be async, because it runs on the renderer's main thread, which is not
+   // the process's main thread in --single-process mode.
+   base::AsyncMemoryPressureListenerRegistration
+       memory_pressure_listener_registration_;
+   const scoped_refptr<base::SingleThreadTaskRunner> task_runner_;

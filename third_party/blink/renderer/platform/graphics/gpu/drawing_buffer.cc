@@ -532,6 +532,12 @@ bool DrawingBuffer::PrepareTransferableResource(
     }
   }
 
+#if BUILDFLAG(ARKWEB_WEBGL)
+  if (static_cast<int>(webgl_version_) > static_cast<int>(kWebGL1)) {
+    out_resource->enable_defer_impl_invalidation_workaround = want_depth_;
+  }
+#endif
+
   return true;
 }
 

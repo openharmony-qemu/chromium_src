@@ -22,6 +22,10 @@
 
 namespace blink {
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_frame_compositor_for_include.cc"
+#endif
+
 using RenderingMode = ::media::VideoRendererSink::RenderCallback::RenderingMode;
 
 // Amount of time to wait between UpdateCurrentFrame() callbacks before starting
@@ -256,6 +260,11 @@ void VideoFrameCompositor::PaintSingleFrame(
       IsClientSinkAvailable()) {
     client_->DidReceiveFrame();
   }
+#if BUILDFLAG(ARKWEB_MEDIA)
+  if (finish_paint_cb_) {
+    finish_paint_cb_.Run();
+  }
+#endif
 }
 
 void VideoFrameCompositor::UpdateCurrentFrameIfStale(UpdateType type) {
@@ -374,6 +383,10 @@ bool VideoFrameCompositor::ProcessNewFrame(
     return false;
   }
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  StatisticsTotalFreeTime(is_playing_, last_frame_time_, total_freeze_time_);
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
   // TODO(crbug.com/40064689): Add other cases where the frame is not readable.
   bool is_frame_readable = !frame->metadata().dcomp_surface;
 
@@ -407,6 +420,11 @@ void VideoFrameCompositor::SetIsPageVisible(bool is_visible) {
   DCHECK(task_runner_->BelongsToCurrentThread());
   if (submitter_)
     submitter_->SetIsPageVisible(is_visible);
+#if BUILDFLAG(ARKWEB_MEDIA)
+  if (is_visible) {
+    ResetDroppedFrameMetrics();
+  }
+#endif // ARKWEB_MEDIA
 }
 
 void VideoFrameCompositor::SetForceSubmit(bool force_submit) {
@@ -414,6 +432,12 @@ void VideoFrameCompositor::SetForceSubmit(bool force_submit) {
   // The `submitter_` can be null in tests.
   if (submitter_)
     submitter_->SetForceSubmit(force_submit);
+}
+
+void VideoFrameCompositor::ResetDroppedFrameMetrics() {
+  DCHECK(task_runner_->BelongsToCurrentThread());
+  if (submitter_)
+    submitter_->ResetDroppedFrameMetrics();
 }
 
 base::TimeDelta VideoFrameCompositor::GetLastIntervalWithoutLock()

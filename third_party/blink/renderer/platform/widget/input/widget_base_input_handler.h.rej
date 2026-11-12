@@ -1,0 +1,17 @@
+diff a/third_party/blink/renderer/platform/widget/input/widget_base_input_handler.h b/third_party/blink/renderer/platform/widget/input/widget_base_input_handler.h	(rejected hunks)
+@@ -122,10 +122,15 @@ class PLATFORM_EXPORT WidgetBaseInputHandler {
+   // Whether the last injected scroll gesture was a GestureScrollBegin. Used to
+   // determine which GestureScrollUpdate is the first in a gesture sequence for
+   // latency classification.
+   bool last_injected_gesture_was_begin_ = false;
+ 
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  // whether the last mouse event is mouse down event.
++  bool is_leftdown_last_mouse_ = false;
++#endif
++
+   const bool supports_buffered_touch_ = false;
+ 
+   base::WeakPtrFactory<WidgetBaseInputHandler> weak_ptr_factory_{this};
+ };
+ 

@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/platform/loader/fetch/resource_fetcher.cc b/third_party/blink/renderer/platform/loader/fetch/resource_fetcher.cc	(rejected hunks)
+@@ -32,10 +32,13 @@
+ #include <optional>
+ #include <string>
+ #include <string_view>
+ #include <utility>
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/auto_reset.h"
+ #include "base/containers/contains.h"
+ #include "base/feature_list.h"
+ #include "base/logging.h"
+ #include "base/metrics/histogram_functions.h"

@@ -1,0 +1,13 @@
+diff a/third_party/blink/renderer/platform/image-decoders/webp/webp_image_decoder.cc b/third_party/blink/renderer/platform/image-decoders/webp/webp_image_decoder.cc	(rejected hunks)
+@@ -6,10 +6,11 @@
+ 
+ #include <string.h>
+ 
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/compiler_specific.h"
+ #include "base/feature_list.h"
+ #include "base/functional/bind.h"
+ #include "base/logging.h"
+ #include "base/metrics/histogram_macros.h"

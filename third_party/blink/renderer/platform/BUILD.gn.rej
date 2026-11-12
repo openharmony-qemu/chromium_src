@@ -1,0 +1,124 @@
+diff a/third_party/blink/renderer/platform/BUILD.gn b/third_party/blink/renderer/platform/BUILD.gn	(rejected hunks)
+@@ -1588,10 +1599,11 @@ component("platform") {
+     "weborigin/referrer.cc",
+     "weborigin/referrer.h",
+     "weborigin/reporting_disposition.h",
+     "weborigin/scheme_registry.cc",
+     "weborigin/scheme_registry.h",
++    "//arkweb/chromium_ext/third_party/blink/renderer/platform/weborigin/scheme_registry_utils.h",
+     "weborigin/security_origin.cc",
+     "weborigin/security_origin.h",
+     "weborigin/security_policy.cc",
+     "weborigin/security_policy.h",
+     "webrtc/convert_to_webrtc_video_frame_buffer.cc",
+@@ -1667,12 +1679,39 @@ component("platform") {
+     "widget/widget_base.h",
+     "widget/widget_base_client.h",
+     "windows_keyboard_codes.h",
+   ]
+ 
++  sources += arkweb_third_patry_blink_renderer_platform_bindings
++  sources += arkweb_third_party_blink_renderer_platform_sources
++
+   sources -= blink_platform_avx_files
+ 
++  if (is_arkweb) {
++    sources += arkweb_third_party_blink_renderer_platform_widget_input_sources
++  }
++
++  if (arkweb_software_compositor) {
++    sources += arkweb_third_party_blink_renderer_software_compositor_sources
++    sources += arkweb_third_patry_blink_renderer_platform_fonts_sources
++  }
++
++  if (arkweb_same_layer) {
++    sources += arkweb_native_event_queue_sources
++    sources += arkweb_third_patry_blink_renderer_platform_sources
++  }
++
++  if (arkweb_media_audio) {
++    sources += arkweb_third_patry_blink_renderer_platform_audio_sources
++  }
++
++  if (is_component_build) {
++    sources += [
++      "media/video_frame_compositor.cc",
++    ]
++  }
++
+   # Add in the generated files.
+   sources += get_target_outputs(":character_data") +
+              get_target_outputs(":color_data") +
+              get_target_outputs(":font_family_names") +
+              get_target_outputs(":runtime_feature_state_override_context")
+@@ -2411,10 +2493,16 @@ source_set("blink_platform_unittests_sources") {
+     "widget/input/prediction/filter_factory_unittests.cc",
+     "widget/input/scroll_predictor_unittest.cc",
+     "widget/input/widget_input_handler_manager_unittest.cc",
+   ]
+ 
++  if (arkweb_unittests) {
++    sources += arkweb_native_event_queue_test_sources
++    sources += arkweb_third_party_blink_renderer_platform_widget_test_sources
++    sources += arkweb_third_party_blink_renderer_platform_media_unittest_sources
++  }
++
+   if (use_dawn) {
+     sources += [ "graphics/gpu/webgpu_swap_buffer_provider_test.cc" ]
+   }
+ 
+   if (rtc_use_h265) {
+@@ -2499,10 +2587,17 @@ source_set("blink_platform_unittests_sources") {
+     "//url",
+     "//url:url_test_support",
+     "//url/mojom:test_url_mojom_gurl_blink",
+   ]
+ 
++  if (is_arkweb) {
++    deps += [
++      "//cef:libcef_static",
++      "//base:base_static",
++    ]
++  }
++
+   deps += [ ":bridge_ice_controller_tests" ]
+ 
+   data_deps = [ ":blink_platform_unittests_data" ]
+ 
+   defines = [ "INSIDE_BLINK" ]
+@@ -2714,10 +2809,11 @@ source_set("blink_image_decoder_fuzzer_test_support") {
+ }
+ 
+ # Fuzzer for blink::unicode::MathVariant.
+ fuzzer_test("math_transform_fuzzer") {
+   sources = [ "math_transform_fuzzer.cc" ]
++  include_dirs = ["//third_party/blink/renderer/platform/testing"]
+   deps = [
+     ":blink_fuzzer_test_support",
+     ":platform",
+   ]
+   libfuzzer_options = [ "max_len=10" ]
+@@ -2887,10 +2983,23 @@ fuzzer_test("blink_jpeg_decoder_fuzzer") {
+   seed_corpuses = [ "//third_party/blink/web_tests/images/resources/jpegfuzz" ]
+   libfuzzer_options = [ "rss_limit_mb=8192" ]
+   additional_configs = [ "//third_party/blink/renderer:inside_blink" ]
+ }
+ 
++if (is_arkweb) {
++  fuzzer_test("blink_heif_decoder_fuzzer") {
++    sources = [ "image-decoders/heif/heif_image_decoder_fuzzer.cc" ]
++    deps = [
++      ":blink_fuzzer_test_support",
++      ":blink_image_decoder_fuzzer_test_support",
++      ":platform",
++    ]
++    libfuzzer_options = [ "rss_limit_mb=8192" ]
++    additional_configs = [ "//third_party/blink/renderer:inside_blink" ]
++  }
++}
++
+ fuzzer_test("blink_bmp_decoder_fuzzer") {
+   sources = [ "image-decoders/bmp/bmp_image_decoder_fuzzer.cc" ]
+   deps = [
+     ":blink_fuzzer_test_support",
+     ":blink_image_decoder_fuzzer_test_support",

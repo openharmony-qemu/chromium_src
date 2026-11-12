@@ -406,6 +406,12 @@ void PopulateResourceRequest(const ResourceRequestHead& src,
 
   dest->original_destination = src.GetOriginalDestination();
 
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  if (dest->load_flags & net::LOAD_PREFETCH) {
+    dest->corb_detachable = true;
+  }
+#endif
+
   if (src.GetURLRequestExtraData()) {
     src.GetURLRequestExtraData()->CopyToResourceRequest(dest);
   }

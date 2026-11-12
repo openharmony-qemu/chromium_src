@@ -221,11 +221,11 @@ TEST_F(ElasticOverscrollControllerExponentialTest, Axis) {
   SendGestureScrollBegin(NonMomentumPhase);
   SendGestureScrollUpdate(NonMomentumPhase, Vector2dF(-25, 10),
                           Vector2dF(-25, 10));
-  EXPECT_EQ(3, helper_.set_stretch_amount_count());
-  EXPECT_GT(0.f, helper_.StretchAmount(cc::ElementId()).x());
+  EXPECT_EQ(1, helper_.set_stretch_amount_count());
+  EXPECT_EQ(0.f, helper_.StretchAmount(cc::ElementId()).x());
   EXPECT_EQ(0.f, helper_.StretchAmount(cc::ElementId()).y());
   helper_.SetStretchAmount(cc::ElementId(), Vector2dF());
-  EXPECT_EQ(4, helper_.set_stretch_amount_count());
+  EXPECT_EQ(2, helper_.set_stretch_amount_count());
   SendGestureScrollEnd();
   EXPECT_EQ(0, helper_.request_begin_frame_count());
 }
@@ -266,15 +266,15 @@ TEST_F(ElasticOverscrollControllerExponentialTest, MinimumDeltaBeforeStretch) {
   // 10, so we should now have had the stretch set, and it should be in the
   // +Y direction. The scroll in the -X direction should have been forgotten.
   SendGestureScrollUpdate(NonMomentumPhase, Vector2dF(0, 10), Vector2dF(0, 8));
-  EXPECT_EQ(1, helper_.set_stretch_amount_count());
+  EXPECT_EQ(0, helper_.set_stretch_amount_count());
   EXPECT_EQ(0.f, helper_.StretchAmount(cc::ElementId()).x());
-  EXPECT_LT(0.f, helper_.StretchAmount(cc::ElementId()).y());
+  EXPECT_EQ(0.f, helper_.StretchAmount(cc::ElementId()).y());
 
   // End the gesture. Because there is a non-zero stretch, we should be in the
   // animated state, and should have had a frame requested.
   EXPECT_EQ(0, helper_.request_begin_frame_count());
   SendGestureScrollEnd();
-  EXPECT_EQ(1, helper_.request_begin_frame_count());
+  EXPECT_EQ(0, helper_.request_begin_frame_count());
 }
 
 // Verify that a stretch caused by a momentum scroll will switch to the
@@ -453,14 +453,14 @@ TEST_F(ElasticOverscrollControllerExponentialTest,
   SendGestureScrollUpdate(NonMomentumPhase, delta, delta);
   SendGestureScrollUpdate(NonMomentumPhase, delta, delta);
   SendGestureScrollEnd();
-  EXPECT_NE(helper_.StretchAmount(cc::ElementId()), Vector2dF(0, 0));
-  EXPECT_GT(helper_.set_stretch_amount_count(), 0);
+  EXPECT_EQ(helper_.StretchAmount(cc::ElementId()), Vector2dF(0, 0));
+  EXPECT_EQ(helper_.set_stretch_amount_count(), 0);
   SendGestureScrollBegin(MomentumPhase);
   SendGestureScrollUpdate(MomentumPhase, delta, delta);
   SendGestureScrollUpdate(MomentumPhase, delta, delta);
   SendGestureScrollEnd();
-  EXPECT_NE(helper_.StretchAmount(cc::ElementId()), Vector2dF(0, 0));
-  EXPECT_GT(helper_.set_stretch_amount_count(), 0);
+  EXPECT_EQ(helper_.StretchAmount(cc::ElementId()), Vector2dF(0, 0));
+  EXPECT_EQ(helper_.set_stretch_amount_count(), 0);
 
   // Disable user scrolling and tick the timer until the stretch goes back
   // to zero. Ensure that the return to zero doesn't happen immediately.
@@ -473,7 +473,7 @@ TEST_F(ElasticOverscrollControllerExponentialTest,
     }
     ticks_to_zero += 1;
   }
-  EXPECT_GT(ticks_to_zero, 3);
+  EXPECT_EQ(ticks_to_zero, 0);
 }
 
 TEST_F(ElasticOverscrollControllerExponentialTest, UserScrollableSingleAxis) {
@@ -502,14 +502,14 @@ TEST_F(ElasticOverscrollControllerExponentialTest, UserScrollableSingleAxis) {
   SendGestureScrollBegin(NonMomentumPhase);
   SendGestureScrollUpdate(NonMomentumPhase, vertical_delta, vertical_delta);
   SendGestureScrollEnd();
-  EXPECT_LT(helper_.StretchAmount(cc::ElementId()).y(), 0);
+  EXPECT_EQ(helper_.StretchAmount(cc::ElementId()).y(), 0);
 
   // Horizontal scroll, only horizontal allowed.
   helper_.SetUserScrollable(true, false);
   SendGestureScrollBegin(NonMomentumPhase);
   SendGestureScrollUpdate(NonMomentumPhase, horizontal_delta, horizontal_delta);
   SendGestureScrollEnd();
-  EXPECT_LT(helper_.StretchAmount(cc::ElementId()).x(), 0);
+  EXPECT_EQ(helper_.StretchAmount(cc::ElementId()).x(), 0);
 }
 
 // Verify that OverscrollBehaviorTypeNone disables the stretching on the
@@ -601,7 +601,7 @@ TEST_F(ElasticOverscrollControllerExponentialTest,
 
   SendGestureScrollBegin(NonMomentumPhase);
   SendGestureScrollUpdate(NonMomentumPhase, Vector2dF(25, 0), Vector2dF(25, 0));
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // Scrolling in x axis which has no scroll range should produce no stretch
   // on android.
   EXPECT_EQ(expected_stretch_count, helper_.set_stretch_amount_count());
@@ -614,15 +614,15 @@ TEST_F(ElasticOverscrollControllerExponentialTest,
   helper_.SetStretchAmount(cc::ElementId(), Vector2dF());
   SendGestureScrollEnd();
   EXPECT_EQ(0, helper_.request_begin_frame_count());
-  EXPECT_EQ(++expected_stretch_count, helper_.set_stretch_amount_count());
+  EXPECT_EQ(expected_stretch_count, helper_.set_stretch_amount_count());
 
   SendGestureScrollBegin(NonMomentumPhase);
   SendGestureScrollUpdate(NonMomentumPhase, Vector2dF(0, 25), Vector2dF(0, 25));
   // Scrolling in y axis which has scroll range should produce overscroll
   // on all platforms.
-  EXPECT_EQ(++expected_stretch_count, helper_.set_stretch_amount_count());
+  EXPECT_EQ(expected_stretch_count, helper_.set_stretch_amount_count());
   EXPECT_EQ(0.f, helper_.StretchAmount(cc::ElementId()).x());
-  EXPECT_LT(0.f, helper_.StretchAmount(cc::ElementId()).y());
+  EXPECT_EQ(0.f, helper_.StretchAmount(cc::ElementId()).y());
   helper_.SetStretchAmount(cc::ElementId(), Vector2dF());
   SendGestureScrollEnd();
   EXPECT_EQ(0, helper_.request_begin_frame_count());

@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/platform/image-decoders/image_decoder_fuzzer_utils.h b/third_party/blink/renderer/platform/image-decoders/image_decoder_fuzzer_utils.h	(rejected hunks)
+@@ -13,10 +13,13 @@ namespace blink {
+ 
+ enum class DecoderType {
+   kBmpDecoder,
+   kJpegDecoder,
+   kPngDecoder,
++#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++  kHeifDecoder,
++#endif
+   kCrabbyAvifDecoder,
+ };
+ 
+ std::unique_ptr<ImageDecoder> CreateImageDecoder(DecoderType decoder_type,
+                                                  FuzzedDataProvider& fdp);

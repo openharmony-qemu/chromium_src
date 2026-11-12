@@ -1,0 +1,174 @@
+diff a/third_party/blink/renderer/platform/scheduler/common/frame_or_worker_scheduler_unittest.cc b/third_party/blink/renderer/platform/scheduler/common/frame_or_worker_scheduler_unittest.cc
+--- a/third_party/blink/renderer/platform/scheduler/common/frame_or_worker_scheduler_unittest.cc
++++ b/third_party/blink/renderer/platform/scheduler/common/frame_or_worker_scheduler_unittest.cc
+@@ -16,82 +16,82 @@
+ 
+ namespace blink::scheduler {
+ namespace {
+ 
+ class FrameOrWorkerSchedulerForTest : public FrameOrWorkerScheduler {
+- public:
+-  FrameOrWorkerSchedulerForTest() = default;
+-  ~FrameOrWorkerSchedulerForTest() override = default;
++public:
++FrameOrWorkerSchedulerForTest() = default;
++~FrameOrWorkerSchedulerForTest() override = default;
+ 
+-  void SetLifecycleState(SchedulingLifecycleState state) {
+-    lifecycle_state_ = state;
+-    NotifyLifecycleObservers();
+-  }
++void SetLifecycleState(SchedulingLifecycleState state) {
++  lifecycle_state_ = state;
++  NotifyLifecycleObservers();
++}
+ 
+-  std::unique_ptr<WebSchedulingTaskQueue> CreateWebSchedulingTaskQueue(
+-      WebSchedulingQueueType,
+-      WebSchedulingPriority) override {
+-    return nullptr;
+-  }
++std::unique_ptr<WebSchedulingTaskQueue> CreateWebSchedulingTaskQueue(
++    WebSchedulingQueueType,
++    WebSchedulingPriority) override {
++  return nullptr;
++}
+ 
+-  scoped_refptr<base::SingleThreadTaskRunner> CompositorTaskRunner() override {
+-    return nullptr;
+-  }
++scoped_refptr<base::SingleThreadTaskRunner> CompositorTaskRunner() override {
++  return nullptr;
++}
+ 
+-  WebScopedVirtualTimePauser CreateWebScopedVirtualTimePauser(
+-      const String& name,
+-      WebScopedVirtualTimePauser::VirtualTaskDuration) override {
+-    return WebScopedVirtualTimePauser();
+-  }
++WebScopedVirtualTimePauser CreateWebScopedVirtualTimePauser(
++    const String& name,
++    WebScopedVirtualTimePauser::VirtualTaskDuration) override {
++  return WebScopedVirtualTimePauser();
++}
+ 
+-  scheduler::SchedulingLifecycleState CalculateLifecycleState(
+-      ObserverType) const override {
+-    return lifecycle_state_;
+-  }
++scheduler::SchedulingLifecycleState CalculateLifecycleState(
++    ObserverType) const override {
++  return lifecycle_state_;
++}
+ 
+-  void OnStartedUsingNonStickyFeature(
+-      SchedulingPolicy::Feature feature,
+-      const SchedulingPolicy& policy,
+-      SourceLocation* source_location,
+-      SchedulingAffectingFeatureHandle* handle) override {}
++void OnStartedUsingNonStickyFeature(
++    SchedulingPolicy::Feature feature,
++    const SchedulingPolicy& policy,
++    SourceLocation* source_location,
++    SchedulingAffectingFeatureHandle* handle) override {}
+ 
+-  void OnStartedUsingStickyFeature(SchedulingPolicy::Feature feature,
+-                                   const SchedulingPolicy& policy,
+-                                   SourceLocation* source_location) override {}
++void OnStartedUsingStickyFeature(SchedulingPolicy::Feature feature,
++                                const SchedulingPolicy& policy,
++                                SourceLocation* source_location) override {}
+ 
+-  void OnStoppedUsingNonStickyFeature(
+-      SchedulingAffectingFeatureHandle* handle) override {}
++void OnStoppedUsingNonStickyFeature(
++    SchedulingAffectingFeatureHandle* handle) override {}
+ 
+-  base::WeakPtr<FrameOrWorkerScheduler> GetFrameOrWorkerSchedulerWeakPtr()
+-      override {
+-    return weak_ptr_factory_.GetWeakPtr();
+-  }
++base::WeakPtr<FrameOrWorkerScheduler> GetFrameOrWorkerSchedulerWeakPtr()
++    override {
++  return weak_ptr_factory_.GetWeakPtr();
++}
+ 
+- private:
+-  SchedulingLifecycleState lifecycle_state_ =
+-      SchedulingLifecycleState::kNotThrottled;
++private:
++SchedulingLifecycleState lifecycle_state_ =
++    SchedulingLifecycleState::kNotThrottled;
+ 
+-  base::WeakPtrFactory<FrameOrWorkerSchedulerForTest> weak_ptr_factory_{this};
++base::WeakPtrFactory<FrameOrWorkerSchedulerForTest> weak_ptr_factory_{this};
+ };
+ 
+ class FrameOrWorkerSchedulerTest : public testing::Test {
+- public:
+-  FrameOrWorkerSchedulerTest()
+-      : scheduler_(std::make_unique<FrameOrWorkerSchedulerForTest>()) {}
++public:
++FrameOrWorkerSchedulerTest()
++    : scheduler_(std::make_unique<FrameOrWorkerSchedulerForTest>()) {}
+ 
+- protected:
+-  std::unique_ptr<FrameOrWorkerSchedulerForTest> scheduler_;
++protected:
++std::unique_ptr<FrameOrWorkerSchedulerForTest> scheduler_;
+ };
+ 
+ TEST_F(FrameOrWorkerSchedulerTest, LifecycleStateCallbacksRunsWhenExpected) {
+   constexpr auto kObserverType = FrameOrWorkerScheduler::ObserverType::kLoader;
+   std::optional<SchedulingLifecycleState> lifecycle_state;
+   std::unique_ptr<FrameOrWorkerScheduler::LifecycleObserverHandle> handle(
+       scheduler_->AddLifecycleObserver(
+           kObserverType,
+           base::BindLambdaForTesting([&](SchedulingLifecycleState state) {
+-            lifecycle_state = state;
++              lifecycle_state = state;
+           })));
+   ASSERT_TRUE(lifecycle_state.has_value());
+   EXPECT_EQ(*lifecycle_state,
+             scheduler_->CalculateLifecycleState(kObserverType));
+ 
+@@ -106,25 +106,25 @@ TEST_F(FrameOrWorkerSchedulerTest, LifecycleStateCallbacksRunsWhenExpected) {
+   scheduler_->SetLifecycleState(SchedulingLifecycleState::kThrottled);
+   ASSERT_FALSE(lifecycle_state.has_value());
+ }
+ 
+ TEST_F(FrameOrWorkerSchedulerTest,
+-       LifecycleStateCallbacksRemovedDuringNofification) {
++    LifecycleStateCallbacksRemovedDuringNofification) {
+   constexpr auto kObserverType = FrameOrWorkerScheduler::ObserverType::kLoader;
+   Vector<std::unique_ptr<FrameOrWorkerScheduler::LifecycleObserverHandle>>
+       handles;
+   int count = 0;
+   bool should_clear = false;
+   for (int i = 0; i < 100; i++) {
+-    handles.emplace_back(scheduler_->AddLifecycleObserver(
+-        kObserverType,
+-        base::BindLambdaForTesting([&](SchedulingLifecycleState state) {
++      handles.emplace_back(scheduler_->AddLifecycleObserver(
++          kObserverType,
++          base::BindLambdaForTesting([&](SchedulingLifecycleState state) {
+           ++count;
+           if (should_clear) {
+             handles.clear();
+           }
+-        })));
++          })));
+   }
+   EXPECT_EQ(count, 100);
+ 
+   // Callbacks should not run for observers removed during iteration.
+   should_clear = true;
+@@ -132,6 +132,6 @@ TEST_F(FrameOrWorkerSchedulerTest,
+   EXPECT_TRUE(handles.empty());
+   EXPECT_EQ(count, 101);
+ }
+ 
+ }  // namespace
+-}  // namespace blink::scheduler
++}  // namespace blink::scheduler
+\ No newline at end of file

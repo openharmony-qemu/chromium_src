@@ -68,6 +68,9 @@
 #include "ui/gfx/geometry/rect_f.h"
 #include "ui/gfx/geometry/skia_conversions.h"
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/night_mode_inverter.h"
+#endif
 // To avoid conflicts with the DrawText macro from the Windows SDK...
 #undef DrawText
 
@@ -587,6 +590,11 @@ void GraphicsContext::DrawImageRRect(
         image.ApplyShader(image_flags, local_matrix, src_rect, draw_options);
   }
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  if (auto_dark_mode.night_mode_enabled) {
+    NightModeInverter::GetInverter().BlendColorFilterForImage(image_flags);
+  }
+#endif
   if (use_shader) {
     // Temporarily set filter-quality for the shader. <reed>
     // Should be replaced with explicit sampling parameter passed to

@@ -31,6 +31,7 @@
 #include <memory>
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/containers/heap_array.h"
 #include "base/memory/raw_ptr.h"
@@ -251,6 +252,8 @@ class PLATFORM_EXPORT ImageDecoder {
   }
 
   virtual void OnSetData(scoped_refptr<SegmentReader> data) {}
+
+  virtual void OnSetData(SegmentReader* data) {}
 
   bool IsSizeAvailable();
 

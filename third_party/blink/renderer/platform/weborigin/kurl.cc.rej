@@ -1,0 +1,50 @@
+diff a/third_party/blink/renderer/platform/weborigin/kurl.cc b/third_party/blink/renderer/platform/weborigin/kurl.cc	(rejected hunks)
+@@ -28,10 +28,11 @@
+ #include "third_party/blink/renderer/platform/weborigin/kurl.h"
+ 
+ #include <algorithm>
+ #include <string_view>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "base/numerics/checked_math.h"
+ #include "base/numerics/safe_conversions.h"
+ #include "base/strings/string_view_util.h"
+@@ -166,11 +167,15 @@ String KURL::StrippedForUseAsHref() const {
+ bool KURL::IsLocalFile() const {
+   // Including feed here might be a bad idea since drag and drop uses this check
+   // and including feed would allow feeds to potentially let someone's blog
+   // read the contents of the clipboard on a drag, even without a drop.
+   // Likewise with using the FrameLoader::shouldTreatURLAsLocal() function.
++#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
++  return ProtocolIs(url::kFileScheme) || ProtocolIs(url::kResourcesScheme);
++#else
+   return ProtocolIs(url::kFileScheme);
++#endif
+ }
+ 
+ bool ProtocolIsJavaScript(const String& url) {
+   return ProtocolIs(url, url::kJavaScriptScheme);
+ }
+@@ -933,10 +952,20 @@ void KURL::Init(const KURL& base,
+   }
+ 
+   InitProtocolMetadata();
+   InitInnerURL();
+   AssertStringSpecIsASCII();
++
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  if (!url::IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
++    // This assertion implicitly assumes that "javascript:" scheme URL is always
++    // valid, but that is no longer true when
++    // kStandardCompliantNonSpecialSchemeURLParsing feature is enabled. e.g.
++    // "javascript://^", which is an invalid URL.
++    DCHECK(!::blink::ProtocolIsJavaScript(string_) || ProtocolIsJavaScript());
++  }
++#endif
+ }
+ 
+ void KURL::InitInnerURL() {
+   if (!is_valid_) {
+     inner_url_.reset();

@@ -85,7 +85,7 @@ class PLATFORM_EXPORT FontUniqueNameLookup {
 
   // Windows and Android share the concept of connecting to a Mojo service for
   // retrieving a ReadOnlySharedMemoryRegion with the lookup table in it.
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_WPT)
   std::unique_ptr<FontTableMatcher> font_table_matcher_;
 #endif
 };

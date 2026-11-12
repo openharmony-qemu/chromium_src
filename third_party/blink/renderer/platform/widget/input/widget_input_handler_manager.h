@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/synchronization/lock.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/thread_annotations.h"
@@ -28,6 +29,7 @@
 #include "third_party/blink/renderer/platform/widget/input/main_thread_event_queue.h"
 #include "third_party/blink/renderer/platform/widget/input/widget_input_handler_impl.h"
 #include "third_party/blink/renderer/platform/wtf/thread_safe_ref_counted.h"
+#include "third_party/blink/renderer/platform/widget/input/widget_input_handler_manager_utils.h"
 
 namespace cc {
 class EventMetrics;
@@ -47,6 +49,7 @@ class SynchronousCompositorRegistry;
 class SynchronousCompositorProxyRegistry;
 class WebInputEventAttribution;
 class WidgetBase;
+class WidgetInputHandlerManagerUtils;
 
 // This class maintains the compositor InputHandlerProxy and is
 // responsible for passing input events on the compositor and main threads.

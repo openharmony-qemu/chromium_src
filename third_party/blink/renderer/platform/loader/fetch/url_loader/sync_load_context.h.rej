@@ -1,0 +1,32 @@
+diff a/third_party/blink/renderer/platform/loader/fetch/url_loader/sync_load_context.h b/third_party/blink/renderer/platform/loader/fetch/url_loader/sync_load_context.h	(rejected hunks)
+@@ -94,21 +106,30 @@ class BLINK_PLATFORM_EXPORT SyncLoadContext : public ResourceRequestClient {
+       SyncLoadContext** context_for_redirect,
+       base::WaitableEvent* completed_event,
+       base::WaitableEvent* abort_event,
+       base::TimeDelta timeout,
+       mojo::PendingRemote<mojom::blink::BlobRegistry> download_to_blob_registry,
++#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
++      scoped_refptr<base::SingleThreadTaskRunner> task_runner,
++      content::RenderThread* render_thread);
++#else
+       scoped_refptr<base::SingleThreadTaskRunner> task_runner);
++#endif
+   // ResourceRequestClient implementation:
+   void OnUploadProgress(uint64_t position, uint64_t size) override;
+   void OnReceivedRedirect(
+       const net::RedirectInfo& redirect_info,
+       network::mojom::URLResponseHeadPtr head,
+       FollowRedirectCallback follow_redirect_callback) override;
+   void OnReceivedResponse(
+       network::mojom::URLResponseHeadPtr head,
+       mojo::ScopedDataPipeConsumerHandle body,
+       std::optional<mojo_base::BigBuffer> cached_metadata) override;
++#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
++  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region,
++                                      uint64_t buffer_size) override;
++#endif
+   void OnTransferSizeUpdated(int transfer_size_diff) override;
+   void OnCompletedRequest(
+       const network::URLLoaderCompletionStatus& status) override;
+   void OnFinishCreatingBlob(const scoped_refptr<BlobDataHandle>& blob);
+ 

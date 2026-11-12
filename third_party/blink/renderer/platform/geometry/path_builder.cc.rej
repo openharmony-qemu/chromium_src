@@ -1,0 +1,14 @@
+diff a/third_party/blink/renderer/platform/geometry/path_builder.cc b/third_party/blink/renderer/platform/geometry/path_builder.cc	(rejected hunks)
+@@ -126,11 +126,11 @@ gfx::RectF PathBuilder::BoundingRect() const {
+     current_bounds_.emplace(gfx::SkRectToRectF(builder_.computeBounds()));
+   }
+   return current_bounds_.value();
+ }
+ 
+-const Path& PathBuilder::CurrentPath() const {
++Path PathBuilder::CurrentPath() const {
+   if (!current_path_) {
+     current_path_.emplace(builder_.snapshot());
+   }
+ 
+   return current_path_.value();

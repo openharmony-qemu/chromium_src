@@ -1,0 +1,17 @@
+diff a/third_party/blink/renderer/platform/media/video_frame_compositor.h b/third_party/blink/renderer/platform/media/video_frame_compositor.h	(rejected hunks)
+@@ -289,10 +319,15 @@ class PLATFORM_EXPORT VideoFrameCompositor : public media::VideoRendererSink,
+   // AutoOpenCloseEvent for begin/end events.
+   std::unique_ptr<base::trace_event::AutoOpenCloseEvent<kTracingCategory>>
+       auto_open_close_;
+   std::unique_ptr<WebVideoFrameSubmitter> submitter_;
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++  int64_t last_frame_time_ = 0;
++  int64_t total_freeze_time_ = 0;
++  bool is_playing_ = false;
++#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+   base::WeakPtrFactory<VideoFrameCompositor> weak_ptr_factory_{this};
+ };
+ 
+ }  // namespace blink
+ 

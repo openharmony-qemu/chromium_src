@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/feature_list.h"
@@ -56,6 +57,10 @@
 #if BUILDFLAG(IS_ANDROID)
 #include "third_party/blink/renderer/platform/widget/compositing/android_webview/synchronous_compositor_registry.h"
 #include "third_party/blink/renderer/platform/widget/input/synchronous_compositor_proxy.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "third_party/blink/renderer/platform/widget/input/arkweb_widget_input_handler_impl_ext.h"
 #endif
 
 namespace blink {
@@ -271,8 +276,12 @@ scoped_refptr<WidgetInputHandlerManager> WidgetInputHandlerManager::Create(
     manager->InitInputHandler();
 
   // A compositor thread implies we're using an input handler.
+#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
+  DCHECK(uses_input_handler);
+#else
   DCHECK(!manager->compositor_thread_default_task_runner_ ||
          uses_input_handler);
+#endif
   // Conversely, if we don't use an input handler we must not have a compositor
   // thread.
   DCHECK(uses_input_handler ||
@@ -772,6 +781,10 @@ void WidgetInputHandlerManager::DispatchEvent(
   if (uses_input_handler_) {
     // If the input_handler_proxy has disappeared ensure we just ack event.
     if (!input_handler_proxy_) {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+      LOG(WARNING) << "widgetInputHanderManager::DispatchEvent input_handler_proxy_ is NULL, "
+                  << "type:" << WebInputEvent::GetName(event_type);
+#endif
       if (callback) {
         std::move(callback).Run(
             mojom::blink::InputEventResultSource::kMainThread,
@@ -948,7 +961,11 @@ void WidgetInputHandlerManager::BindChannel(
   //
   // Deliberately leaked here because WidgetInputHandlerImpl calls
   // "delete this;" when it receives mojo disconnect notification.
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  ArkwebWidgetInputHandlerImplExt* handler = new ArkwebWidgetInputHandlerImplExt(
+#else
   WidgetInputHandlerImpl* handler = new WidgetInputHandlerImpl(
+#endif
       this,
       compositor_thread_default_task_runner_ ? input_event_queue_ : nullptr,
       widget_, frame_widget_input_handler_);
@@ -1333,5 +1350,44 @@ void WidgetInputHandlerManager::FlushEventQueuesForTesting(
                                             std::move(flush_compositor_queue),
                                             std::move(flush_main_queue));
 }
+
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+void WidgetInputHandlerManager::OnOverScrollOffsetChanged(float offset_x,
+                                                          float offset_y) {
+  if (manager_utils_) {
+    manager_utils_->OnOverScrollOffsetChanged(offset_x, offset_y);
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+void WidgetInputHandlerManager::DidNativeEmbedEvent(
+    blink::WebInputEvent::Type type,
+    std::string embedId,
+    int32_t id,
+    float x,
+    float y) {
+  manager_utils_->DidNativeEmbedEvent(type, embedId, id, x, y);
+}
+
+void WidgetInputHandlerManager::TouchHitTest(const WebPointerEvent& event,
+                                             size_t fingerId) {
+  manager_utils_->TouchHitTest(event, fingerId);
+}
+
+void WidgetInputHandlerManager::DidNativeEmbedMouseEvent(
+    blink::WebInputEvent::Type type,
+    blink::WebInputEvent::Modifiers modifiers,
+    std::string embedId,
+    bool isHitNativeArea,
+    float x,
+    float y) {
+  manager_utils_->DidNativeEmbedMouseEvent(type, modifiers, embedId, isHitNativeArea, x, y);
+}
+
+void WidgetInputHandlerManager::MouseHitTest(const WebMouseEvent& event, int32_t button) {
+  manager_utils_->MouseHitTest(event, button);
+}
+#endif
 
 }  // namespace blink

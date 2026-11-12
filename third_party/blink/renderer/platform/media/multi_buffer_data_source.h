@@ -295,6 +295,14 @@ class PLATFORM_EXPORT MultiBufferDataSource
   // element.
   media::DataSource::Preload preload_ = AUTO;
 
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  std::string video_id_;
+  uint16_t byte_rate_ = 0;
+  uint64_t max_cache_ = 0; // bytes
+  uint64_t min_cache_ = 0; // bytes
+  uint64_t preload_cache_ = 0; // bytes
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
   // Bitrate of the content, 0 if unknown.
   int bitrate_ = 0;
 

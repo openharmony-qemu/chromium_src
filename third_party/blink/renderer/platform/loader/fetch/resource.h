@@ -67,6 +67,10 @@
 #include "third_party/blink/renderer/platform/wtf/text/text_encoding.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+#include "third_party/blink/renderer/platform/heap/self_keep_alive.h"
+#endif
+
 namespace base {
 class Clock;
 }
@@ -191,6 +195,10 @@ class PLATFORM_EXPORT Resource : public GarbageCollected<Resource>,
   Resource(const Resource&) = delete;
   Resource& operator=(const Resource&) = delete;
   ~Resource() override;
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  int request_id_perf_stat_;
+#endif
 
   virtual void Trace(Visitor*) const;
 

@@ -1,0 +1,14 @@
+diff a/third_party/blink/renderer/platform/loader/fetch/url_loader/mojo_url_loader_client_unittest.cc b/third_party/blink/renderer/platform/loader/fetch/url_loader/mojo_url_loader_client_unittest.cc	(rejected hunks)
+@@ -201,11 +201,11 @@ class WebMojoURLLoaderClientTest : public ::testing::Test,
+         resource_request_sender_.get(), loading_task_runner,
+         url_loader_factory->BypassRedirectChecks(), request->url,
+         /*evict_from_bfcache_callback=*/
+         base::OnceCallback<void(mojom::blink::RendererEvictionReason)>(),
+         /*did_buffer_load_while_in_bfcache_callback=*/
+-        base::RepeatingCallback<void(size_t)>());
++        base::RepeatingCallback<void(size_t)>(), request->keepalive);
+     context_ = resource_request_sender_->context();
+     context_->url_laoder_client = client_.get();
+     url_loader_ = ThrottlingURLLoader::CreateLoaderAndStart(
+         std::move(url_loader_factory),
+         std::vector<std::unique_ptr<blink::URLLoaderThrottle>>(), request_id_,

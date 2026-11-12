@@ -1,0 +1,39 @@
+diff a/third_party/blink/renderer/platform/bindings/parkable_string.h b/third_party/blink/renderer/platform/bindings/parkable_string.h	(rejected hunks)
+@@ -7,10 +7,11 @@
+ 
+ #include <cstdint>
+ #include <memory>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/check_op.h"
+ #include "base/dcheck_is_on.h"
+ #include "base/gtest_prod_util.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/scoped_refptr.h"
+@@ -38,10 +42,11 @@ namespace blink {
+ 
+ class Digestor;
+ class DiskDataAllocator;
+ class WebProcessMemoryDump;
+ struct BackgroundTaskParams;
++class ParkableStringUtils;
+ 
+ // A parked string is parked by calling |Park()|, and unparked by calling
+ // |ToString()| on a parked string.
+ // |Lock()| does *not* unpark a string.
+ class PLATFORM_EXPORT ParkableStringImpl
+@@ -362,10 +367,13 @@ ASSERT_SIZE(ParkableStringImpl, void* [3]);
+ class PLATFORM_EXPORT ParkableString final {
+   DISALLOW_NEW();
+ 
+  public:
+   ParkableString() : impl_(nullptr) {}
++#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
++  explicit ParkableString(scoped_refptr<StringImpl>&& impl, bool is_parkable);
++#endif
+   explicit ParkableString(scoped_refptr<StringImpl>&& impl);
+   ParkableString(scoped_refptr<StringImpl>&& impl,
+                  std::unique_ptr<ParkableStringImpl::SecureDigest> digest);
+   ParkableString(const ParkableString& rhs) : impl_(rhs.impl_) {}
+   ~ParkableString();

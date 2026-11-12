@@ -4248,6 +4248,11 @@
       status: "stable",
     },
     {
+      name: "NonAdvancedSecurityMode",
+      status: "stable",
+      base_feature: "none",
+    },
+    {
       name: "ManualText",
       public: true,
       status: "test",
@@ -4422,7 +4427,7 @@
     // "experimental" is the support on other platforms.
     {
       name: "MiddleClickAutoscroll",
-      status: "test",
+      status: "stable",
     },
     // Killswitch for crbug.com/40062462 fix.
     {
@@ -5379,7 +5384,7 @@
         "Win": "stable",
         "Mac": "stable",
         "Linux": "stable",
-        "default": "experimental"},
+        "default": "stable"}, // arkweb_media_cast need RemotePlaybackBackend
     },
     {
       // This feature acts as a kill switch for ISO-2022-JP auto-detection.

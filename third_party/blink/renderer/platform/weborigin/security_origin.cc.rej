@@ -1,0 +1,65 @@
+diff a/third_party/blink/renderer/platform/weborigin/security_origin.cc b/third_party/blink/renderer/platform/weborigin/security_origin.cc	(rejected hunks)
+@@ -32,10 +32,11 @@
+ 
+ #include <memory>
+ #include <string>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/contains.h"
+ #include "net/base/url_util.h"
+ #include "services/network/public/cpp/is_potentially_trustworthy.h"
+ #include "third_party/blink/public/common/features.h"
+ #include "third_party/blink/renderer/platform/blob/blob_url.h"
+@@ -54,10 +55,14 @@
+ #include "url/url_canon.h"
+ #include "url/url_canon_ip.h"
+ #include "url/url_constants.h"
+ #include "url/url_util.h"
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "content/public/common/url_constants.h"
++#endif
++
+ namespace blink {
+ 
+ namespace {
+ 
+ const String& EnsureNonNull(const String& string) {
+@@ -407,25 +412,34 @@ bool SecurityOrigin::CanReadContent(const KURL& url) const {
+ 
+   return false;
+ }
+ 
+ bool SecurityOrigin::CanDisplay(const KURL& url) const {
+-  if (universal_access_)
++  if (universal_access_) {
+     return true;
++  }
+ 
+   // Data URLs can always be displayed.
+   if (url.ProtocolIsData()) {
+     return true;
+   }
+ 
+   String protocol = url.Protocol();
+-  if (SchemeRegistry::CanDisplayOnlyIfCanRequest(protocol))
++  if (SchemeRegistry::CanDisplayOnlyIfCanRequest(protocol)) {
+     return CanRequest(url);
++  }
+ 
+   if (SchemeRegistry::ShouldTreatURLSchemeAsDisplayIsolated(protocol)) {
++#if BUILDFLAG(ARKWEB_NETWORK_BASE) || BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++    return protocol_ == protocol ||
++           SecurityPolicy::IsOriginAccessToURLAllowed(this, url) ||
++           (base::Contains(url::GetCorsEnabledSchemes(), url.Protocol().Ascii()) &&
++           (protocol != content::kArkWebUIScheme && protocol != content::kChromeUIScheme));
++#else
+     return protocol_ == protocol ||
+            SecurityPolicy::IsOriginAccessToURLAllowed(this, url);
++#endif
+   }
+ 
+   if (base::Contains(url::GetLocalSchemes(), protocol.Ascii())) {
+     return CanLoadLocalResources() ||
+            SecurityPolicy::IsOriginAccessToURLAllowed(this, url);

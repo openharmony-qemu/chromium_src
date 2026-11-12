@@ -129,6 +129,15 @@ class BLINK_PLATFORM_EXPORT DedicatedOrSharedWorkerGlobalScopeContextImpl final
       std::unique_ptr<WebDocumentSubresourceFilter::Builder>) override;
   std::unique_ptr<WebDocumentSubresourceFilter> TakeSubresourceFilter()
       override;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void SetUserSubresourceFilterBuilder(
+      std::unique_ptr<WebDocumentSubresourceFilter::Builder>) override;
+
+  std::unique_ptr<WebDocumentSubresourceFilter> TakeUserSubresourceFilter()
+      override;
+#endif
+
   std::unique_ptr<WebSocketHandshakeThrottle> CreateWebSocketHandshakeThrottle(
       scoped_refptr<base::SingleThreadTaskRunner> task_runner) override;
   bool IsDedicatedWorkerOrSharedWorkerFetchContext() const override {
@@ -259,6 +268,12 @@ class BLINK_PLATFORM_EXPORT DedicatedOrSharedWorkerGlobalScopeContextImpl final
 
   std::unique_ptr<WebDocumentSubresourceFilter::Builder>
       subresource_filter_builder_;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  std::unique_ptr<WebDocumentSubresourceFilter::Builder>
+      user_subresource_filter_builder_;
+#endif
+
   // For dedicated workers, this is the ancestor frame (the parent frame for
   // non-nested workers, the closest ancestor for nested workers). For shared
   // workers, this is the shadow page.

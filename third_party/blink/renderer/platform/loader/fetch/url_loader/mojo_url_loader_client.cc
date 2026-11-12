@@ -33,6 +33,11 @@
 #include "third_party/blink/renderer/platform/loader/fetch/url_loader/resource_request_sender.h"
 #include "third_party/blink/renderer/platform/wtf/functional.h"
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+
 namespace blink {
 namespace {
 
@@ -348,6 +353,15 @@ void MojoURLLoaderClient::OnReceiveResponse(
       std::move(response_head), std::move(body), std::move(cached_metadata),
       response_ipc_arrival_time));
 }
+
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+void MojoURLLoaderClient::OnTransferDataWithSharedMemory(
+    base::ReadOnlySharedMemoryRegion region,
+    uint64_t buffer_size) {
+  resource_request_sender_->OnTransferDataWithSharedMemory(std::move(region),
+                                                           buffer_size);
+}
+#endif
 
 void MojoURLLoaderClient::EvictFromBackForwardCache(
     mojom::blink::RendererEvictionReason reason) {

@@ -1,0 +1,19 @@
+diff a/third_party/blink/renderer/platform/graphics/gpu/drawing_buffer.h b/third_party/blink/renderer/platform/graphics/gpu/drawing_buffer.h	(rejected hunks)
+@@ -123,10 +123,17 @@ class PLATFORM_EXPORT DrawingBuffer : public cc::TextureLayerClient,
+   enum PreserveDrawingBuffer {
+     kPreserve,
+     kDiscard,
+   };
+ 
++#if BUILDFLAG(ARKWEB_WEBGL)
++  enum WebGLVersion {
++    kWebGL1,
++    kWebGL2,
++  };
++#endif
++
+   enum ChromiumImageUsage {
+     kAllowChromiumImage,
+     kDisallowChromiumImage,
+   };
+ 

@@ -1,0 +1,16 @@
+diff a/third_party/blink/renderer/platform/mediastream/media_stream_audio_source.cc b/third_party/blink/renderer/platform/mediastream/media_stream_audio_source.cc	(rejected hunks)
+@@ -27,10 +27,14 @@
+ #include "third_party/blink/renderer/platform/scheduler/public/post_cross_thread_task.h"
+ #include "third_party/blink/renderer/platform/wtf/cross_thread_copier_base.h"
+ #include "third_party/blink/renderer/platform/wtf/cross_thread_functional.h"
+ #include "third_party/blink/renderer/platform/wtf/functional.h"
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
++#include "arkweb/chromium_ext/third_party/blink/renderer/platform/mediastream/media_stream_audio_source_for_include.cc"
++#endif // ARKWEB_MEDIA_CAPTURE
++
+ namespace blink {
+ 
+ // TODO(https://crbug.com/638081):
+ // Like in ProcessedLocalAudioSource::GetBufferSize(), we should re-evaluate
+ // whether Android needs special treatment here.

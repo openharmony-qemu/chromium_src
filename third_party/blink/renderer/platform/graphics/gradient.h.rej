@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/platform/graphics/gradient.h b/third_party/blink/renderer/platform/graphics/gradient.h	(rejected hunks)
+@@ -178,10 +178,13 @@ class PLATFORM_EXPORT Gradient : public RefCounted<Gradient> {
+ 
+   mutable Vector<ColorStop, 2> stops_;
+   mutable bool stops_sorted_;
+   bool is_dark_mode_enabled_ = false;
+   std::unique_ptr<DarkModeFilter> dark_mode_filter_;
++#if BUILDFLAG(ARKWEB_NIGHT_MODE)
++  bool is_night_mode_ = false;
++#endif
+ 
+   mutable sk_sp<PaintShader> cached_shader_;
+   mutable sk_sp<cc::ColorFilter> color_filter_;
+ 
+   Color::ColorSpace color_space_interpolation_space_ = Color::ColorSpace::kNone;

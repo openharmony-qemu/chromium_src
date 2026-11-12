@@ -1,0 +1,118 @@
+diff a/third_party/blink/renderer/platform/widget/compositing/layer_tree_settings.cc b/third_party/blink/renderer/platform/widget/compositing/layer_tree_settings.cc	(rejected hunks)
+@@ -5,10 +5,11 @@
+ #include "third_party/blink/renderer/platform/widget/compositing/layer_tree_settings.h"
+ 
+ #include <algorithm>
+ #include <tuple>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/base_switches.h"
+ #include "base/command_line.h"
+ #include "base/logging.h"
+ #include "base/metrics/field_trial_params.h"
+ #include "base/strings/string_number_conversions.h"
+@@ -31,10 +32,12 @@
+ #include "ui/base/ui_base_switches.h"
+ #include "ui/native_theme/features/native_theme_features.h"
+ #include "ui/native_theme/native_theme.h"
+ #include "ui/native_theme/overlay_scrollbar_constants.h"
+ 
++#include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/compositing/layer_tree_settings_utils.h"
++
+ namespace blink {
+ 
+ namespace {
+ 
+ // When enabled, scrollbar fade animations' delay and duration are scaled
+@@ -163,11 +166,11 @@ cc::ManagedMemoryPolicy GetGpuMemoryPolicy(
+       actual.bytes_limit_when_visible *= 1024 * 1024;
+     }
+     return actual;
+   }
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
+   if (base::SysInfo::IsLowEndDevice() ||
+       base::SysInfo::AmountOfPhysicalMemory().InMiB() < 2000) {
+     actual.bytes_limit_when_visible = 96 * 1024 * 1024;
+   } else {
+     actual.bytes_limit_when_visible = 256 * 1024 * 1024;
+@@ -203,10 +206,14 @@ cc::ManagedMemoryPolicy GetGpuMemoryPolicy(
+     mb_limit_when_visible = default_memory_mb;
+   }
+ 
+   actual.bytes_limit_when_visible = mb_limit_when_visible * 1024 * 1024;
+ #endif
++#if BUILDFLAG(ARKWEB_SYNC_RENDER)
++  SetMaxVisibleBytes(actual);
++#endif
++
+   return actual;
+ }
+ 
+ // static
+ cc::LayerTreeSettings GenerateLayerTreeSettings(
+@@ -232,11 +239,11 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
+   // Checkerimaging is not supported for synchronous single-threaded mode, which
+   // is what the renderer uses if its not threaded.
+   settings.enable_checker_imaging =
+       !cmd.HasSwitch(::switches::kDisableCheckerImaging) && is_threaded;
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_FLING)
+   // We can use a more aggressive limit on Android since decodes tend to take
+   // longer on these devices.
+   settings.min_image_bytes_to_checker = 512 * 1024;  // 512kB
+ 
+   // Re-rasterization of checker-imaged content with software raster can be too
+@@ -259,11 +266,11 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
+       return false;
+     }
+   };
+ 
+   int default_tile_size = 256;
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_FLING)
+   const gfx::Size screen_size =
+       gfx::ScaleToFlooredSize(initial_screen_size, initial_device_scale_factor);
+   int display_width = screen_size.width();
+   int display_height = screen_size.height();
+   int numTiles = (display_width * display_height) / (256 * 256);
+@@ -342,11 +349,15 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
+   settings.can_use_lcd_text = platform->IsLcdTextEnabled();
+   settings.use_zero_copy = cmd.HasSwitch(switches::kEnableZeroCopy);
+   settings.use_partial_raster = !cmd.HasSwitch(switches::kDisablePartialRaster);
+   // Partial raster is not supported with RawDraw
+   settings.use_partial_raster &= !::features::IsUsingRawDraw();
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  settings.enable_elastic_overscroll = true;
++#else
+   settings.enable_elastic_overscroll = platform->IsElasticOverscrollEnabled();
++#endif
+   settings.use_gpu_memory_buffer_resources =
+       cmd.HasSwitch(switches::kEnableGpuMemoryBufferCompositorResources);
+   settings.use_painted_device_scale_factor = true;
+ 
+   // Build LayerTreeSettings from command line args.
+@@ -465,10 +476,21 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
+     // On other devices we have increased memory excessively to avoid
+     // raster-on-demand already, so now we reserve 50% _only_ to avoid
+     // raster-on-demand, and use 50% of the memory otherwise.
+     settings.max_memory_for_prepaint_percentage = 50;
+   }
++#if BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE)
++  ConfigureOverlayScrollbarSettings(settings);
++#endif  // BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE)
++
++#elif BUILDFLAG(ARKWEB_FLING)
++  bool using_low_memory_policy =
++      base::SysInfo::IsLowEndDevice() && !IsSmallScreen(screen_size);
++  AdjustGraphicsSettings(screen_size, settings, using_low_memory_policy);
++#if BUILDFLAG(IS_ARKWEB_EXT)
++  SetEnableDeleteUnusedResourcesDelay(settings);
++#endif
+ 
+ #else   // BUILDFLAG(IS_ANDROID)
+   const bool using_low_memory_policy = base::SysInfo::IsLowEndDevice();
+ 
+   settings.enable_fluent_scrollbar = ui::IsFluentScrollbarEnabled();

@@ -1,0 +1,32 @@
+diff a/third_party/blink/renderer/platform/mediastream/media_stream_audio_source.h b/third_party/blink/renderer/platform/mediastream/media_stream_audio_source.h	(rejected hunks)
+@@ -138,10 +138,15 @@ class PLATFORM_EXPORT MediaStreamAudioSource
+       const std::string& id);
+ 
+   // Number of MediaStreamAudioTracks added as consumers.
+   size_t NumTracks() const override;
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
++  // Sets paused state and notifies it to all registered tracks.
++  void SetPausedState(bool is_paused);
++#endif // ARKWEB_MEDIA_CAPTURE
++
+  protected:
+   // Returns true if the source has already been started and has not yet been
+   // stopped. Otherwise, attempts to start the source and returns true if
+   // successful. While the source is running, it may provide audio on any thread
+   // by calling DeliverDataToTracks().
+@@ -198,10 +203,14 @@ class PLATFORM_EXPORT MediaStreamAudioSource
+   // this.
+   void StopAudioDeliveryTo(MediaStreamAudioTrack* track);
+ 
+   void LogMessage(const std::string& message);
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
++  void SetPausedStateOnTaskRunner(bool is_paused);
++#endif // ARKWEB_MEDIA_CAPTURE
++
+   void SetErrorCode(media::AudioCapturerSource::ErrorCode code) {
+     DCHECK(GetTaskRunner()->BelongsToCurrentThread());
+     error_code_ = code;
+   }
+ 

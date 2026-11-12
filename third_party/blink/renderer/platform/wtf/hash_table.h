@@ -2062,7 +2062,11 @@ struct HashTableConstIteratorAdapter {
   static_assert(!IsTraceable<typename Traits::TraitType>::value);
 
   using iterator_category = std::bidirectional_iterator_tag;
+#if defined(__clang__) && (__clang_major__ < 17)
+  using value_type = typename HashTableType::ValueType;
+#else
   using value_type = HashTableType::ValueType;
+#endif
   using difference_type = ptrdiff_t;
   using pointer = value_type*;
   using reference = value_type&;
@@ -2111,7 +2115,11 @@ struct HashTableConstIteratorAdapter<HashTableType, Traits> {
 
  public:
   using iterator_category = std::bidirectional_iterator_tag;
+#if defined(__clang__) && (__clang_major__ < 17)
+  using value_type = typename HashTableType::ValueType;
+#else
   using value_type = HashTableType::ValueType;
+#endif
   using difference_type = ptrdiff_t;
   using pointer = value_type*;
   using reference = value_type&;

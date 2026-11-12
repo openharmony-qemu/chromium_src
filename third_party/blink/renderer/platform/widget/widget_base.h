@@ -67,6 +67,7 @@ class PageScheduler;
 class WidgetBaseClient;
 class WidgetInputHandlerManager;
 class WidgetCompositor;
+class WidgetBaseUtils;
 
 // This class is the foundational class for all widgets that blink creates.
 // (WebPagePopupImpl, WebFrameWidgetImpl) will contain an instance of this
@@ -90,6 +91,8 @@ class PLATFORM_EXPORT WidgetBase : public mojom::blink::Widget,
       bool is_embedded,
       bool is_for_scalable_page);
   ~WidgetBase() override;
+
+  friend class WidgetBaseUtils;
 
   // Initialize the compositor. |settings| is typically null. When |settings| is
   // null the default settings will be used, tests may provide a |settings|
@@ -432,12 +435,19 @@ class PLATFORM_EXPORT WidgetBase : public mojom::blink::Widget,
 
   bool WillBeDestroyed() const { return will_be_destroyed_; }
 
+  WidgetBaseUtils* utils() {
+    return widget_base_utils_.get();
+  }
+
   void OnDevToolsSessionConnectionChanged(bool attached);
 
   // Helper to get the non-emulated device scale factor.
   float GetOriginalDeviceScaleFactor() const;
 
  private:
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class WidgetBaseUtilsTest;
+#endif
   static void AssertAreCompatible(const WidgetBase& a, const WidgetBase& b);
 
   bool CanComposeInline();

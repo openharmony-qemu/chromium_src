@@ -1,0 +1,213 @@
+diff a/third_party/blink/renderer/platform/runtime_enabled_features.json5 b/third_party/blink/renderer/platform/runtime_enabled_features.json5	(rejected hunks)
+@@ -1290,10 +1290,16 @@
+     {
+       // The AccentColor And AccentColorText CSS system color keywords
+       name: "CSSAccentColorKeyword",
+       status: "experimental",
+     },
++    {
++      // ArkWeb revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6710263 and change status to test.
++      // Enables alignment properties for block and inline out-of-flow elements.
++      name: "CSSAlignBlockAndInlineOutOfFlows",
++      status: "test",
++    },
+     {
+       // Allows using counter() and counters() in alt text (after / in content property).
+       name: "CSSAltCounter",
+       status: "stable",
+     },
+@@ -2033,15 +2039,16 @@
+       name: "DocumentPatching",
+       status: {
+         "default": "test",
+       },
+     },
++    // ARKWEB_PIP not support DocumentPictureInPictureAPI yet.
+     {
+       name: "DocumentPictureInPictureAPI",
+       status: {
+         "Android": "",
+-        "default": "stable",
++        "default": "test",
+       },
+     },
+     // Enables `preferInitialWindowPlacement` Document PiP option to skip
+     // re-using the previous pip window bounds.
+     {
+@@ -3013,11 +3020,12 @@
+     },
+     {
+       name: "InputMultipleFieldsUI",
+       // No plan to support complex UI for date/time INPUT types on Android and
+       // iOS.
+-      status: {"Android": "test", "iOS": "test", "default": "stable"},
++      // status: {"Android": "test", "iOS": "test", "default": "stable"},
++      status: "stable",
+     },
+     // Insert a blockquote before a outer block after creating the blockquote
+     // when indenting a node whose outer block is a blockquote. See
+     // https://crbug.com/327665597
+     {
+@@ -3124,10 +3132,15 @@
+       status: "stable",
+     },
+     {
+       name: "LayoutIgnoreMarginsForSticky",
+     },
++    {
++      // ArkWeb revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6509722 and change status to test.
++      name: "LayoutJustifySelfForBlocks",
++      status: "test",
++    },
+     {
+       name: "LayoutImageEmptyNaturalSizeBeforeSizeAvailable",
+       status: "stable",
+     },
+     {
+@@ -3503,15 +3521,15 @@
+       name: "NetInfoConstantType",
+     },
+     {
+       name: "NetInfoDownlinkMax",
+       public: true,
+-      // Only Android, ChromeOS support NetInfo downlinkMax, type and ontypechange now
++      // Only Android, ChromeOS support NetInfo downlinkMax, type and ontypechange now,add ohos
+       status: {
+         "Android": "stable",
+         "ChromeOS": "stable",
+-        "default": "experimental",
++        "default": "stable",
+       },
+       base_feature: "none",
+     },
+     {
+       // This turns off all font antialiasing for tests unless it is
+@@ -3601,11 +3619,13 @@
+       name: "OpenPopoverInvokerRestrictToSameTreeScope",
+       status: "stable",
+     },
+     {
+       name: "OrientationEvent",
+-      status: {"Android": "stable"},
++      // BUILDFLAG(ARKWEB_WPT)
++      // status: {"Android": "stable"},
++      status: "stable",
+     },
+     {
+       name: "OriginAPI",
+       status: "experimental",
+     },
+@@ -3802,10 +3822,12 @@
+     },
+     {
+       name: "PartialCompletionNotAllowedInMoveParagraphs",
+       status: "stable",
+     },
++    // Changed ArkWeb from stable to experimental instead of following the community change, 
++    // to resolve the issue where the link is not marked as visited.
+     {
+       name: "PartitionVisitedLinkDatabaseWithSelfLinks",
+       status: {"iOS": "", "default": "stable"},
+     },
+     // This is to add an option to enable the Reveal button on password inputs while waiting ::reveal gets standardized.
+@@ -4137,10 +4159,15 @@
+       // the buffer before resolving the read request.
+       // https://chromestatus.com/feature/6396991665602560
+       name: "ReadableStreamBYOBReaderReadMinOption",
+       status: "stable",
+     },
++    {
++      // Shipping in M148, so should be removed around M150.
++      name: "RecheckParentDuringNodeVectorInsertion",
++      status: "stable",
++    },
+     {
+       name: "RecordSameDocumentPresentationTimeOnce",
+       status: "stable",
+     },
+     // If enabled, both Accept-Language HTTP header and JavaScript getter will
+@@ -4458,16 +4485,18 @@
+     // WebSpeech API with both speech recognition and synthesis functionality
+     // is not fully enabled on all platforms.
+     {
+       name: "ScriptedSpeechRecognition",
+       public: true,
++      depends_on: ["NonAdvancedSecurityMode"],
+       status: "stable",
+       base_feature: "none",
+     },
+     {
+       name: "ScriptedSpeechSynthesis",
+       public: true,
++      depends_on: ["NonAdvancedSecurityMode"],
+       status: "stable",
+       base_feature: "none",
+     },
+     {
+       // crbug.com/378692756
+@@ -4677,10 +4706,15 @@
+       name: "SendBeaconThrowForBlobWithNonSimpleType",
+       public: true,
+       status: "stable",
+       base_feature: "none",
+     },
++    {
++      // arkweb set this feature not enabled
++      name: "SendMouseEventsDisabledFormControls",
++      public: true,
++    },
+     {
+       name: "SensorExtraClasses",
+       public: true,
+       status: "experimental",
+       base_feature: "none",
+@@ -5531,10 +5565,14 @@
+     {
+       name: "V8IdleTasks",
+       base_feature: "none",
+       public: true,
+     },
++    {
++      name: "VideoAspectRatioNaturalDimension",
++      status: "experimental",
++    },
+     {
+       // Whether a video element should automatically play fullscreen unless
+       // 'playsinline' is set.
+       name: "VideoAutoFullscreen",
+       settable_from_internals: true,
+@@ -5930,10 +5968,18 @@
+     },
+     {
+       name: "WebPrinting",
+       status: {"Android": "", "default": "test"},
+     },
++    {
++      // Restricts the sharing of SerialPort instances across different V8
++      // worlds (e.g., main world and isolated worlds) to prevent cross-world
++      // leaks.
++      name: "WebSerialWorldIsolatedCache",
++      status: "stable",
++      base_feature: "none",
++    },
+     // WebShare is enabled by default on Android (non-WebView), Win, ChromeOS, and Mac.
+     // This is done in chrome/renderer/chrome_content_renderer_client.cc to prevent
+     // making the API available to Linux and WebView. Ideally we would set the status
+     // below to "stable" once we can do so without significant test expectation duplication.
+     {
+@@ -6140,8 +6186,14 @@
+     },
+     {
+       // If enabled, the `getDisplayMedia()` family of APIs will ask for NV12
+       // frames, which should trigger a zero-copy path in the tab capture code.
+       name: "ZeroCopyTabCapture",
+-    }
++    },
++    {
++      // js API `window.arkWeb.scrollbarAvoidAreaTop` and `window.arkWeb.scrollbarAvoidAreaBottom`
++      // for setting the margin of vertical scrollbar avoid area in browser
++      name:  "ArkWeb",
++      status: "experimental",
++    },
+   ],
+ }

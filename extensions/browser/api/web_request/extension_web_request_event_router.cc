@@ -1421,6 +1421,10 @@ WebRequestEventRouter::OnAuthRequired(content::BrowserContext* browser_context,
     blocked_request.request = request;
     blocked_request.auth_callback = std::move(callback);
     blocked_request.auth_credentials = credentials;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    LOG(INFO) << kWebRequestApiLogTag
+              << " webRequest.onAuthRequired dispatched";
+#endif
     return AuthRequiredResponse::AUTH_REQUIRED_RESPONSE_IO_PENDING;
   }
   return AuthRequiredResponse::AUTH_REQUIRED_RESPONSE_NO_ACTION;
@@ -1472,6 +1476,10 @@ void WebRequestEventRouter::OnResponseStarted(
 
   // OnResponseStarted is even triggered, when the request was cancelled.
   if (net_error != net::OK) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    LOG(INFO) << kWebRequestApiLogTag
+              << " OnResponseStarted, net_error=" << net_error;
+#endif
     return;
   }
 

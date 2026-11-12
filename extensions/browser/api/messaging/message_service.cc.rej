@@ -1,0 +1,52 @@
+diff a/extensions/browser/api/messaging/message_service.cc b/extensions/browser/api/messaging/message_service.cc	(rejected hunks)
+@@ -81,11 +88,11 @@ namespace extensions {
+ namespace {
+ 
+ const char kReceivingEndDoesntExistError[] =
+     "Could not establish connection. Receiving end does not exist.";
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
++    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+ const char kMissingPermissionError[] =
+     "Access to native messaging requires nativeMessaging permission.";
+ const char kProhibitedByPoliciesError[] =
+     "Access to the native messaging host was disabled by the system "
+     "administrator.";
+@@ -358,10 +372,24 @@ class MessageServiceFactory
+     MessageService::Get(context)->OpenChannelToNativeApp(
+         GetEndpoint(context, source), source_port_id, native_app_name,
+         std::move(port), std::move(port_host));
+   }
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
++  void OpenChannelToBrowser(
++      content::BrowserContext* context,
++      Source source,
++      const PortId& source_port_id,
++      mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
++      mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
++          port_host) override {
++    MessageService::Get(context)->OpenChannelToBrowser(
++        GetEndpoint(context, source), source_port_id, std::move(port),
++        std::move(port_host));
++  }
++#endif
++
+   void OpenChannelToTab(
+       content::BrowserContext* context,
+       Source source,
+       const PortId& source_port_id,
+       int tab_id,
+@@ -674,11 +702,11 @@ void MessageService::OpenChannelToNativeAppImpl(
+           std::move(port), std::move(port_host));
+   if (!opener_port->IsValidPort())
+     return;
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
++    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+   bool has_permission = extension->permissions_data()->HasAPIPermission(
+       mojom::APIPermissionID::kNativeMessaging);
+   if (!has_permission) {
+     opener_port->DispatchOnDisconnect(kMissingPermissionError);
+     return;

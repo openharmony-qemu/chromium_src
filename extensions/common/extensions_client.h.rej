@@ -1,0 +1,18 @@
+diff a/extensions/common/extensions_client.h b/extensions/common/extensions_client.h	(rejected hunks)
+@@ -115,10 +115,16 @@ class ExtensionsClient {
+       const APIPermissionSet& api_permissions) const = 0;
+ 
+   // Returns false if content scripts are forbidden from running on `url`.
+   virtual bool IsScriptableURL(const GURL& url, std::string* error) const = 0;
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  virtual void SetWebstoreBaseURL(const GURL& url) {}
++  virtual void SetNewWebstoreBaseURL(const GURL& url) {}
++  virtual void SetWebstoreUpdateURL(const GURL& url) {}
++#endif
++
+   // Returns the base webstore URL prefix.
+   virtual const GURL& GetWebstoreBaseURL() const = 0;
+ 
+   // Returns the base webstore URL prefix for the new webstore. This is defined
+   // separately rather than just changing what GetWebstoreBaseURL returns, as

@@ -1,0 +1,47 @@
+diff a/extensions/common/extension_urls.cc b/extensions/common/extension_urls.cc	(rejected hunks)
+@@ -60,33 +68,45 @@ const char kNtpPromoSlUtmSource[] = "ext_ntp_promo_sl";
+ 
+ GURL GetWebstoreLaunchURL() {
+   extensions::ExtensionsClient* client = extensions::ExtensionsClient::Get();
+   if (client)
+     return client->GetWebstoreBaseURL();
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+   return GURL(kChromeWebstoreBaseURL);
++#else
++  return GURL(GetDefaultWebstoreLaunchURL());
++#endif
+ }
+ 
+ GURL GetDocsWhatsNewURL() {
+   return GURL(kExtensionsDocsWhatsNewURL);
+ }
+ 
+ GURL GetNewWebstoreLaunchURL() {
+   extensions::ExtensionsClient* client = extensions::ExtensionsClient::Get();
+   if (client)
+     return client->GetNewWebstoreBaseURL();
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+   return GURL(kNewChromeWebstoreBaseURL);
++#else
++  return GURL(GetDefaultNewWebstoreLaunchURL());
++#endif
+ }
+ 
+ GURL AppendUtmSource(const GURL& url, std::string_view utm_source_value) {
+   return net::AppendQueryParameter(url, "utm_source", utm_source_value);
+ }
+ 
+ GURL GetWebstoreExtensionsCategoryURL() {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  return GetWebStoreHomePageUrl();
++#else
+   GURL base_url = GetNewWebstoreLaunchURL();
+   CHECK_EQ(base_url.path(), "/")
+       << "GURL::Resolve() won't work with a URL with a path.";
+   return base_url.Resolve("category/extensions");
++#endif
+ }
+ 
+ std::string GetWebstoreItemDetailURLPrefix() {
+   return GetNewWebstoreLaunchURL().spec() + "detail/";
+ }

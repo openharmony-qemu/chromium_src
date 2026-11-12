@@ -1,0 +1,30 @@
+diff a/extensions/renderer/resource_request_policy.cc b/extensions/renderer/resource_request_policy.cc	(rejected hunks)
+@@ -77,20 +77,27 @@ bool ResourceRequestPolicy::CanRequestResource(
+     blink::WebLocalFrame* frame,
+     ui::PageTransition transition_type,
+     const url::Origin* initiator_origin) {
+   // `target_url` is expected to have a chrome-extension scheme.
+   // `upstream_url` could be empty, have a chrome-extension scheme, or other.
+-  CHECK(target_url.SchemeIs(kExtensionScheme));
++  CHECK(target_url.SchemeIs(kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++        || target_url.SchemeIs(kArkwebExtensionScheme)
++#endif
++  );
+ 
+   GURL frame_url = frame->GetDocument().Url();
+   url::Origin frame_origin = frame->GetDocument().GetSecurityOrigin();
+ 
+   // Navigations from chrome://, devtools://, or embedder-specified pages need
+   // to be allowed, even if the target |url| is not web-accessible.  See also:
+   // - https://crbug.com/662602
+   // - similar scheme checks in ExtensionNavigationThrottle
+   if (frame_origin.scheme() == content::kChromeUIScheme ||
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      frame_origin.scheme() == content::kArkWebUIScheme ||
++#endif
+       frame_origin.scheme() == content::kChromeDevToolsScheme) {
+     return true;
+   }
+   if (delegate_ &&
+       delegate_->ShouldAlwaysAllowRequestForFrameOrigin(frame_origin)) {

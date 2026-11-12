@@ -1,0 +1,96 @@
+diff a/extensions/browser/install_verifier.cc b/extensions/browser/install_verifier.cc	(rejected hunks)
+@@ -41,10 +41,15 @@
+ #include "extensions/common/manifest_url_handlers.h"
+ #include "extensions/common/switches.h"
+ #include "services/network/public/mojom/url_loader_factory.mojom.h"
+ #include "ui/base/l10n/l10n_util.h"
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "arkweb/chromium_ext/extensions/browser/custom_handler.h"
++#include "extensions/common/extension_urls.h"
++#endif
++
+ static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
+ 
+ namespace extensions {
+ 
+ namespace {
+@@ -272,10 +344,16 @@ bool InstallVerifier::MustRemainDisabled(
+ 
+   bool verified = true;
+   if (base::Contains(InstallSigner::GetForcedNotFromWebstore(),
+                      extension->id())) {
+     verified = false;
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  } else if (ShouldBypassStoreCheckForArkwebWebstoreType(*extension)) {
++    // ArkWeb external webstore_type bypasses store-origin and store membership
++    // checks here. CRX package signature validation already ran earlier.
++    verified = true;
++#endif
+   } else if (!IsFromStore(*extension, context_)) {
+     verified = false;
+   } else if (!signature_ && (!bootstrap_check_complete_ ||
+                              GetStatus() < VerifyStatus::ENFORCE_STRICT)) {
+     // If we don't have a signature yet, we'll temporarily consider every
+@@ -404,10 +488,14 @@ void InstallVerifier::BeginFetch() {
+   const PendingOperation& operation = *operation_queue_.front();
+ 
+   ExtensionIdSet ids_to_sign;
+   if (signature_.get()) {
+     ids_to_sign.insert(signature_->ids.begin(), signature_->ids.end());
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++    ids_to_sign.insert(signature_->invalid_ids.begin(),
++                       signature_->invalid_ids.end());
++#endif
+   }
+   if (operation.type == InstallVerifier::REMOVE) {
+     for (const std::string& id : operation.ids) {
+       if (base::Contains(ids_to_sign, id))
+         ids_to_sign.erase(id);
+@@ -416,20 +504,46 @@ void InstallVerifier::BeginFetch() {
+     ids_to_sign.insert(operation.ids.begin(), operation.ids.end());
+   }
+ 
+   auto url_loader_factory = context_->GetDefaultStoragePartition()
+                                 ->GetURLLoaderFactoryForBrowserProcess();
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+   signer_ = std::make_unique<InstallSigner>(url_loader_factory, ids_to_sign);
++#else
++  ExtensionRegistry* extension_registry = ExtensionRegistry::Get(context_);
++  if (!extension_registry) {
++    return;
++  }
++
++  std::map<ExtensionId, int> webstore_types;
++  for (auto& id : ids_to_sign) {
++    auto iter = webstore_types_.find(id);
++    if (iter != webstore_types_.end()) {
++      webstore_types[id] = iter->second;
++      webstore_types_.erase(iter);
++      continue;
++    }
++
++    const Extension* extension =
++        extension_registry->GetExtensionById(id, ExtensionRegistry::EVERYTHING);
++    webstore_types[id] = CustomData::GetStoreType(extension);
++  }
++  signer_ = std::make_unique<InstallSigner>(url_loader_factory, webstore_types);
++#endif
+   signer_->GetSignature(base::BindOnce(&InstallVerifier::SignatureCallback,
+                                        weak_factory_.GetWeakPtr()));
+ }
+ 
+ void InstallVerifier::SaveToPrefs() {
+   if (signature_.get())
+     DCHECK(InstallSigner::VerifySignature(*signature_));
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if (!signature_.get()) {
++#else
+   if (!signature_.get() || signature_->ids.empty()) {
++#endif
+     DVLOG(1) << "SaveToPrefs - saving NULL";
+     prefs_->SetInstallSignature(nullptr);
+   } else {
+     base::Value::Dict pref = signature_->ToDict();
+     if (VLOG_IS_ON(1)) {

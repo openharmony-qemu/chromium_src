@@ -409,6 +409,7 @@ void RuntimeAPI::OnAppUpdateAvailable(const Extension& extension) {
 }
 
 void RuntimeAPI::OnChromeUpdateAvailable() {
+  LOG(INFO) << "RuntimeAPI OnBrowserUpdateAvailable called";
   RuntimeEventRouter::DispatchOnBrowserUpdateAvailableEvent(browser_context_);
 }
 
@@ -814,6 +815,7 @@ void RuntimeEventRouter::DispatchOnRestartRequiredEvent(
   EventRouter* event_router = EventRouter::Get(context);
   DCHECK(event_router);
   event_router->DispatchEventToExtension(app_id, std::move(event));
+  LOG(INFO) << "RuntimeEventRouter API called: runtime.onRestartRequired";
 }
 
 // static
@@ -842,7 +844,12 @@ void RuntimeEventRouter::OnExtensionUninstalled(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  std::string url = uninstall_url.spec();
+  extensions::TabsCreateFunction::CreateTabForExtension(url, context);
+#else
   RuntimeAPI::GetFactoryInstance()->Get(context)->OpenURL(uninstall_url);
+#endif
 }
 
 void RuntimeAPI::OnExtensionInstalledAndLoaded(

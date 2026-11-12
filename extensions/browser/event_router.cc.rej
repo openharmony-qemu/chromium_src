@@ -1,0 +1,78 @@
+diff a/extensions/browser/event_router.cc b/extensions/browser/event_router.cc	(rejected hunks)
+@@ -52,10 +52,14 @@
+ #include "extensions/common/permissions/permissions_data.h"
+ #include "extensions/common/utils/extension_utils.h"
+ #include "ipc/ipc_channel_proxy.h"
+ #include "url/origin.h"
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "cef/ohos_cef_ext/libcef/browser/extensions/api/downloads/download_api_ext_router.h"
++#endif
++
+ using content::BrowserContext;
+ using content::BrowserThread;
+ using content::RenderProcessHost;
+ 
+ namespace extensions {
+@@ -379,10 +383,11 @@ void EventRouter::AddListenerForMainThread(
+     return;
+   }
+ 
+   const mojom::EventListenerOwner& listener_owner =
+       *event_listener->listener_owner;
++  LOG(INFO) << "EventRouter: AddListenerForMainThread: " << event_listener->event_name;
+   if (listener_owner.is_extension_id()) {
+     AddEventListener(event_listener->event_name, process,
+                      listener_owner.get_extension_id());
+   } else if (listener_owner.is_listener_url() &&
+              listener_owner.get_listener_url().is_valid()) {
+@@ -400,10 +405,11 @@ void EventRouter::AddListenerForServiceWorker(
+     return;
+   }
+ 
+   const mojom::EventListenerOwner& listener_owner =
+       *event_listener->listener_owner;
++  LOG(INFO) << "EventRouter: AddListenerForServiceWorker: " << event_listener->event_name;
+   if (!listener_owner.is_extension_id()) {
+     mojo::ReportBadMessage(kAddEventListenerWithInvalidExtensionID);
+     return;
+   }
+ 
+@@ -480,10 +486,11 @@ void EventRouter::RemoveListenerForMainThread(
+     return;
+   }
+ 
+   const mojom::EventListenerOwner& listener_owner =
+       *event_listener->listener_owner;
++  LOG(INFO) << "EventRouter: RemoveListenerForMainThread: " << event_listener->event_name;
+   if (listener_owner.is_extension_id()) {
+     RemoveEventListener(event_listener->event_name, process,
+                         listener_owner.get_extension_id());
+   } else if (listener_owner.is_listener_url() &&
+              listener_owner.get_listener_url().is_valid()) {
+@@ -501,10 +508,11 @@ void EventRouter::RemoveListenerForServiceWorker(
+     return;
+   }
+ 
+   const mojom::EventListenerOwner& listener_owner =
+       *event_listener->listener_owner;
++  LOG(INFO) << "EventRouter: RemoveListenerForServiceWorker: " << event_listener->event_name;
+   if (!listener_owner.is_extension_id()) {
+     mojo::ReportBadMessage(kRemoveEventListenerWithInvalidExtensionID);
+     return;
+   }
+ 
+@@ -685,10 +693,13 @@ void EventRouter::OnListenerRemoved(const EventListener* listener) {
+       listener->listener_url(), listener->browser_context(),
+       listener->worker_thread_id(), listener->service_worker_version_id(),
+       listener->IsLazy());
+   std::string base_event_name = GetBaseEventName(listener->event_name());
+   auto it = observer_map_.find(base_event_name);
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  ExtensionDownloadsEventRouterEx::GetInstance().OnListenerRemoved(details);
++#endif
+   if (it != observer_map_.end()) {
+     for (auto& observer : *it->second) {
+       observer.OnListenerRemoved(details);
+     }
+   }

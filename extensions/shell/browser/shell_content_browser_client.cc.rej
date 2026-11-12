@@ -1,0 +1,98 @@
+diff a/extensions/shell/browser/shell_content_browser_client.cc b/extensions/shell/browser/shell_content_browser_client.cc
+--- a/extensions/shell/browser/shell_content_browser_client.cc
++++ b/extensions/shell/browser/shell_content_browser_client.cc
+@@ -122,10 +122,13 @@ bool ShellContentBrowserClient::IsHandledURL(const GURL& url) {
+       content::kChromeUIScheme,
+       url::kDataScheme,
+       url::kFileScheme,
+       url::kFileSystemScheme,
+       kExtensionScheme,
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      kArkwebExtensionScheme
++#endif
+   };
+   for (const char* scheme : kProtocolList) {
+     if (url.SchemeIs(scheme))
+       return true;
+   }
+@@ -164,10 +167,13 @@ ShellContentBrowserClient::CreateSpeechRecognitionManagerDelegate() {
+ void ShellContentBrowserClient::GetAdditionalAllowedSchemesForFileSystem(
+     std::vector<std::string>* additional_allowed_schemes) {
+   ContentBrowserClient::GetAdditionalAllowedSchemesForFileSystem(
+       additional_allowed_schemes);
+   additional_allowed_schemes->push_back(kExtensionScheme);
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  additional_allowed_schemes->push_back(kArkwebExtensionScheme);
++#endif
+ }
+ 
+ std::unique_ptr<content::DevToolsManagerDelegate>
+ ShellContentBrowserClient::CreateDevToolsManagerDelegate() {
+   return std::make_unique<content::ShellDevToolsManagerDelegate>(
+@@ -230,11 +236,15 @@ ShellContentBrowserClient::GetNavigationUIData(
+ 
+ mojo::PendingRemote<network::mojom::URLLoaderFactory>
+ ShellContentBrowserClient::CreateNonNetworkNavigationURLLoaderFactory(
+     const std::string& scheme,
+     content::FrameTreeNodeId frame_tree_node_id) {
+-  if (scheme == extensions::kExtensionScheme) {
++  if (scheme == extensions::kExtensionScheme
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  || scheme == extensions::kArkwebExtensionScheme
++#endif
++) {
+     content::WebContents* web_contents =
+         content::WebContents::FromFrameTreeNodeId(frame_tree_node_id);
+     return extensions::CreateExtensionNavigationURLLoaderFactory(
+         web_contents->GetBrowserContext(),
+         !!extensions::WebViewGuest::FromFrameTreeNodeId(frame_tree_node_id));
+@@ -251,10 +261,16 @@ void ShellContentBrowserClient::
+ 
+   factories->emplace(
+       extensions::kExtensionScheme,
+       extensions::CreateExtensionWorkerMainResourceURLLoaderFactory(
+           browser_context));
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  factories->emplace(
++      extensions::kArkwebExtensionScheme,
++      extensions::CreateExtensionWorkerMainResourceURLLoaderFactory(
++          browser_context));
++#endif
+ }
+ 
+ void ShellContentBrowserClient::
+     RegisterNonNetworkServiceWorkerUpdateURLLoaderFactories(
+         content::BrowserContext* browser_context,
+@@ -264,10 +280,16 @@ void ShellContentBrowserClient::
+ 
+   factories->emplace(
+       extensions::kExtensionScheme,
+       extensions::CreateExtensionServiceWorkerScriptURLLoaderFactory(
+           browser_context));
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  factories->emplace(
++      extensions::kArkwebExtensionScheme,
++      extensions::CreateExtensionServiceWorkerScriptURLLoaderFactory(
++          browser_context));
++#endif
+ }
+ 
+ void ShellContentBrowserClient::RegisterNonNetworkSubresourceURLLoaderFactories(
+     int render_process_id,
+     int render_frame_id,
+@@ -276,10 +298,15 @@ void ShellContentBrowserClient::RegisterNonNetworkSubresourceURLLoaderFactories(
+   DCHECK(factories);
+ 
+   factories->emplace(extensions::kExtensionScheme,
+                      extensions::CreateExtensionURLLoaderFactory(
+                          render_process_id, render_frame_id));
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  factories->emplace(extensions::kArkwebExtensionScheme,
++                     extensions::CreateExtensionURLLoaderFactory(
++                         render_process_id, render_frame_id));
++#endif
+ }
+ 
+ void ShellContentBrowserClient::WillCreateURLLoaderFactory(
+     content::BrowserContext* browser_context,
+     content::RenderFrameHost* frame,

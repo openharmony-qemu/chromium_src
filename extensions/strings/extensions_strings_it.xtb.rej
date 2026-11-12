@@ -1,0 +1,13 @@
+diff a/extensions/strings/extensions_strings_it.xtb b/extensions/strings/extensions_strings_it.xtb	(rejected hunks)
+@@ -53,10 +53,11 @@
+ <translation id="7972881773422714442">Opzioni: <ph name="EXTENSIONOPTIONS_TAG_NAME" /></translation>
+ <translation id="8035920974645200807">Fotocamera anteriore</translation>
+ <translation id="8047248493720652249">Questa estensione non è riuscita a denominare il download "<ph name="ATTEMPTED_FILENAME" />" perché un'altra estensione (<ph name="EXTENSION_NAME" />) ha determinato un nome di file diverso "<ph name="ACTUAL_FILENAME" />".</translation>
+ <translation id="8284835137979141223"><ph name="PRODUCT_NAME" /> di <ph name="VENDOR_NAME" /></translation>
+ <translation id="8517576857589387417">File manifest mancante o illeggibile</translation>
++<translation id="8602184400052594090">File manifest mancante o illeggibile.</translation>
+ <translation id="8621383749470166852">Impossibile caricare il file "<ph name="RELATIVE_PATH" />" per lo script di contenuti. Gli script di contenuti possono essere caricati solo da file JavaScript supportati, come i file .js.</translation>
+ <translation id="8636666366616799973">Il pacchetto non è valido. Dettagli: "<ph name="ERROR_MESSAGE" />".</translation>
+ <translation id="8761756413268424715">"<ph name="APP_NAME" />" richiede l'accesso a un dispositivo:</translation>
+ <translation id="8885905466771744233">Esiste già una chiave privata per l'estensione specificata. Riutilizza tale chiave o prima eliminala.</translation>
+ <translation id="9039223174332979184">L'amministratore di questa macchina richiede che <ph name="EXTENSION_NAME" /> abbia una versione minima del manifest di 3.</translation>

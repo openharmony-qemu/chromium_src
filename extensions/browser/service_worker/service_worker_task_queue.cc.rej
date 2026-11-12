@@ -1,0 +1,19 @@
+diff a/extensions/browser/service_worker/service_worker_task_queue.cc b/extensions/browser/service_worker/service_worker_task_queue.cc	(rejected hunks)
+@@ -1047,11 +1047,17 @@ void ServiceWorkerTaskQueue::OnRegistrationStoredSync(int64_t registration_id,
+     return;
+   }
+ 
+   // The only registrations we track are the ones for root-scope extension
+   // service workers.
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  DCHECK(kExtensionScheme == scope.GetScheme() ||
++         kArkwebExtensionScheme == scope.GetScheme());
++#else
+   DCHECK_EQ(kExtensionScheme, scope.GetScheme());
++#endif
++
+   DCHECK_EQ("/", scope.GetPath());
+ 
+   base::UnguessableToken activation_token = iter->second;
+   SequencedContextId context_id = {extension_id, browser_context_->UniqueId(),
+                                    activation_token};

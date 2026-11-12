@@ -1,0 +1,14 @@
+diff a/extensions/common/api/_manifest_features.json b/extensions/common/api/_manifest_features.json	(rejected hunks)
+@@ -88,11 +88,11 @@
+     // Note: The "bluetooth" manifest permission is used by the
+     // chrome.bluetooth, chrome.bluetoothSocket and chrome.bluetoothLowEnergy
+     // APIs.
+     "channel": "stable",
+     "extension_types": ["platform_app"],
+-    "platforms": ["chromeos", "win", "mac"]
++    "platforms": ["chromeos", "win", "mac"] //[] "ohos"]
+   }, {
+     "channel": "stable",
+     "extension_types": ["platform_app"],
+     "platforms": ["linux"],
+     "allowlist": [

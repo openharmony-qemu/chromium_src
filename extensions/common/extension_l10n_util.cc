@@ -41,6 +41,10 @@
 #include "third_party/zlib/google/compression_utils.h"
 #include "ui/base/l10n/l10n_util.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/common/extension_l10n_util_ext.cc"
+#endif
+
 namespace errors = extensions::manifest_errors;
 namespace keys = extensions::manifest_keys;
 

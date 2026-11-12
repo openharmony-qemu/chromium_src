@@ -1,0 +1,31 @@
+diff a/extensions/browser/service_worker/service_worker_host.h b/extensions/browser/service_worker/service_worker_host.h	(rejected hunks)
+@@ -6,10 +6,11 @@
+ #define EXTENSIONS_BROWSER_SERVICE_WORKER_SERVICE_WORKER_HOST_H_
+ 
+ #include <string>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/supports_user_data.h"
+ #include "content/public/browser/browser_thread.h"
+ #include "content/public/browser/render_process_host_observer.h"
+ #include "extensions/browser/service_worker/worker_id.h"
+@@ -96,10 +97,17 @@ class ServiceWorkerHost :
+       const std::string& native_app_name,
+       const PortId& port_id,
+       mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
+       mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
+           port_host) override;
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
++  void OpenChannelToBrowser(
++      const PortId& port_id,
++      mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
++      mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
++          port_host) override;
++#endif
+   void OpenChannelToTab(
+       int32_t tab_id,
+       int32_t frame_id,
+       const std::optional<std::string>& document_id,
+       extensions::mojom::ChannelType channel_type,

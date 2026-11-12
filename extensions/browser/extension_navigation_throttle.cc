@@ -182,11 +182,18 @@ ExtensionNavigationThrottle::WillStartOrRedirectRequest() {
   bool url_has_extension_scheme = url.SchemeIs(kExtensionScheme);
   url::Origin target_origin = url::Origin::Create(url);
   const Extension* target_extension = nullptr;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  url_has_extension_scheme |= url.SchemeIs(kArkwebExtensionScheme);
+#endif
   if (url_has_extension_scheme) {
     // "chrome-extension://" URL.
     target_extension = registry->enabled_extensions().GetExtensionOrAppByURL(
         url, /*include_guid=*/true);
-  } else if (target_origin.scheme() == kExtensionScheme) {
+  } else if (target_origin.scheme() == kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+             || target_origin.scheme() == kArkwebExtensionScheme
+#endif
+  ) {
     // "blob:chrome-extension://" or "filesystem:chrome-extension://" URL.
     DCHECK(url.SchemeIsFileSystem() || url.SchemeIsBlob());
     target_extension =

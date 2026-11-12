@@ -1,0 +1,16 @@
+diff a/extensions/browser/api/system_info/system_info_api.cc b/extensions/browser/api/system_info/system_info_api.cc	(rejected hunks)
+@@ -211,10 +216,14 @@ void SystemInfoEventRouter::OnRemovableStorageAttached(
+ }
+ 
+ void SystemInfoEventRouter::OnRemovableStorageDetached(
+     const storage_monitor::StorageInfo& info) {
+   base::Value::List args;
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if (!StorageMonitor::GetInstance())
++    return;
++#endif
+   std::string transient_id =
+       StorageMonitor::GetInstance()->GetTransientIdForDeviceId(
+           info.device_id());
+   args.Append(transient_id);
+ 

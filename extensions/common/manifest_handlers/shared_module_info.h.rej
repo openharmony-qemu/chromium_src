@@ -1,0 +1,15 @@
+diff a/extensions/common/manifest_handlers/shared_module_info.h b/extensions/common/manifest_handlers/shared_module_info.h	(rejected hunks)
+@@ -18,10 +18,13 @@ class SharedModuleInfo : public Extension::ManifestData {
+  public:
+   SharedModuleInfo();
+   ~SharedModuleInfo() override;
+ 
+   struct ImportInfo {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++    int webstore_type;
++#endif
+     ExtensionId extension_id;
+     std::string minimum_version;
+   };
+ 
+   // Utility functions.

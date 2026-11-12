@@ -178,6 +178,11 @@ void SystemInfoEventRouter::StartOrStopStorageEventDispatcherIfNecessary() {
   if (should_dispatch == is_dispatching_storage_events_)
     return;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!StorageMonitor::GetInstance())
+    return;
+#endif
+
   DCHECK(StorageMonitor::GetInstance())
       << "Missing storage monitor. Cannot start/stop storage event "
       << "dispatchers.";

@@ -1,0 +1,19 @@
+diff a/extensions/common/mojom/frame_mojom_unittest.cc b/extensions/common/mojom/frame_mojom_unittest.cc	(rejected hunks)
+@@ -105,10 +106,17 @@ class TestFrameImpl : public mojom::LocalFrame, public mojom::LocalFrameHost {
+       const std::string& native_app_name,
+       const PortId& port_id,
+       mojo::PendingAssociatedRemote<mojom::MessagePort> port,
+       mojo::PendingAssociatedReceiver<mojom::MessagePortHost> port_host)
+       override {}
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
++  void OpenChannelToBrowser(
++      const PortId& port_id,
++      mojo::PendingAssociatedRemote<mojom::MessagePort> port,
++      mojo::PendingAssociatedReceiver<mojom::MessagePortHost> port_host)
++      override {}
++#endif
+   void OpenChannelToTab(int32_t tab_id,
+                         int32_t frame_id,
+                         const std::optional<std::string>& document_id,
+                         mojom::ChannelType channel_type,
+                         const std::string& channel_name,

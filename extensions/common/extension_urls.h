@@ -13,6 +13,10 @@
 #include "extensions/common/extension_id.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/common/extension_urls_for_include.cc"
+#endif
+
 namespace url {
 class Origin;
 }

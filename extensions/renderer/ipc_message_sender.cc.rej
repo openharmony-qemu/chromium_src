@@ -1,0 +1,53 @@
+diff a/extensions/renderer/ipc_message_sender.cc b/extensions/renderer/ipc_message_sender.cc	(rejected hunks)
+@@ -5,10 +5,11 @@
+ #include "extensions/renderer/ipc_message_sender.h"
+ 
+ #include <optional>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/weak_ptr.h"
+ #include "base/metrics/histogram_macros.h"
+ #include "content/public/renderer/render_frame.h"
+ #include "content/public/renderer/render_thread.h"
+@@ -237,10 +238,19 @@ class MainThreadIPCMessageSender : public IPCMessageSender {
+         ExtensionFrameHelper::Get(render_frame)
+             ->GetLocalFrameHost()
+             ->OpenChannelToNativeApp(*target.native_application_name, port_id,
+                                      std::move(port), std::move(port_host));
+         break;
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
++      case MessageTarget::BROWSER:
++        CHECK_EQ(mojom::ChannelType::kBrowser, channel_type);
++        ExtensionFrameHelper::Get(render_frame)
++            ->GetLocalFrameHost()
++            ->OpenChannelToBrowser(port_id, std::move(port),
++                                   std::move(port_host));
++        break;
++#endif
+     }
+   }
+ 
+   void SendActivityLogIPC(ScriptContext* context,
+                           const ExtensionId& extension_id,
+@@ -525,10 +535,19 @@ class WorkerThreadIPCMessageSender : public IPCMessageSender {
+         WorkerThreadDispatcher::GetServiceWorkerData()
+             ->GetServiceWorkerHost()
+             ->OpenChannelToNativeApp(*target.native_application_name, port_id,
+                                      std::move(port), std::move(port_host));
+         break;
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
++      case MessageTarget::BROWSER:
++        CHECK_EQ(mojom::ChannelType::kBrowser, channel_type);
++        WorkerThreadDispatcher::GetServiceWorkerData()
++            ->GetServiceWorkerHost()
++            ->OpenChannelToBrowser(port_id, std::move(port),
++                                   std::move(port_host));
++        break;
++#endif
+     }
+   }
+ 
+   void SendActivityLogIPC(ScriptContext* context,
+                           const ExtensionId& extension_id,

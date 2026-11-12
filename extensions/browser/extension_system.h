@@ -17,6 +17,10 @@
 #include "extensions/common/extension.h"
 #include "extensions/common/extension_id.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/browser/extension_registry_info_manager.h"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace base {

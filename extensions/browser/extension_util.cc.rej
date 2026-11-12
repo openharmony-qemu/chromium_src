@@ -1,0 +1,50 @@
+diff a/extensions/browser/extension_util.cc b/extensions/browser/extension_util.cc	(rejected hunks)
+@@ -51,10 +51,14 @@
+ 
+ #if BUILDFLAG(IS_CHROMEOS)
+ #include "base/system/sys_info.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "arkweb/chromium_ext/extensions/browser/extension_util_ext.cc"
++#endif
++
+ namespace extensions {
+ namespace util {
+ 
+ namespace {
+ 
+@@ -374,11 +382,15 @@ ExtensionId GetExtensionIdForSiteInstance(
+   }
+ 
+   // This works for both apps and extensions because the site has been
+   // normalized to the extension URL for hosted apps.
+   const GURL& site_url = site_instance.GetSiteURL();
+-  if (!site_url.SchemeIs(kExtensionScheme)) {
++  if (!site_url.SchemeIs(kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      && !site_url.SchemeIs(kArkwebExtensionScheme)
++#endif
++  ) {
+     return ExtensionId();
+   }
+ 
+   // Navigating to a disabled (or uninstalled or not-yet-installed) extension
+   // will set the site URL to chrome-extension://invalid.
+@@ -397,11 +409,15 @@ ExtensionId GetExtensionIdForSiteInstance(
+ }
+ 
+ std::string GetExtensionIdFromFrame(
+     content::RenderFrameHost* render_frame_host) {
+   const GURL& site = render_frame_host->GetSiteInstance()->GetSiteURL();
+-  if (!site.SchemeIs(kExtensionScheme)) {
++  if (!site.SchemeIs(kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      && !site.SchemeIs(kArkwebExtensionScheme)
++#endif
++  ) {
+     return std::string();
+   }
+ 
+   return site.GetHost();
+ }

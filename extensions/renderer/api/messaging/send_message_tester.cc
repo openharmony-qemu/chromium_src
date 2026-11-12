@@ -143,6 +143,13 @@ void SendMessageTester::TestSendMessageOrRequest(
       // sendNativeMessage doesn't have name channels so we don't need to change
       // expected_channel from an empty string.
       break;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+    case SEND_BROWSER_MESSAGE:
+      method_name = "sendBrowserMessage";
+      channel_type = mojom::ChannelType::kBrowser;
+      // sendBrowserMessage doesn't have named channels.
+      break;
+#endif
   }
 
   MockMessagePortHost mock_message_port_host;

@@ -541,6 +541,11 @@ std::string GetEventForChannel(const MessagingEndpoint& source_endpoint,
       CHECK(!is_user_script_event);
       event_name = messaging_util::kOnConnectNativeEvent;
       break;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+    case mojom::ChannelType::kBrowser:
+      NOTREACHED();
+      break;
+#endif
   }
 
   return event_name;

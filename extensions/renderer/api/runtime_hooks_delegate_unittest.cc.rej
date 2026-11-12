@@ -1,0 +1,13 @@
+diff a/extensions/renderer/api/runtime_hooks_delegate_unittest.cc b/extensions/renderer/api/runtime_hooks_delegate_unittest.cc	(rejected hunks)
+@@ -2,10 +2,11 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "extensions/renderer/api/runtime_hooks_delegate.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include <memory>
+ #include <string_view>
+ 
+ #include "base/memory/raw_ptr.h"
+ #include "base/strings/stringprintf.h"

@@ -117,6 +117,10 @@
 #include "v8/include/v8-object.h"
 #include "v8/include/v8-primitive.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/renderer/dispatcher_ext.cc"
+#endif
+
 using blink::WebDocument;
 using blink::WebSecurityPolicy;
 using blink::WebString;
@@ -174,7 +178,11 @@ enum class ExtensionRendererLoadStatus {
 // extension.
 bool ExtensionAPIEnabledForServiceWorkerScript(const GURL& scope,
                                                const GURL& script_url) {
-  if (!script_url.SchemeIs(kExtensionScheme)) {
+  if (!script_url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !script_url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     return false;
   }
 
@@ -501,7 +509,11 @@ void Dispatcher::DidInitializeServiceWorkerContextOnWorkerThread(
     blink::WebServiceWorkerContextProxy* context_proxy,
     const GURL& service_worker_scope,
     const GURL& script_url) {
-  if (!script_url.SchemeIs(kExtensionScheme))
+  if (!script_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !script_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  )
     return;
 
   // Defer `PrepareForEvaluation` until `ModuleSystem` is created.
@@ -537,7 +549,11 @@ void Dispatcher::WillEvaluateServiceWorkerOnWorkerThread(
   // TODO(crbug.com/40626913): We may want to give service workers not
   // registered by extensions minimal bindings, the same as other webpage-like
   // contexts.
-  if (!script_url.SchemeIs(kExtensionScheme)) {
+  if (!script_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !script_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  ) {
     // Early-out if this isn't a chrome-extension:// scheme, because looking up
     // the extension registry is unnecessary if it's not. Checking this will
     // also skip over hosted apps, which is the desired behavior - hosted app

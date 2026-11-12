@@ -328,7 +328,11 @@ std::optional<base::DictValue> LoadManifest(
     std::string* error) {
   base::FilePath manifest_path = extension_path.Append(manifest_filename);
   if (!base::PathExists(manifest_path)) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    *error = l10n_util::GetStringUTF8(IDS_EXTENSION_MANIFEST_UNREADABLE_V2);
+#else
     *error = l10n_util::GetStringUTF8(IDS_EXTENSION_MANIFEST_UNREADABLE);
+#endif
     return std::nullopt;
   }
 
@@ -340,7 +344,11 @@ std::optional<base::DictValue> LoadManifest(
       // It would be cleaner to have the JSON reader give a specific error
       // in this case, but other code tests for a file error with
       // error->empty().  For now, be consistent.
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      *error = l10n_util::GetStringUTF8(IDS_EXTENSION_MANIFEST_UNREADABLE_V2);
+#else
       *error = l10n_util::GetStringUTF8(IDS_EXTENSION_MANIFEST_UNREADABLE);
+#endif
     } else {
       *error = base::StringPrintf(
           "%s  %s", manifest_errors::kManifestParseError, error->c_str());

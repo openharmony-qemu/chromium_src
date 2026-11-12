@@ -278,7 +278,11 @@ bool WebAccessibleResourcesInfo::IsResourceWebAccessibleRedirect(
     const std::optional<url::Origin>& initiator_origin,
     const GURL& upstream_url) {
   CHECK(extension);
-  CHECK(target_url.SchemeIs(kExtensionScheme));
+  CHECK(target_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        || target_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  );
 
   return IsResourceWebAccessibleImpl(*extension, target_url, initiator_origin,
                                      upstream_url);

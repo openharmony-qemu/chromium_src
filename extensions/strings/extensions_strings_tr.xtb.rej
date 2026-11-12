@@ -1,0 +1,13 @@
+diff a/extensions/strings/extensions_strings_tr.xtb b/extensions/strings/extensions_strings_tr.xtb	(rejected hunks)
+@@ -53,10 +53,11 @@
+ <translation id="7972881773422714442">Seçenekler: <ph name="EXTENSIONOPTIONS_TAG_NAME" /></translation>
+ <translation id="8035920974645200807">Ön kamera</translation>
+ <translation id="8047248493720652249">Başka bir uzantı (<ph name="EXTENSION_NAME" />) farklı bir dosya adı ("<ph name="ACTUAL_FILENAME" />") belirlediğinden, uzantı indirilen dosyayı "<ph name="ATTEMPTED_FILENAME" />" olarak adlandıramadı.</translation>
+ <translation id="8284835137979141223"><ph name="VENDOR_NAME" /> adlı firmadan <ph name="PRODUCT_NAME" /></translation>
+ <translation id="8517576857589387417">Manifest dosyası eksik veya okunamıyor</translation>
++<translation id="8602184400052594090">Manifest dosyası eksik veya okunamıyor.</translation>
+ <translation id="8621383749470166852">İçerik komut dosyasının "<ph name="RELATIVE_PATH" />" dosyası yüklenemedi. İçerik komut dosyaları yalnızca .js dosyaları gibi desteklenen JavaScript dosyalarından yüklenebilir.</translation>
+ <translation id="8636666366616799973">Paket geçersiz. Ayrıntılar: '<ph name="ERROR_MESSAGE" />'</translation>
+ <translation id="8761756413268424715">"<ph name="APP_NAME" />" uygulaması cihazlarınızdan birine erişim izni istiyor:</translation>
+ <translation id="8885905466771744233">Belirtilen uzantıya ilişkin özel anahtar zaten var. Var olan anahtarı yeniden kullanın veya öncelikle bu anahtarı silin.</translation>
+ <translation id="9039223174332979184">Bu makinenin yöneticisi, <ph name="EXTENSION_NAME" /> uzantısının manifest sürümünün en az 3 olmasını zorunlu kılıyor.</translation>

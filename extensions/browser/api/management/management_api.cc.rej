@@ -1,0 +1,25 @@
+diff a/extensions/browser/api/management/management_api.cc b/extensions/browser/api/management/management_api.cc	(rejected hunks)
+@@ -7,10 +7,11 @@
+ #include <memory>
+ #include <string>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/contains.h"
+ #include "base/functional/bind.h"
+ #include "base/json/json_writer.h"
+ #include "base/lazy_instance.h"
+ #include "base/location.h"
+@@ -405,10 +406,11 @@ void ManagementGetPermissionWarningsByManifestFunction::OnParse(
+   // Matched with AddRef() in Run().
+   Release();
+ }
+ 
+ ExtensionFunction::ResponseAction ManagementLaunchAppFunction::Run() {
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+   if (IsRunningOnAndroid()) {
+     return RespondNow(Error(keys::kLaunchAppNotSupported));
+   }
+   std::optional<management::LaunchApp::Params> params =
+       management::LaunchApp::Params::Create(args());

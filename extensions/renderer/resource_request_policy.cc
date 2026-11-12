@@ -136,7 +136,11 @@ bool ResourceRequestPolicy::CanRequestResource(
 
 #if BUILDFLAG(ENABLE_PDF)
   // Handle specific cases for the PDF viewer.
-  if (extension_origin.GetScheme() == kExtensionScheme &&
+  if ((extension_origin.GetScheme() == kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       || extension_origin.GetScheme() == kArkwebExtensionScheme
+#endif
+       ) &&
       extension_origin.GetHost() == extension_misc::kPdfExtensionId) {
     // For the PDF viewer, `page_origin` doesn't match the `extension_origin`,
     // but the PDF extension frame should still be able to request resources

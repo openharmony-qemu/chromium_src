@@ -1,0 +1,29 @@
+diff a/extensions/browser/api/runtime/runtime_api.cc b/extensions/browser/api/runtime/runtime_api.cc	(rejected hunks)
+@@ -44,10 +44,15 @@
+ #include "extensions/common/manifest_handlers/shared_module_info.h"
+ #include "extensions/common/mojom/view_type.mojom.h"
+ #include "storage/browser/file_system/isolated_context.h"
+ #include "url/gurl.h"
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "chrome/browser/extensions/api/tabs/tabs_api.h"
++#include "extensions/common/manifest_handlers/options_page_info.h"
++#endif
++
+ using content::BrowserContext;
+ 
+ namespace extensions {
+ 
+ namespace runtime = api::runtime;
+@@ -582,10 +588,11 @@ void RuntimeEventRouter::DispatchOnBrowserUpdateAvailableEvent(
+   DCHECK(event_router);
+   auto event = std::make_unique<Event>(
+       events::RUNTIME_ON_BROWSER_UPDATE_AVAILABLE,
+       runtime::OnBrowserUpdateAvailable::kEventName, base::Value::List());
+   event_router->BroadcastEvent(std::move(event));
++  LOG(INFO) << "RuntimeEventRouter API called: runtime.onBrowserUpdateAvailable";
+ }
+ 
+ // static
+ void RuntimeEventRouter::DispatchOnRestartRequiredEvent(
+     content::BrowserContext* context,

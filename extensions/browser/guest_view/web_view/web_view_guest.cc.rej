@@ -1,0 +1,31 @@
+diff a/extensions/browser/guest_view/web_view/web_view_guest.cc b/extensions/browser/guest_view/web_view/web_view_guest.cc	(rejected hunks)
+@@ -987,11 +987,16 @@ void WebViewGuest::RendererResponsive(
+ }
+ 
+ void WebViewGuest::RendererUnresponsive(
+     WebContents* source,
+     content::RenderWidgetHost* render_widget_host,
+-    base::RepeatingClosure hang_monitor_restarter) {
++    base::RepeatingClosure hang_monitor_restarter
++#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
++    ,
++    content::RendererIsUnresponsiveReason reason
++#endif
++) {
+   CHECK(!base::FeatureList::IsEnabled(features::kGuestViewMPArch));
+ 
+   base::Value::Dict args;
+   args.Set(webview::kProcessId,
+            render_widget_host->GetProcess()->GetDeprecatedID());
+@@ -2220,10 +2225,11 @@ GURL WebViewGuest::ResolveURL(const std::string& src) {
+     return GURL(src);
+   }
+ 
+   GURL default_url(
+       base::StringPrintf("%s://%s/", kExtensionScheme, owner_host().c_str()));
++
+   return default_url.Resolve(src);
+ }
+ 
+ void WebViewGuest::OnWebViewNewWindowResponse(int new_window_instance_id,
+                                               bool allow,

@@ -1,0 +1,76 @@
+diff a/extensions/browser/api/web_request/web_request_api.cc b/extensions/browser/api/web_request/web_request_api.cc	(rejected hunks)
+@@ -9,10 +9,11 @@
+ #include <algorithm>
+ #include <memory>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/fixed_flat_set.h"
+ #include "base/functional/bind.h"
+ #include "base/json/json_writer.h"
+ #include "base/lazy_instance.h"
+ #include "base/memory/raw_ptr.h"
+@@ -94,10 +95,14 @@ namespace extensions {
+ 
+ namespace web_request = api::web_request;
+ 
+ namespace {
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++const char kWebRequestApiLogTag[] = "[WebRequestAPI]";
++#endif
++
+ WebRequestAPI::TestObserver* g_test_observer = nullptr;
+ 
+ // These values are persisted to logs. Entries should not be renumbered and
+ // numeric values should never be reused.
+ //
+@@ -384,10 +389,17 @@ void WebRequestAPI::OnListenerRemoved(const EventListenerInfo& details) {
+   // unfortunately, so we'll resort to two code paths for now.
+ 
+   // Note that details.event_name includes the sub-event details (e.g. "/123").
+   const std::string& sub_event_name = details.event_name;
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  LOG(INFO) << kWebRequestApiLogTag
++            << " Remove listener <sub_event_name:" << sub_event_name
++            << ", is_lazy:" << details.is_lazy
++            << "> for extension_id=" << details.extension_id;
++#endif
++
+   // The way we handle the listener removal depends on whether this was a
+   // lazy listener registration (indicated by a null browser context on
+   // `details`).
+   base::OnceClosure remove_listener;
+ 
+@@ -581,10 +593,13 @@ bool WebRequestAPI::MaybeProxyAuthRequest(
+     const content::GlobalRequestID& request_id,
+     bool is_request_for_navigation,
+     AuthRequestCallback callback,
+     WebViewGuest* web_view_guest) {
+   if (!MayHaveProxies()) {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++    LOG(INFO) << kWebRequestApiLogTag << " May not be proxy auth request";
++#endif
+     bool needed_for_webview = false;
+ #if BUILDFLAG(ENABLE_GUEST_VIEW)
+     needed_for_webview =
+         web_view_guest &&
+         IsAvailableToWebViewEmbedderFrame(web_view_guest->GetGuestMainFrame());
+@@ -724,13 +739,15 @@ void WebRequestAPI::ResetURLLoaderFactories() {
+   }
+ }
+ 
+ void WebRequestAPI::UpdateMayHaveProxies() {
+   bool may_have_proxies = MayHaveProxies();
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+   if (!may_have_proxies_ && may_have_proxies) {
+     ResetURLLoaderFactories();
+   }
++#endif
+   may_have_proxies_ = may_have_proxies;
+ }
+ 
+ void WebRequestAPI::OnExtensionLoaded(content::BrowserContext* browser_context,
+                                       const Extension* extension) {

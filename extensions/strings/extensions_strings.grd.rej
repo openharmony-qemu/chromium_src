@@ -1,0 +1,16 @@
+diff a/extensions/strings/extensions_strings.grd b/extensions/strings/extensions_strings.grd	(rejected hunks)
+@@ -193,10 +197,14 @@
+     <file path="extensions_strings_vi.xtb" lang="vi" />
+     <file path="extensions_strings_zh-CN.xtb" lang="zh-CN" />
+     <file path="extensions_strings_zh-HK.xtb" lang="zh-HK" />
+     <file path="extensions_strings_zh-TW.xtb" lang="zh-TW" />
+     <file path="extensions_strings_zu.xtb" lang="zu" />
++    <!-- <if expr="pp_ifdef('arkweb_i18n')"> -->
++       <file path="extensions_strings_bo-CN.xtb" lang="bo-CN" />
++        <file path="extensions_strings_ug.xtb" lang="ug" />
++    <!-- </if> -->
+   </translations>
+   <release seq="1">
+     <messages fallback_to_english="true">
+ 
+       <!-- Document Scan API strings. Please keep alphabetized. -->

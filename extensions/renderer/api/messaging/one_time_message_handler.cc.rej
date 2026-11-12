@@ -1,0 +1,30 @@
+diff a/extensions/renderer/api/messaging/one_time_message_handler.cc b/extensions/renderer/api/messaging/one_time_message_handler.cc	(rejected hunks)
+@@ -8,10 +8,11 @@
+ #include <map>
+ #include <memory>
+ #include <optional>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/contains.h"
+ #include "base/feature_list.h"
+ #include "base/functional/bind.h"
+ #include "base/functional/callback.h"
+ #include "base/functional/callback_helpers.h"
+@@ -755,11 +765,15 @@ bool OneTimeMessageHandler::DeliverReplyToOpener(ScriptContext* script_context,
+ 
+   // Parsing should be fail-safe for kNative channel type as native messaging
+   // hosts can send malformed messages.
+   std::string error;
+   v8::Local<v8::Value> v8_message = messaging_util::MessageToV8(
+-      v8_context, message, port.channel_type == mojom::ChannelType::kNative,
++      v8_context, message, port.channel_type == mojom::ChannelType::kNative
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
++      || port.channel_type == mojom::ChannelType::kBrowser
++#endif
++      ,
+       &error);
+ 
+   if (v8_message.IsEmpty()) {
+     // If the parsing fails, send back a v8::Undefined() message.
+     v8_message = v8::Undefined(isolate);

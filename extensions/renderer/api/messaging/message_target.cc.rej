@@ -1,0 +1,18 @@
+diff a/extensions/renderer/api/messaging/message_target.cc b/extensions/renderer/api/messaging/message_target.cc	(rejected hunks)
+@@ -34,10 +36,16 @@ MessageTarget MessageTarget::ForNativeApp(const std::string& native_app) {
+   MessageTarget target(NATIVE_APP);
+   target.native_application_name = native_app;
+   return target;
+ }
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
++MessageTarget MessageTarget::ForBrowser() {
++  return MessageTarget(BROWSER);
++}
++#endif
++
+ MessageTarget::MessageTarget(MessageTarget&& other) = default;
+ MessageTarget::MessageTarget(const MessageTarget& other) = default;
+ MessageTarget::~MessageTarget() = default;
+ 
+ bool MessageTarget::operator==(const MessageTarget& other) const {

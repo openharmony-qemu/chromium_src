@@ -1,0 +1,15 @@
+diff a/extensions/renderer/bindings/api_bindings_system.h b/extensions/renderer/bindings/api_bindings_system.h	(rejected hunks)
+@@ -88,10 +88,13 @@ class APIBindingsSystem {
+   // `type_name`, where `type_name` is the fully-qualified type (e.g.
+   // storage.StorageArea).
+   void RegisterCustomType(const std::string& type_name,
+                           CustomTypeHandler function);
+ 
++  // Handles any initialization of the context. This should be called before any
++  // APIs or other objects are created.
++  void DidCreateContext(v8::Local<v8::Context> context);
+   // Handles any cleanup necessary before releasing the given `context`.
+   void WillReleaseContext(v8::Local<v8::Context> context);
+ 
+   InteractionProvider* interaction_provider() {
+     return interaction_provider_.get();

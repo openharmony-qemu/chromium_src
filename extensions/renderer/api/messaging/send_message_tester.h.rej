@@ -1,0 +1,44 @@
+diff a/extensions/renderer/api/messaging/send_message_tester.h b/extensions/renderer/api/messaging/send_message_tester.h	(rejected hunks)
+@@ -5,10 +5,11 @@
+ #ifndef EXTENSIONS_RENDERER_API_MESSAGING_SEND_MESSAGE_TESTER_H_
+ #define EXTENSIONS_RENDERER_API_MESSAGING_SEND_MESSAGE_TESTER_H_
+ 
+ #include <string>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/memory/raw_ptr.h"
+ #include "v8/include/v8-forward.h"
+ 
+ namespace extensions {
+ class ScriptContext;
+@@ -52,20 +53,30 @@ class SendMessageTester {
+   v8::Local<v8::Value> TestSendNativeMessage(
+       const std::string& args,
+       const std::string& expected_message,
+       const std::string& expected_application_name);
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
++  // Tests the sendBrowserMessage API with the specified expectations.
++  v8::Local<v8::Value> TestSendBrowserMessage(
++      const std::string& args,
++      const std::string& expected_message);
++#endif
++
+   // Tests the connect API with the specified expectations.
+   void TestConnect(const std::string& args,
+                    const std::string& expected_channel,
+                    const MessageTarget& expected_target);
+ 
+  private:
+   enum Method {
+     SEND_REQUEST,
+     SEND_MESSAGE,
+     SEND_NATIVE_MESSAGE,
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
++    SEND_BROWSER_MESSAGE,
++#endif
+   };
+ 
+   // Common handler for testing sendMessage and sendRequest.
+   void TestSendMessageOrRequest(const std::string& args,
+                                 const std::string& expected_message,

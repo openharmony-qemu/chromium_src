@@ -315,9 +315,9 @@
       ],
       // This feature is only enabled if the embedder's delegated check returns
       // true.
-      "requires_delegated_availability_check": true,
+      "requires_delegated_availability_check": true
       // "desktop_android" is not supported.
-      "platforms": ["chromeos", "linux", "mac", "win"]
+      // "platforms": ["chromeos", "linux", "mac", "win"]
     }
   ],
   "hid": {
@@ -350,7 +350,9 @@
     "contexts": ["webui"],
     "matches": [
       "chrome://extensions/*",
-      "chrome://settings/*"
+      "chrome://settings/*",
+      // ARKWEB_ARKWEB_EXTENSIONS
+      "arkweb://extensions/*"
     ]
   }, {
     "channel": "stable",
@@ -376,9 +378,9 @@
   },
   "management.installReplacementWebApp": {
     "dependencies": ["manifest:replacement_web_app"],
-    "extension_types": ["extension", "platform_app"],
+    "extension_types": ["extension", "platform_app"]
     // "desktop_android" is not supported. http://crbug.com/371332103
-    "platforms": ["chromeos", "linux", "mac", "win"]
+    // "platforms": ["chromeos", "linux", "mac", "win"]
   },
   "management.uninstallSelf": {
     "dependencies": [],
@@ -408,6 +410,8 @@
       "chrome://shopping-insights-side-panel.top-chrome/*",
       "chrome://eche-app/*",
       "chrome://extensions/*",
+      // ARKWEB_ARKWEB_EXTENSIONS
+      "arkweb://extensions/*",      
       "chrome://extensions-zero-state/*",
       "chrome://file-manager/*",
       "chrome://glic/*",
@@ -906,6 +910,8 @@
     "contexts": ["webui"],
     "matches": [
       "chrome://extensions/*",
+      // ARKWEB_ARKWEB_EXTENSIONS
+      "arkweb://extensions/*",
       // System Web App version of File Manager.
       "chrome://file-manager/*",
       "chrome://webui-test/*"

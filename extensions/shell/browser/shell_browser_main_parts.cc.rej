@@ -1,0 +1,19 @@
+diff a/extensions/shell/browser/shell_browser_main_parts.cc b/extensions/shell/browser/shell_browser_main_parts.cc
+--- a/extensions/shell/browser/shell_browser_main_parts.cc
++++ b/extensions/shell/browser/shell_browser_main_parts.cc
+@@ -147,11 +147,14 @@ int ShellBrowserMainParts::PreEarlyInitialization() {
+ int ShellBrowserMainParts::PreCreateThreads() {
+   // TODO(jamescook): Initialize ash::CrosSettings here?
+ 
+   content::ChildProcessSecurityPolicy::GetInstance()->RegisterWebSafeScheme(
+       kExtensionScheme);
+-
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  content::ChildProcessSecurityPolicy::GetInstance()->RegisterWebSafeScheme(
++      kArkwebExtensionScheme);
++#endif
+   // Return no error.
+   return 0;
+ }
+ 
+ int ShellBrowserMainParts::PreMainMessageLoopRun() {

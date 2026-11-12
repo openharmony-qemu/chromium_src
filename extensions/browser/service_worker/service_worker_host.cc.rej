@@ -1,0 +1,65 @@
+diff a/extensions/browser/service_worker/service_worker_host.cc b/extensions/browser/service_worker/service_worker_host.cc	(rejected hunks)
+@@ -208,11 +208,15 @@ void ServiceWorkerHost::DidStartServiceWorkerContext(
+   auto* process_map = ProcessMap::Get(browser_context);
+   if (!process_map || !process_map->Contains(extension_id, render_process_id)) {
+     // We can legitimately get here if the extension was already unloaded.
+     return;
+   }
+-  CHECK(service_worker_scope.SchemeIs(kExtensionScheme) &&
++  CHECK((service_worker_scope.SchemeIs(kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++         || service_worker_scope.SchemeIs(kArkwebExtensionScheme)
++#endif
++             ) &&
+         extension_id == service_worker_scope.host());
+ 
+   ServiceWorkerTaskQueue::Get(browser_context)
+       ->RendererDidStartServiceWorkerContext(
+           render_process_id, extension_id, activation_token,
+@@ -236,11 +240,15 @@ void ServiceWorkerHost::DidStopServiceWorkerContext(
+   auto* process_map = ProcessMap::Get(browser_context);
+   if (!process_map || !process_map->Contains(extension_id, render_process_id)) {
+     // We can legitimately get here if the extension was already unloaded.
+     return;
+   }
+-  CHECK(service_worker_scope.SchemeIs(kExtensionScheme) &&
++  CHECK((service_worker_scope.SchemeIs(kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++        || service_worker_scope.SchemeIs(kArkwebExtensionScheme)
++#endif
++  ) &&
+         extension_id == service_worker_scope.host());
+   CHECK_NE(blink::mojom::kInvalidServiceWorkerVersionId,
+            service_worker_version_id);
+   ServiceWorkerTaskQueue::Get(browser_context)
+       ->RendererDidStopServiceWorkerContext(
+@@ -352,10 +360,29 @@ void ServiceWorkerHost::OpenChannelToNativeApp(
+   MessageServiceApi::GetMessageService()->OpenChannelToNativeApp(
+       browser_context, worker_id_, port_id, native_app_name, std::move(port),
+       std::move(port_host));
+ }
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
++void ServiceWorkerHost::OpenChannelToBrowser(
++    const PortId& port_id,
++    mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
++    mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
++        port_host) {
++  TRACE_EVENT("extensions", "ServiceWorkerHost::OpenChannelToBrowser",
++              ChromeTrackEvent::kRenderProcessHost, *render_process_host_);
++  content::BrowserContext* browser_context = GetBrowserContext();
++  if (!browser_context) {
++    return;
++  }
++
++  MessageServiceApi::GetMessageService()->OpenChannelToBrowser(
++      browser_context, worker_id_, port_id, std::move(port),
++      std::move(port_host));
++}
++#endif
++
+ void ServiceWorkerHost::OpenChannelToTab(
+     int32_t tab_id,
+     int32_t frame_id,
+     const std::optional<std::string>& document_id,
+     extensions::mojom::ChannelType channel_type,

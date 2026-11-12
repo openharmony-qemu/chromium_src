@@ -636,6 +636,47 @@ RequestResult RuntimeHooksDelegate::HandleSendNativeMessage(
   return result;
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+RequestResult RuntimeHooksDelegate::HandleSendBrowserMessage(
+    ScriptContext* script_context,
+    const APISignature::V8ParseResult& parse_result) {
+  const v8::LocalVector<v8::Value>& arguments = *parse_result.arguments;
+  DCHECK_EQ(2u, arguments.size());
+
+  v8::Local<v8::Value> v8_message = arguments[0];
+  DCHECK(!v8_message.IsEmpty());
+  std::string error;
+
+  std::unique_ptr<Message> message =
+      messaging_util::MessageFromV8(script_context->v8_context(), v8_message,
+                                    mojom::SerializationFormat::kJson, &error);
+  if (!message) {
+    RequestResult result(RequestResult::INVALID_INVOCATION);
+    result.error = std::move(error);
+    return result;
+  }
+
+  v8::Local<v8::Function> response_callback;
+  if (!arguments[1]->IsNull()) {
+    response_callback = arguments[1].As<v8::Function>();
+  }
+
+  v8::Local<v8::Promise> promise = messaging_service_->SendOneTimeMessage(
+      script_context, MessageTarget::ForBrowser(), mojom::ChannelType::kBrowser,
+      *message, parse_result.async_type, response_callback);
+  DCHECK_EQ(parse_result.async_type == binding::AsyncResponseType::kPromise,
+            !promise.IsEmpty())
+      << "SendOneTimeMessage should only return a Promise for promise based "
+         "API calls, otherwise it should be empty";
+
+  RequestResult result(RequestResult::HANDLED);
+  if (parse_result.async_type == binding::AsyncResponseType::kPromise) {
+    result.return_value = promise;
+  }
+  return result;
+}
+#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+
 RequestResult RuntimeHooksDelegate::HandleConnect(
     ScriptContext* script_context,
     const APISignature::V8ParseResult& parse_result) {
@@ -820,6 +861,7 @@ RequestResult RuntimeHooksDelegate::HandleGetPackageDirectoryEntryCallback(
 RequestResult RuntimeHooksDelegate::HandleRequestUpdateCheck(
     ScriptContext* script_context,
     const APISignature::V8ParseResult& parse_result) {
+  LOG(INFO) << "RuntimeHooksDelegate API called: runtime.requestUpdateCheck";
   return RequestResult(RequestResult::NOT_HANDLED,
                        v8::Local<v8::Function>() /*custom_callback*/,
                        base::BindOnce(MassageRequestUpdateCheckResults));

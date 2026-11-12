@@ -59,6 +59,21 @@ const char kSignatureKey[] = "signature";
 const char kSignatureFormatVersionKey[] = "signature_format_version";
 const char kTimestampKey[] = "timestamp";
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+const char kIdKey[] = "id";
+const char kModelKey[] = "model";
+const char kSourceKey[] = "source";
+const char kIdDetailsKey[] = "idDetails";
+const char kDeviceTypeKey[] = "deviceType";
+const char kTransactionIdKey[] = "transactionId";
+
+enum : int {
+  kDeviceTypePhone = 1,
+  kDeviceTypeTablet = 2,
+  kDeviceTypePC = 3,
+};
+#endif
+
 const char kContentTypeJSON[] = "application/json";
 
 // This allows us to version the format of what we write into the prefs,
@@ -72,6 +87,19 @@ const char kBackendUrl[] =
     "https://www.googleapis.com/chromewebstore/v1.1/items/verify";
 
 const char kPublicKeyPEM[] =
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    "-----BEGIN PUBLIC KEY-----"
+    "MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAlmkw7puq58gQkvViwGSf"
+    "xqy259+NFnQwIIVB9ttBuA8xOgaGQztbWgTvkGeMcFHU0QfOaBIgEU/8HDLynW6p"
+    "9tBLxaXKeImMy/0ZhZpP7IRvcQ2XOO02ngMZjwI8tiQpwHniUroQI6KyjfctLa/5"
+    "6WvHap0vbTuzaaM9zToMmMkmjUp+Ncl5cAjyVpjnw26SW2dz7sngzz4HL16F2sti"
+    "qfQfU1BOLovDr6Fl8qzQXH1bs/ASHMrsgIJz3ZlPsJMiUc69j8sCgTeqY2bZr4er"
+    "CFb3lZBIP1SwMLYMRaxi5DMk+TnIzHMvqjJUWYr+wiNTI6t1eEClhN7C3bqk7Jjg"
+    "wPLyncTcknaJbHQxGELKU43WRfit551YfNSlgNx6ciraNaHWxM8qRbPXWRp1Z4r"
+    "VHad0osjMTaOfcjYeKsPtg0IpE6zg5qGSfFamVCuJikO2qRNIyTGkYFrKTFZBC4+"
+    "RtmyhpeVdMDmwaE6qICqVx6WEhbDEs7TfFp513vxEBZXrAgMBAAE="
+    "-----END PUBLIC KEY-----";
+#else
     "-----BEGIN PUBLIC KEY-----"
     "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAj/u/XDdjlDyw7gHEtaaa"
     "sZ9GdG8WOKAyJzXd8HFrDtz2Jcuy7er7MtWvHgNDA0bwpznbI5YdZeV4UfCEsA4S"
@@ -81,9 +109,14 @@ const char kPublicKeyPEM[] =
     "/PMIEv+TvWIx2BzqGp71gSh/dV7SJ3rClvWd2xj8dtxG8FfAWDTIIi0qZXWn2Qhi"
     "zQIDAQAB"
     "-----END PUBLIC KEY-----";
+#endif
 
 GURL GetBackendUrl() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   return GURL(kBackendUrl);
+#else
+  return GURL(extension_urls::GetDefaultWebstoreVerifyURL());
+#endif
 }
 
 // Hashes |salt| with the machine id, base64-encodes it and returns it in
@@ -199,8 +232,14 @@ std::unique_ptr<InstallSignature> InstallSignature::FromDict(
 
 InstallSigner::InstallSigner(
     scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
     const ExtensionIdSet& ids)
     : ids_(ids), url_loader_factory_(std::move(url_loader_factory)) {}
+#else
+    const std::map<ExtensionId, int>& webstore_types)
+    : webstore_types_(webstore_types),
+      url_loader_factory_(std::move(url_loader_factory)) {}
+#endif
 
 InstallSigner::~InstallSigner() = default;
 
@@ -258,7 +297,11 @@ void InstallSigner::GetSignature(SignatureCallback callback) {
 
   // If the set of ids is empty, just return an empty signature and skip the
   // call to the server.
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   if (ids_.empty()) {
+#else
+  if (webstore_types_.empty()) {
+#endif
     if (!callback_.is_null())
       std::move(callback_).Run(std::make_unique<InstallSignature>());
     return;
@@ -431,8 +474,17 @@ void InstallSigner::ParseFetchResponse(
 void InstallSigner::HandleSignatureResult(const std::string& signature,
                                           const std::string& expire_date,
                                           const ExtensionIdSet& invalid_ids) {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   ExtensionIdSet valid_ids =
       base::STLSetDifference<ExtensionIdSet>(ids_, invalid_ids);
+#else
+  ExtensionIdSet ids;
+  std::transform(webstore_types_.begin(), webstore_types_.end(),
+                 std::inserter(ids, ids.begin()),
+                 [](auto& kv) { return kv.first; });
+  ExtensionIdSet valid_ids =
+      base::STLSetDifference<ExtensionIdSet>(ids, invalid_ids);
+#endif
 
   std::unique_ptr<InstallSignature> result;
   if (!signature.empty()) {

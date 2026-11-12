@@ -1,0 +1,46 @@
+diff a/extensions/browser/extension_registrar.cc b/extensions/browser/extension_registrar.cc	(rejected hunks)
+@@ -40,10 +40,14 @@
+ #include "extensions/common/manifest_handlers/background_info.h"
+ #include "extensions/common/manifest_handlers/shared_module_info.h"
+ #include "extensions/common/permissions/permissions_data.h"
+ #include "third_party/blink/public/common/service_worker/service_worker_status_code.h"
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "arkweb/chromium_ext/extensions/browser/extension_log_reporter.h"
++#endif
++
+ using content::DevToolsAgentHost;
+ using extensions::mojom::ManifestLocation;
+ 
+ namespace extensions {
+ 
+@@ -173,10 +177,14 @@ void ExtensionRegistrar::AddExtension(
+ 
+   // Notify the delegate we will add the extension.
+   CHECK(delegate_);
+   delegate_->PreAddExtension(extension.get(), old);
+ 
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++  LOG_FEEDBACK(INFO) << "add extension " << extension->id();
++#endif
++
+   if (was_reloading) {
+     failed_to_reload_unpacked_extensions_.erase(extension->path());
+     ReplaceReloadedExtension(extension);
+   } else {
+     if (is_extension_loaded) {
+@@ -332,10 +344,14 @@ void ExtensionRegistrar::EnableExtension(const ExtensionId& extension_id) {
+ 
+   // This can happen if sync enables an extension that is not installed yet.
+   if (!extension)
+     return;
+ 
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++  LOG_FEEDBACK(INFO) << "enable extension " << extension_id;
++#endif
++
+   // Actually enable the extension.
+   registry_->AddEnabled(extension);
+   registry_->RemoveDisabled(extension->id());
+   ActivateExtension(extension, false);
+ }

@@ -1,0 +1,48 @@
+diff a/extensions/browser/api/web_request/extension_web_request_event_router.cc b/extensions/browser/api/web_request/extension_web_request_event_router.cc	(rejected hunks)
+@@ -95,10 +95,14 @@ enum class RequestAction {
+ constexpr char kEventMessage[] = "webViewInternal.onMessage";
+ 
+ constexpr char kWebRequestEventPrefix[] = "webRequest.";
+ constexpr char kWebViewEventPrefix[] = "webViewInternal.";
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++const char kWebRequestApiLogTag[] = "[WebRequestAPI]";
++#endif
++
+ constexpr size_t kWebRequestEventPrefixLen =
+     std::char_traits<char>::length(kWebRequestEventPrefix);
+ constexpr size_t kWebViewEventPrefixLen =
+     std::char_traits<char>::length(kWebViewEventPrefix);
+ 
+@@ -1879,10 +1891,15 @@ void WebRequestEventRouter::OnEventHandled(
+   // listener that fails to re-register upon wake-up (via
+   // `cannot_dispatch_callback`) causes the request to resume before other
+   // blocking listeners have responded. See crbug.com/412695438.
+   if (listener->IsBlocking()) {
+     listener->blocked_requests.erase(request_id);
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++    LOG(INFO) << kWebRequestApiLogTag
++              << " webRequest.OnEventHandled:" << event_name << " by extension:"
++              << extension_id;
++#endif
+     DecrementBlockCount(browser_context, extension_id, event_name, request_id,
+                         std::move(response), listener->extra_info_spec);
+   }
+ }
+ 
+@@ -1959,10 +1976,15 @@ bool WebRequestEventRouter::AddEventListener(
+   // extra headers count.
+   if (!is_reactivated && listener->HasExtraHeaders()) {
+     IncrementExtraHeadersListenerCount(browser_context);
+   }
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  LOG(INFO) << kWebRequestApiLogTag << " webRequest.AddListener for "
++            << event_name;
++#endif
++
+   // If this is a new listener, add it to the list of persisted listeners.
+   if (is_service_worker_listener && !is_reactivated) {
+     AddPersistedLazyListener(browser_context, extension_id, *listener);
+   }
+   if (!is_reactivated && listener->HasSecurityInfo()) {

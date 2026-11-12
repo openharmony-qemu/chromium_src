@@ -165,6 +165,13 @@ class PermissionsUpdater {
   void AddPermissionsForTesting(const Extension& extension,
                                 const PermissionSet& permissions);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void SetOptionalPermissionState(const Extension& extension,
+                                  const PermissionSet& permissions,
+                                  bool should_be_enabled,
+                                  base::OnceClosure completion_callback);
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
   static void EnsureAssociatedFactoryBuilt();
 
  private:

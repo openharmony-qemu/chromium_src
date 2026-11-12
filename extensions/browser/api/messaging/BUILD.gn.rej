@@ -1,0 +1,19 @@
+diff a/extensions/browser/api/messaging/BUILD.gn b/extensions/browser/api/messaging/BUILD.gn	(rejected hunks)
+@@ -22,10 +23,17 @@ source_set("messaging") {
+     "messaging_delegate.h",
+     "native_message_port.cc",
+     "native_message_port.h",
+   ]
+ 
++  if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
++    sources += [
++      "//arkweb/chromium_ext/extensions/browser/api/messaging/browser_message_port.cc",
++      "//arkweb/chromium_ext/extensions/browser/api/messaging/browser_message_port.h",
++    ]
++  }
++
+   configs += [ "//build/config/compiler:wexit_time_destructors" ]
+ 
+   public_deps = [
+     ":native_messaging",
+     "//base",

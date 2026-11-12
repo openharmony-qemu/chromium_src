@@ -1,0 +1,53 @@
+diff a/extensions/common/api/_permission_features.json b/extensions/common/api/_permission_features.json	(rejected hunks)
+@@ -286,16 +287,16 @@
+   "fileSystem": [{
+     "channel": "stable",
+     "extension_types": ["platform_app"],
+     "default_parent": true,
+     // "desktop_android" is not supported.
+-    "platforms": ["chromeos", "linux", "mac", "win"]
++    "platforms": ["chromeos", "linux", "mac", "win", "ohos"]
+   },{
+     "channel": "stable",
+     "extension_types": ["extension"],
+     // "desktop_android" is not supported.
+-    "platforms": ["chromeos", "linux", "mac", "win"],
++    "platforms": ["chromeos", "linux", "mac", "win", "ohos"],
+     "allowlist": [
+       "2FC374607C2DF285634B67C64A2E356C607091C3",  // Quickoffice
+       "3727DD3E564B6055387425027AD74C58784ACC15",  // Quickoffice internal
+       "12E618C3C6E97495AAECF2AC12DEB082353241C6",  // QO component extension
+       "2B6C6A4A5940017146F3E58B7F90116206E84685",  // http://crbug.com/642141
+@@ -563,11 +565,11 @@
+   }],
+   "printerProvider": {
+     "channel": "stable",
+     "extension_types": ["extension", "platform_app" ],
+     // "desktop_android" is not supported.
+-    "platforms": ["chromeos", "linux", "mac", "win"]
++    "platforms": ["chromeos", "linux", "mac", "win", "ohos"]
+   },
+   // Note: runtime is not actually a permission, but some systems check these
+   // values to verify restrictions.
+   "runtime": {
+     "channel": "stable",
+@@ -686,17 +688,17 @@
+   "system.display": [
+     {
+       "channel": "stable",
+       "extension_types": ["extension", "legacy_packaged_app", "platform_app"],
+       // "desktop_android" is not supported.
+-      "platforms": ["chromeos", "linux", "mac", "win"]
++      "platforms": ["chromeos", "linux", "mac", "win", "ohos"]
+     },
+     {
+       "channel": "stable",
+       "extension_types": ["hosted_app"],
+       // "desktop_android" is not supported.
+-      "platforms": ["chromeos", "linux", "mac", "win"],
++      "platforms": ["chromeos", "linux", "mac", "win", "ohos"],
+       "allowlist": ["B44D08FD98F1523ED5837D78D0A606EA9D6206E5"]  // Web Store
+     }
+   ],
+   "u2fDevices": {
+     "channel": "stable",

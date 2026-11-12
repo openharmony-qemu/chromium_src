@@ -48,6 +48,10 @@
 #include "ui/color/color_provider_source.h"
 #include "ui/color/color_provider_utils.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/alloy/offscreen_contents_delegate.h"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 using content::RenderProcessHost;
 using content::WebContents;
 
@@ -151,7 +155,17 @@ ExtensionHost::ExtensionHost(const Extension* extension,
   host_contents_ = WebContents::Create(create_params);
   host_contents_->SetOwnerLocationForDebug(FROM_HERE);
   content::WebContentsObserver::Observe(host_contents_.get());
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (host_type == mojom::ViewType::kOffscreenDocument) {
+    offscreen_delegate_ = std::make_unique<OffscreenContentsDelegate>(
+        weak_ptr_factory_.GetWeakPtr());
+    host_contents_->SetDelegate(offscreen_delegate_.get());
+  } else {
+#endif // ARKWEB_ARKWEB_EXTENSIONS
   host_contents_->SetDelegate(this);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
   SetViewType(host_contents_.get(), host_type);
   main_frame_host_ = host_contents_->GetPrimaryMainFrame();
 
@@ -532,7 +546,11 @@ void ExtensionHost::OnEventAck(int event_id,
 
 content::JavaScriptDialogManager* ExtensionHost::GetJavaScriptDialogManager(
     WebContents* source) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  return nullptr;
+#else
   return javascript_dialogs::AppModalDialogManager::GetInstance();
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 content::WebContents* ExtensionHost::AddNewContents(

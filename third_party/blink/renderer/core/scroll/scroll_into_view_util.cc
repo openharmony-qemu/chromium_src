@@ -920,6 +920,12 @@ ScrollOffset GetScrollOffsetToExpose(
             .ToFloat();
   }
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  if (scroll_offset_limit != 0) {
+    y = current_scroll_offset.y() + scroll_offset_limit;
+  }
+#endif
+
   return ScrollOffset(x, y);
 }
 

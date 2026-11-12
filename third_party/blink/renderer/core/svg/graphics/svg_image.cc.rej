@@ -1,0 +1,59 @@
+diff a/third_party/blink/renderer/core/svg/graphics/svg_image.cc b/third_party/blink/renderer/core/svg/graphics/svg_image.cc	(rejected hunks)
+@@ -461,14 +465,24 @@ std::optional<PaintRecord> SVGImage::PaintRecordForCurrentFrame(
+   view->UpdateAllLifecyclePhases(DocumentUpdateReason::kSVGImage);
+ 
+   return view->GetPaintRecord(cull_rect);
+ }
+ 
++#if BUILDFLAG(ARKWEB_NIGHT_MODE)
++static bool DrawNeedsLayer(const cc::PaintFlags& flags,
++                           const bool night_mode_enabled) {
++#else
+ static bool DrawNeedsLayer(const cc::PaintFlags& flags) {
++#endif
+   if (SkColorGetA(flags.getColor()) < 255)
+     return true;
+ 
++#if BUILDFLAG(ARKWEB_NIGHT_MODE)
++  if (night_mode_enabled) {
++    return true;
++  }
++#endif
+   // This is needed to preserve the dark mode filter that
+   // has been set in GraphicsContext.
+   if (flags.getColorFilter())
+     return true;
+ 
+@@ -652,17 +676,31 @@ void SVGImage::MaybeRecordSvgImageProcessingTime(const Document& document) {
+     data_change_count_ = 0;
+     data_change_elapsed_time_ = base::TimeDelta();
+   }
+ }
+ 
+-Element* SVGImage::GetResourceElement(const AtomicString& id) const {
++Element* SVGImage::GetResourceElement(
++    base::PassKey<ExternalSVGResourceImageContent>,
++    const AtomicString& id) const {
+   if (!document_host_) {
+     return nullptr;
+   }
+   return GetFrame()->GetDocument()->getElementById(id);
+ }
+ 
++void SVGImage::UpdateLifecycleForUse(
++    base::PassKey<ExternalSVGResourceImageContent>) {
++  if (!document_host_) {
++    return;
++  }
++  // Temporarily disable change notifications triggered by the lifecycle
++  // update.
++  ImageObserverDisabler disable_image_observer(this);
++  GetFrame()->View()->UpdateAllLifecyclePhasesExceptPaint(
++      DocumentUpdateReason::kSVGImage);
++}
++
+ void SVGImage::NotifyAsyncLoadCompleted() {
+   if (GetImageObserver())
+     GetImageObserver()->AsyncLoadCompleted(this);
+ }
+ 

@@ -1,0 +1,20 @@
+diff a/third_party/blink/renderer/core/scroll/scrollbar_theme_overlay_mobile.h b/third_party/blink/renderer/core/scroll/scrollbar_theme_overlay_mobile.h	(rejected hunks)
+@@ -9,16 +9,17 @@
+ #include "third_party/blink/renderer/core/core_export.h"
+ #include "third_party/blink/renderer/core/scroll/scrollbar_theme_overlay.h"
+ #include "third_party/blink/renderer/platform/graphics/color.h"
+ 
+ namespace blink {
++struct PaintInfo;
+ 
+ class CORE_EXPORT ScrollbarThemeOverlayMobile : public ScrollbarThemeOverlay {
+  public:
+   static ScrollbarThemeOverlayMobile& GetInstance();
+ 
+-  void PaintThumb(GraphicsContext&,
++  void PaintThumb(const PaintInfo&,
+                   const Scrollbar&,
+                   const gfx::Rect&) override;
+   bool AllowsHitTest() const override { return false; }
+   bool IsSolidColor() const override { return true; }
+   SkColor4f ThumbColor(const Scrollbar& scrollbar) const override;

@@ -293,6 +293,9 @@ class CORE_EXPORT ScrollbarTheme {
  private:
   // Must be implemented to return the correct theme subclass.
   static ScrollbarTheme& NativeTheme();
+#if BUILDFLAG(IS_ARKWEB)
+  std::shared_ptr<ScrollbarThemeUtils> scrollbar_theme_utils_;
+#endif
 };
 
 }  // namespace blink

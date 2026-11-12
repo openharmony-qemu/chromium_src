@@ -69,6 +69,10 @@
 #include "ui/gfx/geometry/size_conversions.h"
 #include "ui/gfx/geometry/skia_conversions.h"
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+#include "third_party/blink/renderer/core/css/style_engine.h"
+#endif
+
 namespace blink {
 
 namespace {
@@ -544,7 +548,17 @@ void SVGImage::DrawInternal(const DrawInfo& draw_info,
 
   {
     PaintCanvasAutoRestore ar(canvas, false);
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    bool night_mode_enabled = false;
+    if (GetFrame() && GetFrame()->GetDocument()) {
+      night_mode_enabled =
+          GetFrame()->GetDocument()->GetStyleEngine().GetNightModeEnabled();
+    }
+
+    if (DrawNeedsLayer(flags, night_mode_enabled)) {
+#else
     if (DrawNeedsLayer(flags)) {
+#endif
       SkRect layer_rect = gfx::RectFToSkRect(dst_rect);
       canvas->saveLayer(layer_rect, flags);
     }

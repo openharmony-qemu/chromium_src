@@ -1,0 +1,109 @@
+diff a/third_party/blink/renderer/core/scroll/scrollbar_theme.h b/third_party/blink/renderer/core/scroll/scrollbar_theme.h	(rejected hunks)
+@@ -33,23 +33,33 @@
+ #include "third_party/blink/renderer/core/scroll/scrollbar.h"
+ #include "third_party/blink/renderer/platform/graphics/paint/display_item.h"
+ #include "third_party/blink/renderer/platform/graphics/scrollbar_theme_settings.h"
+ #include "third_party/skia/include/core/SkColor.h"
+ #include "ui/gfx/geometry/rect.h"
+-
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/scroll/scrollbar_theme_utils.h"
++#endif // IS_ARKWEB
+ namespace blink {
++struct PaintInfo;
+ 
+-class GraphicsContext;
+ class ScrollableArea;
+ class WebMouseEvent;
+ class WebViewImpl;
+-
++#if BUILDFLAG(IS_ARKWEB)
++  class ScrollbarThemeUtils;
++#endif
+ class CORE_EXPORT ScrollbarTheme {
+   USING_FAST_MALLOC(ScrollbarTheme);
+ 
+  public:
++
++#if BUILDFLAG(IS_ARKWEB)
++  ScrollbarTheme() { scrollbar_theme_utils_ = std::make_shared<ScrollbarThemeUtils>(this); }
++#else
+   ScrollbarTheme() = default;
++#endif // IS_ARKWEB
++
+   ScrollbarTheme(const ScrollbarTheme&) = delete;
+   ScrollbarTheme& operator=(const ScrollbarTheme&) = delete;
+   virtual ~ScrollbarTheme() = default;
+ 
+   // If true, then scrollbars with this theme will be painted every time
+@@ -104,15 +114,15 @@ class CORE_EXPORT ScrollbarTheme {
+       float old_position,
+       float new_position) const {
+     return kAllParts;
+   }
+ 
+-  virtual void PaintScrollCorner(GraphicsContext&,
++  virtual void PaintScrollCorner(const PaintInfo&,
+                                  const ScrollableArea&,
+                                  const DisplayItemClient&,
+                                  const gfx::Rect& corner_rect);
+-  virtual void PaintTickmarks(GraphicsContext&,
++  virtual void PaintTickmarks(const PaintInfo&,
+                               const Scrollbar&,
+                               const gfx::Rect&);
+   virtual SkColor4f ThumbColor(const Scrollbar&) const { NOTREACHED(); }
+ 
+   virtual bool ShouldCenterOnThumb(const Scrollbar&,
+@@ -172,16 +182,16 @@ class CORE_EXPORT ScrollbarTheme {
+                           const gfx::Rect& track,
+                           gfx::Rect& start_track,
+                           gfx::Rect& thumb,
+                           gfx::Rect& end_track) const;
+ 
+-  virtual void PaintThumb(GraphicsContext&,
++  virtual void PaintThumb(const PaintInfo&,
+                           const Scrollbar&,
+                           const gfx::Rect&) {}
+ 
+   // Paints the track (including tickmarks if present) and the buttons.
+-  void PaintTrackAndButtons(GraphicsContext&,
++  void PaintTrackAndButtons(const PaintInfo&,
+                             const Scrollbar&,
+                             const gfx::Rect&);
+ 
+   virtual base::TimeDelta InitialAutoscrollTimerDelay() const;
+   virtual base::TimeDelta AutoscrollTimerDelay() const;
+@@ -238,26 +248,29 @@ class CORE_EXPORT ScrollbarTheme {
+                                                      float scale) const {
+     NOTREACHED();
+   }
+ 
+   virtual bool AllowsHitTest() const { return true; }
+-
++#if BUILDFLAG(IS_ARKWEB)
++  friend class ScrollbarThemeUtils;
++  std::shared_ptr<ScrollbarThemeUtils> GetUtils() { return scrollbar_theme_utils_; }
++#endif
+  protected:
+   // The point is in the same coordinate space as the scrollbar's FrameRect.
+   virtual ScrollbarPart HitTest(const Scrollbar&, const gfx::Point&) const;
+ 
+   virtual int TickmarkBorderWidth() const { return 0; }
+   // Paints the background of the track, not including tickmarks.
+-  virtual void PaintTrackBackground(GraphicsContext&,
++  virtual void PaintTrackBackground(const PaintInfo&,
+                                     const Scrollbar&,
+                                     const gfx::Rect&) {}
+-  virtual void PaintButton(GraphicsContext&,
++  virtual void PaintButton(const PaintInfo&,
+                            const Scrollbar&,
+                            const gfx::Rect&,
+                            ScrollbarPart) {}
+ 
+-  virtual void PaintTrackBackgroundAndButtons(GraphicsContext& context,
++  virtual void PaintTrackBackgroundAndButtons(const PaintInfo&,
+                                               const Scrollbar&,
+                                               const gfx::Rect&);
+ 
+  protected:
+   // For GetTheme().

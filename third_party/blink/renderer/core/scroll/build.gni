@@ -4,6 +4,11 @@
 
 import("//third_party/blink/renderer/core/core.gni")
 
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 blink_core_sources_scroll = [
   "programmatic_scroll_animator.cc",
   "programmatic_scroll_animator.h",
@@ -63,6 +68,10 @@ if (use_aura) {
     "scrollbar_theme_fluent.cc",
     "scrollbar_theme_fluent.h",
   ]
+}
+
+if (is_arkweb) {
+  blink_core_sources_scroll += arkweb_third_patry_blink_renderer_core_scroll_resources
 }
 
 blink_core_tests_scroll = [

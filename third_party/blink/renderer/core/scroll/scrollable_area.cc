@@ -86,6 +86,9 @@
 #include "third_party/blink/renderer/platform/scheduler/public/thread_scheduler.h"
 #include "third_party/blink/renderer/platform/timer.h"
 #include "ui/gfx/geometry/vector2d_conversions.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/scroll/scrollable_area_utils.h"
+#endif  // ARKWEB_SCROLLBAR
 
 namespace blink {
 
@@ -124,6 +127,10 @@ ScrollableArea::ScrollableArea(
       has_been_disposed_(false),
       compositor_task_runner_(std::move(compositor_task_runner)) {
   DCHECK(compositor_task_runner_);
+#if BUILDFLAG(IS_ARKWEB)
+  scrollable_area_utils_ = MakeGarbageCollected<ScrollableAreaUtils>(this);
+  scrollbars_hidden_if_overlay_ = false;
+#endif
 }
 
 ScrollableArea::~ScrollableArea() = default;
@@ -750,6 +757,10 @@ void ScrollableArea::SetOverlayScrollbarColorScheme(
     mojom::blink::ColorScheme overlay_theme) {
   overlay_scrollbar_color_scheme__ = static_cast<unsigned>(overlay_theme);
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  scrollable_area_utils_->SetOverlayScrollbarColor();
+#endif  // ARKWEB_SCROLLBAR
+
   if (Scrollbar* scrollbar = HorizontalScrollbar()) {
     scrollbar->SetNeedsPaintInvalidation(kAllParts);
   }
@@ -776,6 +787,9 @@ void ScrollableArea::RecalculateOverlayScrollbarColorScheme() {
           background_color.GetLightness(Color::ColorSpace::kHSL);
       overlay_theme = lightness <= 0.5f ? mojom::blink::ColorScheme::kDark
                                         : mojom::blink::ColorScheme::kLight;
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+      overlay_scrollbar_color_scheme__ = static_cast<unsigned>(overlay_theme);
+#endif  // ARKWEB_SCROLLBAR
     }
   }
 

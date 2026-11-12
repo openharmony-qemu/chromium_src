@@ -1,0 +1,88 @@
+diff a/third_party/blink/renderer/core/scroll/scrollbar_theme_mac.cc b/third_party/blink/renderer/core/scroll/scrollbar_theme_mac.cc	(rejected hunks)
+@@ -30,10 +30,11 @@
+ #include "skia/ext/skia_utils_mac.h"
+ #include "third_party/blink/public/common/input/web_mouse_event.h"
+ #include "third_party/blink/public/platform/mac/web_scrollbar_theme.h"
+ #include "third_party/blink/public/platform/web_theme_engine.h"
+ #include "third_party/blink/renderer/core/page/page.h"
++#include "third_party/blink/renderer/core/paint/paint_info.h"
+ #include "third_party/blink/renderer/core/scroll/mac_scrollbar_animator.h"
+ #include "third_party/blink/renderer/core/scroll/scrollable_area.h"
+ #include "third_party/blink/renderer/platform/graphics/graphics_context.h"
+ #include "third_party/blink/renderer/platform/graphics/graphics_context_state_saver.h"
+ #include "third_party/blink/renderer/platform/graphics/paint/drawing_recorder.h"
+@@ -104,17 +105,17 @@ ScrollbarThemeMac::ScrollbarThemeMac() {}
+ ScrollbarTheme& ScrollbarTheme::NativeTheme() {
+   DEFINE_STATIC_LOCAL(ScrollbarThemeMac, overlay_theme, ());
+   return overlay_theme;
+ }
+ 
+-void ScrollbarThemeMac::PaintTickmarks(GraphicsContext& context,
++void ScrollbarThemeMac::PaintTickmarks(const PaintInfo& paint_info,
+                                        const Scrollbar& scrollbar,
+                                        const gfx::Rect& rect) {
+   gfx::Rect tickmark_track_rect = rect;
+   tickmark_track_rect.set_x(tickmark_track_rect.x() + 1);
+   tickmark_track_rect.set_width(tickmark_track_rect.width() - 1);
+-  ScrollbarTheme::PaintTickmarks(context, scrollbar, tickmark_track_rect);
++  ScrollbarTheme::PaintTickmarks(paint_info, scrollbar, tickmark_track_rect);
+ }
+ 
+ bool ScrollbarThemeMac::ShouldCenterOnThumb(const Scrollbar& scrollbar,
+                                             const WebMouseEvent& event) const {
+   bool alt_key_pressed = event.GetModifiers() & WebInputEvent::kAltKey;
+@@ -187,13 +188,14 @@ WebThemeEngine::ExtraParams GetPaintParams(const Scrollbar& scrollbar,
+   }
+ 
+   return WebThemeEngine::ExtraParams(scrollbar_extra);
+ }
+ 
+-void ScrollbarThemeMac::PaintTrackBackground(GraphicsContext& context,
++void ScrollbarThemeMac::PaintTrackBackground(const PaintInfo& paint_info,
+                                              const Scrollbar& scrollbar,
+                                              const gfx::Rect& rect) {
++  GraphicsContext& context = paint_info.context;
+   GraphicsContextStateSaver state_saver(context);
+   context.Translate(rect.x(), rect.y());
+ 
+   auto* mac_scrollbar = MacScrollbar::GetForScrollbar(scrollbar);
+   if (!mac_scrollbar)
+@@ -225,19 +227,20 @@ void ScrollbarThemeMac::PaintTrackBackground(GraphicsContext& context,
+       scrollbar.GetColorProvider(color_scheme));
+   if (opacity != 1)
+     context.EndLayer();
+ }
+ 
+-void ScrollbarThemeMac::PaintScrollCorner(GraphicsContext& context,
++void ScrollbarThemeMac::PaintScrollCorner(const PaintInfo& paint_info,
+                                           const ScrollableArea& scrollable_area,
+                                           const DisplayItemClient& item,
+                                           const gfx::Rect& rect) {
+   const Scrollbar* vertical_scrollbar = scrollable_area.VerticalScrollbar();
+   if (!vertical_scrollbar) {
+-    ScrollbarTheme::PaintScrollCorner(context, scrollable_area, item, rect);
++    ScrollbarTheme::PaintScrollCorner(paint_info, scrollable_area, item, rect);
+     return;
+   }
++  GraphicsContext& context = paint_info.context;
+   if (DrawingRecorder::UseCachedDrawingIfPossible(context, item,
+                                                   DisplayItem::kScrollCorner)) {
+     return;
+   }
+   DrawingRecorder recorder(context, item, DisplayItem::kScrollCorner, rect);
+@@ -255,13 +258,14 @@ void ScrollbarThemeMac::PaintScrollCorner(GraphicsContext& context,
+       vertical_scrollbar->InForcedColorsMode(), color_scheme,
+       vertical_scrollbar->GetPreferredContrast(),
+       vertical_scrollbar->GetColorProvider(color_scheme));
+ }
+ 
+-void ScrollbarThemeMac::PaintThumb(GraphicsContext& context,
++void ScrollbarThemeMac::PaintThumb(const PaintInfo& paint_info,
+                                    const Scrollbar& scrollbar,
+                                    const gfx::Rect& rect) {
++  GraphicsContext& context = paint_info.context;
+   if (DrawingRecorder::UseCachedDrawingIfPossible(
+           context, scrollbar, DisplayItem::kScrollbarThumb)) {
+     return;
+   }
+   DrawingRecorder recorder(context, scrollbar, DisplayItem::kScrollbarThumb,

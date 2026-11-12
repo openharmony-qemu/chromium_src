@@ -1,0 +1,39 @@
+diff a/third_party/blink/renderer/core/scroll/scrollbar_theme_aura.h b/third_party/blink/renderer/core/scroll/scrollbar_theme_aura.h	(rejected hunks)
+@@ -35,10 +35,11 @@
+ #include "third_party/blink/public/platform/web_theme_engine.h"
+ #include "third_party/blink/renderer/core/core_export.h"
+ #include "third_party/blink/renderer/core/scroll/scrollbar_theme.h"
+ 
+ namespace blink {
++struct PaintInfo;
+ 
+ class CORE_EXPORT ScrollbarThemeAura : public ScrollbarTheme {
+  public:
+   int ScrollbarThickness(float scale_from_dip,
+                          EScrollbarWidth scrollbar_width) const override;
+@@ -50,21 +51,21 @@ class CORE_EXPORT ScrollbarThemeAura : public ScrollbarTheme {
+   gfx::Rect BackButtonRect(const Scrollbar&) const override;
+   gfx::Rect ForwardButtonRect(const Scrollbar&) const override;
+   gfx::Rect TrackRect(const Scrollbar&) const override;
+   int MinimumThumbLength(const Scrollbar&) const override;
+ 
+-  void PaintTrackBackgroundAndButtons(GraphicsContext& context,
++  void PaintTrackBackgroundAndButtons(const PaintInfo&,
+                                       const Scrollbar&,
+                                       const gfx::Rect&) override;
+-  void PaintTrackBackground(GraphicsContext&,
++  void PaintTrackBackground(const PaintInfo&,
+                             const Scrollbar&,
+                             const gfx::Rect&) override;
+-  void PaintButton(GraphicsContext&,
++  void PaintButton(const PaintInfo&,
+                    const Scrollbar&,
+                    const gfx::Rect&,
+                    ScrollbarPart) override;
+-  void PaintThumb(GraphicsContext&,
++  void PaintThumb(const PaintInfo&,
+                   const Scrollbar&,
+                   const gfx::Rect&) override;
+   virtual WebThemeEngine::ScrollbarThumbExtraParams
+   BuildScrollbarThumbExtraParams(const Scrollbar&) const;
+ 

@@ -1,0 +1,27 @@
+diff a/third_party/blink/renderer/core/testing/fake_local_frame_host.h b/third_party/blink/renderer/core/testing/fake_local_frame_host.h	(rejected hunks)
+@@ -51,10 +51,25 @@ class FakeLocalFrameHost : public mojom::blink::LocalFrameHost {
+       ui::mojom::blink::VirtualKeyboardMode mode) override;
+   void VisibilityChanged(mojom::blink::FrameVisibility visibility) override;
+   void DidChangeThemeColor(std::optional<::SkColor> theme_color) override;
+   void DidChangeBackgroundColor(const SkColor4f& background_color,
+                                 bool color_adjust) override;
++#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
++  void NotifyContextMenuWillShow() override {}
++#endif
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
++  void OnDetectedBlankScreen(const String &url,
++                             int32_t blankScreenReason,
++                             int32_t detectedContentfulNodesCount) override {}
++#endif
++#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
++  void OnFirstScreenPaint(
++      const String &url, int64_t navigation_start_time, int64_t first_screen_paint_time) override {}
++#endif
++#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
++  void OnOverScrollOffsetChanged(float offset_x, float offset_y) override {}
++#endif
+   void DidFailLoadWithError(const ::blink::KURL& url,
+                             int32_t error_code) override;
+   void DidFocusFrame() override;
+   void DidCallFocus() override;
+   void EnforceInsecureRequestPolicy(

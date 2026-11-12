@@ -1,0 +1,16 @@
+diff a/components/embedder_support/user_agent_utils.h b/components/embedder_support/user_agent_utils.h	(rejected hunks)
+@@ -48,10 +48,14 @@ std::optional<std::string> GetUserAgentFromCommandLine();
+ // TODO(crbug.com/40212812): modify to accept an optional PrefService*.
+ std::string GetUserAgent(
+     UserAgentReductionEnterprisePolicyState user_agent_reduction =
+         UserAgentReductionEnterprisePolicyState::kDefault);
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++std::string GetUserAgentByHost(const std::string& host);
++#endif
++
+ // Return UserAgentMetadata, `only_low_entropy_ch` indicates whether only
+ // populate the low entropy client hints.
+ blink::UserAgentMetadata GetUserAgentMetadata(bool only_low_entropy_ch = false);
+ 
+ // Returns a list of form-factors compliant with

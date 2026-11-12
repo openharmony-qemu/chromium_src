@@ -18,6 +18,8 @@
 #include "ui/gfx/geometry/size.h"
 #include "url/gurl.h"
 
+#include "arkweb/chromium_ext/components/dom_distiller/core/distiller_page_ohos.h"
+
 namespace dom_distiller {
 
 class SourcePageHandle {

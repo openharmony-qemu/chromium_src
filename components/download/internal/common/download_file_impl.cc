@@ -35,6 +35,14 @@
 #include "components/download/internal/common/android/download_collection_bridge.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+#include "base/command_line.h"
+#include "base/debug/crash_logging.h"
+#include "base/debug/dump_without_crashing.h"
+#include "components/download/public/common/download_utils.h"
+#include "content/public/common/content_switches.h"
+#endif // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+
 namespace download {
 
 namespace {
@@ -80,7 +88,6 @@ void UnHideFile(const base::FilePath& path) {
   }
 }
 #endif
-
 }  // namespace
 
 DownloadFileImpl::SourceStream::SourceStream(
@@ -205,7 +212,6 @@ DownloadFileImpl::DownloadFileImpl(
 
 DownloadFileImpl::~DownloadFileImpl() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-
   TRACE_EVENT_END("download",
                   /* DownloadFileActive */ perfetto::Track(download_id_));
 }
@@ -286,7 +292,39 @@ void DownloadFileImpl::AddInputStream(std::unique_ptr<InputStream> stream,
   auto [it, inserted] =
       source_streams_.insert({offset, std::make_unique<SourceStream>(
                                           offset, offset, std::move(stream))});
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  if (!inserted) {
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kEnableNwebEx)) {
+      SCOPED_CRASH_KEY_NUMBER("AddInputStream", "offset_insert_failed", offset);
+      SCOPED_CRASH_KEY_NUMBER("AddInputStream", "stream_count", static_cast<int>(source_streams_.size()));
+      SCOPED_CRASH_KEY_NUMBER("AddInputStream", "existing_bytes_read",it->second->bytes_read());
+      SCOPED_CRASH_KEY_NUMBER("AddInputStream", "num_active_streams", num_active_streams_);
+      SCOPED_CRASH_KEY_NUMBER("AddInputStream", "total_received", TotalBytesReceived());
+      SCOPED_CRASH_KEY_NUMBER("AddInputStream", "potential_length", potential_file_length_);
+      SCOPED_CRASH_KEY_BOOL("AddInputStream", "existing_finished", it->second->is_finished());
+      SCOPED_CRASH_KEY_NUMBER("AddInputStream", "existing_bytes_written", it->second->bytes_written());
+      SCOPED_CRASH_KEY_NUMBER("AddInputStream", "existing_length", it->second->length());
+      SCOPED_CRASH_KEY_NUMBER("AddInputStream", "download_id", download_id_);
+      LOG(INFO) << "AddInputStream offset_insert_failed: offset=" << offset
+                << ", stream_count=" << source_streams_.size()
+                << ", existing_bytes_read=" << it->second->bytes_read()
+                << ", num_active_streams=" << num_active_streams_
+                << ", total_received=" << TotalBytesReceived()
+                << ", potential_length=" << potential_file_length_
+                << ", existing_finished=" << it->second->is_finished()
+                << ", existing_bytes_written=" << it->second->bytes_written()
+                << ", existing_length=" << it->second->length()
+                << ", download_id=" << download_id_;
+      base::debug::DumpWithoutCrashing();
+      CancelRequest(offset);
+      return;
+    }
+    CHECK(inserted);
+  }
+#else
   CHECK(inserted);
+#endif  // BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
   OnSourceStreamAdded(it->second.get());
 }
 
@@ -402,6 +440,16 @@ void DownloadFileImpl::RenameAndUniquify(const base::FilePath& full_path,
     return;
   }
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  if (GetFileRenameOptions() == FileRenameOptions::OVERWRITE_MODE) {
+    std::unique_ptr<RenameParameters> parameters(
+        new RenameParameters(OVERWRITE, full_path, std::move(callback)));
+    RenameWithRetryInternal(std::move(parameters));
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+
   std::unique_ptr<RenameParameters> parameters(
       new RenameParameters(UNIQUIFY, full_path, std::move(callback)));
   RenameWithRetryInternal(std::move(parameters));
@@ -606,6 +654,10 @@ void DownloadFileImpl::Pause() {
   // Stop sending updates since meaningless after paused.
   if (update_timer_ && update_timer_->IsRunning())
     update_timer_->Stop();
+
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  AsArkWebDownloadFileImplExt()->StopDownloadJobTimer();
+#endif
 }
 
 void DownloadFileImpl::Resume() {
@@ -625,7 +677,9 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   if (is_paused_)
     return;
-
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  AsArkWebDownloadFileImplExt()->ResetDownloadJobTimer();
+#endif
   base::TimeTicks start(base::TimeTicks::Now());
   base::TimeTicks now;
   scoped_refptr<net::IOBuffer> incoming_data;
@@ -651,10 +705,14 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
             CalculateBytesToWrite(source_stream, incoming_data_size,
                                   &bytes_to_validate, &bytes_to_write);
         DCHECK_GE(incoming_data_size, bytes_to_write);
+        LOG(DEBUG) << "DownloadFileImpl::StreamActive called";
         reason = ValidateAndWriteDataToFile(
             source_stream->offset() + source_stream->bytes_read(),
             incoming_data->span().first(bytes_to_validate),
             incoming_data->span().subspan(bytes_to_validate, bytes_to_write));
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+        AsArkWebDownloadFileImplExt()->ReadAndRunCallbackIfDataReady();
+#endif
         bytes_seen_ += bytes_to_write;
         total_incoming_data_size += incoming_data_size;
         if (reason == DOWNLOAD_INTERRUPT_REASON_NONE) {
@@ -673,6 +731,9 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
                 bytes_to_write;
           }
         }
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+        AsArkWebDownloadFileImplExt()->ReadAndRunCallbackIfDataReady();
+#endif
       } break;
       case InputStream::WAIT_FOR_COMPLETION:
         source_stream->RequestCompletionNotification(
@@ -700,6 +761,9 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
     source_stream->RegisterDataReadyCallback(
         base::BindRepeating(&DownloadFileImpl::StreamActive, weak_factory_.GetWeakPtr(),
                    source_stream));
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+    AsArkWebDownloadFileImplExt()->CreateDownloadJobTimer(source_stream);
+#endif
   }
 
   if (state == InputStream::COMPLETE)
@@ -714,7 +778,6 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
 void DownloadFileImpl::OnStreamCompleted(SourceStream* source_stream) {
   DownloadInterruptReason reason = HandleStreamCompletionStatus(source_stream);
   SendUpdate();
-
   NotifyObserver(source_stream, reason, InputStream::COMPLETE, false);
 }
 
@@ -801,7 +864,6 @@ void DownloadFileImpl::OnDownloadCompleted() {
 
 void DownloadFileImpl::RegisterAndActivateStream(SourceStream* source_stream) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-
   source_stream->Initialize();
   // Truncate |source_stream|'s length if necessary.
   for (const auto& received_slice : received_slices_) {

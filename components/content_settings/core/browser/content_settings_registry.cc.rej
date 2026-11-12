@@ -1,0 +1,17 @@
+diff a/components/content_settings/core/browser/content_settings_registry.cc b/components/content_settings/core/browser/content_settings_registry.cc	(rejected hunks)
+@@ -888,10 +904,14 @@ void ContentSettingsRegistry::Register(
+                                             delegate_ptr, valid_settings,
+                                             incognito_behavior);
+ 
+   if (type == ContentSettingsType::COOKIES) {
+     info->set_third_party_cookie_allowed_secondary_schemes(
+-        {kChromeDevToolsScheme, kExtensionScheme});
++        {kChromeDevToolsScheme, kExtensionScheme
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++        , kArkwebExtensionScheme
++#endif
++        });
+   }
+ }
+ 
+ }  // namespace content_settings

@@ -1,0 +1,15 @@
+diff a/components/crash/core/app/crashpad_linux.cc b/components/crash/core/app/crashpad_linux.cc	(rejected hunks)
+@@ -232,10 +236,13 @@ bool PlatformCrashpadInitialization(
+     // where crash_reporter provides it's own values for lsb-release.
+     annotations["lsb-release"] = base::GetLinuxDistro();
+ #endif
+ 
+     std::vector<std::string> arguments;
++#if BUILDFLAG(IS_OHOS)
++    arguments.push_back(std::string("--type=") + switches::kCrashpadHandler);
++#endif
+     if (crash_reporter_client->ShouldMonitorCrashHandlerExpensively()) {
+       arguments.push_back("--monitor-self");
+     }
+ 
+     // Set up --monitor-self-annotation even in the absence of --monitor-self

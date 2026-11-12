@@ -140,6 +140,13 @@ class ContentSettingsPref {
   base::ThreadChecker thread_checker_;
 
   raw_ptr<const base::Clock> clock_;
+
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+  // For OTR instances, whether a deferred re-read has been scheduled.
+  bool otr_deferred_read_pending_ = false;
+
+  base::WeakPtrFactory<ContentSettingsPref> weak_ptr_factory_{this};
+#endif
 };
 
 }  // namespace content_settings

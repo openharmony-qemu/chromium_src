@@ -1,0 +1,27 @@
+diff a/components/feature_engagement/public/feature_list.cc b/components/feature_engagement/public/feature_list.cc	(rejected hunks)
+@@ -202,11 +202,11 @@ const base::Feature* const kAllFeatures[] = {
+     &kIPHiOSGeminiFullscreenPromoFeature,
+     &kIPHiOSGeminiContextualCueChip,
+     &kIPHiOSReaderModeOptionsFeature,
+ #endif  // BUILDFLAG(IS_IOS)
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) || \
+-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
++    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+ #if BUILDFLAG(GOOGLE_CHROME_BRANDING)
+     &kEsbDownloadRowPromoFeature,
+ #endif
+     &kIPHBatterySaverModeFeature,
+     &kIPHCompanionSidePanelFeature,
+@@ -278,11 +278,11 @@ const base::Feature* const kAllFeatures[] = {
+     &kIPHWebUiHelpBubbleTestFeature,
+     &kIPHPriceTrackingInSidePanelFeature,
+     &kIPHBackNavigationMenuFeature,
+     &kIPHPwaQuietNotificationFeature,
+ #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) ||
+-        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
++        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) || \
+     BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
+     &kIPHAutofillAiOptInFeature,
+     &kIPHAutofillAiValuablesFeature,

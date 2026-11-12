@@ -1,0 +1,26 @@
+diff a/components/autofill/core/browser/payments/payments_requests/get_bnpl_payment_instrument_for_fetching_url_request_unittest.cc b/components/autofill/core/browser/payments/payments_requests/get_bnpl_payment_instrument_for_fetching_url_request_unittest.cc
+--- a/components/autofill/core/browser/payments/payments_requests/get_bnpl_payment_instrument_for_fetching_url_request_unittest.cc
++++ b/components/autofill/core/browser/payments/payments_requests/get_bnpl_payment_instrument_for_fetching_url_request_unittest.cc
+@@ -200,10 +200,22 @@ TEST_F(GetBnplPaymentInstrumentForFetchingUrlRequestTest,
+   request_->ParseResponse(response);
+ 
+   EXPECT_FALSE(request_->IsResponseComplete());
+ }
+ 
++TEST_F(GetBnplPaymentInstrumentForFetchingUrlRequestTest,
++       IsResponseComplete_ParseResponseCalled_NonHttpRedirectUrl) {
++  Dict response = GetFullResponse();
++  response.SetByDottedPath(
++      "buy_now_pay_later_info.get_redirect_url_response_"
++      "info.redirect_url",
++      "chrome://version/");
++  request_->ParseResponse(response);
++
++  EXPECT_FALSE(request_->IsResponseComplete());
++}
++
+ TEST_F(GetBnplPaymentInstrumentForFetchingUrlRequestTest, RespondToDelegate) {
+   Dict response_dict = Dict().Set(
+       "buy_now_pay_later_info",
+       Dict().Set(
+           "get_redirect_url_response_info",

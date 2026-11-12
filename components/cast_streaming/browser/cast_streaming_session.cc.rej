@@ -1,0 +1,37 @@
+diff a/components/cast_streaming/browser/cast_streaming_session.cc b/components/cast_streaming/browser/cast_streaming_session.cc	(rejected hunks)
+@@ -190,10 +190,11 @@ void CastStreamingSession::ReceiverSessionClient::PreloadVideoBuffer(
+         (*preloaded_video_buffer_)->get_data()->timestamp);
+   }
+ }
+ 
+ CastStreamingSession::ReceiverSessionClient::~ReceiverSessionClient() {
++  weak_factory_.InvalidateWeakPtrs();
+   // Teardown of the `receiver_session_` may trigger callbacks into `this`,
+   // so destroy it explicitly here, so that callbacks execute while all other
+   // members are still valid.
+   receiver_session_.reset();
+ }
+@@ -413,10 +414,11 @@ void CastStreamingSession::ReceiverSessionClient::OnReceiversDestroying(
+   // do not sanity-check |session| here.
+   DVLOG(1) << __func__;
+   if (playback_command_dispatcher_) {
+     playback_command_dispatcher_->OnRemotingSessionEnded();
+   }
++  start_session_cb_.Reset();
+ 
+   preloaded_audio_buffer_ = std::nullopt;
+   preloaded_video_buffer_ = std::nullopt;
+ 
+   switch (reason) {
+@@ -488,10 +490,11 @@ void CastStreamingSession::ReceiverSessionClient::OnCastChannelClosed() {
+   receiver_session_.reset();
+   EndSession();
+ }
+ 
+ void CastStreamingSession::ReceiverSessionClient::EndSession() {
++  start_session_cb_.Reset();
+   if (client_) {
+     client_->OnSessionEnded();
+     client_ = nullptr;
+   }
+ }

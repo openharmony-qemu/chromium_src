@@ -1,0 +1,14 @@
+diff a/components/feature_engagement/public/event_constants.h b/components/feature_engagement/public/event_constants.h	(rejected hunks)
+@@ -69,11 +69,11 @@ extern const char kExtensionsRequestAccessButtonClicked[];
+ 
+ // The user has opened the cookie controls bubble.
+ extern const char kCookieControlsBubbleShown[];
+ 
+ #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) ||
+-        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
++        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+ 
+ #if BUILDFLAG(IS_IOS)
+ // The user has opened Chrome (cold start or from background).
+ extern const char kChromeOpened[];
+ 

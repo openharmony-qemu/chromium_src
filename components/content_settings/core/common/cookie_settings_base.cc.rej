@@ -1,0 +1,42 @@
+diff a/components/content_settings/core/common/cookie_settings_base.cc b/components/content_settings/core/common/cookie_settings_base.cc
+--- a/components/content_settings/core/common/cookie_settings_base.cc
++++ b/components/content_settings/core/common/cookie_settings_base.cc
+@@ -329,11 +329,11 @@ bool CookieSettingsBase::ShouldDeleteCookieOnExit(
+     std::string_view domain,
+     net::CookieSourceScheme scheme) const {
+   // Cookies with an unknown (kUnset) scheme will be treated as having a not
+   // secure scheme.
+   GURL origin = net::cookie_util::CookieOriginToURL(
+-      domain, scheme == net::CookieSourceScheme::kSecure);
++      std::string(domain), scheme == net::CookieSourceScheme::kSecure);
+   // Pass GURL() as first_party_url since we don't know the context and
+   // don't want to match against (*, exception) pattern.
+   SettingInfo setting_info;
+   ContentSetting setting = GetContentSetting(
+       origin, GURL(), ContentSettingsType::COOKIES, &setting_info);
+@@ -858,11 +858,11 @@ bool CookieSettingsBase::IsAllowedByStorageAccessGrant(
+ ContentSetting CookieSettingsBase::GetSettingForLegacyCookieAccess(
+     std::string_view cookie_domain) const {
+   // The content setting patterns are treated as domains, not URLs, so the
+   // scheme is irrelevant (so we can just arbitrarily pass false).
+   GURL cookie_domain_url = net::cookie_util::CookieOriginToURL(
+-      cookie_domain, false /* secure scheme */);
++      std::string(cookie_domain), false /* secure scheme */);
+ 
+   return GetContentSetting(cookie_domain_url, GURL(),
+                            ContentSettingsType::LEGACY_COOKIE_ACCESS,
+                            /*info=*/nullptr);
+ }
+@@ -870,11 +870,11 @@ ContentSetting CookieSettingsBase::GetSettingForLegacyCookieAccess(
+ ContentSetting CookieSettingsBase::GetSettingForLegacyCookieScope(
+     std::string_view cookie_domain) const {
+   // The content setting patterns are treated as registrable domains, not URLs,
+   // so the scheme is irrelevant (so we can just arbitrarily pass false).
+   net::SchemefulSite registrable_domain(net::cookie_util::CookieOriginToURL(
+-      cookie_domain, false /*secure_scheme=*/));
++      std::string(cookie_domain), false /*secure_scheme=*/));
+ 
+   return GetContentSetting(registrable_domain.GetURL(), GURL(),
+                            ContentSettingsType::LEGACY_COOKIE_SCOPE,
+                            /*info=*/nullptr);
+ }

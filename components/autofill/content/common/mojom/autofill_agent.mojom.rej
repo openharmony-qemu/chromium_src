@@ -1,0 +1,18 @@
+diff a/components/autofill/content/common/mojom/autofill_agent.mojom b/components/autofill/content/common/mojom/autofill_agent.mojom	(rejected hunks)
+@@ -88,10 +88,16 @@ interface AutofillAgent {
+   // Sets the value of `field` (if it is still the currently selected node).
+   // to the given data list value.
+   AcceptDataListSuggestion(
+       FieldRendererId field, mojo_base.mojom.String16 value);
+ 
++  // Tells the renderer to fill the username and password with with given
++  // values on openharmony system.
++  [EnableIf=arkweb_password_autofill]
++  FillAccountSuggestion(mojo_base.mojom.String16 username,
++                        mojo_base.mojom.String16 password);
++
+   // Tells the renderer to preview the username and password with the given
+   // values.
+   PreviewPasswordSuggestion(
+       mojo_base.mojom.String16 username, mojo_base.mojom.String16 password);
+ 

@@ -1,0 +1,17 @@
+diff a/components/gcm_driver/gcm_client_impl.cc b/components/gcm_driver/gcm_client_impl.cc	(rejected hunks)
+@@ -77,11 +77,15 @@ const char kDeletedCountKey[] = "total_deleted";
+ const char kMessageTypeDataMessage[] = "gcm";
+ const char kMessageTypeDeletedMessagesKey[] = "deleted_messages";
+ const char kMessageTypeKey[] = "message_type";
+ const char kMessageTypeSendErrorKey[] = "send_error";
+ const char kSubtypeKey[] = "subtype";
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++const char kSendMessageFromValue[] = "https://x.x.x.x";
++#else
+ const char kSendMessageFromValue[] = "gcm@chrome.com";
++#endif
+ const int64_t kDefaultUserSerialNumber = 0LL;
+ const int kDestroyGCMStoreDelayMS = 5 * 60 * 1000;  // 5 minutes.
+ 
+ GCMClient::Result ToGCMClientResult(MCSClient::MessageSendStatus status) {
+   switch (status) {

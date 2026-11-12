@@ -1,0 +1,41 @@
+diff a/components/feature_engagement/public/feature_constants.h b/components/feature_engagement/public/feature_constants.h	(rejected hunks)
+@@ -148,11 +148,11 @@ FEATURE_CONSTANTS_DECLARE_FEATURE(kIPHDesktopPwaInstallFeature);
+ FEATURE_CONSTANTS_DECLARE_FEATURE(kIPHProfileSwitchFeature);
+ FEATURE_CONSTANTS_DECLARE_FEATURE(kIPHWebUiHelpBubbleTestFeature);
+ FEATURE_CONSTANTS_DECLARE_FEATURE(kIPHPriceTrackingInSidePanelFeature);
+ FEATURE_CONSTANTS_DECLARE_FEATURE(kIPHBackNavigationMenuFeature);
+ #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) ||
+-        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
++        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+ 
+ // All the features declared for Android below that are also used in Java,
+ // should also be declared in:
+ // org.chromium.components.feature_engagement.FeatureConstants.
+ #if BUILDFLAG(IS_ANDROID)
+@@ -390,11 +390,12 @@ FEATURE_CONSTANTS_DECLARE_FEATURE(kIPHiOSGeminiFullscreenPromoFeature);
+ FEATURE_CONSTANTS_DECLARE_FEATURE(kIPHiOSGeminiContextualCueChip);
+ 
+ #endif  // BUILDFLAG(IS_IOS)
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) || \
+-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
++    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
++    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+ FEATURE_CONSTANTS_DECLARE_FEATURE(kIPHAutofillBnplAffirmOrZipSuggestionFeature);
+ FEATURE_CONSTANTS_DECLARE_FEATURE(
+     kIPHAutofillBnplAffirmZipOrKlarnaSuggestionFeature);
+ FEATURE_CONSTANTS_DECLARE_FEATURE(
+     kIPHAutofillCardInfoRetrievalSuggestionFeature);
+@@ -414,11 +415,11 @@ FEATURE_CONSTANTS_DECLARE_FEATURE(kIPHAutofillVirtualCardSuggestionFeature);
+ FEATURE_CONSTANTS_DECLARE_FEATURE(kIPHCookieControlsFeature);
+ FEATURE_CONSTANTS_DECLARE_FEATURE(kIPHPlusAddressCreateSuggestionFeature);
+ FEATURE_CONSTANTS_DECLARE_FEATURE(kIPHAutofillEnableLoyaltyCardsFeature);
+ #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) ||
+         // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) ||
+-        // BUILDFLAG(IS_FUCHSIA)
++        // BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+ 
+ #if BUILDFLAG(IS_CHROMEOS)
+ FEATURE_CONSTANTS_DECLARE_FEATURE(kIPHGrowthFramework);
+ FEATURE_CONSTANTS_DECLARE_FEATURE(kIPHGoogleOneOfferNotificationFeature);
+ FEATURE_CONSTANTS_DECLARE_FEATURE(kIPHLauncherSearchHelpUiFeature);

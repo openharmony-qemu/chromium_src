@@ -1,0 +1,25 @@
+diff a/components/device_signals/core/common/signals_features.cc b/components/device_signals/core/common/signals_features.cc	(rejected hunks)
+@@ -61,21 +61,21 @@ bool IsSystemSignalCollectionImprovementEnabled() {
+ bool IsPolicyDataCollectionEnabled() {
+   return base::FeatureList::IsEnabled(kPolicyDataCollectionEnabled);
+ }
+ 
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || \
+-    BUILDFLAG(IS_CHROMEOS)
++    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_ASAN)
+ // Enables the triggering of device signals consent dialog when conditions met
+ // This feature also requires UnmanagedDeviceSignalsConsentFlowEnabled policy to
+ // be enabled
+ BASE_FEATURE(kDeviceSignalsConsentDialog, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ bool IsConsentDialogEnabled() {
+   return base::FeatureList::IsEnabled(kDeviceSignalsConsentDialog);
+ }
+ #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) ||
+-        // BUILDFLAG(IS_CHROMEOS)
++        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_ASAN)
+ 
+ BASE_FEATURE(kNewEvSignalsUnaffiliatedEnabled,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ }  // namespace enterprise_signals::features

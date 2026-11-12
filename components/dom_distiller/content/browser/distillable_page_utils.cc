@@ -22,6 +22,10 @@
 #include "content/public/browser/web_contents.h"
 #include "ui/base/resource/resource_bundle.h"
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
+#endif
+
 namespace dom_distiller {
 namespace {
 
@@ -53,17 +57,37 @@ void IsDistillablePageForDetector(content::WebContents* web_contents,
 
 bool operator==(const DistillabilityResult& first,
                 const DistillabilityResult& second) {
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  return first.page_info.pageType == second.page_info.pageType &&
+         first.page_info.distillablePageUrl ==
+             second.page_info.distillablePageUrl &&
+         first.page_info.pageDistillable == second.page_info.pageDistillable &&
+         first.page_info.title == second.page_info.title &&
+         first.is_last == second.is_last &&
+         first.is_mobile_friendly == second.is_mobile_friendly;
+#else
   return first.url == second.url &&
          first.is_distillable == second.is_distillable &&
          first.is_last == second.is_last &&
          first.is_mobile_friendly == second.is_mobile_friendly;
+#endif
 }
 
 std::ostream& operator<<(std::ostream& os, const DistillabilityResult& result) {
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  os << "DistillabilityResult: { page_info.pageType: "
+     << result.page_info.pageType << ", page_info.distillablePageUrl: "
+     << url::LogUtils::ConvertUrl(result.page_info.distillablePageUrl)
+     << ", page_info.pageDistillable: " << result.page_info.pageDistillable
+     << ", page_info.title: " << result.page_info.title
+     << ", is_last: " << result.is_last
+     << ", is_mobile_friendly: " << result.is_mobile_friendly << " }";
+#else
   os << "DistillabilityResult: { url: " << result.url.spec()
      << ", is_distillable: " << result.is_distillable
      << ", is_last: " << result.is_last
      << ", is_mobile_friendly: " << result.is_mobile_friendly << " }";
+#endif
   return os;
 }
 

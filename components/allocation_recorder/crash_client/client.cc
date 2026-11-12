@@ -10,7 +10,7 @@
 #include "components/allocation_recorder/internal/internal.h"
 #include "third_party/crashpad/crashpad/client/annotation.h"
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_GWP_ASAN)
 #include "components/crash/core/app/crashpad.h"  // nogncheck
 #endif
 
@@ -57,7 +57,7 @@ void RegisterRecorderWithCrashpad(AllocationTraceRecorder& trace_recorder) {
   g_recorder_address = reinterpret_cast<uintptr_t>(&trace_recorder);
   g_recorder_address_annotation.SetSize(sizeof(g_recorder_address));
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_GWP_ASAN)
   crash_reporter::AllowMemoryRange(&trace_recorder, sizeof(trace_recorder));
 #endif
 }

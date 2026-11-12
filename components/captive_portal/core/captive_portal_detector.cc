@@ -21,9 +21,18 @@
 #include "url/gurl.h"
 
 namespace {
-constexpr char kLegacyURL[] = "http://www.gstatic.com/generate_204";
+constexpr char kLegacyURL[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "http://***";
+#else
+    "http://www.gstatic.com/generate_204";
+#endif
 constexpr char kDefaultURL[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "http://***";
+#else
     "http://connectivitycheck.gstatic.com/generate_204";
+#endif
 }  // namespace
 
 namespace captive_portal {

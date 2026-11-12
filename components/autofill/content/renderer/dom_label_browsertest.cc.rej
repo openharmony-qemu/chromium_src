@@ -1,0 +1,13 @@
+diff a/components/autofill/content/renderer/dom_label_browsertest.cc b/components/autofill/content/renderer/dom_label_browsertest.cc	(rejected hunks)
+@@ -121,10 +121,11 @@ class DomLabelTest : public content::RenderViewTest,
+  private:
+   scoped_refptr<FieldDataManager> field_data_manager_ =
+       base::MakeRefCounted<FieldDataManager>();
+ };
+ 
++#if !BUILDFLAG(ARKWEB_UNITTESTS)
+ TEST_P(DomLabelTest, DataDrivenLabels) {
+   const TestCase& test = GetParam();
+   std::string dom;
+   ASSERT_TRUE(base::ReadFileToString(test.dom_path, &dom));
+   LoadHTML(dom);

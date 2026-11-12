@@ -1,0 +1,45 @@
+diff a/components/dom_distiller/core/distiller_page.cc b/components/dom_distiller/core/distiller_page.cc	(rejected hunks)
+@@ -28,14 +28,20 @@
+ #include "third_party/dom_distiller_js/dom_distiller.pb.h"
+ #include "third_party/dom_distiller_js/dom_distiller_json_converter.h"
+ #include "ui/base/resource/resource_bundle.h"
+ #include "url/gurl.h"
+ 
++#include "arkweb/chromium_ext/components/dom_distiller/core/distiller_page_ohos.h"
++
+ namespace dom_distiller {
+ 
+ namespace {
+ 
++#if BUILDFLAG(ARKWEB_READER_MODE)
++const char* kResultKey = "result";
++#endif
++
+ // Counts the number of words in the text_content portion, used to record how
+ // many words are present for a readability distillation. Note this won't work
+ // as well on languages like Chinese where the space separation isn't the
+ // same as in english.
+ int CountWords(const std::string& text_content) {
+@@ -125,14 +131,21 @@ void DistillerPage::DistillPage(
+   switch (GetDistillerType()) {
+     case DistillerType::kReadability:
+       script = GetReadabilityDistillerScript();
+       break;
+     case DistillerType::kDOMDistiller:
++#if BUILDFLAG(ARKWEB_READER_MODE)
++      dom_distiller::proto::DomDistillerOptions new_options = options;
++      bool is_distill_catalog = DistillPageOhos(gurl, new_options);
++      bool is_article = GetDistillOptions() && GetDistillOptions()->distill_type_ext == DistillTypeExt::CUSTOM;
++      auto custom_options = GetCustomDomDistillerOptions(is_article, gurl, new_options);
++      script = GetDistillerScriptWithOptionsOhos(custom_options, is_distill_catalog);
++#else
+       script = GetDistillerScriptWithOptions(options);
++#endif
+       break;
+   }
+-
+   DistillPageImpl(gurl, script);
+ }
+ 
+ void DistillerPage::OnDistillationDone(const GURL& page_url,
+                                        const base::Value* value) {

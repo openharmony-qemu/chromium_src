@@ -210,6 +210,14 @@ class FormData {
     button_titles_ = std::move(button_titles);
   }
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  // An identifier of the form that is unique among the forms from the same
+  // frame. In the browser process, it should only be used in conjunction with
+  // |host_frame| to identify a field; see global_id(). It is not persistent
+  // between page loads and therefore not used in comparison in SameFieldAs().
+  FormRendererId unique_renderer_id;
+#endif
+
   // The URL (minus query parameters and fragment) containing the form.
   // This value should not be sent via mojo.
   const GURL& url() const { return url_; }

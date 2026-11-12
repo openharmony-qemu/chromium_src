@@ -1,0 +1,15 @@
+diff a/components/autofill/core/browser/payments/credit_card_access_manager.cc b/components/autofill/core/browser/payments/credit_card_access_manager.cc	(rejected hunks)
+@@ -1711,11 +1711,12 @@ void CreditCardAccessManager::StartDeviceAuthenticationForFilling(
+   LogMandatoryReauthCheckoutFlowUsageEvent(
+       payments::MandatoryReauthManager::GetNonInteractivePaymentMethodType(
+           card->record_type()),
+       authentication_method,
+       autofill_metrics::MandatoryReauthAuthenticationFlowEvent::kFlowStarted);
+-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_IOS)
++#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_IOS) || \
++    BUILDFLAG(IS_OHOS)
+   autofill_client()
+       .GetPaymentsAutofillClient()
+       ->GetOrCreatePaymentsMandatoryReauthManager()
+       ->AuthenticateWithMessage(
+           l10n_util::GetStringUTF16(

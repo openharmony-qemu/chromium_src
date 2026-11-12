@@ -2229,3 +2229,7 @@ TEST_F(AutofillAgentTestObserveFieldVisibility, NonExistentElement) {
 }  // namespace
 
 }  // namespace autofill
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/components/autofill/content/render/autofill_agent_ext_browsertest.cc"
+#endif

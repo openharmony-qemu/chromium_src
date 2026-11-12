@@ -1,0 +1,31 @@
+diff a/components/find_in_page/find_tab_helper.h b/components/find_in_page/find_tab_helper.h	(rejected hunks)
+@@ -5,10 +5,11 @@
+ #ifndef COMPONENTS_FIND_IN_PAGE_FIND_TAB_HELPER_H_
+ #define COMPONENTS_FIND_IN_PAGE_FIND_TAB_HELPER_H_
+ 
+ #include <string>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/observer_list.h"
+ #include "build/build_config.h"
+ #include "components/find_in_page/find_notification_details.h"
+ #include "content/public/browser/web_contents_user_data.h"
+@@ -54,11 +55,16 @@ class FindTabHelper : public content::WebContentsUserData<FindTabHelper> {
+   // counts and highlighting.
+   void StartFinding(std::u16string search_string,
+                     bool forward_direction,
+                     bool case_sensitive,
+                     bool find_match,
+-                    bool run_synchronously_for_testing = false);
++                    bool run_synchronously_for_testing = false
++#if BUILDFLAG(ARKWEB_FIND_IN_PAGE)
++                    ,
++                    bool new_session = false
++#endif
++  );
+ 
+   // Stops the current Find operation.
+   void StopFinding(SelectionAction selection_action);
+ 
+   // When the user commits to a search query or jumps from one result

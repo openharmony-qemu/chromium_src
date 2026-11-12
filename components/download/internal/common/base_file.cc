@@ -73,6 +73,7 @@ class FileErrorData : public base::trace_event::ConvertableToTraceFormat {
   int os_error_;
   DownloadInterruptReason interrupt_reason_;
 };
+}  // namespace
 
 void InitializeFile(base::File* file, const base::FilePath& file_path) {
 #if BUILDFLAG(IS_ANDROID)
@@ -94,6 +95,7 @@ void InitializeFile(base::File* file, const base::FilePath& file_path) {
           base::File::FLAG_WIN_SHARE_DELETE);
 }
 
+namespace {
 void DeleteFileWrapper(const base::FilePath& file_path) {
 #if BUILDFLAG(IS_ANDROID)
   if (file_path.IsContentUri()) {

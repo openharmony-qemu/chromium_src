@@ -1,0 +1,16 @@
+diff a/components/download/public/common/download_item.h b/components/download/public/common/download_item.h	(rejected hunks)
+@@ -22,10 +22,14 @@
+ #include <map>
+ #include <optional>
+ #include <string>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/functional/callback_forward.h"
+ #include "base/memory/scoped_refptr.h"
+ #include "base/observer_list_types.h"
+ #include "base/supports_user_data.h"
+ #include "build/build_config.h"

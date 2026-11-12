@@ -43,7 +43,8 @@ class ViewerHandle {
 
 // Interface for a DOM distiller entry viewer. Implement this to make a view
 // request and receive the data for an entry when it becomes available.
-class ViewRequestDelegate : public base::CheckedObserver {
+class ViewRequestDelegate : public ViewRequestDelegateOhos,
+                            public base::CheckedObserver {
  public:
   ~ViewRequestDelegate() override = default;
 
@@ -165,6 +166,7 @@ class TaskTracker {
 
   bool destruction_allowed_;
 
+  std::unique_ptr<TaskTrackerUtils> tracker_utils_;
   // Note: This should remain the last member so it'll be destroyed and
   // invalidate its weak pointers before any other members are destroyed.
   base::WeakPtrFactory<TaskTracker> weak_ptr_factory_{this};

@@ -60,9 +60,15 @@ void FindTabHelper::StartFinding(std::u16string search_string,
     return;
   }
 
+#if BUILDFLAG(ARKWEB_FIND_IN_PAGE)
+  new_session = find_text_ != search_string ||
+                (last_search_case_sensitive_ != case_sensitive) ||
+                find_op_aborted_ || new_session;
+#else
   bool new_session = find_text_ != search_string ||
                      (last_search_case_sensitive_ != case_sensitive) ||
                      find_op_aborted_;
+#endif
 
   // Continuing here would just find the same results, potentially causing
   // some flicker in the highlighting.

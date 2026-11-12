@@ -280,6 +280,12 @@ class DownloadItemActivatedData
 
 }  // namespace
 
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+bool CallIsCancellation(DownloadInterruptReason reason) {
+  return IsCancellation(reason);
+}
+#endif
+
 // The maximum number of attempts we will make to resume automatically.
 const int DownloadItemImpl::kMaxAutoResumeAttempts = 5;
 
@@ -575,6 +581,9 @@ void DownloadItemImpl::UpdateObservers() {
   for (auto& observer : observers_)
     observer.OnDownloadUpdated(this);
   is_updating_observers_ = false;
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  AsArkWebDownloadItemImplExt()->RunCallbackIfStateMatch();
+#endif
 }
 
 void DownloadItemImpl::ValidateDangerousDownload() {
@@ -657,6 +666,11 @@ void DownloadItemImpl::CopyDownload(AcquireFileCallback callback) {
 
 void DownloadItemImpl::Pause() {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  LOG(INFO) << "DownloadItemImpl::Pause guid: " << GetGuid()
+            << ", isPaused: " << IsPaused()
+            << ", state_: " << DebugDownloadStateString(state_);
+#endif // BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
 
   // Ignore irrelevant states.
   if (IsPaused())
@@ -692,6 +706,10 @@ void DownloadItemImpl::Pause() {
 void DownloadItemImpl::Resume(bool user_resume) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   DVLOG(20) << __func__ << "() download = " << DebugString(true);
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  LOG(INFO) << "DownloadItemImpl::Resume guid: " << GetGuid()
+            << ", user_resume: " << user_resume;
+#endif // BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
 
   switch (state_) {
     case CANCELLED_INTERNAL:  // Nothing to resume.
@@ -699,7 +717,12 @@ void DownloadItemImpl::Resume(bool user_resume) {
     case COMPLETING_INTERNAL:
     case INITIAL_INTERNAL:
     case INTERRUPTED_TARGET_PENDING_INTERNAL:
+      return;
     case RESUMING_INTERNAL:  // Resumption in progress.
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+      if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
+              switches::kEnableNwebExDownload))
+#endif
       return;
 
     case TARGET_PENDING_INTERNAL:
@@ -748,6 +771,10 @@ void DownloadItemImpl::UpdateResumptionInfo(bool user_resume) {
 void DownloadItemImpl::Cancel(bool user_cancel) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   DVLOG(20) << __func__ << "() download = " << DebugString(true);
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  LOG(INFO) << "DownloadItemImpl::Cancel guid: " << GetGuid()
+            << ", user_cancel: " << user_cancel;
+#endif // BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
   InterruptAndDiscardPartialState(
       user_cancel ? DOWNLOAD_INTERRUPT_REASON_USER_CANCELED
                   : DOWNLOAD_INTERRUPT_REASON_USER_SHUTDOWN);
@@ -757,6 +784,9 @@ void DownloadItemImpl::Cancel(bool user_cancel) {
 void DownloadItemImpl::Remove() {
   DVLOG(20) << __func__ << "() download = " << DebugString(true);
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  LOG(INFO) << "DownloadItemImpl::Remove guid: " << GetGuid();
+#endif // BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
 
   InterruptAndDiscardPartialState(DOWNLOAD_INTERRUPT_REASON_USER_CANCELED);
   UpdateObservers();
@@ -837,7 +867,9 @@ void DownloadItemImpl::RenameDownloadedFileDone(
 void DownloadItemImpl::Rename(const base::FilePath& display_name,
                               DownloadItem::RenameDownloadCallback callback) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
-
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  LOG(INFO) << "DownloadItemImpl::Rename guid: " << GetGuid();
+#endif // BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
   if (display_name.IsAbsolute()) {
     base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
         FROM_HERE, base::BindOnce(&DownloadItemImpl::RenameDownloadedFileDone,
@@ -895,15 +927,23 @@ bool DownloadItemImpl::IsTemporary() const {
 
 bool DownloadItemImpl::CanResume() const {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  LOG(INFO) << "DownloadItemImpl::CanResume guid: " << GetGuid()
+            << ", state_: " << DebugDownloadStateString(state_);
+#endif // BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
   switch (state_) {
     case INITIAL_INTERNAL:
     case COMPLETING_INTERNAL:
     case COMPLETE_INTERNAL:
     case CANCELLED_INTERNAL:
-    case RESUMING_INTERNAL:
     case INTERRUPTED_TARGET_PENDING_INTERNAL:
       return false;
-
+    case RESUMING_INTERNAL:
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+      if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
+              switches::kEnableNwebExDownload))
+#endif
+        return false;
     case TARGET_PENDING_INTERNAL:
     case TARGET_RESOLVED_INTERNAL:
     case IN_PROGRESS_INTERNAL:
@@ -1683,6 +1723,15 @@ void DownloadItemImpl::Start(
     URLLoaderFactoryProvider::URLLoaderFactoryProviderPtr
         url_loader_factory_provider) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  LOG(INFO) << "DownloadItemImpl::Start guid: " << GetGuid();
+#endif // BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+#if BUILDFLAG(IS_ARKWEB)
+  // Simultaneously restoring a failed download multiple times will result in a crash.
+  if (download_file_) {
+    return;
+  }
+#endif
   CHECK(!download_file_) << "last interrupt reason: "
                          << DownloadInterruptReasonToString(last_reason_)
                          << ", state: " << DebugDownloadStateString(state_);
@@ -2200,6 +2249,9 @@ void DownloadItemImpl::InterruptWithPartialState(
             << " bytes_so_far:" << bytes_so_far
             << " hash_state:" << (hash_state ? "Valid" : "Invalid")
             << " this=" << DebugString(true);
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  bool need_auto_resume = false;
+#endif
 
   // Somewhat counter-intuitively, it is possible for us to receive an
   // interrupt after we've already been interrupted.  The generation of
@@ -2250,6 +2302,9 @@ void DownloadItemImpl::InterruptWithPartialState(
       last_reason_ = reason;
 
       ResumeMode resume_mode = GetResumeMode();
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+      AsArkWebDownloadItemImplExt()->IsNeedAutoResume(reason, resume_mode, need_auto_resume);
+#endif  // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
       ReleaseDownloadFile(resume_mode != ResumeMode::IMMEDIATE_CONTINUE &&
                           resume_mode != ResumeMode::USER_CONTINUE);
     } break;
@@ -2329,6 +2384,14 @@ void DownloadItemImpl::InterruptWithPartialState(
   DCHECK_EQ(last_reason_, reason);
   TransitionTo(INTERRUPTED_INTERNAL);
   delegate_->DownloadInterrupted(this);
+
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  if (need_auto_resume) {
+    AsArkWebDownloadItemImplExt()->AutoResume();
+    return;
+  }
+#endif
+
   AutoResumeIfValid();
 }
 
@@ -2436,6 +2499,11 @@ bool DownloadItemImpl::IsDownloadReadyForCompletion(
 
 void DownloadItemImpl::TransitionTo(DownloadInternalState new_state) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  LOG(INFO) << "DownloadItemImpl::TransitionTo "
+            << DebugDownloadStateString(state_) << " to "
+            << DebugDownloadStateString(new_state);
+#endif // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
 
   if (state_ == new_state)
     return;
@@ -2732,8 +2800,19 @@ void DownloadItemImpl::ResumeInterruptedDownload(
   // will only be sent to the URL returned by GetURL().
   download_params->set_referrer(GetReferrerUrl());
   download_params->set_referrer_policy(net::ReferrerPolicy::NEVER_CLEAR);
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      switches::kEnableNwebExDownload)) {
+      download_params->set_cross_origin_redirects(
+          network::mojom::RedirectMode::kFollow);
+  } else {
   download_params->set_cross_origin_redirects(
       network::mojom::RedirectMode::kError);
+  }
+#else
+  download_params->set_cross_origin_redirects(
+      network::mojom::RedirectMode::kError);
+#endif
 
   TransitionTo(RESUMING_INTERNAL);
   RecordDownloadCountWithSource(source == ResumptionRequestSource::USER
@@ -2938,4 +3017,12 @@ void DownloadItemImpl::UpdateRenameProgress(int64_t bytes_so_far,
   UpdateObservers();
 }
 
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+void DownloadItemImpl::ReadDownloadData(
+    const std::string& guid,
+    const int32_t read_size,
+    base::OnceCallback<void(const std::vector<uint8_t>&)> callback) {
+  NOTREACHED();
+}
+#endif // ARKWEB_EXT_DOWNLOAD
 }  // namespace download

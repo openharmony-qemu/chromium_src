@@ -99,6 +99,10 @@ void DistillerImpl::DistillPage(const GURL& url,
   finished_cb_ = std::move(finished_cb);
   update_cb_ = update_cb;
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  impl_utils_->DistillPage();
+#endif // ARKWEB_READER_MODE
+
   AddToDistillationQueue(0, url);
   DistillNextPage();
 }
@@ -236,6 +240,14 @@ void DistillerImpl::OnPageDistillationFinished(
   AddPageIfDone(page_num);
   DistillNextPage();
 }
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+void DistillerImpl::AbortDistill() {
+  if (distiller_page_) {
+    distiller_page_->AbortDistill();
+  }
+}
+#endif // ARKWEB_READER_MODE
 
 void DistillerImpl::MaybeFetchImage(int page_num,
                                     const std::string& image_id,

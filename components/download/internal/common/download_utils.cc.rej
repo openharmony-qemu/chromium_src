@@ -1,0 +1,26 @@
+diff a/components/download/internal/common/download_utils.cc b/components/download/internal/common/download_utils.cc	(rejected hunks)
+@@ -7,10 +7,11 @@
+ #include <memory>
+ #include <optional>
+ #include <string>
+ #include <string_view>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/files/file_util.h"
+ #include "base/format_macros.h"
+ #include "base/i18n/file_util_icu.h"
+ #include "base/metrics/field_trial_params.h"
+ #include "base/numerics/safe_conversions.h"
+@@ -291,11 +292,11 @@ DownloadInterruptReason HandleSuccessfulServerResponse(
+ 
+     return DOWNLOAD_INTERRUPT_REASON_NONE;
+   }
+ 
+   // The caller is expecting a partial response.
+-  if (save_info && save_info->offset > 0) {
++  if (save_info) {
+     if (http_headers.response_code() != net::HTTP_PARTIAL_CONTENT) {
+       // Requested a partial range, but received the entire response, when
+       // the range request header is "Range:bytes={offset}-".
+       // The response can be HTTP 200 or other error code when
+       // |fetch_error_body| is true.

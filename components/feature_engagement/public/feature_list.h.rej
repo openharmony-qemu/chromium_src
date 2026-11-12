@@ -1,0 +1,53 @@
+diff a/components/feature_engagement/public/feature_list.h b/components/feature_engagement/public/feature_list.h	(rejected hunks)
+@@ -357,11 +357,11 @@ DEFINE_VARIATION_PARAM(kIPHiOSGeminiFullscreenPromoFeature,
+                        "IPH_iOSGeminiFullscreenPromoFeature");
+ 
+ #endif  // BUILDFLAG(IS_IOS)
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) || \
+-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
++    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+ #if BUILDFLAG(GOOGLE_CHROME_BRANDING)
+ DEFINE_VARIATION_PARAM(kEsbDownloadRowPromoFeature, "EsbDownloadRowPromo");
+ #endif
+ DEFINE_VARIATION_PARAM(kIPHBatterySaverModeFeature, "IPH_BatterySaverMode");
+ DEFINE_VARIATION_PARAM(kIPHCompanionSidePanelFeature, "IPH_CompanionSidePanel");
+@@ -480,11 +480,11 @@ DEFINE_VARIATION_PARAM(kIPHTabGroupsSaveV2CloseGroupFeature,
+ DEFINE_VARIATION_PARAM(kIPHTabGroupsSharedTabChangedFeature,
+                        "IPH_TabGroupsSharedTabChanged");
+ DEFINE_VARIATION_PARAM(kIPHTabGroupsSharedTabFeedbackFeature,
+                        "IPH_TabGroupsSharedTabFeedback");
+ #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) ||
+-        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
++        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) || \
+     BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
+ DEFINE_VARIATION_PARAM(kIPHAutofillAiOptInFeature, "IPH_AutofillAiOptIn");
+ DEFINE_VARIATION_PARAM(kIPHAutofillAiValuablesFeature,
+@@ -790,11 +790,11 @@ inline constexpr flags_ui::FeatureEntry::FeatureVariation
+         VARIATION_ENTRY(kIPHIOSPageActionMenu),
+         VARIATION_ENTRY(kIPHiOSAIHubNewBadge),
+         VARIATION_ENTRY(kIPHiOSGeminiContextualCueChip),
+         VARIATION_ENTRY(kIPHiOSGeminiFullscreenPromoFeature),
+ #elif BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
++    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+         VARIATION_ENTRY(kIPHBatterySaverModeFeature),
+         VARIATION_ENTRY(kIPHCompanionSidePanelFeature),
+         VARIATION_ENTRY(kIPHCompanionSidePanelRegionSearchFeature),
+         VARIATION_ENTRY(kIPHComposeMSBBSettingsFeature),
+         VARIATION_ENTRY(kIPHComposeNewBadgeFeature),
+@@ -852,11 +852,11 @@ inline constexpr flags_ui::FeatureEntry::FeatureVariation
+         VARIATION_ENTRY(kIPHDesktopSharedHighlightingFeature),
+         VARIATION_ENTRY(kIPHWebUiHelpBubbleTestFeature),
+         VARIATION_ENTRY(kIPHPriceTrackingInSidePanelFeature),
+         VARIATION_ENTRY(kIPHBackNavigationMenuFeature),
+ #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) ||
+-        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
++        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) || \
+     BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
+         VARIATION_ENTRY(kIPHAutofillAiOptInFeature),
+         VARIATION_ENTRY(kIPHAutofillAiValuablesFeature),

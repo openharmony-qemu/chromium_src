@@ -1,0 +1,30 @@
+diff a/components/download/internal/common/parallel_download_job.cc b/components/download/internal/common/parallel_download_job.cc	(rejected hunks)
+@@ -4,20 +4,28 @@
+ 
+ #include "components/download/internal/common/parallel_download_job.h"
+ 
+ #include <algorithm>
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/functional/bind.h"
+ #include "base/metrics/histogram_macros.h"
+ #include "base/time/time.h"
+ #include "components/download/internal/common/parallel_download_utils.h"
+ #include "components/download/public/common/download_create_info.h"
+ #include "components/download/public/common/download_stats.h"
+ #include "mojo/public/cpp/bindings/pending_remote.h"
+ #include "net/traffic_annotation/network_traffic_annotation.h"
+ #include "net/url_request/referrer_policy.h"
+ 
++#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
++#include "base/command_line.h"
++#include "content/public/common/content_switches.h"
++#endif
++
+ namespace download {
+ namespace {
+ const int kDownloadJobVerboseLevel = 1;
+ }  // namespace
+ 

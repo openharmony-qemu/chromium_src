@@ -37,7 +37,9 @@ TaskTracker::TaskTracker(const ArticleEntry& entry,
       entry_(entry),
       distilled_article_(),
       content_ready_(false),
-      destruction_allowed_(true) {}
+      destruction_allowed_(true) {
+  tracker_utils_ = std::make_unique<TaskTrackerUtils>(this);
+      }
 
 TaskTracker::~TaskTracker() {
   DCHECK(destruction_allowed_);
@@ -87,6 +89,9 @@ void TaskTracker::AddSaveCallback(SaveCallback callback) {
 std::unique_ptr<ViewerHandle> TaskTracker::AddViewer(
     ViewRequestDelegate* delegate) {
   viewers_.AddObserver(delegate);
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  tracker_utils_->AddViewer(delegate);
+#endif // ARKWEB_READER_MODE
   if (content_ready_) {
     // Distillation for this task has already completed, and so the delegate can
     // be immediately told of the result.

@@ -1,0 +1,13 @@
+diff a/components/enterprise/connectors/core/service_provider_config.cc b/components/enterprise/connectors/core/service_provider_config.cc	(rejected hunks)
+@@ -6,10 +6,11 @@
+ 
+ #include <array>
+ #include <iterator>
+ #include <string_view>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/json/json_reader.h"
+ 
+ namespace enterprise_connectors {
+ 
+ namespace {

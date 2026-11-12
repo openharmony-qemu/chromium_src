@@ -1,0 +1,14 @@
+diff a/components/dom_distiller/core/distiller_page.h b/components/dom_distiller/core/distiller_page.h	(rejected hunks)
+@@ -25,11 +27,11 @@ class SourcePageHandle {
+ // Injects JavaScript into a page, and uses it to extract and return long-form
+ // content. The class can be reused to load and distill multiple pages,
+ // following the state transitions described along with the class's states.
+ // Constructing a DistillerPage should be cheap, as some of the instances can be
+ // thrown away without ever being used.
+-class DistillerPage {
++class DistillerPage : public DistillerPageOhos {
+  public:
+   using DistillerPageCallback = base::OnceCallback<void(
+       std::unique_ptr<proto::DomDistillerResult> distilled_page,
+       bool distillation_successful)>;
+ 

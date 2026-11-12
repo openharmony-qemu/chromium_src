@@ -278,8 +278,19 @@ void ParallelDownloadJob::CreateRequest(int64_t offset) {
   // TODO(xingliu): We should not support redirect at all for parallel requests.
   // Currently the network service code path still can redirect as long as it's
   // the same origin.
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      switches::kEnableNwebExDownload)) {
+      download_params->set_cross_origin_redirects(
+          network::mojom::RedirectMode::kFollow);
+  } else {
+      download_params->set_cross_origin_redirects(
+          network::mojom::RedirectMode::kError);
+  }
+#else
   download_params->set_cross_origin_redirects(
       network::mojom::RedirectMode::kError);
+#endif
 
   // Send the request.
   mojo::PendingRemote<device::mojom::WakeLockProvider> wake_lock_provider;

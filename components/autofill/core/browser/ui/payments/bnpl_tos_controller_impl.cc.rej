@@ -1,0 +1,21 @@
+diff a/components/autofill/core/browser/ui/payments/bnpl_tos_controller_impl.cc b/components/autofill/core/browser/ui/payments/bnpl_tos_controller_impl.cc	(rejected hunks)
+@@ -24,14 +24,19 @@ using std::u16string;
+ namespace autofill {
+ using autofill_metrics::BnplTosDialogResult;
+ using autofill_metrics::LogBnplTosDialogShown;
+ 
+ namespace {
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++constexpr std::string_view kWalletLinkText = "https://x.x.x.x/";
++constexpr std::string_view kWalletUrlString = "https://x.x.x.x/";
++#else
+ // LINT.IfChange
+ constexpr std::string_view kWalletLinkText = "wallet.google.com";
+ constexpr std::string_view kWalletUrlString = "https://wallet.google.com/";
+ // LINT.ThenChange(//chrome/browser/touch_to_fill/autofill/android/internal/java/src/org/chromium/chrome/browser/touch_to_fill/payments/TouchToFillPaymentMethodMediator.java)
++#endif
+ }  // namespace
+ 
+ BnplTosModel::BnplTosModel() = default;
+ 
+ BnplTosModel::BnplTosModel(const BnplTosModel& other) = default;

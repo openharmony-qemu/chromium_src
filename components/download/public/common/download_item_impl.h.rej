@@ -1,0 +1,73 @@
+diff a/components/download/public/common/download_item_impl.h b/components/download/public/common/download_item_impl.h	(rejected hunks)
+@@ -10,10 +10,14 @@
+ #include <memory>
+ #include <optional>
+ #include <string>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/files/file_path.h"
+ #include "base/functional/callback_forward.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/safety_checks.h"
+ #include "base/memory/weak_ptr.h"
+@@ -35,22 +39,36 @@
+ #include "services/device/public/mojom/wake_lock_provider.mojom.h"
+ #include "services/network/public/mojom/fetch_api.mojom-shared.h"
+ #include "url/gurl.h"
+ #include "url/origin.h"
+ 
++#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
++#include "base/supports_user_data.h"
++#endif
++
+ namespace download {
+ class DownloadFile;
+ class DownloadItemImplDelegate;
++class ArkWebDownloadItemImplExt;
++
++#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
++bool CallIsCancellation(DownloadInterruptReason reason);
++#endif
+ 
+ // See download_item.h for usage.
+ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
+     : public DownloadItem,
+       public DownloadDestinationObserver {
+   // TODO(crbug.com/422045023): Remove this macro once the bug gets fixed.
+   ADVANCED_MEMORY_SAFETY_CHECKS();
+ 
+  public:
++  friend ArkWebDownloadItemImplExt;
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  friend class ArkWebDownloadItemImplExtTest;
++#endif
++  virtual ArkWebDownloadItemImplExt *AsArkWebDownloadItemImplExt() { return nullptr; }
+   // Information about the initial request that triggers the download. Most of
+   // the fields are immutable after the DownloadItem is successfully
+   // created. However, it is possible that the url chain is changed when
+   // resuming an interrupted download. In that case, the download will restart
+   // from the beginning.
+@@ -906,13 +928,19 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
+ #if BUILDFLAG(IS_ANDROID)
+   bool is_from_external_app_ = false;
+   bool allow_auto_open_after_completion_ = true;
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
++#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
++  std::string request_method_;
++#endif
++
+   THREAD_CHECKER(thread_checker_);
+ 
+   base::WeakPtrFactory<DownloadItemImpl> weak_ptr_factory_{this};
+ };
+ 
+ }  // namespace download
+ 
++#include "arkweb/chromium_ext/components/download/internal/common/arkweb_download_item_impl_ext.h"
++
+ #endif  // COMPONENTS_DOWNLOAD_PUBLIC_COMMON_DOWNLOAD_ITEM_IMPL_H_

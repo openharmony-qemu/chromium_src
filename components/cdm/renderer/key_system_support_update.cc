@@ -41,6 +41,11 @@
 #include "components/cdm/renderer/android_key_system_info.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+#include "components/cdm/renderer/wiseplay_key_system_info.h"
+#include "media/cdm/wiseplay_cdm_common.h"
+#endif
+
 #if BUILDFLAG(ENABLE_PLAYREADY)
 #include "components/cdm/common/playready_cdm_common.h"
 #include "components/cdm/renderer/playready_key_system_info.h"
@@ -273,6 +278,9 @@ bool CanSupportPersistentLicense() {
   // persistence-based features are supported or not.
   return true;
 
+#elif BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+  LOG(INFO) << "[DRM]" << __func__;
+  return true;
 #elif BUILDFLAG(ENABLE_CDM_HOST_VERIFICATION) && \
     BUILDFLAG(ENABLE_CDM_STORAGE_ID)
   // On other platforms, persistent licenses are only supported if CDM host
@@ -389,8 +397,12 @@ void AddWidevine(const media::KeySystemCapability& capability,
   // persistence-based features are supported or not.
   persistent_state_support = EmeFeatureSupport::ALWAYS_ENABLED;
   distinctive_identifier_support = EmeFeatureSupport::ALWAYS_ENABLED;
+#elif BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+  persistent_state_support = EmeFeatureSupport::REQUESTABLE;
+  distinctive_identifier_support = EmeFeatureSupport::NOT_SUPPORTED;
+  LOG(INFO) << "[DRM]" << __func__;
 #endif
-
+  LOG(INFO) << "[DRM]" << __func__;
   key_systems->emplace_back(std::make_unique<WidevineKeySystemInfo>(
       codecs, encryption_schemes, session_types, hw_secure_codecs,
       hw_secure_encryption_schemes, hw_secure_session_types,
@@ -556,6 +568,14 @@ void OnKeySystemSupportUpdated(
     }
 #endif  // BUILDFLAG(ENABLE_WIDEVINE)
 
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+    if (key_system == media::kWiseplayKeySystem) {
+      LOG(INFO) << "[DRM]" << __func__ << ", add wiseplay.";
+      AddWiseplay(capability, can_persist_data, &key_systems);
+      continue;
+    }
+#endif
+
     if (key_system == media::kExternalClearKeyKeySystem) {
       AddExternalClearKey(capability, &key_systems);
       continue;
@@ -582,7 +602,7 @@ void OnKeySystemSupportUpdated(
     DLOG(ERROR) << "Unrecognized key system: " << key_system;
 #endif  // BUILDFLAG(IS_ANDROID)
   }
-
+  LOG(INFO) << "[DRM]" << __func__;
   cb.Run(std::move(key_systems));
 }
 
@@ -592,9 +612,18 @@ std::unique_ptr<media::KeySystemSupportRegistration>
 GetSupportedKeySystemsUpdates(content::RenderFrame* render_frame,
                               bool can_persist_data,
                               media::GetSupportedKeySystemsCB cb) {
+  LOG(INFO) << "[DRM]" << __func__;
   return content::ObserveKeySystemSupportUpdate(
       render_frame, base::BindRepeating(&OnKeySystemSupportUpdated,
                                         can_persist_data, std::move(cb)));
 }
+
+#if BUILDFLAG(ARKWEB_TEST)
+void TestAddWiseplay(const media::KeySystemCapability& capability,
+                     bool can_persist_data,
+                     media::KeySystemInfos* key_systems) {
+  AddWiseplay(capability, can_persist_data, key_systems);
+}
+#endif  // ARKWEB_TEST
 
 }  // namespace cdm

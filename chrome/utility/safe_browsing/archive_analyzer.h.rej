@@ -1,0 +1,13 @@
+diff a/chrome/utility/safe_browsing/archive_analyzer.h b/chrome/utility/safe_browsing/archive_analyzer.h	(rejected hunks)
+@@ -42,10 +42,11 @@ class ArchiveAnalyzer {
+                GetTempFileCallback get_temp_file_callback,
+                ArchiveAnalyzerResults* results);
+ 
+   void SetResultsForTesting(ArchiveAnalyzerResults* results);
+   void SetFinishedCallbackForTesting(FinishedAnalysisCallback callback);
++  void SetGetTempFileCallbackForTesting(GetTempFileCallback callback);
+ 
+  protected:
+   // Called when starting extraction. Subclasses should call `InitComplete` when
+   // finished.
+   virtual void Init() = 0;

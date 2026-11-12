@@ -252,6 +252,10 @@
 #include "printing/metafile_agent.h"  // nogncheck
 #endif
 
+#if BUILDFLAG(ARKWEB_PRINT)
+#include "cef/ohos_cef_ext/libcef/renderer/extensions/ohos_print_render_frame_helper_delegate.h"
+#endif  // BUIDFLAG(ARKWEB_PRINT)
+
 #if BUILDFLAG(ENABLE_PAINT_PREVIEW)
 #include "components/paint_preview/renderer/paint_preview_recorder_impl.h"  // nogncheck
 #endif
@@ -312,6 +316,10 @@ using SecureContextRequired = autofill::AutofillAgent::SecureContextRequired;
 using UserGestureRequired = autofill::AutofillAgent::UserGestureRequired;
 using UsesKeyboardAccessoryForSuggestions =
     autofill::AutofillAgent::UsesKeyboardAccessoryForSuggestions;
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+using autofill::AutofillAgentExt;
+using autofill::PasswordAutofillAgentExt;
+#endif
 
 namespace {
 
@@ -410,10 +418,13 @@ void ChromeContentRendererClient::RenderThreadStarted() {
   main_thread_profiler_->SetAuxUnwinderFactory(base::BindRepeating(
       &CreateV8Unwinder, base::Unretained(v8::Isolate::GetCurrent())));
 
+#if !BUILDFLAG(IS_OHOS)
+  // TODO:OHOS
   // In the case of single process mode, the v8 unwinding will not work.
   tracing::TracingSamplerProfiler::SetAuxUnwinderFactoryOnMainThread(
       base::BindRepeating(&CreateV8Unwinder,
                           base::Unretained(v8::Isolate::GetCurrent())));
+#endif
 
   const bool is_extension = IsStandaloneContentExtensionProcess();
 
@@ -656,6 +667,9 @@ void ChromeContentRendererClient::RenderFrameCreated(
   service_manager::BinderRegistry* registry = render_frame_observer->registry();
 
   new prerender::NoStatePrefetchRenderFrameObserver(render_frame);
+#if BUILDFLAG(IS_ARKWEB)
+  new js_injection::JsCommunication(render_frame);
+#endif
 
   auto content_settings_delegate =
       std::make_unique<ChromeContentSettingsAgentDelegate>(render_frame);
@@ -664,7 +678,11 @@ void ChromeContentRendererClient::RenderFrameCreated(
       extensions::ExtensionsRendererClient::Get()->dispatcher());
 #endif
   content_settings::ContentSettingsAgentImpl* content_settings =
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+      new content_settings::ArkWebContentSettingsAgentImplExt(
+#else
       new content_settings::ContentSettingsAgentImpl(
+#endif
           render_frame, std::move(content_settings_delegate));
   if (chrome_observer_.get()) {
     if (chrome_observer_->content_settings_manager()) {
@@ -675,6 +693,11 @@ void ChromeContentRendererClient::RenderFrameCreated(
     }
   }
 
+#if BUILDFLAG(ARKWEB_NETWORK_BASE) && BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+  AsArkWebChromeContentRendererClientExt()->RenderFrameCreatedContentSettings(
+      content_settings, this);
+#endif
+
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
   extensions::ExtensionsRendererClient::Get()->RenderFrameCreated(render_frame,
                                                                   registry);
@@ -684,9 +707,15 @@ void ChromeContentRendererClient::RenderFrameCreated(
   safe_browsing::ThreatDOMDetails::Create(render_frame, registry);
 #endif
 
-#if BUILDFLAG(ENABLE_PRINTING)
+#if BUILDFLAG(ENABLE_PRINTING) && !BUILDFLAG(ARKWEB_PRINT)
   new printing::PrintRenderFrameHelper(
       render_frame, std::make_unique<ChromePrintRenderFrameHelperDelegate>());
+#endif
+
+#if BUILDFLAG(ARKWEB_PRINT)
+  new printing::PrintRenderFrameHelper(
+      render_frame,
+      base::WrapUnique(new extensions::OhosPrintRenderFrameHelperDelegate()));
 #endif
 
 #if BUILDFLAG(ENABLE_PAINT_PREVIEW)
@@ -1219,6 +1248,7 @@ void ChromeContentRendererClient::GetInterface(
       mojo::GenericPendingReceiver(interface_name, std::move(interface_pipe)));
 }
 
+#if !BUILDFLAG(ARKWEB_EXT_ERROR_PAGE)
 void ChromeContentRendererClient::PrepareErrorPage(
     content::RenderFrame* render_frame,
     const blink::WebURLError& web_error,
@@ -1255,6 +1285,8 @@ void ChromeContentRendererClient::PrepareErrorPageForHttpStatusError(
                          std::move(alternative_error_page_info), error_html);
 }
 
+#endif  //
+
 void ChromeContentRendererClient::PostSandboxInitialized() {
 #if BUILDFLAG(IS_CHROMEOS)
   DCHECK(!main_thread_profiler_);
@@ -1280,11 +1312,14 @@ void ChromeContentRendererClient::PostCompositorThreadCreated(
   // Enable stack sampling for tracing.
   // We pass in CreateCoreUnwindersFactory here since it lives in the chrome/
   // layer while TracingSamplerProfiler is outside of chrome/.
+#if !BUILDFLAG(IS_OHOS)
+  // TODO:OHOS
   compositor_thread_task_runner->PostTask(
       FROM_HERE,
       base::BindOnce(&tracing::TracingSamplerProfiler::
                          CreateOnChildThreadWithCustomUnwinders,
                      base::BindRepeating(&CreateCoreUnwindersFactory)));
+#endif
 }
 
 bool ChromeContentRendererClient::RunIdleHandlerWhenWidgetsHidden() {
@@ -1459,7 +1494,8 @@ std::unique_ptr<media::KeySystemSupportRegistration>
 ChromeContentRendererClient::GetSupportedKeySystems(
     content::RenderFrame* render_frame,
     media::GetSupportedKeySystemsCB cb) {
-#if BUILDFLAG(ENABLE_LIBRARY_CDMS) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ENABLE_LIBRARY_CDMS) || BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_ENABLE_CDM)
   return GetChromeKeySystems(render_frame, std::move(cb));
 #else
   std::move(cb).Run({});
@@ -1492,6 +1528,10 @@ ChromeContentRendererClient::CreateSpeechRecognitionClient(
 
 void ChromeContentRendererClient::RunScriptsAtDocumentStart(
     content::RenderFrame* render_frame) {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  AsArkWebChromeContentRendererClientExt()
+      ->RenderFrameCreateSubresourceFilterAgentTriggerHide(render_frame);
+#endif
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
   extensions::ExtensionsRendererClient::Get()->RunScriptsAtDocumentStart(
       render_frame);

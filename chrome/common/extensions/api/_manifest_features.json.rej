@@ -1,0 +1,30 @@
+diff a/chrome/common/extensions/api/_manifest_features.json b/chrome/common/extensions/api/_manifest_features.json	(rejected hunks)
+@@ -20,12 +20,11 @@
+     "extension_types": ["extension"],
+     "max_manifest_version": 2
+   },
+   "chrome_settings_overrides": {
+     "channel": "stable",
+-    "extension_types": ["extension"],
+-    "platforms": ["win", "mac"]
++    "extension_types": ["extension"]    
+   },
+   "content_scripts": [
+     {
+       "channel": "stable",
+       "extension_types": ["extension", "legacy_packaged_app"]
+@@ -42,10 +41,14 @@
+     "channel": "stable",
+     "extension_types": [
+       "extension", "legacy_packaged_app", "hosted_app"
+     ]
+   },
++  "custom_data": {
++    "channel": "stable",
++    "extension_types": ["extension"]
++  },    
+   "display_in_launcher": [
+     {
+       "channel": "stable",
+       "extension_types": ["legacy_packaged_app", "platform_app", "hosted_app"],
+       "location": "component"

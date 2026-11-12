@@ -1,0 +1,21 @@
+diff a/chrome/common/webui_url_constants.h b/chrome/common/webui_url_constants.h	(rejected hunks)
+@@ -567,16 +567,17 @@ inline constexpr char kChromeUIOSSettingsHost[] = "os-settings";
+ inline constexpr char kChromeUIOSSettingsURL[] = "chrome://os-settings/";
+ inline constexpr char kChromeUIOsUrlAppURL[] = "chrome://internal/";
+ #endif  // BUILDFLAG(IS_CHROMEOS)
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_DESKTOP_ANDROID)
++    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_DESKTOP_ANDROID) || BUILDFLAG(IS_OHOS)
+ inline constexpr char kChromeUIDiscardsHost[] = "discards";
+ inline constexpr char kChromeUIDiscardsURL[] = "chrome://discards/";
+ #endif
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
++    BUILDFLAG(IS_OHOS)
+ inline constexpr char kChromeUIWebAppSettingsHost[] = "app-settings";
+ inline constexpr char kChromeUIWebAppSettingsURL[] = "chrome://app-settings/";
+ inline constexpr char kChromeUIWhatsNewHost[] = "whats-new";
+ inline constexpr char kChromeUIWhatsNewURL[] = "chrome://whats-new/";
+ #endif

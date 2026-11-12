@@ -1,0 +1,17 @@
+diff a/chrome/test/fuzzing/atspi_in_process_fuzzer.cc b/chrome/test/fuzzing/atspi_in_process_fuzzer.cc
+--- a/chrome/test/fuzzing/atspi_in_process_fuzzer.cc
++++ b/chrome/test/fuzzing/atspi_in_process_fuzzer.cc
+@@ -742,13 +742,11 @@ void UiNode::ScanAttributes() const {
+     g_hash_table_iter_init(&i, attributes);
+     while (g_hash_table_iter_next(&i, &key, &value)) {
+     }
+   }
+   g_clear_error(&error);
+-  if (attributes) {
+     g_hash_table_unref(attributes);
+-  }
+ }
+ 
+ void UiNode::RescanAndFindNewChildren(
+     std::vector<std::vector<UiNode*>>& new_controls,
+     const std::vector<UiNode*> my_path) {

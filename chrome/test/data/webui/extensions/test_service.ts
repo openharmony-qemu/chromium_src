@@ -54,6 +54,9 @@ export class TestService extends TestBrowserProxy implements ServiceInterface {
       'notifyDragInstallInProgress',
       'openDevToolsForError',
       'openUrl',
+      // <if expr="arkweb_test">
+      'openUrlEx',
+      // </if>
       'packExtension',
       'recordUserAction',
       'reloadItem',
@@ -195,6 +198,12 @@ export class TestService extends TestBrowserProxy implements ServiceInterface {
     this.methodCalled('setItemPinnedToToolbar', [id, pinnedToToolbar]);
   }
 
+  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  setItemOptionalPermission(id: string, name: string, enabled: boolean): void {
+    this.methodCalled('setItemOptionalPermission', [id, name, enabled]);
+  }
+  // #endif
+
   setShortcutHandlingSuspended(enable: boolean) {
     this.methodCalled('setShortcutHandlingSuspended', enable);
   }
@@ -251,6 +260,12 @@ export class TestService extends TestBrowserProxy implements ServiceInterface {
     this.methodCalled('openUrl', url);
   }
 
+  // <if expr="arkweb_test">
+  openUrlEx(url: string, type: Number) {
+    this.methodCalled('openUrlEx', [url, type]);
+  }
+  // </if>
+  
   packExtension(rootPath: string, keyPath: string, flag?: number) {
     this.methodCalled('packExtension', [rootPath, keyPath, flag]);
     return Promise.resolve({

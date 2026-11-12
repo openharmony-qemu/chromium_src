@@ -1,0 +1,14 @@
+diff a/chrome/browser/web_applications/web_app_install_info.h b/chrome/browser/web_applications/web_app_install_info.h	(rejected hunks)
+@@ -40,11 +40,11 @@
+ #include "third_party/skia/include/core/SkColor.h"
+ #include "ui/gfx/geometry/size.h"
+ #include "url/gurl.h"
+ 
+ static_assert(BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) ||
+-              BUILDFLAG(IS_CHROMEOS));
++              BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS));
+ 
+ namespace web_app {
+ 
+ // A map of icon urls to the bitmaps provided by that url.
+ using IconsMap = std::map<GURL, std::vector<SkBitmap>>;

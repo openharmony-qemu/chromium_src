@@ -1,0 +1,25 @@
+diff a/chrome/updater/ipc/update_service_dialer_win.cc b/chrome/updater/ipc/update_service_dialer_win.cc	(rejected hunks)
+@@ -81,16 +81,17 @@ void ConnectMojoImpl(
+     if (!result) {
+       return std::nullopt;
+     }
+ 
+     server = result;
+-    return named_mojo_ipc_server::ConnectToServer({
+-        .server_name = is_internal_service
+-                           ? GetUpdateServiceInternalServerName(scope)
+-                           : GetUpdateServiceServerName(scope),
+-        .allow_impersonation = true,
+-    });
++    mojo::NamedPlatformChannel::Options options;
++    options.server_name = is_internal_service
++                              ? GetUpdateServiceInternalServerName(scope)
++                              : GetUpdateServiceServerName(scope);
++    options.allow_impersonation = true;
++    options.verify_server_privilege = true;
++    return named_mojo_ipc_server::ConnectToServer(options);
+   }();
+ 
+   if (tries >= 1 && !endpoint) {
+     VLOG(1) << "Failed to connect to remote mojo service, is_internal_service: "
+             << is_internal_service << ", scope: " << scope;

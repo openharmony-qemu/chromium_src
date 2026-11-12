@@ -184,6 +184,20 @@ bool ChromeExtensionsClient::IsCapturableURL(const GURL& url,
   return true;
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void ChromeExtensionsClient::SetWebstoreBaseURL(const GURL& url) {
+  webstore_base_url_ = url;
+}
+ 
+void ChromeExtensionsClient::SetNewWebstoreBaseURL(const GURL& url) {
+  new_webstore_base_url_ = url;
+}
+ 
+void ChromeExtensionsClient::SetWebstoreUpdateURL(const GURL& url) {
+  webstore_update_url_ = url;
+}
+#endif
+
 const GURL& ChromeExtensionsClient::GetWebstoreBaseURL() const {
   return webstore_base_url_;
 }

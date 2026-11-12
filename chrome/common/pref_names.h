@@ -1441,13 +1441,13 @@ inline constexpr char kPinInfoBarTimesShown[] =
     "browser.pin_infobar_times_shown";
 #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
 
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
 
 // How many times the session restore infobar has been shown.
 inline constexpr char kSessionRestoreInfoBarTimesShown[] =
     "browser.session_restore_infobar_times_shown";
 
-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
 
 // A collection of position, size, and other data relating to the browser
 // window to restore on startup.

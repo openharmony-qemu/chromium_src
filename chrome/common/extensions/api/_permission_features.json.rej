@@ -1,0 +1,66 @@
+diff a/chrome/common/extensions/api/_permission_features.json b/chrome/common/extensions/api/_permission_features.json	(rejected hunks)
+@@ -191,11 +191,11 @@
+   },
+   "contentSettings": {
+     "channel": "stable",
+     "extension_types": ["extension", "legacy_packaged_app"],
+     // "desktop_android" is not supported.
+-    "platforms": ["chromeos", "linux", "mac", "win"]
++    "platforms": ["chromeos", "linux", "mac", "win", "ohos"]
+   },
+   "contextMenus": {
+     "channel": "stable",
+     "extension_types": ["extension", "legacy_packaged_app", "platform_app"]
+   },
+@@ -906,11 +906,11 @@
+   },
+   "sessions": {
+     "channel": "stable",
+     "extension_types": ["extension", "legacy_packaged_app"],
+     // "desktop_android" is not supported.
+-    "platforms": ["chromeos", "linux", "mac", "win"]
++    "platforms": ["chromeos", "linux", "mac", "win", "ohos"]
+   },
+   "settingsPrivate": [{
+     "channel": "trunk",
+     "extension_types": ["extension", "platform_app"],
+     "location": "component",
+@@ -950,11 +950,11 @@
+   "sidePanel": {
+     "channel": "stable",
+     "extension_types": ["extension"],
+     "min_manifest_version": 3,
+     // "desktop_android" is not supported.
+-    "platforms": ["chromeos", "linux", "mac", "win"]
++    "platforms": ["chromeos", "linux", "mac", "win", "ohos"]
+   },
+   "smartCardProviderPrivate": {
+     "channel": "stable",
+     "platforms": ["chromeos"],
+     "extension_types": ["extension", "platform_app"],
+@@ -1000,11 +1000,11 @@
+   "tabGroups": {
+     "channel": "stable",
+     "extension_types": ["extension"],
+     "min_manifest_version": 3,
+     // "desktop_android" is not supported.
+-    "platforms": ["chromeos", "linux", "mac", "win"]
++    "platforms": ["chromeos", "linux", "mac", "win", "ohos"]
+   },
+   "tabs": [
+     {
+       "channel": "stable",
+       "extension_types": ["extension", "legacy_packaged_app"]
+@@ -1068,11 +1068,11 @@
+   },
+   "webAuthenticationProxy": {
+     "channel": "stable",
+     "extension_types": ["extension"],
+     "min_manifest_version": 3,
+-    "platforms": ["desktop_android", "linux", "mac", "win"]
++    "platforms": ["desktop_android", "linux", "mac", "win", "ohos"]
+   },
+   "webNavigation": {
+     "channel": "stable",
+     "extension_types": ["extension", "legacy_packaged_app"]
+   },

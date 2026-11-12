@@ -1,0 +1,56 @@
+diff a/chrome/renderer/chrome_content_renderer_client.h b/chrome/renderer/chrome_content_renderer_client.h	(rejected hunks)
+@@ -63,22 +67,27 @@ struct WebContentSecurityPolicyHeader;
+ 
+ namespace chrome {
+ class WebRtcLoggingAgentImpl;
+ }  // namespace chrome
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
+ namespace subresource_filter {
+ class UnverifiedRulesetDealer;
++class UserUnverifiedRulesetDealer;
+ }
++#endif
+ 
+ namespace url {
+ class Origin;
+ }
+ 
+ namespace web_cache {
+ class WebCacheImpl;
+ }
+ 
++class ArkWebChromeContentRendererClientExt;
++
+ class ChromeContentRendererClient
+     : public content::ContentRendererClient,
+       public service_manager::LocalInterfaceProvider {
+  public:
+   ChromeContentRendererClient();
+@@ -262,17 +279,26 @@ class ChromeContentRendererClient
+   std::unique_ptr<chrome::WebRtcLoggingAgentImpl> webrtc_logging_agent_impl_;
+ 
+ #if BUILDFLAG(ENABLE_SPELLCHECK)
+   std::unique_ptr<SpellCheck> spellcheck_;
+ #endif
++#if BUILDFLAG(ARKWEB_ADBLOCK)
+   std::unique_ptr<subresource_filter::UnverifiedRulesetDealer>
+       subresource_filter_ruleset_dealer_;
++  std::unique_ptr<subresource_filter::UserUnverifiedRulesetDealer>
++      subresource_filter_user_ruleset_dealer_;
++#endif      
+ #if BUILDFLAG(SAFE_BROWSING_AVAILABLE)
+   std::unique_ptr<safe_browsing::PhishingModelSetterImpl>
+       phishing_model_setter_;
+ #endif
+ 
+   scoped_refptr<blink::ThreadSafeBrowserInterfaceBrokerProxy>
+       browser_interface_broker_;
+ };
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK) || BUILDFLAG(ARKWEB_NETWORK_BASE) || \
++    BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
++#include "arkweb/chromium_ext/chrome/renderer/arkweb_chrome_content_renderer_client_ext.h"
++#endif
++
+ #endif  // CHROME_RENDERER_CHROME_CONTENT_RENDERER_CLIENT_H_

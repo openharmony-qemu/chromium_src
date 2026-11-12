@@ -100,8 +100,15 @@ constexpr Translation kNameTranslations[] = {
 }  // namespace
 
 ExternalInstallOptions GetConfigForGoogleCalendar() {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  static constexpr char kGoogleCalendarBaseUrl[] = "https://x.x.x"; 
+#else
+// The URL for providing more information about Google nameservers.
+  static constexpr char kGoogleCalendarBaseUrl[] = "https://calendar.google.com/calendar/";
+#endif
+  
   ExternalInstallOptions options(
-      /*install_url=*/GURL("https://calendar.google.com/calendar/"
+      /*install_url=*/GURL(kGoogleCalendarBaseUrl
                            "installwebapp?usp=chrome_default"),
 #if BUILDFLAG(IS_CHROMEOS)
       /*user_display_mode=*/mojom::UserDisplayMode::kStandalone,
@@ -118,14 +125,14 @@ ExternalInstallOptions GetConfigForGoogleCalendar() {
 
   options.only_use_app_info_factory = true;
   options.app_info_factory = base::BindRepeating([]() {
-    GURL start_url = GURL("https://calendar.google.com/calendar/r");
+    GURL start_url = GURL(kGoogleCalendarBaseUrl "r");
     // `manifest_id` must remain fixed even if start_url changes.
     webapps::ManifestId manifest_id = GenerateManifestIdFromStartUrlOnly(
-        GURL("https://calendar.google.com/calendar/r"));
+        GURL(kGoogleCalendarBaseUrl "r"));
     auto info = std::make_unique<WebAppInstallInfo>(manifest_id, start_url);
     info->title = base::UTF8ToUTF16(
         GetTranslatedName("Google Calendar", kNameTranslations));
-    info->scope = GURL("https://calendar.google.com/calendar/");
+    info->scope = GURL(kGoogleCalendarBaseUrl);
     info->display_mode = DisplayMode::kStandalone;
     info->icon_bitmaps.any = LoadBundledIcons(
         {IDR_PREINSTALLED_WEB_APPS_GOOGLE_CALENDAR_ICON_192_PNG});

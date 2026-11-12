@@ -207,6 +207,10 @@ export class NativeLayerStub extends TestBrowserProxy implements NativeLayer {
     this.methodCalled('managePrinters');
   }
 
+  // <if expr="is_ohos">
+  systemPrint() {}
+  // </if>
+
   /**
    * settings The settings to return as a response to |getInitialSettings|.
    */

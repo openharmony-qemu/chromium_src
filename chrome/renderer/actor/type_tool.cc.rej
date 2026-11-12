@@ -1,0 +1,35 @@
+diff a/chrome/renderer/actor/type_tool.cc b/chrome/renderer/actor/type_tool.cc	(rejected hunks)
+@@ -387,12 +387,16 @@ WebInputEventResult TypeTool::CreateAndDispatchKeyEvent(
+   key_event.dom_key =
+       ui::KeycodeConverter::KeyStringToDomKey(key_params.dom_key);
+   key_event.text[0] = key_params.text;
+   key_event.unmodified_text[0] = key_params.unmodified_text;
+ 
++  base::WeakPtr<TypeTool> weak_this = weak_ptr_factory_.GetWeakPtr();
+   WebInputEventResult result = widget.HandleInputEvent(
+       WebCoalescedInputEvent(key_event, ui::LatencyInfo()));
++  if (!weak_this) {
++    return result;
++  }
+   journal_->Log(task_id_, WebInputEvent::GetName(type),
+                 JournalDetailsBuilder()
+                     .Add("key", key_params.dom_key)
+                     .Add("result", WebInputEventResultToString(result))
+                     .Build());
+@@ -408,12 +412,16 @@ mojom::ActionResultPtr TypeTool::SimulateKeyPress(
+     return MakeResult(mojom::ActionResultCode::kFrameWentAway,
+                       /*requires_page_stabilization=*/false,
+                       "No widget during simulate key down");
+   }
+ 
++  base::WeakPtr<TypeTool> weak_this = weak_ptr_factory_.GetWeakPtr();
+   WebInputEventResult down_result = CreateAndDispatchKeyEvent(
+       *widget, WebInputEvent::Type::kRawKeyDown, params);
++  if (!weak_this) {
++    return nullptr;
++  }
+ 
+   // Only the KeyDown event will check for and report failure. The reason the
+   // other events don't is that if the KeyDown event was dispatched to the page,
+   // the key input was observable to the page and it may mutate itself in a way
+   // that subsequent Char and KeyUp events are suppressed (e.g. mutating the DOM

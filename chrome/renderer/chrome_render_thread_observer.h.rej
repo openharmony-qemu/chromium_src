@@ -1,0 +1,18 @@
+diff a/chrome/renderer/chrome_render_thread_observer.h b/chrome/renderer/chrome_render_thread_observer.h	(rejected hunks)
+@@ -153,10 +165,16 @@ class ChromeRenderThreadObserver : public content::RenderThreadObserver,
+ #endif  // !BUILDFLAG(IS_ANDROID)
+   void OnRendererConfigurationAssociatedRequest(
+       mojo::PendingAssociatedReceiver<chrome::mojom::RendererConfiguration>
+           receiver);
+ 
++#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
++  void SetContentSettingRules(
++      const RendererContentSettingRules& rules) override;
++  RendererContentSettingRules content_setting_rules_;
++#endif  // BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
++
+   mojo::Remote<content_settings::mojom::ContentSettingsManager>
+       content_settings_manager_;
+ 
+   std::unique_ptr<visitedlink::VisitedLinkReader> visited_link_reader_;
+ 

@@ -1,0 +1,53 @@
+diff a/chrome/renderer/actor/click_dispatcher.cc b/chrome/renderer/actor/click_dispatcher.cc	(rejected hunks)
+@@ -52,12 +52,16 @@ ClickDispatcher::ClickDispatcher(
+     // No button for move
+     mouse_move.button = WebMouseEvent::Button::kNoButton;
+     mouse_move.SetPositionInWidget(target.widget_point);
+ 
+     // Mouse move is considered optional, so we don't check this result.
++    base::WeakPtr<ClickDispatcher> weak_this = weak_ptr_factory_.GetWeakPtr();
+     widget->HandleInputEvent(
+         blink::WebCoalescedInputEvent(mouse_move, ui::LatencyInfo()));
++    if (!weak_this) {
++      return;
++    }
+ 
+     base::TimeDelta delay = features::kGlicActorMoveBeforeClickDelay.Get();
+     base::SequencedTaskRunner::GetCurrentDefault()->PostDelayedTask(
+         FROM_HERE,
+         base::BindOnce(&ClickDispatcher::DoMouseDown,
+@@ -100,12 +104,16 @@ void ClickDispatcher::DoMouseDown(WebMouseEvent::Button button,
+   //   const gfx::Rect offset =
+   //     render_frame_host_->GetRenderWidgetHost()->GetView()->GetViewBounds();
+   //   mouse_event_.SetPositionInScreen(point.x() + offset.x(),
+   //                                    point.y() + offset.y());
+ 
++  base::WeakPtr<ClickDispatcher> weak_this = weak_ptr_factory_.GetWeakPtr();
+   blink::WebInputEventResult result = widget->HandleInputEvent(
+       blink::WebCoalescedInputEvent(mouse_down, ui::LatencyInfo()));
++  if (!weak_this) {
++    return;
++  }
+ 
+   if (result == blink::WebInputEventResult::kHandledSuppressed) {
+     Finish(MakeResult(mojom::ActionResultCode::kClickSuppressed,
+                       /*requires_page_stabilization=*/false));
+     return;
+@@ -141,13 +149,17 @@ void ClickDispatcher::DoMouseUpImpl() {
+                       "No widget when dispatching mouse up"));
+     return;
+   }
+ 
+   mouse_up_event_->SetTimeStamp(ui::EventTimeForNow());
++  base::WeakPtr<ClickDispatcher> weak_this = weak_ptr_factory_.GetWeakPtr();
+   blink::WebInputEventResult result =
+       widget->HandleInputEvent(blink::WebCoalescedInputEvent(
+           std::move(*mouse_up_event_), ui::LatencyInfo()));
++  if (!weak_this) {
++    return;
++  }
+   mouse_up_event_.reset();
+   if (result == blink::WebInputEventResult::kHandledSuppressed) {
+     Finish(MakeResult(mojom::ActionResultCode::kClickSuppressed,
+                       /*requires_page_stabilization=*/false));
+     return;

@@ -1,0 +1,20 @@
+diff a/chrome/common/extensions/chrome_extensions_client.cc b/chrome/common/extensions/chrome_extensions_client.cc	(rejected hunks)
+@@ -76,12 +76,18 @@ void ChromeExtensionsClient::InitializeWebStoreUrls(
+     webstore_base_url_ =
+         GURL(command_line->GetSwitchValueASCII(switches::kAppsGalleryURL));
+     new_webstore_base_url_ =
+         GURL(command_line->GetSwitchValueASCII(switches::kAppsGalleryURL));
+   } else {
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+     webstore_base_url_ = GURL(extension_urls::kChromeWebstoreBaseURL);
+     new_webstore_base_url_ = GURL(extension_urls::kNewChromeWebstoreBaseURL);
++#else
++    webstore_base_url_ = GURL(extension_urls::GetDefaultWebstoreLaunchURL());
++    new_webstore_base_url_ =
++        GURL(extension_urls::GetDefaultNewWebstoreLaunchURL());
++#endif
+   }
+   if (command_line->HasSwitch(switches::kAppsGalleryUpdateURL)) {
+     webstore_update_url_ = GURL(
+         command_line->GetSwitchValueASCII(switches::kAppsGalleryUpdateURL));
+   } else {

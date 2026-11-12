@@ -1,0 +1,22 @@
+diff a/chrome/chrome_repack_locales.gni b/chrome/chrome_repack_locales.gni	(rejected hunks)
+@@ -98,10 +103,20 @@ template("chrome_repack_locales") {
+           "//chromeos/ash/resources/internal/strings",
+         ]
+       }
+       compress = true
+     }
++
++    if (is_arkweb_ext && arkweb_nweb_ex) {
++      source_patterns += [ "${root_gen_dir}/ohos_nweb_ex/overrides/ui/strings/ohos_nweb_ex_strings_" ]
++      deps += [ "//ohos_nweb_ex/overrides/ui/strings" ]
++    }
++    if (arkweb_i18n) {
++      source_patterns += [ "${root_gen_dir}/ohos_resources/components/string/ohos_components_strings_" ]
++      deps += [ "//ohos_resources/components/string" ]
++    }
++
+     if (enable_builtin_search_provider_assets && !is_android) {
+       source_patterns += [ "${root_gen_dir}/third_party/search_engines_data/search_engine_descriptions_strings_" ]
+       deps += [
+         "//third_party/search_engines_data:search_engine_descriptions_strings",
+       ]

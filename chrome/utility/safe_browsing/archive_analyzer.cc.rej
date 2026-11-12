@@ -1,0 +1,17 @@
+diff a/chrome/utility/safe_browsing/archive_analyzer.cc b/chrome/utility/safe_browsing/archive_analyzer.cc	(rejected hunks)
+@@ -74,10 +74,15 @@ void ArchiveAnalyzer::SetResultsForTesting(ArchiveAnalyzerResults* results) {
+ void ArchiveAnalyzer::SetFinishedCallbackForTesting(
+     FinishedAnalysisCallback callback) {
+   finished_analysis_callback_ = std::move(callback);
+ }
+ 
++void ArchiveAnalyzer::SetGetTempFileCallbackForTesting(
++    GetTempFileCallback callback) {
++  get_temp_file_callback_ = std::move(callback);
++}
++
+ base::File& ArchiveAnalyzer::GetArchiveFile() {
+   return archive_file_;
+ }
+ void ArchiveAnalyzer::GetTempFile(
+     base::OnceCallback<void(base::File)> callback) {

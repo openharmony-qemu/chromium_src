@@ -1,0 +1,26 @@
+diff a/chrome/common/chrome_switches.h b/chrome/common/chrome_switches.h	(rejected hunks)
+@@ -39,10 +39,11 @@ extern const char kAcceptLang[];
+ #if BUILDFLAG(IS_MAC)
+ extern const char kAllowAppShimSignatureMismatchForTests[];
+ #endif
+ extern const char kAllowCrossOriginAuthPrompt[];
+ extern const char kAllowHttpScreenCapture[];
++extern const char kAllowUnsafeDevToolsRemoteFileLoading[];
+ extern const char kAllowRunningInsecureContent[];
+ extern const char kAllowSilentPush[];
+ extern const char kApp[];
+ extern const char kAppId[];
+ extern const char kAppLaunchUrlForShortcutsMenuItem[];
+@@ -289,11 +290,11 @@ extern const char kUninstallAppId[];
+ #if BUILDFLAG(ENABLE_PRINT_PREVIEW) && !defined(OFFICIAL_BUILD)
+ extern const char kDebugPrint[];
+ #endif
+ 
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_MAC) || \
+-    BUILDFLAG(IS_WIN)
++    BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+ extern const char kEnableNewAppMenuIcon[];
+ extern const char kGuest[];
+ extern const char kForceNtpMobilePromo[];
+ #endif
+ 

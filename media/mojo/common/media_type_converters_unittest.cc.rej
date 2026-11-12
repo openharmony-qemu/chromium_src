@@ -1,20 +1,4 @@
 diff a/media/mojo/common/media_type_converters_unittest.cc b/media/mojo/common/media_type_converters_unittest.cc	(rejected hunks)
-@@ -170,14 +170,11 @@ TEST(MediaTypeConvertersTest, ConvertDecoderBuffer_CencEncryptedBuffer) {
-   const uint8_t kData[] = "hello, world";
-   const size_t kDataSize = std::size(kData);
-   const char kKeyId[] = "00112233445566778899aabbccddeeff";
-   const char kIv[] = "0123456789abcdef";
- 
--  std::vector<SubsampleEntry> subsamples;
--  subsamples.push_back(SubsampleEntry(10, 20));
--  subsamples.push_back(SubsampleEntry(30, 40));
--  subsamples.push_back(SubsampleEntry(50, 60));
-+  std::vector<SubsampleEntry> subsamples = {SubsampleEntry(5, 8)};
- 
-   // Original.
-   scoped_refptr<DecoderBuffer> buffer(DecoderBuffer::CopyFrom(kData));
-   buffer->set_decrypt_config(
-       DecryptConfig::CreateCencConfig(kKeyId, kIv, subsamples));
 @@ -205,14 +202,11 @@ TEST(MediaTypeConvertersTest, ConvertDecoderBuffer_CbcsEncryptedBuffer) {
    const uint8_t kData[] = "hello, world";
    const size_t kDataSize = std::size(kData);

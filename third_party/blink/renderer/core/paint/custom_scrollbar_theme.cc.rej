@@ -1,21 +1,4 @@
 diff a/third_party/blink/renderer/core/paint/custom_scrollbar_theme.cc b/third_party/blink/renderer/core/paint/custom_scrollbar_theme.cc	(rejected hunks)
-@@ -134,14 +134,15 @@ gfx::Rect CustomScrollbarTheme::ConstrainTrackRectToTrackPieces(
-   }
-   return result;
- }
- 
- void CustomScrollbarTheme::PaintScrollCorner(
--    GraphicsContext& context,
-+    const PaintInfo& paint_info,
-     const ScrollableArea&,
-     const DisplayItemClient& display_item_client,
-     const gfx::Rect& corner_rect) {
-+  GraphicsContext& context = paint_info.context;
-   if (DrawingRecorder::UseCachedDrawingIfPossible(context, display_item_client,
-                                                   DisplayItem::kScrollCorner))
-     return;
- 
-   DrawingRecorder recorder(context, display_item_client,
 @@ -149,69 +150,73 @@ void CustomScrollbarTheme::PaintScrollCorner(
    // FIXME: Implement.
    context.FillRect(corner_rect, Color::kWhite, AutoDarkMode::Disabled());
@@ -108,23 +91,3 @@ diff a/third_party/blink/renderer/core/paint/custom_scrollbar_theme.cc b/third_p
    // determines which FragmentData to use, but that won't work for
    // LayoutCustomScrollbarPart, since it creates no fragments. It's not even
    // attached to the layout tree. So do it manually here.
-@@ -220,17 +225,17 @@ void CustomScrollbarTheme::PaintIntoRect(
- 
-   ObjectPainter(layout_custom_scrollbar_part)
-       .PaintAllPhasesAtomically(paint_info);
- }
- 
--void CustomScrollbarTheme::PaintPart(GraphicsContext& context,
-+void CustomScrollbarTheme::PaintPart(const PaintInfo& paint_info,
-                                      const Scrollbar& scrollbar,
-                                      const gfx::Rect& rect,
-                                      ScrollbarPart part) {
-   const auto& custom_scrollbar = To<CustomScrollbar>(scrollbar);
-   const auto* part_layout_object = custom_scrollbar.GetPart(part);
-   if (!part_layout_object)
-     return;
--  PaintIntoRect(*part_layout_object, context, PhysicalRect(rect));
-+  PaintIntoRect(*part_layout_object, paint_info, PhysicalRect(rect));
- }
- 
- }  // namespace blink

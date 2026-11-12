@@ -57,15 +57,3 @@ diff a/services/network/network_service_network_delegate.h b/services/network/ne
 +#endif
  
  #endif  // SERVICES_NETWORK_NETWORK_SERVICE_NETWORK_DELEGATE_H_
-@@ -66,10 +76,11 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkServiceNetworkDelegate
-       std::optional<GURL>* preserve_fragment_on_redirect_url,
-       const std::optional<net::SSLInfo>& ssl_info) override;
-   void OnBeforeRedirect(net::URLRequest* request,
-                         const GURL& new_location) override;
-   void OnResponseStarted(net::URLRequest* request, int net_error) override;
-+
-   void OnCompleted(net::URLRequest* request,
-                    bool started,
-                    int net_error) override;
-   void OnPACScriptError(int line_number, const std::u16string& error) override;
-   std::optional<net::cookie_util::StorageAccessStatus> OnGetStorageAccessStatus(

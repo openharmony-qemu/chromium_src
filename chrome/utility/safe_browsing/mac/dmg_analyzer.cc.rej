@@ -22,16 +22,3 @@ diff a/chrome/utility/safe_browsing/mac/dmg_analyzer.cc b/chrome/utility/safe_br
    }
  
    return true;
-@@ -229,10 +231,12 @@ void DMGAnalyzer::OnGetTempFile(base::File temp_file) {
-   if (!temp_file.IsValid()) {
-     InitComplete(ArchiveAnalysisResult::kFailedToOpenTempFile);
-     return;
-   }
- 
-+  temp_file_ = std::move(temp_file);
-+
-   if (!iterator_->Open()) {
-     InitComplete(ArchiveAnalysisResult::kUnknown);
-     return;
-   } else if (iterator_->IsEmpty()) {
-     InitComplete(ArchiveAnalysisResult::kDmgNoPartitions);

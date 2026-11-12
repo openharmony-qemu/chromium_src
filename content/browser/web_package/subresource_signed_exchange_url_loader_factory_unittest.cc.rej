@@ -18,37 +18,6 @@ diff a/content/browser/web_package/subresource_signed_exchange_url_loader_factor
  #include "services/network/public/mojom/url_loader.mojom.h"
  #include "services/network/public/mojom/url_loader_factory.mojom.h"
  #include "services/network/test/test_url_loader_client.h"
-@@ -19,25 +23,18 @@
- #include "testing/gtest/include/gtest/gtest.h"
- 
- namespace content {
- namespace {
- 
--// This is a regression test for https://crbug.com/345261068.
--// (Note that the repro may require `enable_dangling_raw_ptr_checks` in
--// `args.gn`. See also `//docs/dangling_ptr_guide.md`)
--TEST(SubresourceSignedExchangeURLLoaderFactoryTest,
--     ShortlivedFactoryAndLonglivedLoader) {
--  BrowserTaskEnvironment task_environment;
--  GURL inner_url("https://foo.com/outer/inner");
--  auto initiator_origin = url::Origin::Create(GURL("https://foo.com"));
--
--  // Construct a minimal `PrefetchedSignedExchangeCacheEntry` needed to make the
--  // unit tests work.
-+std::unique_ptr<PrefetchedSignedExchangeCacheEntry> CreateCacheEntry(
-+    const GURL& outer_url,
-+    const GURL& inner_url,
-+    storage::BlobStorageContext* blob_context) {
-   auto entry = std::make_unique<PrefetchedSignedExchangeCacheEntry>();
-   auto status = std::make_unique<network::URLLoaderCompletionStatus>();
-   entry->SetCompletionStatus(std::move(status));
--  entry->SetOuterUrl(GURL("https://foo.com/outer"));
-+  entry->SetOuterUrl(outer_url);
-   entry->SetInnerUrl(inner_url);
-   auto headers = base::MakeRefCounted<net::HttpResponseHeaders>(
-       net::HttpUtil::AssembleRawHeaders(
-           "HTTP/1.1 200 OK\nContent-type: application/custom\n\n"));
-   auto outer_response = network::mojom::URLResponseHead::New();
 @@ -46,16 +43,30 @@ TEST(SubresourceSignedExchangeURLLoaderFactoryTest,
    auto header_integrity = std::make_unique<net::SHA256HashValue>();
    entry->SetHeaderIntegrity(std::move(header_integrity));

@@ -11,19 +11,6 @@ diff a/content/browser/devtools/devtools_session.h b/content/browser/devtools/de
  #include "base/observer_list.h"
  #include "content/browser/devtools/protocol/protocol.h"
  #include "content/public/browser/devtools_agent_host_client_channel.h"
-@@ -27,10 +28,12 @@
- namespace content {
- 
- class DevToolsAgentHostClient;
- class DevToolsAgentHostImpl;
- class DevToolsExternalAgentProxyDelegate;
-+class DevToolsSession;
-+class RenderProcessHost;
- 
- namespace protocol {
- class DevToolsDomainHandler;
- class AuditsHandler;
- class DOMHandler;
 @@ -122,15 +125,20 @@ class DevToolsSession : public protocol::FrontendChannel,
                                        DevToolsAgentHostClient* client,
                                        Mode mode,

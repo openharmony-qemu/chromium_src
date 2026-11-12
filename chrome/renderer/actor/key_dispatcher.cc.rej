@@ -1,21 +1,4 @@
 diff a/chrome/renderer/actor/key_dispatcher.cc b/chrome/renderer/actor/key_dispatcher.cc	(rejected hunks)
-@@ -88,12 +88,16 @@ void KeyDispatcher::Cancel() {
-   if (is_key_down_) {
-     // A key is currently held down. We need to release it to avoid a stuck key.
-     WebWidget* widget = resolved_target_->GetWidget(*type_tool_);
-     if (widget) {
-       const KeyDispatcher::KeyParams& params = key_sequence_[current_key_];
-+      base::WeakPtr<KeyDispatcher> weak_this = weak_ptr_factory_.GetWeakPtr();
-       WebInputEventResult up_result = CreateAndDispatchKeyEvent(
-           *widget, WebInputEvent::Type::kKeyUp, params);
-+      if (!weak_this) {
-+        return;
-+      }
-       if (up_result == WebInputEventResult::kHandledSuppressed) {
-         ACTOR_LOG() << "Warning: KeyUp event for key " << params.dom_key
-                     << " suppressed during cancelation.";
-       }
-     }
 @@ -114,12 +118,16 @@ void KeyDispatcher::ContinueIncrementalTyping() {
                        "No widget during incremental typing"));
      return;

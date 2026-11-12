@@ -54,25 +54,6 @@ diff a/third_party/blink/renderer/core/scroll/scrollbar_theme.h b/third_party/bl
    virtual SkColor4f ThumbColor(const Scrollbar&) const { NOTREACHED(); }
  
    virtual bool ShouldCenterOnThumb(const Scrollbar&,
-@@ -172,16 +182,16 @@ class CORE_EXPORT ScrollbarTheme {
-                           const gfx::Rect& track,
-                           gfx::Rect& start_track,
-                           gfx::Rect& thumb,
-                           gfx::Rect& end_track) const;
- 
--  virtual void PaintThumb(GraphicsContext&,
-+  virtual void PaintThumb(const PaintInfo&,
-                           const Scrollbar&,
-                           const gfx::Rect&) {}
- 
-   // Paints the track (including tickmarks if present) and the buttons.
--  void PaintTrackAndButtons(GraphicsContext&,
-+  void PaintTrackAndButtons(const PaintInfo&,
-                             const Scrollbar&,
-                             const gfx::Rect&);
- 
-   virtual base::TimeDelta InitialAutoscrollTimerDelay() const;
-   virtual base::TimeDelta AutoscrollTimerDelay() const;
 @@ -238,26 +248,29 @@ class CORE_EXPORT ScrollbarTheme {
                                                       float scale) const {
      NOTREACHED();

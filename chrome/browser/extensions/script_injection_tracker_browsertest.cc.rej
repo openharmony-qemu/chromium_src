@@ -78,19 +78,3 @@ diff a/chrome/browser/extensions/script_injection_tracker_browsertest.cc b/chrom
  // Helper class for executing a content script right before handling a DidCommit
  // IPC.
  class ContentScriptExecuterBeforeDidCommit {
-@@ -1729,12 +1786,15 @@ IN_PROC_BROWSER_TEST_F(DynamicScriptsTrackerBrowserTest, ActiveTabGranted) {
-             content::EvalJs(web_contents, "document.body.innerText"));
-   EXPECT_FALSE(ScriptInjectionTracker::DidProcessRunContentScriptFromExtension(
-       *web_contents->GetPrimaryMainFrame()->GetProcess(), extension->id()));
- 
-   // Step 3: Grant activeTab and verify tracker runs the content script.
-+  PermissionsManagerWaiter waiter(PermissionsManager::Get(profile()));
-   ActiveTabPermissionGranter::FromWebContents(web_contents)
-       ->GrantIfRequested(extension);
-+  waiter.WaitForActiveTabPermissionGranted(extension->id());
-+
-   EXPECT_TRUE(ScriptInjectionTracker::DidProcessRunContentScriptFromExtension(
-       *web_contents->GetPrimaryMainFrame()->GetProcess(), extension->id()));
- 
-   // Step 4: Navigate to a.com in the same renderer. Verify process shows up as
-   // having been injected with content script, and content script is injected.

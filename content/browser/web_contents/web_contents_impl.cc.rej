@@ -234,18 +234,6 @@ diff a/content/browser/web_contents/web_contents_impl.cc b/content/browser/web_c
                               new_contents_impl, opener, params.target_url,
                               params.referrer.To<Referrer>(), params.disposition,
                               ui::PAGE_TRANSITION_LINK,
-@@ -7235,11 +7513,10 @@ base::ScopedClosureRunner WebContentsImpl::ForSecurityDropFullscreen(
- 
-     if (!opener) {
-       continue;
-     }
- 
--
-     // ...block the WebContents from entering fullscreen until further notice.
-     ++opener->fullscreen_blocker_count_;
-     blocked_contents_list.push_back(opener);
-   }
- 
 @@ -7300,10 +7577,14 @@ bool WebContentsImpl::FocusLocationBarByDefault() {
  }
  

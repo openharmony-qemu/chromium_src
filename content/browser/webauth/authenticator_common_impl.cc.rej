@@ -30,23 +30,3 @@ diff a/content/browser/webauth/authenticator_common_impl.cc b/content/browser/we
        base::BindOnce(&InsertIsPPAACapability).Then(std::move(callback));
  
    bool immediate_get_enabled =
-@@ -3111,11 +3223,19 @@ void AuthenticatorCommonImpl::CompleteReportRequest(
-   Cleanup();
- }
- 
- void AuthenticatorCommonImpl::Cleanup() {
-   CHECK(!req_state_ || req_state_->request_key.value() == next_request_key_);
-+  // `req_state_.reset()` destroys the embedder request delegate which can
-+  // synchronously close UI which (via activation observers) may destroy the
-+  // hosting WebContents and therefore `this`. See https://crbug.com/521495992.
-+  base::WeakPtr<AuthenticatorCommonImpl> weak_this = weak_factory_.GetWeakPtr();
-   req_state_.reset();
-+  if (!weak_this) {
-+    return;
-+  }
-+
-   next_request_key_++;
-   CHECK(next_request_key_);  // crash on overflow. Only 2^64 WebAuthn requests
-                              // per instance of this object are supported.
- }
- 

@@ -15,18 +15,3 @@ diff a/third_party/blink/renderer/platform/network/http_parsers.h b/third_party/
  #include "third_party/blink/renderer/platform/network/server_timing_header.h"
  #include "third_party/blink/renderer/platform/platform_export.h"
  #include "third_party/blink/renderer/platform/weborigin/security_origin.h"
-@@ -190,10 +193,14 @@ ParseContentSecurityPolicyHeaders(
- // network::ParseSRIMessageSignaturesFromHeaders with blink types.
- PLATFORM_EXPORT
- network::mojom::blink::SRIMessageSignaturesPtr
- ParseSRIMessageSignaturesFromHeaders(const String& raw_headers);
- 
-+PLATFORM_EXPORT
-+network::mojom::blink::UnencodedDigestsPtr ParseUnencodedDigestsFromHeaders(
-+    const String& raw_headers);
-+
- PLATFORM_EXPORT
- network::mojom::blink::TimingAllowOriginPtr ParseTimingAllowOrigin(
-     const String& header_value);
- 
- PLATFORM_EXPORT

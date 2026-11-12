@@ -17,15 +17,3 @@ diff a/extensions/browser/guest_view/web_view/web_view_guest.cc b/extensions/bro
    base::Value::Dict args;
    args.Set(webview::kProcessId,
             render_widget_host->GetProcess()->GetDeprecatedID());
-@@ -2220,10 +2225,11 @@ GURL WebViewGuest::ResolveURL(const std::string& src) {
-     return GURL(src);
-   }
- 
-   GURL default_url(
-       base::StringPrintf("%s://%s/", kExtensionScheme, owner_host().c_str()));
-+
-   return default_url.Resolve(src);
- }
- 
- void WebViewGuest::OnWebViewNewWindowResponse(int new_window_instance_id,
-                                               bool allow,

@@ -1,20 +1,4 @@
 diff a/third_party/blink/renderer/core/html/html_script_element.cc b/third_party/blink/renderer/core/html/html_script_element.cc	(rejected hunks)
-@@ -83,11 +83,14 @@ bool HTMLScriptElement::HasLegalLinkAttribute(const QualifiedName& name) const {
-          HTMLElement::HasLegalLinkAttribute(name);
- }
- 
- void HTMLScriptElement::ChildrenChanged(const ChildrenChange& change) {
-   HTMLElement::ChildrenChanged(change);
--  loader_->ChildrenChanged(change);
-+
-+  if (!GetDocument().StatePreservingAtomicMoveInProgress()) {
-+    loader_->ChildrenChanged(change);
-+  }
- 
-   // We'll record whether the script element children were ever changed by
-   // the API (as opposed to the parser).
-   children_changed_by_api_ |= !change.ByParser();
- }
 @@ -372,10 +375,16 @@ bool HTMLScriptElement::AsyncAttributeValue() const {
  
  bool HTMLScriptElement::DeferAttributeValue() const {

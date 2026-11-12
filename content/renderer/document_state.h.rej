@@ -1,16 +1,4 @@
 diff a/content/renderer/document_state.h b/content/renderer/document_state.h	(rejected hunks)
-@@ -5,10 +5,11 @@
- #ifndef CONTENT_RENDERER_DOCUMENT_STATE_H_
- #define CONTENT_RENDERER_DOCUMENT_STATE_H_
- 
- #include <memory>
- 
-+#include "base/memory/weak_ptr.h"
- #include "content/common/content_export.h"
- #include "content/renderer/navigation_state.h"
- #include "net/http/http_response_info.h"
- #include "third_party/blink/public/web/web_document_loader.h"
- #include "url/gurl.h"
 @@ -71,16 +72,33 @@ class CONTENT_EXPORT DocumentState
    void set_navigation_state(std::unique_ptr<NavigationState> navigation_state);
    std::unique_ptr<NavigationState> TakeNavigationState() {

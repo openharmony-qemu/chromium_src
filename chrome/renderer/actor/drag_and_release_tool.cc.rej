@@ -46,40 +46,6 @@ diff a/chrome/renderer/actor/drag_and_release_tool.cc b/chrome/renderer/actor/dr
    task_runner_ = base::SequencedTaskRunner::GetCurrentDefault();
    task_runner_->PostDelayedTask(
        FROM_HERE,
-@@ -121,10 +134,11 @@ void DragAndReleaseTool::Execute(ToolFinishedCallback callback) {
- }
- 
- void DragAndReleaseTool::ProcessDrag(ResolvedTarget from,
-                                      ResolvedTarget to,
-                                      ToolFinishedCallback callback) {
-+  base::WeakPtr<DragAndReleaseTool> weak_this = weak_ptr_factory_.GetWeakPtr();
-   WebWidget* widget = from.GetWidget(*this);
-   if (!widget) {
-     std::move(callback).Run(
-         MakeResult(mojom::ActionResultCode::kFrameWentAway));
-     return;
-@@ -148,15 +162,21 @@ void DragAndReleaseTool::ProcessDrag(ResolvedTarget from,
-     drag_point = to.widget_point;
-   }
- 
-   if (!InjectMouseEvent(*widget, drag_point, EventType::kMouseMove,
-                         WebMouseEvent::Button::kLeft)) {
-+    if (!weak_this) {
-+      return;
-+    }
-     std::move(callback).Run(
-         MakeResult(mojom::ActionResultCode::kDragAndReleaseToMoveSuppressed,
-                    /*requires_page_stabilization=*/true));
-     return;
-   }
-+  if (!weak_this) {
-+    return;
-+  }
-   if (!done) {
-     task_runner_->PostDelayedTask(
-         FROM_HERE,
-         base::BindOnce(&DragAndReleaseTool::ProcessDrag,
-                        weak_ptr_factory_.GetWeakPtr(),
 @@ -177,24 +197,31 @@ void DragAndReleaseTool::ProcessDrag(ResolvedTarget from,
    }
  }

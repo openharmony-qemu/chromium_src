@@ -46,15 +46,3 @@ diff a/content/browser/file_system_access/file_system_access_file_writer_impl_un
  
      // Use an absolute path for local files, or a relative path otherwise,
      auto test_file_path = type == storage::kFileSystemTypeLocal
-@@ -386,10 +395,11 @@ class FileSystemAccessFileWriterImplTestBase : public testing::Test {
-   raw_ptr<TestFileSystemBackend> test_file_system_backend_ = nullptr;
-   scoped_refptr<ChromeBlobStorageContext> chrome_blob_context_;
-   raw_ptr<storage::BlobStorageContext> blob_context_ = nullptr;
-   scoped_refptr<FileSystemAccessManagerImpl> manager_;
-   mojo::Remote<blink::mojom::FileSystemAccessManager> manager_remote_;
-+  TestBrowserContext browser_context_;
- 
-   FileSystemURL test_file_url_;
-   FileSystemURL test_swap_url_;
- 
-   MockQuarantine quarantine_;

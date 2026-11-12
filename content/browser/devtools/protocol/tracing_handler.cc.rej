@@ -19,15 +19,3 @@ diff a/content/browser/devtools/protocol/tracing_handler.cc b/content/browser/de
                         "ProcessReadyInBrowser", TRACE_EVENT_SCOPE_THREAD,
                         "data", std::move(data));
  }
-@@ -213,11 +209,10 @@ void FillFrameData(base::trace_event::TracedValue* data,
-         "parent", frame_host->GetParent()->GetDevToolsFrameToken().ToString());
-   }
-   RenderProcessHost* process_host = frame_host->GetProcess();
-   const base::Process& process_handle = process_host->GetProcess();
-   if (!process_handle.IsValid()) {
--    data->SetString("processPseudoId", GetProcessHostHex(process_host));
-     frame_host->GetProcess()->PostTaskWhenProcessIsReady(
-         base::BindOnce(&SendProcessReadyInBrowserEvent,
-                        frame_host->devtools_frame_token(), process_host));
-   } else {
-     // Cast process id to int to be compatible with tracing.

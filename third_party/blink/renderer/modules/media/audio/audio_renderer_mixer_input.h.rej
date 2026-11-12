@@ -12,31 +12,3 @@ diff a/third_party/blink/renderer/modules/media/audio/audio_renderer_mixer_input
    // Pool to obtain mixers from / return them to.
    const raw_ptr<AudioRendererMixerPool> mixer_pool_;
  
-@@ -116,10 +118,13 @@ class BLINK_MODULES_EXPORT AudioRendererMixerInput
-   // GetOutputDeviceInfoAsync() completes.
-   void OnDeviceSwitchReady(media::OutputDeviceStatusCB switch_cb,
-                            scoped_refptr<media::AudioRendererSink> sink,
-                            media::OutputDeviceInfo device_info);
- 
-+  // Prevents race conditions when Stop() is called during a device change.
-+  base::Lock device_change_lock_;
-+
-   // AudioParameters received during Initialize().
-   media::AudioParameters params_;
- 
-   // Linearly fades in the input volume during the first ProvideInput() calls,
-   // avoiding audible pops.
-@@ -141,11 +146,12 @@ class BLINK_MODULES_EXPORT AudioRendererMixerInput
- 
-   // SwitchOutputDevice() and GetOutputDeviceInfoAsync() must be mutually
-   // exclusive when executing; these flags indicate whether one or the other is
-   // in progress. Each method will use the other method's to defer its action.
-   bool godia_in_progress_ = false;
--  bool switch_output_device_in_progress_ = false;
-+  bool switch_output_device_in_progress_ GUARDED_BY(device_change_lock_) =
-+      false;
- 
-   // Set by GetOutputDeviceInfoAsync() if a SwitchOutputDevice() call is in
-   // progress. GetOutputDeviceInfoAsync() will be invoked again with this value
-   // once OnDeviceSwitchReady() from the SwitchOutputDevice() call completes.
-   OutputDeviceInfoCB pending_device_info_cb_;

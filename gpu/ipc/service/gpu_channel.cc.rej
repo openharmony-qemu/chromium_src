@@ -54,37 +54,6 @@ diff a/gpu/ipc/service/gpu_channel.cc b/gpu/ipc/service/gpu_channel.cc	(rejected
        client_id, client_tracing_id, is_gpu_host,
        enable_extra_handles_validation, gpu_extra_info));
  
-@@ -934,10 +978,15 @@ void GpuChannel::CreateCommandBuffer(
-                   "buffer during process shutdown.";
-     responder.set_result(ContextResult::kTransientFailure);
-     return;
-   }
- 
-+  if (route_id <= static_cast<int32_t>(GpuChannelReservedRoutes::kMaxValue)) {
-+    LOG(ERROR) << "ContextResult::kFatalFailure: using reserved route";
-+    return;
-+  }
-+
-   int32_t stream_id = init_params->stream_id;
-   CommandBufferId command_buffer_id =
-       CommandBufferIdFromChannelAndRoute(client_id_, route_id);
- 
-   SequenceId sequence_id = stream_sequences_[stream_id];
-@@ -995,10 +1044,14 @@ void GpuChannel::CreateCommandBuffer(
- 
- void GpuChannel::DestroyCommandBuffer(int32_t route_id) {
-   TRACE_EVENT1("gpu", "GpuChannel::OnDestroyCommandBuffer", "route_id",
-                route_id);
- 
-+  if (route_id <= static_cast<int32_t>(GpuChannelReservedRoutes::kMaxValue)) {
-+    return;
-+  }
-+
-   std::unique_ptr<CommandBufferStub> stub;
-   auto it = stubs_.find(route_id);
-   if (it != stubs_.end()) {
-     stub = std::move(it->second);
-     stubs_.erase(it);
 @@ -1110,5 +1163,9 @@ uint64_t GpuChannel::GetMemoryUsage() const {
  
    return size;

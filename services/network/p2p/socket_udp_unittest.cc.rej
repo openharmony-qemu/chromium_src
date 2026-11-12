@@ -1,16 +1,4 @@
 diff a/services/network/p2p/socket_udp_unittest.cc b/services/network/p2p/socket_udp_unittest.cc	(rejected hunks)
-@@ -39,10 +39,11 @@
- #include "services/network/p2p/socket_test_utils.h"
- #include "services/network/p2p/socket_throttler.h"
- #include "services/network/public/cpp/p2p_socket_type.h"
- #include "services/network/throttling/network_conditions.h"
- #include "services/network/throttling/throttling_controller.h"
-+#include "services/network/throttling/throttling_p2p_network_interceptor.h"
- #include "testing/gmock/include/gmock/gmock.h"
- #include "testing/gtest/include/gtest/gtest.h"
- #include "third_party/webrtc/rtc_base/time_utils.h"
- 
- using ::testing::_;
 @@ -1433,6 +1434,20 @@ TEST_F(P2PSocketUdpWithInterceptorTest, ReceivePacketDelayed) {
    EXPECT_CALL(*this, SinglePacketReceptionHelper(_, SpanEq(packet), _));
    AdvanceClock(base::Milliseconds(2000));

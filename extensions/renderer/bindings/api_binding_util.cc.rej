@@ -1,44 +1,4 @@
 diff a/extensions/renderer/bindings/api_binding_util.cc b/extensions/renderer/bindings/api_binding_util.cc	(rejected hunks)
-@@ -49,12 +49,11 @@ class ContextInvalidationData : public base::SupportsUserData::Data {
- 
-   bool is_context_valid() const { return is_context_valid_; }
- 
-  private:
-   bool is_context_valid_ = true;
--  base::ObserverList<ContextInvalidationListener>::Unchecked
--      invalidation_listeners_;
-+  base::ObserverList<ContextInvalidationListener> invalidation_listeners_;
- };
- 
- constexpr char ContextInvalidationData::kPerContextDataKey[];
- 
- ContextInvalidationData::ContextInvalidationData() = default;
-@@ -63,22 +62,22 @@ ContextInvalidationData::~ContextInvalidationData() {
-     Invalidate();
- }
- 
- void ContextInvalidationData::AddListener(
-     ContextInvalidationListener* listener) {
--  DCHECK(is_context_valid_);
-+  CHECK(is_context_valid_);
-   invalidation_listeners_.AddObserver(listener);
- }
- 
- void ContextInvalidationData::RemoveListener(
-     ContextInvalidationListener* listener) {
--  DCHECK(invalidation_listeners_.HasObserver(listener));
-+  CHECK(invalidation_listeners_.HasObserver(listener));
-   invalidation_listeners_.RemoveObserver(listener);
- }
- 
- void ContextInvalidationData::Invalidate() {
--  DCHECK(is_context_valid_);
-+  CHECK(is_context_valid_);
-   is_context_valid_ = false;
- 
-   for (ContextInvalidationListener& listener : invalidation_listeners_)
-     listener.OnInvalidated();
- }
 @@ -86,17 +85,17 @@ void ContextInvalidationData::Invalidate() {
  bool IsContextValid(v8::Local<v8::Context> context) {
    gin::PerContextData* per_context_data = gin::PerContextData::From(context);

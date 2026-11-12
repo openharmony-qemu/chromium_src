@@ -1,18 +1,4 @@
 diff a/headless/lib/browser/protocol/target_handler.cc b/headless/lib/browser/protocol/target_handler.cc	(rejected hunks)
-@@ -6,10 +6,13 @@
- 
- #include <ranges>
- #include <string_view>
- 
- #include "build/build_config.h"
-+#include "content/public/browser/render_frame_host.h"
-+#include "content/public/browser/render_process_host.h"
-+#include "content/public/browser/web_contents.h"
- #include "headless/lib/browser/headless_browser_context_impl.h"
- #include "headless/lib/browser/headless_browser_impl.h"
- #include "headless/lib/browser/headless_web_contents_impl.h"
- #include "headless/public/headless_window_state.h"
- #include "ui/gfx/geometry/rect.h"
 @@ -107,10 +110,19 @@ Response TargetHandler::CreateTarget(
  
      // Create a hidden target.

@@ -188,20 +188,6 @@ diff a/content/renderer/render_frame_impl.cc b/content/renderer/render_frame_imp
  #endif
  
      GURL url;
-@@ -3312,11 +3443,12 @@ void RenderFrameImpl::CommitSameDocumentNavigation(
-     // method should return immediately and not touch any part of the object,
-     // otherwise it will result in a use-after-free bug.
-     // Similarly, check whether `navigation_state` is still the state associated
-     // with the WebDocumentLoader. It may have been preempted by a navigation
-     // started by an event handler.
--    if (!weak_this || document_state->navigation_state() != navigation_state) {
-+    if (!weak_this || !weak_document_state ||
-+        document_state->navigation_state() != navigation_state) {
-       return;
-     }
-   }
- 
-   DCHECK_NE(commit_status, blink::mojom::CommitResult::Ok);
 @@ -3889,10 +4079,14 @@ void RenderFrameImpl::DidCommitNavigation(
      observer.ReadyToCommitNavigation(document_loader);
  

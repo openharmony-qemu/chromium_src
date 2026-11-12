@@ -14,41 +14,6 @@ diff a/chrome/browser/extensions/extension_action_runner.cc b/chrome/browser/ext
  #include "chrome/browser/ui/browser_finder.h"
  #include "chrome/browser/ui/browser_window.h"
  #include "chrome/browser/ui/extensions/extensions_dialogs.h"
-@@ -159,16 +163,17 @@ void ExtensionActionRunner::GrantTabPermissions(
-             GetBlockedActions(extension->id()));
-       });
- 
-   // If a refresh is required this prevents blocked actions (that wouldn't run
-   // at the right time) from running until the user refreshes the page.
--  base::AutoReset<bool> ignore_active_tab(&ignore_active_tab_granted_,
--                                          refresh_required);
-   // Immediately grant permissions to every extension.
-+  auto* granter = ActiveTabPermissionGranter::FromWebContents(web_contents());
-   for (auto* extension : extensions) {
--    ActiveTabPermissionGranter::FromWebContents(web_contents())
--        ->GrantIfRequested(extension);
-+    if (refresh_required && !granter->IsGranted(extension)) {
-+      extensions_to_ignore_active_tab_granted_.insert(extension->id());
-+    }
-+    granter->GrantIfRequested(extension);
-   }
- 
-   if (!refresh_required) {
-     return;
-   }
-@@ -187,11 +192,11 @@ void ExtensionActionRunner::GrantTabPermissions(
-   ShowReloadPageBubble(extensions);
- }
- 
- void ExtensionActionRunner::OnActiveTabPermissionGranted(
-     const Extension* extension) {
--  if (ignore_active_tab_granted_) {
-+  if (extensions_to_ignore_active_tab_granted_.erase(extension->id())) {
-     return;
-   }
- 
-   if (WantsToRun(extension)) {
-     RunBlockedActions(extension);
 @@ -440,10 +450,11 @@ void ExtensionActionRunner::DidFinishNavigation(
    for (auto& scripts : pending_scripts_) {
      RunCallbackOnPendingScript(scripts.second, false);

@@ -101,19 +101,6 @@ diff a/content/browser/renderer_host/navigation_request.h b/content/browser/rend
    void BeginNavigation();
  
    const blink::mojom::CommonNavigationParams& common_params() const {
-@@ -564,11 +608,11 @@ class CONTENT_EXPORT NavigationRequest
- 
-   NavigationURLLoader* loader_for_testing() const { return loader_.get(); }
- 
-   NavigationState state() const { return state_; }
- 
--  FrameTreeNode* frame_tree_node() const { return frame_tree_node_; }
-+  FrameTreeNode* frame_tree_node() const { return frame_tree_node_.get(); }
- 
-   bool is_synchronous_renderer_commit() const {
-     return is_synchronous_renderer_commit_;
-   }
- 
 @@ -1729,10 +1788,13 @@ class CONTENT_EXPORT NavigationRequest
        std::optional<base::SafeRef<RenderFrameHostImpl>>
            rfh_restored_from_back_forward_cache,
@@ -128,25 +115,6 @@ diff a/content/browser/renderer_host/navigation_request.h b/content/browser/rend
            renderer_cancellation_listener = mojo::NullReceiver(),
        std::optional<std::u16string> embedder_shared_storage_context =
            std::nullopt);
-@@ -2448,14 +2516,14 @@ class CONTENT_EXPORT NavigationRequest
-   //
-   // See https://crbug.com/41487933 for more background on the types of bugs
-   // this protects against.
-   void ValidateCommitOrigin(const url::Origin& origin_to_commit);
- 
--  // Never null. The pointee node owns this navigation request instance.
--  // This field is not a raw_ptr because of incompatibilities with tracing
--  // (TRACE_EVENT*), perfetto::TracedDictionary::Add and gmock/EXPECT_THAT.
--  RAW_PTR_EXCLUSION FrameTreeNode* const frame_tree_node_;
-+  // Never null, and intended to outlive this NavigationRequest. Initially, this
-+  // NavigationRequest instance is owned by this FrameTreeNode, until ownership
-+  // is transferred to the committing RenderFrameHost.
-+  raw_ptr<FrameTreeNode> const frame_tree_node_;
- 
-   // Returns true if navigation timeline UKMs should be recorded.
-   // This is also used in `MaybeRecordTraceEventsAndHistograms()`, which should
-   // eventually be replaced with the navigation timeline metrics.
-   bool ShouldRecordNavigationTimelineUkm() const;
 @@ -3059,10 +3127,14 @@ class CONTENT_EXPORT NavigationRequest
    // Indicates that this navigation is for PDF content in a renderer. On
    // Android, this can only be true when a PDF NativePage is created for

@@ -1,16 +1,4 @@
 diff a/content/test/BUILD.gn b/content/test/BUILD.gn	(rejected hunks)
-@@ -673,10 +675,11 @@ static_library("test_support") {
-     "//storage/browser:test_support",
-     "//storage/common",
-     "//testing/gmock",
-     "//testing/gtest",
-     "//third_party/blink/public/strings:strings_grit",
-+    "//third_party/inspector_protocol:crdtp",
-     "//third_party/webrtc_overrides:webrtc_component",
-     "//third_party/zlib/google:compression_utils",
-     "//tools/v8_context_snapshot:buildflags",
-     "//ui/accessibility:ax_enums_mojo",
-     "//ui/base",
 @@ -1569,21 +1580,22 @@ test("content_browsertests") {
      "../browser/file_system_access/file_system_access_file_handle_impl_browsertest.cc",
      "../browser/file_system_access/file_system_access_file_modification_host_impl_browsertest.cc",

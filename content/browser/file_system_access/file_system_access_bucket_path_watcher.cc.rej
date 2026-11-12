@@ -1,16 +1,4 @@
 diff a/content/browser/file_system_access/file_system_access_bucket_path_watcher.cc b/content/browser/file_system_access/file_system_access_bucket_path_watcher.cc	(rejected hunks)
-@@ -11,10 +11,11 @@
- #include "base/task/bind_post_task.h"
- #include "base/task/sequenced_task_runner.h"
- #include "base/threading/sequence_bound.h"
- #include "content/browser/file_system_access/file_system_access_error.h"
- #include "content/browser/file_system_access/file_system_access_watcher_manager.h"
-+#include "content/public/browser/browser_thread.h"
- #include "storage/browser/file_system/file_observers.h"
- #include "storage/browser/file_system/file_system_url.h"
- #include "storage/browser/file_system/sandbox_file_system_backend_delegate.h"
- 
- namespace content {
 @@ -63,15 +64,27 @@ void FileSystemAccessBucketPathWatcher::Initialize(
          .Run(file_system_access_error::FromStatus(
              blink::mojom::FileSystemAccessStatus::kOperationFailed));

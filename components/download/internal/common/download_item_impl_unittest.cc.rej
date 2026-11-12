@@ -11,18 +11,6 @@ diff a/components/download/internal/common/download_item_impl_unittest.cc b/comp
  #include "base/test/gmock_move_support.h"
  #include "base/test/metrics/histogram_tester.h"
  #include "base/test/scoped_feature_list.h"
-@@ -43,10 +44,11 @@
- #include "net/http/http_response_headers.h"
- #include "testing/gmock/include/gmock/gmock.h"
- #include "testing/gtest/include/gtest/gtest.h"
- 
- using ::testing::_;
-+using ::testing::AnyNumber;
- using ::testing::ByMove;
- using ::testing::DoAll;
- using ::testing::InvokeWithoutArgs;
- using ::testing::NiceMock;
- using ::testing::Property;
 @@ -2501,7 +2515,47 @@ TEST_P(DownloadItemDestinationUpdateRaceTest, IntermediateRenameSucceeds) {
  
    item_->Cancel(true);

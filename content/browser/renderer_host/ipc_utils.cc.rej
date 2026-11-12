@@ -23,21 +23,6 @@ diff a/content/browser/renderer_host/ipc_utils.cc b/content/browser/renderer_hos
  namespace content {
  
  namespace {
-@@ -243,10 +245,14 @@ bool VerifyOpenURLParams(RenderFrameHostImpl* current_rfh,
-   if (!VerifyInitiatorOrigin(process_id, params->initiator_origin, current_rfh,
-                              &params->url, &params->initiator_frame_token)) {
-     return false;
-   }
- 
-+  if (!VerifyNavigationHeaders(process, params->extra_headers)) {
-+    return false;
-+  }
-+
-   if (params->initiator_base_url) {
-     // `initiator_base_url` should only be defined for about:blank and
-     // about:srcdoc navigations, and should never be an empty GURL (if it is not
-     // nullopt).
-     if (params->initiator_base_url->is_empty() ||
 @@ -422,6 +428,37 @@ bool VerifyNavigationInitiator(
    }
  

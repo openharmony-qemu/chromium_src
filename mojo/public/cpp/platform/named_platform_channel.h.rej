@@ -1,18 +1,4 @@
 diff a/mojo/public/cpp/platform/named_platform_channel.h b/mojo/public/cpp/platform/named_platform_channel.h	(rejected hunks)
-@@ -38,10 +38,13 @@ class COMPONENT_EXPORT(MOJO_CPP_PLATFORM) NamedPlatformChannel {
- #else
-   using ServerName = std::string;
- #endif
- 
-   struct COMPONENT_EXPORT(MOJO_CPP_PLATFORM) Options {
-+    Options();
-+    ~Options();
-+
-     // Specifies the name to use for the server. If empty, a random name is
-     // generated.
-     ServerName server_name;
- 
- #if BUILDFLAG(IS_WIN)
 @@ -62,10 +65,16 @@ class COMPONENT_EXPORT(MOJO_CPP_PLATFORM) NamedPlatformChannel {
  
      // The maximum number of clients that can connect at any given time.

@@ -267,20 +267,6 @@ diff a/content/browser/renderer_host/navigation_request.cc b/content/browser/ren
    // Let the NTP override the navigation params and pretend that this is a
    // browser-initiated, bookmark-like navigation.
    // TODO(crbug.com/40702467): determine why some link navigations on chrome://
-@@ -2054,11 +2154,12 @@ NavigationRequest::NavigationRequest(
-     AddAdditionalRequestHeaders(
-         &headers, common_params_->url, common_params_->navigation_type,
-         ui::PageTransitionFromInt(common_params_->transition),
-         controller->GetBrowserContext(), common_params_->method,
-         GetUserAgentOverride(), common_params_->initiator_origin,
--        common_params_->referrer.get(), frame_tree_node);
-+        common_params_->referrer.get(), frame_tree_node,
-+        commit_params_->is_browser_initiated);
- 
-     if (begin_params_->is_form_submission) {
-       // During form resubmit, `commit_params_->post_content_type` is populated
-       // from the history. Use it.
-       if (!commit_params_->post_content_type.empty()) {
 @@ -2585,12 +2690,18 @@ bool NavigationRequest::MaybeStartPrerenderingActivationChecks() {
    // Find an available prerendered page for this request. If it's found, this
    // request may activate it instead of loading a page via network.

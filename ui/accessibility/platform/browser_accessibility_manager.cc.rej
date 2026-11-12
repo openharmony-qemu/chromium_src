@@ -1,19 +1,4 @@
 diff a/ui/accessibility/platform/browser_accessibility_manager.cc b/ui/accessibility/platform/browser_accessibility_manager.cc	(rejected hunks)
-@@ -252,11 +252,13 @@ void BrowserAccessibilityManager::FireGeneratedEvent(
-   // Currently, this method is only used to fire ARIA notification events.
-   if (event_type != AXEventGenerator::Event::ARIA_NOTIFICATIONS_POSTED) {
-     return;
-   }
- 
--  auto* wrapper = GetFromAXNode(node);
-+  // Mitigation for b/498205735. Using raw_ptr on the stack as defense-in-depth
-+  // to ensure memory is quarantined if freed during the loop below.
-+  raw_ptr<BrowserAccessibility> wrapper = GetFromAXNode(node);
-   DCHECK(wrapper);
- 
-   const auto& node_data = wrapper->GetData();
- 
-   const auto& announcements = node_data.GetStringListAttribute(
 @@ -561,10 +563,16 @@ bool BrowserAccessibilityManager::OnAccessibilityEvents(
      defer_load_complete_event_ = false;
      FireBlinkEvent(ax::mojom::Event::kLoadComplete,

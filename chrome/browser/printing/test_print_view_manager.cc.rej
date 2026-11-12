@@ -1,20 +1,4 @@
 diff a/chrome/browser/printing/test_print_view_manager.cc b/chrome/browser/printing/test_print_view_manager.cc	(rejected hunks)
-@@ -30,13 +30,13 @@
- 
- namespace printing {
- 
- namespace {
- 
--void OnDidUpdatePrintSettings(
-+void OnDidGetPrintPreviewParams(
-     mojom::PrintPagesParamsPtr& snooped_params,
--    mojom::PrintManagerHost::UpdatePrintSettingsCallback callback,
-+    mojom::PrintManagerHost::GetPrintPreviewParamsCallback callback,
-     mojom::PrintPagesParamsPtr settings) {
-   snooped_params = mojom::PrintPagesParams::New();
-   auto params = mojom::PrintParams::New();
- 
-   // Copy over any relevant fields that we want to snoop.
 @@ -154,15 +154,13 @@ void TestPrintViewManager::PrintPreviewAllowedForTesting() {
    if (quit_closure_) {
      std::move(quit_closure_).Run();

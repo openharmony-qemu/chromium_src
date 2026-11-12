@@ -1,17 +1,4 @@
 diff a/third_party/blink/web_tests/external/wpt/webidl/ecmascript-binding/allow-shared.https.html b/third_party/blink/web_tests/external/wpt/webidl/ecmascript-binding/allow-shared.https.html	(rejected hunks)
-@@ -5,11 +5,11 @@
- <script src="/resources/testharness.js"></script>
- <script src="/resources/testharnessreport.js"></script>
- <script src="/common/sab.js"></script>
- <script>
-   "use strict";
-- 
-+
-   test(t => {
-     // Create a standard SharedArrayBuffer (safe even without COOP/COEP headers)
-     const sab = createBuffer('SharedArrayBuffer', 128);
-     const arr = new Uint8Array(sab);
-     arr.fill(42);
 @@ -17,13 +17,13 @@
      new ImageDecoder({
        data: arr,

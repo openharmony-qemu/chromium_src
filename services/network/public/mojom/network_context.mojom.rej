@@ -45,18 +45,6 @@ diff a/services/network/public/mojom/network_context.mojom b/services/network/pu
    // the URLRequestContextOwner object in the NetworkContext.
    [EnableIf=is_android]
    bool stale_dns_enabled = false;
-@@ -1496,10 +1539,11 @@ interface NetworkContext {
-   // Create a NetLogExporter, which helps export NetLog to an existing file.
-   // Note that the log is generally global, including all NetworkContexts
-   // managed by the same NetworkService. The particular NetworkContext this is
-   // called on will determine which NetworkContext gets its information and
-   // configuration summary written out at the end of the log.
-+  [AllowedContext=sandbox.mojom.Context.kBrowser]
-   CreateNetLogExporter(pending_receiver<NetLogExporter> receiver);
- 
-   // Tries to preconnect to `url`. `num_streams` may be used to request more
-   // than one connection be established in parallel.
-   // The sockets will only be used for requests which share the same values for
 @@ -1586,10 +1630,22 @@ interface NetworkContext {
                                HostPortPair host_port,
                                string ocsp_response,

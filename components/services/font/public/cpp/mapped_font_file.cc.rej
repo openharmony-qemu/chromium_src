@@ -22,18 +22,3 @@ diff a/components/services/font/public/cpp/mapped_font_file.cc b/components/serv
    base::ScopedAllowBlocking allow_mmap;
    return mapped_font_file_.Initialize(std::move(file));
  }
-@@ -33,12 +33,12 @@ SkMemoryStream* MappedFontFile::CreateMemoryStream() {
-   AddRef();
-   return new SkMemoryStream(std::move(data));
- }
- 
- MappedFontFile::~MappedFontFile() {
--  if (observer_)
--    observer_->OnMappedFontFileDestroyed(this);
-+  TRACE_EVENT1("fonts", "MappedFontFile::~MappedFontFile", "identity",
-+               font_id_);
- }
- 
- // static
- void MappedFontFile::ReleaseProc(const void* ptr, void* context) {
-   base::ScopedAllowBlocking allow_munmap;

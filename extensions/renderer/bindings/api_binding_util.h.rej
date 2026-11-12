@@ -1,16 +1,4 @@
 diff a/extensions/renderer/bindings/api_binding_util.h b/extensions/renderer/bindings/api_binding_util.h	(rejected hunks)
-@@ -9,10 +9,11 @@
- #include <string>
- 
- #include "base/auto_reset.h"
- #include "base/functional/callback.h"
- #include "base/memory/raw_ptr.h"
-+#include "base/observer_list_types.h"
- #include "v8/include/v8.h"
- 
- namespace extensions {
- namespace binding {
- 
 @@ -28,26 +29,29 @@ class ContextInvalidationData;
  bool IsContextValid(v8::Local<v8::Context> context);
  

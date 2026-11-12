@@ -619,21 +619,6 @@ diff a/chrome/browser/chrome_content_browser_client.cc b/chrome/browser/chrome_c
      return content::ContentBrowserClient::PrivateNetworkRequestPolicyOverride::
          kBlockInsteadOfWarn;
    }
-@@ -7937,12 +8243,13 @@ void ChromeContentBrowserClient::OnKeepaliveRequestFinished() {
-   DVLOG(1) << "OnKeepaliveRequestFinished: " << num_keepalive_requests_
-            << " ==> " << num_keepalive_requests_ - 1;
-   --num_keepalive_requests_;
-   if (num_keepalive_requests_ == 0) {
-     DVLOG(1) << "Stopping the keepalive timer";
--    if (keepalive_timer_)
-+    if (keepalive_timer_) {
-       keepalive_timer_->Stop();
-+    }
-     // This deletes the keep alive handle attached to the timer function and
-     // unblock the shutdown sequence.
-   }
- #endif  // !BUILDFLAG(IS_ANDROID)
- }
 @@ -8386,11 +8715,15 @@ std::string ChromeContentBrowserClient::GetChildProcessSuffix(int child_flags) {
  #endif  // BUILDFLAG(IS_MAC)
  

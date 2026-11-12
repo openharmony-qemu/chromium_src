@@ -4,7 +4,12 @@
 
 #include "chrome/browser/apps/platform_apps/chrome_apps_browser_api_provider.h"
 
+#include "arkweb/build/features/features.h"
+#include "build/build_config.h"
+
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "chrome/browser/apps/platform_apps/api/generated_api_registration.h"
+#endif
 
 namespace chrome_apps {
 
@@ -13,7 +18,9 @@ ChromeAppsBrowserAPIProvider::~ChromeAppsBrowserAPIProvider() = default;
 
 void ChromeAppsBrowserAPIProvider::RegisterExtensionFunctions(
     ExtensionFunctionRegistry* registry) {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   api::ChromeAppsGeneratedFunctionRegistry::RegisterAll(registry);
+#endif
 }
 
 }  // namespace chrome_apps

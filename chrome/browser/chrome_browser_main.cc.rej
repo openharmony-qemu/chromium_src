@@ -1,0 +1,167 @@
+diff a/chrome/browser/chrome_browser_main.cc b/chrome/browser/chrome_browser_main.cc	(rejected hunks)
+@@ -439,18 +440,23 @@ StartupProfileInfo CreateInitialProfile(
+       !last_used_profile_set) {
+     profile_info = GetFallbackStartupProfile();
+   }
+ 
+   if (profile_info.mode == StartupProfileMode::kError) {
++#if !BUILDFLAG(IS_OHOS)
++    // TODO:OHOS
+     ProfileErrorType error_type =
+         profile_dir_specified ? ProfileErrorType::CREATE_FAILURE_SPECIFIED
+                               : ProfileErrorType::CREATE_FAILURE_ALL;
+ 
+     // TODO(lwchkg): What diagnostics do you want to include in the feedback
+     // report when an error occurs?
+     ShowProfileErrorDialog(error_type, IDS_COULDNT_STARTUP_PROFILE_ERROR,
+                            "Error creating initial profile.");
++#else
++  LOG(ERROR) << "Error creating initial profile.";
++#endif
+     return profile_info;
+   }
+ #endif
+ 
+   UMA_HISTOGRAM_LONG_TIMES(
+@@ -463,11 +469,11 @@ OSStatus KeychainCallback(SecKeychainEvent keychain_event,
+                           SecKeychainCallbackInfo* info, void* context) {
+   return noErr;
+ }
+ #endif
+ 
+-#if BUILDFLAG(ENABLE_PROCESS_SINGLETON)
++#if BUILDFLAG(ENABLE_PROCESS_SINGLETON) || BUILDFLAG(ARKWEB_TEST)
+ void ProcessSingletonNotificationCallbackImpl(
+     base::CommandLine command_line,
+     const base::FilePath& current_directory) {
+   // Drop the request if the browser process is already shutting down.
+   if (!g_browser_process || g_browser_process->IsShuttingDown() ||
+@@ -785,11 +791,11 @@ std::unique_ptr<content::BrowserMainParts> ChromeBrowserMainParts::Create(
+ 
+   main_parts->AddParts(
+       std::make_unique<
+           enterprise_util::ChromeBrowserMainExtraPartsEnterprise>());
+ 
+-#if !BUILDFLAG(IS_ANDROID)
++#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
+   main_parts->AddParts(
+       std::make_unique<headless::ChromeBrowserMainExtraPartsHeadless>());
+ #endif
+ 
+   // Always add ChromeBrowserMainExtraPartsGpu last to make sure
+@@ -933,11 +939,15 @@ int ChromeBrowserMainParts::PreEarlyInitialization() {
+   for (auto& chrome_extra_part : chrome_extra_parts_)
+     chrome_extra_part->PreEarlyInitialization();
+ 
+   // Create BrowserProcess in PreEarlyInitialization() so that we can load
+   // field trials (and all it depends upon).
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  browser_process_ = std::make_unique<BrowserProcessImplExt>(startup_data_);
++#else
+   browser_process_ = std::make_unique<BrowserProcessImpl>(startup_data_);
++#endif
+ 
+ #if BUILDFLAG(IS_ANDROID)
+   startup_data_->CreateProfilePrefService();
+ #endif
+ 
+@@ -952,10 +962,17 @@ int ChromeBrowserMainParts::PreEarlyInitialization() {
+       startup_data_->chrome_feature_list_creator();
+   browser_process_->SetMetricsServices(
+       chrome_feature_list_creator->TakeMetricsServicesManager(),
+       chrome_feature_list_creator->GetMetricsServicesManagerClient());
+ 
++#if BUILDFLAG(IS_OHOS)
++  // TODO:OHOS
++  if (browser_process_) {
++    return content::RESULT_CODE_NORMAL_EXIT;
++  }
++#endif
++
+   if (load_local_state_result == CHROME_RESULT_CODE_MISSING_DATA &&
+       failed_to_load_resource_bundle) {
+     if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+             switches::kNoErrorDialogs)) {
+       return CHROME_RESULT_CODE_MISSING_DATA;
+@@ -1224,17 +1244,19 @@ int ChromeBrowserMainParts::PreCreateThreadsImpl() {
+ #endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS)
+ #endif  // !BUILDFLAG(ENABLE_CEF)
+ 
+ #if BUILDFLAG(ENABLE_EXTENSIONS_CORE) &&                                   \
+     (BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || \
+-     BUILDFLAG(IS_ANDROID))
++     BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS))
+   // Create directory for user-level Native Messaging manifest files. This
+   // makes it less likely that the directory will be created by third-party
+   // software with incorrect owner or permission. See crbug.com/725513 .
+   base::FilePath user_native_messaging_dir;
+-  CHECK(base::PathService::Get(chrome::DIR_USER_NATIVE_MESSAGING,
+-                               &user_native_messaging_dir));
++  // Follow-up Processing. The code here has a crash, and I can't find the 
++  // reason for now, so I've commented it out.
++  // CHECK(base::PathService::Get(chrome::DIR_USER_NATIVE_MESSAGING,
++  //                              &user_native_messaging_dir));
+   if (!base::PathExists(user_native_messaging_dir)) {
+     base::CreateDirectory(user_native_messaging_dir);
+   }
+ #endif
+ 
+@@ -1384,15 +1406,26 @@ void ChromeBrowserMainParts::PostCreateThreads() {
+ }
+ 
+ int ChromeBrowserMainParts::PreMainMessageLoopRun() {
+   TRACE_EVENT0("startup", "ChromeBrowserMainParts::PreMainMessageLoopRun");
+ 
++#if BUILDFLAG(IS_ARKWEB)
++  LOG(INFO) << "PreMainMessageLoopRun start";
++#endif
+   result_code_ = PreMainMessageLoopRunImpl();
+ 
+   for (auto& chrome_extra_part : chrome_extra_parts_)
+     chrome_extra_part->PreMainMessageLoopRun();
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  if (g_browser_process) {
++    g_browser_process->subresource_filter_ruleset_service();
++    g_browser_process->AsBrowserProcessImplExt()
++        ->subresource_filter_user_ruleset_service();
++  }
++#endif
++
+   return result_code_;
+ }
+ 
+ // PreMainMessageLoopRun calls these extra stages in the following order:
+ //  PreMainMessageLoopRunImpl()
+@@ -1406,12 +1439,15 @@ int ChromeBrowserMainParts::PreMainMessageLoopRun() {
+ //   PostBrowserStart()
+ 
+ void ChromeBrowserMainParts::PreProfileInit() {
+   TRACE_EVENT0("startup", "ChromeBrowserMainParts::PreProfileInit");
+ 
++#if !BUILDFLAG(IS_OHOS)
++  // TODO:OHOS
+   media::AudioManager::SetGlobalAppName(
+       l10n_util::GetStringUTF8(IDS_SHORT_PRODUCT_NAME));
++#endif
+ 
+   for (auto& chrome_extra_part : chrome_extra_parts_)
+     chrome_extra_part->PreProfileInit();
+ 
+   DisallowKeyedServiceFactoryRegistration();
+@@ -1743,10 +1779,15 @@ int ChromeBrowserMainParts::PreMainMessageLoopRunImpl() {
+ 
+   // This step is costly and is already measured in Startup.CreateFirstProfile
+   // and more directly Profile.CreateAndInitializeProfile.
+   StartupProfileInfo profile_info = CreateInitialProfile(
+       user_data_dir_, *base::CommandLine::ForCurrentProcess());
++#if !BUILDFLAG(IS_OHOS)
++  // TODO:OHOS
++  if (profile_info.mode == StartupProfileMode::kError)
++    return content::RESULT_CODE_NORMAL_EXIT;
++#endif
+ 
+   if (profile_info.mode == StartupProfileMode::kError)
+     return content::RESULT_CODE_NORMAL_EXIT;
+ 
+ #if !BUILDFLAG(IS_ANDROID)

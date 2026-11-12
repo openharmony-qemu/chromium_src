@@ -1,0 +1,16 @@
+diff a/chrome/browser/browser_process.h b/chrome/browser/browser_process.h	(rejected hunks)
+@@ -123,10 +124,14 @@ class PrintPreviewDialogController;
+ namespace resource_coordinator {
+ class ResourceCoordinatorParts;
+ class TabManager;
+ }
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++class BrowserProcessImplExt;
++#endif
++
+ namespace ui {
+ class UnownedUserDataHost;
+ }  // namespace ui
+ 
+ // NOT THREAD SAFE, call only from the main thread.

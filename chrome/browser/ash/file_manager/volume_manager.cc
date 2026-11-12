@@ -1524,6 +1524,10 @@ void VolumeManager::OnDiskMountManagerRefreshed(bool success) {
 void VolumeManager::OnStorageMonitorInitialized() {
   VLOG(1) << *this << "::OnStorageMonitorInitialized";
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!storage_monitor::StorageMonitor::GetInstance())
+    return;
+#endif
   const std::vector<storage_monitor::StorageInfo> storages =
       storage_monitor::StorageMonitor::GetInstance()->GetAllAvailableStorages();
   for (const storage_monitor::StorageInfo& storage : storages) {

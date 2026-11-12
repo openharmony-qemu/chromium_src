@@ -97,6 +97,11 @@
 #include "chrome/browser/media/android/cdm/media_drm_storage_factory.h"
 #endif
 
+#if BUILDFLAG(ENABLE_MOJO_CDM) && \
+    BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+#include "chrome/browser/media/ohos/cdm/media_drm_storage_factory.h"
+#endif
+
 #if BUILDFLAG(ENABLE_SPELLCHECK)
 #include "chrome/browser/spellchecker/spell_check_initialization_host_impl.h"
 #include "components/spellcheck/common/spellcheck.mojom.h"
@@ -230,6 +235,9 @@ void BindBadgeServiceForServiceWorker(
 
 }  // namespace
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/chrome/browser/chrome_content_browser_client_receiver_bindings_for_include.cc"
+#endif
 void ChromeContentBrowserClient::ExposeInterfacesToRenderer(
     service_manager::BinderRegistry* registry,
     blink::AssociatedInterfaceRegistry* associated_registry,
@@ -337,7 +345,8 @@ void ChromeContentBrowserClient::BindMediaServiceReceiver(
   }
 #endif  // BUILDFLAG(ENABLE_LIBRARY_CDMS) || BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(ENABLE_MOJO_CDM) && BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ENABLE_MOJO_CDM) && (BUILDFLAG(IS_ANDROID) || \
+    (BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)))
   if (auto r = receiver.As<media::mojom::MediaDrmStorage>()) {
     CreateMediaDrmStorage(render_frame_host, std::move(r));
     return;
@@ -665,6 +674,7 @@ void ChromeContentBrowserClient::
           },
           &render_frame_host));
 #endif  // BUILDFLAG(ENABLE_PRINTING)
+#endif  // BUILDFLAG(ARKWEB_PRINT)
   associated_registry.AddInterface<
       security_interstitials::mojom::InterstitialCommands>(base::BindRepeating(
       [](content::RenderFrameHost* render_frame_host,
@@ -683,6 +693,18 @@ void ChromeContentBrowserClient::
             BindReceiver(std::move(receiver), render_frame_host);
       },
       &render_frame_host));
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  associated_registry.AddInterface<
+      subresource_filter::mojom::UserSubresourceFilterHost>(base::BindRepeating(
+      [](content::RenderFrameHost* render_frame_host,
+         mojo::PendingAssociatedReceiver<
+             subresource_filter::mojom::UserSubresourceFilterHost> receiver) {
+        subresource_filter::ArkWebContentSubresourceFilterThrottleManagerExt::
+            BindUserReceiver(std::move(receiver), render_frame_host);
+      },
+      &render_frame_host));
+#endif
 
   associated_registry
       .AddInterface<supervised_user::mojom::SupervisedUserCommands>(

@@ -148,6 +148,15 @@ void OnManagementIconReceived(
   std::move(callback).Run(icon);
 }
 
+#if BUILDFLAG(IS_OHOS)
+base::Value::List getList(GURL url) {
+  if (*g_tempurl == url) {
+    return std::move(*g_templist);
+  }
+  return base::Value::List();
+}
+#endif  // BUILDFLAG(IS_OHOS)
+
 // Expected to be called when Management is set and enterprise badging is
 // enabled. Returns:
 // - true for Work.

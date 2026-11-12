@@ -1,0 +1,29 @@
+diff a/chrome/browser/enterprise/connectors/analysis/content_analysis_delegate.h b/chrome/browser/enterprise/connectors/analysis/content_analysis_delegate.h	(rejected hunks)
+@@ -19,10 +19,12 @@
+ #include "chrome/browser/enterprise/connectors/common.h"
+ #include "components/enterprise/connectors/core/analysis_settings.h"
+ #include "components/enterprise/connectors/core/common.h"
+ #include "components/enterprise/connectors/core/content_analysis_delegate_base.h"
+ #include "url/gurl.h"
++#include "chrome/browser/safe_browsing/cloud_content_scanning/file_opening_job.h"
++#include "components/safe_browsing/buildflags.h"
+ 
+ class Profile;
+ 
+ namespace content {
+ class WebContent;
+@@ -505,10 +507,14 @@ class ContentAnalysisDelegate : public ContentAnalysisDelegateBase,
+   // Indicates that `this` can be deleted right away. This is used with
+   // `callback_running_` to handle race conditions where non-blocking scans
+   // should wait before deleting `this`.
+   bool all_work_done_ = false;
+ 
++#if BUILDFLAG(FULL_SAFE_BROWSING)
++  std::unique_ptr<safe_browsing::FileOpeningJob> file_opening_job_;
++#endif
++
+   // Content type of the page that triggered the action.
+   std::string page_content_type_;
+ 
+   base::TimeTicks upload_start_time_;
+ 

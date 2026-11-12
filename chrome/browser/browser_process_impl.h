@@ -123,6 +123,10 @@ class BrowserProcessImpl : public BrowserProcess,
 
   ~BrowserProcessImpl() override;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  friend class BrowserProcessImplExt;
+#endif
+
   ui::UnownedUserDataHost& GetUnownedUserDataHost() override;
   const ui::UnownedUserDataHost& GetUnownedUserDataHost() const override;
 
@@ -277,6 +281,7 @@ class BrowserProcessImpl : public BrowserProcess,
   void CreateSafeBrowsingService();
 #endif
   void CreateSubresourceFilterRulesetService();
+
   void CreateFingerprintingProtectionRulesetService();
   void CreateOptimizationGuideService();
   void CreateStatusTray();
@@ -524,5 +529,9 @@ class BrowserProcessImpl : public BrowserProcess,
 
   SEQUENCE_CHECKER(sequence_checker_);
 };
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "arkweb/chromium_ext/chrome/browser/browser_process_impl_ext.h"
+#endif
 
 #endif  // CHROME_BROWSER_BROWSER_PROCESS_IMPL_H_

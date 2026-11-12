@@ -1,0 +1,17 @@
+diff a/chrome/browser/component_updater/subresource_filter_component_installer.cc b/chrome/browser/component_updater/subresource_filter_component_installer.cc	(rejected hunks)
+@@ -86,13 +86,15 @@ void SubresourceFilterComponentInstallerPolicy::ComponentReady(
+       install_dir.Append(subresource_filter::kUnindexedRulesetDataFileName);
+   ruleset_info.license_path =
+       install_dir.Append(subresource_filter::kUnindexedRulesetLicenseFileName);
+   subresource_filter::RulesetService* ruleset_service =
+       g_browser_process->subresource_filter_ruleset_service();
++#if !BUILDFLAG(ARKWEB_ADBLOCK)
+   if (ruleset_service) {
+     ruleset_service->IndexAndStoreAndPublishRulesetIfNeeded(ruleset_info);
+   }
++#endif
+ }
+ 
+ // Called during startup and installation before ComponentReady().
+ bool SubresourceFilterComponentInstallerPolicy::VerifyInstallation(
+     const base::Value::Dict& manifest,

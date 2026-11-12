@@ -1,0 +1,16 @@
+diff a/chrome/browser/enterprise/util/managed_browser_utils.h b/chrome/browser/enterprise/util/managed_browser_utils.h	(rejected hunks)
+@@ -18,10 +18,14 @@
+ #include "net/base/host_port_pair.h"
+ #include "net/ssl/client_cert_identity.h"
+ #include "ui/gfx/image/image.h"
+ #include "url/gurl.h"
+ 
++#if BUILDFLAG(IS_OHOS)
++#include "base/values.h"
++#endif  // BUILDFLAG(IS_OHOS)
++
+ struct AccountInfo;
+ struct CoreAccountId;
+ class GURL;
+ class PrefRegistrySimple;
+ class Profile;

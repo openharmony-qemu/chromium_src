@@ -1,0 +1,15 @@
+diff a/chrome/browser/ai/ai_manager.h b/chrome/browser/ai/ai_manager.h	(rejected hunks)
+@@ -71,10 +71,13 @@ class AIManager : public base::SupportsUserData::Data,
+ 
+   // Return the default and max sampling params for the LanguageModel API.
+   blink::mojom::AILanguageModelParamsPtr GetLanguageModelParams();
+ 
+   // `blink::mojom::AIManager` implementation.
++#if BUILDFLAG(ARKWEB_AI)
++  void CreateLanguageDetector(CreateLanguageDetectorCallback callback) override {}
++#endif
+   void CanCreateLanguageModel(
+       blink::mojom::AILanguageModelCreateOptionsPtr options,
+       CanCreateLanguageModelCallback callback) override;
+   void CreateLanguageModel(
+       mojo::PendingRemote<blink::mojom::AIManagerCreateLanguageModelClient>

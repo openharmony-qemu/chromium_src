@@ -51,6 +51,10 @@ source_set("platform_apps") {
     "//chrome/common/apps/platform_apps/api",
   ]
 
+  if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
+    public_deps -= [ "//chrome/browser/apps/platform_apps/api:api_registration" ]
+  }
+
   deps = [
     "//chrome/app:command_ids",
     "//chrome/browser:browser_process",

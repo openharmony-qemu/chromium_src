@@ -1,0 +1,16 @@
+diff a/chrome/browser/ash/file_manager/volume_manager.cc b/chrome/browser/ash/file_manager/volume_manager.cc	(rejected hunks)
+@@ -1187,10 +1187,14 @@ void VolumeManager::OnRemovableStorageAttached(
+   // Resolve mtp storage name and get MtpStorageInfo.
+   std::string storage_name;
+   base::RemoveChars(info.location(), kRootPath, &storage_name);
+   DCHECK(!storage_name.empty());
+   if (get_mtp_storage_info_callback_.is_null()) {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++    if (!storage_monitor::StorageMonitor::GetInstance()) 
++      return;
++#endif
+     storage_monitor::StorageMonitor::GetInstance()
+         ->media_transfer_protocol_manager()
+         ->GetStorageInfo(storage_name,
+                          base::BindOnce(&VolumeManager::DoAttachMtpStorage,
+                                         weak_ptr_factory_.GetWeakPtr(), info));

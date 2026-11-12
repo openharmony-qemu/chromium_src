@@ -1,0 +1,29 @@
+diff a/chrome/browser/autofill/BUILD.gn b/chrome/browser/autofill/BUILD.gn	(rejected hunks)
+@@ -4,10 +4,11 @@
+ 
+ import("//build/buildflag_header.gni")
+ import("//build/config/ui.gni")
+ import("//components/optimization_guide/features.gni")
+ import("//extensions/buildflags/buildflags.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ assert(!is_fuchsia, "Fuchsia shouldn't use anything in //chrome")
+ 
+ static_library("autofill") {
+   sources = [
+@@ -206,10 +207,15 @@ source_set("browser_tests") {
+       "autofill_browsertest.cc",
+       "autofill_metrics_browsertest.cc",
+       "autofill_server_browsertest.cc",
+       "form_structure_browsertest.cc",
+     ]
++    
++    if (arkweb_test) {
++      sources -= [ "form_structure_browsertest.cc", ]
++    }
++    
+   }
+ 
+   defines = [ "HAS_OUT_OF_PROC_TEST_RUNNER" ]
+ 
+   deps = [

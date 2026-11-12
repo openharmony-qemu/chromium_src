@@ -12140,9 +12140,11 @@ const FeatureEntry kFeatureEntries[] = {
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
         // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
     {"verify-qwacs", flag_descriptions::kVerifyQWACsName,
      flag_descriptions::kVerifyQWACsDescription, kOsAll,
      FEATURE_VALUE_TYPE(net::features::kVerifyQWACs)},
+#endif  // BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
 
     {"autofill-prefer-buy-now-pay-later-blocklists",
      flag_descriptions::kAutofillPreferBuyNowPayLaterBlocklistsName,
@@ -14557,7 +14559,10 @@ base::span<const FeatureEntry> GetFeatureEntries() {
       !entries_for_testing->empty()) {
     return *entries_for_testing;
   }
-  return kFeatureEntries;
+  // Workaround for OHOS SDK libcxx-ohos not supporting array-to-span conversion.
+  // Use base::span's array constructor explicitly.
+  constexpr base::span<const FeatureEntry> kFeatureEntriesSpan(kFeatureEntries);
+  return kFeatureEntriesSpan;
 }
 
 }  // namespace testing

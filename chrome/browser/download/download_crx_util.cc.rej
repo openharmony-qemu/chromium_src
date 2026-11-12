@@ -1,0 +1,17 @@
+diff a/chrome/browser/download/download_crx_util.cc b/chrome/browser/download/download_crx_util.cc	(rejected hunks)
+@@ -71,10 +71,15 @@ std::unique_ptr<ExtensionInstallPrompt> CreateExtensionInstallPrompt(
+         browser = Browser::Create(
+             Browser::CreateParams(Browser::TYPE_NORMAL, profile, true));
+       }
+       web_contents = browser->tab_strip_model()->GetActiveWebContents();
+     }
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++    if (!web_contents) {
++      return std::make_unique<ExtensionInstallPrompt>(profile, nullptr);
++    }
++#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+     return std::make_unique<ExtensionInstallPrompt>(web_contents);
+   }
+ #else
+   // TODO(crbug.com/397754565): Show extension install UI on desktop Android.
+   NOTIMPLEMENTED() << "CreateExtensionInstallPrompt";

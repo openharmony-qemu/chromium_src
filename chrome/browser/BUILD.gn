@@ -106,7 +106,7 @@ buildflag_header("buildflags") {
 
   # Android and ChromeOS don't support multiple browser processes, so they don't
   # employ ProcessSingleton.
-  if (is_android || is_chromeos) {
+  if (is_android || is_chromeos || is_ohos) {
     flags += [ "ENABLE_PROCESS_SINGLETON=false" ]
   } else {
     flags += [ "ENABLE_PROCESS_SINGLETON=true" ]
@@ -140,6 +140,10 @@ source_set("browser_process") {
     "//media:media_buildflags",
     "//ui/base/unowned_user_data",
   ]
+
+  if (arkweb_adblock) {
+    sources += arkweb_browser_process_sources
+  }
 }
 
 source_set("main_extra_parts") {

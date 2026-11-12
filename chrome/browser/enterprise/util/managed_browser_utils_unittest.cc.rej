@@ -1,0 +1,16 @@
+diff a/chrome/browser/enterprise/util/managed_browser_utils_unittest.cc b/chrome/browser/enterprise/util/managed_browser_utils_unittest.cc	(rejected hunks)
+@@ -214,10 +214,14 @@ class AutoSelectCertificateTest : public testing::Test {
+     return net::FakeClientCertIdentityListFromCertificateList(
+         {client_1_, client_2_});
+   }
+ 
+   void SetPolicyValueInContentSettings(base::Value::List filters) {
++#if BUILDFLAG(IS_OHOS)
++    chrome::enterprise_util::SetTemplistForOhosTest(std::move(filters),
++                                                    GURL(kRequestingUrl));
++#endif
+     HostContentSettingsMap* m =
+         HostContentSettingsMapFactory::GetForProfile(profile());
+ 
+     base::Value::Dict root;
+     root.Set("filters", std::move(filters));

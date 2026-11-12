@@ -137,6 +137,10 @@ void GetManagementIcon(const GURL& url,
                        EnterpriseLogoUrlScope url_scope,
                        base::OnceCallback<void(const gfx::Image&)> callback);
 
+#if BUILDFLAG(IS_OHOS)
+void SetTemplistForOhosTest(base::Value::List list, GURL url);
+#endif  // BUILDFLAG(IS_OHOS)
+
 // Returns the default enterprise label "Work"/"School" or the
 // `EnterpriseCustomLabel` set by policy if present.
 // `truncated` indicates whether the label returned needs to be truncated.

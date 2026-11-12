@@ -1,0 +1,18 @@
+diff a/chrome/browser/download/bubble/download_bubble_update_service.cc b/chrome/browser/download/bubble/download_bubble_update_service.cc	(rejected hunks)
+@@ -753,10 +753,16 @@ void DownloadBubbleUpdateService::OnDownloadCreated(
+     content::DownloadManager* manager,
+     download::DownloadItem* item) {
+   if (IsShutDown()) {
+     return;
+   }
++#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
++  if (!download_item_notifier_ || !original_download_item_notifier_) {
++    LOG(INFO) << "download_item_notifier_ or original_download_item_notifier_ is null";
++    return;
++  }
++#endif
+   CHECK(download_item_notifier_ || original_download_item_notifier_);
+   if (!download_item_notifier_) {
+     return;
+   }
+   if (download_crx_util::IsExtensionDownload(*item) &&

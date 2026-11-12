@@ -1,0 +1,107 @@
+diff a/chrome/browser/chrome_content_browser_client_receiver_bindings.cc b/chrome/browser/chrome_content_browser_client_receiver_bindings.cc	(rejected hunks)
+@@ -127,10 +132,24 @@
+ 
+ #if BUILDFLAG(ENABLE_OFFLINE_PAGES)
+ #include "chrome/browser/offline_pages/offline_page_tab_helper.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_PRINT)
++#include "cef/ohos_cef_ext/libcef/browser/printing/ohos_print_manager.h"
++#endif
++
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++#include "components/subresource_filter/content/browser/content_subresource_filter_throttle_manager.h"
++#include "libcef/browser/subresource_filter/adblock_content_subresource_filter_web_contents_helper_factory.h"
++#include "arkweb/chromium_ext/components/subresource_filter/content/browser/arkweb_content_subresource_filter_throttle_manager_ext.h"
++#endif  // ARKWEB_ADBLOCK
++
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++#include "arkweb/chromium_ext/content/browser/media/ohos/ohos_video_experience_reporter.h"
++#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
++
+ namespace {
+ 
+ #if BUILDFLAG(SAFE_BROWSING_AVAILABLE)
+ // Helper method for ExposeInterfacesToRenderer() that checks the latest
+ // SafeBrowsing pref value on the UI thread before hopping over to the IO
+@@ -333,13 +356,27 @@ void ChromeContentBrowserClient::RegisterBrowserInterfaceBindersForFrame(
+     content::RenderFrameHost* render_frame_host,
+     mojo::BinderMapWithContext<content::RenderFrameHost*>* map) {
+   chrome::internal::PopulateChromeFrameBinders(map, render_frame_host);
+   chrome::internal::PopulateChromeWebUIFrameBinders(map, render_frame_host);
+ 
++#if BUILDFLAG(ARKWEB_READER_MODE)
++  map->Add<dom_distiller::mojom::DistillabilityService>(
++      base::BindRepeating(&BindDistillabilityService));
++#endif
++
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++  map->Add<blink::mojom::VideoExperienceReporter>(base::BindRepeating(
++      &content::OHOSVideoExperienceReporter::CreateForFrameHost));
++#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
++
+ #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
+   const GURL& site = render_frame_host->GetSiteInstance()->GetSiteURL();
+-  if (!site.SchemeIs(extensions::kExtensionScheme))
++  if (!site.SchemeIs(extensions::kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      && !site.SchemeIs(extensions::kArkwebExtensionScheme)
++#endif
++  )
+     return;
+ 
+   content::BrowserContext* browser_context =
+       render_frame_host->GetProcess()->GetBrowserContext();
+   auto* extension = extensions::ExtensionRegistry::Get(browser_context)
+@@ -540,18 +577,20 @@ void ChromeContentBrowserClient::
+             page_load_metrics::MetricsWebContentsObserver::BindPageLoadMetrics(
+                 std::move(receiver), render_frame_host);
+           },
+           &render_frame_host));
+ #if BUILDFLAG(ENABLE_PDF)
+-  associated_registry.AddInterface<pdf::mojom::PdfHost>(base::BindRepeating(
+-      [](content::RenderFrameHost* render_frame_host,
+-         mojo::PendingAssociatedReceiver<pdf::mojom::PdfHost> receiver) {
+-        pdf::PDFDocumentHelper::BindPdfHost(
+-            std::move(receiver), render_frame_host,
+-            std::make_unique<ChromePDFDocumentHelperClient>());
+-      },
+-      &render_frame_host));
++  if (render_frame_host.GetProcess()->IsPdf()) {
++    associated_registry.AddInterface<pdf::mojom::PdfHost>(base::BindRepeating(
++        [](content::RenderFrameHost* render_frame_host,
++           mojo::PendingAssociatedReceiver<pdf::mojom::PdfHost> receiver) {
++          pdf::PDFDocumentHelper::BindPdfHost(
++              std::move(receiver), render_frame_host,
++              std::make_unique<ChromePDFDocumentHelperClient>());
++        },
++        &render_frame_host));
++  }
+ #endif  // BUILDFLAG(ENABLE_PDF)
+ #if !BUILDFLAG(IS_ANDROID)
+   associated_registry.AddInterface<search::mojom::EmbeddedSearchConnector>(
+       base::BindRepeating(
+           [](content::RenderFrameHost* render_frame_host,
+@@ -560,10 +599,22 @@ void ChromeContentBrowserClient::
+             SearchTabHelper::BindEmbeddedSearchConnecter(std::move(receiver),
+                                                          render_frame_host);
+           },
+           &render_frame_host));
+ #endif  //  !BUILDFLAG(IS_ANDROID)
++
++#if BUILDFLAG(ARKWEB_PRINT)
++  associated_registry.AddInterface<printing::mojom::PrintManagerHost>(
++      base::BindRepeating(
++          [](content::RenderFrameHost* render_frame_host,
++             mojo::PendingAssociatedReceiver<printing::mojom::PrintManagerHost>
++                 receiver) {
++            printing::OhosPrintManager::BindPrintManagerHost(
++                std::move(receiver), render_frame_host);
++          },
++          &render_frame_host));
++#else
+ #if BUILDFLAG(ENABLE_PRINTING)
+   associated_registry.AddInterface<printing::mojom::PrintManagerHost>(
+       base::BindRepeating(
+           [](content::RenderFrameHost* render_frame_host,
+              mojo::PendingAssociatedReceiver<printing::mojom::PrintManagerHost>

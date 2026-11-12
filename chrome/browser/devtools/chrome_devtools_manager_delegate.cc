@@ -85,6 +85,10 @@ static_assert(!BUILDFLAG(IS_ANDROID),
 #include "cef/libcef/browser/chrome/extensions/chrome_extension_util.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "cef/ohos_cef_ext/libcef/browser/cdp_handler.h"
+#endif // BUILDFLAG(IS_ARKWEB)
+
 using content::DevToolsAgentHost;
 
 const char ChromeDevToolsManagerDelegate::kTypeApp[] = "app";
@@ -616,6 +620,12 @@ void ChromeDevToolsManagerDelegate::ResetAndroidDeviceManagerForTesting() {
 void ChromeDevToolsManagerDelegate::CloseBrowserSoon() {
   content::GetUIThreadTaskRunner({})->PostTask(
       FROM_HERE, base::BindOnce([]() {
+#if BUILDFLAG(IS_ARKWEB)
+        // Notify the host app before closing so it can handle the close
+        // request first. ExitIgnoreUnloadHandlers initiates browser window
+        // closure which may prevent subsequent code from executing.
+        CdpHandler::GetInstance().BrowserClose();
+#endif // BUILDFLAG(IS_ARKWEB)
         // Do not keep the application running anymore, we got an explicit
         // request to close.
         AllowBrowserToClose();

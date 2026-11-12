@@ -1,0 +1,28 @@
+diff a/chrome/browser/devtools/devtools_window.cc b/chrome/browser/devtools/devtools_window.cc	(rejected hunks)
+@@ -1942,10 +1952,11 @@ void DevToolsWindow::ShowCertificateViewer(const std::string& cert_chain) {
+     return;
+   }
+   gfx::NativeWindow parent = browser->window()->GetNativeWindow();
+   ::ShowCertificateViewer(inspected_contents, parent, cert.get());
+ #endif
++#endif  // BUILDFLAG(ENABLE_WEBUI_CERTIFICATE_VIEWER)
+ }
+ 
+ void DevToolsWindow::OnLoadCompleted() {
+   // First seed inspected tab id for extension APIs.
+   WebContents* inspected_web_contents = GetInspectedWebContents();
+@@ -2157,10 +2168,14 @@ void DevToolsWindow::MaybeShowSharedProcessInfobar() {
+ 
+   content::SiteInstance* site_instance =
+       inspected_web_contents->GetPrimaryMainFrame()->GetSiteInstance();
+   const GURL& site_url = site_instance->GetSiteURL();
+   if (site_url.SchemeIs(extensions::kExtensionScheme) ||
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      site_url.SchemeIs(content::kArkWebUIScheme) ||
++      site_url.SchemeIs(extensions::kArkwebExtensionScheme) ||
++#endif
+       site_url.SchemeIs(content::kChromeDevToolsScheme) ||
+       site_url.SchemeIs(content::kChromeUIScheme)) {
+     return;
+   }
+ 

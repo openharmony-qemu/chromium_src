@@ -1,0 +1,17 @@
+diff a/chrome/browser/content_settings/cookie_settings_factory.cc b/chrome/browser/content_settings/cookie_settings_factory.cc	(rejected hunks)
+@@ -78,11 +78,15 @@ CookieSettingsFactory::BuildServiceInstanceFor(
+         "Privacy.CookieControlsSetting.RegularProfile", cookie_controls_mode);
+   }
+ 
+   const char* extension_scheme =
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      extensions::kArkwebExtensionScheme;
++#else
+       extensions::kExtensionScheme;
++#endif
+ #else
+       content_settings::kDummyExtensionScheme;
+ #endif
+ 
+   HostContentSettingsMap* host_content_settings_map =

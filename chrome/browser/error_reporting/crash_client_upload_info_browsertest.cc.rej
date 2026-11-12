@@ -1,0 +1,14 @@
+diff a/chrome/browser/error_reporting/crash_client_upload_info_browsertest.cc b/chrome/browser/error_reporting/crash_client_upload_info_browsertest.cc	(rejected hunks)
+@@ -47,10 +47,12 @@ IN_PROC_BROWSER_TEST_F(CrashClientUploadInfoTest, GetClientProductInfo) {
+ #if BUILDFLAG(GOOGLE_CHROME_BRANDING)
+   constexpr char kProductName[] = "Chrome";
+ #else
+   constexpr char kProductName[] = "Chromium";
+ #endif
++#elif BUILDFLAG(IS_OHOS)
++  constexpr char kProductName[] = "ohos";
+ #endif
+ 
+   crash_reporter::ProductInfo product_info;
+   crash_reporter::GetClientProductInfo(&product_info);
+   EXPECT_EQ(product_info.product_name, kProductName);

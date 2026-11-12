@@ -125,7 +125,11 @@ void LocalTargetsUIHandler::ForceUpdate() {
 }
 
 void LocalTargetsUIHandler::ScheduleUpdate() {
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  const int kUpdateDelay = 1000;
+#else
   const int kUpdateDelay = 100;
+#endif // ARKWEB_DEVTOOLS
   timer_ = std::make_unique<base::OneShotTimer>();
   timer_->Start(FROM_HERE, base::Milliseconds(kUpdateDelay),
                 base::BindOnce(&LocalTargetsUIHandler::UpdateTargets,

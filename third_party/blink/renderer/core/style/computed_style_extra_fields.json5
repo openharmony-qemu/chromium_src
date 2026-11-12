@@ -1410,6 +1410,24 @@
       field_group: "*",
       default_value: "false",
     },
+    // #if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    {
+      name: "NightColorScheme",
+      field_template: "primitive",
+      type_name: "bool",
+      default_value: "false",
+      custom_compare: true,
+      inherited: true,
+    },
+    {
+      name: "NightModeEnabled",
+      field_template: "primitive",
+      type_name: "bool",
+      default_value: "false",
+      custom_compare: true,
+      inherited: true,
+    },
+    // #endif
     // Whether this style contains at least one reference to a (custom)
     // CSS function.
     {

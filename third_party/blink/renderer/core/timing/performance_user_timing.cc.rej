@@ -1,0 +1,42 @@
+diff a/third_party/blink/renderer/core/timing/performance_user_timing.cc b/third_party/blink/renderer/core/timing/performance_user_timing.cc	(rejected hunks)
+@@ -276,10 +276,28 @@ PerformanceMeasure* UserTiming::Measure(ScriptState* script_state,
+     // clock (note that the timestamps of begin / end events are
+     // overridden to use the params passed to the performance.measure
+     // call).
+     TRACE_EVENT("devtools.timeline", "UserTiming::Measure", "sampleTraceId",
+                 hash, "traceId", hash);
++#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_DFX_TRACING)
++    // For ArkWeb: use instant event with duration as debug annotation
++    TRACE_EVENT_INSTANT(
++        "blink.user_timing", nullptr, unsafe_start_time,
++        "startTime", start_time, "callTime", callTime, "traceId", hash,
++        "duration", end_time - start_time,
++        [&](perfetto::EventContext ctx) {
++          if (ctx.ShouldFilterDynamicEventNames()) {
++            ctx.event()->set_name("performance.measure");
++            ctx.AddDebugAnnotation("measureName", measure_name.Utf8());
++          } else {
++            ctx.event()->set_name(measure_name.Utf8());
++          }
++          if (serialized_detail.length()) {
++            ctx.AddDebugAnnotation("detail", serialized_detail);
++          }
++        });
++#else
+     TRACE_EVENT_BEGIN(
+         "blink.user_timing", nullptr, perfetto::Track(hash), unsafe_start_time,
+         "startTime", start_time, "callTime", callTime, "traceId", hash,
+         [&](perfetto::EventContext ctx) {
+           if (ctx.ShouldFilterDynamicEventNames()) {
+@@ -293,10 +311,11 @@ PerformanceMeasure* UserTiming::Measure(ScriptState* script_state,
+             ctx.AddDebugAnnotation("detail", serialized_detail);
+           }
+         });
+     TRACE_EVENT_END("blink.user_timing", perfetto::Track(hash),
+                     unsafe_end_time);
++#endif
+   }
+ 
+   PerformanceMeasure* measure = PerformanceMeasure::Create(
+       script_state, measure_name, start_time, end_time, detail, exception_state,
+       source, navigation_id);

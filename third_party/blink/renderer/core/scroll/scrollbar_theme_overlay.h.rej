@@ -1,0 +1,26 @@
+diff a/third_party/blink/renderer/core/scroll/scrollbar_theme_overlay.h b/third_party/blink/renderer/core/scroll/scrollbar_theme_overlay.h	(rejected hunks)
+@@ -29,10 +29,11 @@
+ #include "base/gtest_prod_util.h"
+ #include "third_party/blink/renderer/core/core_export.h"
+ #include "third_party/blink/renderer/core/scroll/scrollbar_theme.h"
+ 
+ namespace blink {
++struct PaintInfo;
+ 
+ // This scrollbar theme is used to get overlay scrollbar for platforms other
+ // than Mac. Mac's overlay scrollbars are in ScrollbarThemeMac*.
+ class CORE_EXPORT ScrollbarThemeOverlay : public ScrollbarTheme {
+  public:
+@@ -64,11 +65,11 @@ class CORE_EXPORT ScrollbarThemeOverlay : public ScrollbarTheme {
+   gfx::Rect BackButtonRect(const Scrollbar&) const override;
+   gfx::Rect ForwardButtonRect(const Scrollbar&) const override;
+   gfx::Rect TrackRect(const Scrollbar&) const override;
+   gfx::Rect ThumbRect(const Scrollbar&) const override;
+ 
+-  void PaintThumb(GraphicsContext&,
++  void PaintThumb(const PaintInfo&,
+                   const Scrollbar&,
+                   const gfx::Rect&) override;
+ 
+   bool UsesNinePatchThumbResource() const override;
+   gfx::Size NinePatchThumbCanvasSize(const Scrollbar&) const override;

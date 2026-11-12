@@ -1,0 +1,19 @@
+diff a/third_party/blink/renderer/core/scroll/scroll_into_view_util.cc b/third_party/blink/renderer/core/scroll/scroll_into_view_util.cc	(rejected hunks)
+@@ -578,11 +578,16 @@ mojom::blink::ScrollIntoViewParamsPtr CreateScrollIntoViewParams(
+ ScrollOffset GetScrollOffsetToExpose(
+     const ScrollableArea& scroll_area,
+     const PhysicalRect& local_expose_rect,
+     const PhysicalBoxStrut& expose_scroll_margin,
+     const mojom::blink::ScrollAlignment& align_x,
+-    const mojom::blink::ScrollAlignment& align_y) {
++    const mojom::blink::ScrollAlignment& align_y
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++    ,
++    const int32_t scroll_offset_limit
++#endif
++) {
+   // Represent the rect in the container's scroll-origin coordinate.
+   PhysicalRect scroll_origin_to_expose_rect = local_expose_rect;
+   scroll_origin_to_expose_rect.Move(scroll_area.LocalToScrollOriginOffset());
+   // Prevent degenerate cases by giving the visible rect a minimum non-0 size.
+   PhysicalRect non_zero_visible_rect = scroll_area.VisibleScrollSnapportRect();

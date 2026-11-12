@@ -242,6 +242,7 @@ class CORE_EXPORT ScrollableArea : public GarbageCollectedMixin {
   // overflow:overlay might be deprecated soon.
   bool HasOverlayScrollbars() const;
   void SetOverlayScrollbarColorScheme(mojom::blink::ColorScheme);
+
   void RecalculateOverlayScrollbarColorScheme();
   mojom::blink::ColorScheme GetOverlayScrollbarColorScheme() const {
     return static_cast<mojom::blink::ColorScheme>(
@@ -817,6 +818,10 @@ class CORE_EXPORT ScrollableArea : public GarbageCollectedMixin {
   unsigned scrollbar_captured_ : 1;
   unsigned mouse_over_scrollbar_ : 1;
   unsigned has_been_disposed_ : 1;
+
+#if BUILDFLAG(IS_ARKWEB)
+  Member<ScrollableAreaUtils> scrollable_area_utils_;
+#endif
 
   std::optional<mojom::blink::ScrollType> active_smooth_scroll_type_;
 

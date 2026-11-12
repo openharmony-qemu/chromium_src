@@ -1,0 +1,62 @@
+diff a/third_party/blink/renderer/core/svg/svg_resource.h b/third_party/blink/renderer/core/svg/svg_resource.h	(rejected hunks)
+@@ -75,11 +75,11 @@ class SVGResource : public GarbageCollected<SVGResource> {
+   virtual void Load(Document&, CrossOriginAttributeValue) {}
+   virtual void LoadWithoutCSP(Document&) {}
+ 
+   virtual bool IsLoading() const { return false; }
+ 
+-  Element* Target() const { return target_.Get(); }
++  Element* Target() const;
+   // Returns the target's LayoutObject (if target exists and is attached to the
+   // layout tree). Also perform cycle-checking, and may thus return nullptr if
+   // this SVGResourceClient -> SVGResource reference would start a cycle.
+   LayoutSVGResourceContainer* ResourceContainer(SVGResourceClient&) const;
+   // Same as the above, minus the cycle-checking.
+@@ -101,10 +101,11 @@ class SVGResource : public GarbageCollected<SVGResource> {
+ 
+  protected:
+   SVGResource();
+ 
+   void InvalidateCycleCache();
++  virtual void UpdateContentLifecycleForUse() const = 0;
+   void NotifyContentChanged();
+ 
+   Member<Element> target_;
+ 
+   enum CycleState {
+@@ -139,10 +140,11 @@ class LocalSVGResource final : public SVGResource {
+       const QualifiedName& attribute);
+ 
+   void Trace(Visitor*) const override;
+ 
+  private:
++  void UpdateContentLifecycleForUse() const override {}
+   void TargetChanged(const AtomicString& id);
+ 
+   Member<TreeScope> tree_scope_;
+   Member<IdTargetObserver> id_observer_;
+ };
+@@ -161,10 +163,11 @@ class ExternalSVGResourceDocumentContent final
+   void Trace(Visitor*) const override;
+ 
+  private:
+   bool IsLoading() const override;
+   Element* ResolveTarget();
++  void UpdateContentLifecycleForUse() const override;
+ 
+   // SVGResourceDocumentObserver:
+   void ResourceNotifyFinished(SVGResourceDocumentContent*) override;
+   void ResourceContentChanged(SVGResourceDocumentContent*) override;
+ 
+@@ -187,10 +190,11 @@ class ExternalSVGResourceImageContent final : public SVGResource,
+  private:
+   void Prefinalize();
+ 
+   bool IsLoading() const override;
+   Element* ResolveTarget();
++  void UpdateContentLifecycleForUse() const override;
+ 
+   // ImageResourceObserver overrides
+   void ImageNotifyFinished(ImageResourceContent*) override;
+   String DebugName() const override;
+ 

@@ -1,0 +1,64 @@
+diff a/third_party/blink/renderer/core/scroll/scrollable_area.cc b/third_party/blink/renderer/core/scroll/scrollable_area.cc	(rejected hunks)
+@@ -48,10 +48,11 @@
+ #include "third_party/blink/renderer/core/editing/frame_selection.h"
+ #include "third_party/blink/renderer/core/editing/markers/document_marker_controller.h"
+ #include "third_party/blink/renderer/core/event_type_names.h"
+ #include "third_party/blink/renderer/core/frame/local_frame.h"
+ #include "third_party/blink/renderer/core/frame/local_frame_view.h"
++#include "third_party/blink/renderer/core/frame/settings.h"
+ #include "third_party/blink/renderer/core/frame/visual_viewport.h"
+ #include "third_party/blink/renderer/core/html/anchor_element_viewport_position_tracker.h"
+ #include "third_party/blink/renderer/core/input/event_handler.h"
+ #include "third_party/blink/renderer/core/layout/layout_box.h"
+ #include "third_party/blink/renderer/core/layout/layout_embedded_content.h"
+@@ -311,10 +319,18 @@ bool ScrollableArea::SetScrollOffset(const ScrollOffset& offset,
+     std::move(run_scroll_complete_callbacks)
+         .Run(ScrollCompletionMode::kFinished);
+     return false;
+   }
+ 
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  if (!scrollable_area_utils_->GetScrollable()) {
++    std::move(run_scroll_complete_callbacks)
++        .Run(ScrollableArea::ScrollCompletionMode::kFinished);
++    return false;
++  }
++#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
++
+   // If this was not a targeted scroll, the associated scroll-marker-group
+   // should stop pinning its selected scroll-marker.
+   if (!targeted_scroll) {
+     if (ScrollMarkerGroupPseudoElement* marker_group = GetScrollMarkerGroup()) {
+       marker_group->UnPinSelectedMarker();
+@@ -794,11 +817,17 @@ void ScrollableArea::SetScrollbarNeedsPaintInvalidation(
+         CompositorElementId element_id = GetScrollbarElementId(orientation);
+         if (scrollbar->IsSolidColor()) {
+           // This will call SetNeedsDisplay() if the color changes (which is
+           // the only reason for a SolidColorScrollbarLayer to update display).
+           if (compositor->SetScrollbarSolidColor(
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++                  element_id,
++                  SkColor4f::FromColor(SkColorSetA(
++                      scrollable_area_utils_->GetScrollBarColor(), 102)))) {
++#else
+                   element_id, scrollbar->GetTheme().ThumbColor(*scrollbar))) {
++#endif
+             scrollbar->ClearNeedsUpdateDisplay();
+           }
+         } else if (compositor->SetScrollbarNeedsDisplay(element_id)) {
+           scrollbar->ClearNeedsUpdateDisplay();
+         }
+@@ -1298,10 +1327,13 @@ bool ScrollableArea::PerformSnapping(
+ void ScrollableArea::Trace(Visitor* visitor) const {
+   visitor->Trace(scroll_animator_);
+   visitor->Trace(mac_scrollbar_animator_);
+   visitor->Trace(programmatic_scroll_animator_);
+   visitor->Trace(fade_overlay_scrollbars_timer_);
++#if BUILDFLAG(IS_ARKWEB)
++  visitor->Trace(scrollable_area_utils_);
++#endif
+ }
+ 
+ void ScrollableArea::InjectScrollbarGestureScroll(
+     ScrollOffset delta,
+     ui::ScrollGranularity granularity,

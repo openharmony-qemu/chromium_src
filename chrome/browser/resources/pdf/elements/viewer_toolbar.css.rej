@@ -1,0 +1,14 @@
+diff a/chrome/browser/resources/pdf/elements/viewer_toolbar.css b/chrome/browser/resources/pdf/elements/viewer_toolbar.css	(rejected hunks)
+@@ -180,11 +195,11 @@ cr-progress,
+ </if>
+ 
+ <if expr="enable_pdf_ink2">
+ #annotate-controls {
+   align-items: center;
+-  display: flex;
++  display: none;
+   margin-inline-start: 6px;
+ }
+ 
+ #annotate-controls .annotate-button {
+   margin-inline: 0;

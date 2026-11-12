@@ -14,7 +14,11 @@ namespace predictors {
 
 bool IsLoadingPredictorEnabled(Profile* profile) {
   // Disabled for off-the-record. Policy choice, not a technical limitation.
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  return false;
+#else
   return profile && !profile->IsOffTheRecord();
+#endif
 }
 
 bool IsPreconnectAllowed(Profile* profile) {

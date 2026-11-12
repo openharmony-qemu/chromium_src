@@ -1,0 +1,26 @@
+diff a/chrome/browser/renderer_host/chrome_navigation_ui_data.h b/chrome/browser/renderer_host/chrome_navigation_ui_data.h	(rejected hunks)
+@@ -89,16 +89,24 @@ class ChromeNavigationUIData : public content::NavigationUIData {
+   }
+   void set_navigation_initiated_from_sync(bool navigation_initiated_from_sync) {
+     navigation_initiated_from_sync_ = navigation_initiated_from_sync;
+   }
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  const std::string& extra_headers() const { return extra_headers_; }
++#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
++
+  private:
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
+   // Manages the lifetime of optional ExtensionNavigationUIData information.
+   std::unique_ptr<extensions::ExtensionNavigationUIData> extension_data_;
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  std::string extra_headers_ = std::string();
++#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
++
+ #if BUILDFLAG(ENABLE_OFFLINE_PAGES)
+   // Manages the lifetime of optional OfflinePageNavigationUIData information.
+   std::unique_ptr<offline_pages::OfflinePageNavigationUIData>
+       offline_page_data_;
+ #endif

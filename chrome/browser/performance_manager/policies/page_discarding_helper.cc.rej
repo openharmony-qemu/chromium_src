@@ -1,0 +1,29 @@
+diff a/chrome/browser/performance_manager/policies/page_discarding_helper.cc b/chrome/browser/performance_manager/policies/page_discarding_helper.cc	(rejected hunks)
+@@ -10,10 +10,11 @@
+ 
+ #include "base/byte_count.h"
+ #include "base/containers/flat_map.h"
+ #include "base/containers/flat_set.h"
+ #include "base/feature_list.h"
++#include "base/memory/weak_ptr.h"
+ #include "base/metrics/histogram_macros.h"
+ #include "build/build_config.h"
+ #include "chrome/browser/performance_manager/policies/policy_features.h"
+ #include "components/performance_manager/graph/page_node_impl.h"
+ #include "components/performance_manager/public/decorators/tab_page_decorator.h"
+@@ -232,13 +233,13 @@ PageDiscardingHelper::DiscardMultiplePagesImpl(
+     DiscardEligibilityPolicy::AddDiscardAttemptMarker(
+         PageNodeImpl::FromNode(node));
+ 
+     // PageNode may be replaced after discard. TabHandle is not replaced after
+     // discard.
+-    TabPageDecorator::TabHandle* tab_handle;
++    base::WeakPtr<TabPageDecorator::TabHandle> tab_handle;
+     if (!result.first_discard_time.has_value()) {
+-      tab_handle = TabPageDecorator::FromPageNode(node);
++      tab_handle = TabPageDecorator::WeakHandleFromPageNode(node);
+     }
+ 
+     // Do the discard.
+     std::optional<base::ByteCount> estimated_memory_freed =
+         page_discarder_->DiscardPageNode(node, discard_reason);

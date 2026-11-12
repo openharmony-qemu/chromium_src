@@ -1,0 +1,13 @@
+diff a/chrome/browser/safe_browsing/BUILD.gn b/chrome/browser/safe_browsing/BUILD.gn	(rejected hunks)
+@@ -3,10 +3,11 @@
+ # found in the LICENSE file.
+ 
+ import("//components/enterprise/buildflags/buildflags.gni")
+ import("//components/safe_browsing/buildflags.gni")
+ import("//extensions/buildflags/buildflags.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ static_library("safe_browsing") {
+   sources = [
+     "chrome_controller_client.cc",
+     "chrome_controller_client.h",

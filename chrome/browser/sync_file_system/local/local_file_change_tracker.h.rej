@@ -1,0 +1,14 @@
+diff a/chrome/browser/sync_file_system/local/local_file_change_tracker.h b/chrome/browser/sync_file_system/local/local_file_change_tracker.h	(rejected hunks)
+@@ -38,11 +38,11 @@ class WriteBatch;
+ namespace sync_file_system {
+ 
+ // Tracks local file changes for cloud-backed file systems.
+ // All methods must be called on the file_task_runner given to the constructor.
+ // Owned by FileSystemContext.
+-class LocalFileChangeTracker 
++class LocalFileChangeTracker
+     : public storage::FileUpdateObserver,
+       public storage::FileChangeObserver,
+       public base::RefCountedDeleteOnSequence<LocalFileChangeTracker> {
+  public:
+   // |file_task_runner| must be the one where the observee file operations run.

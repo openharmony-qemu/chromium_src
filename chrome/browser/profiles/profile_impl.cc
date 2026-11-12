@@ -1134,6 +1134,9 @@ void ProfileImpl::DestroyOffTheRecordProfile(Profile* otr_profile) {
   CHECK(otr_profile);
   OTRProfileID profile_id = otr_profile->GetOTRProfileID();
   DCHECK(HasOffTheRecordProfile(profile_id));
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  ClearOffTheRecordProfile(otr_profile);
+#endif
   otr_profiles_.erase(profile_id);
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
   // Extensions are only supported on primary OTR profile.
@@ -1487,7 +1490,14 @@ ProfileImpl::GetBrowsingDataRemoverDelegate() {
 // instead of repeating them inside all Profile implementations.
 content::PermissionControllerDelegate*
 ProfileImpl::GetPermissionControllerDelegate() {
+#if BUILDFLAG(ARKWEB_PERMISSION)
+  if (!permission_manager_.get()) {
+    permission_manager_.reset(new AlloyPermissionManager());
+  }
+  return permission_manager_.get();
+#else
   return PermissionManagerFactory::GetForProfile(this);
+#endif  // BUILDFLAG(ARKWEB_PERMISSION)
 }
 
 content::ClientHintsControllerDelegate*

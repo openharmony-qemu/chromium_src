@@ -1,0 +1,14 @@
+diff a/chrome/browser/prefs/BUILD.gn b/chrome/browser/prefs/BUILD.gn	(rejected hunks)
+@@ -7,11 +7,11 @@ import("//components/enterprise/buildflags/buildflags.gni")
+ import("//components/safe_browsing/buildflags.gni")
+ import("//components/services/on_device_translation/buildflags/features.gni")
+ import("//extensions/buildflags/buildflags.gni")
+ import("//pdf/features.gni")
+ 
+-assert(is_win || is_mac || is_linux || is_chromeos || is_android)
++assert(is_win || is_mac || is_linux || is_chromeos || is_android || is_ohos)
+ 
+ source_set("prefs") {
+   sources = [
+     "browser_prefs.h",
+     "chrome_command_line_pref_store.h",

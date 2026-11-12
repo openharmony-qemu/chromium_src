@@ -1,0 +1,15 @@
+diff a/chrome/browser/supervised_user/supervised_user_browser_utils.h b/chrome/browser/supervised_user/supervised_user_browser_utils.h	(rejected hunks)
+@@ -50,11 +50,12 @@ std::string GetAccountGivenName(Profile& profile);
+ // Terminates user session in case of status mismatch in order to prevent
+ // supervision incidents. Relevant on Chrome OS platform that has the concept
+ // of the user.
+ void AssertChildStatusOfTheUser(Profile* profile, bool is_child);
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || \
++    BUILDFLAG(IS_OHOS)
+ // Returns the html content of the reauthentication interstitial for blocked
+ // sites. This interstitial is associated with the given NavigationHandle.
+ std::string CreateReauthenticationInterstitialForBlockedSites(
+     content::NavigationHandle& navigation_handle,
+     FilteringBehaviorReason block_reason);

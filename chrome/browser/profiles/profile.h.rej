@@ -1,0 +1,41 @@
+diff a/chrome/browser/profiles/profile.h b/chrome/browser/profiles/profile.h	(rejected hunks)
+@@ -504,10 +504,15 @@ class Profile : public content::BrowserContext {
+   jni_zero::ScopedJavaLocalRef<jobject> GetJavaObject() const;
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
+   void NotifyOffTheRecordProfileCreated(Profile* off_the_record);
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  bool HasOTRProfile();
++  Profile* GetOTRProfile();
++#endif
++
+  protected:
+   // Creates an OffTheRecordProfile which points to this Profile.
+   static std::unique_ptr<Profile> CreateOffTheRecordProfile(
+       Profile* parent,
+       const OTRProfileID& otr_profile_id);
+@@ -532,11 +537,23 @@ class Profile : public content::BrowserContext {
+   // TODO(40233408): Remove this when migration is completed.
+   // True if the guest profile uses BrowserProfileType::kGuest.
+   bool new_guest_profile_impl_;
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  void ClearOffTheRecordProfile(Profile* otr_profile) {
++    if (off_the_record_ == otr_profile) {
++      off_the_record_ = nullptr;
++    }
++  }
++#endif
++
+  private:
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  Profile* off_the_record_ = nullptr;
++#endif
++
+   bool restored_last_session_ = false;
+ 
+   // Used to prevent the notification that this Profile is destroyed from
+   // being sent twice.
+   bool sent_destroyed_notification_ = false;

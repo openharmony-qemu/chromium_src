@@ -1,0 +1,13 @@
+diff a/chrome/browser/signin/signin_util.h b/chrome/browser/signin/signin_util.h	(rejected hunks)
+@@ -245,10 +245,10 @@ bool IsValidAccessPointForHistoryOptinScreen(
+ bool ShouldShowAvatarSyncPromo(Profile* profile);
+ 
+ // Show a simple error message with an "OK" button to the user, displaying
+ // `error_message_id`.
+ void ShowErrorDialogWithMessage(Browser* browser, int error_message_id);
+-#endif  // BUILDFLAG(IS_LINUX) ||  BUILDFLAG(IS_MAC) ||  BUILDFLAG(IS_WIN)
++#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+ 
+ }  // namespace signin_util
+ 
+ #endif  // CHROME_BROWSER_SIGNIN_SIGNIN_UTIL_H_

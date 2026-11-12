@@ -504,7 +504,8 @@
 #include "chrome/browser/policy/messaging_layer/util/manual_test_heartbeat_event_factory.h"
 #endif
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(IS_OHOS)
 #include "chrome/browser/browser_switcher/browser_switcher_service_factory.h"
 #include "chrome/browser/enterprise/signin/enterprise_signin_service_factory.h"
 #include "chrome/browser/enterprise/signin/oidc_authentication_signin_interceptor_factory.h"
@@ -652,6 +653,14 @@
 
 #if BUILDFLAG(USE_NSS_CERTS)
 #include "chrome/browser/net/nss_service_factory.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+#include "cef/ohos_cef_ext/libcef/browser/content_settings/oh_host_content_settings_observer_factory.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+#include "cef/ohos_cef_ext/libcef/browser/predictors/loading_predictor_factory.h"
 #endif
 
 void AddProfilesExtraParts(ChromeBrowserMainParts* main_parts) {
@@ -1127,11 +1136,14 @@ void ChromeBrowserMainExtraPartsProfiles::
 #if !BUILDFLAG(IS_ANDROID)
   media_router::AccessCodeCastSinkServiceFactory::GetInstance();
 #endif
+  // todo #if !(BUILDFLAG(IS_OHOS) && BUILDFLAG(ARKWEB_ASAN)) ||
+  // BUILDFLAG(OHOS_ENABLE_MEDIA_ROUTER)
   media_router::ChromeLocalPresentationManagerFactory::GetInstance();
   media_router::ChromeMediaRouterFactory::GetInstance();
 #if !BUILDFLAG(IS_ANDROID)
   media_router::MediaRouterUIServiceFactory::GetInstance();
 #endif
+// #endif
 #if BUILDFLAG(IS_ANDROID)
   MediaDrmOriginIdManagerFactory::GetInstance();
 #endif

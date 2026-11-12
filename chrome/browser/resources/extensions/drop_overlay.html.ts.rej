@@ -1,0 +1,16 @@
+diff a/chrome/browser/resources/extensions/drop_overlay.html.ts b/chrome/browser/resources/extensions/drop_overlay.html.ts	(rejected hunks)
+@@ -8,11 +8,13 @@ import type {ExtensionsDropOverlayElement} from './drop_overlay.js';
+ 
+ export function getHtml(this: ExtensionsDropOverlayElement) {
+   // clang-format off
+   return html`<!--_html_template_start_-->
+ <div id="container">
+-  <cr-icon icon="cr:extension"></cr-icon>
++  <div class="icon-container">
++    <cr-icon icon="cr:extension-outline"></cr-icon>
++  </div>
+   <div id="text">$i18n{dropToInstall}</div>
+ </div>
+ <!--_html_template_end_-->`;
+   // clang-format on
+ }

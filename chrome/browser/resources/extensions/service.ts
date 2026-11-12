@@ -346,6 +346,11 @@ export class Service implements ServiceInterface {
     window.open(url);
   }
 
+  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  openUrlEx(url: string, type: number): void {
+    chrome.developerPrivate.openUrl(url, type);
+  }
+
   reloadItem(id: string): Promise<void> {
     return chrome.developerPrivate
         .reload(id, {failQuietly: true, populateErrorForUnpacked: true})

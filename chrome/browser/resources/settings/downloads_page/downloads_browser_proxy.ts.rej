@@ -1,0 +1,14 @@
+diff a/chrome/browser/resources/settings/downloads_page/downloads_browser_proxy.ts b/chrome/browser/resources/settings/downloads_page/downloads_browser_proxy.ts	(rejected hunks)
+@@ -34,11 +34,11 @@ export class DownloadsBrowserProxyImpl implements DownloadsBrowserProxy {
+ 
+   resetAutoOpenFileTypes() {
+     chrome.send('resetAutoOpenFileTypes');
+   }
+ 
+-  // <if expr="is_chromeos">
++  // <if expr="is_chromeos  or is_ohos">
+   getDownloadLocationText(path: string) {
+     return sendWithPromise('getDownloadLocationText', path);
+   }
+   // </if>
+ 

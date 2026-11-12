@@ -1,0 +1,85 @@
+diff a/chrome/browser/printing/print_browsertest.cc b/chrome/browser/printing/print_browsertest.cc	(rejected hunks)
+@@ -1613,17 +1613,17 @@ IN_PROC_BROWSER_TEST_F(PrintExtensionBrowserTest,
+   sticky_settings->StoreAppState(extension_printer_settings);
+ 
+   content::WebContents* web_contents =
+       browser()->tab_strip_model()->GetActiveWebContents();
+   ASSERT_TRUE(web_contents);
+-  TestPrintViewManager print_view_manager(web_contents);
+-  PrintViewManager::SetReceiverImplForTesting(&print_view_manager);
++  TestPrintViewManager* print_view_manager =
++      TestPrintViewManager::CreateForWebContents(web_contents);
+ 
+   PrintAndWaitUntilPreviewIsReady();
+ 
+   const mojom::PrintPagesParamsPtr& snooped_params =
+-      print_view_manager.snooped_params();
++      print_view_manager->snooped_params();
+   ASSERT_TRUE(snooped_params);
+   EXPECT_EQ(gfx::Size(kDefaultPdfDpi, kDefaultPdfDpi),
+             snooped_params->params->dpi);
+   EXPECT_EQ(kLetterPdfPhysicalSize, snooped_params->params->page_size);
+   // This must be in sync with
+@@ -1660,17 +1660,17 @@ IN_PROC_BROWSER_TEST_F(
+   sticky_settings->StoreAppState(extension_printer_settings);
+ 
+   content::WebContents* web_contents =
+       browser()->tab_strip_model()->GetActiveWebContents();
+   ASSERT_TRUE(web_contents);
+-  TestPrintViewManager print_view_manager(web_contents);
+-  PrintViewManager::SetReceiverImplForTesting(&print_view_manager);
++  TestPrintViewManager* print_view_manager =
++      TestPrintViewManager::CreateForWebContents(web_contents);
+ 
+   PrintAndWaitUntilPreviewIsReady();
+ 
+   const mojom::PrintPagesParamsPtr& snooped_params =
+-      print_view_manager.snooped_params();
++      print_view_manager->snooped_params();
+   ASSERT_TRUE(snooped_params);
+   EXPECT_EQ(gfx::Size(kDefaultPdfDpi, kDefaultPdfDpi),
+             snooped_params->params->dpi);
+   EXPECT_EQ(kIsoA4PdfPhysicalSize, snooped_params->params->page_size);
+   // The default printable area is platform-dependent, so just check that the
+@@ -1696,19 +1696,16 @@ IN_PROC_BROWSER_TEST_F(PrintBrowserTest, DISABLED_PrintNup) {
+   ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), url));
+ 
+   content::WebContents* web_contents =
+       browser()->tab_strip_model()->GetActiveWebContents();
+   ASSERT_TRUE(web_contents);
+-  TestPrintViewManager print_view_manager(web_contents);
+-  PrintViewManager::SetReceiverImplForTesting(&print_view_manager);
++  TestPrintViewManager::CreateForWebContents(web_contents);
+ 
+   // Override print parameters to do N-up, specify 4 pages per sheet.
+   const PrintParams kParams{.pages_per_sheet = 4};
+   PrintAndWaitUntilPreviewIsReady(kParams);
+ 
+-  PrintViewManager::SetReceiverImplForTesting(nullptr);
+-
+   // With 4 pages per sheet requested by `GetPrintParams()`, a 7 page input
+   // will result in 2 pages in the print preview.
+   EXPECT_EQ(rendered_page_count(), 2u);
+ }
+ 
+@@ -1720,19 +1717,16 @@ IN_PROC_BROWSER_TEST_F(SitePerProcessPrintBrowserTest, DISABLED_PrintNup) {
+   ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), url));
+ 
+   content::WebContents* web_contents =
+       browser()->tab_strip_model()->GetActiveWebContents();
+   ASSERT_TRUE(web_contents);
+-  TestPrintViewManager print_view_manager(web_contents);
+-  PrintViewManager::SetReceiverImplForTesting(&print_view_manager);
++  TestPrintViewManager::CreateForWebContents(web_contents);
+ 
+   // Override print parameters to do N-up, specify 4 pages per sheet.
+   const PrintParams kParams{.pages_per_sheet = 4};
+   PrintAndWaitUntilPreviewIsReady(kParams);
+ 
+-  PrintViewManager::SetReceiverImplForTesting(nullptr);
+-
+   // With 4 pages per sheet requested by `GetPrintParams()`, a 7 page input
+   // will result in 2 pages in the print preview.
+   EXPECT_EQ(rendered_page_count(), 2u);
+ }
+ 

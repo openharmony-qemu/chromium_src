@@ -1,0 +1,16 @@
+diff a/chrome/browser/sync/BUILD.gn b/chrome/browser/sync/BUILD.gn	(rejected hunks)
+@@ -3,12 +3,13 @@
+ # found in the LICENSE file.
+ 
+ import("//chrome/common/features.gni")
+ import("//components/supervised_user/buildflags.gni")
+ import("//extensions/buildflags/buildflags.gni")
++import("//arkweb/build/features/features.gni")
+ 
+-assert(is_win || is_mac || is_linux || is_chromeos || is_android)
++assert(is_win || is_mac || is_linux || is_chromeos || is_android || is_ohos)
+ 
+ source_set("sync") {
+   sources = [
+     "account_bookmark_sync_service_factory.cc",
+     "account_bookmark_sync_service_factory.h",

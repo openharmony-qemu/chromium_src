@@ -49,6 +49,8 @@ declare global {
     'change-page': CustomEvent<ChangePageDetail>;
     'change-zoom': CustomEvent<ChangeZoomDetail>;
     'navigate': CustomEvent<NavigateDetail>;
+    // arkweb_pdf: extends for bookmark clicking.
+    'click-bookmark':CustomEvent<string>;
   }
 }
 
@@ -85,7 +87,8 @@ export class ViewerBookmarkElement extends CrLitElement {
     };
   }
 
-  accessor bookmark: Bookmark = {title: '', children: []};
+  // arkweb_pdf: Remove dest info. Move them to native side accroding to id.
+  accessor bookmark: Bookmark = {title: '', id:'', children: []};
   accessor depth: number = 0;
   protected accessor childrenShown_: boolean = false;
 
@@ -112,25 +115,12 @@ export class ViewerBookmarkElement extends CrLitElement {
   }
 
   protected onClick_() {
-    if (this.bookmark.page != null) {
-      if (this.bookmark.zoom != null) {
-        this.fire('change-zoom', {zoom: this.bookmark.zoom});
-      }
-      if (this.bookmark.x != null && this.bookmark.y != null) {
-        this.fire('change-page-and-xy', {
-          page: this.bookmark.page,
-          x: this.bookmark.x,
-          y: this.bookmark.y,
-          origin: ChangePageOrigin.BOOKMARK,
-        });
-      } else {
-        this.fire(
-            'change-page',
-            {page: this.bookmark.page, origin: ChangePageOrigin.BOOKMARK});
-      }
-    } else if (this.bookmark.uri != null) {
-      this.fire('navigate', {uri: this.bookmark.uri, newtab: true});
+    if (!this.bookmark.id) {
+      console.error('Bookmark ID is missing');
+      return;
     }
+    // arkweb_pdf: Now bookmark has no any information about the destination.
+    this.fire('click-bookmark', this.bookmark.id);
   }
 
   private onEnter_(e: KeyboardEvent) {

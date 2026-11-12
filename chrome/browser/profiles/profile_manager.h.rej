@@ -1,0 +1,36 @@
+diff a/chrome/browser/profiles/profile_manager.h b/chrome/browser/profiles/profile_manager.h	(rejected hunks)
+@@ -369,10 +369,19 @@ class ProfileManager : public Profile::Delegate {
+   // last-active time to now. If the profile has a primary account, this also
+   // sets its last-active time to now.
+   // Public so that `ProfileManagerAndroid` can call it.
+   void SetProfileAsLastUsed(Profile* last_active);
+ 
++#if BUILDFLAG(ARKWEB_COOKIE)
++  bool GetPersistSessionCookies();
++  void SetPersistSessionCookies(bool persist_session_cookies);
++#endif
++
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  void OnOtrProfileAdded(Profile* profile);
++#endif // ARKWEB_ARKWEB_EXTENSIONS
++
+  protected:
+   // Creates a new profile by calling into the profile's profile creation
+   // method. Virtual so that unittests can return a TestingProfile instead
+   // of the Profile's result. Returns null if creation fails.
+   virtual std::unique_ptr<Profile> CreateProfileHelper(
+@@ -619,10 +628,14 @@ class ProfileManager : public Profile::Delegate {
+   base::RepeatingTimer zombie_metrics_timer_;
+ 
+   // Controls whether to initialize some services. Only disabled for testing.
+   bool do_final_services_init_ = true;
+ 
++#if BUILDFLAG(ARKWEB_COOKIE)
++  bool persist_session_cookies_ = false;
++#endif
++
+   // TODO(chrome/browser/profiles/OWNERS): Usage of this in profile_manager.cc
+   // should likely be turned into DCHECK_CURRENTLY_ON(BrowserThread::UI) for
+   // consistency with surrounding code in the same file but that wasn't trivial
+   // enough to do as part of the mass refactor CL which introduced
+   // |thread_checker_|, ref. https://codereview.chromium.org/2907253003/#msg37.

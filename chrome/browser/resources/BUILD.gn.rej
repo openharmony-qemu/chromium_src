@@ -1,0 +1,19 @@
+diff a/chrome/browser/resources/BUILD.gn b/chrome/browser/resources/BUILD.gn	(rejected hunks)
+@@ -114,15 +114,15 @@ group("resources") {
+       "//chrome/browser/resources/media/mei_preload:component",
+       "//components/privacy_sandbox/privacy_sandbox_attestations/preload:component",
+     ]
+   }
+ 
+-  if (is_win || is_mac || is_linux || is_chromeos || is_desktop_android) {
++  if (is_win || is_mac || is_linux || is_chromeos || is_desktop_android || is_ohos) {
+     public_deps += [ "discards:resources" ]
+   }
+ 
+-  if (is_win || is_mac || is_linux) {
++  if (is_win || is_mac || is_linux || is_ohos) {
+     public_deps += [
+       "app_home:resources",
+       "app_settings:resources",
+       "browser_switch:resources",
+       "on_device_translation_internals:resources",

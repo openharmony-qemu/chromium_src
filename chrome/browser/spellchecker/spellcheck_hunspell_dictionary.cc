@@ -10,6 +10,7 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/containers/span.h"
 #include "base/files/file_util.h"
@@ -277,8 +278,13 @@ GURL SpellcheckHunspellDictionary::GetDictionaryURL() {
   std::string bdict_file = dictionary_file_.path.BaseName().MaybeAsASCII();
   DCHECK(!bdict_file.empty());
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  static const char kDownloadServerUrl[] =
+      "https://x.x.x";
+#else
   static const char kDownloadServerUrl[] =
       "https://redirector.gvt1.com/edgedl/chrome/dict/";
+#endif
 
   return GURL(std::string(kDownloadServerUrl) +
               base::ToLowerASCII(bdict_file));

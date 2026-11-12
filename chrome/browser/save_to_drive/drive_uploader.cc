@@ -50,8 +50,13 @@ constexpr char kDeveloperKey[] = "X-Developer-Key";
 
 constexpr std::string_view kMetadataContentType =
     "Content-Type: application/json; charset=UTF-8";
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr std::string_view kParentFolderUrl =
+    "https://x.x.x.x";
+#else
 constexpr std::string_view kParentFolderUrl =
     "https://www.googleapis.com/drive/v3beta/files";
+#endif
 
 constexpr net::NetworkTrafficAnnotationTag kTrafficAnnotationTag =
     net::DefineNetworkTrafficAnnotation("save_to_drive", R"(

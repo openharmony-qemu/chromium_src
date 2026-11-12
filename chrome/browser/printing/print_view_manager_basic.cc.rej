@@ -1,0 +1,14 @@
+diff a/chrome/browser/printing/print_view_manager_basic.cc b/chrome/browser/printing/print_view_manager_basic.cc	(rejected hunks)
+@@ -42,11 +42,11 @@ void PrintViewManagerBasic::BindPrintManagerHost(
+   if (!print_manager)
+     return;
+   print_manager->BindReceiver(std::move(receiver), rfh);
+ }
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
+ void PrintViewManagerBasic::PdfWritingDone(int page_count) {
+   pdf_writing_done_callback().Run(page_count);
+ }
+ #endif
+ 

@@ -1,0 +1,15 @@
+diff a/chrome/browser/resources/pdf/pdf_viewer.html b/chrome/browser/resources/pdf/pdf_viewer.html	(rejected hunks)
+@@ -61,11 +61,12 @@ import {AnnotationMode} from './constants.js';
+         .docLength="${this.docLength_}"
+         .strings="${this.strings}"
+         @change-page="${this.onChangePage_}"
+         @change-page-and-xy="${this.onChangePageAndXy_}"
+         @navigate="${this.onNavigate_}"
+-        @save-attachment="${this.onSaveAttachment_}">
++        @save-attachment="${this.onSaveAttachment_}"
++        @click-bookmark="${this.onClickBookmark_}">
+     </viewer-pdf-sidenav>
+   </div>
+   <div id="main">
+     <div id="scroller">
+       <div id="sizer">

@@ -1,0 +1,13 @@
+diff a/chrome/browser/printing/print_view_manager.cc b/chrome/browser/printing/print_view_manager.cc	(rejected hunks)
+@@ -235,10 +235,11 @@ void PrintViewManager::PrintPreviewDone() {
+     // PrintPreviewAlmostDone() usually already calls this. Calling it again
+     // will likely be a no-op, but do it anyway to reset the state for sure.
+     MaybeUnblockScriptedPreviewRPH();
+     scripted_print_preview_rph_ = nullptr;
+   }
++  ClearPrintPreviewSettings();
+   print_preview_state_ = NOT_PREVIEWING;
+   print_preview_rfh_ = nullptr;
+   for (auto& observer : GetTestObservers()) {
+     observer.OnPrintPreviewDone();
+   }

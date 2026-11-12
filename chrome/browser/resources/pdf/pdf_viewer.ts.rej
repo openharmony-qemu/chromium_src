@@ -1,0 +1,28 @@
+diff a/chrome/browser/resources/pdf/pdf_viewer.ts b/chrome/browser/resources/pdf/pdf_viewer.ts	(rejected hunks)
+@@ -38,10 +38,11 @@ import type {Bookmark} from './bookmark_type.js';
+ import type {BrowserApi} from './browser_api.js';
+ import type {Attachment, DocumentMetadata, ExtendedKeyEvent, Point} from './constants.js';
+ // <if expr="enable_pdf_ink2">
+ import {AnnotationMode} from './constants.js';
+ // </if>
++import {ScreenWidth} from './constants.js';
+ import {FittingType, FormFieldFocusType} from './constants.js';
+ // <if expr="enable_pdf_save_to_drive">
+ import {SaveToDriveBubbleRequestType, SaveToDriveState} from './constants.js';
+ // </if> enable_pdf_save_to_drive
+ import type {MessageData} from './controller.js';
+@@ -475,11 +544,13 @@ export class PdfViewerElement extends PdfViewerBaseElement {
+     super.disconnectedCallback();
+   }
+   // </if> enable_pdf_ink2 or enable_pdf_save_to_drive
+ 
+   getBackgroundColor(): number {
+-    return BACKGROUND_COLOR;
++    /* arkweb_pdf parses URL to extract background color parameter */
++    const backgroundColor = getBackgroundColorFromURL(this.originalUrl);
++    return backgroundColor;
+   }
+ 
+   setPluginSrc(plugin: HTMLEmbedElement) {
+     plugin.src = this.browserApi!.getStreamInfo().streamUrl;
+   }

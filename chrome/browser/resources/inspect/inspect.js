@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import {assert} from 'chrome://resources/js/assert.js';
+import {assert} from 'arkweb://resources/js/assert.js';
 
 function $(id) {
   // Disable getElementById restriction here, because this UI uses non valid
@@ -77,6 +77,15 @@ function removeChildren(element_id) {
   element.textContent = '';
 }
 
+// ARKWEB_DEVTOOLS begin
+function hideChildren(elementId) {
+  const element = $(elementId);
+  if (element) {
+    element.hidden = true;
+  }
+}
+// ARKWEB_DEVTOOLS end
+
 function onload() {
   const tabContents = document.querySelectorAll('#content > div');
   for (let i = 0; i !== tabContents.length; i++) {
@@ -97,12 +106,21 @@ function onload() {
   initSettings();
   sendCommand('init-ui');
   initStaleDataWatch();
+  // ARKWEB_DEVTOOLS begin
+  const hiddenElements = ['devices', 'apps', 'shared-storage-worklets', 'other',
+    'tab-devices', 'tab-apps', 'tab-shared-storage-worklets', 'tab-other', 'tab-remote-debugging'];
+  for (let j = 0; j !== hiddenElements.length; j++) {
+    hideChildren(hiddenElements[j]);
+  }
+  // ARKWEB_DEVTOOLS end
 }
 
 function onHashChange() {
   const hash = window.location.hash.slice(1).toLowerCase();
   if (!selectTab(hash)) {
-    selectTab('devices');
+    // ARKWEB_DEVTOOLS begin
+    selectTab('pages');
+    // ARKWEB_DEVTOOLS end
   }
 }
 
@@ -1021,6 +1039,12 @@ function updateRemoteDebuggingEnabled(enabled, allowed, hide, address) {
   if (tab) {
     tab.hidden = false;
   }
+
+  // ARKWEB_DEVTOOLS begin
+  if (tab) {
+    tab.hidden = true;
+  }
+  // ARKWEB_DEVTOOLS end
 
   const checkbox = $('remote-debugging-enabled');
   checkbox.checked = !!enabled;

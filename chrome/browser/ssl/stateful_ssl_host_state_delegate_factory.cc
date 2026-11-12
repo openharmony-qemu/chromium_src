@@ -10,13 +10,22 @@
 #include "chrome/browser/profiles/profile.h"
 #include "components/security_interstitials/content/stateful_ssl_host_state_delegate.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/chrome/browser/ssl/arkweb_ssl_host_state_delegate.h"
+#endif
+
 namespace {
 
 std::unique_ptr<KeyedService> BuildStatefulSSLHostStateDelegate(
     content::BrowserContext* context) {
   Profile* profile = Profile::FromBrowserContext(context);
+#if BUILDFLAG(IS_ARKWEB_EXT)
+  return std::make_unique<chrome::ArkWebSSLHostStateDelegate>(
+      profile, HostContentSettingsMapFactory::GetForProfile(profile));
+#else  
   return std::make_unique<StatefulSSLHostStateDelegate>(
       profile, HostContentSettingsMapFactory::GetForProfile(profile));
+#endif      
 }
 
 }  // namespace

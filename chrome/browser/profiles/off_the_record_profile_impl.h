@@ -161,6 +161,9 @@ class OffTheRecordProfileImpl : public Profile {
 
   // Number of main frame navigations done by this profile.
   unsigned int main_frame_navigations_ = 0;
+#if BUILDFLAG(ARKWEB_PERMISSION)
+  std::unique_ptr<content::PermissionControllerDelegate> permission_manager_;
+#endif  // ARKWEB_PERMISSION
 };
 
 #endif  // CHROME_BROWSER_PROFILES_OFF_THE_RECORD_PROFILE_IMPL_H_

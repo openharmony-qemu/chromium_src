@@ -1,0 +1,27 @@
+diff a/chrome/browser/resources/extensions/runtime_host_permissions.html.ts b/chrome/browser/resources/extensions/runtime_host_permissions.html.ts	(rejected hunks)
+@@ -14,11 +14,11 @@ ${!this.enableEnhancedSiteControls ? html`
+     <div id="section-heading">
+       <div id="section-heading-heading">
+         <span id="section-heading-text">
+           $i18n{hostPermissionsHeading}
+         </span>
+-        <a class="link-icon-button"
++        <a hidden=true class="link-icon-button"
+             aria-label="$i18n{permissionsLearnMoreLabel}"
+             href="$i18n{hostPermissionsLearnMoreLink}" target="_blank"
+             @click="${this.onLearnMoreClick_}">
+           <cr-icon icon="cr:help-outline"></cr-icon>
+         </a>
+@@ -51,11 +51,11 @@ ${!this.enableEnhancedSiteControls ? html`
+     <div id="new-section-heading">
+       <div id="new-section-heading-title">
+         <span id="new-section-heading-text">
+             $i18n{newHostPermissionsHeading}
+         </span>
+-        <a class="link-icon-button"
++        <a hidden=true class="link-icon-button"
+             aria-label="$i18n{permissionsLearnMoreLabel}"
+             href="$i18n{hostPermissionsLearnMoreLink}" target="_blank"
+             @click="${this.onLearnMoreClick_}">
+           <cr-icon icon="cr:help-outline"></cr-icon>
+         </a>

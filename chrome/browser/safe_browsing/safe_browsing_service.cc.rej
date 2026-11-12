@@ -1,0 +1,16 @@
+diff a/chrome/browser/safe_browsing/safe_browsing_service.cc b/chrome/browser/safe_browsing/safe_browsing_service.cc	(rejected hunks)
+@@ -412,10 +412,14 @@ void SafeBrowsingServiceImpl::SetDatabaseManagerForTest(
+ }
+ 
+ void SafeBrowsingServiceImpl::Start() {
+   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  return;
++#endif
++
+   if (!enabled_) {
+     enabled_ = true;
+     services_delegate_->StartOnUIThread(
+         g_browser_process->shared_url_loader_factory(), GetV4ProtocolConfig());
+   }

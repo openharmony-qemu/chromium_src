@@ -1,0 +1,52 @@
+diff a/chrome/browser/resources/settings/downloads_page/downloads_page.ts b/chrome/browser/resources/settings/downloads_page/downloads_page.ts	(rejected hunks)
+@@ -44,11 +44,11 @@ export class SettingsDownloadsPageElement extends
+       autoOpenDownloads_: {
+         type: Boolean,
+         value: false,
+       },
+ 
+-      // <if expr="is_chromeos">
++      // <if expr="is_chromeos or is_ohos">
+       /**
+        * The download location string that is suitable to display in the UI.
+        */
+       downloadLocation_: String,
+       // </if>
+@@ -65,22 +65,22 @@ export class SettingsDownloadsPageElement extends
+         },
+       },
+     };
+   }
+ 
+-  // <if expr="is_chromeos">
++  // <if expr="is_chromeos or is_ohos">
+   static get observers() {
+     return [
+       'handleDownloadLocationChanged_(prefs.download.default_directory.value)',
+     ];
+   }
+   // </if>
+ 
+ 
+   declare private autoOpenDownloads_: boolean;
+ 
+-  // <if expr="is_chromeos">
++  // <if expr="is_chromeos or is_ohos">
+   declare private downloadLocation_: string;
+   // </if>
+ 
+   declare private downloadBubblePartialViewControlledByPref_: boolean;
+ 
+@@ -100,11 +100,11 @@ export class SettingsDownloadsPageElement extends
+ 
+   private selectDownloadLocation_() {
+     this.browserProxy_.selectDownloadLocation();
+   }
+ 
+-  // <if expr="is_chromeos">
++  // <if expr="is_chromeos or is_ohos">
+   private handleDownloadLocationChanged_() {
+     this.browserProxy_
+         .getDownloadLocationText(
+             this.getPref<string>('download.default_directory').value)
+         .then(text => {

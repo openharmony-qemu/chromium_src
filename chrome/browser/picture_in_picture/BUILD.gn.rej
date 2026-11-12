@@ -1,0 +1,14 @@
+diff a/chrome/browser/picture_in_picture/BUILD.gn b/chrome/browser/picture_in_picture/BUILD.gn	(rejected hunks)
+@@ -2,11 +2,11 @@
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//chrome/common/features.gni")
+ 
+-assert(is_win || is_mac || is_linux || is_chromeos || is_android)
++assert(is_win || is_mac || is_linux || is_chromeos || is_android || is_ohos)
+ 
+ source_set("picture_in_picture") {
+   sources = [
+     "picture_in_picture_bounds_cache.h",
+     "picture_in_picture_window_manager.h",

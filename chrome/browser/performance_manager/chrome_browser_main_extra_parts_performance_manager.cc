@@ -328,6 +328,11 @@ void ChromeBrowserMainExtraPartsPerformanceManager::CreatePoliciesAndDecorators(
         std::make_unique<performance_manager::policies::KeepAliveDSEPolicy>());
   }
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  graph->PassToGraph(
+      std::make_unique<performance_manager::policies::BackgroundTaskPolicy>());
+#endif
+
 #if !BUILDFLAG(IS_ANDROID)
   if (base::FeatureList::IsEnabled(
           performance_manager::features::kTransientKeepAlivePolicy)) {

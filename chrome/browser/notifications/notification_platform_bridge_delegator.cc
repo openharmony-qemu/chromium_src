@@ -12,6 +12,7 @@
 #include "base/check.h"
 #include "base/functional/bind.h"
 #include "base/metrics/histogram_functions.h"
+#include "base/strings/string_util.h"
 #include "build/build_config.h"
 #include "build/buildflag.h"
 #include "chrome/browser/browser_process.h"
@@ -28,6 +29,10 @@
 
 #if BUILDFLAG(IS_WIN)
 #include "chrome/browser/notifications/notification_platform_bridge_win.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+#include "arkweb/chromium_ext/chrome/browser/notifications/notification_platform_bridge_delegator_for_include.cc"
 #endif
 
 namespace {

@@ -1,0 +1,16 @@
+diff a/chrome/browser/passage_embeddings/page_embeddings_service.cc b/chrome/browser/passage_embeddings/page_embeddings_service.cc
+--- a/chrome/browser/passage_embeddings/page_embeddings_service.cc
++++ b/chrome/browser/passage_embeddings/page_embeddings_service.cc
+@@ -21,11 +21,11 @@ passage_embeddings::PassagePriority ConvertToPassagePriority(
+     PageEmbeddingsService::Priority priority) {
+   switch (priority) {
+     case PageEmbeddingsService::kUserBlocking:
+       return passage_embeddings::kUserInitiated;
+ 
+-    case PageEmbeddingsService::kUrgent:
++    case PageEmbeddingsService::kHighPriority:
+       return passage_embeddings::kUrgent;
+ 
+     case PageEmbeddingsService::kDefault:
+       return passage_embeddings::kPassive;
+ 

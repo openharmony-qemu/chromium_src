@@ -1,0 +1,38 @@
+diff a/chrome/browser/resources/extensions/mv2_deprecation_panel.html.ts b/chrome/browser/resources/extensions/mv2_deprecation_panel.html.ts	(rejected hunks)
+@@ -18,11 +18,11 @@ export function getHtml(this: ExtensionsMv2DeprecationPanelElement) {
+     <cr-icon aria-hidden="true" icon="extensions-icons:my_extensions"
+         class="panel-header-icon">
+     </cr-icon>
+     <div class="panel-header-text">
+       <h3 id="headingText">${this.headerString_}</h3>
+-      <div class="cr-secondary-text" .innerHTML="${this.getSubtitleString_()}">
++      <div class="cr-secondary-text" hidden=true .innerHTML="${this.getSubtitleString_()}">
+       </div>
+     </div>
+     <cr-button class="header-button" @click="${this.onDismissButtonClick_}">
+       $i18n{mv2DeprecationPanelDismissButton}
+     </cr-button>
+@@ -60,21 +60,21 @@ export function getHtml(this: ExtensionsMv2DeprecationPanelElement) {
+       </div>`)}
+ 
+     <cr-action-menu id="actionMenu">
+       <button class="dropdown-item" id="findAlternativeAction"
+           @click="${this.onFindAlternativeExtensionActionClick_}"
+-          ?hidden="${!this.showExtensionFindAlternativeAction_()}">
++          hidden=true>
+         Find alternatives
+       </button>
+       <button class="dropdown-item" id="keepAction"
+           @click="${this.onKeepExtensionActionClick_}"
+           ?hidden="${!this.showExtensionKeepAction_()}">
+         $i18n{mv2DeprecationPanelKeepForNowButton}
+       </button>
+       <button class="dropdown-item" id="removeAction"
+           @click="${this.onRemoveExtensionActionClicked_}"
+-          ?hidden="${!this.showExtensionRemoveAction_()}">
++          hidden=true>
+         $i18n{mv2DeprecationPanelRemoveExtensionButton}
+       </button>
+     </cr-action-menu>
+   </div>
+ </div>

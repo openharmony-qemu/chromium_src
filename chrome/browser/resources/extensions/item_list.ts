@@ -69,6 +69,12 @@ export class ExtensionsItemListElement extends ExtensionsItemListElementBase {
       filteredApps_: {type: Array},
 
       /**
+       * List of extensions disabled by the blocklist flow that should be
+       * visible in the blocklist review panel.
+       */
+      blacklistedExtensions_: {type: Array},
+
+      /**
        * List of potentially unsafe extensions that should be visible in the
        * review panel.
        */
@@ -82,6 +88,19 @@ export class ExtensionsItemListElement extends ExtensionsItemListElementBase {
 
       shownAppsCount_: {type: Number},
       shownExtensionsCount_: {type: Number},
+
+      /**
+       * Indicates whether the blocklist review panel is shown.
+       */
+      showBlacklistReviewPanel_: {type: Boolean},
+
+      /**
+       * Indicates if the blocklist review panel has ever been shown.
+       */
+      blacklistReviewPanelShown_: {
+        type: Boolean,
+        state: true,
+      },
 
       /**
        * Indicates whether the review panel is shown.
@@ -151,6 +170,8 @@ export class ExtensionsItemListElement extends ExtensionsItemListElementBase {
     }
 
     if (changedProperties.has('extensions')) {
+      this.blacklistedExtensions_ = this.computeBlacklistedExtensions_();
+      this.showBlacklistReviewPanel_ = this.computeShowBlacklistReviewPanel_();
       this.unsafeExtensions_ = this.computeUnsafeExtensions_();
       this.showSafetyCheckReviewPanel_ =
           this.computeShowSafetyCheckReviewPanel_();

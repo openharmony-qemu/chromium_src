@@ -1266,7 +1266,7 @@ Periksa sandi Anda kapan saja di <ph name="GOOGLE_PASSWORD_MANAGER" />.</transla
 <translation id="1949584741547056205">Jawaban Cepat</translation>
 <translation id="1949980990364952348">Nama aplikasi</translation>
 <translation id="1951012854035635156">Asisten</translation>
-<translation id="1951823516285577843">Cari alternatif</translation>
+<translation id="1951823516285577843">Temukan alternatif</translation>
 <translation id="1953626242273481999">Izinkan proses debug jarak jauh?</translation>
 <translation id="1953796913175502363">Siapkan profil kerja Anda</translation>
 <translation id="1954597385941141174">Situs dapat meminta untuk terhubung ke perangkat USB</translation>
@@ -9666,6 +9666,7 @@ Simpan file kunci Anda di tempat yang aman. Anda akan membutuhkannya untuk membu
 <translation id="8338427544764842461">Grup tab Anda disimpan di sini dan diperbarui di semua perangkat yang digunakan untuk login</translation>
 <translation id="8338952601723052325">Situs web pengembang</translation>
 <translation id="8339288417038613756">Ukuran tampilan dan teks</translation>
+<translation id="8339542793910400648">Muatan didekompresi</translation>
 <translation id="833986336429795709">Untuk membuka link ini, pilih aplikasi</translation>
 <translation id="8340547030807793004">Tindakan lainnya untuk <ph name="DEVICE" /></translation>
 <translation id="8341804784147620576">Tampilkan Pintasan Penelusuran</translation>

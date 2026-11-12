@@ -1,0 +1,61 @@
+diff a/chrome/app/resources/chromium_strings_de.xtb b/chrome/app/resources/chromium_strings_de.xtb	(rejected hunks)
+@@ -103,10 +103,11 @@
+ <translation id="2190166659037789668">Fehler bei der Prüfung auf Updates: <ph name="UPDATE_CHECK_ERROR" />.</translation>
+ <translation id="2199210295479376551">Konto aus Chromium entfernen</translation>
+ <translation id="2210502920229141283">Mit dem erweiterten Safe Browsing in Chromium für iOS bist du unterwegs besser geschützt</translation>
+ <translation id="2210682093923538346">Gefährliche Website. Chromium hat Berechtigungen für Benachrichtigungen entfernt.</translation>
+ <translation id="2236949375853147973">Meine Aktivitäten</translation>
++<translation id="2238104961394611930">Ein • Die Quelle der Erweiterung kann nicht bestätigt werden</translation>
+ <translation id="2238130810669087193">Wenn du auf allen deinen Geräten auf deine Adressen und andere Daten zugreifen möchtest, melde dich in Chromium an. Diese Adresse wird in deinem Google-Konto gespeichert, nachdem du dich angemeldet hast.</translation>
+ <translation id="2241627712206172106">Bei gemeinsam genutzten Computern können die verschiedenen Personen separat surfen und Chromium jeweils nach ihren Wünschen einrichten.</translation>
+ <translation id="2283803047247799269">Diesen Tab mit der Bildersuche durchsuchen</translation>
+ <translation id="2287771843518581140">{NUM_TABS,plural, =1{Chromium empfiehlt, den Tab zu pausieren, der deinen Browser verlangsamt}other{Chromium empfiehlt, die Tabs zu pausieren, die deinen Browser verlangsamen}}</translation>
+ <translation id="2307973900865360088">Im Dock behalten</translation>
+@@ -227,10 +228,11 @@ Diese Aktion wirkt sich nicht auf Lesezeichen, gespeicherte Passwörter und den
+ <translation id="3509308970982693815">Schließe bitte alle Chromium-Fenster und versuche es erneut.</translation>
+ <translation id="3522404737534491619">Wenn du dein Fenster teilen möchtest, musst du in den Systemeinstellungen die Bildschirmaufzeichnung für Chromium zulassen</translation>
+ <translation id="3530103706039034513"><ph name="EXISTING_USER" /> ist bereits angemeldet.  Wenn du deine Browsingaktivitäten getrennt halten möchtest, melde dich mit <ph name="USER_EMAIL_ADDRESS" /> in deinem eigenen Profil in Chromium an.</translation>
+ <translation id="3561853857681580870">Wenn du deinen Bildschirm teilen möchtest, musst du in den Systemeinstellungen die Bildschirmaufzeichnung für Chromium zulassen.</translation>
+ <translation id="3597003331831379823">Die Einrichtung konnte nicht mit erhöhten Berechtigungen ausgeführt werden. <ph name="METAINSTALLER_ERROR" /></translation>
++<translation id="360610872308168435">Der Browser empfiehlt Ihnen, diese Erweiterung zu überprüfen</translation>
+ <translation id="3639635944603682591">Die Browserdaten dieser Person werden von diesem Gerät gelöscht. Wenn du die Daten wiederherstellen möchtest, melde dich als <ph name="USER_EMAIL" /> in Chromium an.</translation>
+ <translation id="364817392622123556">{COUNT,plural, =0{Ein neues Update für Chromium ist verfügbar und wird installiert, sobald du den Browser neu startest.}=1{Ein neues Update für Chromium ist verfügbar und wird installiert, sobald du den Browser neu startest. Dein Inkognitofenster wird nicht wieder geöffnet.}other{Ein neues Update für Chromium ist verfügbar und wird installiert, sobald du den Browser neu startest. Deine # Inkognitofenster werden nicht wieder geöffnet.}}</translation>
+ <translation id="3651803019964686660">Wenn du eine Nummer von <ph name="ORIGIN" /> an dein Android-Smartphone senden möchtest, musst du dich auf beiden Geräten in Chromium anmelden.</translation>
+ <translation id="3667616615096815454">Installation nicht möglich. Die App ist dem Server nicht bekannt.</translation>
+ <translation id="3675854891107786059">Verwende deine <ph name="BEGIN_LINK" />eigene Passphrase<ph name="END_LINK" /> für die Verschlüsselung aller Chromium-Daten in deinem Google-Konto. Zahlungsmethoden und Adressen bei Google Pay werden nicht verschlüsselt. Der Chromium-Browserverlauf wird nicht synchronisiert.</translation>
+@@ -338,10 +340,11 @@ Diese Aktion wirkt sich nicht auf Lesezeichen, gespeicherte Passwörter und den
+ <translation id="4759645701210484457">Chromium fragen</translation>
+ <translation id="4771701986670315895">Du hast diese Website in letzter Zeit nicht besucht. Chromium hat „<ph name="PERMISSION_1" />“, „<ph name="PERMISSION_2" />“ und <ph name="COUNT" /> weitere Berechtigungen entfernt.</translation>
+ <translation id="4788777615168560705">Chromium kann deine Passwörter nicht prüfen. Versuche es in 24 Stunden noch einmal oder <ph name="BEGIN_LINK" />prüfe die Passwörter in deinem Google-Konto<ph name="END_LINK" />.</translation>
+ <translation id="479167709087336770">Es wird dieselbe Rechtschreibprüfung wie in der Google Suche verwendet. Der in den Browser eingegebene Text wird an Google gesendet. Du kannst dies jederzeit in den Einstellungen ändern.</translation>
+ <translation id="4814736265800133385">Chromium ohne Konto verwenden</translation>
++<translation id="483739396253020185">Der Browser kann die Herkunft dieser Erweiterung nicht überprüfen und sie ist möglicherweise nicht sicher. Entfernen Sie sie aus dem Browser, damit sie Ihre Daten auf den von Ihnen besuchten Websites – einschließlich Ihrer persönlichen Daten – nicht mehr einsehen oder ändern kann.</translation>
+ <translation id="4888717733111232871">Eingangsregel für die Zulassung von mDNS-Verkehr in Chromium</translation>
+ <translation id="4893347770495441059">Neu starten, um &amp;Chromium zu aktualisieren</translation>
+ <translation id="4918844574251943176">Bild kopiert</translation>
+ <translation id="4943838377383847465">Chromium wird im Hintergrundmodus ausgeführt.</translation>
+ <translation id="494490797786467921">Klicken, um Dialogfeld zur Anmeldung in Chromium zu schließen</translation>
+@@ -512,10 +515,11 @@ Einige Funktionen stehen möglicherweise nicht zur Verfügung. Gib bitte ein and
+ <translation id="6857782730669500492">Chromium – <ph name="PAGE_TITLE" /></translation>
+ <translation id="6859580922007887573">Drücke die Tabulatortaste zum Fortfahren</translation>
+ <translation id="6862030660799253820">Dieses Bild mit der Bildersuche durchsuchen</translation>
+ <translation id="6873893289264747459">Chromium hat festgestellt, dass „<ph name="EXTENSION_NAME" />“ Malware enthält</translation>
+ <translation id="6877155553248388166">Rechte untere Ecke des Suchbereichs: rechts <ph name="RIGHT" /> %, unten <ph name="BOTTOM" /> %</translation>
++<translation id="6885534934768077023">Hinweis: Browser kann nicht verhindern, dass Erweiterungen Ihren Browserverlauf aufzeichnen. Schalten Sie diese Option aus, um diese Erweiterung im Privatmodus zu deaktivieren.</translation>
+ <translation id="6896758677409633944">Kopieren</translation>
+ <translation id="6901631050894301805">Chromium als Standardbrowser festlegen und an die Taskleiste anheften</translation>
+ <translation id="6909503629704372277">&amp;Chromium-Profile verwalten</translation>
+ <translation id="6934579572334859869">Bildersuche nach Infos zu diesem Bild fragen</translation>
+ <translation id="6964305034639999644">Link in Chromium-Inkognitofenster öffnen</translation>
+@@ -570,10 +574,11 @@ Chromium kann deine Einstellungen nicht wiederherstellen.</translation>
+ <translation id="7517403744065880907">Deine Passwörter und andere Daten werden in deinem Google-Konto gespeichert und verwendet, wenn du in Chromium angemeldet bist. <ph name="LEARN_MORE" /></translation>
+ <translation id="751935028865900641">Websites sollten wie erwartet funktionieren. Wenn du alle Chromium-Fenster schließt, wirst du auf den meisten Websites abgemeldet – mit Ausnahme deines Google-Kontos, falls du in Chromium angemeldet bist.</translation>
+ <translation id="753534427205733210">{0,plural, =1{Chromium wird in einer Minute neu gestartet}other{Chromium wird in # Minuten neu gestartet}}</translation>
+ <translation id="7565444033145385702">Erlaube Chromium zum Schutz deiner Daten, Berechtigungen von Websites zu entfernen, die du in letzter Zeit nicht besucht hast.</translation>
+ <translation id="7583399374488819119"><ph name="COMPANY_NAME" />-Installationsprogramm</translation>
++<translation id="7597668698051545254">Aus • Die Quelle der Erweiterung kann nicht bestätigt werden</translation>
+ <translation id="761356813943268536">Chromium verwendet deine Kamera und dein Mikrofon.</translation>
+ <translation id="7617377681829253106">Chromium ist jetzt noch besser</translation>
+ <translation id="7622753900276619808">Du hast jetzt Zugriff auf weitere Funktionen in Chromium</translation>
+ <translation id="7649070708921625228">Hilfe</translation>
+ <translation id="7658239707568436148">Abbrechen</translation>

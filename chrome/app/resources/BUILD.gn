@@ -34,6 +34,13 @@ grit_strings("platform_locale_settings") {
   }
 
   defines = chrome_grit_defines
+
+  #ifdef arkweb_i18n
+  if (arkweb_i18n) {
+    locales_with_pseudolocales += extra_locales
+  }
+
+  #endif
   outputs = [ "grit/platform_locale_settings.h" ]
   locales = locales_with_pseudolocales
   output_dir = "$root_gen_dir/chrome"

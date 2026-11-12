@@ -1,0 +1,28 @@
+diff a/chrome/app/resources/BUILD.gn b/chrome/app/resources/BUILD.gn	(rejected hunks)
+@@ -5,18 +5,26 @@
+ import("//build/config/chrome_build.gni")
+ import("//build/config/chromeos/ui_mode.gni")
+ import("//build/config/locales.gni")
+ import("//chrome/common/features.gni")
+ import("//tools/grit/grit_rule.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ assert(!is_ios, "Chromium/iOS shouldn't use anything in //chrome")
+ assert(!is_fuchsia, "Fuchsia shouldn't use anything in //chrome")
+ 
+ grit_strings("locale_settings") {
+   source = "locale_settings.grd"
+   defines = chrome_grit_defines
+   output_dir = "$root_gen_dir/chrome"
++
++  #ifdef arkweb_i18n
++  if (arkweb_i18n) {
++    locales = all_chrome_locales + extra_locales
++  }
++
++  #endif
+   outputs = [ "grit/locale_settings.h" ]
+ }
+ 
+ grit_strings("platform_locale_settings") {
+   if (is_win) {

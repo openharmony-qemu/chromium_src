@@ -1,0 +1,69 @@
+diff a/chrome/app/generated_resources.grd b/chrome/app/generated_resources.grd	(rejected hunks)
+@@ -3836,11 +3850,11 @@ are declared in tools/grit/grit_args.gni.
+           Pin to Taskbar
+         </message>
+       </if>
+ 
+       <!-- Bluetooth Device Credentials (i.e. PIN/Passkey) dialog -->
+-      <if expr="is_win or is_linux or is_chromeos">
++      <if expr="is_win or is_linux or is_chromeos or is_ohos">
+         <message name="IDS_BLUETOOTH_DEVICE_CREDENTIALS_TITLE" desc="Title of the Bluetooth device credentials prompt dialog.">
+           Device Credentials
+         </message>
+         <!--
+           NOTE: As per Bluetooth spec. v4.2 [Vol 3, Part C] (section 3.2.3.2):
+@@ -5289,10 +5303,13 @@ are declared in tools/grit/grit_args.gni.
+         The newest version of "<ph name="EXTENSION_NAME">$1<ex>Gmail Checker</ex></ph>" has been disabled because it requires more permissions.
+       </message>
+       <message name="IDS_EXTENSION_PERMISSIONS_PROMPT_TITLE" desc="Titlebar of the extension or app permissions prompt. Asks the user if they want to grant the permissions to the particular extension or app.">
+         "<ph name="EXTENSION_NAME">$1<ex>Gmail Checker</ex></ph>" has requested additional permissions.
+       </message>
++      <message name="IDS_EXTENSION_PERMISSIONS_PROMPT_TITLE_V2" desc="Titlebar of the extension or app permissions prompt. Asks the user if they want to grant the permissions to the particular extension or app.">
++        "<ph name="EXTENSION_NAME">$1<ex>Gmail Checker</ex></ph>" has requested additional permissions
++      </message>
+       <message name="IDS_EXTENSION_REMOTE_INSTALL_PROMPT_TITLE" desc="Titlebar of the extension or app installation prompt. Asks the user if they want to enable a particular extension or app that was installed remotely.">
+         Enable "<ph name="EXTENSION_NAME">$1<ex>Gmail Checker</ex></ph>"?
+       </message>
+       <message name="IDS_EXTENSION_REPAIR_PROMPT_TITLE" desc="Titlebar of the extension or app installation prompt. Asks the user if they want to update the extension/app.">
+         Repair "<ph name="EXTENSION_NAME">$1<ex>Gmail Checker</ex></ph>"?
+@@ -5369,10 +5386,13 @@ are declared in tools/grit/grit_args.gni.
+         It can now:
+       </message>
+       <message name="IDS_EXTENSION_PROMPT_WANTS_ACCESS_TO" desc="Second line in the content area of the extension or app permissions prompt. Note that the exact wording is important. This should mean that the extension _wants to_ access the listed privileges, but not necessarily that it will or needs to. This message appeared because the user must approve new permissions of the extension or app.">
+         It could:
+       </message>
++      <message name="IDS_EXTENSION_PROMPT_WANTS_ACCESS_TO_V2" desc="Second line in the content area of the extension or app permissions prompt. Note that the exact wording is important. This should mean that the extension _wants to_ access the listed privileges, but not necessarily that it will or needs to. This message appeared because the user must approve new permissions of the extension or app." meaning="V2">
++        It could:
++      </message>
+       <message name="IDS_EXTENSION_PROMPT_CAN_ACCESS" desc="Second line in the content area of the extension or app permissions view dialog. Note that the exact wording is important. This should mean that the extension _can now_ access the listed privileges, because it has already been installed. This message appeared because the user must approve new permissions of the extension or app.">
+         It can:
+       </message>
+       <message name="IDS_EXTENSION_PROMPT_GRANT_PERMISSIONS_CHECKBOX" desc="Label next to the checkbox in the extension or app installation prompt, which indicates if a user wants to grant access to all requested sites.">
+         Grant access to all requested sites.
+@@ -5697,11 +5717,11 @@ are declared in tools/grit/grit_args.gni.
+         </message>
+         <message name="IDS_EXTENSION_PROMPT_WARNING_NEW_TAB_PAGE_OVERRIDE" desc="Permission string for extensions that override the new tab page.">
+           Replace the page you see when opening a new tab
+         </message>
+         <message name="IDS_EXTENSION_PROMPT_WARNING_TRANSIENT_BACKGROUND" desc="Permission string for transient background permission.">
+-          Run in the background when requested by a cooperating native application
++          Run in the background when requested by a cooperating native app
+         </message>
+         <message name="IDS_EXTENSION_PROMPT_WARNING_ENTERPRISE_DEVICE_ATTRIBUTES" desc="Permission string for enterprise device attributes permission.">
+           See device information, such as its serial number or asset ID
+         </message>
+         <message name="IDS_EXTENSION_PROMPT_WARNING_ENTERPRISE_KIOSK_INPUT" desc="Permission string for enterprise kiosk input permission.">
+@@ -6421,10 +6447,13 @@ Keep your key file in a safe place. You will need it to create new versions of y
+         This extension is not listed in the <ph name="IDS_EXTENSION_WEB_STORE_TITLE">$1<ex>Chrome Web Store</ex></ph> and may have been added without your knowledge.
+       </message>
+       <message name="IDS_EXTENSIONS_ADDED_WITHOUT_KNOWLEDGE_LEARN_MORE" desc="Text read by screen readers for a link labeled 'Learn more' that links to a Help article about disabled extensions.">
+         Learn more about disabled extensions.
+       </message>
++      <message name="IDS_EXTENSIONS_NO_PASSED_SECURITY_COMPLIANCE_VERIFICATION" desc="Text shown in the extensions settings is used to notify the user that the extension has been automatically disabled due to failing the security compliance check.">
++        This extension failed the security compliance check and has been automatically disabled.
++      </message>
+ 
+       <!-- Manifest V2 Deprecation Dialogs -->
+       <message name="IDS_EXTENSIONS_MANIFEST_V2_DEPRECATION_KEEP_DIALOG_TITLE" desc="The title of the dialog asking the user if they want to keep the extension installed, which is affected by the Manifest V2 deprecation">
+         Keep "<ph name="EXTENSION_NAME">$1<ex>Google Translate</ex></ph>"?
+       </message>

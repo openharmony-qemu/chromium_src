@@ -1,0 +1,10 @@
+diff a/third_party/blink/web_tests/inspector-protocol/css/css-set-scope-text-reattach.js b/third_party/blink/web_tests/inspector-protocol/css/css-set-scope-text-reattach.js
+--- a/third_party/blink/web_tests/inspector-protocol/css/css-set-scope-text-reattach.js
++++ b/third_party/blink/web_tests/inspector-protocol/css/css-set-scope-text-reattach.js
+@@ -51,5 +51,6 @@
+ })()
+ `);
+     },
+   ]);
+ })
++

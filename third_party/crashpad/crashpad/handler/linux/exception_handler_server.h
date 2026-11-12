@@ -22,6 +22,7 @@
 #include <memory>
 #include <unordered_map>
 
+#include "arkweb/build/features/features.h"
 #include "util/file/file_io.h"
 #include "util/linux/exception_handler_protocol.h"
 #include "util/misc/address_types.h"
@@ -176,12 +177,22 @@ class ExceptionHandlerServer {
   bool InstallClientSocket(ScopedFileHandle socket, Event::Type type);
   bool UninstallClientSocket(Event* event);
   bool ReceiveClientMessage(Event* event);
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  bool HandleCrashDumpRequest(
+      const ucred& creds,
+      const ExceptionHandlerProtocol::ClientInformation& client_info,
+      VMAddress requesting_thread_stack_address,
+      int client_sock,
+      bool multiple_clients,
+      const ExceptionHandlerProtocol::ClientToServerMessage& message);
+#else
   bool HandleCrashDumpRequest(
       const ucred& creds,
       const ExceptionHandlerProtocol::ClientInformation& client_info,
       VMAddress requesting_thread_stack_address,
       int client_sock,
       bool multiple_clients);
+#endif
 
   std::unordered_map<int, std::unique_ptr<Event>> clients_;
   std::unique_ptr<Event> shutdown_event_;

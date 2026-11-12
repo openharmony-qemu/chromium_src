@@ -6,6 +6,7 @@ import("//build/config/locales.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//testing/test.gni")
 import("//tools/grit/grit_rule.gni")
+import("//arkweb/build/features/features.gni")
 
 config("internal_config") {
   if (is_clang) {

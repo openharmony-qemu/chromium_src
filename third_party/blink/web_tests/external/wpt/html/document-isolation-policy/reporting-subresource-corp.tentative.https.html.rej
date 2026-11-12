@@ -1,0 +1,22 @@
+diff a/third_party/blink/web_tests/external/wpt/html/document-isolation-policy/reporting-subresource-corp.tentative.https.html b/third_party/blink/web_tests/external/wpt/html/document-isolation-policy/reporting-subresource-corp.tentative.https.html	(rejected hunks)
+@@ -130,10 +130,20 @@ const CASES = [
+     check: (reports, contextUrl, url) => {
+       checkReport(reports[0], contextUrl, url, 'reporting', '');
+       checkReport(reports[1], contextUrl, url, 'enforce', '');
+     }
+   },
++  {
++    name: 'blocked due to DIP (with fragment)',
++    url: `${REMOTE_ORIGIN}/common/square.png#fragment`,
++    expected_count: 2,
++    check: (reports, contextUrl, url) => {
++      const strippedUrl = url.split('#')[0];
++      checkReport(reports[0], contextUrl, strippedUrl, 'reporting', '');
++      checkReport(reports[1], contextUrl, strippedUrl, 'enforce', '');
++    }
++  },
+   {
+     name: 'blocked during redirect',
+     url: `${ORIGIN}/common/redirect.py?location=` +
+       encodeURIComponent(`${REMOTE_ORIGIN}/common/square.png`),
+     expected_count: 2,

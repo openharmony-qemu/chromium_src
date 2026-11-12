@@ -210,9 +210,19 @@ class SignalHandler {
   static void HandleOrReraiseSignal(int signo,
                                     siginfo_t* siginfo,
                                     void* context) {
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+    LOG(INFO)
+        << "crashpad SignalHandler::HandleOrReraiseSignal, received signo = "
+        << signo;
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
     if (handler_->first_chance_handler_ &&
         handler_->first_chance_handler_(
             signo, siginfo, static_cast<ucontext_t*>(context))) {
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+      LOG(INFO) << "crashpad SignalHandler::HandleOrReraiseSignal, "
+                   "first_chance_handler_ handled, return, signo = "
+                << signo;
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
       return;
     }
 
@@ -222,11 +232,6 @@ class SignalHandler {
     if (!handler_->disabled_.test_and_set()) {
       handler_->HandleCrash(signo, siginfo, context);
       handler_->WakeThreads();
-      if (handler_->last_chance_handler_ &&
-          handler_->last_chance_handler_(
-              signo, siginfo, static_cast<ucontext_t*>(context))) {
-        return;
-      }
     } else {
       // Processes on Android normally have several chained signal handlers that
       // co-operate to report crashes. e.g. WebView will have this signal
@@ -314,7 +319,12 @@ class LaunchAtCrashHandler : public SignalHandler {
   }
 
   void HandleCrashImpl() override {
+#if BUILDFLAG(ARKWEB_CRASHPAD)
     ScopedPrSetPtracer set_ptracer(sys_getpid(), /* may_log= */ false);
+    const std::string process_type = "browser";
+    const std::string error_reason = "browser exited";
+    const std::string bundle_name = CrashpadDfx::GetProcessBundleName();
+#endif
 
     pid_t pid = fork();
     if (pid < 0) {
@@ -328,13 +338,31 @@ class LaunchAtCrashHandler : public SignalHandler {
                const_cast<char* const*>(argv_.data()),
                const_cast<char* const*>(envp_.data()));
       } else {
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+        int ret = execv(argv_[0], const_cast<char* const*>(argv_.data()));
+        if (ret != 0) {
+          LOG(ERROR) << "crashpad LaunchAtCrashHandler::HandleCrashImpl, child "
+                        "process execv failed, execv bin = "
+                     << argv_[0] << ", errno = " << errno;
+        }
+#else
         execv(argv_[0], const_cast<char* const*>(argv_.data()));
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
       }
       _exit(EXIT_FAILURE);
     }
 
     int status;
     waitpid(pid, &status, 0);
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#if defined(REPORT_SYS_EVENT)
+    CrashpadDfx::ProcessCrashReport(
+        process_type, g_happen_time, bundle_name, error_reason);
+#endif  // defined(REPORT_SYS_EVENT)
+    LOG(INFO) << "crashpad LaunchAtCrashHandler::HandleCrashImpl, parent "
+                 "process wait child process exit, status = "
+              << status << ", child process pid = " << pid;
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
   }
 
  private:
@@ -502,7 +530,8 @@ bool CrashpadClient::StartHandler(
       std::move(client_sock), handler_pid, &unhandled_signals_);
 }
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
 // static
 bool CrashpadClient::GetHandlerSocket(int* sock, pid_t* pid) {
   auto signal_handler = RequestCrashDumpHandler::Get();
@@ -607,7 +636,7 @@ bool CrashpadClient::InitializeSignalStackForThread() {
   return true;
 }
 #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) ||
-        // BUILDFLAG(IS_CHROMEOS)
+        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(OHOS)
 
 #if BUILDFLAG(IS_ANDROID)
 
@@ -788,5 +817,6 @@ void CrashpadClient::SetCrashLoopBefore(uint64_t crash_loop_before_time) {
   request_crash_dump_handler->SetCrashLoopBefore(crash_loop_before_time);
 }
 #endif
+
 
 }  // namespace crashpad

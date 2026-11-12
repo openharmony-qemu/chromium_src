@@ -1,0 +1,10 @@
+diff a/third_party/blink/web_tests/http/tests/inspector-protocol/third_party/blink/web_tests/http/tests/inspector-protocol/target/target-setAutoAttach-destroy-UAF-expected.txt b/third_party/blink/web_tests/http/tests/inspector-protocol/third_party/blink/web_tests/http/tests/inspector-protocol/target/target-setAutoAttach-destroy-UAF-expected.txt
+--- a/third_party/blink/web_tests/http/tests/inspector-protocol/third_party/blink/web_tests/http/tests/inspector-protocol/target/target-setAutoAttach-destroy-UAF-expected.txt
++++ b/third_party/blink/web_tests/http/tests/inspector-protocol/third_party/blink/web_tests/http/tests/inspector-protocol/target/target-setAutoAttach-destroy-UAF-expected.txt
+@@ -0,0 +1,5 @@
++Tests that iterator invalidation in AutoAttacherDestroyed is fixed.
++Enabled auto attach on browser target.
++Created 3 targets. Throttles are now deferred.
++Called setAutoAttach again on browser target.
++All targets loaded successfully.
+\ No newline at end of file

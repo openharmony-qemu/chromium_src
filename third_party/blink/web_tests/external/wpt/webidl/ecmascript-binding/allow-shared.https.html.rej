@@ -1,0 +1,32 @@
+diff a/third_party/blink/web_tests/external/wpt/webidl/ecmascript-binding/allow-shared.https.html b/third_party/blink/web_tests/external/wpt/webidl/ecmascript-binding/allow-shared.https.html	(rejected hunks)
+@@ -5,11 +5,11 @@
+ <script src="/resources/testharness.js"></script>
+ <script src="/resources/testharnessreport.js"></script>
+ <script src="/common/sab.js"></script>
+ <script>
+   "use strict";
+- 
++
+   test(t => {
+     // Create a standard SharedArrayBuffer (safe even without COOP/COEP headers)
+     const sab = createBuffer('SharedArrayBuffer', 128);
+     const arr = new Uint8Array(sab);
+     arr.fill(42);
+@@ -17,13 +17,13 @@
+     new ImageDecoder({
+       data: arr,
+       // We don't really need encoding to succeed, just for argument conversion before the native call.
+       type: "invalid"
+     });
+- 
++
+     assert_throws_js(TypeError, () => {
+       new MIDIMessageEvent('message', { data: arr });
+     }, "An attempt to pass a view backed by a shared array buffer should throw");
+- 
++
+   }, "APIs without [AllowShared] do not accept SharedArrayBuffer-backed views with pre-existing wrapper");
+- 
++
+ </script>
+\ No newline at end of file

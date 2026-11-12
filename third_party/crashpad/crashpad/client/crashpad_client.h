@@ -23,6 +23,7 @@
 
 #include <stdint.h>
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file_path.h"
 #include "build/build_config.h"
 #include "util/file/file_io.h"
@@ -36,7 +37,8 @@
 #elif BUILDFLAG(IS_WIN)
 #include <windows.h>
 #include "util/win/scoped_handle.h"
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 #include <signal.h>
 #include <ucontext.h>
 #endif
@@ -465,7 +467,7 @@ class CrashpadClient {
   //!     FirstChanceHandler and crashes the current process.
   //!
   //! \param[in] message A message to be logged before crashing.
-  [[noreturn]] static void CrashWithoutDump(const std::string& message);
+  static void CrashWithoutDump(const std::string& message);
 
   //! \brief The type for custom handlers installed by clients.
   using FirstChanceHandler = bool (*)(int, siginfo_t*, ucontext_t*);
@@ -856,7 +858,8 @@ class CrashpadClient {
   std::wstring ipc_pipe_;
   ScopedKernelHANDLE handler_start_thread_;
   ScopedVectoredExceptionRegistration vectored_handler_;
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   std::set<int> unhandled_signals_;
 #endif  // BUILDFLAG(IS_APPLE)
 };

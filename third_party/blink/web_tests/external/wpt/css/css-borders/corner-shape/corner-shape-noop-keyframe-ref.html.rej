@@ -1,0 +1,20 @@
+diff a/third_party/blink/web_tests/external/wpt/css/css-borders/corner-shape/corner-shape-noop-keyframe-ref.html b/third_party/blink/web_tests/external/wpt/css/css-borders/corner-shape/corner-shape-noop-keyframe-ref.html
+--- a/third_party/blink/web_tests/external/wpt/css/css-borders/corner-shape/corner-shape-noop-keyframe-ref.html
++++ b/third_party/blink/web_tests/external/wpt/css/css-borders/corner-shape/corner-shape-noop-keyframe-ref.html
+@@ -0,0 +1,16 @@
++<!DOCTYPE html>
++<meta charset="UTF-8" />
++<title>corner-shape interpolation - noop</title>
++<link
++  rel="help"
++  href="https://drafts.csswg.org/css-borders-4/#corner-shape-interpolation"
++/>
++<style>
++  div {
++    width: 100px;
++    height: 100px;
++    background: green;
++    border-radius: 50px;
++  }
++</style>
++<div></div>

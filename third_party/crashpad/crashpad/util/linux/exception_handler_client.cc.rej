@@ -1,0 +1,35 @@
+diff a/third_party/crashpad/crashpad/util/linux/exception_handler_client.cc b/third_party/crashpad/crashpad/util/linux/exception_handler_client.cc	(rejected hunks)
+@@ -17,21 +17,32 @@
+ #include <errno.h>
+ #include <signal.h>
+ #include <sys/prctl.h>
+ #include <sys/wait.h>
+ #include <unistd.h>
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(ARKWEB_CRASHPAD_FORK)
++#include <sys/syscall.h>
++#endif
+ 
+-#include "base/check_op.h"
++#include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
++#if BUILDFLAG(ARKWEB_CRASHPAD)
++#include "arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/crashpad_dfx.h"
++#include "info/fatal_message.h"
++#endif
+ #include "base/logging.h"
+ #include "base/posix/eintr_wrapper.h"
+ #include "build/build_config.h"
+ #include "third_party/lss/lss.h"
+ #include "util/file/file_io.h"
+ #include "util/linux/ptrace_broker.h"
+ #include "util/linux/socket.h"
+ #include "util/misc/from_pointer_cast.h"
+ #include "util/posix/signals.h"
++#if BUILDFLAG(ARKWEB_CRASHPAD_FORK)
++#include "base/process/process_handle.h"
++#endif
+ 
+ #if BUILDFLAG(IS_ANDROID)
+ #include <android/api-level.h>
+ #endif
+ 

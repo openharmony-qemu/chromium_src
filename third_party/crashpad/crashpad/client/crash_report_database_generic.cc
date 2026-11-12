@@ -22,6 +22,7 @@
 #include <tuple>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/logging.h"
 #include "build/build_config.h"
@@ -31,6 +32,9 @@
 #include "util/misc/initialization_state_dcheck.h"
 #include "util/misc/memory_sanitizer.h"
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+extern std::string g_crash_dump_path_suffix;
+#endif
 namespace crashpad {
 
 namespace {
@@ -328,8 +332,12 @@ OperationStatus CrashReportDatabaseGeneric::FinishedWritingCrashReport(
     std::unique_ptr<NewReport> report,
     UUID* uuid) {
   INITIALIZATION_STATE_DCHECK_VALID(initialized_);
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  base::FilePath path =
+      base::FilePath("/data/storage/el2/log/crashpad/pending/")
+          .Append(g_crash_dump_path_suffix);
+#endif
 
-  base::FilePath path = ReportPath(report->ReportID(), kPending);
   ScopedLockFile lock_file;
   if (!lock_file.ResetAcquire(path)) {
     return kBusyError;

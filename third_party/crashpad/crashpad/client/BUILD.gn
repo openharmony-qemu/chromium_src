@@ -13,7 +13,10 @@
 # limitations under the License.
 
 import("../build/crashpad_buildconfig.gni")
-
+import("//arkweb/build/features/features.gni")
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
 crashpad_static_library("client") {
   sources = [
     "crashpad_client.h",
@@ -60,14 +63,16 @@ crashpad_static_library("client") {
     }
   }
 
-  if (crashpad_is_linux || crashpad_is_android) {
+  if (crashpad_is_linux || crashpad_is_android || crashpad_is_ohos) {
     sources += [
       "crashpad_client_linux.cc",
       "simulate_crash_linux.h",
     ]
+
+    sources += arkweb_crashpad_client
   }
 
-  if (crashpad_is_linux || crashpad_is_android || crashpad_is_fuchsia) {
+  if (crashpad_is_linux || crashpad_is_android || crashpad_is_fuchsia || crashpad_is_ohos) {
     sources += [
       "client_argv_handling.cc",
       "client_argv_handling.h",
@@ -112,7 +117,7 @@ crashpad_static_library("client") {
     ]
   }
 
-  if (crashpad_is_linux || crashpad_is_android) {
+  if (crashpad_is_linux || crashpad_is_android || crashpad_is_ohos) {
     deps += [ "../third_party/lss" ]
   }
 
@@ -121,6 +126,10 @@ crashpad_static_library("client") {
     if (crashpad_is_in_fuchsia) {
       deps += [ "//sdk/lib/fdio" ]
     }
+  }
+
+  if(crashpad_is_ohos) {
+    deps += [ "//ohos/adapter:adapter" ]
   }
 }
 
@@ -148,7 +157,7 @@ static_library("common") {
   if (crashpad_is_win) {
     sources += [ "crash_report_database_win.cc" ]
   }
-  if (crashpad_is_linux || crashpad_is_android || crashpad_is_fuchsia) {
+  if (crashpad_is_linux || crashpad_is_android || crashpad_is_fuchsia || crashpad_is_ohos) {
     sources += [
       "crash_report_database_generic.cc",
       "crashpad_info_note.S",
@@ -211,7 +220,7 @@ source_set("client_test") {
     ]
   }
 
-  if (crashpad_is_linux || crashpad_is_android) {
+  if (crashpad_is_linux || crashpad_is_android || crashpad_is_ohos) {
     sources += [ "crashpad_client_linux_test.cc" ]
   }
 
@@ -246,7 +255,7 @@ source_set("client_test") {
   }
 }
 
-if (crashpad_is_linux || crashpad_is_android) {
+if (crashpad_is_linux || crashpad_is_android || crashpad_is_ohos) {
   source_set("pthread_create") {
     sources = [ "pthread_create_linux.cc" ]
 

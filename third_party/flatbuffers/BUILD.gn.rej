@@ -1,0 +1,13 @@
+diff a/third_party/flatbuffers/BUILD.gn b/third_party/flatbuffers/BUILD.gn	(rejected hunks)
+@@ -137,10 +137,11 @@ executable("flatc") {
+   sources = [ "src/src/flatc_main.cpp" ]
+   deps = [
+     ":compiler_files",
+     ":flatbuffers",
+   ]
++  ldflags = [ "-lgcc_s" ]
+ }
+ 
+ # The following is just for testing.
+ 
+ flatbuffer("flatbuffers_samplebuffer") {

@@ -25,7 +25,7 @@ config("compat_config") {
     include_dirs += [ "ios" ]
   }
 
-  if (crashpad_is_linux || crashpad_is_android) {
+  if (crashpad_is_linux || crashpad_is_android || crashpad_is_ohos) {
     include_dirs += [ "linux" ]
   }
 
@@ -88,7 +88,7 @@ compat_target("compat") {
     ]
   }
 
-  if (crashpad_is_linux || crashpad_is_android) {
+  if (crashpad_is_linux || crashpad_is_android || crashpad_is_ohos) {
     sources += [
       "linux/signal.h",
       "linux/sys/mman.h",

@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/files/file_path.h"
 #include "base/logging.h"
@@ -137,6 +138,14 @@ bool ProcessInfo::InitializeWithPtrace(PtraceConnection* connection) {
           gid_t group;
           while (AdvancePastNumber(&line_c, &group)) {
             supplementary_groups_.insert(group);
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+            if (line_c == &line.back()) {
+              LOG(INFO) << "crashpad ProcessInfo::InitializeWithPtrace, "
+                           "proc/pid/status is HM kernel format";
+              break;
+            }
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
             if (!AdvancePastPrefix(&line_c, " ")) {
               LOG(ERROR) << "format error: unrecognized Groups format";
               return false;

@@ -1,0 +1,51 @@
+diff a/third_party/crashpad/crashpad/handler/BUILD.gn b/third_party/crashpad/crashpad/handler/BUILD.gn	(rejected hunks)
+@@ -12,11 +12,14 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
+ import("//cef/libcef/features/features.gni")
+ import("../build/crashpad_buildconfig.gni")
+-
++import("//arkweb/build/features/features.gni")
++if (is_arkweb) {
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++}
+ static_library("handler") {
+   sources = [
+     "handler_main.cc",
+     "handler_main.h",
+     "prune_crash_reports_thread.cc",
+@@ -30,19 +33,20 @@ static_library("handler") {
+       "mac/exception_handler_server.cc",
+       "mac/exception_handler_server.h",
+     ]
+   }
+ 
+-  if (crashpad_is_linux || crashpad_is_android) {
++  if (crashpad_is_linux || crashpad_is_android || crashpad_is_ohos) {
+     sources += [
+       "linux/capture_snapshot.cc",
+       "linux/capture_snapshot.h",
+       "linux/crash_report_exception_handler.cc",
+       "linux/crash_report_exception_handler.h",
+       "linux/exception_handler_server.cc",
+       "linux/exception_handler_server.h",
+     ]
++    sources += arkweb_crashpad_sources
+   }
+ 
+   if (crashpad_is_linux) {
+     sources += [
+       "linux/cros_crash_report_exception_handler.cc",
+@@ -73,10 +77,11 @@ static_library("handler") {
+     ":common",
+     "../minidump",
+     "../snapshot",
+     "../tools:tool_support",
+     "//cef/libcef/features:buildflags",
++    "//third_party:huawei_securec",
+   ]
+ 
+   if (crashpad_is_win) {
+     cflags = [ "/wd4201" ]  # nonstandard extension used : nameless struct/union
+   }

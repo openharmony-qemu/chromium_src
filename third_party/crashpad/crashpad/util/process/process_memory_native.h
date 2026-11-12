@@ -16,7 +16,7 @@
 
 #if BUILDFLAG(IS_FUCHSIA)
 #include "util/process/process_memory_fuchsia.h"
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_CRASHPAD)
 #include "util/process/process_memory_linux.h"
 #elif BUILDFLAG(IS_WIN)
 #include "util/process/process_memory_win.h"
@@ -29,7 +29,7 @@ namespace crashpad {
 #if BUILDFLAG(IS_FUCHSIA) || DOXYGEN
 //! \brief Alias for platform-specific native implementation of ProcessMemory.
 using ProcessMemoryNative = ProcessMemoryFuchsia;
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_CRASHPAD)
 using ProcessMemoryNative = ProcessMemoryLinux;
 #elif BUILDFLAG(IS_WIN)
 using ProcessMemoryNative = ProcessMemoryWin;

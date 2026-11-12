@@ -1,0 +1,12 @@
+diff a/third_party/blink/web_tests/wpt_internal/html/canvas/drawElementImage/privacy/svg-pattern-cross-origin-image.https.sub.html b/third_party/blink/web_tests/wpt_internal/html/canvas/drawElementImage/privacy/svg-pattern-cross-origin-image.https.sub.html
+--- a/third_party/blink/web_tests/wpt_internal/html/canvas/drawElementImage/privacy/svg-pattern-cross-origin-image.https.sub.html
++++ b/third_party/blink/web_tests/wpt_internal/html/canvas/drawElementImage/privacy/svg-pattern-cross-origin-image.https.sub.html
+@@ -66,6 +66,6 @@
+         assert_array_equals(pixel, [0, 0, 255, 255], "Cross origin pattern should not draw");
+       });
+     }
+   </script>
+ </body>
+-</html>
++</html>
+\ No newline at end of file

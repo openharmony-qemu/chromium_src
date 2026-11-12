@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include "arkweb/build/features/features.h"
 #include "util/file/file_io.h"
 #include "util/linux/exception_handler_protocol.h"
 #include "util/linux/ptrace_connection.h"
@@ -27,7 +28,7 @@
 #include "util/misc/address_types.h"
 
 namespace crashpad {
-
+class PtraceBrokerUtils;
 //! \brief Implements a PtraceConnection over a socket.
 //!
 //! This class is the server half of the connection. The broker should be run
@@ -166,7 +167,7 @@ class PtraceBroker {
   PtraceBroker& operator=(const PtraceBroker&) = delete;
 
   ~PtraceBroker();
-
+  friend class PtraceBrokerUtils;
   //! \brief Restricts the broker to serving the contents of files under \a
   //!     root.
   //!
@@ -212,6 +213,11 @@ class PtraceBroker {
   int sock_;
   pid_t memory_pid_;
   bool tried_opening_mem_file_;
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  bool is_in_pid_ns_ = false;
+  std::unordered_map<int, int> tid_nstid_map_;
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
 };
 
 }  // namespace crashpad

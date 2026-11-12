@@ -1,0 +1,18 @@
+diff a/third_party/blink/renderer/core/html/resources/html.css b/third_party/blink/renderer/core/html/resources/html.css	(rejected hunks)
+@@ -823,14 +826,12 @@ input:disabled, textarea:disabled {
+ option:-internal-spatial-navigation-focus {
+     outline: light-dark(black, white) dashed 1px;
+     outline-offset: -1px;
+ }
+ 
+-input:not([type="image" i], [type="range" i], [type="checkbox" i], [type="radio" i]) {
+-  overflow: clip !important;
+-  overflow-clip-margin: 0px !important;
+-}
++/* ArkWeb not use Chromium's new input element default CSS style about "overflow:clip",
++   but still use "overflow:hidden". crbug.com/40877677 */
+ 
+ /* https://html.spec.whatwg.org/multipage/rendering.html#hidden-elements */
+ /* TODO(crbug.com/1231263): <area> should be display:none. */
+ area {
+   display: inline;

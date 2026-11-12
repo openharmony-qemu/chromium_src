@@ -1,0 +1,165 @@
+diff a/third_party/blink/renderer/core/paint/timing/paint_timing_detector.cc b/third_party/blink/renderer/core/paint/timing/paint_timing_detector.cc	(rejected hunks)
+@@ -48,10 +48,11 @@
+ #include "third_party/blink/renderer/platform/wtf/functional.h"
+ #include "third_party/blink/renderer/platform/wtf/hash_map.h"
+ #include "third_party/blink/renderer/platform/wtf/std_lib_extras.h"
+ #include "ui/gfx/geometry/rect.h"
+ 
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils.h"
+ namespace blink {
+ 
+ namespace {
+ 
+ // In the context of FCP++, we define contentful background image as one that
+@@ -148,16 +149,30 @@ const char* ScrollTypeToString(mojom::blink::ScrollType scroll_type) {
+   }
+ }
+ 
+ }  // namespace
+ 
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++PaintTimingDetector::PaintTimingDetector(LocalFrameView* frame_view, bool need_supplement_for_bl /* = true */)
++#else
+ PaintTimingDetector::PaintTimingDetector(LocalFrameView* frame_view)
++#endif
+     : frame_view_(frame_view),
+       text_paint_timing_detector_(
+           MakeGarbageCollected<TextPaintTimingDetector>(frame_view, this)),
+       image_paint_timing_detector_(
++#if BUILDFLAG(IS_ARKWEB)
++          MakeGarbageCollected<ImagePaintTimingDetector>(frame_view)),
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++      paint_timing_detector_utils_(this,
++                                   need_supplement_for_bl) {
++#else
++      paint_timing_detector_utils_(this) {
++#endif
++#else
+           MakeGarbageCollected<ImagePaintTimingDetector>(frame_view)) {
++#endif
+   if (PaintTimingVisualizer::IsTracingEnabled()) {
+     visualizer_.emplace();
+   }
+ }
+ 
+@@ -281,27 +296,36 @@ void PaintTimingDetector::NotifyInteractionTriggeredVideoSrcChange(
+ }
+ 
+ void PaintTimingDetector::NotifyImageFinished(const LayoutObject& object,
+                                               const MediaTiming* media_timing) {
+   if (IgnorePaintTimingScope::ShouldIgnore()) {
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  paint_timing_detector_utils_.ForwardNotifyImageFinished(object, media_timing);
++#endif
+     return;
+   }
+   image_paint_timing_detector_->NotifyImageFinished(object, media_timing);
+ }
+ 
+ void PaintTimingDetector::LayoutObjectWillBeDestroyed(
+     const LayoutObject& object) {
+   text_paint_timing_detector_->LayoutObjectWillBeDestroyed(object);
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  paint_timing_detector_utils_.ForwardLayoutObjectWillBeDestroyed(object);
++#endif
+ }
+ 
+ void PaintTimingDetector::NotifyImageRemoved(
+     const LayoutObject& object,
+     const ImageResourceContent* cached_image) {
+   image_paint_timing_detector_->NotifyImageRemoved(object, cached_image);
+ }
+ 
+ void PaintTimingDetector::OnInputOrScroll() {
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  paint_timing_detector_utils_.ForwardOnInputOrScroll();
++#endif
+   if (LocalDOMWindow* window = DomWindow()) {
+     if (auto* heuristics = window->GetSoftNavigationHeuristics()) {
+       heuristics->OnInputOrScroll();
+     }
+   }
+@@ -318,10 +342,13 @@ void PaintTimingDetector::OnInputOrScroll() {
+   text_paint_timing_detector_->StopRecordingLargestTextPaint();
+   // ImagePaintTimingDetector is currently only being used for
+   // LargestContentfulPaint.
+   image_paint_timing_detector_->StopRecordEntries();
+   image_paint_timing_detector_->StopRecordingLargestImagePaint();
++#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
++  paint_timing_detector_utils_.OnUserScroll();
++#endif
+   largest_contentful_paint_calculator_ = nullptr;
+ 
+   DidChangePerformanceTiming();
+ }
+ 
+@@ -380,13 +407,21 @@ void PaintTimingDetector::UpdateMetricsLcp() {
+ 
+   lcp_details_for_metrics_ =
+       GetLargestContentfulPaintCalculator()->LatestLcpDetails();
+ 
+   DidChangePerformanceTiming();
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  paint_timing_detector_utils_.NotifyLcpForBlankless();
++#endif
+ }
+ 
+ void PaintTimingDetector::DidChangePerformanceTiming() {
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  if (!paint_timing_detector_utils_.HaveSupplementForBL()) {
++    return;
++  }
++#endif
+   Document* document = frame_view_->GetFrame().GetDocument();
+   if (!document) {
+     return;
+   }
+   DocumentLoader* loader = document->Loader();
+@@ -466,18 +501,32 @@ void PaintTimingDetector::UpdateLcpCandidate() {
+       image_paint_timing_detector_->UpdateMetricsCandidate();
+ 
+   if (image_update_result.second || text_update_result.second) {
+     UpdateMetricsLcp();
+   }
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  else {
++    // Follow-up Processing. The White Screen Detection feature caused a crash
++    // in the renderer process and has been temporarily commented out.
++    // paint_timing_detector_utils_.CheckNotifyLcpForBlankless();
++  }
++#endif
+ 
+   lcp_calculator->UpdateWebExposedLargestContentfulPaintIfNeeded(
+       text_update_result.first, image_update_result.first);
+ }
+ 
+ void PaintTimingDetector::ReportIgnoredContent() {
+   text_paint_timing_detector_->ReportLargestIgnoredText();
+-  image_paint_timing_detector_->ReportLargestIgnoredImage();
++  if (image_paint_timing_detector_->IsRecordingLargestImagePaint()) {
++    image_paint_timing_detector_->ReportLargestIgnoredImage();
++  }
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  else {
++    paint_timing_detector_utils_.ForwardReportIgnoredContent();
++  }
++#endif
+ }
+ 
+ const LargestContentfulPaintDetails&
+ PaintTimingDetector::LatestLcpDetailsForTest() {
+   return GetLargestContentfulPaintCalculator()->LatestLcpDetails();
+@@ -550,10 +599,13 @@ ScopedPaintTimingDetectorBlockPaintHook::
+ void PaintTimingDetector::Trace(Visitor* visitor) const {
+   visitor->Trace(text_paint_timing_detector_);
+   visitor->Trace(image_paint_timing_detector_);
+   visitor->Trace(frame_view_);
+   visitor->Trace(largest_contentful_paint_calculator_);
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  visitor->Trace(paint_timing_detector_utils_);
++#endif
+ }
+ 
+ LocalDOMWindow* PaintTimingDetector::DomWindow() const {
+   return frame_view_->GetFrame().DomWindow();
+ }

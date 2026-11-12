@@ -1,0 +1,14 @@
+diff a/third_party/blink/renderer/core/script/build.gni b/third_party/blink/renderer/core/script/build.gni	(rejected hunks)
+@@ -5,10 +5,12 @@
+ blink_core_sources_script = [
+   "classic_pending_script.cc",
+   "classic_pending_script.h",
+   "classic_script.cc",
+   "classic_script.h",
++  "../../../../../arkweb/chromium_ext/third_party/blink/renderer/core/script/classic_script_utils.h",
++  "../../../../../arkweb/chromium_ext/third_party/blink/renderer/core/script/classic_script_utils.cc",
+   "detect_javascript_frameworks.cc",
+   "detect_javascript_frameworks.h",
+   "document_modulator_impl.cc",
+   "document_modulator_impl.h",
+   "document_write_intervention.cc",

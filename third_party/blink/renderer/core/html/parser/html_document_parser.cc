@@ -24,7 +24,7 @@
  */
 
 #include "third_party/blink/renderer/core/html/parser/html_document_parser.h"
-
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/parser/html_document_parser_ext.h"
 #include <memory>
 #include <utility>
 
@@ -418,6 +418,9 @@ HTMLDocumentParser::HTMLDocumentParser(Document& document,
           // cause UI flickering. To mitigate, use_infinite_budget will
           // parse all the way up to the mojo limit.
           (document.Url().ProtocolIs("chrome-extension") ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+            document.Url().ProtocolIs("arkweb-extension") ||
+#endif
            document.Url().IsLocalFile())
               ? kInfiniteTokenizationBudget
               : kDefaultMaxTokenizationBudget)),
@@ -747,6 +750,10 @@ bool HTMLDocumentParser::PumpTokenizer() {
       (task_runner_state_->TimesYielded() <= kNumYieldsWithDefaultBudget)
           ? task_runner_state_->GetDefaultBudget()
           : kInfiniteTokenizationBudget;
+
+#if BUILDFLAG(IS_OHOS)
+  budget = GetOptimizeParserBudgetEnabled() ? kOptimizedMaxTokenizationBudget : budget;
+#endif
 
   if (RuntimeEnabledFeatures::HTMLParserYieldAndDelayOftenForTestingEnabled()) {
     budget = 2;

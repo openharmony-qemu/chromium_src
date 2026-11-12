@@ -76,6 +76,13 @@ enum ShouldIncludeScrollbarGutter {
   kIncludeScrollbarGutter
 };
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+enum class LayoutPolicy {
+  kContent,
+  kSystem
+};
+#endif
+
 struct LayoutBoxRareData final : public GarbageCollected<LayoutBoxRareData> {
  public:
   LayoutBoxRareData();

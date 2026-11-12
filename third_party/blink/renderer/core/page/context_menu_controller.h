@@ -53,6 +53,10 @@ class CORE_EXPORT ContextMenuController
   ~ContextMenuController() override;
   void Trace(Visitor*) const;
 
+#if BUILDFLAG(IS_ARKWEB)
+  friend class ContextMenuControllerExt;
+  virtual ContextMenuControllerExt* AsContextMenuControllerExt() { return nullptr; }
+#endif
   void ClearContextMenu();
 
   void DocumentDetached(Document*);
@@ -144,5 +148,7 @@ class CORE_EXPORT ContextMenuController
 };
 
 }  // namespace blink
-
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/page/context_menu_controller_ext.h"
+#endif
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_CONTEXT_MENU_CONTROLLER_H_

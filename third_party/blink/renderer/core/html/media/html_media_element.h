@@ -392,6 +392,10 @@ class CORE_EXPORT HTMLMediaElement
   // Returns the "effective media volume" value as specified in the HTML5 spec.
   double EffectiveMediaVolume() const;
 
+#ifdef BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  bool IsUsedCustomVideoPlayer();
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
   // Predicates also used when dispatching wrapper creation (cf.
   // [SpecialWrapFor] IDL attribute usage.)
   virtual bool IsHTMLAudioElement() const { return false; }
@@ -639,6 +643,15 @@ class CORE_EXPORT HTMLMediaElement
   void PausePlayback(WebMediaPlayer::PauseReason) final;
   void DidPlayerStartPlaying() override;
   void DidPlayerPaused(bool stream_ended) override;
+
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  // Notify the client that the avsession should be destoryed.
+  virtual void DidEndAVSession(bool is_hidden) override;
+#endif // ARKWEB_MEDIA_AVSESSION
+
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+  void DidPlayerGone() override;
+#endif
   void DidPlayerMutedStatusChange(bool muted) override;
   void DidMediaMetadataChange(bool has_audio,
                               bool has_video,
@@ -833,10 +846,40 @@ class CORE_EXPORT HTMLMediaElement
   mojo::PendingAssociatedReceiver<media::mojom::blink::MediaPlayerObserver>
   AddMediaPlayerObserverAndPassReceiver();
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+
+  media::mojom::blink::MediaInfoForVASTPtr CollectMediaInfoAttributesForVAST();
+
+  void NotifyVideoPlayingInternal();
+
+  void NotifyVideoDestroyed();
+
+  void OnVideoAssistantConfigReceived(
+      base::OnceCallback<void()> callback,
+      media::mojom::blink::VideoAssistantConfigPtr config);
+  void OnNotifyVideoPlayingTimerFired(TimerBase*);
+  WebString GetUrlString(const KURL& url);
+  bool SupportVideoAssistantDownload() const;
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  void SetVideoIsPlaying(bool);
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  void ReportVideoExperienceToBI() override;
+  void SetVideoExperienceMojo();
+  String GetMediaPlayerType() const;
+  std::string page_url_ = "";
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
   // Timers used to schedule one-shot tasks with no delay.
   HeapTaskRunnerTimer<HTMLMediaElement> load_timer_;
   HeapTaskRunnerTimer<HTMLMediaElement> audio_tracks_timer_;
   HeapTaskRunnerTimer<HTMLMediaElement> removed_from_document_timer_;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  HeapTaskRunnerTimer<HTMLMediaElement> notify_video_playing_timer_;
+#endif  // ARKWEB_VIDEO_ASSISTANT
   // Use a low precision timer for repeating tasks to avoid excessive Idle Wake
   // Up frequency, especially when WebRTC is used and the page contains many
   // HTMLMediaElements.

@@ -7,6 +7,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/mojom/script/script_type.mojom-blink.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_script_runner.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_worker_type.h"
@@ -74,6 +75,10 @@ class CORE_EXPORT Script : public GarbageCollected<Script> {
   const KURL& BaseUrl() const { return base_url_; }
   const KURL& SourceUrl() const { return source_url_; }
   const TextPosition& StartPosition() const { return start_position_; }
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+  String GetArkWebCompile() const {return arkWebCompile_;}
+  void SetArkWebCompile(String arkWebCompile) { arkWebCompile_ = arkWebCompile;}
+#endif
 
  protected:
   explicit Script(const ScriptFetchOptions& fetch_options,
@@ -112,6 +117,9 @@ class CORE_EXPORT Script : public GarbageCollected<Script> {
   const KURL source_url_;
 
   const TextPosition start_position_;
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+  String arkWebCompile_ = String();
+#endif
 };
 
 }  // namespace blink

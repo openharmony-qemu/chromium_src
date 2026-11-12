@@ -1,0 +1,11 @@
+diff a/third_party/blink/renderer/core/paint/paint_layer_test.cc b/third_party/blink/renderer/core/paint/paint_layer_test.cc	(rejected hunks)
+@@ -2650,5 +2650,9 @@ TEST_P(PaintLayerTest, HitTestScrollMarkerPseudoElement) {
+   second_scroll_marker->DefaultEventHandler(event);
+   EXPECT_EQ(scroller->scrollTop(), 100);
+ }
+ 
+ }  // namespace blink
++
++#if BUILDFLAG(ARKWEB_TEST)
++#include "third_party/blink/renderer/core/paint/paint_layer_scrollable_area_ext_unittest.cc"
++#endif

@@ -1,0 +1,44 @@
+diff a/third_party/blink/renderer/core/html/forms/internal_popup_menu.cc b/third_party/blink/renderer/core/html/forms/internal_popup_menu.cc	(rejected hunks)
+@@ -46,10 +46,14 @@
+ #include "third_party/blink/renderer/platform/wtf/shared_buffer.h"
+ #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
+ #include "ui/base/ui_base_features.h"
+ #include "ui/gfx/geometry/rect.h"
+ 
++#if BUILDFLAG(ARKWEB_HTML_SELECT)
++#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
++#endif
++
+ namespace blink {
+ 
+ namespace {
+ 
+ // TODO crbug.com/516675 Add stretch to serialization
+@@ -395,10 +399,13 @@ void InternalPopupMenu::WriteDocument(SegmentedBuffer& data) {
+   }
+   context.FinishGroupIfNecessary();
+   PagePopupClient::AddString("],\n", data);
+ 
+   AddProperty("anchorRectInScreen", anchor_rect_in_screen, data);
++#if BUILDFLAG(ARKWEB_HTML_SELECT)
++  PopupUtils::AddAvailRectInWebToData(owner_element_->GetDocument().GetFrame(), data);
++#endif
+   AddProperty("zoomFactor", 1, data);
+   AddProperty("scaleFactor", scale_factor, data);
+   bool is_rtl = !owner_style.IsLeftToRightDirection();
+   AddProperty("isRTL", is_rtl, data);
+   AddProperty("paddingStart",
+@@ -715,10 +722,13 @@ void InternalPopupMenu::Update(bool force_update) {
+   PagePopupClient::AddString("],\n", data);
+   gfx::Rect anchor_rect_in_screen = chrome_client_->LocalRootToScreenDIPs(
+       owner_element_->VisibleBoundsInLocalRoot(),
+       OwnerElement().GetDocument().View());
+   AddProperty("anchorRectInScreen", anchor_rect_in_screen, data);
++#if BUILDFLAG(ARKWEB_HTML_SELECT)
++  PopupUtils::AddAvailRectInWebToData(owner_element_->GetDocument().GetFrame(), data);
++#endif
+   PagePopupClient::AddString("}\n", data);
+   Vector<char> flatten_data = std::move(data).CopyAs<Vector<char>>();
+   popup_->PostMessageToPopup(
+       String::FromUTF8(base::as_string_view(flatten_data)));
+ }

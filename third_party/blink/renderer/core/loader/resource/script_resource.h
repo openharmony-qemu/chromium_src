@@ -47,6 +47,7 @@ class CachedMetadataHandler;
 class FetchParameters;
 class KURL;
 class ResourceFetcher;
+class ScriptResourceUtils;
 
 enum class ResolvedModuleType;
 
@@ -72,6 +73,8 @@ class CORE_EXPORT ScriptResource final : public TextResource {
  public:
   // The script resource will always try to start streaming if kAllowStreaming
   // is passed in.
+  friend class ScriptResourceUtils;
+
   enum StreamingAllowed { kNoStreaming, kAllowStreaming };
 
   static ScriptResource* Fetch(
@@ -180,6 +183,11 @@ class CORE_EXPORT ScriptResource final : public TextResource {
 
   // Visible for tests.
   void SetRevalidatingRequest(const ResourceRequestHead&) override;
+
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+  String GetArkWebCompile() const override {return arkWebCompile_;}
+  void SetArkWebCompile(String arkWebCompile) override { arkWebCompile_ = arkWebCompile;}
+#endif
 
   v8_compile_hints::V8CrowdsourcedCompileHintsProducer*
   GetV8CrowdsourcedCompileHintsProducer() const {
@@ -337,6 +345,9 @@ class CORE_EXPORT ScriptResource final : public TextResource {
   ConsumeCacheState consume_cache_state_;
   const mojom::blink::ScriptType initial_request_script_type_;
   std::unique_ptr<TextResourceDecoder> stream_text_decoder_;
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+  String arkWebCompile_ = String();
+#endif
 
   Member<v8_compile_hints::V8CrowdsourcedCompileHintsProducer>
       v8_compile_hints_producer_;

@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/core/html/media/html_media_element_controls_list.h"
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/html/media/html_media_element.h"
 #include "third_party/blink/renderer/core/keywords.h"
 
@@ -19,7 +20,11 @@ bool HTMLMediaElementControlsList::ValidateTokenValue(
   return token_value == keywords::kNodownload ||
          token_value == keywords::kNofullscreen ||
          token_value == keywords::kNoplaybackrate ||
-         token_value == keywords::kNoremoteplayback;
+         token_value == keywords::kNoremoteplayback
+#if BUILDFLAG(ARKWEB_MEDIA)
+         || token_value == keywords::kNofullscreentitle
+#endif
+      ;
 }
 
 bool HTMLMediaElementControlsList::ShouldHideDownload() const {
@@ -37,6 +42,12 @@ bool HTMLMediaElementControlsList::ShouldHidePlaybackRate() const {
 bool HTMLMediaElementControlsList::ShouldHideRemotePlayback() const {
   return contains(keywords::kNoremoteplayback);
 }
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+bool HTMLMediaElementControlsList::ShouldHideFullscreenTitle() const {
+  return contains(keywords::kNofullscreentitle);
+}
+#endif
 
 bool HTMLMediaElementControlsList::CanShowAllControls() const {
   return ShouldHideDownload() || ShouldHideFullscreen() ||

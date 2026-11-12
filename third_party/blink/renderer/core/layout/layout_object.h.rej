@@ -1,0 +1,57 @@
+diff a/third_party/blink/renderer/core/layout/layout_object.h b/third_party/blink/renderer/core/layout/layout_object.h	(rejected hunks)
+@@ -90,11 +90,13 @@ class PaintLayer;
+ class StyleRequest;
+ struct PaintInfo;
+ struct PaintInvalidatorContext;
+ struct SVGLayoutInfo;
+ struct SVGLayoutResult;
+-
++#if BUILDFLAG(ARKWEB_MENU)
++class LayoutObjectUtils;
++#endif
+ enum CursorDirective { kSetCursorBasedOnStyle, kSetCursor, kDoNotSetCursor };
+ 
+ enum MarkingBehavior {
+   kMarkOnlyThis,
+   kMarkContainerChain,
+@@ -927,10 +933,16 @@ class CORE_EXPORT LayoutObject : public GarbageCollected<LayoutObject>,
+   }
+   virtual bool IsLayoutImage() const {
+     NOT_DESTROYED();
+     return false;
+   }
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  virtual bool IsLayoutNative() const {
++    NOT_DESTROYED();
++    return false;
++  }
++#endif
+   virtual bool IsLayoutReplaced() const {
+     NOT_DESTROYED();
+     return false;
+   }
+   virtual bool IsLayoutCustomScrollbarPart() const {
+@@ -2619,17 +2631,22 @@ class CORE_EXPORT LayoutObject : public GarbageCollected<LayoutObject>,
+   void Remove() {
+     NOT_DESTROYED();
+     if (Parent())
+       Parent()->RemoveChild(this);
+   }
+-
++#if BUILDFLAG(ARKWEB_MENU)
++  bool VisibleToHitTestRequest(const HitTestRequest& request) const;
++  void SetPositionMode(bool mode);
++  bool IsGetPostionForSelection() const;
++#else
+   bool VisibleToHitTestRequest(const HitTestRequest& request) const {
+     NOT_DESTROYED();
+     return StyleRef().Visibility() == EVisibility::kVisible &&
+            (request.IgnorePointerEventsNone() ||
+             StyleRef().UsedPointerEvents() != EPointerEvents::kNone);
+   }
++#endif  // BUILDFLAG(ARKWEB_MENU)
+ 
+   bool VisibleToHitTesting() const {
+     NOT_DESTROYED();
+     return StyleRef().VisibleToHitTesting();
+   }

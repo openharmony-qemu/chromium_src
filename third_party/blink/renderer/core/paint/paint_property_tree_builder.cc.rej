@@ -1,0 +1,14 @@
+diff a/third_party/blink/renderer/core/paint/paint_property_tree_builder.cc b/third_party/blink/renderer/core/paint/paint_property_tree_builder.cc	(rejected hunks)
+@@ -2084,11 +2084,11 @@ void FragmentPaintPropertyTreeBuilder::UpdateViewTransitionEffect() {
+           ViewTransitionUtils::TransitionForTaggedElement(object_);
+       DCHECK(transition);
+ 
+       EffectPaintPropertyNode::State state;
+       state.direct_compositing_reasons =
+-          CompositingReason::kViewTransitionElement;
++          CompositingReason::kViewTransitionElement;      
+       state.local_transform_space = context_.current.transform;
+       state.output_clip = context_.current.clip;
+       state.compositor_element_id = CompositorElementIdFromUniqueObjectId(
+           object_.UniqueId(),
+           CompositorElementIdNamespace::kViewTransitionElement);

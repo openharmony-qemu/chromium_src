@@ -164,6 +164,17 @@ mojom::blink::ColorScheme GetColorSchemeForAccentColor(
       GetContrastingColorFor(element, mojom::blink::ColorScheme::kDark, part));
 }
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+mojom::blink::ColorScheme GetColorScheme(const ComputedStyle& style) {
+  if (style.UsedColorScheme() == mojom::blink::ColorScheme::kNight ||
+      (style.UsedColorScheme() == mojom::blink::ColorScheme::kLight &&
+       style.NightModeEnabled())) {
+    return mojom::blink::ColorScheme::kDark;
+  }
+  return style.UsedColorScheme();
+}
+#endif
+
 class DirectionFlippingScope {
   STACK_ALLOCATED();
 
@@ -349,6 +360,9 @@ bool ThemePainterDefault::PaintCheckbox(const Element& element,
       ApplyZoomToRect(rect, paint_info, state_saver, zoom_level);
   WebThemeEngine::ExtraParams extra_params(button);
   mojom::blink::ColorScheme color_scheme = style.UsedColorScheme();
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  color_scheme = GetColorScheme(style);
+#endif
 
   // This is used for `kPartCheckbox`, which gets drawn adjacent to
   // `accent_color`. In order to guarantee contrast between `kPartCheckbox` and
@@ -392,6 +406,9 @@ bool ThemePainterDefault::PaintRadio(const Element& element,
   gfx::Rect unzoomed_rect =
       ApplyZoomToRect(rect, paint_info, state_saver, zoom_level);
   mojom::blink::ColorScheme color_scheme = style.UsedColorScheme();
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  color_scheme = GetColorScheme(style);
+#endif
 
   // This is used for `kPartRadio`, which gets drawn adjacent to `accent_color`.
   // In order to guarantee contrast between `kPartRadio` and `accent_color`, we
@@ -430,6 +447,9 @@ bool ThemePainterDefault::PaintButton(const Element& element,
   button.zoom = style.EffectiveZoom();
   WebThemeEngine::ExtraParams extra_params(button);
   mojom::blink::ColorScheme color_scheme = style.UsedColorScheme();
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  color_scheme = GetColorScheme(style);
+#endif
   const ui::ColorProvider* color_provider =
       document.GetColorProviderForPainting(color_scheme);
 
@@ -511,6 +531,9 @@ bool ThemePainterDefault::PaintMenuList(const Element& element,
   SetupMenuListArrow(document, style, rect, extra_params);
 
   mojom::blink::ColorScheme color_scheme = style.UsedColorScheme();
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  color_scheme = GetColorScheme(style);
+#endif
   const ui::ColorProvider* color_provider =
       document.GetColorProviderForPainting(color_scheme);
 
@@ -536,6 +559,9 @@ bool ThemePainterDefault::PaintMenuListButton(const Element& element,
   WebThemeEngine::ExtraParams extra_params(menu_list);
   SetupMenuListArrow(document, style, rect, extra_params);
   mojom::blink::ColorScheme color_scheme = style.UsedColorScheme();
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  color_scheme = GetColorScheme(style);
+#endif
   const ui::ColorProvider* color_provider =
       document.GetColorProviderForPainting(color_scheme);
 
@@ -756,6 +782,9 @@ bool ThemePainterDefault::PaintInnerSpinButton(const Element& element,
 
   WebThemeEngine::ExtraParams extra_params(inner_spin);
   mojom::blink::ColorScheme color_scheme = style.UsedColorScheme();
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  color_scheme = GetColorScheme(style);
+#endif
   const ui::ColorProvider* color_provider =
       element.GetDocument().GetColorProviderForPainting(color_scheme);
 
@@ -790,6 +819,9 @@ bool ThemePainterDefault::PaintProgressBar(const Element& element,
   WebThemeEngine::ExtraParams extra_params(progress_bar);
   DirectionFlippingScope scope(layout_object, paint_info, rect);
   mojom::blink::ColorScheme color_scheme = style.UsedColorScheme();
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  color_scheme = GetColorScheme(style);
+#endif
 
   // This is used for `kPartProgressBar`, which gets drawn adjacent to
   // `accent_color`. In order to guarantee contrast between `kPartProgressBar`

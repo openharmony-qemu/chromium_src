@@ -173,6 +173,23 @@ class CORE_EXPORT HTMLVideoElement final
   void OnPictureInPictureStateChange() final;
   void SetPersistentState(bool persistent) final;
 
+#if BUILDFLAG(ARKWEB_PIP)
+  void UpdatePictureInPictureSurface() final;
+#endif
+  
+  // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+  uint16_t hbsPreloadTime();
+  uint16_t hbsMaxCacheTime();
+  uint16_t hbsMinCacheTime();
+  uint16_t hbsBitrate();
+  uint16_t hbsMoovSize();
+
+  void setHbsPreloadTime(uint16_t);
+  void setHbsMaxCacheTime(uint16_t);
+  void setHbsMinCacheTime(uint16_t);
+  void setHbsBitrate(uint16_t);
+  void setHbsMoovSize(uint16_t);
+
   // Used by the PictureInPictureController as callback when the video element
   // enters or exits Picture-in-Picture state.
   void OnEnteredPictureInPicture();

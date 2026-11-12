@@ -41,6 +41,10 @@
 #include "third_party/blink/renderer/core/layout/layout_embedded_object.h"
 #include "third_party/blink/renderer/core/layout/layout_object_inlines.h"
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/html_embed_element_for_include.cc"
+#endif
+
 namespace blink {
 
 HTMLEmbedElement::HTMLEmbedElement(Document& document,

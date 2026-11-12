@@ -1,0 +1,57 @@
+diff a/third_party/blink/renderer/core/paint/theme_painter_default.cc b/third_party/blink/renderer/core/paint/theme_painter_default.cc	(rejected hunks)
+@@ -258,10 +269,13 @@ gfx::Rect ProgressValueRectFor(const LayoutProgress& layout_progress,
+ 
+ std::optional<SkColor> GetAccentColor(const ComputedStyle& style,
+                                       const Document& document) {
+   std::optional<Color> accent_color = style.AccentColorResolved();
+   mojom::blink::ColorScheme color_scheme = style.UsedColorScheme();
++#if BUILDFLAG(ARKWEB_NIGHT_MODE)
++  color_scheme = GetColorScheme(style);
++#endif
+   LayoutTheme& layout_theme = LayoutTheme::GetTheme();
+ 
+   // We should not allow the system accent color to be rendered in image
+   // contexts because it could be read back by the page and used for
+   // fingerprinting.
+@@ -428,10 +451,13 @@ bool ThemePainterDefault::PaintTextField(const Element& element,
+       DynamicTo<HTMLFormControlElement>(element)->IsAutofilled() ||
+       DynamicTo<HTMLFormControlElement>(element)->IsPreviewed();
+ 
+   WebThemeEngine::ExtraParams extra_params(text_field);
+   mojom::blink::ColorScheme color_scheme = style.UsedColorScheme();
++#if BUILDFLAG(ARKWEB_NIGHT_MODE)
++  color_scheme = GetColorScheme(style);
++#endif
+   const ui::ColorProvider* color_provider =
+       element.GetDocument().GetColorProviderForPainting(color_scheme);
+ 
+   WebThemeEngineHelper::GetNativeThemeEngine()->Paint(
+       paint_info.context.Canvas(), WebThemeEngine::kPartTextField,
+@@ -617,10 +649,13 @@ bool ThemePainterDefault::PaintSliderTrack(const Element& element,
+                        input_box->BorderTop().ToInt();
+     }
+   }
+   WebThemeEngine::ExtraParams extra_params(slider);
+   mojom::blink::ColorScheme color_scheme = style.UsedColorScheme();
++#if BUILDFLAG(ARKWEB_NIGHT_MODE)
++  color_scheme = GetColorScheme(style);
++#endif
+ 
+   // This is used for `kPartSliderTrack`, which gets drawn adjacent to
+   // `accent_color`. In order to guarantee contrast between `kPartSliderTrack`
+   // and `accent_color`, we choose the `color_scheme` here based on the two
+   // possible color values for `kPartSliderTrack`.
+@@ -667,10 +702,13 @@ bool ThemePainterDefault::PaintSliderThumb(const Element& element,
+   std::optional<SkColor> accent_color =
+       GetAccentColor(*slider_element->HostInput()->EnsureComputedStyle(),
+                      element.GetDocument());
+   WebThemeEngine::ExtraParams extra_params(slider);
+   mojom::blink::ColorScheme color_scheme = style.UsedColorScheme();
++#if BUILDFLAG(ARKWEB_NIGHT_MODE)
++  color_scheme = GetColorScheme(style);
++#endif
+ 
+   // This is used for `kPartSliderThumb`, which gets drawn adjacent to
+   // `accent_color`. In order to guarantee contrast between `kPartSliderThumb`
+   // and `accent_color`, we choose the `color_scheme` here based on the two
+   // possible color values for `kPartSliderThumb`.

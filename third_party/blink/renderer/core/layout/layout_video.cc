@@ -108,7 +108,20 @@ PhysicalNaturalSizingInfo LayoutVideo::GetNaturalDimensions() const {
       break;
   }
 
-  return PhysicalNaturalSizingInfo::None();
+#if BUILDFLAG(ARKWEB_MEDIA)
+  if (RuntimeEnabledFeatures::VideoAspectRatioNaturalDimensionEnabled()) {
+#endif  // ARKWEB_MEDIA
+    return PhysicalNaturalSizingInfo::None();
+#if BUILDFLAG(ARKWEB_MEDIA)
+  }
+#endif  // ARKWEB_MEDIA
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+  // Natural dimensions are missing.
+  PhysicalSize default_size(DefaultSize());
+  default_size.Scale(StyleRef().EffectiveZoom());
+  return PhysicalNaturalSizingInfo::MakeFixed(default_size);
+#endif  // ARKWEB_MEDIA
 }
 
 void LayoutVideo::ImageChanged(WrappedImagePtr new_image,
@@ -192,6 +205,17 @@ PhysicalRect LayoutVideo::ReplacedContentRectFrom(
   PhysicalRect replaced_content_rect =
       LayoutMedia::ReplacedContentRectFrom(base_content_rect);
   if (GetDisplayMode() == kVideo) {
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+    if (const auto* player = MediaElement()->GetWebMediaPlayer()) {
+      if (player->IsUsingCustomRenderer()) {
+        auto base_content_size = base_content_rect.size;
+        PhysicalNaturalSizingInfo sizing_info = PhysicalNaturalSizingInfo::MakeFixed(base_content_size);
+
+        return PreSnappedRectForPersistentSizing(
+            ComputeReplacedContentRect(base_content_rect, sizing_info));
+      }
+    }
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
     // Video codecs may need to restart from an I-frame when the output is
     // resized. Round size in advance to avoid 1px snap difference.
     replaced_content_rect =

@@ -185,7 +185,14 @@ bool SVGObjectPainter::PreparePaint(
     flag_color.SetAlpha(flag_color.Alpha() * alpha);
     flags.setColor(flag_color.toSkColor4f());
     flags.setShader(nullptr);
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    if (style.NightModeEnabled()) {
+      NightModeInverter::GetInverter().BlendColorFilterForImage(flags);
+      ApplyColorInterpolation(paint_flags, style, flags);
+    }
+#else
     ApplyColorInterpolation(paint_flags, style, flags);
+#endif
     return true;
   }
   return false;

@@ -1,0 +1,107 @@
+diff a/third_party/blink/renderer/core/html/media/html_media_element_test.cc b/third_party/blink/renderer/core/html/media/html_media_element_test.cc	(rejected hunks)
+@@ -1,20 +1,30 @@
+ // Copyright 2016 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+-#include "third_party/blink/renderer/core/html/media/html_media_element.h"
+-
++#include "arkweb/build/features/features.h"
+ #include "base/run_loop.h"
+ #include "base/test/gtest_util.h"
+ #include "media/base/media_content_type.h"
+ #include "media/base/media_switches.h"
+ #include "media/base/media_track.h"
+ #include "media/mojo/mojom/media_player.mojom-blink.h"
+ #include "services/media_session/public/mojom/media_session.mojom-blink.h"
+ #include "testing/gmock/include/gmock/gmock.h"
+ #include "testing/gtest/include/gtest/gtest.h"
++
++#if BUILDFLAG(ARKWEB_TEST)
++#define private public
++#define protected public
++#endif  // ARKWEB_TEST
++#include "third_party/blink/renderer/core/html/media/html_media_element.h"
++#if BUILDFLAG(ARKWEB_TEST)
++#undef private
++#undef protected
++#endif  // ARKWEB_TEST
++
+ #include "third_party/blink/public/mojom/autoplay/autoplay.mojom-blink.h"
+ #include "third_party/blink/public/platform/web_media_player.h"
+ #include "third_party/blink/public/platform/web_media_player_source.h"
+ #include "third_party/blink/renderer/core/css/css_default_style_sheets.h"
+ #include "third_party/blink/renderer/core/dom/dom_implementation.h"
+@@ -108,10 +126,23 @@ class MockWebMediaPlayer : public EmptyWebMediaPlayer {
+                                  CorsMode cors_mode,
+                                  bool is_cache_disabled));
+   MOCK_CONST_METHOD0(DidLazyLoad, bool());
+ 
+   MOCK_METHOD0(GetSrcAfterRedirects, GURL());
++#if BUILDFLAG(ARKWEB_TEST)
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  MOCK_METHOD1(SetVideoSurface, void(int32_t widget_id));
++  MOCK_METHOD0(SupportVideoSurface, bool());
++#endif  // ARKWEB_VIDEO_ASSISTANT
++#if BUILDFLAG(ARKWEB_PIP)
++  MOCK_METHOD1(PipEnable, void(bool enable));
++#endif  // ARKWEB_PIP
++#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
++  MOCK_METHOD0(RecycleDmaBuffer, void());
++  MOCK_METHOD0(ResumeDmaBuffer, void());
++#endif  // ARKWEB_MEDIA_DMABUF
++#endif  // ARKWEB_TEST
+ };
+ 
+ class WebMediaStubLocalFrameClient : public EmptyLocalFrameClient {
+  public:
+   explicit WebMediaStubLocalFrameClient(std::unique_ptr<WebMediaPlayer> player)
+@@ -251,10 +308,37 @@ class TestMediaPlayerObserver final
+     run_loop_->Quit();
+   }
+ 
+   void OnVideoVisibilityChanged(bool meets_visibility_threshold) override {}
+ 
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  void OnVideoPlaying(media::mojom::blink::VideoAttributesForVASTPtr
++                          video_attributes) override {}
++  void OnUpdateVideoAttributes(media::mojom::blink::VideoAttributesForVASTPtr
++                                   video_attributes) override {}
++  void OnVideoDestroyed() override {}
++  void OnFullScreenOverlayEnter(media::mojom::blink::MediaInfoForVASTPtr media_info) override {}
++  void OnAVCastStarted(media::mojom::blink::MediaInfoForVASTPtr media_info) override {}
++  void UpdatePlayStateOverlay(uint32_t playState) override {}
++  void MutedChangedOverlay(bool muted) override {}
++  void PlaybackRateChangedOverlay(double playback_rate) override {}
++
++  void DurationChangedOverlay(double duration) override {}
++  void TimeUpdateOverlay(double current_time) override {}
++  void BufferedEndTimeChangedOverlay(double buffered_end_time) override {}
++  void EndedOverlay() override {}
++
++  void FullscreenChangedOverlay(bool fullscreen) override {}
++  void SeekingOverlay() override {}
++  void SeekingFinishedOverlay() override {}
++  void ErrorOverlay(int32_t error_code, const String& error_msg) override {}
++  void VideoSizeChangedOverlay(int32_t width, int32_t height) override {}
++  void FullscreenOverlayChanged(
++      bool fullscreen_overlay, const String& decoder_name) override {}
++  void OnVolumeChanged(double volume) override {}
++#endif  // ARKWEB_VIDEO_ASSISTANT
++
+   // Getters used from HTMLMediaElementTest.
+   bool received_media_playing() const { return received_media_playing_; }
+ 
+   const std::optional<bool>& received_media_paused_stream_ended() const {
+     return received_media_paused_stream_ended_;
+@@ -2645,6 +2747,10 @@ TEST_P(HTMLMediaElementTest, StartVideoWithDoubleTrackSelection) {
+   if (!audio_only) {
+     EXPECT_TRUE(Media()->videoTracks().AnonymousIndexedGetter(0)->selected());
+   }
+ }
+ 
++#if BUILDFLAG(ARKWEB_TEST)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/media/html_media_element_for_include_unittest.cc"
++#endif  // ARKWEB_TEST
++
+ }  // namespace blink

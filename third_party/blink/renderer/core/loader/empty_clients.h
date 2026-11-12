@@ -91,7 +91,11 @@ namespace blink {
 
 class AssociatedInterfaceProvider;
 
+#if BUILDFLAG(IS_ARKWEB)
+class CORE_EXPORT EmptyChromeClient : public ChromeClientExt {
+#else
 class CORE_EXPORT EmptyChromeClient : public ChromeClient {
+#endif
  public:
   EmptyChromeClient() = default;
   ~EmptyChromeClient() override = default;
@@ -346,6 +350,11 @@ class CORE_EXPORT EmptyLocalFrameClient : public LocalFrameClient {
                            WebHistoryCommitType) override {}
   void DispatchDidDispatchDOMContentLoadedEvent() override {}
   void DispatchDidFinishLoad() override {}
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void DispatchDidSubresourceFiltered() override {}
+  bool GetGlobalAdblockEnabled() override { return false; }
+#endif
 
   void BeginNavigation(
       const ResourceRequest&,

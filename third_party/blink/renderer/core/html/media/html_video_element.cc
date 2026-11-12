@@ -147,6 +147,16 @@ HTMLVideoElement::HTMLVideoElement(Document& document)
 
   EnsureUserAgentShadowRoot();
   UpdateStateIfNeeded();
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  if (IsUseVideoLoadOptimization()) {
+    hbs_preload_time_ = GetVideoPreloadTimeDefault();
+    hbs_min_cache_time_ = GetVideoMinCacheTimeDefault();
+    hbs_max_cache_time_ = GetVideoMaxCacheTimeDefault();
+    hbs_moov_size_ = GetVideoMoovSizeDefault();
+    hbs_bitrate_ = GetVideoBitrateDefault();
+  }
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 }
 
 void HTMLVideoElement::Trace(Visitor* visitor) const {
@@ -1131,6 +1141,18 @@ void HTMLVideoElement::OnPictureInPictureStateChange() {
   PictureInPictureController::From(GetDocument())
       .OnPictureInPictureStateChange();
 }
+
+#if BUILDFLAG(ARKWEB_PIP)
+void HTMLVideoElement::UpdatePictureInPictureSurface() {
+  LOG(INFO) << "Pip update " << __func__ << " " << pip_active_ << " " << videoWidth()
+            << " " << videoHeight();
+  if (pip_active_) {
+    OnPictureInPictureStateChanged(
+        content::PIP_STATE_UPDATE_SURFACE,
+        videoWidth(), videoHeight());
+  }
+}
+#endif
 
 void HTMLVideoElement::OnEnteredPictureInPicture() {
   if (!picture_in_picture_interstitial_) {

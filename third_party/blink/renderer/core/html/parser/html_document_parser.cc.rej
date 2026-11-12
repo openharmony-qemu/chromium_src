@@ -1,0 +1,23 @@
+diff a/third_party/blink/renderer/core/html/parser/html_document_parser.cc b/third_party/blink/renderer/core/html/parser/html_document_parser.cc	(rejected hunks)
+@@ -799,10 +806,21 @@ bool HTMLDocumentParser::PumpTokenizer() {
+           }
+         } else {
+           elapsed_time = chunk_parsing_timer.Elapsed();
+         }
+         should_yield = elapsed_time >= timed_budget;
++#if BUILDFLAG(IS_OHOS)
++        if (GetOptimizeParserBudgetEnabled()) {
++          should_yield = should_yield || budget <= 0;
++          if (should_yield) {
++            LOG(WARNING) << "OptimizeParserBudget in PumpTokenlizer. current "
++                            "parse tokens: "
++                         << tokens_parsed << ". left token budget: " << budget
++                         << ". elapsed time: " << elapsed_time;
++          }
++        }
++#endif
+       } else {
+         should_yield = budget <= 0;
+       }
+       should_yield |= scheduler_->ShouldYieldForHighPriorityWork();
+       should_yield &= task_runner_state_->HaveExitedHeader();

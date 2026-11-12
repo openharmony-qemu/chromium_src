@@ -1,0 +1,106 @@
+diff a/third_party/blink/renderer/core/paint/paint_layer_scrollable_area.cc b/third_party/blink/renderer/core/paint/paint_layer_scrollable_area.cc	(rejected hunks)
+@@ -655,10 +678,13 @@ gfx::Vector2d PaintLayerScrollableArea::MaximumScrollOffsetInt() const {
+   // than it's overflow clipping box. This is to ensure that content exposed by
+   // hiding the URL bar at the bottom of the screen is visible.
+   gfx::Size visible_size;
+   if (this == controller.RootScrollerArea()) {
+     visible_size = controller.RootScrollerVisibleArea();
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++    utils_->ScaleSize(visible_size);
++#endif  // ARKWEB_SCROLLBAR
+   } else {
+     visible_size = ToRoundedSize(
+         GetLayoutBox()
+             ->OverflowClipRect(PhysicalOffset(), kIgnoreOverlayScrollbarSize)
+             .size);
+@@ -1397,21 +1423,29 @@ bool PaintLayerScrollableArea::HasHorizontalOverflow() const {
+   // problem: it can leave a sliver of horizontal overflow hidden behind the
+   // vertical scrollbar without creating a horizontal scrollbar.  This
+   // converse problem seems to happen much less frequently in practice, so we
+   // bias the logic towards preventing unwanted horizontal scrollbars, which
+   // are more common and annoying.
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++  LayoutUnit client_width = utils_->ScaleWidth();
++#else
+   LayoutUnit client_width = LayoutContentRect(kIncludeScrollbars).Width() -
+                             VerticalScrollbarWidth(kIgnoreOverlayScrollbarSize);
++#endif
+   if (NeedsRelayout() && !HadVerticalScrollbarBeforeRelayout())
+     client_width += VerticalScrollbarWidth();
+   return ScrollWidth().Round() > client_width.Round();
+ }
+ 
+ bool PaintLayerScrollableArea::HasVerticalOverflow() const {
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++  LayoutUnit client_height = utils_->ScaleHeight();
++#else
+   LayoutUnit client_height =
+       LayoutContentRect(kIncludeScrollbars).Height() -
+       HorizontalScrollbarHeight(kIgnoreOverlayScrollbarSize);
++#endif
+   return ScrollHeight().Round() > client_height.Round();
+ }
+ 
+ bool PaintLayerScrollableArea::CanPropagateScroll() const {
+   if (!base::FeatureList::IsEnabled(
+@@ -1540,15 +1574,20 @@ gfx::Rect PaintLayerScrollableArea::RectForVerticalScrollbar() const {
+               .ToInt() -
+           scroll_corner.height());
+ }
+ 
+ int PaintLayerScrollableArea::VerticalScrollbarStart() const {
++  int margin = 0;
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++  if (VerticalScrollbar()->IsOverlayScrollbar())
++    margin = ScaleFromDIP() * kScrollbarMargin;
++#endif
+   if (GetLayoutBox()->ShouldPlaceBlockDirectionScrollbarOnLogicalLeft())
+-    return GetLayoutBox()->BorderLeft().ToInt();
++    return GetLayoutBox()->BorderLeft().ToInt() + margin;
+   return PixelSnappedBorderBoxSize().width() -
+          GetLayoutBox()->BorderRight().ToInt() -
+-         VerticalScrollbar()->ScrollbarThickness();
++         VerticalScrollbar()->ScrollbarThickness() - margin;
+ }
+ 
+ int PaintLayerScrollableArea::HorizontalScrollbarStart() const {
+   int x = GetLayoutBox()->BorderLeft().ToInt();
+   if (GetLayoutBox()->ShouldPlaceBlockDirectionScrollbarOnLogicalLeft()) {
+@@ -2529,13 +2571,19 @@ PhysicalRect PaintLayerScrollableArea::ScrollIntoView(
+           ? kIgnoreStickyOffset
+           : 0;
+ 
+   PhysicalRect local_expose_rect =
+       GetLayoutBox()->AbsoluteToLocalRect(absolute_rect);
++
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++  ScrollOffset target_offset =
++      utils_->GetScrollOffset(params, local_expose_rect, scroll_margin);
++#else
+   ScrollOffset target_offset = scroll_into_view_util::GetScrollOffsetToExpose(
+       *this, local_expose_rect, scroll_margin, *params->align_x.get(),
+       *params->align_y.get());
++#endif
+   ScrollOffset new_scroll_offset(
+       ClampScrollOffset(gfx::ToRoundedVector2d(target_offset)));
+ 
+   ScrollOffset old_scroll_offset = GetScrollOffset();
+   if (params->type == mojom::blink::ScrollType::kUser) {
+@@ -2761,10 +2814,17 @@ bool PaintLayerScrollableArea::UsesCompositedScrolling() const {
+          paint_artifact_compositor->UsesCompositedScrolling(
+              *properties->Scroll());
+ }
+ 
+ bool PaintLayerScrollableArea::VisualViewportSuppliesScrollbars() const {
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++  if (auto* layout_view = DynamicTo<LayoutView>(GetLayoutBox())) {
++    if (!base::FeatureList::IsEnabled(::features::kOverlayVisualScrollbar)) {
++      return false;
++    }
++  }
++#endif  // ARKWEB_SCROLLBAR
+   LocalFrame* frame = GetLayoutBox()->GetFrame();
+   if (!frame || !frame->GetSettings())
+     return false;
+ 
+   // On desktop, we always use the layout viewport's scrollbars.

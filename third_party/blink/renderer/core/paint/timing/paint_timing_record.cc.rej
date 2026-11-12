@@ -1,0 +1,32 @@
+diff a/third_party/blink/renderer/core/paint/timing/paint_timing_record.cc b/third_party/blink/renderer/core/paint/timing/paint_timing_record.cc	(rejected hunks)
+@@ -21,11 +21,15 @@ PaintTimingRecord::PaintTimingRecord(Node* node,
+                                      SoftNavigationContext* context)
+     : node_(node),
+       recorded_size_(recorded_size),
+       root_visual_rect_(root_visual_rect),
+       soft_navigation_context_(context),
++#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
++      lcp_rect_info_(true
++#else
+       lcp_rect_info_(PaintTimingVisualizer::IsTracingEnabled()
++#endif
+                          ? std::make_unique<LCPRectInfo>(
+                                frame_visual_rect,
+                                gfx::ToRoundedRect(root_visual_rect))
+                          : nullptr) {
+   CHECK(node_);
+@@ -78,11 +82,13 @@ ImageRecord::ImageRecord(Node* node,
+                         root_visual_rect,
+                         soft_navigation_context),
+       media_timing_(new_media_timing),
+       hash_(hash),
+       entropy_for_lcp_(entropy_for_lcp) {
+-  CHECK_GT(RecordedSize(), 0u);
++  // Follow-up Processing. A failed check caused the renderer process to crash;
++  // the code has been temporarily commented out.
++  // CHECK_GT(RecordedSize(), 0u);
+ }
+ 
+ std::optional<WebURLRequest::Priority> ImageRecord::RequestPriority() const {
+   if (!GetMediaTiming()) {
+     return std::nullopt;

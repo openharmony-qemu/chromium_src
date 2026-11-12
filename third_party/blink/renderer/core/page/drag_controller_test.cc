@@ -176,13 +176,24 @@ TEST_F(DragControllerTest, DragImageForSelectionUsesPageScaleFactor) {
   GetFrame().GetPage()->GetVisualViewport().SetScale(1);
   GetFrame().Selection().SelectAll();
   UpdateAllLifecyclePhasesForTest();
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  gfx::RectF rect(0, 0, 100, 100);
+  const std::unique_ptr<DragImage> image1(
+      DragController::DragImageForSelection(GetFrame(), 0.75f, rect));
+#else
   const std::unique_ptr<DragImage> image1(
       DragController::DragImageForSelection(GetFrame(), 0.75f));
+#endif
   GetFrame().GetPage()->GetVisualViewport().SetScale(2);
   GetFrame().Selection().SelectAll();
   UpdateAllLifecyclePhasesForTest();
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  const std::unique_ptr<DragImage> image2(
+      DragController::DragImageForSelection(GetFrame(), 0.75f, rect));
+#else
   const std::unique_ptr<DragImage> image2(
       DragController::DragImageForSelection(GetFrame(), 0.75f));
+#endif
 
   EXPECT_GT(image1->Size().width(), 0);
   EXPECT_GT(image1->Size().height(), 0);
@@ -436,7 +447,13 @@ TEST_F(DragControllerTest, DragImageForSelectionClipsToViewport) {
   gfx::RectF expected_selection(0, node_margin_top, node_width,
                                 viewport_height_css - node_margin_top);
   EXPECT_EQ(expected_selection, DragController::ClippedSelection(GetFrame()));
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  gfx::RectF rect(0, 0, 100, 100);
+  auto selection_image(
+      DragController::DragImageForSelection(GetFrame(), 1, rect));
+#else
   auto selection_image(DragController::DragImageForSelection(GetFrame(), 1));
+#endif
   gfx::Size expected_image_size = gfx::ToRoundedSize(
       gfx::ScaleSize(expected_selection.size(), page_scale_factor));
   EXPECT_EQ(expected_image_size, selection_image->Size());
@@ -452,7 +469,11 @@ TEST_F(DragControllerTest, DragImageForSelectionClipsToViewport) {
       cc::ScrollSourceType::kNone);
   expected_selection = gfx::RectF(0, 0, node_width, viewport_height_css);
   EXPECT_EQ(expected_selection, DragController::ClippedSelection(GetFrame()));
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  selection_image = DragController::DragImageForSelection(GetFrame(), 1, rect);
+#else
   selection_image = DragController::DragImageForSelection(GetFrame(), 1);
+#endif
   expected_image_size = gfx::ToRoundedSize(
       gfx::ScaleSize(expected_selection.size(), page_scale_factor));
   EXPECT_EQ(expected_image_size, selection_image->Size());
@@ -466,7 +487,11 @@ TEST_F(DragControllerTest, DragImageForSelectionClipsToViewport) {
   expected_selection = gfx::RectF(
       0, 0, node_width, node_height + node_margin_top - scroll_offset);
   EXPECT_EQ(expected_selection, DragController::ClippedSelection(GetFrame()));
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  selection_image = DragController::DragImageForSelection(GetFrame(), 1, rect);
+#else
   selection_image = DragController::DragImageForSelection(GetFrame(), 1);
+#endif
   expected_image_size = gfx::ToRoundedSize(
       gfx::ScaleSize(expected_selection.size(), page_scale_factor));
   EXPECT_EQ(expected_image_size, selection_image->Size());
@@ -509,7 +534,13 @@ TEST_F(DragControllerTest, DragImageForSelectionClipsChildFrameToViewport) {
   // not include the iframe's margin.
   gfx::RectF expected_selection(0, 5, 30, 20);
   EXPECT_EQ(expected_selection, DragController::ClippedSelection(child_frame));
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  gfx::RectF rect(0, 0, 100, 100);
+  auto selection_image(
+      DragController::DragImageForSelection(child_frame, 1, rect));
+#else
   auto selection_image(DragController::DragImageForSelection(child_frame, 1));
+#endif
   gfx::Size expected_image_size = gfx::ToRoundedSize(expected_selection.size());
   EXPECT_EQ(expected_image_size, selection_image->Size());
 
@@ -522,7 +553,11 @@ TEST_F(DragControllerTest, DragImageForSelectionClipsChildFrameToViewport) {
       cc::ScrollSourceType::kNone);
   expected_selection = gfx::RectF(0, 5, 30, 20);
   EXPECT_EQ(expected_selection, DragController::ClippedSelection(child_frame));
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  selection_image = DragController::DragImageForSelection(child_frame, 1, rect);
+#else
   selection_image = DragController::DragImageForSelection(child_frame, 1);
+#endif
   expected_image_size = gfx::ToRoundedSize(expected_selection.size());
   EXPECT_EQ(expected_image_size, selection_image->Size());
 
@@ -535,7 +570,11 @@ TEST_F(DragControllerTest, DragImageForSelectionClipsChildFrameToViewport) {
       cc::ScrollSourceType::kNone);
   expected_selection = gfx::RectF(0, 10, 30, 15);
   EXPECT_EQ(expected_selection, DragController::ClippedSelection(child_frame));
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  selection_image = DragController::DragImageForSelection(child_frame, 1, rect);
+#else
   selection_image = DragController::DragImageForSelection(child_frame, 1);
+#endif
   expected_image_size = gfx::ToRoundedSize(expected_selection.size());
   EXPECT_EQ(expected_image_size, selection_image->Size());
 
@@ -547,7 +586,11 @@ TEST_F(DragControllerTest, DragImageForSelectionClipsChildFrameToViewport) {
       mojom::blink::ScrollType::kProgrammatic, cc::ScrollSourceType::kNone);
   expected_selection = gfx::RectF(0, 10, 30, 8);
   EXPECT_EQ(expected_selection, DragController::ClippedSelection(child_frame));
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  selection_image = DragController::DragImageForSelection(child_frame, 1, rect);
+#else
   selection_image = DragController::DragImageForSelection(child_frame, 1);
+#endif
   expected_image_size = gfx::ToRoundedSize(expected_selection.size());
   EXPECT_EQ(expected_image_size, selection_image->Size());
 }
@@ -592,7 +635,13 @@ TEST_F(DragControllerTest,
   // not include the iframe's margin.
   gfx::RectF expected_selection(0, 5, 30, 20);
   EXPECT_EQ(expected_selection, DragController::ClippedSelection(child_frame));
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  gfx::RectF rect(0, 0, 100, 100);
+  auto selection_image(
+      DragController::DragImageForSelection(child_frame, 1, rect));
+#else
   auto selection_image(DragController::DragImageForSelection(child_frame, 1));
+#endif
   gfx::Size expected_image_size = gfx::ToRoundedSize(
       gfx::ScaleSize(expected_selection.size(), page_scale_factor));
   EXPECT_EQ(expected_image_size, selection_image->Size());
@@ -606,7 +655,11 @@ TEST_F(DragControllerTest,
       cc::ScrollSourceType::kNone);
   expected_selection = gfx::RectF(0, 5, 30, 20);
   EXPECT_EQ(expected_selection, DragController::ClippedSelection(child_frame));
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  selection_image = DragController::DragImageForSelection(child_frame, 1, rect);
+#else
   selection_image = DragController::DragImageForSelection(child_frame, 1);
+#endif
   expected_image_size = gfx::ToRoundedSize(
       gfx::ScaleSize(expected_selection.size(), page_scale_factor));
   EXPECT_EQ(expected_image_size, selection_image->Size());
@@ -620,7 +673,11 @@ TEST_F(DragControllerTest,
       cc::ScrollSourceType::kNone);
   expected_selection = gfx::RectF(0, 10, 30, 15);
   EXPECT_EQ(expected_selection, DragController::ClippedSelection(child_frame));
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  selection_image = DragController::DragImageForSelection(child_frame, 1, rect);
+#else
   selection_image = DragController::DragImageForSelection(child_frame, 1);
+#endif
   expected_image_size = gfx::ToRoundedSize(
       gfx::ScaleSize(expected_selection.size(), page_scale_factor));
   EXPECT_EQ(expected_image_size, selection_image->Size());
@@ -633,7 +690,11 @@ TEST_F(DragControllerTest,
       mojom::blink::ScrollType::kProgrammatic, cc::ScrollSourceType::kNone);
   expected_selection = gfx::RectF(0, 10, 30, 8);
   EXPECT_EQ(expected_selection, DragController::ClippedSelection(child_frame));
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  selection_image = DragController::DragImageForSelection(child_frame, 1, rect);
+#else
   selection_image = DragController::DragImageForSelection(child_frame, 1);
+#endif
   expected_image_size = gfx::ToRoundedSize(
       gfx::ScaleSize(expected_selection.size(), page_scale_factor));
   EXPECT_EQ(expected_image_size, selection_image->Size());
@@ -999,3 +1060,8 @@ TEST_F(DragControllerTest, ResumeCaretBlinkingAfterDrag) {
 }
 
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/page/drag_controller_ext_unittest_for_include.cc"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/page/drag_controller_utils_unittest_for_include.cc"
+#endif

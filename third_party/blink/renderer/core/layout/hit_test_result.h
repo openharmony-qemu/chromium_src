@@ -24,6 +24,7 @@
 
 #include <tuple>
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/editing/forward.h"
 #include "third_party/blink/renderer/core/layout/geometry/physical_rect.h"
@@ -58,8 +59,16 @@ class Node;
 class PhysicalBoxFragment;
 class Scrollbar;
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+class HitTestResultUtils;
+#endif
 class CORE_EXPORT HitTestResult {
   DISALLOW_NEW();
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  friend class HitTestResultUtils;
+  std::unique_ptr<HitTestResultUtils> imp_utils_ = nullptr;
+#endif
 
  public:
   using NodeSet = GCedHeapLinkedHashSet<Member<Node>>;
@@ -216,6 +225,10 @@ class CORE_EXPORT HitTestResult {
       Node* resolved_inner_node,
       const PhysicalOffset& resolved_point_in_main_frame);
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  PhysicalOffset GetLocalPoint() { return local_point_; }
+#endif
+
  private:
   NodeSet& MutableListBasedTestResult();  // See above.
   HTMLMediaElement* MediaElement() const;
@@ -261,6 +274,10 @@ class CORE_EXPORT HitTestResult {
 };
 
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/layout/hit_test_result_utils.h"
+#endif
 
 WTF_ALLOW_CLEAR_UNUSED_SLOTS_WITH_MEM_FUNCTIONS(blink::HitTestResult)
 

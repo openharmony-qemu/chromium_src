@@ -1,0 +1,16 @@
+diff a/third_party/blink/renderer/core/paint/outline_painter.cc b/third_party/blink/renderer/core/paint/outline_painter.cc	(rejected hunks)
+@@ -843,10 +847,14 @@ void PaintFocusRing(GraphicsContext& context,
+   if (style.DarkColorScheme()) {
+     inner_color = Color::kWhite;
+   }
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_NIGHT_MODE)
++  inner_color = NightModeInverter::GetInverter().InvertElementColor(
++      style, inner_color, NightModeInverter::ElementRole::kBorder);
++#endif
+   const float outer_ring_width = FocusRingOuterStrokeWidth(style);
+   const float inner_ring_width = FocusRingInnerStrokeWidth(style);
+   const int offset = FocusRingOffset(style, info);
+ 
+   Color outer_color =

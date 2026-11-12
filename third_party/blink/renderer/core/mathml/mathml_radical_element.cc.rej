@@ -1,0 +1,17 @@
+diff a/third_party/blink/renderer/core/mathml/mathml_radical_element.cc b/third_party/blink/renderer/core/mathml/mathml_radical_element.cc	(rejected hunks)
+@@ -16,10 +20,15 @@ bool MathMLRadicalElement::HasIndex() const {
+   return HasTagName(mathml_names::kMrootTag);
+ }
+ 
+ LayoutObject* MathMLRadicalElement::CreateLayoutObject(
+     const ComputedStyle& style) {
++#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
++  if (Cssutils::IsMathFormulaDisabledMode()) {
++    return MathMLElement::CreateLayoutObject(style);
++  }
++#endif
+   if (!style.IsDisplayMathType()) {
+     return MathMLElement::CreateLayoutObject(style);
+   }
+   if (HasTagName(mathml_names::kMsqrtTag))
+     return MakeGarbageCollected<LayoutMathMLBlockWithAnonymousMrow>(this);

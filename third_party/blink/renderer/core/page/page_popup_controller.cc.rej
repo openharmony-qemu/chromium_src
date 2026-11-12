@@ -1,0 +1,16 @@
+diff a/third_party/blink/renderer/core/page/page_popup_controller.cc b/third_party/blink/renderer/core/page/page_popup_controller.cc	(rejected hunks)
+@@ -113,10 +113,14 @@ void PagePopupController::ClearPagePopupClient() {
+   popup_client_ = nullptr;
+   popup_origin_.reset();
+ }
+ 
+ void PagePopupController::setWindowRect(int x, int y, int width, int height) {
++  if (!popup_client_) {
++    return;
++  }
++
+   popup_.SetWindowRect(gfx::Rect(x, y, width, height));
+ 
+   popup_origin_ = gfx::Point(x, y);
+   popup_client_->SetMenuListOptionsBoundsInAXTree(options_bounds_,
+                                                   *popup_origin_);

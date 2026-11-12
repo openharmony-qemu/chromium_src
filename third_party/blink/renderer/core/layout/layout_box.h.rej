@@ -1,0 +1,39 @@
+diff a/third_party/blink/renderer/core/layout/layout_box.h b/third_party/blink/renderer/core/layout/layout_box.h	(rejected hunks)
+@@ -240,10 +247,15 @@ class CORE_EXPORT LayoutBox : public LayoutBoxModelObject {
+   LayoutUnit LogicalHeightForEmptyLine() const {
+     NOT_DESTROYED();
+     return FirstLineHeight();
+   }
+ 
++  virtual PhysicalOffset Location() const {
++    NOT_DESTROYED();
++    return frame_location_;
++  }
++
+   // Return the size of all fragments stitched together in the block direction.
+   //
+   // <div style="columns:2; column-fill:auto; height:100px;">
+   //   <div id="box" style="width:80px;">
+   //     <div style="height:70px;"></div>
+@@ -833,12 +845,21 @@ class CORE_EXPORT LayoutBox : public LayoutBoxModelObject {
+     NOT_DESTROYED();
+     return ShouldPlaceBlockDirectionScrollbarOnLogicalLeft();
+   }
+   virtual bool ShouldPlaceBlockDirectionScrollbarOnLogicalLeft() const {
+     NOT_DESTROYED();
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++    if (ScrollbarLayoutPolicy() == LayoutPolicy::kSystem) {
++      return IsSystemRtlEnable();
++    }
++#endif
+     return StyleRef().ShouldPlaceBlockDirectionScrollbarOnLogicalLeft();
+   }
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  LayoutPolicy ScrollbarLayoutPolicy() const;
++  bool IsSystemRtlEnable() const;
++#endif
+ 
+   bool HasScrollableOverflowX() const {
+     NOT_DESTROYED();
+     return ScrollsOverflowX() && ScrollWidth() != ClientWidth();
+   }

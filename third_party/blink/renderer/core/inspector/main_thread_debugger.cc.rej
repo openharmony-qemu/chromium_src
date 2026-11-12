@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/core/inspector/main_thread_debugger.cc b/third_party/blink/renderer/core/inspector/main_thread_debugger.cc	(rejected hunks)
+@@ -31,10 +31,13 @@
+ #include "third_party/blink/renderer/core/inspector/main_thread_debugger.h"
+ 
+ #include <memory>
+ #include <set>
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/feature_list.h"
+ #include "base/synchronization/lock.h"
+ #include "base/unguessable_token.h"
+ #include "build/build_config.h"
+ #include "third_party/blink/public/common/features.h"

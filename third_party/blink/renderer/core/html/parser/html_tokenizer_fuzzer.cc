@@ -18,7 +18,7 @@ namespace blink {
 int FuzzTokenizer(const uint8_t* data, size_t size) {
   static BlinkFuzzerTestSupport test_support = BlinkFuzzerTestSupport();
   test::TaskEnvironment task_environment;
-  FuzzedDataProvider fuzzed_data_provider(data, size);
+  blink::FuzzedDataProvider fuzzed_data_provider(data, size);
 
   // Use the first byte of fuzz data to randomize the tokenizer options.
   HTMLParserOptions options;

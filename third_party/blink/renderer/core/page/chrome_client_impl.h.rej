@@ -1,0 +1,45 @@
+diff a/third_party/blink/renderer/core/page/chrome_client_impl.h b/third_party/blink/renderer/core/page/chrome_client_impl.h	(rejected hunks)
+@@ -32,10 +32,12 @@
+ #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_CHROME_CLIENT_IMPL_H_
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_CHROME_CLIENT_IMPL_H_
+ 
+ #include <memory>
+ 
++#include "absl/types/optional.h"
++#include "arkweb/build/features/features.h"
+ #include "base/gtest_prod_util.h"
+ #include "cc/input/overscroll_behavior.h"
+ #include "third_party/blink/public/common/widget/constants.h"
+ #include "third_party/blink/public/mojom/input/focus_type.mojom-blink-forward.h"
+ #include "third_party/blink/public/web/web_navigation_policy.h"
+@@ -54,18 +56,29 @@ namespace blink {
+ 
+ class PagePopup;
+ class PagePopupClient;
+ class WebAutofillClient;
+ class WebViewImpl;
++#if BUILDFLAG(IS_ARKWEB)
++class ChromeClientImplExt;
++#endif  // IS_ARKWEB
+ 
+ // Handles window-level notifications from core on behalf of a WebView.
+-class CORE_EXPORT ChromeClientImpl final : public ChromeClient {
++#if BUILDFLAG(IS_ARKWEB)
++class CORE_EXPORT ChromeClientImpl : public ChromeClientExt {
++#else
++class CORE_EXPORT ChromeClientImpl : public ChromeClient {
++#endif
+  public:
+   explicit ChromeClientImpl(WebViewImpl*);
+   ~ChromeClientImpl() override;
+   void Trace(Visitor* visitor) const override;
+ 
++#if BUILDFLAG(IS_ARKWEB)
++  friend class ChromeClientImplExt;
++  virtual ChromeClientImplExt* AsChromeClientImplExt() { return nullptr; }
++#endif  // IS_ARKWEB
+   // ChromeClient methods:
+   WebViewImpl* GetWebView() const override;
+   void ChromeDestroyed() override;
+   void SetWindowRect(const gfx::Rect&, LocalFrame&) override;
+ #if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)

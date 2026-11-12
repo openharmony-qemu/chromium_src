@@ -234,6 +234,14 @@ LogicalStaticPosition::InlineEdge InlineStaticPositionEdge(
     WritingDirectionMode parent_writing_direction,
     bool should_swap_inline_axis) {
   CHECK(oof_node.IsOutOfFlowPositioned());
+#if BUILDFLAG(IS_ARKWEB)
+  // revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6710263
+  if (!RuntimeEnabledFeatures::CSSAlignBlockAndInlineOutOfFlowsEnabled()) {
+    return should_swap_inline_axis ? LogicalStaticPosition::kInlineEnd
+                                   : LogicalStaticPosition::kInlineStart;
+  }
+
+#endif
   StyleSelfAlignmentData normal_value_behavior = {ItemPosition::kStart,
                                                   OverflowAlignment::kDefault};
   const ItemPosition align_self =
@@ -285,6 +293,13 @@ LogicalStaticPosition::BlockEdge BlockStaticPositionEdge(
     const ComputedStyle* align_items_style,
     WritingDirectionMode parent_writing_direction) {
   CHECK(oof_node.IsOutOfFlowPositioned());
+#if BUILDFLAG(IS_ARKWEB)
+  // revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6710263
+  if (!RuntimeEnabledFeatures::CSSAlignBlockAndInlineOutOfFlowsEnabled()) {
+    return LogicalStaticPosition::kBlockStart;
+  }
+
+#endif
   StyleSelfAlignmentData normal_value_behavior = {ItemPosition::kStart,
                                                   OverflowAlignment::kDefault};
   const ItemPosition align_self =

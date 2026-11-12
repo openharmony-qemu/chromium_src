@@ -24,8 +24,11 @@
 #include "third_party/blink/renderer/platform/bindings/script_state.h"
 #include "third_party/blink/renderer/platform/wtf/text/string_utf8_adaptor.h"
 
-namespace blink {
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/mojo/ark_web_mojo.h"
+#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
 
+namespace blink {
 // static
 MojoCreateMessagePipeResult* Mojo::createMessagePipe() {
   MojoCreateMessagePipeResult* result_dict =
@@ -105,6 +108,11 @@ void Mojo::bindInterface(ScriptState* script_state,
                          const V8MojoScope& scope,
                          ExceptionState& exception_state) {
   std::string name = interface_name.Utf8();
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  if (ArkWebBypassInterfacesExceptPdf(name)) {
+    return;
+  }
+#endif
   auto handle =
       mojo::ScopedMessagePipeHandle::From(request_handle->TakeHandle());
 

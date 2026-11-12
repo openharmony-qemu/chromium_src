@@ -1,0 +1,59 @@
+diff a/third_party/blink/renderer/core/mathml/mathml_element.cc b/third_party/blink/renderer/core/mathml/mathml_element.cc	(rejected hunks)
+@@ -2,20 +2,24 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "third_party/blink/renderer/core/mathml/mathml_element.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "third_party/blink/renderer/bindings/core/v8/js_event_handler_for_content_attribute.h"
+ #include "third_party/blink/renderer/core/css/css_property_name.h"
+ #include "third_party/blink/renderer/core/css/css_to_length_conversion_data.h"
+ #include "third_party/blink/renderer/core/css/parser/css_parser.h"
+ #include "third_party/blink/renderer/core/css_value_keywords.h"
+ #include "third_party/blink/renderer/core/dom/document.h"
+ #include "third_party/blink/renderer/core/execution_context/execution_context.h"
+ #include "third_party/blink/renderer/core/html/html_element.h"
+ #include "third_party/blink/renderer/platform/wtf/text/character_visitor.h"
+ #include "third_party/blink/renderer/platform/wtf/text/string_to_number.h"
++#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
++#endif
+ 
+ namespace blink {
+ 
+ MathMLElement::MathMLElement(const QualifiedName& tagName,
+                              Document& document,
+@@ -38,10 +42,15 @@ static inline bool IsDisallowedMathSizeAttribute(const AtomicString& value) {
+          EqualIgnoringASCIICase(value, "larger") ||
+          EqualIgnoringASCIICase(value, "math");
+ }
+ 
+ bool MathMLElement::IsPresentationAttribute(const QualifiedName& name) const {
++#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
++  if (Cssutils::IsMathFormulaDisabledMode()) {
++    return Element::IsPresentationAttribute(name);
++  }
++#endif
+   if (name == html_names::kDirAttr || name == mathml_names::kMathsizeAttr ||
+       name == mathml_names::kMathcolorAttr ||
+       name == mathml_names::kMathbackgroundAttr ||
+       name == mathml_names::kScriptlevelAttr ||
+       name == mathml_names::kDisplaystyleAttr) {
+@@ -117,10 +132,16 @@ void MathMLElement::CollectStyleForPresentationAttribute(
+     Element::CollectStyleForPresentationAttribute(name, value, style);
+   }
+ }
+ 
+ void MathMLElement::ParseAttribute(const AttributeModificationParams& param) {
++#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
++  if (Cssutils::IsMathFormulaDisabledMode()) {
++    Element::ParseAttribute(param);
++    return;
++  }
++#endif
+   const AtomicString& event_name =
+       HTMLElement::EventNameForAttributeName(param.name);
+   if (!event_name.IsNull()) {
+     SetAttributeEventListener(
+         event_name, JSEventHandlerForContentAttribute::Create(

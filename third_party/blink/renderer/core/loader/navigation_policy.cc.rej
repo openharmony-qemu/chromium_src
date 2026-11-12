@@ -1,0 +1,17 @@
+diff a/third_party/blink/renderer/core/loader/navigation_policy.cc b/third_party/blink/renderer/core/loader/navigation_policy.cc	(rejected hunks)
+@@ -66,11 +66,14 @@ NavigationPolicy NavigationPolicyFromEventModifiers(
+     return kNavigationPolicyLinkPreview;
+   } else if (new_tab_modifier) {
+     return shift ? kNavigationPolicyNewForegroundTab
+                  : kNavigationPolicyNewBackgroundTab;
+   }
+-  return shift ? kNavigationPolicyNewWindow : kNavigationPolicyDownload;
++#if BUILDFLAG(IS_ARKWEB)
++  LOG(INFO) << "navigation policy from event modifiers " << shift;
++#endif
++  return shift ? kNavigationPolicyNewWindow : kNavigationPolicyCurrentTab;
+ }
+ 
+ NavigationPolicy NavigationPolicyFromEventInternal(
+     const Event* event,
+     bool is_link_preview_enabled) {

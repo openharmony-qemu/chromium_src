@@ -1,0 +1,16 @@
+diff a/third_party/blink/renderer/core/loader/document_loader.h b/third_party/blink/renderer/core/loader/document_loader.h	(rejected hunks)
+@@ -31,10 +31,14 @@
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_LOADER_DOCUMENT_LOADER_H_
+ 
+ #include <memory>
+ #include <optional>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/memory/scoped_refptr.h"
+ #include "base/time/time.h"
+ #include "base/unguessable_token.h"
+ #include "base/uuid.h"
+ #include "mojo/public/cpp/base/big_buffer.h"

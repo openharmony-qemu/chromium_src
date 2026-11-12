@@ -1,0 +1,25 @@
+diff a/third_party/blink/renderer/core/loader/build.gni b/third_party/blink/renderer/core/loader/build.gni	(rejected hunks)
+@@ -169,10 +176,23 @@ blink_core_sources_loader = [
+   "worker_resource_fetcher_properties.h",
+   "worker_resource_timing_notifier_impl.cc",
+   "worker_resource_timing_notifier_impl.h",
+ ]
+ 
++if (arkweb_same_layer) {
++  blink_core_sources_loader += arkweb_third_patry_blink_renderer_core_loader_sources
++  blink_core_sources_loader += arkweb_third_party_blink_renderer_core_loader_resource_sources
++}
++
++if (defined(enable_arkweb_ext) && enable_arkweb_ext) {
++  blink_core_sources_loader += arkweb_third_patry_blink_renderer_core_video_loader_sources
++}
++
++if (is_arkweb) {
++  blink_core_sources_loader += arkweb_third_party_blink_renderer_core_loader_sources
++}
++
+ blink_core_tests_loader = [
+   "alternate_signed_exchange_resource_info_test.cc",
+   "anchor_element_interaction_test.cc",
+   "base_fetch_context_test.cc",
+   "document_load_timing_test.cc",

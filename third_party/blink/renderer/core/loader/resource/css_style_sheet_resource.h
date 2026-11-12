@@ -26,6 +26,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_LOADER_RESOURCE_CSS_STYLE_SHEET_RESOURCE_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_LOADER_RESOURCE_CSS_STYLE_SHEET_RESOURCE_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/task/single_thread_task_runner.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/loader/resource/text_resource.h"
@@ -35,6 +36,7 @@
 
 namespace blink {
 
+class CSSStyleSheetResourceUtils;
 class CSSParserContext;
 class FetchParameters;
 class KURL;
@@ -43,12 +45,16 @@ class StyleSheetContents;
 
 class CORE_EXPORT CSSStyleSheetResource final : public TextResource {
  public:
+  friend class CSSStyleSheetResourceUtils;
   enum class MIMETypeCheck { kStrict, kLax };
 
   static CSSStyleSheetResource* Fetch(FetchParameters&,
                                       ResourceFetcher*,
                                       ResourceClient*);
   static CSSStyleSheetResource* CreateForTest(const KURL&, const TextEncoding&);
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+  Member<CSSStyleSheetResourceUtils> cssStyleSheetResourceUtils;
+#endif
 
   CSSStyleSheetResource(const ResourceRequest&,
                         const ResourceLoaderOptions&,

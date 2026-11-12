@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/core/loader/resource/script_resource.h b/third_party/blink/renderer/core/loader/resource/script_resource.h	(rejected hunks)
+@@ -319,10 +327,13 @@ class CORE_EXPORT ScriptResource final : public TextResource {
+   void OnDataPipeReadable(MojoResult result,
+                           const mojo::HandleSignalsState& state);
+ 
+   // Stores the source text. Should be used only for non-Wasm resources.
+   ParkableString source_text_;
++#if BUILDFLAG(IS_ARKWEB)
++  Member<ScriptResourceUtils> resourceUtils;
++#endif
+ 
+   // This isolate will be null if this ScriptResource is not created on the main
+   // thread. The isolate is not stored because non-main thread Isolates are
+   // transient. The main thread isolate will be always outlive this object.
+   v8::Isolate* isolate_if_main_thread_;

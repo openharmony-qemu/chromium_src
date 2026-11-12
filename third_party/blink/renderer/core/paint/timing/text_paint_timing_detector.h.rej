@@ -1,0 +1,32 @@
+diff a/third_party/blink/renderer/core/paint/timing/text_paint_timing_detector.h b/third_party/blink/renderer/core/paint/timing/text_paint_timing_detector.h	(rejected hunks)
+@@ -120,10 +120,16 @@ class CORE_EXPORT TextPaintTimingDetector final
+     return ltp_manager_.UpdateMetricsCandidate();
+   }
+   void ReportLargestIgnoredText();
+   void Trace(Visitor*) const;
+ 
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  void SetForBlankless();
++  uint32_t GetFrameIndex() const;
++  void SetFrameIndex(uint32_t frame_index);
++#endif
++
+  private:
+   friend class LargestContentfulPaintCalculatorTest;
+ 
+   // The state of `LayoutObject`s being tracked in the `recorded_set_`.
+   enum class TextPaintStatus { kPainted, kAllowRepaint };
+@@ -165,10 +171,13 @@ class CORE_EXPORT TextPaintTimingDetector final
+   bool recording_largest_text_paint_ = true;
+ 
+   // Used to decide which frame a record belongs to, monotonically increasing.
+   uint32_t frame_index_ = 1;
+   bool added_entry_in_latest_frame_ = false;
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  bool is_for_blankless_only_ = false;
++#endif
+ };
+ 
+ }  // namespace blink
+ 
+ #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_PAINT_TIMING_TEXT_PAINT_TIMING_DETECTOR_H_

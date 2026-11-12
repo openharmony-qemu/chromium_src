@@ -1,0 +1,31 @@
+diff a/third_party/blink/renderer/core/html/media/html_video_element_test.cc b/third_party/blink/renderer/core/html/media/html_video_element_test.cc	(rejected hunks)
+@@ -1,10 +1,18 @@
+ // Copyright 2018 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(ARKWEB_TEST)
++#include "ohos_sdk/openharmony/native/llvm/bin/../include/libcxx-ohos/include/c++/v1/__ranges/lazy_split_view.h"
++#define private public
+ #include "third_party/blink/renderer/core/html/media/html_video_element.h"
++#undef private
++#else
++#include "third_party/blink/renderer/core/html/media/html_video_element.h"
++#endif // ARKWEB_TEST
+ 
+ #include "cc/layers/layer.h"
+ #include "testing/gmock/include/gmock/gmock.h"
+ #include "testing/gtest/include/gtest/gtest.h"
+ #include "third_party/blink/public/platform/web_fullscreen_video_status.h"
+@@ -460,6 +468,10 @@ TEST_P(HTMLVideoElementTest, VideoVisibilityTrackerVideoElementRectDimensions) {
+   const auto intersection = Intersection(VisualRectInDocument(*box),
+                                          occlusion_state.video_element_rect);
+   EXPECT_EQ(occlusion_state.video_element_rect, intersection);
+ }
+ 
++#if BUILDFLAG(ARKWEB_TEST)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/media/html_video_element_ext_unittest.cc"
++#endif //ARKWEB_TEST
++
+ }  // namespace blink

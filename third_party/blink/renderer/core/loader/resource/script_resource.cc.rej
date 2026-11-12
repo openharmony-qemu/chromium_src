@@ -1,0 +1,18 @@
+diff a/third_party/blink/renderer/core/loader/resource/script_resource.cc b/third_party/blink/renderer/core/loader/resource/script_resource.cc	(rejected hunks)
+@@ -446,11 +471,16 @@ void ScriptResource::ResponseReceived(const ResourceResponse& response) {
+         response, mojom::blink::CodeCacheType::kJavascript,
+         GetResourceRequest().RequestorOrigin());
+     cached_metadata_handler_ =
+         MakeGarbageCollected<ScriptCachedMetadataHandlerWithHashing>(
+             Encoding(), std::move(sender));
++#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
++  } else if (http_family || code_cache_with_response_time_supported) {
++    LOG(DEBUG) << "Create CachedMetadataSender";
++#else
+   } else if (http_family) {
++#endif
+     std::unique_ptr<CachedMetadataSender> sender = CachedMetadataSender::Create(
+         response, mojom::blink::CodeCacheType::kJavascript,
+         GetResourceRequest().RequestorOrigin());
+     cached_metadata_handler_ =
+         MakeGarbageCollected<ScriptCachedMetadataHandler>(Encoding(),

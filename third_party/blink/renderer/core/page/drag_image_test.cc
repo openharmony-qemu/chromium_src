@@ -139,11 +139,17 @@ TEST(DragImageTest, TrimWhitespace) {
   String test_label = "          Example Example Example      \n    ";
   String expected_label = "Example Example Example";
   float device_scale_factor = 1.0f;
-
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  std::unique_ptr<DragImage> test_image =
+      DragImage::Create(url, test_label, device_scale_factor, false);
+  std::unique_ptr<DragImage> expected_image =
+      DragImage::Create(url, expected_label, device_scale_factor, false);
+#else
   std::unique_ptr<DragImage> test_image =
       DragImage::Create(url, test_label, device_scale_factor);
   std::unique_ptr<DragImage> expected_image =
       DragImage::Create(url, expected_label, device_scale_factor);
+#endif
 
   EXPECT_EQ(test_image->Size().width(), expected_image->Size().width());
 }
@@ -159,9 +165,9 @@ TEST(DragImageTest, CreateWithClipping) {
   String expected_label = u"Example Exam\u2026";
 
   std::unique_ptr<DragImage> test_image =
-      DragImage::Create(url, test_label, device_scale_factor);
+      DragImage::Create(url, test_label, device_scale_factor, false);
   std::unique_ptr<DragImage> expected_image =
-      DragImage::Create(expected_url, expected_label, device_scale_factor);
+      DragImage::Create(expected_url, expected_label, device_scale_factor, false);
 
   EXPECT_EQ(test_image->Size().width(), expected_image->Size().width());
 }

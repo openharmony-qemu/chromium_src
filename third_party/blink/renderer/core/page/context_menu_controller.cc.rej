@@ -1,0 +1,43 @@
+diff a/third_party/blink/renderer/core/page/context_menu_controller.cc b/third_party/blink/renderer/core/page/context_menu_controller.cc	(rejected hunks)
+@@ -28,10 +28,11 @@
+ 
+ #include <algorithm>
+ #include <memory>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/to_vector.h"
+ #include "base/feature_list.h"
+ #include "base/metrics/field_trial_params.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "components/shared_highlighting/core/common/shared_highlighting_features.h"
+@@ -671,10 +683,14 @@ bool ContextMenuController::ShowContextMenu(LocalFrame* frame,
+       data.src_url =
+           GURL(HitTestResult::AbsoluteImageURL(potential_image_node));
+       data.media_type = mojom::blink::ContextMenuDataMediaType::kImage;
+       data.media_flags |= ContextMenuData::kMediaCanPrint;
+       data.has_image_contents = HitTestResult::GetImage(potential_image_node);
++#if BUILDFLAG(ARKWEB_MENU)
++      AsContextMenuControllerExt()->SetImageRectFromPotentialImageNode(
++          data, potential_image_node);
++#endif  // BUILDFLAG(ARKWEB_MENU)    
+     }
+   }
+   // If it's not a link, an image, a media element, or an image/media link,
+   // show a selection menu or a more generic page menu.
+   if (selected_frame->GetDocument()->Loader()) {
+@@ -837,10 +853,14 @@ bool ContextMenuController::ShowContextMenu(LocalFrame* frame,
+       data.referrer_policy = network::mojom::ReferrerPolicy::kNever;
+     }
+     data.link_text = anchor->innerText().Utf8();
+   }
+ 
++#if BUILDFLAG(IS_ARKWEB)
++  AsContextMenuControllerExt()->HandleArkWebContextMenu(data, frame, result, selected_frame, source_type);
++#endif
++
+   data.selection_rect = ComputeSelectionRect(selected_frame);
+   data.source_type = source_type;
+ 
+   SetAutofillData(result.InnerNode(), data);
+ 

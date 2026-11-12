@@ -5,13 +5,13 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_SCRIPT_CLASSIC_SCRIPT_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_SCRIPT_CLASSIC_SCRIPT_H_
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/bindings/core/v8/sanitize_script_errors.h"
 #include "third_party/blink/renderer/bindings/core/v8/script_source_location_type.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/loader/resource/script_resource.h"
 #include "third_party/blink/renderer/core/script/script.h"
 #include "third_party/blink/renderer/platform/loader/fetch/script_fetch_options.h"
-
 namespace blink {
 
 struct WebScriptSource;
@@ -46,6 +46,7 @@ class CORE_EXPORT ClassicScript final : public Script {
   // behavior.
   // TODO(crbug/1112266): Use kSanitize for all existing callers if possible, or
   // otherwise add comments why kDoNotSanitize should be used.
+  
   static ClassicScript* CreateUnspecifiedScript(
       const String& source_text,
       ScriptSourceLocationType = ScriptSourceLocationType::kUnknown,

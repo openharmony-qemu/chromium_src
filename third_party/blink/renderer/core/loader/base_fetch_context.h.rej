@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/core/loader/base_fetch_context.h b/third_party/blink/renderer/core/loader/base_fetch_context.h	(rejected hunks)
+@@ -83,10 +87,13 @@ class CORE_EXPORT BaseFetchContext : public FetchContext {
+   virtual void CountUsage(mojom::WebFeature) const = 0;
+   virtual void CountDeprecation(mojom::WebFeature) const = 0;
+   virtual net::SiteForCookies GetSiteForCookies() const = 0;
+ 
+   virtual SubresourceFilter* GetSubresourceFilter() const = 0;
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  virtual SubresourceFilter* GetUserSubresourceFilter() const = 0;
++#endif
+   virtual bool ShouldBlockWebSocketByMixedContentCheck(const KURL&) const = 0;
+   virtual std::unique_ptr<WebSocketHandshakeThrottle>
+   CreateWebSocketHandshakeThrottle() = 0;
+ 
+   // If the optional `alias_url` is non-null, it will be used to perform the

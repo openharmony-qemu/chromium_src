@@ -134,9 +134,14 @@ function adjustWindowRect(
     return windowRect;
 
   const anchorRect = new Rectangle(global.params.anchorRectInScreen);
-  const availRect = new Rectangle(
+  let availRect = new Rectangle(
       window.screen.availLeft, window.screen.availTop, window.screen.availWidth,
       window.screen.availHeight);
+// OpenHarmony uses global.params.availableRectInScreen rather than window.screen to
+// represent availRect
+  if (global.params.availableRectInScreen) {
+      availRect = new Rectangle(global.params.availableRectInScreen);
+  }
 
   _adjustWindowRectVertically(
       windowRect, availRect, anchorRect, minHeight, allowOverlapWithAnchor);

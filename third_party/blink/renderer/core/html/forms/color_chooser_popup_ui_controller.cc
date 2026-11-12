@@ -47,6 +47,9 @@
 #include "ui/base/ui_base_features.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/strings/grit/ax_strings.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 
 namespace blink {
 
@@ -82,6 +85,9 @@ void ColorChooserPopupUIController::OpenUI() {
 }
 
 void ColorChooserPopupUIController::EndChooser() {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  eye_dropper_chooser_.reset();
+#endif  
   ColorChooserUIController::EndChooser();
   CancelPopup();
 }
@@ -95,6 +101,11 @@ bool ColorChooserPopupUIController::IsPickerVisible() const {
 }
 
 void ColorChooserPopupUIController::WriteDocument(SegmentedBuffer& data) {
+#if BUILDFLAG(IS_ARKWEB)
+  if (!base::ohos::IsPcDevice()) {
+    return;
+  }
+#endif  
   if (client_->ShouldShowSuggestions()) {
     WriteColorSuggestionPickerDocument(data);
   } else {

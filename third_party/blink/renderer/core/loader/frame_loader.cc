@@ -697,8 +697,14 @@ DetermineRequestDestinationFromNavigationType(
   NOTREACHED();
 }
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+void FrameLoader::StartNavigation(FrameLoadRequest& request,
+                                  WebFrameLoadType frame_load_type,
+                                  bool is_triggered_by_js) {
+#else
 void FrameLoader::StartNavigation(FrameLoadRequest& request,
                                   WebFrameLoadType frame_load_type) {
+#endif
   CHECK(!IsBackForwardOrRestore(frame_load_type));
   DCHECK(request.GetTriggeringEventInfo() !=
          mojom::blink::TriggeringEventInfo::kUnknown);
@@ -761,6 +767,9 @@ void FrameLoader::StartNavigation(FrameLoadRequest& request,
             mojom::blink::ConsoleMessageLevel::kError,
             StrCat({"Not allowed to navigate top frame to ", url.Protocol(),
                     " URL: ", url.ElidedString()})));
+#if BUILDFLAG(ARKWEB_AI)
+    frame_->ProcessFragment(url);
+#endif
     return;
   }
 
@@ -825,6 +834,13 @@ void FrameLoader::StartNavigation(FrameLoadRequest& request,
         /*has_ua_visual_transition*/ false,
         /*soft_navigation_heuristics_task_id=*/std::nullopt,
         /*should_skip_screenshot=*/false);
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT) && BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+    if (enable_logger_report_) {
+      StartNavigationLoggerReport(
+          request, resource_request, frame_load_type, true, is_triggered_by_js,
+          WebNavigationType::kWebNavigationTypeOther, url);
+    }
+#endif
     return;
   }
 
@@ -842,6 +858,14 @@ void FrameLoader::StartNavigation(FrameLoadRequest& request,
           mojom::blink::TriggeringEventInfo::kNotFromEvent);
   mojom::blink::RequestContextType request_context_type =
       DetermineRequestContextFromNavigationType(navigation_type);
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT) && BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  if (enable_logger_report_) {
+    StartNavigationLoggerReport(request, resource_request, frame_load_type,
+                                false, is_triggered_by_js, navigation_type,
+                                url);
+  }
+#endif
 
   // TODO(lyf): handle `frame` context type. https://crbug.com/1019716
   if (mojom::blink::RequestContextType::LOCATION == request_context_type &&
@@ -927,7 +951,12 @@ void FrameLoader::StartNavigation(FrameLoadRequest& request,
   //
   // See wpt/url/javascript-urls.window.js test for the standard compliant
   // behaviors.
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
+      ProtocolIsJavaScript(url.GetString()) && !url.IsValid()) {
+#else
   if (ProtocolIsJavaScript(url.GetString()) && !url.IsValid()) {
+#endif
     return;
   }
 
@@ -1411,8 +1440,20 @@ void FrameLoader::StopAllLoaders(bool abort_client) {
     frame_->DomWindow()->navigation()->InformAboutCanceledNavigation();
   }
 
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  if (document_loader_) {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "Frame loader StopAllLoaders, url: "
+                       << url::LogUtils::ConvertUrlWithMask(
+                              frame_->GetDocument()->Url().GetString().Utf8());
+#endif
+    document_loader_->StopLoading();
+  }
+#else
   if (document_loader_)
     document_loader_->StopLoading();
+#endif
+
   if (abort_client)
     CancelClientNavigation();
   else
@@ -1872,6 +1913,14 @@ void FrameLoader::RunScriptsAtDocumentElementAvailable() {
   Client()->RunScriptsAtDocumentElementAvailable();
   // The frame might be detached at this point.
 }
+
+#if BUILDFLAG(ARKWEB_JSPROXY)
+void FrameLoader::RunScriptsAtHeadElementAvailable() {
+  if (Client()) {
+    Client()->RunScriptsAtHeadElementAvailable();
+  }
+}
+#endif
 
 void FrameLoader::DispatchDidClearDocumentOfWindowObject() {
   if (state_ == State::kUninitialized)

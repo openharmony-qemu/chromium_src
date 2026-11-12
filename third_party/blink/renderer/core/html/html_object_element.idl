@@ -61,7 +61,7 @@
     [CEReactions, Reflect] attribute DOMString codeType;
 
     [CEReactions, Reflect] attribute [LegacyNullToEmptyString] DOMString border;
-
+    [CEReactions, Reflect] attribute DOMString arkwebnativestyle;
     // TODO(foolip): These getters and setters are not in the spec.
     [NotEnumerable, MeasureAs=HTMLObjectElementGetter] getter any (DOMString name);
     [MeasureAs=HTMLObjectElementSetter] setter any (DOMString name, any value);

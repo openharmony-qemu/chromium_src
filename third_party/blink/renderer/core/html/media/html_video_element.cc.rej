@@ -1,0 +1,139 @@
+diff a/third_party/blink/renderer/core/html/media/html_video_element.cc b/third_party/blink/renderer/core/html/media/html_video_element.cc	(rejected hunks)
+@@ -71,10 +71,17 @@
+ #include "third_party/blink/renderer/platform/graphics/video_frame_image_util.h"
+ #include "third_party/blink/renderer/platform/instrumentation/use_counter.h"
+ #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
+ #include "third_party/blink/renderer/platform/web_test_support.h"
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/media/html_video_element_ext.cc"
++#endif
++#if BUILDFLAG(ARKWEB_PIP)
++#include "content/browser/media/media_web_contents_observer.h"
++#endif
++
+ namespace blink {
+ 
+ namespace {
+ // Represents the visibility threshold to be used by the
+ // |visibility_tracker_|. Where visibility is defined as: intersecting
+@@ -99,11 +106,20 @@ HTMLVideoElement::HTMLVideoElement(Document& document)
+       video_has_played_(false),
+       mostly_filling_viewport_(false),
+       cache_deleting_timer_(
+           GetDocument().GetTaskRunner(TaskType::kInternalMedia),
+           this,
+-          &HTMLVideoElement::ResetCache) {
++          &HTMLVideoElement::ResetCache)
++#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
++      ,
++      hbs_preload_time_(kVideoPreloadTimeDefault),
++      hbs_min_cache_time_(kVideoMinCacheTimeDefault),
++      hbs_max_cache_time_(kVideoMaxCacheTimeDefault),
++      hbs_moov_size_(kVideoMoovSizeDefault),
++      hbs_bitrate_(kVideoBitrateDefault)
++#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
++{
+   if (document.GetSettings()) {
+     default_poster_url_ =
+         AtomicString(document.GetSettings()->GetDefaultVideoPosterURL());
+   }
+ 
+@@ -218,10 +244,13 @@ void HTMLVideoElement::ParseAttribute(
+     const KURL poster_image_url = PosterImageURL();
+     // Load the poster if set, |VideoPainter| will decide whether to draw
+     // it. Only create an ImageLoader if a non-empty URL is seen.
+     if (image_loader_ || !poster_image_url.IsEmpty()) {
+       UpdatePosterImage();
++#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
++      video_poster_ = FastGetAttribute(html_names::kPosterAttr).GetString();
++#endif  // ARKWEB_MEDIA_AVSESSION
+     }
+     // Notify the player when the poster image URL changes.
+     if (GetWebMediaPlayer()) {
+       GetWebMediaPlayer()->SetPoster(poster_image_url);
+     }
+@@ -229,10 +258,22 @@ void HTMLVideoElement::ParseAttribute(
+     // image, instead, it shows a grayscaled and blurred copy.
+     if (remoting_interstitial_)
+       remoting_interstitial_->OnPosterImageChanged();
+     if (picture_in_picture_interstitial_)
+       picture_in_picture_interstitial_->OnPosterImageChanged();
++#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
++  } else if (params.name == html_names::kHbspreloadtimeAttr) {
++    CheckAndSetValue(params.name, &hbs_preload_time_);
++  } else if (params.name == html_names::kHbsmaxcachetimeAttr) {
++    CheckAndSetValue(params.name, &hbs_max_cache_time_);
++  } else if (params.name == html_names::kHbsmincachetimeAttr) {
++    CheckAndSetValue(params.name, &hbs_min_cache_time_);
++  } else if (params.name == html_names::kHbsbitrateAttr) {
++    CheckAndSetValue(params.name, &hbs_bitrate_);
++  } else if (params.name == html_names::kHbsmoovsizeAttr) {
++    CheckAndSetValue(params.name, &hbs_moov_size_);
++#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+   } else {
+     HTMLMediaElement::ParseAttribute(params);
+   }
+ }
+ 
+@@ -497,10 +538,17 @@ void HTMLVideoElement::DidEnterFullscreen() {
+     // FIXME: There is no embedder-side handling in web test mode.
+     if (!WebTestSupport::IsRunningWebTest())
+       GetWebMediaPlayer()->EnteredFullscreen();
+     GetWebMediaPlayer()->OnDisplayTypeChanged(GetDisplayType());
+   }
++
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++  FullscreenChanged(true);
++#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  html_media_element_utils_.EnterFullScreenOverlay();
++#endif
+ }
+ 
+ void HTMLVideoElement::DidExitFullscreen() {
+   UpdateControlsVisibility();
+ 
+@@ -511,10 +559,17 @@ void HTMLVideoElement::DidExitFullscreen() {
+ 
+   if (RuntimeEnabledFeatures::VideoAutoFullscreenEnabled() &&
+       !FastHasAttribute(html_names::kPlaysinlineAttr)) {
+     pause();
+   }
++
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++  FullscreenChanged(false);
++#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  html_media_element_utils_.FullscreenChangedOverlay(false);
++#endif
+ }
+ 
+ void HTMLVideoElement::DidMoveToNewDocument(Document& old_document) {
+   if (image_loader_)
+     image_loader_->ElementDidMoveToNewDocument();
+@@ -754,18 +821,23 @@ void HTMLVideoElement::OnEnteredPictureInPicture() {
+ 
+   PseudoStateChanged(CSSSelector::kPseudoPictureInPicture);
+ 
+   DCHECK(GetWebMediaPlayer());
+   GetWebMediaPlayer()->OnDisplayTypeChanged(GetDisplayType());
++#if BUILDFLAG(ARKWEB_PIP)
++  pip_active_ = true;
++#endif
+ }
+ 
+ void HTMLVideoElement::OnExitedPictureInPicture() {
+   if (picture_in_picture_interstitial_)
+     picture_in_picture_interstitial_->Hide();
+ 
+   PseudoStateChanged(CSSSelector::kPseudoPictureInPicture);
+-
++#if BUILDFLAG(ARKWEB_PIP)
++  pip_active_ = false;
++#endif
+   if (GetWebMediaPlayer())
+     GetWebMediaPlayer()->OnDisplayTypeChanged(GetDisplayType());
+ }
+ 
+ void HTMLVideoElement::SetIsEffectivelyFullscreen(

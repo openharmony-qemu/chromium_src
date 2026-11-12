@@ -9,7 +9,6 @@
 #include "third_party/blink/renderer/core/css/properties/longhands.h"
 #include "third_party/blink/renderer/core/style/computed_style.h"
 #include "third_party/blink/renderer/platform/graphics/graphics_context.h"
-#include "ui/display/screen_info.h"
 
 namespace blink {
 
@@ -19,12 +18,23 @@ inline AutoDarkMode PaintAutoDarkMode(const ComputedStyle& style,
                                       DarkModeFilter::ElementRole role) {
   return AutoDarkMode(
       role, style.ForceDark(),
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+      style.VisitedDependentColorFast(GetCSSPropertyBackgroundColor()).Rgb(),
+      style.NightModeEnabled());
+#else
       style.VisitedDependentColorFast(GetCSSPropertyBackgroundColor()).Rgb());
+#endif
 }
 
 inline AutoDarkMode PaintAutoDarkMode(DarkModeFilter::ElementRole role,
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+                                      bool auto_dark_mode_enabled,
+                                      bool night_mode_enabled = false) {
+  return AutoDarkMode(role, auto_dark_mode_enabled, night_mode_enabled);
+#else
                                       bool auto_dark_mode_enabled) {
   return AutoDarkMode(role, auto_dark_mode_enabled);
+#endif
 }
 
 class ImageClassifierHelper {

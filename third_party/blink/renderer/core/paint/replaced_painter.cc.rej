@@ -1,0 +1,14 @@
+diff a/third_party/blink/renderer/core/paint/replaced_painter.cc b/third_party/blink/renderer/core/paint/replaced_painter.cc	(rejected hunks)
+@@ -189,11 +189,11 @@ void ReplacedPainter::Paint(const PaintInfo& paint_info) {
+       layout_replaced_.CanResize()) {
+     auto* scrollable_area = layout_replaced_.GetScrollableArea();
+     DCHECK(scrollable_area);
+     if (!scrollable_area->HasLayerForScrollCorner()) {
+       ScrollableAreaPainter(*scrollable_area)
+-          .PaintResizer(local_paint_info.context, paint_offset,
++          .PaintResizer(local_paint_info, paint_offset,
+                         local_paint_info.GetCullRect());
+     }
+     // Otherwise the resizer will be painted by the scroll corner layer.
+   }
+ 

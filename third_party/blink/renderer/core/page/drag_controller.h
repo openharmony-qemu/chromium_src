@@ -129,7 +129,13 @@ class CORE_EXPORT DragController final
 
   DragState& GetDragState();
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  static std::unique_ptr<DragImage> DragImageForSelection(LocalFrame&,
+                                                          float,
+                                                          const gfx::RectF&);
+#else
   static std::unique_ptr<DragImage> DragImageForSelection(LocalFrame&, float);
+#endif
 
   // Return the selection bounds in absolute coordinates for the frame, clipped
   // to the visual viewport.

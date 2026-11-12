@@ -1656,6 +1656,9 @@ LayoutBox* LayoutBox::FindAutoscrollable(LayoutObject* layout_object,
     // fixed-position element.
     if (!is_middle_click_autoscroll && layout_object->IsBox() &&
         To<LayoutBox>(layout_object)->IsFixedToView()) {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+      LOG(DEBUG) << "LayoutBox::FindAutoscrollable failed nullptr";
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
       return nullptr;
     }
 
@@ -4661,5 +4664,16 @@ const GCedHeapVector<Member<Node>>& LayoutBox::ReadingFlowNodes() const {
                       (MakeGarbageCollected<GCedHeapVector<Member<Node>>>()));
   return *empty_vector.Get();
 }
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+LayoutPolicy LayoutBox::ScrollbarLayoutPolicy() const {
+  return static_cast<LayoutPolicy>(
+    GetDocument().GetSettings()->GetScrollbarLayoutPolicy());
+}
+ 	 
+bool LayoutBox::IsSystemRtlEnable() const {
+  return GetDocument().GetSettings()->GetIsSystemRtlEnabled();
+}
+#endif
 
 }  // namespace blink

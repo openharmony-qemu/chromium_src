@@ -1,0 +1,147 @@
+diff a/third_party/blink/renderer/core/paint/timing/image_paint_timing_detector.h b/third_party/blink/renderer/core/paint/timing/image_paint_timing_detector.h	(rejected hunks)
+@@ -18,10 +18,13 @@
+ #include "third_party/blink/renderer/core/core_export.h"
+ #include "third_party/blink/renderer/core/loader/resource/image_resource_content.h"
+ #include "third_party/blink/renderer/core/paint/timing/media_record_id.h"
+ #include "third_party/blink/renderer/core/paint/timing/paint_timing_callback_manager.h"
+ #include "third_party/blink/renderer/core/paint/timing/paint_timing_record.h"
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
++#include "third_party/blink/renderer/core/paint/timing/paint_timing_detector.h"
++#endif
+ #include "third_party/blink/renderer/core/timing/performance_entry.h"
+ #include "third_party/blink/renderer/platform/allow_discouraged_type.h"
+ #include "third_party/blink/renderer/platform/graphics/dom_node_id.h"
+ #include "third_party/blink/renderer/platform/heap/collection_support/heap_deque.h"
+ #include "third_party/blink/renderer/platform/heap/collection_support/heap_hash_set.h"
+@@ -29,10 +32,13 @@
+ #include "third_party/blink/renderer/platform/heap/member.h"
+ #include "third_party/blink/renderer/platform/loader/fetch/media_timing.h"
+ #include "third_party/blink/renderer/platform/wtf/cross_thread_functional.h"
+ #include "third_party/blink/renderer/platform/wtf/hash_set.h"
+ #include "ui/gfx/geometry/rect_conversions.h"
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/image_paint_timing_detector_utils.h"
++#endif
+ 
+ namespace blink {
+ 
+ class LayoutObject;
+ class LocalFrameView;
+@@ -53,15 +59,27 @@ static constexpr double kMinimumEntropyForLCP = 0.05;
+ // Node, LayoutObject, etc.
+ class CORE_EXPORT ImageRecordsManager {
+   DISALLOW_NEW();
+   friend class ImagePaintTimingDetector;
+   friend class ImagePaintTimingDetectorTest;
++
++#if BUILDFLAG(IS_ARKWEB)
++  friend class ImageRecordsManagerUtils;
++#endif
++
+   FRIEND_TEST_ALL_PREFIXES(ImagePaintTimingDetectorTest,
+                            LargestImagePaint_Detached_Frame);
+ 
+   void Trace(Visitor* visitor) const;
+-
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  bool TakeIfHasALCP();
++  void UpdateViewportSize(const std::optional<uint64_t>& size);
++  bool CheckALCPRecord(const MediaRecordIdHash& record_id_hash, const MediaTiming& media_timing,
++    const StyleImage* style_image, unsigned frame_index, bool new_lcp_record);
++  void ALCPProcessBeforeLcpRecord();
++  void SetForBlankless();
++#endif
+  private:
+   explicit ImageRecordsManager(LocalFrameView*);
+   ImageRecordsManager(const ImageRecordsManager&) = delete;
+   ImageRecordsManager& operator=(const ImageRecordsManager&) = delete;
+   ImageRecord* LargestImage() const;
+@@ -78,10 +96,19 @@ class CORE_EXPORT ImageRecordsManager {
+       pending_images_.erase(it);
+       // Leave out |images_queued_for_paint_time_| intentionally because the
+       // null record can be removed in
+       // |AssignPaintTimeToRegisteredQueuedRecords|.
+     }
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++    else {
++      image_record_manager_utils_->RemoveRecord(record_id_hash);
++    }
++#endif
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
++    image_record_manager_utils_->RemoveRecordFromFirstScreenCalculator(
++        record_id_hash);
++#endif
+   }
+ 
+   inline void RecordImage(MediaRecordIdHash record_id_hash) {
+     recorded_images_.insert(record_id_hash);
+   }
+@@ -189,10 +216,13 @@ class CORE_EXPORT ImageRecordsManager {
+   // is composited. We solve this for the special case of documentElement by
+   // storing a record for the largest ignored image without nested opacity. We
+   // consider this an LCP candidate when the documentElement's opacity changes
+   // from zero to nonzero.
+   Member<ImageRecord> largest_ignored_image_;
++#if BUILDFLAG(IS_ARKWEB)
++  Member<ImageRecordsManagerUtils> image_record_manager_utils_;
++#endif
+ };
+ 
+ // ImagePaintTimingDetector contains Largest Image Paint.
+ //
+ // Largest Image Paint timing measures when the largest image element within
+@@ -264,11 +294,27 @@ class CORE_EXPORT ImagePaintTimingDetector final
+     return recording_largest_image_paint_;
+   }
+   void StopRecordingLargestImagePaint() {
+     recording_largest_image_paint_ = false;
+   }
++
++#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
++  bool is_full_viewport_image() const {
++    return is_full_viewport_;
++  }
++
++  std::optional<uint64_t> GetViewportSize() const {
++    return viewport_size_;
++  }
++#endif
+   void Trace(Visitor*) const;
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  bool TakeIfHasALCP();
++  void SetForBlankless();
++  unsigned GetFrameIndex() const;
++  void SetFrameIndex(unsigned frame_index);
++#endif
+ 
+  private:
+   friend class LargestContentfulPaintCalculatorTest;
+   friend class ImagePaintTimingDetectorTest;
+   FRIEND_TEST_ALL_PREFIXES(ImagePaintTimingDetectorTest,
+@@ -289,10 +335,13 @@ class CORE_EXPORT ImagePaintTimingDetector final
+   // Used to decide which frame a record belongs to, monotonically increasing.
+   uint32_t frame_index_ = 1;
+   bool added_entry_in_latest_frame_ = false;
+ 
+   bool contains_full_viewport_image_ = false;
++#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
++  bool is_full_viewport_ = false;
++#endif
+ 
+   // We cache the viewport size computation to avoid performing it on every
+   // image. This value is reset when paint is finished and is computed if unset
+   // when needed. 0 means that the size has not been computed.
+   std::optional<uint64_t> viewport_size_;
+@@ -303,9 +352,12 @@ class CORE_EXPORT ImagePaintTimingDetector final
+   bool recording_largest_image_paint_ = true;
+ 
+   ImageRecordsManager records_manager_;
+   Member<LocalFrameView> frame_view_;
+   Member<PaintTimingCallbackManager> callback_manager_;
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  bool is_for_blankless_only_ = false;
++#endif
+ };
+ }  // namespace blink
+ 
+ #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_PAINT_TIMING_IMAGE_PAINT_TIMING_DETECTOR_H_

@@ -2475,6 +2475,9 @@ void HTMLTreeBuilder::ProcessEndTag(AtomicHTMLToken* token) {
           ProcessTemplateEndTag(token);
           return;
         case HTMLTag::kHead:
+#if BUILDFLAG(ARKWEB_JSPROXY)
+          tree_.RunScriptsAtHeadElementAvailable();
+#endif
           tree_.OpenElements()->PopHTMLHeadElement();
           SetInsertionMode(kAfterHeadMode);
           return;

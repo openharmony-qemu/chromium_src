@@ -41,6 +41,10 @@ enum ViewportErrorCode {
   kMaximumScaleTooLargeError,
   kTargetDensityDpiUnsupported,
   kViewportFitUnsupported
+#if BUILDFLAG(ARKWEB_FLING)
+  ,
+  kViewportLimitSpeedUnsupported
+#endif
 };
 
 class CORE_EXPORT HTMLMetaElement final : public HTMLElement {
@@ -52,6 +56,14 @@ class CORE_EXPORT HTMLMetaElement final : public HTMLElement {
       ViewportDescription&,
       Document*,
       bool viewport_meta_zero_values_quirk);
+
+#if BUILDFLAG(ARKWEB_FLING)
+  static void ParseFlingData(Document* document,
+                             bool report_warnings,
+                             const String& key_string,
+                             const String& value_string,
+                             ViewportDescription& description);
+#endif
 
   static void ProcessMetaCH(Document&,
                             const AtomicString& content,

@@ -1,0 +1,14 @@
+diff a/third_party/blink/renderer/core/paint/paint_auto_dark_mode.h b/third_party/blink/renderer/core/paint/paint_auto_dark_mode.h	(rejected hunks)
+@@ -38,11 +48,11 @@ class ImageClassifierHelper {
+       const gfx::RectF& src_rect,
+       DarkModeFilter::ElementRole role =
+           DarkModeFilter::ElementRole::kBackground);
+ 
+   CORE_EXPORT static DarkModeFilter::ImageType GetImageTypeForTesting(
+-      display::ScreenInfo& screen_info,
++      LocalFrame& local_frame,
+       const gfx::RectF& dest_rect,
+       const gfx::RectF& src_rect);
+ };
+ 
+ }  // namespace blink

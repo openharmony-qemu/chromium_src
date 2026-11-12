@@ -1,0 +1,100 @@
+diff a/third_party/blink/renderer/core/layout/block_layout_algorithm.cc b/third_party/blink/renderer/core/layout/block_layout_algorithm.cc	(rejected hunks)
+@@ -252,11 +252,17 @@ LayoutUnit WebkitTextAlignAndJustifySelfOffset(
+ 
+   const StyleSelfAlignmentData alignment_data = child_style.ResolvedJustifySelf(
+       {ItemPosition::kNormal, OverflowAlignment::kDefault}, &style);
+   ItemPosition justify_self = alignment_data.GetPosition();
+   OverflowAlignment safe = OverflowAlignment::kSafe;
++#if BUILDFLAG(IS_ARKWEB)
++  // revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6509722
++  if (RuntimeEnabledFeatures::LayoutJustifySelfForBlocksEnabled() &&
++      justify_self != ItemPosition::kNormal) {
++#else
+   if (justify_self != ItemPosition::kNormal) {
++#endif
+     safe = alignment_data.Overflow();
+   } else {
+     justify_self = WebkitTextToItemPosition(style.GetTextAlign());
+   }
+   auto FreeSpace = [&]() -> LayoutUnit {
+@@ -3235,22 +3241,40 @@ BoxStrut BlockLayoutAlgorithm::CalculateMargins(
+                                      child_style.GetWritingDirection(),
+                                      /* is_new_fc */ false);
+       builder.SetAvailableSize(ChildAvailableSize());
+       builder.SetPercentageResolutionSize(child_percentage_size_);
+ 
++#if BUILDFLAG(IS_ARKWEB)
++      // revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6509722
++      const bool justify_self_affects_sizing =
++          RuntimeEnabledFeatures::LayoutJustifySelfForBlocksEnabled();
++
++#endif
+       const ItemPosition justify_self =
+           child_style
+               .ResolvedJustifySelf(
+                   {ItemPosition::kNormal, OverflowAlignment::kDefault},
+                   &Style())
+               .GetPosition();
+ 
+       if (child.IsAnonymousBlockFlow()) {
+         builder.SetInlineAutoBehavior(AutoSizeBehavior::kStretchImplicit);
++#if BUILDFLAG(IS_ARKWEB)
++        // revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6509722
++      } else if (justify_self_affects_sizing &&
++                 justify_self == ItemPosition::kStretch) {
++#else
+       } else if (justify_self == ItemPosition::kStretch) {
++#endif
+         builder.SetInlineAutoBehavior(AutoSizeBehavior::kStretchExplicit);
++#if BUILDFLAG(IS_ARKWEB)
++        // revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6509722
++      } else if (justify_self_affects_sizing &&
++                 justify_self != ItemPosition::kNormal) {
++#else
+       } else if (justify_self != ItemPosition::kNormal) {
++#endif
+         builder.SetInlineAutoBehavior(AutoSizeBehavior::kFitContent);
+       } else {
+         builder.SetInlineAutoBehavior(AutoSizeBehavior::kStretchImplicit);
+       }
+       ConstraintSpace space = builder.ToConstraintSpace();
+@@ -3316,21 +3340,39 @@ ConstraintSpace BlockLayoutAlgorithm::CreateConstraintSpaceForChild(
+   if (child.IsInline()) {
+     if (is_in_parallel_flow) {
+       builder.SetInlineAutoBehavior(AutoSizeBehavior::kStretchImplicit);
+     }
+   } else {
++#if BUILDFLAG(IS_ARKWEB)
++    // revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6509722
++    const bool justify_self_affects_sizing =
++        RuntimeEnabledFeatures::LayoutJustifySelfForBlocksEnabled();
++
++#endif
+     const ItemPosition justify_self =
+         child_style
+             .ResolvedJustifySelf(
+                 {ItemPosition::kNormal, OverflowAlignment::kDefault}, &Style())
+             .GetPosition();
+ 
+     if (child.IsAnonymousBlockFlow()) {
+       builder.SetInlineAutoBehavior(AutoSizeBehavior::kStretchImplicit);
++#if BUILDFLAG(IS_ARKWEB)
++      // revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6509722
++    } else if (justify_self_affects_sizing &&
++               justify_self == ItemPosition::kStretch) {
++#else
+     } else if (justify_self == ItemPosition::kStretch) {
++#endif
+       builder.SetInlineAutoBehavior(AutoSizeBehavior::kStretchExplicit);
++#if BUILDFLAG(IS_ARKWEB)
++      // revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6509722
++    } else if (justify_self_affects_sizing &&
++               justify_self != ItemPosition::kNormal) {
++#else
+     } else if (justify_self != ItemPosition::kNormal) {
++#endif
+       builder.SetInlineAutoBehavior(AutoSizeBehavior::kFitContent);
+     } else if (is_in_parallel_flow &&
+                ShouldBlockContainerChildStretchAutoInlineSize(
+                    To<BlockNode>(child))) {
+       builder.SetInlineAutoBehavior(AutoSizeBehavior::kStretchImplicit);

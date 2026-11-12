@@ -173,7 +173,12 @@ struct CORE_EXPORT ViewportDescription {
            max_zoom_is_explicit == other.max_zoom_is_explicit &&
            user_zoom_is_explicit == other.user_zoom_is_explicit &&
            virtual_keyboard_mode == other.virtual_keyboard_mode &&
-           viewport_fit_ == other.viewport_fit_;
+           viewport_fit_ == other.viewport_fit_
+#if BUILDFLAG(ARKWEB_FLING)
+           && max_fling_velocity_x == other.max_fling_velocity_x &&
+           max_fling_velocity_y == other.max_fling_velocity_y
+#endif
+        ;
   }
 
   bool IsLegacyViewportType() const {

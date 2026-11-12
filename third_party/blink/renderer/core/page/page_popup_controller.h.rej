@@ -1,0 +1,26 @@
+diff a/third_party/blink/renderer/core/page/page_popup_controller.h b/third_party/blink/renderer/core/page/page_popup_controller.h	(rejected hunks)
+@@ -31,10 +31,11 @@
+ #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_PAGE_POPUP_CONTROLLER_H_
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_PAGE_POPUP_CONTROLLER_H_
+ 
+ #include <optional>
+ 
++#include "third_party/blink/renderer/core/core_export.h"
+ #include "third_party/blink/renderer/platform/bindings/script_wrappable.h"
+ #include "third_party/blink/renderer/platform/heap/collection_support/heap_vector.h"
+ #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+ #include "third_party/blink/renderer/platform/wtf/forward.h"
+ #include "ui/gfx/geometry/rect.h"
+@@ -46,11 +47,11 @@ class Document;
+ class DOMRect;
+ class Page;
+ class PagePopup;
+ class PagePopupClient;
+ 
+-class PagePopupController : public ScriptWrappable {
++class CORE_EXPORT PagePopupController : public ScriptWrappable {
+   DEFINE_WRAPPERTYPEINFO();
+ 
+  public:
+   PagePopupController(Page&, PagePopup&, PagePopupClient*);
+ 

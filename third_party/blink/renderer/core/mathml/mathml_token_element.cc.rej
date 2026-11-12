@@ -1,0 +1,17 @@
+diff a/third_party/blink/renderer/core/mathml/mathml_token_element.cc b/third_party/blink/renderer/core/mathml/mathml_token_element.cc	(rejected hunks)
+@@ -89,10 +93,15 @@ void MathMLTokenElement::ChildrenChanged(
+   MathMLElement::ChildrenChanged(children_change);
+ }
+ 
+ LayoutObject* MathMLTokenElement::CreateLayoutObject(
+     const ComputedStyle& style) {
++#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
++  if (Cssutils::IsMathFormulaDisabledMode()) {
++    return MathMLElement::CreateLayoutObject(style);
++  }
++#endif
+   if (!style.IsDisplayMathType()) {
+     return MathMLElement::CreateLayoutObject(style);
+   }
+   return MakeGarbageCollected<LayoutMathMLBlockFlow>(this);
+ }

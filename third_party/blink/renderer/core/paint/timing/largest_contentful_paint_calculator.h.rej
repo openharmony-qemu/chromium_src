@@ -1,0 +1,30 @@
+diff a/third_party/blink/renderer/core/paint/timing/largest_contentful_paint_calculator.h b/third_party/blink/renderer/core/paint/timing/largest_contentful_paint_calculator.h	(rejected hunks)
+@@ -67,10 +67,14 @@ class CORE_EXPORT LargestContentfulPaintCalculator final
+     return latest_lcp_details_;
+   }
+ 
+   void Trace(Visitor* visitor) const;
+ 
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  void SetForBlankless();
++#endif
++
+  private:
+   friend class LargestContentfulPaintCalculatorTest;
+ 
+   void UpdateWebExposedLargestContentfulImage(const ImageRecord& largest_image);
+   void UpdateWebExposedLargestContentfulText(const TextRecord& largest_text);
+@@ -106,10 +110,13 @@ class CORE_EXPORT LargestContentfulPaintCalculator final
+ 
+   // The |latest_lcp_details_| struct is just for internal accounting purposes
+   // and is not reported anywhere (neither to metrics, nor to the web exposed
+   // API).
+   LargestContentfulPaintDetails latest_lcp_details_;
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  bool is_for_blankless_only_ = false;
++#endif
+ 
+   Member<Delegate> delegate_;
+ };
+ 
+ }  // namespace blink

@@ -1,0 +1,43 @@
+diff a/third_party/blink/renderer/core/page/autoscroll_controller.cc b/third_party/blink/renderer/core/page/autoscroll_controller.cc	(rejected hunks)
+@@ -266,11 +302,14 @@ bool CanScrollDirection(LayoutBox* layout_box,
+     can_scroll =
+         can_scroll || (orientation == ScrollOrientation::kHorizontalScroll
+                            ? maximum_scroll_offset.x() > 0
+                            : maximum_scroll_offset.y() > 0);
+   }
+-
++#if BUILDFLAG(ARKWEB_DRAG_DROP)
++  LOG(DEBUG) << "AutoscrollController::CanScrollDirection can_scroll:"
++             << can_scroll;
++#endif
+   return can_scroll;
+ }
+ 
+ void AutoscrollController::HandleMouseMoveForMiddleClickAutoscroll(
+     LocalFrame* frame,
+@@ -476,13 +524,24 @@ void AutoscrollController::Animate() {
+       offset;
+   switch (autoscroll_type_) {
+     case kAutoscrollForDragAndDrop:
+       ScheduleMainThreadAnimation();
+       if ((base::TimeTicks::Now() - drag_and_drop_autoscroll_start_time_) >
+-          kAutoscrollDelay)
++          kAutoscrollDelay) {
++#if BUILDFLAG(ARKWEB_DRAG_DROP)
++        LOG(DEBUG) << "AutoscrollController kAutoscrollForDragAndDrop "
++                      "Autoscroll start, position:"
++                   << drag_and_drop_autoscroll_reference_position_.ToString();
+         autoscroll_layout_object_->Autoscroll(
+             drag_and_drop_autoscroll_reference_position_);
++        LOG(DEBUG)
++            << "AutoscrollController kAutoscrollForDragAndDrop Autoscroll end";
++#else
++        autoscroll_layout_object_->Autoscroll(
++            drag_and_drop_autoscroll_reference_position_);
++#endif
++      }
+       break;
+     case kAutoscrollForSelection:
+       if (!event_handler.MousePressed()) {
+         StopAutoscroll();
+         return;

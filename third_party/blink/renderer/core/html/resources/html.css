@@ -763,6 +763,9 @@ input[type="hidden" i], input[type="image" i], input[type="file" i] {
 input[type="file" i] {
     align-items: baseline;
     color: inherit;
+    /* ArkWeb not use Chromium's new input element default CSS style about "overflow:clip",
+       but still use "overflow:hidden". crbug.com/40877677 */
+    overflow: hidden !important;
     text-align: start !important;
     /* Prevent a malicious author from using a custom string for text-overflow
        to spoof a filename. */

@@ -35,6 +35,8 @@
 #include "gpu/config/gpu_switches.h"
 #include "ui/gfx/switches.h"
 
+#include "arkweb/chromium_ext/components/viz/service/main/viz_compositor_thread_runner_impl_utils.h"
+
 #if BUILDFLAG(IS_OZONE)
 #include "ui/ozone/public/ozone_platform.h"
 #endif

@@ -89,6 +89,10 @@
 #include "ui/gfx/presentation_feedback.h"
 #include "ui/gfx/swap_result.h"
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+#include "components/viz/common/quads/debug_border_draw_quad.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/gfx/android/android_surface_control_compat.h"
 #endif
@@ -96,6 +100,10 @@
 namespace viz {
 
 namespace {
+
+#if BUILDFLAG(ARKWEB_ROTATE_RESIZE)
+constexpr int RENDER_FIT_TYPE = 5;
+#endif
 
 #if !BUILDFLAG(IS_APPLE)
 DBG_FLAG_FBOOL("delegated.fd.usage", usage_every_frame)
@@ -325,12 +333,19 @@ Display::Display(
 
   if (scheduler_)
     scheduler_->SetClient(this);
+
+#if !defined(COMPONENT_BUILD) // FIXME
+  display_utils_ = std::make_unique<ArkwebDisplayUtils>(this);
+#endif
 }
 
 Display::~Display() {
 #if DCHECK_IS_ON()
   allow_schedule_gpu_task_during_destruction_.reset(
       new gpu::ScopedAllowScheduleGpuTask);
+#endif
+#if !defined(COMPONENT_BUILD) // FIXME
+  display_utils_.reset();
 #endif
   if (resource_provider_) {
     resource_provider_->SetAllowAccessToGPUThread(true);
@@ -405,6 +420,12 @@ void Display::SetLocalSurfaceId(const LocalSurfaceId& id,
       device_scale_factor_ == device_scale_factor) {
     return;
   }
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  if (renderer_) {
+    renderer_->ResetPartialDrawState();
+  }
+#endif
 
   TRACE_EVENT0("viz", "Display::SetSurfaceId");
   current_surface_id_ = SurfaceId(frame_sink_id_, id);
@@ -593,6 +614,10 @@ void Display::InitializeRenderer() {
   // the frame won't be drawn (as that would drop the copy request).
   aggregator_->set_take_copy_requests(
       !output_surface_->capabilities().skips_draw);
+}
+
+void Display::SetRendererDrawMode(bool flag) {
+  renderer_->SetIsSyncDrawMode(flag);
 }
 
 bool Display::IsRootFrameMissing() const {
@@ -1167,6 +1192,10 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     }
   }
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  disable_draw_and_swap_on_next_frame_ = false;
+#endif
+
   client_->DisplayDidDrawAndSwap();
   // Garbage collection can lead to sync IPCs to the GPU service to verify sync
   // tokens. We defer garbage collection until the end of DrawAndSwap to avoid
@@ -1533,4 +1562,14 @@ void Display::ResetDisplayClientForTesting(DisplayClient* old_client) {
   client_ = nullptr;
 }
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void Display::SetClientId(const uint32_t client_id) {
+  display_utils_->SetClientId(client_id);
+}
+#endif
+
 }  // namespace viz
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/viz/service/display/display_for_include.cc"
+#endif

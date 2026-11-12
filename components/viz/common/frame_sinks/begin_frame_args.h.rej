@@ -1,0 +1,50 @@
+diff a/components/viz/common/frame_sinks/begin_frame_args.h b/components/viz/common/frame_sinks/begin_frame_args.h	(rejected hunks)
+@@ -14,10 +14,15 @@
+ 
+ #include "base/location.h"
+ #include "base/time/time.h"
+ #include "components/viz/common/viz_common_export.h"
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(ARKWEB_SYNC_RENDER)
++#include "ui/gfx/geometry/rect.h"
++#endif
++
+ namespace perfetto {
+ class EventContext;
+ namespace protos {
+ namespace pbzero {
+ class BeginFrameArgsV2;
+@@ -235,10 +240,17 @@ struct VIZ_COMMON_EXPORT BeginFrameArgs {
+   // Note `deadline` is not yet updated to one of these deadline since some
+   // code still assumes `deadline` is a multiple of `interval` from
+   // `frame_time`.
+   std::optional<PossibleDeadlines> possible_deadlines;
+ 
++#if BUILDFLAG(ARKWEB_SYNC_RENDER)
++  gfx::Rect draw_rect;
++#endif
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  bool internal_frame = false;
++#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
++
+  private:
+   BeginFrameArgs(uint64_t source_id,
+                  uint64_t sequence_number,
+                  base::TimeTicks frame_time,
+                  base::TimeTicks deadline,
+@@ -276,10 +288,14 @@ struct VIZ_COMMON_EXPORT BeginFrameAck {
+   int64_t trace_id = -1;
+ 
+   // |true| if the observer has produced damage (e.g. sent a CompositorFrame or
+   // damaged a surface) as part of responding to the BeginFrame.
+   bool has_damage = false;
++#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
++  std::optional<base::TimeDelta> preferred_frame_interval;
++#endif
++
+ 
+   void AsValueInto(base::trace_event::TracedValue* dict) const;
+ };
+ 
+ }  // namespace viz

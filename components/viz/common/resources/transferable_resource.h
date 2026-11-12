@@ -22,8 +22,9 @@
 #include "ui/gfx/color_space.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/hdr_metadata.h"
+#include "arkweb/build/features/features.h"
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
 #include "gpu/vulkan/vulkan_ycbcr_info.h"
 #endif
 
@@ -215,6 +216,9 @@ struct VIZ_COMMON_EXPORT TransferableResource {
            wants_promotion_hint == o.wants_promotion_hint &&
 #elif BUILDFLAG(IS_WIN)
            wants_promotion_hint == o.wants_promotion_hint &&
+#endif
+#if BUILDFLAG(ARKWEB_AI_HDR)
+           is_ai_hdr_active == o.is_ai_hdr_active &&
 #endif
            synchronization_type == o.synchronization_type &&
            resource_source == o.resource_source;

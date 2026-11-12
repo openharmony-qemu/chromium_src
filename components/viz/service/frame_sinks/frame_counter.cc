@@ -82,6 +82,16 @@ mojom::FrameCountingDataPtr FrameCounter::TakeData() {
   return data;
 }
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+void FrameCounter::SetFrameSinkType(const FrameSinkId& frame_sink_id,
+                                    mojom::CompositorFrameSinkType type) {
+  auto it = frame_sink_data_.find(frame_sink_id);
+  if (it != frame_sink_data_.end()) {
+    it->second->type = type;
+  }
+}
+#endif
+
 void FrameCounter::SetFrameSinkDebugLabel(const FrameSinkId& frame_sink_id,
                                           std::string_view debug_label) {
   // SetFrameSinkDebugLabel could happen before a frame sink is created. Ignore

@@ -1,0 +1,13 @@
+diff a/components/viz/service/frame_sinks/frame_sink_bundle_impl.cc b/components/viz/service/frame_sinks/frame_sink_bundle_impl.cc	(rejected hunks)
+@@ -12,10 +12,11 @@
+ #include "base/functional/bind.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/raw_ref.h"
+ #include "base/memory/weak_ptr.h"
+ #include "build/build_config.h"
++#include "arkweb/build/features/features.h"
+ #include "components/viz/service/frame_sinks/compositor_frame_sink_impl.h"
+ #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
+ #include "mojo/public/cpp/bindings/receiver.h"
+ #include "mojo/public/cpp/bindings/remote.h"
+ #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"

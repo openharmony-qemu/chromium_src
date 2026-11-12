@@ -1,0 +1,16 @@
+diff a/components/viz/service/display/overlay_processor_interface.h b/components/viz/service/display/overlay_processor_interface.h	(rejected hunks)
+@@ -172,10 +172,14 @@ class VIZ_SERVICE_EXPORT OverlayProcessorInterface {
+   virtual void SetFrameHasDelegatedInk() {}
+ 
+   // Notifies the OverlayProcessor about the status of the last swap.
+   virtual void OnSwapBuffersComplete(gfx::SwapResult swap_result) {}
+ 
++#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
++  virtual void UpdateFocusAndScreenStatus(bool is_focused,
++                                          bool is_single_screen) {}
++#endif
+  protected:
+   OverlayProcessorInterface() = default;
+ };
+ 
+ }  // namespace viz

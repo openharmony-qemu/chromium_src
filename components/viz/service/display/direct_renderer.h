@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/circular_deque.h"
 #include "base/containers/flat_map.h"
 #include "base/memory/raw_ptr.h"
@@ -49,6 +50,14 @@ class DrawPolygon;
 class OutputSurface;
 struct DebugRendererSettings;
 class RendererSettings;
+
+#if BUILDFLAG(ARKWEB_VULKAN_INC_PRESENT)
+enum class VulkanIncPresent : int32_t {
+  kDefault,
+  kEnable,
+  kDisable,
+};
+#endif // BUILDFLAG(ARKWEB_VULKAN_INC_PRESENT)
 
 namespace copy_output {
 struct RenderPassGeometry;
@@ -121,6 +130,23 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
   virtual void BuffersPresented() {}
   virtual void DidReceiveReleasedOverlays(
       const std::vector<gpu::Mailbox>& released_overlays) {}
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  virtual bool IsPresentBuffersFullDamage(gfx::Rect damage_rect) { return true; };
+  virtual void ClosePostSubBuffer() {}
+  virtual void ResetPartialDrawState() {}
+  void SetIsSyncDrawMode(bool flag) {
+    LOG(INFO) << "SetIsSyncDrawMode " << flag;
+    is_sync_draw_mode_ = flag;
+    if (is_sync_draw_mode_) {
+      use_partial_swap_ = false;
+      ClosePostSubBuffer();
+    }
+  }
+  void SetIsBlankLessMode(bool flag) {
+    is_blankless_mode_ = flag;
+  }
+#endif
 
   // Public for tests that poke at internals.
   struct VIZ_SERVICE_EXPORT DrawingFrame {
@@ -344,6 +370,11 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
   // Whether partial swap can be used.
   bool use_partial_swap_ = false;
 
+#if BUILDFLAG(ARKWEB_VULKAN_INC_PRESENT)
+  bool init_partial_swap_ = false;
+  int32_t incPresentValue_ = static_cast<int32_t>(VulkanIncPresent::kDisable);
+#endif
+
   // A map from RenderPass id to the single quad present in and replacing the
   // RenderPass. The DrawQuads are owned by their RenderPasses, which outlive
   // the drawn frame, so it is safe to store these pointers until the end of
@@ -436,6 +467,21 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
   gfx::OverlayTransform reshape_display_transform_ =
       gfx::OVERLAY_TRANSFORM_INVALID;
   uint64_t total_pixels_rendered_this_frame_ = 0;
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  bool partial_draw_debug_ = false;
+  bool skip_partial_paint_ = true;
+  bool is_sync_draw_mode_ = false;
+  bool is_blankless_mode_ = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  bool next_frame_skips_draw_render_passes_ = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  bool is_focused_ = false;
+  bool is_single_screen_ = false;
+#endif
 };
 
 }  // namespace viz

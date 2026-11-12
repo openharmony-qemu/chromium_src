@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
@@ -131,6 +132,9 @@ CompositorFrameSinkImpl::CompositorFrameSinkImpl(
   if (bundle_id.has_value()) {
     support_->SetBundle(*bundle_id);
   }
+#if BUILDFLAG(IS_ARKWEB)
+  compositor_frame_sink_impl_util_ = std::make_unique<CompositorFrameSinkImplUtil>(this);
+#endif
 }
 
 CompositorFrameSinkImpl::~CompositorFrameSinkImpl() = default;
@@ -209,6 +213,17 @@ void CompositorFrameSinkImpl::SetThreads(const std::vector<Thread>& threads) {
   support_->SetThreads(/*from_untrusted_client=*/true, threads);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+void CompositorFrameSinkImpl::ReportKeyThreadIds(
+    const std::vector<int32_t>& thread_ids,
+    int32_t process_id,
+    bool is_created) {
+  compositor_frame_sink_impl_util_->ReportKeyThreadIdsUtils(thread_ids,
+      process_id,
+      is_created);
+}
+#endif // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 
 void CompositorFrameSinkImpl::OnClientConnectionLost() {
   // The client that owns this CompositorFrameSink is either shutting down or

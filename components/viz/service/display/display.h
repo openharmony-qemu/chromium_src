@@ -43,6 +43,8 @@
 #include "ui/gfx/swap_result.h"
 #include "ui/latency/latency_info.h"
 
+#include "arkweb/chromium_ext/components/viz/service/display/arkweb_display_utils.h"
+
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/gfx/android/surface_control_frame_rate.h"
 #endif
@@ -104,6 +106,10 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
       std::unique_ptr<OverlayProcessorInterface> overlay_processor,
       std::unique_ptr<DisplaySchedulerBase> scheduler,
       scoped_refptr<base::SingleThreadTaskRunner> current_task_runner);
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  bool disable_draw_and_swap_on_next_frame_ = false;
+#endif
 
   Display(const Display&) = delete;
   Display& operator=(const Display&) = delete;
@@ -229,8 +235,23 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
   // calls.
   OverdrawTracker::OverdrawTimeSeries StopTrackingOverdraw();
 
+#if !defined(COMPONENT_BUILD) // FIXME
+  ArkwebDisplayUtils* display_utils() {
+    return display_utils_.get();
+  }
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetClientId(const uint32_t client_id) override;
+#endif
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  void SetRendererDrawMode(bool flag);
+#endif
+
  protected:
   friend class DisplayTest;
+#if !defined(COMPONENT_BUILD) // FIXME
+  friend class ArkwebDisplayUtils;
+#endif
   // PresentationGroupTiming stores rendering pipeline stage timings associated
   // with a call to Display::DrawAndSwap along with a list of
   // Surface::PresentationHelper's for each aggregated Surface that will be

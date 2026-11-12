@@ -360,10 +360,18 @@ TEST_P(RendererPixelTest,
   SharedQuadState* texture_quad_state = CreateTestSharedQuadState(
       gfx::Transform(), rect, pass.get(), gfx::MaskFilterInfo());
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  ARKWEB_UNITTESTS_DEFINE_COLOR();
+#endif
+
   CreateTestTwoColoredTextureDrawQuad(
       !is_software_renderer(), gfx::Rect(this->device_viewport_size_),
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+      ARKWEB_UNITTESTS_PASS_PARAM()
+#elif
       SkColor4f::FromColor(SkColorSetARGB(0, 120, 255, 255)),  // Texel color 1.
       SkColor4f::FromColor(SkColorSetARGB(204, 120, 0, 255)),  // Texel color 2.
+#endif
       SkColors::kGreen,  // Background color.
       true,              // Premultiplied alpha.
       false,             // flipped_texture_quad.
@@ -416,10 +424,17 @@ TEST_P(RendererPixelTest, BypassableTextureQuad_ClipRect) {
         CreateTestSharedQuadState(gfx::Transform(), child_pass_rect,
                                   child_pass.get(), gfx::MaskFilterInfo());
     sqs->clip_rect = gfx::Rect(170, 200);
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+    auto temp_color_rect = is_software_renderer() ? SkColors::kYellow : SkColors::kCyan;
+#endif
 
     CreateTestTwoColoredTextureDrawQuad(
         !is_software_renderer(), child_pass_rect,
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+        /*texel_color_one=*/temp_color_rect,
+#else
         /*texel_color_one=*/SkColors::kYellow,
+#endif
         /*texel_color_two=*/SkColors::kMagenta,
         /*background_color=*/SkColors::kGreen,
         /*premultiplied_alpha=*/true,
@@ -457,7 +472,12 @@ TEST_P(RendererPixelTest, BypassableTextureQuad_ClipRect) {
 
   EXPECT_TRUE(this->RunPixelTest(
       &pass_list, base::FilePath(FILE_PATH_LITERAL("bypass_texture.png")),
-      cc::ExactPixelComparator()));
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+      ARKWEB_UNITTESTS_RUN_PIXEL_TEST_2()
+#else
+      cc::ExactPixelComparator()
+#endif
+      ));
 }
 
 TEST_P(RendererPixelTest, BypassableTextureQuad_Rotation_ClipRect) {
@@ -496,10 +516,17 @@ TEST_P(RendererPixelTest, BypassableTextureQuad_Rotation_ClipRect) {
         CreateTestSharedQuadState(transform_texture_quad, child_pass_rect,
                                   child_pass.get(), gfx::MaskFilterInfo());
     sqs->clip_rect = gfx::Rect(110, 140);
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+    auto temp_color_rect = is_software_renderer() ? SkColors::kYellow : SkColors::kCyan;
+#endif
 
     CreateTestTwoColoredTextureDrawQuad(
         !is_software_renderer(), child_pass_rect,
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+        /*texel_color_one=*/temp_color_rect,
+#else
         /*texel_color_one=*/SkColors::kYellow,
+#endif
         /*texel_color_two=*/SkColors::kMagenta,
         /*background_color=*/SkColors::kGreen,
         /*premultiplied_alpha=*/true,
@@ -974,10 +1001,18 @@ TEST_P(RendererPixelTest, TextureDrawQuadVisibleRectInsetBottomRight) {
   SharedQuadState* texture_quad_state = CreateTestSharedQuadState(
       gfx::Transform(), rect, pass.get(), gfx::MaskFilterInfo());
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+    ARKWEB_UNITTESTS_DEFINE_COLOR();
+#endif
+
   CreateTestTwoColoredTextureDrawQuad(
       !is_software_renderer(), gfx::Rect(this->device_viewport_size_),
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+    ARKWEB_UNITTESTS_PASS_PARAM()
+#else
       SkColor4f::FromColor(SkColorSetARGB(0, 120, 255, 255)),  // Texel color 1.
       SkColor4f::FromColor(SkColorSetARGB(204, 120, 0, 255)),  // Texel color 2.
+#endif
       SkColors::kGreen,  // Background color.
       true,              // Premultiplied alpha.
       false,             // flipped_texture_quad.
@@ -2417,7 +2452,13 @@ TEST_P(GPURendererPixelTest, AntiAliasing) {
   }
 
   EXPECT_TRUE(this->RunPixelTest(
-      &pass_list, baseline, cc::AlphaDiscardingFuzzyPixelOffByOneComparator()));
+      &pass_list, baseline,
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+                                 ARKWEB_UNITTESTS_RUN_PIXEL_TEST_7()
+#else
+      cc::AlphaDiscardingFuzzyPixelOffByOneComparator()
+#endif
+      ));
 }
 
 // Software renderer does not support anti-aliased edges.
@@ -2460,7 +2501,13 @@ TEST_P(GPURendererPixelTest, AntiAliasingPerspective) {
   }
 
   EXPECT_TRUE(this->RunPixelTest(
-      &pass_list, baseline, cc::AlphaDiscardingFuzzyPixelOffByOneComparator()));
+      &pass_list, baseline,
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+                                 ARKWEB_UNITTESTS_RUN_PIXEL_TEST_7()
+#else
+      cc::AlphaDiscardingFuzzyPixelOffByOneComparator()
+#endif
+      ));
 }
 
 // This test tests that anti-aliasing works for axis aligned quads.
@@ -2766,7 +2813,12 @@ TEST_P(GPURendererPixelTest, TrilinearFiltering) {
     }
 
     EXPECT_TRUE(this->RunPixelTest(&pass_list, baseline,
-                                   cc::AlphaDiscardingExactPixelComparator()));
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+                                   ARKWEB_UNITTESTS_RUN_PIXEL_TEST_7()
+#else
+                                   cc::AlphaDiscardingExactPixelComparator()
+#endif
+                                   ));
   }
 }
 
@@ -3670,7 +3722,12 @@ TEST_P(GPURendererPixelTest, TextureQuadBatching) {
 
   EXPECT_TRUE(this->RunPixelTest(
       &pass_list, base::FilePath(FILE_PATH_LITERAL("spiral.png")),
-      cc::AlphaDiscardingFuzzyPixelOffByOneComparator()));
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+      ARKWEB_UNITTESTS_RUN_PIXEL_TEST_7()
+#else
+      cc::AlphaDiscardingFuzzyPixelOffByOneComparator()
+#endif
+      ));
 }
 
 TEST_P(GPURendererPixelTest, TileQuadClamping) {
@@ -3955,8 +4012,12 @@ TEST_P(GPURendererPixelTest, MAYBE_LinearGradientOnRenderPass) {
   EXPECT_TRUE(this->RunPixelTest(
       &pass_list,
       base::FilePath(FILE_PATH_LITERAL("linear_gradient_render_pass.png")),
-      cc::FuzzyPixelComparator().DiscardAlpha().SetErrorPixelsPercentageLimit(
-          0.6f)));
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+      ARKWEB_UNITTESTS_RUN_PIXEL_TEST_7()
+#else
+      cc::FuzzyPixelComparator().DiscardAlpha().SetErrorPixelsPercentageLimit(0.6f)
+#endif
+      ));
 }
 
 #if BUILDFLAG(IS_IOS)
@@ -4028,8 +4089,12 @@ TEST_P(GPURendererPixelTest, MAYBE_MultiLinearGradientOnRenderPass) {
       &pass_list,
       base::FilePath(
           FILE_PATH_LITERAL("multi_linear_gradient_render_pass.png")),
-      cc::FuzzyPixelComparator().DiscardAlpha().SetErrorPixelsPercentageLimit(
-          0.6f)));
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+                                 ARKWEB_UNITTESTS_RUN_PIXEL_TEST_7()
+#else
+      cc::FuzzyPixelComparator().DiscardAlpha().SetErrorPixelsPercentageLimit(0.6f)
+#endif
+      ));
 }
 
 TEST_P(RendererPixelTest, RoundedCornerMultiRadii) {

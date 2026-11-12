@@ -112,6 +112,9 @@ CompositorGpuThread::CompositorGpuThread(
       weak_ptr_factory_(this) {}
 
 CompositorGpuThread::~CompositorGpuThread() {
+#if BUILDFLAG(IS_ARKWEB)
+  CompositorGpuThreadUtils::CompositorGpuThreadDestruct(this);
+#endif
   base::Thread::Stop();
 }
 

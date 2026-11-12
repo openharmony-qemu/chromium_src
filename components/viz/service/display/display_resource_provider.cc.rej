@@ -1,0 +1,22 @@
+diff a/components/viz/service/display/display_resource_provider.cc b/components/viz/service/display/display_resource_provider.cc	(rejected hunks)
+@@ -120,10 +120,20 @@ bool DisplayResourceProvider::IsBackedBySurfaceView(ResourceId id) const {
+   const ChildResource* resource = GetResource(id);
+   return resource->transferable.is_backed_by_surface_view;
+ }
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_AI_HDR)
++bool DisplayResourceProvider::IsAiHdrActive(ResourceId id) const {
++  const ChildResource* resource = GetResource(id);
++  if (!resource) {
++    return false;
++  }
++  return resource->transferable.is_ai_hdr_active;
++}
++#endif
++
+ #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)
+ bool DisplayResourceProvider::DoesResourceWantPromotionHint(
+     ResourceId id) const {
+   const ChildResource* resource = TryGetResource(id);
+   // TODO(ericrk): We should never fail TryGetResource, but we appear to

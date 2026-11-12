@@ -1,0 +1,24 @@
+diff a/components/viz/service/frame_sinks/frame_counter.cc b/components/viz/service/frame_sinks/frame_counter.cc	(rejected hunks)
+@@ -30,15 +30,22 @@ FrameCounter::FrameCounter(base::TimeTicks start_time,
+     : start_time_(start_time), bucket_size_(bucket_size) {}
+ 
+ FrameCounter::~FrameCounter() = default;
+ 
+ void FrameCounter::AddFrameSink(const FrameSinkId& frame_sink_id,
++#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
++                                mojom::CompositorFrameSinkType type,
++#endif
++
+                                 bool is_root,
+                                 std::string_view debug_label) {
+   DCHECK(!base::Contains(frame_sink_data_, frame_sink_id));
+ 
+   auto per_sink_data = mojom::FrameCountingPerSinkData::New(
++#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
++    type,
++#endif
+       is_root, static_cast<std::string>(debug_label), 0,
+       std::vector<uint16_t>());
+   per_sink_data->presented_frames.reserve(kMaxFrameRecords);
+ 
+   frame_sink_data_[frame_sink_id] = std::move(per_sink_data);

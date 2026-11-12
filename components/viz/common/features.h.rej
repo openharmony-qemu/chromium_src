@@ -1,0 +1,48 @@
+diff a/components/viz/common/features.h b/components/viz/common/features.h	(rejected hunks)
+@@ -15,11 +15,14 @@
+ 
+ // See the following for guidance on adding new viz feature flags:
+ // https://cs.chromium.org/chromium/src/components/viz/README.md#runtime-features
+ 
+ namespace features {
+-
++#if BUILDFLAG(IS_ARKWEB)
++VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE(kExtremeThrottle);
++VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE_PARAM(double, kExtremeThrottleFrameRate);
++#endif
+ #if BUILDFLAG(IS_ANDROID)
+ VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE(kAndroidAnimatedProgressBarInViz);
+ VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE(kAndroidBcivBottomControls);
+ VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE(kAndroidBrowserControlsInViz);
+ VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE(kAndroidDumpForBadCompositedUiState);
+@@ -132,10 +135,13 @@ VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE(
+     kVizDirectCompositorThreadIpcFrameSinkManager);
+ VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE(kVizNullHypothesis);
+ #if BUILDFLAG(IS_CHROMEOS)
+ VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE(kCrosContentAdjustedRefreshRate);
+ #endif  // BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
++VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE(kEvictUnlockFrame);
++#endif
+ 
+ VIZ_COMMON_EXPORT extern const char kDraw1Point12Ms[];
+ VIZ_COMMON_EXPORT extern const char kDraw2Points6Ms[];
+ VIZ_COMMON_EXPORT extern const char kDraw1Point6Ms[];
+ VIZ_COMMON_EXPORT extern const char kDraw2Points3Ms[];
+@@ -195,8 +201,16 @@ VIZ_COMMON_EXPORT bool ShouldUseAdpfForSoc(std::string_view soc_allowlist,
+                                            std::string_view soc);
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
+ VIZ_COMMON_EXPORT bool ShouldAckCOREarlyForViewTransition();
+ 
++#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
++VIZ_COMMON_EXPORT bool IsEvictUnlockFrameEnabled();
++#endif
++
++#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
++VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE(kDelegatedCompositingOhos);
++VIZ_COMMON_EXPORT bool IsDelegatedCompositingFeatureEnabledOhos();
++#endif
+ }  // namespace features
+ 
+ #endif  // COMPONENTS_VIZ_COMMON_FEATURES_H_

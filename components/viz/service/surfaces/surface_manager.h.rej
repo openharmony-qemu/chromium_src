@@ -1,0 +1,16 @@
+diff a/components/viz/service/surfaces/surface_manager.h b/components/viz/service/surfaces/surface_manager.h	(rejected hunks)
+@@ -226,10 +226,14 @@ class VIZ_SERVICE_EXPORT SurfaceManager {
+   // to newest. If predicate returns true, surface is committed. If not the
+   // surface processing stops and we go to the next surface.
+   void CommitFramesInRangeRecursively(const SurfaceRange& range,
+                                       const CommitPredicate& predicate);
+ 
++#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
++  void ReenableSwapCheck(const SurfaceId& surface_id, int width, int height);
++#endif // ARKWEB_MAXIMIZE_RESIZE
++
+  private:
+   friend class CompositorFrameSinkSupportTestBase;
+   friend class FrameSinkManagerTest;
+   friend class HitTestAggregatorTest;
+   friend class SurfaceSynchronizationTest;

@@ -1,0 +1,15 @@
+diff a/components/viz/common/viz_utils.h b/components/viz/common/viz_utils.h	(rejected hunks)
+@@ -69,10 +69,13 @@ VIZ_COMMON_EXPORT void SetCopyOutputRequestResultSize(
+     CopyOutputRequest* request,
+     const gfx::Rect& src_rect,
+     const gfx::Size& output_size,
+     const gfx::Size& surface_size_in_pixels);
+ 
++#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
++VIZ_COMMON_EXPORT bool IsEvictUnlockFrameEnabled();
++#endif
+ }  // namespace viz
+ 
+ #define VIZ_HIT_PATH(path_name)                                         \
+   do {                                                                  \
+     static bool init = false;                                           \

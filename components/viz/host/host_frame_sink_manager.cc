@@ -28,11 +28,14 @@
 #include "services/viz/privileged/mojom/compositing/frame_sink_manager_test_api.mojom-forward.h"
 #include "services/viz/privileged/mojom/compositing/frame_sinks_metrics_recorder.mojom.h"
 #include "services/viz/privileged/mojom/compositing/renderer_settings.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace viz {
 
 HostFrameSinkManager::HostFrameSinkManager()
-    : debug_renderer_settings_(CreateDefaultDebugRendererSettings()) {}
+    : debug_renderer_settings_(CreateDefaultDebugRendererSettings()) {
+      managerUtils = std::make_unique<HostFrameSinkManagerUtils>(this);
+}
 
 HostFrameSinkManager::~HostFrameSinkManager() {
   viz_touch_state_ro_mapping_ = base::ReadOnlySharedMemoryMapping();

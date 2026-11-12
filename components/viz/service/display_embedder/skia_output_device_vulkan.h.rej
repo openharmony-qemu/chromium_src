@@ -1,0 +1,18 @@
+diff a/components/viz/service/display_embedder/skia_output_device_vulkan.h b/components/viz/service/display_embedder/skia_output_device_vulkan.h	(rejected hunks)
+@@ -22,13 +23,16 @@ class VulkanSurface;
+ }
+ 
+ namespace viz {
+ 
+ class VulkanContextProvider;
++class SkiaOutputDeviceVulkanUtils;
+ 
+ class SkiaOutputDeviceVulkan final : public SkiaOutputDevice {
+  public:
++  friend class SkiaOutputDeviceVulkanUtils;
++
+   SkiaOutputDeviceVulkan(
+       base::PassKey<SkiaOutputDeviceVulkan>,
+       VulkanContextProvider* context_provider,
+       gpu::SurfaceHandle surface_handle,
+       gpu::MemoryTracker* memory_tracker,

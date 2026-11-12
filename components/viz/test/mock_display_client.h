@@ -15,6 +15,10 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "ui/base/ozone_buildflags.h"
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/components/viz/test/mock_display_client_ext.h"
+#endif
+
 namespace viz {
 
 class MockDisplayClient : public mojom::DisplayClient {

@@ -1,0 +1,16 @@
+diff a/components/viz/service/display/viz_pixel_test.cc b/components/viz/service/display/viz_pixel_test.cc	(rejected hunks)
+@@ -5,10 +5,14 @@
+ #include "components/viz/service/display/viz_pixel_test.h"
+ 
+ #include "build/build_config.h"
+ #include "ui/base/ui_base_features.h"
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++#include "ui/gl/init/gl_factory.h"
++#endif
++
+ namespace viz {
+ 
+ // static
+ cc::PixelTest::GraphicsBackend VizPixelTest::RenderTypeToBackend(
+     RendererType renderer_type) {

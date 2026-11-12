@@ -4,6 +4,7 @@
 
 #include "components/web_cache/browser/web_cache_manager.h"
 
+#include "arkweb/chromium_ext/components/web_cache/browser/web_cache_manager_utils.h"
 #include "base/no_destructor.h"
 
 namespace web_cache {
@@ -25,6 +26,9 @@ WebCacheManager::WebCacheManager() {
       RenderProcessReady(process_host);
     }
   }
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+  webCacheManagerUtils = std::make_unique<WebCacheManagerUtils>(this);
+#endif
 }
 
 WebCacheManager::~WebCacheManager() = default;

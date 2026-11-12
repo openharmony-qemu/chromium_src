@@ -151,6 +151,7 @@ CompositorFrameSinkSupport::CompositorFrameSinkSupport(
       allow_copy_output_requests_(is_root) {
   // This may result in SetBeginFrameSource() being called.
   frame_sink_manager_->RegisterCompositorFrameSinkSupport(frame_sink_id_, this);
+  supportUtils = std::make_unique<CompositorFrameSinkSupportUtils>(this);
 }
 
 CompositorFrameSinkSupport::~CompositorFrameSinkSupport() {
@@ -721,6 +722,25 @@ bool CompositorFrameSinkSupport::DidNotProduceFrame(const BeginFrameAck& ack) {
   BeginFrameAck modified_ack(ack);
   modified_ack.has_damage = false;
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  // Track consecutive no-damage frames and throttle if needed
+  if (!ack.has_damage) {
+    consecutive_no_damage_frames_++;
+    if (consecutive_no_damage_frames_ >= kNoDamageThrottleThreshold && !is_throttled_ && is_throttle_enabled) {
+      // Throttle to 30fps when consecutive no-damage threshold is exceeded
+      base::TimeDelta preferred_frame_interval = viz::BeginFrameArgs::DefaultInterval() * 2;
+      TRACE_EVENT0("viz", "CompositorFrameSinkSupport::UpdateThrottleMode Start");
+      TRACE_EVENT_INSTANT2("viz", "Set sink framerate (no-damage)",
+                           TRACE_EVENT_SCOPE_THREAD, "interval",
+                           preferred_frame_interval, "sourceid",
+                           ack.frame_id.source_id);
+      is_throttled_ = true;
+      ThrottleBeginFrame(preferred_frame_interval,
+                         /*simple_cadence_only=*/true);
+    }
+  }
+#endif
+
   // If the client doesn't produce a frame, we assume it's no longer interactive
   // for scheduling.
   if (last_activated_surface_id_.is_valid()) {
@@ -747,11 +767,54 @@ void CompositorFrameSinkSupport::SubmitCompositorFrame(
   DCHECK_EQ(result, SubmitResult::ACCEPTED);
 }
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+void CompositorFrameSinkSupport::SubmitCompositorFrameLocally(
+    const SurfaceId& surface_id,
+    CompositorFrame frame,
+    const RendererSettings& settings) {
+  CHECK_EQ(surface_id, last_created_surface_id_);
+ 
+  pending_frames_++;
+  Surface* surface = surface_manager_->GetSurfaceForId(surface_id);
+ 
+  auto frame_rejected_callback =
+      base::ScopedClosureRunner(base::BindOnce([] { NOTREACHED(); }));
+  auto frame_index = ++last_frame_index_;
+  Surface::QueueFrameResult result = surface->QueueFrame(
+      std::move(frame), frame_index, std::move(frame_rejected_callback));
+  // Currently, frames are only queued on Android, and we don't need to use
+  // `SubmitCompositorFrameLocally` for evicting resources on Android.
+  CHECK_EQ(result, Surface::QueueFrameResult::ACCEPTED_ACTIVE);
+ 
+  // Make sure this surface will be stretched to match the display size. If
+  // `auto_resize_output_surface` is false, then swap will not occur meaning
+  // that the content of this compositor frame will not be presented. If it is
+  // not, then we won't properly push out existing resources. A mismatch between
+  // root surface size and display size can happen. For example, there is a race
+  // condition if `Display` is resized after it is set not visible but before
+  // any compositor frame with that new size is submitted.
+  CHECK(settings.auto_resize_output_surface);
+}
+#endif
+
 SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
     const LocalSurfaceId& local_surface_id,
     CompositorFrame frame,
     std::optional<HitTestRegionList> hit_test_region_list,
     uint64_t submit_time) {
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  if (consecutive_no_damage_frames_ > 0 || is_throttled_) {
+    consecutive_no_damage_frames_ = 0;
+    if (is_throttled_ && is_throttle_enabled) {
+      is_throttled_ = false;
+      TRACE_EVENT0("viz", "CompositorFrameSinkSupport::UpdateThrottleMode End");
+      base::TimeDelta preferred_frame_interval = base::TimeDelta::FromInternalValue(0);
+      ThrottleBeginFrame(preferred_frame_interval,
+                         /*simple_cadence_only=*/true);
+    }
+  }
+#endif
+
   if (!client_needs_begin_frame_ && auto_needs_begin_frame_) {
     // SetNeedsBeginFrame(true) below may cause `last_begin_frame_args_` to be
     // updated.
@@ -849,6 +912,15 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
   // |frame.metadata.frame_token| instead of maintaining a |last_frame_index_|.
   CHECK_LT(last_frame_index_, std::numeric_limits<uint32_t>::max());
   uint32_t frame_index = ++last_frame_index_;
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  if (frame.metadata.begin_frame_ack.preferred_frame_interval) {
+    preferred_frame_interval_ =
+        *frame.metadata.begin_frame_ack.preferred_frame_interval;
+  } else {
+    preferred_frame_interval_ = BeginFrameArgs::MinInterval();
+  }
+#endif
 
   if (features::ShouldOnBeginFrameThrottleVideo()) {
     const auto& interval_info =
@@ -1230,6 +1302,10 @@ void CompositorFrameSinkSupport::OnBeginFrame(const BeginFrameArgs& args) {
     }
 
     adjusted_args.trace_id = trace_id;
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                      std::to_string(adjusted_args.trace_id), "step", "IssueBeginFrame");
+#endif
     adjusted_args.frames_throttled_since_last = frames_throttled_since_last_;
     frames_throttled_since_last_ = 0;
 
@@ -1599,6 +1675,12 @@ bool CompositorFrameSinkSupport::ShouldSendBeginFrame(
   }
 
   if (should_throttle_as_requested) {
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+    if (throttle_mode_ && !throttle_started_) {
+      throttle_started_ = true;
+      TRACE_EVENT0("viz", "CompositorFrameSinkSupport::UpdateThrottleMode start");
+    }
+#endif
     ++frames_throttled_since_last_;
     return RecordShouldSendBeginFrame("ThrottleRequested", false);
   }

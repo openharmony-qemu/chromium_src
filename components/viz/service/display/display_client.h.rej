@@ -1,0 +1,22 @@
+diff a/components/viz/service/display/display_client.h b/components/viz/service/display/display_client.h	(rejected hunks)
+@@ -28,10 +28,20 @@ class DisplayClient {
+       const gfx::CALayerParams& ca_layer_params) = 0;
+   virtual void DisplayDidCompleteSwapWithSize(const gfx::Size& pixel_size) = 0;
+   virtual void DisplayAddChildWindowToBrowser(
+       gpu::SurfaceHandle child_window) = 0;
+   virtual void SetWideColorEnabled(bool enabled) = 0;
++#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
++  virtual void RestoreRenderFit(const FrameSinkId& frame_sink_id) = 0;
++#endif // ARKWEB_MAXIMIZE_RESIZE
++#if BUILDFLAG(ARKWEB_ROTATE_RESIZE)
++  virtual void ModifyRenderFit(int32_t fitType, const FrameSinkId& frame_sink_id) = 0;
++#endif // ARKWEB_ROTATE_RESIZE
++
++#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
++  virtual void DisplayDidRealSwapBuffer() = 0;
++#endif
+ };
+ 
+ }  // namespace viz
+ 
+ #endif  // COMPONENTS_VIZ_SERVICE_DISPLAY_DISPLAY_CLIENT_H_

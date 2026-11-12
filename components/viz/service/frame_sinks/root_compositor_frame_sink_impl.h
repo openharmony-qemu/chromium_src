@@ -20,6 +20,9 @@
 #include "components/viz/service/display/frame_interval_decider.h"
 #include "components/viz/service/display/overdraw_tracker.h"
 #include "components/viz/service/frame_sinks/compositor_frame_sink_support.h"
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+#include "arkweb/chromium_ext/components/viz/service/frame_sinks/eviction_handler.h"
+#endif
 #include "components/viz/service/viz_service_export.h"
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "mojo/public/cpp/bindings/pending_associated_receiver.h"
@@ -31,6 +34,7 @@
 #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
 #include "ui/base/ozone_buildflags.h"
 #include "ui/gfx/ca_layer_params.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/gfx/android/surface_control_frame_rate.h"
@@ -45,6 +49,8 @@ class FrameSinkManagerImpl;
 class HintSessionFactory;
 class SyntheticBeginFrameSource;
 class VSyncParameterListener;
+class FrameSinkManagerImplUtils;
+class RootCompositorFrameSinkImplExt;
 
 // The viz portion of a root CompositorFrameSink. Holds the Binding/InterfacePtr
 // for the mojom::CompositorFrameSink interface and owns the Display.
@@ -53,6 +59,8 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
       public mojom::DisplayPrivate,
       public DisplayClient {
  public:
+  friend class FrameSinkManagerImplUtils;
+  friend class RootCompositorFrameSinkImplExt;
   // Creates a new RootCompositorFrameSinkImpl.
   static std::unique_ptr<RootCompositorFrameSinkImpl> Create(
       mojom::RootCompositorFrameSinkParamsPtr params,
@@ -121,12 +129,22 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
   void NotifyNewLocalSurfaceIdExpectedWhilePaused() override;
   void BindLayerContext(mojom::PendingLayerContextPtr context,
                         mojom::LayerContextSettingsPtr settings) override;
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void OnSetBypassVsyncCondition(int32_t condition) override {}
+#endif
 #if BUILDFLAG(IS_ANDROID)
   void SetThreads(const std::vector<Thread>& threads) override;
 #endif
 
 #if BUILDFLAG(IS_ANDROID)
   base::ScopedClosureRunner GetCacheBackBufferCb();
+#endif
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  void UpdateThrottleMode(bool is_enable) override {}
+  void InitializeCompositorFrameSinkType(
+      mojom::CompositorFrameSinkType type) override;
 #endif
   ExternalBeginFrameSource* external_begin_frame_source() {
     return external_begin_frame_source_.get();
@@ -137,9 +155,13 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
   void StartOverdrawTracking(int interval_length_in_seconds);
   OverdrawTracker::OverdrawTimeSeries StopOverdrawTracking();
 
+  virtual RootCompositorFrameSinkImplExt* AsExt() {
+    return nullptr;
+  }
+
  private:
   class StandaloneBeginFrameObserver;
-
+  std::unique_ptr<FrameSinkManagerImplUtils> managerImplUtils;
   RootCompositorFrameSinkImpl(
       FrameSinkManagerImpl* frame_sink_manager,
       const FrameSinkId& frame_sink_id,

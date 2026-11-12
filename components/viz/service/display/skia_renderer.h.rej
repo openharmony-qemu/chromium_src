@@ -1,0 +1,48 @@
+diff a/components/viz/service/display/skia_renderer.h b/components/viz/service/display/skia_renderer.h	(rejected hunks)
+@@ -64,10 +64,17 @@ class VIZ_SERVICE_EXPORT SkiaRenderer : public DirectRenderer {
+                            gfx::GpuFenceHandle release_fence) override;
+   void BuffersPresented() override;
+   void DidReceiveReleasedOverlays(
+       const std::vector<gpu::Mailbox>& released_overlays) override;
+ 
++#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
++  bool IsPresentBuffersFullDamage(gfx::Rect damage_rect) override;
++  void ClosePostSubBuffer() override;
++  void ResetPartialDrawState() override;
++  std::atomic<bool> force_full_draw_after_reset_{false};
++#endif
++
+   DelegatedInkPointRendererBase* GetDelegatedInkPointRenderer(
+       bool create_if_necessary) override;
+   void SetDelegatedInkMetadata(
+       std::unique_ptr<gfx::DelegatedInkMetadata> metadata) override;
+   gfx::Rect GetCurrentFramebufferDamage() const override;
+@@ -548,18 +562,28 @@ class VIZ_SERVICE_EXPORT SkiaRenderer : public DirectRenderer {
+ 
+   // Used to get mailboxes for the root render pass when
+   // capabilities().renderer_allocates_images = true.
+   std::unique_ptr<BufferQueue> buffer_queue_;
+ 
++#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
++  bool is_partial_damage_ = false;
++  gfx::Rect skia_last_damage_rect_;
++#endif
++
+ #if BUILDFLAG(ENABLE_VULKAN) && BUILDFLAG(IS_CHROMEOS) && \
+     BUILDFLAG(USE_V4L2_CODEC)
+   bool is_protected_pool_idle_ = true;
+   std::unique_ptr<BufferQueue> protected_buffer_queue_ = nullptr;
+ 
+   gpu::Mailbox GetProtectedSharedImage(bool is_10bit);
+   void MaybeFreeProtectedPool();
+ #endif
++
++#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
++  bool is_delegated_enabled_ = false;
++#endif
++
+ };
+ 
+ }  // namespace viz
+ 
+ #endif  // COMPONENTS_VIZ_SERVICE_DISPLAY_SKIA_RENDERER_H_

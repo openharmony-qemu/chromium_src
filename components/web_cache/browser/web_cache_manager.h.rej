@@ -1,0 +1,34 @@
+diff a/components/web_cache/browser/web_cache_manager.h b/components/web_cache/browser/web_cache_manager.h	(rejected hunks)
+@@ -10,11 +10,13 @@
+ 
+ #include <stddef.h>
+ 
+ #include <map>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/gtest_prod_util.h"
++#include "base/memory/raw_ptr.h"
+ #include "base/memory/weak_ptr.h"
+ #include "base/no_destructor.h"
+ #include "base/scoped_multi_source_observation.h"
+ #include "components/web_cache/public/mojom/web_cache.mojom.h"
+ #include "content/public/browser/child_process_id.h"
+@@ -23,15 +25,18 @@
+ #include "content/public/browser/render_process_host_observer.h"
+ #include "mojo/public/cpp/bindings/remote.h"
+ 
+ namespace web_cache {
+ 
++class WebCacheManagerUtils;
++
+ // Note: memory usage uses uint64_t because potentially the browser could be
+ // 32 bit and the renderers 64 bits.
+ class WebCacheManager : public content::RenderProcessHostCreationObserver,
+                         public content::RenderProcessHostObserver {
+  public:
++  friend class WebCacheManagerUtils;
+   // Gets the singleton WebCacheManager object.  The first time this method
+   // is called, a WebCacheManager object is constructed and returned.
+   // Subsequent calls will return the same object.
+   static WebCacheManager* GetInstance();
+ 

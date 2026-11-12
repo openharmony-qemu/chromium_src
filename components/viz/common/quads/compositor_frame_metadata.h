@@ -33,6 +33,7 @@
 #include "ui/gfx/geometry/vector2d_f.h"
 #include "ui/gfx/overlay_transform.h"
 #include "ui/latency/latency_info.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "components/viz/common/quads/selection.h"
@@ -100,6 +101,10 @@ class VIZ_COMMON_EXPORT CompositorFrameMetadata {
   // The device scale factor used to generate this compositor frame. Must be
   // greater than zero.
   float device_scale_factor = 0.f;
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  float stretch_content_none_device_scale_factor = 0.f;
+#endif
 
   // Scroll offset and scale of the root layer. This can be used for tasks
   // like positioning windowed plugins.

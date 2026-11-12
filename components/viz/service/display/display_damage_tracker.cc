@@ -264,11 +264,19 @@ void DisplayDamageTracker::OnSurfaceDamageExpected(const SurfaceId& surface_id,
   // through all of the entries in `surface_states_`. That iteration is
   // expensive so avoid doing it when source_id doesn't match.
   if (!CheckBeginFrameSourceId(args.frame_id.source_id)) {
-    return;
+    return false;
   }
 
   NotifyPendingSurfacesChanged();
 }
+
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+void DisplayDamageTracker::ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) {
+  if (delegate_) {
+    delegate_->ReenableSwapCheck(surface_id, width, height);
+  }
+}
+#endif // ARKWEB_MAXIMIZE_RESIZE
 
 void DisplayDamageTracker::UpdateRootFrameMissing() {
   Surface* surface = surface_manager_->GetSurfaceForId(root_surface_id_);

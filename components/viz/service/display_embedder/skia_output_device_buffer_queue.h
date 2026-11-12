@@ -69,6 +69,10 @@ class VIZ_SERVICE_EXPORT SkiaOutputDeviceBufferQueue : public SkiaOutputDevice {
     swap_time_clock_ = clock;
   }
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  void DiscardCompositingResources(bool is_clean_all, bool is_clean_video_surface) override;
+#endif
+
  private:
   friend class SkiaOutputDeviceBufferQueueTest;
 

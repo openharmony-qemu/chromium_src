@@ -1,0 +1,19 @@
+diff a/components/viz/host/host_frame_sink_manager.h b/components/viz/host/host_frame_sink_manager.h	(rejected hunks)
+@@ -389,10 +399,17 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
+       const blink::SameDocNavigationScreenshotDestinationToken&
+           destination_token,
+       std::unique_ptr<CopyOutputResult> copy_output_result) override;
+   void OnVizTouchStateAvailable(
+       base::ReadOnlySharedMemoryRegion region) override;
++#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
++  void RestoreRenderFit(uint32_t client_id, uint32_t sink_id) override;
++#endif // ARKWEB_MAXIMIZE_RESIZE
++
++#if BUILDFLAG(ARKWEB_ROTATE_RESIZE)
++  void ModifyRenderFit(int32_t fitType, uint32_t client_id, uint32_t sink_id) override;
++#endif // ARKWEB_ROTATE_RESIZE
+ 
+   mojo::Remote<mojom::RendererInputRouterDelegateRegistry>
+       rir_delegate_registry_;
+   // Connections to/from FrameSinkManagerImpl.
+   mojo::Remote<mojom::FrameSinkManager> frame_sink_manager_remote_;

@@ -1,0 +1,13 @@
+diff a/components/viz/service/surfaces/surface_observer.h b/components/viz/service/surfaces/surface_observer.h	(rejected hunks)
+@@ -4,10 +4,11 @@
+ 
+ #ifndef COMPONENTS_VIZ_SERVICE_SURFACES_SURFACE_OBSERVER_H_
+ #define COMPONENTS_VIZ_SERVICE_SURFACES_SURFACE_OBSERVER_H_
+ 
+ #include "components/viz/service/viz_service_export.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace viz {
+ 
+ class Surface;
+ class SurfaceId;

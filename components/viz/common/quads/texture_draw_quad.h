@@ -111,6 +111,13 @@ class VIZ_COMMON_EXPORT TextureDrawQuad : public DrawQuad {
   // of canvas or webgl content.
   bool is_video_frame : 1;
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  // ArkWeb OHOS: when true, the video frame is rendered directly by the
+  // OHOS Rosen render service. Drives frame-level skip_present in viz so the
+  // fully-occluded web surface is not presented (see SkiaRenderer).
+  bool render_video_view : 1 = false;
+#endif
+
   // If true we will treat the alpha in the texture as 1. This works like rgbx
   // and not like blend mode 'kSrc' which would copy the alpha.
   bool force_rgbx : 1 = false;

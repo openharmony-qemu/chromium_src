@@ -1,0 +1,117 @@
+diff a/components/viz/service/gl/gpu_service_impl.h b/components/viz/service/gl/gpu_service_impl.h	(rejected hunks)
+@@ -53,10 +54,22 @@
+ 
+ #if BUILDFLAG(IS_WIN)
+ #include "ui/gl/direct_composition_support.h"
+ #endif  // BUILDFLAG(IS_WIN)
+ 
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++#include "third_party/skia/include/core/SkPixmap.h"
++#include "ui/gfx/geometry/rect.h"
++#endif
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE) || BUILDFLAG(ARKWEB_SAFEBROWSING)
++#include "components/viz/common/frame_sinks/copy_output_result.h"
++#endif
++
++#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
++#include "arkweb/ohos_adapter_ndk/interfaces/hiappevent_adapter.h"
++#endif
++
+ namespace gpu {
+ class DawnContextProvider;
+ class GpuWatchdogThread;
+ class Scheduler;
+ class SharedContextState;
+@@ -164,10 +177,17 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
+                            bool is_gpu_host,
+                            bool enable_extra_handles_validation,
+                            EstablishGpuChannelCallback callback) override;
+   void SetChannelClientPid(int32_t client_id,
+                            base::ProcessId client_pid) override;
++#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
++  void GetSurfaceId(int32_t native_embed_id,
++                    GetSurfaceIdCallback callback) override;
++  void SetTransformHint(uint32_t rotation, uint32_t window_id) override;
++  void DestroyNativeWindow(uint32_t native_window_id) override;
++  void Discard(uint32_t native_window_id) override;
++#endif
+   void SetChannelDiskCacheHandle(
+       int32_t client_id,
+       const gpu::GpuDiskCacheHandle& handle) override;
+   void SetChannelPersistentCachePendingBackend(
+       int32_t client_id,
+@@ -374,10 +394,56 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
+ #endif
+ 
+   using VisibilityChangedCallback =
+       base::RepeatingCallback<void(bool /*visible*/)>;
+   void SetVisibilityChangedCallback(VisibilityChangedCallback);
++#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
++  void SetVisible(int32_t nweb_id, bool visible) override;
++  void SetHasTouchPoint(bool has_touch_point) override;
++  void ReportSlidingFrameRate(int32_t frame_rate) override;
++  void SetLTPOStrategy(int32_t strategy) override;
++#endif
++#if BUILDFLAG(ARKWEB_INVISIBLE_RENDER_THROTTLE)
++  void SetWebComponentVisible(int32_t nweb_id, bool visible) override;
++  void InitInvisibleThrottle(int32_t strategy, int32_t timeout, int32_t ratio) override;
++#endif
++#if BUILDFLAG(ARKWEB_DFX_DUMP)
++  void DumpGpuInfo(DumpGpuInfoCallback callback) override;
++#endif
++
++#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
++  void StartMonitor(int32_t nweb_id) override;
++  void StopMonitor() override;
++  void ReportDynamicFrameLoss(
++      const OHOS::NWeb::HiAppeventAdapter::DynamicFrameDropInfo& info);
++  void InitFrameLossMonitor();
++#endif
++
++#if BUILDFLAG(ARKWEB_D_VSYNC)
++  void SetIsFling(bool is_fling_enabled) override;
++#endif
++
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  void SendBlanklessSnapshotInfo(mojom::BlanklessSendInfoPtr infoPtr,
++                                 mojo::ScopedSharedBufferHandle buffer,
++                                 mojom::BlanklessBitmapMetadataPtr metadata);
++
++  void ClearBlanklessSnapshotInfo(uint64_t blankless_key);
++  void OnFrameSnapshotCopyOutputResult(std::unique_ptr<CopyOutputResult> result);
++#endif
++
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE) || BUILDFLAG(ARKWEB_SAFEBROWSING)
++  base::WeakPtr<GpuServiceImpl> GetWeakPtr() const;
++#endif
++
++#if BUILDFLAG(ARKWEB_SAFEBROWSING)
++  void OnAdfFrameSnapshotCopyOutputResult(std::unique_ptr<CopyOutputResult> result);
++  void SendAntiFraudSnapshotInfo(mojo::ScopedSharedBufferHandle buffer,
++                                 mojom::SbBitmapMetadataPtr metadata);
++  bool TakeIsAllowSnapshot();
++  void RequestSnapshotOnce() override;
++#endif
+ 
+  private:
+   void InitializeWithHostInternal(
+       mojo::PendingRemote<mojom::GpuHost> gpu_host,
+       gpu::GpuProcessShmCount use_shader_cache_shm_count,
+@@ -551,10 +617,17 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
+   // ::LoadedBlob() instead of the constructor which was causing users to fall
+   // out of the finch experiment as ::LoadedBlob() is not called in the next
+   // browser start after the disk cache is cleared.
+   const bool clear_shader_cache_;
+ 
++#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
++  bool oop_gpu_enabled_ = false;
++#endif
++
++  bool allow_snapshot_ = false;
++  std::mutex allow_snapshot_mtx_;
++
+   base::WeakPtr<GpuServiceImpl> weak_ptr_;
+   base::WeakPtrFactory<GpuServiceImpl> weak_ptr_factory_{this};
+ };
+ 
+ }  // namespace viz

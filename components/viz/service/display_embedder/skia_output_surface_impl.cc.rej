@@ -1,0 +1,15 @@
+diff a/components/viz/service/display_embedder/skia_output_surface_impl.cc b/components/viz/service/display_embedder/skia_output_surface_impl.cc	(rejected hunks)
+@@ -1363,10 +1409,13 @@ void SkiaOutputSurfaceImpl::DidSwapBuffersComplete(
+   client_->DidReceiveSwapBuffersAck(params, std::move(release_fence));
+   if (!params.released_overlays.empty())
+     client_->DidReceiveReleasedOverlays(params.released_overlays);
+   if (needs_swap_size_notifications_)
+     client_->DidSwapWithSize(pixel_size);
++#if BUILDFLAG(ARKWEB_ROTATE_RESIZE) && !defined(COMPONENT_BUILD)
++  client_->DidSwapWithRotate(pixel_size);
++#endif // ARKWEB_ROTATE_RESIZE
+ }
+ 
+ void SkiaOutputSurfaceImpl::ReleaseOverlays(
+     std::vector<gpu::Mailbox> released_overlays) {
+   if (!released_overlays.empty()) {

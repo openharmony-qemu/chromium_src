@@ -1,0 +1,167 @@
+diff a/components/viz/service/frame_sinks/compositor_frame_sink_support.cc b/components/viz/service/frame_sinks/compositor_frame_sink_support.cc	(rejected hunks)
+@@ -48,10 +48,11 @@
+ #include "components/viz/service/surfaces/surface.h"
+ #include "components/viz/service/surfaces/surface_reference.h"
+ #include "components/viz/service/transitions/surface_animation_manager.h"
+ #include "media/filters/video_cadence_estimator.h"
+ #include "mojo/public/cpp/system/platform_handle.h"
++#include "arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_support_utils.h"
+ 
+ // This determines whether the provided time since last interval corresponds
+ // to a cadence frame that needs to be rendered.
+ bool HasElapsedCadenceInterval(
+     base::TimeDelta render_interval,
+@@ -441,10 +443,18 @@ void CompositorFrameSinkSupport::OnSurfaceDestroyed(Surface* surface) {
+ void CompositorFrameSinkSupport::OnSurfacePresented(
+     uint32_t frame_token,
+     base::TimeTicks draw_start_timestamp,
+     const gfx::SwapTimings& swap_timings,
+     const gfx::PresentationFeedback& feedback) {
++#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
++  if (g_firstScrollingFrame == frame_token) {
++    TRACE_EVENT1("viz", "CompositorFrameSinkSupport::OnSurfacePresented",
++      "sliding response end frame", frame_token);
++    LOG(DEBUG) << "CompositorFrameSinkSupport::OnSurfacePresented "
++      "sliding response end";
++  }
++#endif
+   // If the frame was submitted locally (from inside viz), do not tell the
+   // client about it, since the client did not send it.
+   if (frame_token != kLocalFrameToken) {
+     DidPresentCompositorFrame(frame_token, draw_start_timestamp, swap_timings,
+                               feedback);
+@@ -676,12 +705,46 @@ void CompositorFrameSinkSupport::DidNotProduceFrame(const BeginFrameAck& ack) {
+ 
+   if (begin_frame_source_) {
+     begin_frame_source_->DidFinishFrame(this);
+     frame_sink_manager_->DidFinishFrame(frame_sink_id_, last_begin_frame_args_);
+   }
++
++#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
++  if (ack.preferred_frame_interval &&
++      frame_sink_type_ == mojom::CompositorFrameSinkType::kLayerTree) {
++    preferred_frame_interval_ = *ack.preferred_frame_interval;
++    ApplyPreferredFrameRate();
++  }
++#endif
++}
++
++#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
++void CompositorFrameSinkSupport::ApplyPreferredFrameRate() {
++  if ((last_known_frame_interval_ - preferred_frame_interval_).magnitude() >
++      base::Milliseconds(2) && !is_root()) {
++    last_known_frame_interval_ = preferred_frame_interval_;
++    // Only throttle simple cadences.
++    ThrottleBeginFrame(preferred_frame_interval_,
++                       /*simple_cadence_only=*/true);
++  }
+ }
+ 
++void CompositorFrameSinkSupport::InitializeCompositorFrameSinkType(
++    mojom::CompositorFrameSinkType type) {
++  if (frame_sink_type_ != mojom::CompositorFrameSinkType::kUnspecified ||
++      type == mojom::CompositorFrameSinkType::kUnspecified) {
++    return;
++  }
++  frame_sink_type_ = type;
++
++  if (frame_sink_manager_->frame_counter()) {
++    frame_sink_manager_->frame_counter()->SetFrameSinkType(frame_sink_id_,
++                                                           frame_sink_type_);
++  }
++}
++#endif
++
+ void CompositorFrameSinkSupport::SubmitCompositorFrame(
+     const LocalSurfaceId& local_surface_id,
+     CompositorFrame frame,
+     std::optional<HitTestRegionList> hit_test_region_list,
+     uint64_t submit_time) {
+@@ -730,17 +836,32 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
+         frame_sink_id_.WriteIntoTrace(ctx.Wrap(data->set_frame_sink_id()));
+         data->set_surface_frame_trace_id(
+             frame.metadata.begin_frame_ack.trace_id);
+       });
+ 
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
++                    std::to_string(frame.metadata.begin_frame_ack.trace_id), "step", "ReceiveCompositorFrame");
++  TRACE_EVENT1("viz", "CompositorFrameSinkSupport::MaybeSubmitCompositorFrame",
++      "root_scroll_offset", frame.metadata.root_scroll_offset.ToString());
++#endif
++
+   DCHECK(local_surface_id.is_valid());
+   DCHECK(!frame.render_pass_list.empty());
+   DCHECK(!frame.size_in_pixels().IsEmpty());
+ 
+   CHECK(callback_received_begin_frame_);
+   CHECK(callback_received_receive_ack_);
+ 
++#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
++  auto frame_size = frame.size_in_pixels();
++#endif // ARKWEB_MAXIMIZE_RESIZE
++
++#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
++  supportUtils->flingSlideMaybeSubmitCompositorFrame(frame);
++#endif
++
+   begin_frame_tracker_.ReceivedAck(frame.metadata.begin_frame_ack);
+   pending_frames_++;
+ 
+   base::TimeTicks now_time = base::TimeTicks::Now();
+   pending_received_frame_times_.emplace(
+@@ -763,10 +884,14 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
+   }
+   for (ui::LatencyInfo& latency : frame.metadata.latency_info) {
+     if (latency.latency_components().size() > 0) {
+       latency.AddLatencyNumberWithTimestamp(
+           ui::DISPLAY_COMPOSITOR_RECEIVED_FRAME_COMPONENT, now_time);
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
++                        std::to_string(latency.trace_id()), "step", "DISPLAY_COMPOSITOR_RECEIVED_FRAME_COMPONENT");
++#endif
+     }
+   }
+ 
+   base::ScopedClosureRunner frame_rejected_callback(
+       base::BindOnce(&CompositorFrameSinkSupport::DidRejectCompositorFrame,
+@@ -831,11 +965,14 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
+         local_surface_id.ToString());
+ 
+     SurfaceId surface_id(frame_sink_id_, local_surface_id);
+     SurfaceInfo surface_info(surface_id, frame.device_scale_factor(),
+                              frame.size_in_pixels());
+-
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++    surface_info.set_stretch_content_none_device_scale_factor(
++        frame.stretch_content_none_device_scale_factor());
++#endif
+     // LocalSurfaceIds should be monotonically increasing. This ID is used
+     // to determine the freshness of a surface at aggregation time.
+     const LocalSurfaceId& last_created_local_surface_id =
+         last_created_surface_id_.local_surface_id();
+ 
+@@ -992,15 +1129,23 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
+     case Surface::QueueFrameResult::ACCEPTED_ACTIVE:
+       // Nothing to do here.
+       break;
+   }
+ 
++#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
++  supportUtils->maximizeResizeCompositorFrame(current_surface, frame_size);
++#endif
++
+   if (begin_frame_source_) {
+     begin_frame_source_->DidFinishFrame(this);
+     frame_sink_manager_->DidFinishFrame(frame_sink_id_, last_begin_frame_args_);
+   }
+ 
++#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
++  supportUtils->videoLtpoMaybeSubmitCompositorFrame();
++#endif
++
+   return SubmitResult::ACCEPTED;
+ }
+ 
+ void CompositorFrameSinkSupport::NotifyNewLocalSurfaceIdExpectedWhilePaused() {
+   if (!last_activated_surface_id_.is_valid()) {

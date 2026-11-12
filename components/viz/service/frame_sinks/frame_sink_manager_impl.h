@@ -90,6 +90,9 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
       public SurfaceManagerDelegate,
       public HitTestDataProvider {
  public:
+  friend class FrameSinkManagerImplUtils;
+  std::unique_ptr<FrameSinkManagerImplUtils> managerImplUtils;
+
   struct VIZ_SERVICE_EXPORT InitParams {
     explicit InitParams(
         OutputSurfaceProvider* output_surface_provider = nullptr,
@@ -230,6 +233,10 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
   void StartFrameCounting(base::TimeTicks start_time,
                           base::TimeDelta bucket_size) override;
   void StopFrameCounting(StopFrameCountingCallback callback) override;
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void SendInternalBeginFrame(const FrameSinkId& id) override;
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void StartOverdrawTracking(const FrameSinkId& root_frame_sink_id,
                              base::TimeDelta bucket_size) override;
   void StopOverdrawTracking(const FrameSinkId& root_frame_sink_id,

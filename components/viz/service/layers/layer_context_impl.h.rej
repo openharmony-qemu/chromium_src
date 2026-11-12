@@ -1,0 +1,17 @@
+diff a/components/viz/service/layers/layer_context_impl.h b/components/viz/service/layers/layer_context_impl.h	(rejected hunks)
+@@ -144,11 +145,14 @@ class VIZ_SERVICE_EXPORT LayerContextImpl : public cc::LayerTreeHostImplClient,
+   void SubmitCompositorFrame(CompositorFrame frame,
+                              bool hit_test_data_changed) override;
+   void DidNotProduceFrame(const BeginFrameAck& ack,
+                           cc::FrameSkippedReason reason) override;
+   void NotifyNewLocalSurfaceIdExpectedWhilePaused() override;
+-
++#if BUILDFLAG(ARKWEB_WEBGL)
++  void SetDeferInvalidationForFastMainFrameFromImpl(
++           bool defer_invalidation_for_fast_main_frame) override {}
++#endif
+   // mojom::LayerContext:
+   void SetVisible(bool visible) override;
+   void UpdateDisplayTree(mojom::LayerTreeUpdatePtr update) override;
+   void UpdateDisplayTiling(mojom::TilingPtr tiling,
+                            bool update_damage) override;

@@ -1,0 +1,221 @@
+diff a/components/viz/service/display/direct_renderer.cc b/components/viz/service/display/direct_renderer.cc	(rejected hunks)
+@@ -51,10 +51,15 @@
+ #include "ui/gfx/geometry/rect_conversions.h"
+ #include "ui/gfx/geometry/size.h"
+ #include "ui/gfx/geometry/transform.h"
+ #include "ui/gfx/geometry/transform_util.h"
+ 
++#if BUILDFLAG(ARKWEB_VULKAN) || BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
++#include "gpu/config/gpu_finch_features.h"
++#endif
++#include "arkweb/chromium_ext/components/viz/service/display/direct_renderer_ext.h"
++
+ namespace viz {
+ 
+ namespace {
+ 
+ // Enum used for UMA histogram. These enum values must not be changed or
+@@ -99,12 +104,40 @@ DirectRenderer::DirectRenderer(const RendererSettings* settings,
+ }
+ 
+ DirectRenderer::~DirectRenderer() = default;
+ 
+ void DirectRenderer::Initialize() {
++#if BUILDFLAG(ARKWEB_VULKAN_INC_PRESENT)
++  TRACE_EVENT2("viz", "DirectRenderer::Initialize",
++               "partial_swap_enabled", settings_->partial_swap_enabled,
++               "CanPartialSwap()", CanPartialSwap());
++#endif
+   use_partial_swap_ = settings_->partial_swap_enabled && CanPartialSwap();
+   initialized_ = true;
++#if BUILDFLAG(ARKWEB_VULKAN_INC_PRESENT)
++  if (!features::IsUsingVulkan()) {
++    return;
++  }
++  incPresentValue_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
++                     .GetSystemPropertiesInstance()
++                     .GetIntParameter("web.gpu.incpresent",
++                                      static_cast<int32_t>(VulkanIncPresent::kDisable));
++  switch (incPresentValue_) {
++    case static_cast<int32_t>(VulkanIncPresent::kDefault):
++      break;
++    case static_cast<int32_t>(VulkanIncPresent::kEnable):
++      use_partial_swap_ = true;
++      break;
++    case static_cast<int32_t>(VulkanIncPresent::kDisable):
++      use_partial_swap_ = false;
++      break;
++    default:
++      break;
++  }
++  init_partial_swap_ = use_partial_swap_;
++  LOG(INFO) << "DirectRenderer Initialize, use_partial_swap_: " << use_partial_swap_;
++#endif
+ }
+ 
+ gfx::AxisTransform2d DirectRenderer::CalculateTargetToDeviceTransform(
+     const gfx::Rect& draw_rect,
+     const gfx::Size& viewport_size) {
+@@ -137,22 +170,58 @@ void DirectRenderer::SetOutputSurfaceClipRect(const gfx::Rect& clip_rect) {
+ void DirectRenderer::SetVisible(bool visible) {
+   DCHECK(initialized_);
+   if (visible_ == visible)
+     return;
+   visible_ = visible;
++#if BUILDFLAG(ARKWEB_VULKAN)
++  LOG(INFO) << "DirectRenderer::SetVisible status change, visible_ = " << visible_;
++  next_frame_needs_full_frame_redraw_ = true;
++#endif
+   DidChangeVisibility();
+ }
+ 
+ void DirectRenderer::ReallocatedFrameBuffers() {
+   next_frame_needs_full_frame_redraw_ = true;
+ }
+ 
++#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
++void DirectRenderer::UpdateFocusAndScreenStatus(bool is_focused,
++                                                bool is_single_screen) {
++  is_focused_ = is_focused;
++  is_single_screen_ = is_single_screen;
++}
++#endif
++
+ void DirectRenderer::Reshape(
+     const OutputSurface::ReshapeParams& reshape_params) {
+   output_surface_->Reshape(reshape_params);
+ }
+ 
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++void DirectRenderer::SetNativeInnerWeb(bool isInnerWeb) {
++  if (output_surface_) {
++    output_surface_->SetNativeInnerWeb(isInnerWeb);
++  }
++}
++#endif
++
++#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
++void DirectRenderer::SetBypassVsyncCondition(int32_t condition) {
++  if (output_surface_) {
++    output_surface_->SetBypassVsyncCondition(condition);
++  }
++}
++#endif
++
++#if BUILDFLAG(ARKWEB_DFX_DUMP)
++void DirectRenderer::SetAsyncStackId(uint64_t stackId) {
++  if (output_surface_) {
++    output_surface_->SetAsyncStackId(stackId);
++  }
++}
++#endif
++
+ void DirectRenderer::DecideRenderPassAllocationsForFrame(
+     const AggregatedRenderPassList& render_passes_in_draw_order,
+     bool skip_root_render_pass_allocation) {
+   DCHECK(render_pass_bypass_quads_.empty());
+ 
+@@ -220,12 +289,17 @@ void DirectRenderer::DrawFrame(
+     // trail to be drawn at the same time.
+     ink_renderer->FinalizePathForDraw();
+   }
+   AddInkDamageToRenderPass(current_frame()->root_render_pass,
+                            current_frame()->root_damage_rect);
+-
++#if BUILDFLAG(ARKWEB_VULKAN)
++  CHECK_DAMAGE_RECT_WHEN_VULKAN(device_viewport_size)
++#endif
+   current_frame()->root_damage_rect.Intersect(gfx::Rect(device_viewport_size));
++#if BUILDFLAG(ARKWEB_VULKAN)
++  }
++#endif
+   current_frame()->device_viewport_size = device_viewport_size;
+   current_frame()->display_color_spaces = display_color_spaces;
+ 
+   output_surface_->SetNeedsMeasureNextDrawLatency();
+   BeginDrawingFrame();
+@@ -266,10 +340,14 @@ void DirectRenderer::DrawFrame(
+     // Android SurfaceControl, and viewport size is need on Windows. These need
+     // to be called before ProcessForOverlays.
+     overlay_processor_->SetDisplayTransformHint(
+         output_surface_->GetDisplayTransform());
+     overlay_processor_->SetViewportSize(device_viewport_size);
++#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
++    overlay_processor_->UpdateFocusAndScreenStatus(is_focused_,
++                                                   is_single_screen_);
++#endif
+ 
+     // Before ProcessForOverlay calls into the hardware to ask about whether the
+     // overlay setup can be handled, we need to set up the primary plane.
+     std::optional<OverlayCandidate> primary_plane;
+     if (output_surface_->capabilities().renderer_allocates_images) {
+@@ -382,11 +460,19 @@ void DirectRenderer::DrawFrame(
+   DecideRenderPassAllocationsForFrame(*render_passes_in_draw_order,
+                                       skip_root_render_pass_allocation);
+ 
+   // Draw all non-root render passes except for the root render pass.
+   total_pixels_rendered_this_frame_ = 0;
++#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
++  bool has_copy_requests = false;
++#endif
+   for (const auto& pass : *render_passes_in_draw_order) {
++#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
++    if (!pass->copy_requests.empty()) {
++      has_copy_requests = true;
++    }
++#endif
+     if (pass.get() == root_render_pass)
+       break;
+     DrawRenderPassAndExecuteCopyRequests(pass.get());
+   }
+ 
+@@ -399,14 +485,35 @@ void DirectRenderer::DrawFrame(
+   if (!use_partial_swap_ && !skip_drawing_root_render_pass)
+     needs_full_frame_redraw = true;
+ 
+   // If we need to redraw the frame, the whole output should be considered
+   // damaged.
++#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
++  CHECK_DAMAGE_RECT_OHOS();
++#endif
+   if (needs_full_frame_redraw)
+     current_frame()->root_damage_rect = gfx::Rect(device_viewport_size);
+ 
++#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
++  if (!features::IsUsingVulkan()) {
++    if (!(is_sync_draw_mode_ || is_blankless_mode_)) {
++      skip_partial_paint_ = IsPresentBuffersFullDamage(current_frame()->root_damage_rect);
++    }
++    if (skip_partial_paint_) {
++      current_frame()->root_damage_rect = gfx::Rect(device_viewport_size);
++    }
++  }
++  TRACE_EVENT2("viz", "DirectRenderer::DrawFrame PARTIAL_DRAW",
++               "skip_partial_paint_", skip_partial_paint_,
++               "root_damage_rect", current_frame()->root_damage_rect.ToString());
++#endif
++
++#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
++  if (!skip_drawing_root_render_pass || has_copy_requests) {
++#else
+   if (!skip_drawing_root_render_pass) {
++#endif
+     DrawRenderPassAndExecuteCopyRequests(root_render_pass);
+   }
+ 
+   // Displays 4k in size or greater are relatively common.
+   constexpr uint64_t kMaxPixelCount = 30'000'000;
+@@ -447,10 +554,13 @@ void DirectRenderer::DrawFrame(
+   render_pass_backdrop_filter_bounds_.clear();
+   render_pass_bypass_quads_.clear();
+   backdrop_filter_output_rects_.clear();
+   has_pixel_moving_foreground_filters_ = false;
+ 
++#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
++  SetNextFrameSkipsDrawRenderPasses(false);
++#endif
+   current_frame_valid_ = false;
+ }
+ 
+ gfx::Rect DirectRenderer::GetCurrentFramebufferDamage() const {
+   return output_surface_->GetCurrentFramebufferDamage();

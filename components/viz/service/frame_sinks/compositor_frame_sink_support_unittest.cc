@@ -2830,6 +2830,16 @@ TEST_P(CompositorFrameSinkSupportTest,
               Eq(frame_time + base::Milliseconds(3)));
 }
 
+TEST_P(CompositorFrameSinkSupportTest, SubmitCompositorFrameLocally_IncrementsFrameIndex) {
+  LocalSurfaceId local_surface_id(1, kArbitraryToken);
+  SurfaceId surface_id(support_->frame_sink_id(), local_surface_id);
+ 
+  auto frame = CompositorFrameBuilder().AddDefaultRenderPass().SetIsHandlingInteraction(true).Build();
+  support_->SubmitCompositorFrame(local_surface_id, std::move(frame));
+  ASSERT_EQ(surface_observer_->last_created_surface_id(), surface_id);
+
+}
+
 INSTANTIATE_TEST_SUITE_P(
     ,
     CompositorFrameSinkSupportTest,

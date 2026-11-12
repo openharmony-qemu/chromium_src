@@ -15,6 +15,9 @@
 #include "gpu/command_buffer/service/shared_context_state.h"
 #include "gpu/ipc/common/memory_stats.h"
 #include "gpu/ipc/service/gpu_watchdog_thread.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/gpu/ipc/service/gpu_hang_adapter.h"
+#endif
 
 namespace gl {
 class GLDisplay;
@@ -101,6 +104,9 @@ class VIZ_SERVICE_EXPORT CompositorGpuThread : public base::Thread {
   std::unique_ptr<gpu::DawnContextProvider> dawn_context_provider_;
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+  std::unique_ptr<gpu::GpuHangAdapter> gpu_hang_;
+#endif
   // The GLDisplay lives in GLDisplayManager, which never deletes displays once
   // they are lazily created.
   raw_ptr<gl::GLDisplay> display_ = nullptr;

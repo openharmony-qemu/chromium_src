@@ -1,0 +1,51 @@
+diff a/components/viz/service/main/viz_compositor_thread_runner_impl.cc b/components/viz/service/main/viz_compositor_thread_runner_impl.cc	(rejected hunks)
+@@ -4,10 +4,11 @@
+ 
+ #include "components/viz/service/main/viz_compositor_thread_runner_impl.h"
+ 
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/command_line.h"
+ #include "base/feature_list.h"
+ #include "base/features.h"
+ #include "base/functional/bind.h"
+ #include "base/message_loop/message_pump_type.h"
+@@ -121,10 +124,14 @@ std::unique_ptr<VizCompositorThreadType> CreateAndStartCompositorThread(
+   thread_options.thread_type = thread_type;
+   thread_options.task_observer = task_observer;
+ 
+   CHECK(thread->StartWithOptions(std::move(thread_options)));
+ 
++#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
++  ReportThreadForInit(thread);
++#endif
++
+   thread->task_runner()->PostTask(
+       FROM_HERE, base::BindOnce([]() {
+         mojo::InterfaceEndpointClient::SetThreadNameSuffixForMetrics(
+             "VizCompositor");
+       }));
+@@ -147,18 +154,22 @@ VizCompositorThreadRunnerImpl::VizCompositorThreadRunnerImpl() {
+   thread_ = CreateAndStartCompositorThread(
+       scenario_priority_boost_.has_value() ? &scenario_priority_boost_.value()
+                                            : nullptr);
+   task_runner_ = thread_->task_runner();
+   DCHECK_CALLED_ON_VALID_SEQUENCE(gpu_sequence_checker_);
++  implUtils = std::make_unique<VizCompositorThreadRunnerImplUtils>(this);
+ }
+ 
+ VizCompositorThreadRunnerImpl::~VizCompositorThreadRunnerImpl() {
+   task_runner_->PostTask(
+       FROM_HERE,
+       base::BindOnce(&VizCompositorThreadRunnerImpl::TearDownOnCompositorThread,
+                      base::Unretained(this)));
+   thread_->Stop();
++#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
++  implUtils->ReportThreadForDestroy(thread_);
++#endif
+ }
+ 
+ bool VizCompositorThreadRunnerImpl::CreateHintSessionFactory(
+     base::flat_set<base::PlatformThreadId> thread_ids,
+     base::RepeatingClosure* wake_up_closure) {

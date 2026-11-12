@@ -1,0 +1,14 @@
+diff a/components/viz/host/gpu_host_impl.cc b/components/viz/host/gpu_host_impl.cc	(rejected hunks)
+@@ -48,10 +48,12 @@
+ #if BUILDFLAG(IS_OZONE)
+ #include "ui/ozone/public/gpu_platform_support_host.h"
+ #include "ui/ozone/public/ozone_platform.h"
+ #endif
+ 
++#include "arkweb/chromium_ext/components/viz/host/gpu_host_impl_utils.cc"
++
+ namespace viz {
+ namespace {
+ 
+ // A wrapper around gfx::FontRenderParams that checks it is set and accessed on
+ // the same thread.

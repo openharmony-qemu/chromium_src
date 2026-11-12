@@ -1,0 +1,74 @@
+diff a/components/viz/service/display/display.h b/components/viz/service/display/display.h	(rejected hunks)
+@@ -62,11 +64,17 @@ class DisplayResourceProvider;
+ class FrameIntervalDecider;
+ class OutputSurface;
+ class RendererSettings;
+ class SkiaOutputSurface;
+ class SoftwareRenderer;
++#if BUILDFLAG(ARKWEB_DFX_DUMP)
++class DumpFrameObserver;
++#endif
+ class OcclusionCuller;
++#if !defined(COMPONENT_BUILD) // FIXME
++class ArkwebDisplayUtils;
++#endif
+ 
+ class VIZ_SERVICE_EXPORT DisplayObserver {
+  public:
+   virtual ~DisplayObserver() = default;
+ 
+@@ -156,17 +168,23 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
+   const SurfaceId& CurrentSurfaceId() const;
+ 
+   // DisplaySchedulerClient implementation.
+   bool DrawAndSwap(const DrawAndSwapParams& params) override;
+   void DidFinishFrame(const BeginFrameAck& ack) override;
++#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
++  void ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) override;
++#endif // ARKWEB_MAXIMIZE_RESIZE
+ 
+   // OutputSurfaceClient implementation.
+   void DidReceiveSwapBuffersAck(const gpu::SwapBuffersCompleteParams& params,
+                                 gfx::GpuFenceHandle release_fence) override;
+   void DidReceiveCALayerParams(
+       const gfx::CALayerParams& ca_layer_params) override;
+   void DidSwapWithSize(const gfx::Size& pixel_size) override;
++#if BUILDFLAG(ARKWEB_ROTATE_RESIZE) && !defined(COMPONENT_BUILD)
++  void DidSwapWithRotate(const gfx::Size& pixel_size) override;
++#endif // ARKWEB_ROTATE_RESIZE
+   void DidReceivePresentationFeedback(
+       const gfx::PresentationFeedback& feedback) override;
+   void DidReceiveReleasedOverlays(
+       const std::vector<gpu::Mailbox>& released_overlays) override;
+   void AddChildWindowToBrowser(gpu::SurfaceHandle child_window) override;
+@@ -295,10 +328,15 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
+   gfx::DisplayColorSpaces display_color_spaces_;
+   bool visible_ = false;
+   bool swapped_since_resize_ = false;
+   bool output_is_secure_ = false;
+ 
++#if BUILDFLAG(ARKWEB_ROTATE_RESIZE)
++  int oldWidth_ = 0;
++  int oldHeight_ = 0;
++#endif // ARKWEB_ROTATE_RESIZE
++
+ #if DCHECK_IS_ON()
+   std::unique_ptr<gpu::ScopedAllowScheduleGpuTask>
+       allow_schedule_gpu_task_during_destruction_;
+ #endif
+   std::unique_ptr<DisplayCompositorMemoryAndTaskController> gpu_dependency_;
+@@ -352,10 +390,14 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
+ 
+   uint64_t frame_sequence_number_ = 0;
+ 
+   // A subsampler for potential quad information logging.
+   base::MetricsSubSampler metrics_subsampler_;
++
++#if !defined(COMPONENT_BUILD) // FIXME
++  std::unique_ptr<ArkwebDisplayUtils> display_utils_;
++#endif
+ };
+ 
+ }  // namespace viz
+ 
+ #endif  // COMPONENTS_VIZ_SERVICE_DISPLAY_DISPLAY_H_

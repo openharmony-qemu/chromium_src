@@ -1,0 +1,64 @@
+diff a/components/viz/service/display/direct_renderer.h b/components/viz/service/display/direct_renderer.h	(rejected hunks)
+@@ -76,13 +85,48 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
+ 
+   void Initialize();
+ 
+   bool use_partial_swap() const { return use_partial_swap_; }
+ 
++#if BUILDFLAG(ARKWEB_VULKAN)
++  void disable_partial_swap() { use_partial_swap_ = false; }
++
++  void enable_partial_swap() {
++    use_partial_swap_ = true;
++  }
++#endif
++
++#if BUILDFLAG(ARKWEB_VULKAN_INC_PRESENT)
++  bool GetInitPartialSwap() const {
++    return init_partial_swap_;
++  }
++#endif
++
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  void SetNativeInnerWeb(bool isInnerWeb);
++#endif
++
++#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
++  void SetBypassVsyncCondition(int32_t condition);
++#endif
++
++#if BUILDFLAG(ARKWEB_DFX_DUMP)
++  void SetAsyncStackId(uint64_t stackId);
++#endif
++
++#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
++  void SetNextFrameSkipsDrawRenderPasses(bool skip) {
++    next_frame_skips_draw_render_passes_ = skip;
++  }
++#endif
++
+   void SetOutputSurfaceClipRect(const gfx::Rect& clip_rect);
+   void SetVisible(bool visible);
+   void ReallocatedFrameBuffers();
++#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
++  void UpdateFocusAndScreenStatus(bool is_focused, bool is_single_screen);
++#endif
+   void DecideRenderPassAllocationsForFrame(
+       const AggregatedRenderPassList& render_passes_in_draw_order,
+       bool skip_root_render_pass_allocation);
+   void DrawFrame(AggregatedRenderPassList* render_passes_in_draw_order,
+                  float device_scale_factor,
+@@ -143,10 +204,13 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
+         nullptr;
+     raw_ptr<const AggregatedRenderPass> root_render_pass = nullptr;
+     raw_ptr<const AggregatedRenderPass> current_render_pass = nullptr;
+ 
+     gfx::Rect root_damage_rect;
++#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
++    gfx::Rect damage_rect;
++#endif
+     std::vector<gfx::Rect> root_content_bounds;
+     gfx::Size device_viewport_size;
+     gfx::DisplayColorSpaces display_color_spaces;
+ 
+     gfx::AxisTransform2d target_to_device_transform;

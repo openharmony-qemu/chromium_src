@@ -1,0 +1,148 @@
+diff a/components/viz/service/display/renderer_pixeltest.cc b/components/viz/service/display/renderer_pixeltest.cc	(rejected hunks)
+@@ -68,10 +68,13 @@
+ #include "ui/gfx/geometry/rect_f.h"
+ #include "ui/gfx/geometry/skia_conversions.h"
+ #include "ui/gfx/geometry/transform_util.h"
+ #include "ui/gfx/video_types.h"
+ #include "ui/gl/gl_implementation.h"
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++#include "arkweb/chromium_ext/components/viz/service/display/renderer_pixeltest_ext.h"
++#endif
+ 
+ namespace viz {
+ namespace {
+ const gfx::DisplayColorSpaces kRec601DisplayColorSpaces(
+     gfx::ColorSpace(gfx::ColorSpace::PrimaryID::SMPTE170M,
+@@ -2028,14 +2066,21 @@ TEST_P(IntersectingQuadPixelTest, TexturedQuads) {
+       base::FilePath(FILE_PATH_LITERAL("intersecting_blue_green_squares.png")));
+ }
+ 
+ TEST_P(IntersectingQuadPixelTest, NonFlippedTexturedQuads) {
+   this->SetupQuadStateAndRenderPass();
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  ARKWEB_UNITTESTS_DEFINE_ONE_COLOR();
++#endif
+   CreateTestTwoColoredTextureDrawQuad(
+       !is_software_renderer(), this->quad_rect_,
+       SkColor4f::FromColor(SkColorSetARGB(255, 0, 0, 0)),
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++      temp_color_rect,
++#else
+       SkColor4f::FromColor(SkColorSetARGB(255, 0, 0, 255)),
++#endif
+       SkColors::kTransparent, true /* premultiplied_alpha */,
+       false /* flipped_texture_quad */, true /* half_and_half */,
+       this->front_quad_state_, this->resource_provider_.get(),
+       this->child_resource_provider_.get(), this->child_context_provider_,
+       this->render_pass_.get());
+@@ -2138,18 +2183,25 @@ TEST_P(IntersectingQuadPixelTest, RenderPassQuads) {
+   AggregatedRenderPassId child_pass_id2{3};
+   auto child_pass1 =
+       CreateTestRenderPass(child_pass_id1, this->quad_rect_, gfx::Transform());
+   SharedQuadState* child1_quad_state = CreateTestSharedQuadState(
+       gfx::Transform(), this->quad_rect_, child_pass1.get(), gfx::MaskFilterInfo());
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  ARKWEB_UNITTESTS_DEFINE_ONE_COLOR();
++#endif
+   auto child_pass2 =
+       CreateTestRenderPass(child_pass_id2, this->quad_rect_, gfx::Transform());
+   SharedQuadState* child2_quad_state = CreateTestSharedQuadState(
+       gfx::Transform(), this->quad_rect_, child_pass2.get(), gfx::MaskFilterInfo());
+   CreateTestTwoColoredTextureDrawQuad(
+       !is_software_renderer(), this->quad_rect_,
+       SkColor4f::FromColor(SkColorSetARGB(255, 0, 0, 0)),
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++      temp_color_rect,
++#else
+       SkColor4f::FromColor(SkColorSetARGB(255, 0, 0, 255)),
++#endif
+       SkColors::kTransparent, true /* premultiplied_alpha */,
+       false /* flipped_texture_quad */, false /* half_and_half */,
+       child1_quad_state, this->resource_provider_.get(),
+       this->child_resource_provider_.get(), this->child_context_provider_,
+       child_pass1.get());
+@@ -2473,11 +2525,16 @@ TEST_P(VideoRendererPixelHiLoTest, SimpleYUVRect) {
+   AggregatedRenderPassList pass_list;
+   pass_list.push_back(std::move(copy_pass));
+ 
+   EXPECT_TRUE(this->RunPixelTest(
+       &pass_list, base::FilePath(FILE_PATH_LITERAL("yuv_stripes.png")),
+-      cc::AlphaDiscardingFuzzyPixelOffByOneComparator()));
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++      ARKWEB_UNITTESTS_RUN_PIXEL_TEST_7()
++#else
++      cc::AlphaDiscardingFuzzyPixelOffByOneComparator()
++#endif
++      ));
+ }
+ 
+ class VideoRendererPixelHiLoColorSpaceTest
+     : public VideoRendererPixelTestBase,
+       public testing::WithParamInterface<std::tuple<bool, gfx::ColorSpace>> {
+@@ -2617,11 +2674,16 @@ TEST_P(VideoRendererPixelHiLoTest, MAYBE_ClippedYUVRect) {
+   AggregatedRenderPassList pass_list;
+   pass_list.push_back(std::move(copy_pass));
+ 
+   EXPECT_TRUE(this->RunPixelTest(
+       &pass_list, base::FilePath(FILE_PATH_LITERAL("yuv_stripes_clipped.png")),
+-      cc::AlphaDiscardingFuzzyPixelOffByOneComparator()));
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++      ARKWEB_UNITTESTS_RUN_PIXEL_TEST_7()
++#else
++      cc::AlphaDiscardingFuzzyPixelOffByOneComparator()
++#endif
++      ));
+ }
+ #endif  // #if BUILDFLAG(ENABLE_GL_BACKEND_TESTS)
+ 
+ class VideoRendererPixelTest
+     : public VideoRendererPixelTestBase,
+@@ -6244,10 +6336,13 @@ class ColorTransformPixelTest
+     }
+     this->premultiplied_alpha_ = std::get<3>(GetParam());
+   }
+ 
+   void Basic() {
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++    ARKWEB_UNITTESTS_BASIC();
++#endif
+     gfx::Rect rect(this->device_viewport_size_);
+     std::vector<uint8_t> input_colors(4 * rect.width() * rect.height(), 0);
+     std::vector<SkColor> expected_output_colors(rect.width() * rect.height());
+ 
+     // Set the input data to be:
+@@ -6312,14 +6407,18 @@ class ColorTransformPixelTest
+       color.Scale(alpha);
+       transform_blend_to_dst->Transform(&color, 1, runtime_options);
+       color.set_x(std::clamp(color.x(), 0.0f, 1.0f));
+       color.set_y(std::clamp(color.y(), 0.0f, 1.0f));
+       color.set_z(std::clamp(color.z(), 0.0f, 1.0f));
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++      ARKWEB_UNITTESTS_OUTPUT();
++#else
+       expected_output_colors[i] =
+           SkColorSetARGB(255, static_cast<size_t>(255.f * color.x() + 0.5f),
+                          static_cast<size_t>(255.f * color.y() + 0.5f),
+                          static_cast<size_t>(255.f * color.z() + 0.5f));
++#endif
+     }
+ 
+     AggregatedRenderPassId id{1};
+     auto pass = CreateTestRootRenderPass(id, rect);
+ 
+@@ -6361,11 +6460,15 @@ class ColorTransformPixelTest
+     AggregatedRenderPassList pass_list;
+     pass_list.push_back(std::move(pass));
+ 
+     // Allow a difference of 2 bytes in comparison for most cases.
+     float avg_abs_error_limit = 2.0f;
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++    int max_abs_error_limit = 7;
++#else
+     int max_abs_error_limit = 2;
++#endif
+ #if BUILDFLAG(IS_FUCHSIA)
+     if (this->src_color_space_.GetTransferID() == TransferID::PQ) {
+       // Fuchsia+SwiftShader/Vulkan has higher error on some pixels with HDR
+       // color spaces. See https://crbug.com/1312141.
+       max_abs_error_limit = 5;

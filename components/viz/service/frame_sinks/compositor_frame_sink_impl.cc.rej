@@ -1,0 +1,63 @@
+diff a/components/viz/service/frame_sinks/compositor_frame_sink_impl.cc b/components/viz/service/frame_sinks/compositor_frame_sink_impl.cc	(rejected hunks)
+@@ -18,10 +19,14 @@
+ #include "components/viz/service/frame_sinks/frame_sink_bundle_impl.h"
+ #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
+ #include "services/viz/public/mojom/compositing/layer_context.mojom.h"
+ #include "ui/gfx/overlay_transform.h"
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_impl_utils.h"
++#endif
++
+ namespace viz {
+ 
+ namespace {
+ 
+ // Helper class which implements the CompositorFrameSinkClient interface so it
+@@ -151,15 +159,24 @@ void CompositorFrameSinkImpl::SetParams(
+   if (params->no_compositor_frame_acks) {
+     support_->SetNoCompositorFrameAcks();
+   }
+ }
+ 
++#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
++void CompositorFrameSinkImpl::OnSetBypassVsyncCondition(int32_t condition) {
++  compositor_frame_sink_impl_util_->OnSetBypassVsyncCondition(condition);
++}
++#endif
++
+ void CompositorFrameSinkImpl::SubmitCompositorFrame(
+     const LocalSurfaceId& local_surface_id,
+     CompositorFrame frame,
+     std::optional<HitTestRegionList> hit_test_region_list,
+     uint64_t submit_time) {
++#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
++  compositor_frame_sink_impl_util_->SubmitCompositorFrameUtils(frame.metadata);
++#endif
+   // Non-root surface frames should not have display transform hint.
+   DCHECK_EQ(gfx::OVERLAY_TRANSFORM_NONE, frame.metadata.display_transform_hint);
+ 
+   const auto result = support_->MaybeSubmitCompositorFrame(
+       local_surface_id, std::move(frame), std::move(hit_test_region_list),
+@@ -182,10 +199,21 @@ void CompositorFrameSinkImpl::SubmitCompositorFrame(
+ void CompositorFrameSinkImpl::DidNotProduceFrame(
+     const BeginFrameAck& begin_frame_ack) {
+   support_->DidNotProduceFrame(begin_frame_ack);
+ }
+ 
++#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
++void CompositorFrameSinkImpl::UpdateThrottleMode(bool is_enable) {
++  compositor_frame_sink_impl_util_->UpdateThrottleMode(is_enable);
++}
++
++void CompositorFrameSinkImpl::InitializeCompositorFrameSinkType(
++    mojom::CompositorFrameSinkType type) {
++  support_->InitializeCompositorFrameSinkType(type);
++}
++#endif
++
+ void CompositorFrameSinkImpl::NotifyNewLocalSurfaceIdExpectedWhilePaused() {
+   support_->NotifyNewLocalSurfaceIdExpectedWhilePaused();
+ }
+ 
+ void CompositorFrameSinkImpl::BindLayerContext(

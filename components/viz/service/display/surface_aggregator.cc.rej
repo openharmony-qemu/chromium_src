@@ -1,0 +1,13 @@
+diff a/components/viz/service/display/surface_aggregator.cc b/components/viz/service/display/surface_aggregator.cc	(rejected hunks)
+@@ -9,10 +9,11 @@
+ #include <algorithm>
+ #include <map>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/check_op.h"
+ #include "base/containers/adapters.h"
+ #include "base/functional/bind.h"
+ #include "base/logging.h"
+ #include "base/metrics/histogram_macros.h"

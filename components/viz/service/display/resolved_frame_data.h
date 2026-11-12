@@ -255,6 +255,9 @@ class VIZ_SERVICE_EXPORT ResolvedFrameData {
   gfx::Size size_in_pixels() const;
   float device_scale_factor() const;
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  float stretch_content_none_device_scale_factor() const;
+#endif
   // Returns namespace ID for the client that submitted this frame. This is used
   // to deduplicate layer IDs from different clients.
   std::pair<uint32_t, uint32_t> GetClientNamespaceId() const;

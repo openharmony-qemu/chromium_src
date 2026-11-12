@@ -329,6 +329,13 @@ GpuServiceImpl::~GpuServiceImpl() {
 
   bind_task_tracker_.TryCancelAll();
 
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  if (oop_gpu_enabled_) {
+    base::ohos::DynamicFrameLossMonitor::GetInstance().SetHiAppEventCallback(
+        base::ohos::HiAppEventCallback());
+  }
+#endif
+
 #if BUILDFLAG(IS_WIN)
   gl::DirectCompositionOverlayCapsMonitor::GetInstance()->RemoveObserver(this);
 #endif
@@ -513,6 +520,10 @@ void GpuServiceImpl::InitializeWithHostInternal(
                           gpu_info_for_hardware_gpu_,
                           gpu_feature_info_for_hardware_gpu_, gpu_extra_info_);
   gpu_host_ = mojo::SharedRemote<mojom::GpuHost>(gpu_host.Unbind(), io_runner_);
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  InitFrameLossMonitor();
+#endif
 
   // Defer creation of the render thread. This is to prevent it from handling
   // IPC messages before the sandbox has been enabled and all other necessary

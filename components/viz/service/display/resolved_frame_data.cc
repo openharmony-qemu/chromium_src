@@ -138,6 +138,12 @@ float ResolvedFrameData::device_scale_factor() const {
   return surface_->device_scale_factor();
 }
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+float ResolvedFrameData::stretch_content_none_device_scale_factor() const {
+  return surface_->stretch_content_none_device_scale_factor();
+}
+#endif
+
 gfx::OverlayLayerId::NamespaceId ResolvedFrameData::GetClientNamespaceId()
     const {
   return {surface_id_.frame_sink_id().client_id(),

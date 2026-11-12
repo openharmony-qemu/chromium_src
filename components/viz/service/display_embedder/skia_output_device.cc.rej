@@ -1,0 +1,63 @@
+diff a/components/viz/service/display_embedder/skia_output_device.cc b/components/viz/service/display_embedder/skia_output_device.cc	(rejected hunks)
+@@ -5,10 +5,11 @@
+ #include "components/viz/service/display_embedder/skia_output_device.h"
+ 
+ #include <algorithm>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/check_op.h"
+ #include "base/notimplemented.h"
+ #include "base/task/common/task_annotator.h"
+ #include "gpu/command_buffer/service/graphite_shared_context.h"
+ #include "gpu/command_buffer/service/memory_tracking.h"
+@@ -191,22 +202,33 @@ void SkiaOutputDevice::FinishSwapBuffers(
+         auto* data = event->set_chrome_graphics_pipeline();
+         data->set_step(perfetto::protos::pbzero::ChromeGraphicsPipeline::
+                            StepName::STEP_FINISH_BUFFER_SWAP);
+         data->set_display_trace_id(swap_trace_id);
+       });
+-
++#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
++  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
++      std::to_string(frame.data.swap_trace_id), "step", "FinishBufferSwap");
++#endif
+   auto release_fence = std::move(result.release_fence);
+   const gpu::SwapBuffersCompleteParams& params =
+       pending_swaps_.front().Complete(std::move(result), damage_area,
+                                       std::move(released_overlays),
++#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
++          primary_plane_mailbox,
++#endif
+                                       frame.data.swap_trace_id);
+ 
+   did_swap_buffer_complete_callback_.Run(params, size,
+                                          std::move(release_fence));
+ 
+   pending_swaps_.front().CallFeedback();
+-
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  for (auto& latency : frame.latency_info) {
++    OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
++                      std::to_string(latency.trace_id()), "step", "STEP_FINISHED_SWAP_BUFFERS");
++  }
++#endif
+   ReportLatency(params.swap_response.timings, std::move(frame.latency_info));
+ 
+   pending_swaps_.pop();
+ 
+   // If there are skipped swaps at the front of the queue, they are now ready
+@@ -266,10 +288,13 @@ uint64_t SkiaOutputDevice::SwapInfo::SwapId() {
+ 
+ const gpu::SwapBuffersCompleteParams& SkiaOutputDevice::SwapInfo::Complete(
+     gfx::SwapCompletionResult result,
+     const std::optional<gfx::Rect>& damage_rect,
+     std::vector<gpu::Mailbox> released_overlays,
++#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
++    const gpu::Mailbox& primary_plane_mailbox,
++#endif
+     int64_t swap_trace_id) {
+   params_.swap_response.result = result.swap_result;
+   params_.swap_response.timings.swap_end = base::TimeTicks::Now();
+   params_.frame_buffer_damage_area = damage_rect;
+   if (result.ca_layer_params)

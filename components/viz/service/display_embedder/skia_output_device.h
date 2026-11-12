@@ -165,6 +165,37 @@ class VIZ_SERVICE_EXPORT SkiaOutputDevice {
   // drawn to. Default no-op.
   virtual void EnsureBackbuffer();
   virtual void DiscardBackbuffer();
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  virtual void SetIfNeedCleanBuffers(bool need_clean_buffers) {}
+#endif
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  virtual void CleanBufferAfterSwapBuffer(bool delay_clean) {}
+#endif
+
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  virtual void DiscardCompositingResources(bool is_clean_all, bool is_clean_video_surface) {}
+#endif
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  virtual void SetNativeInnerWeb(bool isInnerWeb) {}
+#endif
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  virtual gfx::Rect GetLastBufferDamageRect() { return gfx::Rect(); }
+  virtual int GetLastBufferAge() { return 0; }
+  virtual int GetLastBufferSameCnt() { return 0; }
+  virtual bool SetPresentBufferDamageRect(gfx::Rect damage_rect, gfx::Rect curr_rect) { return true; }
+  virtual void ClosePostSubBuffer() {}
+#endif
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  virtual void SetBypassVsyncCondition(int32_t condition) {}
+#endif
+
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  virtual void SetAsyncStackId(uint64_t stackId) {}
+  virtual uint64_t GetAsyncStackId() { return 0; }
+#endif
 
   // Acknowledges a SwapBuffers request without actually attempting to swap.
   // This should be called when the GPU thread decides to skip a swap that was
@@ -248,7 +279,12 @@ class VIZ_SERVICE_EXPORT SkiaOutputDevice {
       const gfx::Size& size,
       OutputSurfaceFrame frame,
       const std::optional<gfx::Rect>& damage_area = std::nullopt,
-      std::vector<gpu::Mailbox> released_overlays = {});
+      std::vector<gpu::Mailbox> released_overlays = {}
+#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
+      ,
+      const gpu::Mailbox& primary_plane_mailbox = gpu::Mailbox()
+#endif
+      );
 
   OutputSurface::Capabilities capabilities_;
 

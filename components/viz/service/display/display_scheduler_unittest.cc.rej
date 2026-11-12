@@ -1,0 +1,16 @@
+diff a/components/viz/service/display/display_scheduler_unittest.cc b/components/viz/service/display/display_scheduler_unittest.cc	(rejected hunks)
+@@ -103,10 +103,14 @@ class FakeDisplaySchedulerClient : public DisplaySchedulerClient {
+ 
+   void SetNextDrawAndSwapFails() { next_draw_and_swap_fails_ = true; }
+ 
+   const BeginFrameAck& last_begin_frame_ack() { return last_begin_frame_ack_; }
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  void ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) override {}
++#endif // ARKWEB_UNITTESTS
++
+  protected:
+   raw_ptr<TestDisplayDamageTracker> damage_tracker_ = nullptr;
+   int draw_and_swap_count_;
+   bool next_draw_and_swap_fails_;
+   BeginFrameAck last_begin_frame_ack_;

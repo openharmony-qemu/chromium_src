@@ -48,7 +48,14 @@
 #include "components/viz/service/display/aggregated_frame.h"
 #include "components/viz/service/display/delegated_ink_point_renderer_skia.h"
 #include "components/viz/service/display/delegated_ink_trail_data.h"
+// Allow access to DirectRenderer/SkiaRenderer private members for testing.
+#define private public
 #include "components/viz/service/display/direct_renderer.h"
+#include "components/viz/service/display/skia_renderer.h"
+#undef private
+
+#include "base/ohos/sys_info_utils_ext.h"
+
 #include "components/viz/service/display/display_client.h"
 #include "components/viz/service/display/display_scheduler.h"
 #include "components/viz/service/display/overlay_processor_stub.h"
@@ -201,7 +208,7 @@ class DisplayTest : public testing::Test {
                                       kArbitraryFrameSinkId);
   }
 
-  std::unique_ptr<Display> CreateDisplay(
+  virtual std::unique_ptr<Display> CreateDisplay(
       const RendererSettings& settings,
       const FrameSinkId& frame_sink_id,
       std::unique_ptr<DisplayScheduler> scheduler,

@@ -42,6 +42,14 @@ class VIZ_COMMON_EXPORT SurfaceInfo {
 
   const SurfaceId& id() const { return id_; }
   float device_scale_factor() const { return device_scale_factor_; }
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void set_stretch_content_none_device_scale_factor(float factor) {
+    stretch_content_none_device_scale_factor_ = factor;
+  }
+  float stretch_content_none_device_scale_factor() const {
+    return stretch_content_none_device_scale_factor_;
+  }
+#endif
   const gfx::Size& size_in_pixels() const { return size_in_pixels_; }
 
   std::string ToString() const;
@@ -52,6 +60,9 @@ class VIZ_COMMON_EXPORT SurfaceInfo {
 
   SurfaceId id_;
   float device_scale_factor_ = 1.f;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  float stretch_content_none_device_scale_factor_ = 0.f;
+#endif
   gfx::Size size_in_pixels_;
 };
 

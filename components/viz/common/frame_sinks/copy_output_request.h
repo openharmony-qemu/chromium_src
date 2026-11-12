@@ -21,8 +21,11 @@
 #include "mojo/public/cpp/bindings/struct_traits.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/vector2d.h"
+#include "arkweb/build/features/features.h"
 
 namespace viz {
+
+class ArkwebCopyOutputRequestUtils;
 
 namespace mojom {
 class CopyOutputRequestDataView;
@@ -45,6 +48,7 @@ class CopyOutputRequestDataView;
 // screen capture use cases (please use FrameSinkVideoCapturer instead).
 class VIZ_COMMON_EXPORT CopyOutputRequest {
  public:
+  friend class ArkwebCopyOutputRequestUtils;
   using ResultFormat = CopyOutputResult::Format;
   // Specifies intended destination for the results. For software compositing,
   // only the system-memory results are supported - even if the
@@ -55,11 +59,19 @@ class VIZ_COMMON_EXPORT CopyOutputRequest {
   using CopyOutputRequestCallback =
       base::OnceCallback<void(std::unique_ptr<CopyOutputResult> result)>;
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  // Creates new CopyOutputRequest. I420_PLANES format returned via
+  // kNativeTextures is currently not supported.
+  CopyOutputRequest(ResultFormat result_format,
+                    ResultDestination result_destination,
+                    CopyOutputRequestCallback result_callback, uint64_t id = 0, const std::string& dump_path = "");
+#else
   // Creates new CopyOutputRequest. I420_PLANES format returned via
   // kNativeTextures is currently not supported.
   CopyOutputRequest(ResultFormat result_format,
                     ResultDestination result_destination,
                     CopyOutputRequestCallback result_callback);
+#endif
 
   CopyOutputRequest(const CopyOutputRequest&) = delete;
   CopyOutputRequest& operator=(const CopyOutputRequest&) = delete;
@@ -168,6 +180,10 @@ class VIZ_COMMON_EXPORT CopyOutputRequest {
   static std::unique_ptr<CopyOutputRequest> CreateStubForTesting();
 
   std::string ToString() const;
+
+  ArkwebCopyOutputRequestUtils* copy_output_request_utils() {
+    return copy_output_request_utils_.get();
+  }
 
  private:
   // Note: The StructTraits may "steal" the |result_callback_|, to allow it to

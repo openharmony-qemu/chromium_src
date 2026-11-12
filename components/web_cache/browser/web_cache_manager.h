@@ -61,11 +61,17 @@ class WebCacheManager : public content::RenderProcessHostCreationObserver,
   void RenderProcessHostDestroyed(
       content::RenderProcessHost* process_host) override;
 
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+  std::unique_ptr<WebCacheManagerUtils> webCacheManagerUtils;
+#endif
+
  private:
   friend class base::NoDestructor<WebCacheManager>;
   FRIEND_TEST_ALL_PREFIXES(WebCacheManagerTest, AddRemoveRendererTest);
   FRIEND_TEST_ALL_PREFIXES(WebCacheManagerTest, OnlyClearCacheWhenProcessReady);
   FRIEND_TEST_ALL_PREFIXES(WebCacheManagerTest, PreExistingRenderProcessHost);
+  FRIEND_TEST_ALL_PREFIXES(WebCacheManagerUtilsTest, AddResourceToCache_SizeOneUnbound);
+  FRIEND_TEST_ALL_PREFIXES(WebCacheManagerUtilsTest, AddResourceToCache_SizeTwo);
 
   // This class is a singleton.  Do not instantiate directly. Call GetInstance()
   // instead.

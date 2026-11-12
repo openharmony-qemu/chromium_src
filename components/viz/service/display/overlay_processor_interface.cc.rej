@@ -1,0 +1,20 @@
+diff a/components/viz/service/display/overlay_processor_interface.cc b/components/viz/service/display/overlay_processor_interface.cc	(rejected hunks)
+@@ -107,10 +113,18 @@ OverlayProcessorInterface::CreateOverlayProcessor(
+     const RendererSettings& renderer_settings,
+     const DebugRendererSettings* debug_settings) {
+   // If we are offscreen, we don't have overlay support.
+   // TODO(vasilyt): WebView would have a kNullSurfaceHandle. Make sure when
+   // overlay for WebView is enabled, this check still works.
++
++#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
++  if (base::ohos::IsDelegatedCompositingEnabledOhos()) {
++    TRACE_EVENT0("viz", "create OverlayProcessorOhos");
++    return std::make_unique<OverlayProcessorOhos>();
++  }
++#endif
++
+   if (surface_handle == gpu::kNullSurfaceHandle)
+     return std::make_unique<OverlayProcessorStub>();
+ 
+ #if BUILDFLAG(IS_APPLE)
+   DCHECK(capabilities.supports_surfaceless);

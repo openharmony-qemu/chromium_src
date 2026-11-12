@@ -1,0 +1,85 @@
+diff a/components/viz/service/display/skia_renderer.cc b/components/viz/service/display/skia_renderer.cc	(rejected hunks)
+@@ -1015,10 +1021,14 @@ SkiaRenderer::SkiaRenderer(const RendererSettings* settings,
+     BUILDFLAG(USE_V4L2_CODEC)
+   protected_buffer_queue_ = std::make_unique<BufferQueue>(
+       skia_output_surface_, skia_output_surface_->GetSurfaceHandle(), 3,
+       /*is_protected=*/true);
+ #endif
++
++#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
++  is_delegated_enabled_ = base::ohos::IsDelegatedCompositingEnabledOhos();
++#endif
+ }
+ 
+ SkiaRenderer::~SkiaRenderer() = default;
+ 
+ bool SkiaRenderer::CanPartialSwap() {
+@@ -1087,14 +1100,23 @@ void SkiaRenderer::SwapBuffers(SwapFrameData swap_frame_data) {
+   output_frame.latency_info = std::move(swap_frame_data.latency_info);
+   output_frame.choreographer_vsync_id = swap_frame_data.choreographer_vsync_id;
+   output_frame.size = viewport_size_for_swap_buffers();
+   output_frame.data.seq = swap_frame_data.seq;
+   output_frame.data.swap_trace_id = swap_frame_data.swap_trace_id;
++#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
++#if BUILDFLAG(ARKWEB_VULKAN)
++  UPDATE_SWAP_BUFFER_RECT_FOR_VULKAN(rect, swap_buffer_rect_);
++#else
++  swap_buffer_rect_.Intersect(gfx::Rect(surface_size_for_swap_buffers()));
++#endif
++      output_frame.sub_buffer_rect = swap_buffer_rect_;
++#else
+   if (use_partial_swap_) {
+     swap_buffer_rect_.Intersect(gfx::Rect(surface_size_for_swap_buffers()));
+     output_frame.sub_buffer_rect = swap_buffer_rect_;
+   }
++#endif
+   if (delegated_ink_handler_ && !UsingSkiaForDelegatedInk()) {
+     output_frame.delegated_ink_metadata =
+         delegated_ink_handler_->TakeMetadata();
+   }
+   output_frame.data.display_hdr_headroom = swap_frame_data.display_hdr_headroom;
+@@ -1113,10 +1135,14 @@ void SkiaRenderer::SwapBuffers(SwapFrameData swap_frame_data) {
+     gfx::Rect damage_rect = output_frame.sub_buffer_rect.value_or(
+         gfx::Rect(surface_size_for_swap_buffers()));
+     buffer_queue_->SwapBuffers(damage_rect);
+   }
+ 
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  output_frame.skip_present = frame_should_skip_present_;
++  frame_should_skip_present_ = false;
++#endif
+   skia_output_surface_->SwapBuffers(std::move(output_frame));
+   swap_buffer_rect_ = gfx::Rect();
+ 
+   FlushOutputSurface();
+ 
+@@ -3411,21 +3479,28 @@ void SkiaRenderer::CopyDrawnRenderPass(
+   skia_output_surface_->CopyOutput(geometry, RenderPassColorSpace(render_pass),
+                                    std::move(request), mailbox);
+ }
+ 
+ void SkiaRenderer::DidChangeVisibility() {
++#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
++  ResetPartialDrawState();
++#endif
+   if (visible_)
+     output_surface_->EnsureBackbuffer();
+   else
+     output_surface_->DiscardBackbuffer();
+ }
+ 
+ void SkiaRenderer::FinishDrawingRenderPass() {
+   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("viz.quads"),
+                "SkiaRenderer::FinishDrawingRenderPass");
+-  if (!current_canvas_)
++  if (!current_canvas_) {
++#if BUILDFLAG(IS_OHOS)
++    LOG(ERROR) << "SkiaRenderer::FinishDrawingRenderPass:current_canvas_ is null";
++#endif
+     return;
++  }
+ 
+   if (!batched_quads_.empty())
+     FlushBatchedQuads();
+ 
+   bool is_root_render_pass =

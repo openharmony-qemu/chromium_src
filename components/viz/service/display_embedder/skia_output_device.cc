@@ -40,6 +40,11 @@ void ReportLatency(const gfx::SwapTimings& timings,
         ui::INPUT_EVENT_GPU_SWAP_BUFFER_COMPONENT, timings.swap_start);
     latency.AddLatencyNumberWithTimestamp(
         ui::INPUT_EVENT_LATENCY_FRAME_SWAP_COMPONENT, timings.swap_end);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                      std::to_string(latency.trace_id()), "step",
+                      "INPUT_EVENT_GPU_SWAP_BUFFER_COMPONENT & INPUT_EVENT_LATENCY_FRAME_SWAP_COMPONENT");
+#endif
   }
 }
 
@@ -204,7 +209,12 @@ void SkiaOutputDevice::FinishSwapBuffers(
     const gfx::Size& size,
     OutputSurfaceFrame frame,
     const std::optional<gfx::Rect>& damage_area,
-    std::vector<gpu::Mailbox> released_overlays) {
+    std::vector<gpu::Mailbox> released_overlays
+#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
+    ,
+    const gpu::Mailbox& primary_plane_mailbox
+#endif
+    ) {
   DCHECK(!pending_swaps_.empty());
 
   TRACE_EVENT(

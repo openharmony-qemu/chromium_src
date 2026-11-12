@@ -29,6 +29,10 @@
 #include "ui/gfx/overlay_transform_utils.h"
 #include "ui/gfx/video_types.h"
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 namespace viz {
 
 namespace {
@@ -132,7 +136,6 @@ bool RequiresBlendingForReasonOtherThanRoundedCorners(const DrawQuad* quad) {
   return quad->ShouldDrawWithBlendingForReasonOtherThanMaskFilter() ||
          quad->shared_quad_state->mask_filter_info.HasGradientMask();
 }
-
 }  // namespace
 
 OverlayCandidateFactory::OverlayContext::OverlayContext() = default;
@@ -180,6 +183,11 @@ OverlayCandidate::CandidateStatus OverlayCandidateFactory::FromDrawQuad(
       status = FromTextureQuad(TextureDrawQuad::MaterialCast(quad), candidate);
       break;
     case DrawQuad::Material::kVideoHole:
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+      if (base::ohos::IsDelegatedCompositingEnabledOhos()) {
+        break;
+      }
+#endif
       status =
           FromVideoHoleQuad(VideoHoleDrawQuad::MaterialCast(quad), candidate);
       break;
@@ -694,6 +702,11 @@ OverlayCandidate::CandidateStatus OverlayCandidateFactory::FromTextureQuad(
 #if BUILDFLAG(IS_ANDROID)
     candidate.is_video_in_surface_view =
         resource_provider_->IsBackedBySurfaceView(quad->resource_id);
+#endif
+
+#if BUILDFLAG(ARKWEB_AI_HDR)
+    candidate.is_ai_hdr_active =
+        resource_provider_->IsAiHdrActive(quad->resource_id);
 #endif
 
     candidate.has_rounded_display_masks =

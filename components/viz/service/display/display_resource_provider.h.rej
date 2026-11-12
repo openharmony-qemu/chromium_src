@@ -1,0 +1,18 @@
+diff a/components/viz/service/display/display_resource_provider.h b/components/viz/service/display/display_resource_provider.h	(rejected hunks)
+@@ -77,10 +77,16 @@ class VIZ_SERVICE_EXPORT DisplayResourceProvider
+   // can be promoted to an overlay via legacy (SurfaceView/Dialog) overlay
+   // system.
+   bool IsBackedBySurfaceView(ResourceId id) const;
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_AI_HDR)
++  // ArkWeb OHOS: Indicates if this resource has been processed by VPE
++  // (Video Processing Engine) for AI HDR enhancement.
++  bool IsAiHdrActive(ResourceId id) const;
++#endif
++
+ #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)
+   // Indicates if this resource wants to receive promotion hints.
+   bool DoesResourceWantPromotionHint(ResourceId id) const;
+ #endif
+ 

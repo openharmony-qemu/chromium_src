@@ -1,0 +1,19 @@
+diff a/components/viz/service/display/overlay_candidate_factory.cc b/components/viz/service/display/overlay_candidate_factory.cc	(rejected hunks)
+@@ -625,10 +633,17 @@ OverlayCandidate::CandidateStatus OverlayCandidateFactory::FromTileQuad(
+ }
+ 
+ OverlayCandidate::CandidateStatus OverlayCandidateFactory::FromTextureQuad(
+     const TextureDrawQuad* quad,
+     OverlayCandidate& candidate) const {
++#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
++  if (base::ohos::IsDelegatedCompositingEnabledOhos() && !quad->is_video_frame) {
++    LOG(DEBUG) << "OverlayCandidateFactory::FromTextureQuad is not video frame";
++    return CandidateStatus::kFailNotOverlay;
++  }
++#endif
++
+   if (!context_.is_delegated_context &&
+       quad->overlay_priority_hint == OverlayPriority::kLow) {
+     // For current implementation low priority means this does not promote to
+     // overlay.
+     return CandidateStatus::kFailPriority;

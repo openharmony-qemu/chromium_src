@@ -444,8 +444,16 @@ void FrameSinkManagerImpl::CreateCompositorFrameSink(
 void FrameSinkManagerImpl::DestroyCompositorFrameSink(
     const FrameSinkId& frame_sink_id,
     DestroyCompositorFrameSinkCallback callback) {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  LOG(INFO) << "DestroyCompositorFrameSink, frame_sink_id info: " << frame_sink_id.ToString();
+#endif
   sink_map_.erase(frame_sink_id);
   root_sink_map_.erase(frame_sink_id);
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  if (managerImplUtils) {
+    managerImplUtils->EraseIfNeedCleanBuffers(frame_sink_id);
+  }
+#endif
   std::move(callback).Run();
 }
 
@@ -570,6 +578,25 @@ void FrameSinkManagerImpl::CreateVideoCapturer(
 
 void FrameSinkManagerImpl::EvictSurfaces(
     const std::vector<SurfaceId>& surface_ids) {
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  for (const SurfaceId& surface_id : surface_ids) {
+    auto it = support_map_.find(surface_id.frame_sink_id());
+    if (it == support_map_.end())
+      continue;
+
+    bool should_evict = true;
+    if (it->second->is_root()) {
+      auto root_it = root_sink_map_.find(surface_id.frame_sink_id());
+      if (root_it != root_sink_map_.end()) {
+        should_evict = root_it->second->WillEvictSurface(surface_id);
+      }
+    }
+
+    if (should_evict) {
+      it->second->EvictSurface(surface_id.local_surface_id());
+    }
+  }
+#else
   for (const SurfaceId& surface_id : surface_ids) {
     CompositorFrameSinkSupport* support =
         base::FindPtrOrNull(support_map_, surface_id.frame_sink_id());
@@ -592,6 +619,7 @@ void FrameSinkManagerImpl::EvictSurfaces(
       root->DidEvictSurface(surface_id);
     }
   }
+#endif
 
   // Trigger garbage collection immediately, otherwise the surface may not be
   // evicted for a long time (e.g. not before a frame is produced).
@@ -649,6 +677,10 @@ void FrameSinkManagerImpl::RequestCopyOfOutput(
 }
 
 void FrameSinkManagerImpl::DestroyFrameSinkBundle(const FrameSinkBundleId& id) {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  LOG(INFO) << "DestroyFrameSinkBundle client_id " << id.client_id()
+            << " bundle_id " << id.bundle_id();
+#endif
   bundle_map_.erase(id);
 }
 

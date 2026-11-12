@@ -1,0 +1,18 @@
+diff a/components/viz/service/display_embedder/skia_render_copy_results.cc b/components/viz/service/display_embedder/skia_render_copy_results.cc	(rejected hunks)
+@@ -108,10 +112,16 @@ void CopyOutputResultSkiaRGBA::OnReadbackDone(
+     return;
+ 
+   auto result = std::make_unique<CopyOutputResultSkiaRGBA>(
+       impl_on_gpu, context->result_rect, std::move(async_result),
+       context->color_space);
++
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  if (result && result->copy_output_result_utils() && impl_on_gpu) {
++    result->copy_output_result_utils()->SetImplOnGpu(impl_on_gpu);
++  }
++#endif
+   context->request->SendResult(std::move(result));
+ }
+ 
+ const SkBitmap& CopyOutputResultSkiaRGBA::AsSkBitmap() const {
+   if (!result_) {

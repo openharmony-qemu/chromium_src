@@ -1,0 +1,108 @@
+diff a/components/viz/service/BUILD.gn b/components/viz/service/BUILD.gn	(rejected hunks)
+@@ -184,16 +193,22 @@ viz_component("service") {
+     "frame_sinks/begin_frame_tracker.h",
+     "frame_sinks/compositor_frame_sink_impl.cc",
+     "frame_sinks/compositor_frame_sink_impl.h",
+     "frame_sinks/compositor_frame_sink_support.cc",
+     "frame_sinks/compositor_frame_sink_support.h",
++    "//arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_support_utils.cc",
++    "//arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_support_utils.h",
+     "frame_sinks/frame_counter.cc",
+     "frame_sinks/frame_counter.h",
+     "frame_sinks/frame_sink_bundle_impl.cc",
+     "frame_sinks/frame_sink_bundle_impl.h",
+     "frame_sinks/frame_sink_manager_impl.cc",
+     "frame_sinks/frame_sink_manager_impl.h",
++    "//arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.cc",
++    "//arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.h",
++    "//arkweb/chromium_ext/components/viz/service/frame_sinks/eviction_handler.cc",
++    "//arkweb/chromium_ext/components/viz/service/frame_sinks/eviction_handler.h",
+     "frame_sinks/frame_sink_observer.h",
+     "frame_sinks/gmb_video_frame_pool_context_provider.h",
+     "frame_sinks/gmb_video_frame_pool_context_provider_impl.cc",
+     "frame_sinks/gmb_video_frame_pool_context_provider_impl.h",
+     "frame_sinks/root_compositor_frame_sink_impl.cc",
+@@ -456,10 +496,39 @@ viz_component("service") {
+       "//ui/events:gesture_detection",
+       "//ui/events/blink",
+     ]
+   }
+ 
++  if (is_arkweb && arkweb_dfx_dump) {
++    sources += arkweb_components_viz_service_display_sources
++  }
++
++  if (is_arkweb && arkweb_composite_render) {
++    sources += arkweb_components_viz_service_frame_sinks_sources
++  }
++
++  if (is_arkweb) {
++    sources += arkweb_chromium_components_viz_service_frame_sinks_sources
++    sources += arkweb_components_viz_service_display_embedder_compositor_gpu_thread_sources
++    sources += arkweb_components_viz_service_display_embedder_skia_output_device_vulkan_sources
++  }
++
++  if (enable_arkweb) {
++    sources += [
++      "display/overlay_processor_ohos.cc",
++      "display/overlay_processor_ohos.h",
++      "display_embedder/output_presenter_ohos.cc",
++      "display_embedder/output_presenter_ohos.h",
++    ]
++
++    deps += [ "//arkweb//build/features"]
++  }
++
++  if (enable_arkweb) {
++    public_deps += [ "//arkweb/build/features" ]
++  }
++
+   if (use_ozone) {
+     sources += [
+       "display/overlay_processor_delegated.cc",
+       "display/overlay_processor_delegated.h",
+       "display/overlay_processor_delegated_support.cc",
+@@ -626,12 +695,13 @@ viz_source_set("unit_tests") {
+     "display_embedder/software_output_surface_unittest.cc",
+     "display_embedder/vsync_parameter_listener_unittest.cc",
+     "frame_sinks/begin_frame_tracker_unittest.cc",
+     "frame_sinks/compositor_frame_sink_support_unittest.cc",
+     "frame_sinks/frame_sink_bundle_impl_unittest.cc",
+-    "frame_sinks/frame_sink_manager_unittest.cc",
++    # "frame_sinks/frame_sink_manager_unittest.cc",
+     "frame_sinks/surface_references_unittest.cc",
++    "frame_sinks/root_compositor_frame_sink_impl_unittest.cc",
+     "frame_sinks/surface_synchronization_unittest.cc",
+     "frame_sinks/video_capture/frame_sink_video_capturer_impl_unittest.cc",
+     "frame_sinks/video_capture/shared_memory_video_frame_pool_unittest.cc",
+     "frame_sinks/video_capture/video_capture_overlay_unittest.cc",
+     "frame_sinks/video_detector_unittest.cc",
+@@ -748,16 +818,28 @@ viz_source_set("unit_tests") {
+       "input/viz_touch_state_handler_unittest.cc",
+     ]
+     deps += [ "//ui/events:motionevent_jni_headers" ]
+   }
+ 
++  if (enable_arkweb) {
++    sources += [
++      "display/overlay_processor_ohos_unittest.cc",
++      "display_embedder/output_presenter_ohos_unittest.cc",
++    ]
++  }
++
+   if (enable_vulkan) {
+     deps += [
+       "//gpu/vulkan:test_support",
+       "//gpu/vulkan/init",
+     ]
+   }
++
++  import("//arkweb/chromium_ext/components/viz/service/arkweb_viz_service_ext.gni")
++  sources += components_viz_service_unittests_ext.sources
++  sources -= components_viz_service_unittests_ext.sources_del
++  deps += components_viz_service_unittests_ext.deps
+ }
+ 
+ viz_source_set("perf_tests") {
+   testonly = true
+   sources = [

@@ -1,0 +1,13 @@
+diff a/components/viz/host/BUILD.gn b/components/viz/host/BUILD.gn	(rejected hunks)
+@@ -44,10 +63,11 @@ viz_component("host") {
+     "//components/persistent_cache",
+     "//gpu/ipc/client",
+     "//gpu/ipc/common",
+     "//gpu/webgpu:common",
+     "//services/viz/privileged/mojom",
++    "//services/viz/privileged/mojom/compositing",
+     "//services/webnn/host",
+     "//services/webnn/public/mojom",
+     "//ui/base",
+     "//ui/base:ozone_buildflags",
+     "//ui/gfx",

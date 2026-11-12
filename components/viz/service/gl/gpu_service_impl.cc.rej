@@ -1,0 +1,50 @@
+diff a/components/viz/service/gl/gpu_service_impl.cc b/components/viz/service/gl/gpu_service_impl.cc	(rejected hunks)
+@@ -7,10 +7,14 @@
+ #include <memory>
+ #include <string>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
++#include "arkweb/chromium_ext/base/ohos/dynamic_frame_loss_monitor.h"
++#endif
+ #include "base/allocator/partition_alloc_support.h"
+ #include "base/android/android_info.h"
+ #include "base/command_line.h"
+ #include "base/debug/crash_logging.h"
+ #include "base/feature_list.h"
+@@ -129,10 +133,16 @@
+ #if BUILDFLAG(IS_OZONE)
+ #include "ui/ozone/public/ozone_platform.h"
+ #include "ui/ozone/public/surface_factory_ozone.h"
+ #endif  // BUILDFLAG(IS_OZONE)
+ 
++// Follow-up Processing, 141统一删除了image_decode_相关文件/功能，为解决编译错误，删除arkweb对应的相关逻辑
++// #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++// #include "media/gpu/ohos/ohos_image_decode_accelerator_worker.h"
++// #endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++
++#include "arkweb/chromium_ext/components/viz/service/gl/gpu_service_impl_utils.cc"
+ namespace viz {
+ 
+ namespace {
+ 
+ // The names emitted for GPU initialization trace events.
+@@ -261,10 +271,16 @@ GpuServiceImpl::GpuServiceImpl(
+       DLOG(ERROR) << "Failed to create Metal context provider for Graphite.";
+     }
+ #endif  // BUILDFLAG(SKIA_USE_METAL)
+   }
+ 
++// Follow-up Processing, 141统一删除了image_decode_相关文件/功能，为解决编译错误，删除arkweb对应的相关逻辑
++// #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++//   image_decode_accelerator_worker_ =
++//       media::OhosImageDecodeAcceleratorWorker::Create();
++// #endif
++
+ #if BUILDFLAG(IS_WIN)
+   if (media::SupportMediaFoundationClearPlayback()) {
+     // Initialize the OverlayStateService using the GPUServiceImpl task
+     // sequence.
+     auto* overlay_state_service = OverlayStateService::GetInstance();

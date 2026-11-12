@@ -1,0 +1,102 @@
+diff a/components/viz/common/frame_sinks/copy_output_request.cc b/components/viz/common/frame_sinks/copy_output_request.cc	(rejected hunks)
+@@ -17,10 +17,19 @@
+ #include "base/trace_event/trace_event.h"
+ #include "components/viz/common/frame_sinks/copy_output_result.h"
+ #include "third_party/perfetto/include/perfetto/tracing/track.h"
+ #include "third_party/skia/include/core/SkBitmap.h"
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/components/viz/common/frame_sinks/arkweb_copy_output_request_utils.h"
++#include "arkweb/chromium_ext/components/viz/common/frame_sinks/arkweb_copy_output_result_utils.h"
++#endif
++
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
++#endif
++
+ namespace {
+ 
+ constexpr int kMaxPendingSendResult = 4;
+ 
+ const char* ResultFormatToShortString(
+@@ -73,11 +103,13 @@ CopyOutputRequest::CopyOutputRequest(ResultFormat result_format,
+          result_destination_ == ResultDestination::kSystemMemory);
+ 
+   DCHECK(!result_callback_.is_null());
+   TRACE_EVENT_BEGIN("viz", "CopyOutputRequest",
+                     perfetto::Track::FromPointer(this));
++  copy_output_request_utils_ = std::make_unique<ArkwebCopyOutputRequestUtils>(this);
+ }
++#endif
+ 
+ CopyOutputRequest::~CopyOutputRequest() {
+   if (!result_callback_.is_null()) {
+     // Send an empty result to indicate the request was never satisfied.
+     SendResult(std::make_unique<CopyOutputResult>(
+@@ -142,13 +174,54 @@ void CopyOutputRequest::set_blit_request(BlitRequest blit_request) {
+ void CopyOutputRequest::SendResult(std::unique_ptr<CopyOutputResult> result) {
+   TRACE_EVENT_END("viz",
+                   /* CopyOutputRequest */ perfetto::Track::FromPointer(this),
+                   "success", !result->IsEmpty(), "has_provided_task_runner",
+                   !!result_task_runner_);
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  auto runner =
++      result_task_runner_
++          ? result_task_runner_
++          : base::ThreadPool::CreateSequencedTaskRunner({base::MayBlock()});
++#else
+   CHECK(result_task_runner_);
++#endif
++#if BUILDFLAG(ARKWEB_DFX_DUMP)
++  if (result) {
++    result->SetDumpFrameId(dump_frame_id_);
++    result->SetDumpFramePath(dump_frame_path_);
++  }
++#endif
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  if (result && result->copy_output_result_utils() && copy_output_request_utils_
++      && copy_output_request_utils_->IsBlanklessInfoValid()) {
++    result->copy_output_result_utils()->SetBlanklessInfo(copy_output_request_utils_->GetBlanklessInfo());
++  }
++#endif
+   auto task = base::BindOnce(std::move(result_callback_), std::move(result));
+ 
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  if (send_result_delay_.is_zero()) {
++    runner->PostTask(FROM_HERE, std::move(task));
++  } else {
++    base::AutoLock locked_counter(GetPendingSendResultLock());
++    if (g_pending_send_result_count >= kMaxPendingSendResult) {
++      runner->PostTask(FROM_HERE, std::move(task));
++    } else {
++      g_pending_send_result_count++;
++      runner->PostDelayedTask(
++          FROM_HERE,
++          base::BindOnce(
++              [](base::OnceClosure callback) {
++                std::move(callback).Run();
++                base::AutoLock locked_counter(GetPendingSendResultLock());
++                g_pending_send_result_count--;
++              },
++              std::move(task)),
++          send_result_delay_);
++    }
++  }
++#else
+   if (send_result_delay_.is_zero()) {
+     result_task_runner_->PostTask(FROM_HERE, std::move(task));
+   } else {
+     base::AutoLock locked_counter(GetPendingSendResultLock());
+     if (g_pending_send_result_count >= kMaxPendingSendResult) {
+@@ -165,10 +238,11 @@ void CopyOutputRequest::SendResult(std::unique_ptr<CopyOutputResult> result) {
+               },
+               std::move(task)),
+           send_result_delay_);
+     }
+   }
++#endif
+   // Remove the reference to the task runner (no-op if we didn't have one).
+   result_task_runner_ = nullptr;
+ }
+ 
+ bool CopyOutputRequest::SendsResultsInCurrentSequence() const {

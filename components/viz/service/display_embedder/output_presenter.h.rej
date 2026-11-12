@@ -1,0 +1,16 @@
+diff a/components/viz/service/display_embedder/output_presenter.h b/components/viz/service/display_embedder/output_presenter.h	(rejected hunks)
+@@ -41,10 +41,14 @@ class VIZ_SERVICE_EXPORT OutputPresenter {
+       const OverlayPlaneCandidate& overlay_plane_candidate,
+       ScopedOverlayAccess* access) = 0;
+ 
+   virtual void SetVSyncDisplayID(int64_t display_id) {}
+ 
++#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
++  virtual void DiscardCompositingResources(bool is_clean_all, bool is_clean_video_surface) {}
++#endif
++
+ #if BUILDFLAG(IS_APPLE)
+   virtual void SetMaxPendingSwaps(int max_pending_swaps) {}
+ #endif
+ };
+ 

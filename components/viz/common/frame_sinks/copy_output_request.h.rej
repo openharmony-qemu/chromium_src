@@ -1,0 +1,17 @@
+diff a/components/viz/common/frame_sinks/copy_output_request.h b/components/viz/common/frame_sinks/copy_output_request.h	(rejected hunks)
+@@ -194,10 +210,15 @@ class VIZ_COMMON_EXPORT CopyOutputRequest {
+   std::optional<base::UnguessableToken> source_;
+   std::optional<gfx::Rect> area_;
+   std::optional<gfx::Rect> result_selection_;
+ 
+   std::optional<BlitRequest> blit_request_;
++#if BUILDFLAG(ARKWEB_DFX_DUMP)
++  uint64_t dump_frame_id_ = 0;
++  std::string dump_frame_path_ = "";
++#endif
++  std::unique_ptr<ArkwebCopyOutputRequestUtils> copy_output_request_utils_;
+ };
+ 
+ }  // namespace viz
+ 
+ #endif  // COMPONENTS_VIZ_COMMON_FRAME_SINKS_COPY_OUTPUT_REQUEST_H_

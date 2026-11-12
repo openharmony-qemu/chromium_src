@@ -27,4 +27,7 @@ viz_component("shared_image_format") {
     "//ui/gfx:buffer_types",
     "//ui/gfx/geometry",
   ]
+  if (enable_arkweb) {
+    deps += [ "//arkweb//build/features"]
+  }
 }

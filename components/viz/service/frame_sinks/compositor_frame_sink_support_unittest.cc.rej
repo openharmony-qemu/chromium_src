@@ -1,0 +1,16 @@
+diff a/components/viz/service/frame_sinks/compositor_frame_sink_support_unittest.cc b/components/viz/service/frame_sinks/compositor_frame_sink_support_unittest.cc	(rejected hunks)
+@@ -123,10 +123,14 @@ class MockFrameSinkManagerClient : public mojom::FrameSinkManagerClient {
+       const blink::SameDocNavigationScreenshotDestinationToken&
+           destination_token,
+       std::unique_ptr<CopyOutputResult> copy_output_result) override {}
+   void OnVizTouchStateAvailable(
+       base::ReadOnlySharedMemoryRegion region) override {}
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  MOCK_METHOD2(RestoreRenderFit, void(uint32_t client_id, uint32_t sink_id));
++  MOCK_METHOD3(ModifyRenderFit, void(int32_t fitType, uint32_t client_id, uint32_t sink_id));
++#endif // ARKWEB_UNITTESTS
+ };
+ 
+ class CompositorFrameSinkSupportTestBase : public testing::Test {
+  public:
+   CompositorFrameSinkSupportTestBase()

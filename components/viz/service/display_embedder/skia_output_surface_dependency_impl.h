@@ -11,6 +11,8 @@
 #include "base/memory/raw_ptr.h"
 #include "components/viz/service/display_embedder/skia_output_surface_dependency.h"
 
+#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_dependency_impl_utils.h"
+
 namespace base {
 class SingleThreadTaskRunner;
 }
@@ -18,10 +20,12 @@ class SingleThreadTaskRunner;
 namespace viz {
 
 class GpuServiceImpl;
+class SkiaOutputSurfaceDependencyImplUtils;
 
 class VIZ_SERVICE_EXPORT SkiaOutputSurfaceDependencyImpl
     : public SkiaOutputSurfaceDependency {
  public:
+  friend class SkiaOutputSurfaceDependencyImplUtils;
   SkiaOutputSurfaceDependencyImpl(
       GpuServiceImpl* gpu_service_impl,
       gpu::SurfaceHandle surface_handle);
@@ -60,11 +64,14 @@ class VIZ_SERVICE_EXPORT SkiaOutputSurfaceDependencyImpl
 
   bool NeedsSupportForExternalStencil() override;
   bool IsUsingCompositorGpuThread() override;
-
+  SkiaOutputSurfaceDependencyImplUtils* impl_utils() {
+    return impl_utils_.get();
+  }
  private:
   const raw_ptr<GpuServiceImpl> gpu_service_impl_;
   const gpu::SurfaceHandle surface_handle_;
   scoped_refptr<base::SingleThreadTaskRunner> client_thread_task_runner_;
+  std::unique_ptr<SkiaOutputSurfaceDependencyImplUtils> impl_utils_;
 };
 
 }  // namespace viz

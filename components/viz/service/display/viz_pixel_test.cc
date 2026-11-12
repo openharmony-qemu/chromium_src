@@ -31,6 +31,10 @@ VizPixelTest::VizPixelTest(RendererType type)
     : PixelTest(RenderTypeToBackend(type)), renderer_type_(type) {}
 
 void VizPixelTest::SetUp() {
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  gl::init::InitializeGLNoExtensionsOneOff(
+    /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kDefault);
+#endif
   switch (renderer_type_) {
     case RendererType::kSoftware:
       SetUpSoftwareRenderer();

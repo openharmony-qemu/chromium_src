@@ -1,0 +1,78 @@
+diff a/components/viz/service/display/display_scheduler.cc b/components/viz/service/display/display_scheduler.cc	(rejected hunks)
+@@ -20,10 +20,15 @@
+ #include "components/viz/common/frame_sinks/begin_frame_args.h"
+ #include "components/viz/common/frame_sinks/begin_frame_source.h"
+ #include "components/viz/service/performance_hint/hint_session.h"
+ #include "third_party/perfetto/include/perfetto/tracing/track.h"
+ 
++#include "arkweb/chromium_ext/components/viz/service/display/display_scheduler_utils.h"
++#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
++#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
++#endif
++
+ namespace viz {
+ 
+ namespace {
+ 
+ base::TimeDelta ComputeAdpfTarget(const BeginFrameArgs& args) {
+@@ -156,10 +164,13 @@ void DisplayScheduler::OnDisplayDamaged(SurfaceId surface_id) {
+   // avoid being reentrant to the caller of SurfaceDamaged, track when this is
+   // happening with |inside_surface_damaged_|.
+   base::AutoReset<bool> auto_reset(&inside_surface_damaged_, true);
+ 
+   needs_draw_ = true;
++#if !defined(COMPONENT_BUILD) // FIXME
++  display_scheduler_utils_->OnDisplayDamaged(surface_id);
++#endif
+   MaybeStartObservingBeginFrames();
+   UpdateHasPendingSurfaces();
+   ScheduleBeginFrameDeadline();
+ }
+ 
+@@ -171,10 +182,18 @@ void DisplayScheduler::OnPendingSurfacesChanged() {
+ base::TimeDelta DisplayScheduler::GetDeadlineOffset(
+     base::TimeDelta interval) const {
+   return BeginFrameArgs::DefaultEstimatedDisplayDrawTime(interval);
+ }
+ 
++#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
++void DisplayScheduler::SetShouldFrameSubmissionBeforeDraw(bool should) {
++#if !defined(COMPONENT_BUILD) // FIXME
++  display_scheduler_utils_->SetShouldFrameSubmissionBeforeDraw(should);
++#endif
++}
++#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
++
+ // This is used to force an immediate swap before a resize.
+ void DisplayScheduler::ForceImmediateSwapIfPossible() {
+   TRACE_EVENT0("viz", "DisplayScheduler::ForceImmediateSwapIfPossible");
+   bool in_begin = inside_begin_frame_deadline_interval_;
+   bool did_draw = AttemptDrawAndSwap();
+@@ -261,11 +280,11 @@ void DisplayScheduler::ReportFrameTime(
+     }
+   }
+ }
+ 
+ bool DisplayScheduler::DrawAndSwap() {
+-  TRACE_EVENT0("viz", "DisplayScheduler::DrawAndSwap");
++  OHOS_TRACE_EVENT0("viz", "DisplayScheduler::DrawAndSwap");
+   DCHECK_LT(pending_swaps_,
+             std::max(pending_swap_params_.max_pending_swaps,
+                      pending_swap_params_.max_pending_swaps_120hz.value_or(0)));
+   DCHECK(!output_surface_lost_);
+ 
+@@ -490,10 +514,14 @@ DisplayScheduler::AdjustedBeginFrameDeadlineMode() const {
+   return mode;
+ }
+ 
+ DisplayScheduler::BeginFrameDeadlineMode
+ DisplayScheduler::DesiredBeginFrameDeadlineMode() const {
++#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER) && !defined(COMPONENT_BUILD) // FIXME
++  DESIRED_BEGIN_FRAME_DEADLINE_MODED();
++#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
++
+   if (output_surface_lost_) {
+     TRACE_EVENT_INSTANT0("viz", "Lost output surface",
+                          TRACE_EVENT_SCOPE_THREAD);
+     return BeginFrameDeadlineMode::kImmediate;
+   }

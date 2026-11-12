@@ -1,0 +1,86 @@
+diff a/components/viz/service/frame_sinks/frame_sink_manager_impl.h b/components/viz/service/frame_sinks/frame_sink_manager_impl.h	(rejected hunks)
+@@ -53,10 +53,11 @@
+ #include "services/viz/privileged/mojom/compositing/frame_sink_manager.mojom.h"
+ #include "services/viz/privileged/mojom/compositing/frame_sink_manager_test_api.mojom.h"
+ #include "services/viz/privileged/mojom/compositing/frame_sink_video_capture.mojom.h"
+ #include "services/viz/privileged/mojom/compositing/frame_sinks_metrics_recorder.mojom.h"
+ #include "services/viz/public/mojom/compositing/video_detector_observer.mojom.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace viz {
+ 
+ class CapturableFrameSink;
+ class CompositorFrameSinkSupport;
+@@ -64,10 +65,11 @@ class FrameSinkBundleImpl;
+ class GmbVideoFramePoolContextProvider;
+ class HintSessionFactory;
+ class InputManager;
+ class OutputSurfaceProvider;
+ class SharedImageInterfaceProvider;
++class FrameSinkManagerImplUtils;
+ struct VideoCaptureTarget;
+ 
+ // FrameSinkManagerImpl manages BeginFrame hierarchy. This is the implementation
+ // detail for FrameSinkManagerImpl.
+ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
+@@ -395,10 +404,30 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
+     return copy_output_request_result_size_for_testing_;
+   }
+ 
+   void RequestBeginFrameForGpuService(bool toggle);
+ 
++#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
++  void SetEnableLowerFrameRate(bool enabled,
++                               const FrameSinkId& frame_sink_id) override;
++  void SetEnableHalfFrameRate(bool enabled,
++                               const FrameSinkId& frame_sink_id) override;
++#endif
++
++#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
++  void UpdateVSyncFrequency(const FrameSinkId& frame_sink_id, uint32_t client_id) override;
++  void ResetVSyncFrequency(const FrameSinkId& frame_sink_id) override;
++#endif
++
++#if BUILDFLAG(ARKWEB_PIP)
++  void SetPipActive(bool active, const FrameSinkId& frame_sink_id) override;
++#endif
++
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  void ClearBlanklessSnapshotInfo(uint64_t blankless_key) override;
++#endif
++
+   GpuServiceImpl* GetGpuService();
+ 
+  private:
+   friend class FrameSinkManagerTest;
+   friend class CompositorFrameSinkSupportTestBase;
+@@ -472,10 +501,29 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
+   // an update include: starting of video capturing requires throttling on the
+   // frame sink being captured to be stopped; a frame sink hierarchical change
+   // requires throttling on affected frame sinks to be started or stopped.
+   void UpdateThrottling();
+ 
++#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
++  void EvictFrameBackBuffers(const FrameSinkId& root_frame_sink_id) override;
++#endif
++
++#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
++  void SetIfNeedCleanBuffers(const FrameSinkId& frame_sink_id, bool need_clean_buffers) override;
++#endif
++
++#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
++  void SetIsOfflineWebComponentInactive(bool is_inactive, const FrameSinkId& frame_sink_id) override;
++#endif
++
++#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
++  void DiscardCompositingResources(
++    const FrameSinkId& root_frame_sink_id) override;
++  void UpdateFocusAndScreenStatus(bool is_focused,
++                                  bool is_single_screen,
++                                  const FrameSinkId& frame_sink_id) override;
++#endif
+   // Clears throttling operation on the frame sink with |id| and all its
+   // descendants.
+   void ClearThrottling(const FrameSinkId& id);
+ 
+   // Clears HitTestQuery stored for |frame_sink_id| in

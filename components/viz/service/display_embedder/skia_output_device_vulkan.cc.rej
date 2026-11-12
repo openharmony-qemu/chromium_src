@@ -1,0 +1,16 @@
+diff a/components/viz/service/display_embedder/skia_output_device_vulkan.cc b/components/viz/service/display_embedder/skia_output_device_vulkan.cc	(rejected hunks)
+@@ -41,12 +41,13 @@
+ #include "gpu/ipc/common/gpu_surface_lookup.h"
+ #include "ui/gl/android/scoped_a_native_window.h"
+ #include "ui/gl/android/scoped_java_surface.h"
+ #endif
+ 
+-namespace viz {
++#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_device_vulkan_utils.h"
+ 
++namespace viz {
+ // static
+ std::unique_ptr<SkiaOutputDeviceVulkan> SkiaOutputDeviceVulkan::Create(
+     VulkanContextProvider* context_provider,
+     gpu::SurfaceHandle surface_handle,
+     gpu::MemoryTracker* memory_tracker,

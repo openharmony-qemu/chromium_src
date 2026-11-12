@@ -121,6 +121,9 @@ DisplayScheduler::DisplayScheduler(BeginFrameSource* begin_frame_source,
           features::kEnableADPFSeparateRendererMainSession)) {
     session_states_.emplace_back(HintSession::SessionType::kRendererMain);
   }
+#if !defined(COMPONENT_BUILD) // FIXME
+  display_scheduler_utils_ = std::make_unique<DisplaySchedulerUtils>(this);
+#endif
 }
 
 DisplayScheduler::~DisplayScheduler() {
@@ -461,7 +464,12 @@ bool DisplayScheduler::OnBeginFrame(const BeginFrameArgs& args) {
 void DisplayScheduler::OnBeginFrameContinuation(const BeginFrameArgs& args) {
   // If we get another BeginFrame before the previous deadline,
   // synchronously trigger the previous deadline before progressing.
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER) && !defined(COMPONENT_BUILD) // FIXME
+  if (inside_begin_frame_deadline_interval_ &&
+      !display_scheduler_utils_->wait_before_draw()) {
+#else
   if (inside_begin_frame_deadline_interval_) {
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
     OnBeginFrameDeadline();
   }
 

@@ -1,0 +1,70 @@
+diff a/components/viz/service/display_embedder/skia_output_surface_impl_on_gpu.cc b/components/viz/service/display_embedder/skia_output_surface_impl_on_gpu.cc	(rejected hunks)
+@@ -463,10 +492,23 @@ void SkiaOutputSurfaceImplOnGpu::FinishPaintCurrentFrame(
+     std::unique_ptr<skgpu::graphite::Recording> graphite_recording,
+     std::vector<raw_ptr<ImageContextImpl, VectorExperimental>> image_contexts,
+     std::vector<gpu::SyncToken> sync_tokens,
+     base::OnceClosure on_finished,
+     base::OnceCallback<void(gfx::GpuFenceHandle)> return_release_fence_cb) {
++#if BUILDFLAG(ARKWEB_DFX_DUMP)
++  uint64_t stackId = output_device_ ? output_device_->GetAsyncStackId() : 0;
++  std::optional<base::ScopedClosureRunner> dfx_pop_submitter_stack_id;
++  if (stackId) {
++    LOG(DEBUG) << "SkiaOutputSurfaceImplOnGpu::FinishPaintCurrentFrame::GetAsyncStackId: " << stackId;
++    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetHiViewDfxAdapterInstance().DfxSetSubmitterStackId(stackId);
++    dfx_pop_submitter_stack_id.emplace(base::BindOnce(
++        [](uint64_t id) {
++          OHOS::NWeb::OhosAdapterHelper::GetInstance().GetHiViewDfxAdapterInstance().DfxPopSubmitterStackId(id);
++        },
++        stackId));
++  }
++#endif
+   TRACE_EVENT0("viz", "SkiaOutputSurfaceImplOnGpu::FinishPaintCurrentFrame");
+   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+   DCHECK(!scoped_output_device_paint_);
+ 
+   if (context_is_lost_) {
+@@ -2626,13 +2714,44 @@ void SkiaOutputSurfaceImplOnGpu::EnsureBackbuffer() {
+ void SkiaOutputSurfaceImplOnGpu::DiscardBackbuffer() {
+   // We call GLSurface::SetBackbuffferAllocation in Ensure/Discard backbuffer,
+   // so technically need framebuffer. In reality no GLSurface implements it, but
+   // until it's removed we should keep true here.
+   MakeCurrent(/*need_framebuffer=*/true);
++#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
++  if (is_delegated_enabled_) {
++    output_device_->DiscardCompositingResources(false, true);
++  } else {
++    output_device_->DiscardBackbuffer();
++  }
++#else
+   output_device_->DiscardBackbuffer();
++#endif
+ }
+ 
++#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
++void SkiaOutputSurfaceImplOnGpu::SetIfNeedCleanBuffers(bool need_clean_buffers)
++{
++  if (output_device_) {
++    output_device_->SetIfNeedCleanBuffers(need_clean_buffers);
++  }
++}
++#endif
++
++#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
++void SkiaOutputSurfaceImplOnGpu::DiscardCompositingResources() {
++  if (output_device_) {
++    output_device_->DiscardCompositingResources(true, true);
++  }
++}
++#endif
++
++#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
++void SkiaOutputSurfaceImplOnGpu::CleanBufferAfterSwapBuffer(bool delay_clean) {
++  output_device_->CleanBufferAfterSwapBuffer(delay_clean);
++}
++#endif
++
+ #if BUILDFLAG(ENABLE_VULKAN)
+ gfx::GpuFenceHandle SkiaOutputSurfaceImplOnGpu::CreateReleaseFenceForVulkan(
+     const GrBackendSemaphore& semaphore) {
+   DCHECK(is_using_vulkan());
+ 

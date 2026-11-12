@@ -1103,5 +1103,62 @@ TEST_F(OverlayCandidateFactoryTest, ClipDelegation_VisibleRect) {
   EXPECT_EQ(clip_cand.clip_rect.value(), clip);
 }
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+
+TEST_F(OverlayCandidateFactoryTest, TextureQuad_NonVideo_NotDelegated) {
+  AggregatedRenderPass render_pass;
+  render_pass.SetNew(AggregatedRenderPassId::FromUnsafeValue(1),
+                     gfx::Rect(0, 0, 100, 100), gfx::Rect(), gfx::Transform());
+
+  OverlayCandidateFactory::OverlayContext context;
+  context.is_delegated_context = true;
+  OverlayCandidateFactory factory = CreateCandidateFactory(
+      render_pass, gfx::RectF(render_pass.output_rect), context);
+
+  SharedQuadState* sqs = render_pass.CreateAndAppendSharedQuadState();
+  TextureDrawQuad quad;
+  quad.SetNew(sqs, gfx::Rect(10, 10), gfx::Rect(10, 10), false,
+              CreateResource(/*is_overlay_candidate=*/true, kTopLeft_GrSurfaceOrigin),
+              gfx::PointF(), gfx::PointF(1, 1), SkColors::kTransparent, false,
+              false, gfx::ProtectedVideoType::kClear);
+  // is_video_frame defaults to false
+  EXPECT_FALSE(quad.is_video_frame);
+
+  OverlayCandidate candidate;
+  // IsDelegatedCompositingEnabledOhos() returns false in test env,
+  // so the kFailNotOverlay early return is NOT triggered.
+  // The quad should proceed with normal overlay logic.
+  auto status = factory.FromDrawQuad(&quad, candidate);
+  EXPECT_NE(status, OverlayCandidate::CandidateStatus::kFailNotOverlay);
+}
+
+// Verify that a TextureDrawQuad with is_video_frame=true proceeds normally
+// even when ARKWEB_DELEGATE_COMPOSITING is enabled (the early return only
+// triggers for !is_video_frame).
+TEST_F(OverlayCandidateFactoryTest, TextureQuad_VideoFrame_NotBlockedByDelegated) {
+  AggregatedRenderPass render_pass;
+  render_pass.SetNew(AggregatedRenderPassId::FromUnsafeValue(1),
+                     gfx::Rect(0, 0, 100, 100), gfx::Rect(), gfx::Transform());
+
+  OverlayCandidateFactory::OverlayContext context;
+  context.is_delegated_context = true;
+  OverlayCandidateFactory factory = CreateCandidateFactory(
+      render_pass, gfx::RectF(render_pass.output_rect), context);
+
+  SharedQuadState* sqs = render_pass.CreateAndAppendSharedQuadState();
+  TextureDrawQuad quad;
+  quad.SetNew(sqs, gfx::Rect(10, 10), gfx::Rect(10, 10), false,
+              CreateResource(/*is_overlay_candidate=*/true, kTopLeft_GrSurfaceOrigin),
+              gfx::PointF(), gfx::PointF(1, 1), SkColors::kTransparent, false,
+              false, gfx::ProtectedVideoType::kClear);
+  quad.is_video_frame = true;
+
+  OverlayCandidate candidate;
+  auto status = factory.FromDrawQuad(&quad, candidate);
+  // Video frames should not be blocked regardless of delegate compositing state.
+  EXPECT_NE(status, OverlayCandidate::CandidateStatus::kFailNotOverlay);
+}
+#endif  // BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+
 }  // namespace
 }  // namespace viz

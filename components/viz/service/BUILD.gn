@@ -11,6 +11,11 @@ import("//media/gpu/args.gni")
 import("//skia/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/jni_zero/jni_zero.gni")
+import("//arkweb/build/features/features.gni")
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
 
 config("viz_service_implementation") {
 }
@@ -72,6 +77,7 @@ viz_component("service") {
     "display/delegated_ink_trail_data.h",
     "display/direct_renderer.cc",
     "display/direct_renderer.h",
+    "//arkweb/chromium_ext/components/viz/service/display/direct_renderer_ext.h",
     "display/display.cc",
     "display/display.h",
     "display/display_client.h",
@@ -139,6 +145,7 @@ viz_component("service") {
     "display/skia_output_surface.h",
     "display/skia_renderer.cc",
     "display/skia_renderer.h",
+    "//arkweb/chromium_ext/components/viz/service/display/direct_renderer_ext.h",
     "display/software_output_device.cc",
     "display/software_output_device.h",
     "display/software_renderer.cc",
@@ -163,6 +170,8 @@ viz_component("service") {
     "display_embedder/skia_output_device_buffer_queue.h",
     "display_embedder/skia_output_device_gl.cc",
     "display_embedder/skia_output_device_gl.h",
+    "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_device_gl_utils.cc",
+    "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_device_gl_utils.h",
     "display_embedder/skia_output_device_offscreen.cc",
     "display_embedder/skia_output_device_offscreen.h",
     "display_embedder/skia_output_device_webview.cc",
@@ -361,6 +370,31 @@ viz_component("service") {
     "//ui/latency",
   ]
 
+  if (arkweb_oop_gpu_process) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
+  if (arkweb_blank_screen_monitor) {
+    deps += [ "//arkweb/chromium_ext/components/blank_screen:frame_analysis" ]
+  }
+
+  if (arkweb_slide_ltpo) {
+    import("//arkweb/chromium_ext/base/arkweb_base_ext.gni")
+    sources += arkweb_base_ohos_ltpo_sources
+  }
+
+  if (arkweb_d_vsync) {
+    import("//arkweb/chromium_ext/base/arkweb_base_ext.gni")
+    sources += arkweb_base_ohos_d_vsync_sources
+  }
+
+  if (is_ohos) {
+    deps += [
+      "//ohos_glue:ohos_adapter_glue_source",
+      "//arkweb/chromium_ext/gpu/ipc/common:ohos_nweb_native_window_tracker",
+    ]
+  }
+
   if (is_chromeos) {
     sources += [
       "display_embedder/output_surface_unified.cc",
@@ -413,7 +447,7 @@ viz_component("service") {
     ]
   }
 
-  if (is_android || use_ozone) {
+  if (is_android || use_ozone || is_ohos) {
     sources += [
       "display/overlay_combination_cache.cc",
       "display/overlay_combination_cache.h",

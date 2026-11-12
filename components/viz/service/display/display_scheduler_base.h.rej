@@ -1,0 +1,47 @@
+diff a/components/viz/service/display/display_scheduler_base.h b/components/viz/service/display/display_scheduler_base.h	(rejected hunks)
+@@ -12,10 +12,11 @@
+ #include "base/threading/platform_thread.h"
+ #include "base/time/time.h"
+ #include "components/viz/service/display/display_damage_tracker.h"
+ #include "components/viz/service/performance_hint/hint_session.h"
+ #include "components/viz/service/viz_service_export.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace viz {
+ 
+ struct BeginFrameAck;
+ class DisplayDamageTracker;
+@@ -34,10 +35,16 @@ class VIZ_SERVICE_EXPORT DisplaySchedulerClient {
+  public:
+   virtual ~DisplaySchedulerClient() = default;
+ 
+   virtual bool DrawAndSwap(const DrawAndSwapParams& params) = 0;
+   virtual void DidFinishFrame(const BeginFrameAck& ack) = 0;
++#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
++  virtual void ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) = 0;
++#endif // ARKWEB_MAXIMIZE_RESIZE
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  virtual void SetClientId(const uint32_t client_id) {}
++#endif
+ };
+ 
+ class VIZ_SERVICE_EXPORT DisplaySchedulerBase
+     : public DisplayDamageTracker::Delegate {
+  public:
+@@ -60,10 +67,16 @@ class VIZ_SERVICE_EXPORT DisplaySchedulerBase
+       base::TimeDelta frame_time,
+       base::flat_set<base::PlatformThreadId> animation_thread_ids,
+       base::flat_set<base::PlatformThreadId> renderer_main_thread_ids,
+       base::TimeTicks draw_start,
+       HintSession::BoostType boost_type) = 0;
++#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
++  virtual void SetShouldFrameSubmissionBeforeDraw(bool should) = 0;
++#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
++#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
++  void ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) override;
++#endif // ARKWEB_MAXIMIZE_RESIZE
+ 
+  protected:
+   raw_ptr<DisplaySchedulerClient> client_ = nullptr;
+   raw_ptr<DisplayDamageTracker> damage_tracker_ = nullptr;
+ };

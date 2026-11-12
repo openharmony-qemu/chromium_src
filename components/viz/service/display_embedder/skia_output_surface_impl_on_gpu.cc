@@ -101,6 +101,14 @@
 #include "ui/gl/presenter.h"
 #include "ui/gl/progress_reporter.h"
 #include "url/gurl.h"
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+#include "arkweb/chromium_ext/base/report_loss_frame_ext.h"
+#include "arkweb/chromium_ext/base/ohos/dynamic_frame_loss_monitor.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
+#include "base/trace_event/typed_macros.h"
+#endif
 
 #if BUILDFLAG(IS_WIN)
 #include "components/viz/service/display/dc_layer_overlay.h"
@@ -144,6 +152,14 @@
 #include "components/viz/service/display_embedder/output_presenter_fuchsia.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "components/viz/service/display_embedder/output_presenter_ohos.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
 namespace viz {
 
 namespace {
@@ -343,6 +359,11 @@ SkiaOutputSurfaceImplOnGpu::SkiaOutputSurfaceImplOnGpu(
   weak_ptr_ = weak_ptr_factory_.GetWeakPtr();
   buffer_presented_callback_ = CreateSafeRepeatingCallback(
       weak_ptr_, std::move(buffer_presented_callback));
+  impl_utils_ =  std::make_shared<SkiaOutputSurfaceImplOnGpuUtils>(this);
+
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  is_delegated_enabled_ = base::ohos::IsDelegatedCompositingEnabledOhos();
+#endif
 }
 
 void SkiaOutputSurfaceImplOnGpu::ReleaseAsyncReadResultHelpers() {
@@ -445,6 +466,14 @@ void SkiaOutputSurfaceImplOnGpu::Reshape(
     MarkContextLost(CONTEXT_LOST_RESHAPE_FAILED);
   }
 }
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+void SkiaOutputSurfaceImplOnGpu::SetNativeInnerWeb(bool isInnerWeb) {
+  if (output_device_) {
+    output_device_->SetNativeInnerWeb(isInnerWeb);
+  }
+}
+#endif
 
 void SkiaOutputSurfaceImplOnGpu::DrawOverdraw(
     sk_sp<GrDeferredDisplayList> overdraw_ddl,
@@ -599,7 +628,13 @@ void SkiaOutputSurfaceImplOnGpu::SwapBuffers(OutputSurfaceFrame frame) {
   TRACE_EVENT0("viz", "SkiaOutputSurfaceImplOnGpu::SwapBuffers");
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
 
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  ReportLossFrame::GetInstance()->Record();
+#endif
   SwapBuffersInternal(std::move(frame));
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  base::ohos::DynamicFrameLossMonitor::GetInstance().OnSwapBuffer();
+#endif
 }
 
 void SkiaOutputSurfaceImplOnGpu::SetDependenciesResolvedTimings(
@@ -2026,11 +2061,30 @@ bool SkiaOutputSurfaceImplOnGpu::InitializeForGL() {
               shared_gpu_deps_->memory_tracker(),
               GetDidSwapBuffersCompleteCallback());
         } else {
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+          auto output_presenter = is_delegated_enabled_ ?
+              OutputPresenterOHOS::Create(dependency_.get()) : nullptr;
+          if (output_presenter) {
+            TRACE_EVENT0("viz", "InitializeForGL create output_device_");
+            output_device_ = std::make_unique<SkiaOutputDeviceBufferQueue>(
+                std::move(output_presenter), dependency_,
+                shared_image_representation_factory_.get(),
+                shared_gpu_deps_->memory_tracker(),
+                GetDidSwapBuffersCompleteCallback(),
+                GetReleaseOverlaysCallback());
+          } else {
+            output_device_ = std::make_unique<SkiaOutputDeviceGL>(
+                context_state_.get(), gl_surface_, feature_info_,
+                shared_gpu_deps_->memory_tracker(),
+                GetDidSwapBuffersCompleteCallback());
+          }
+#else
           // Used by Android, Linux, and Windows (when DComp has been disabled).
           output_device_ = std::make_unique<SkiaOutputDeviceGL>(
               context_state_.get(), gl_surface_, feature_info_,
               shared_gpu_deps_->memory_tracker(),
               GetDidSwapBuffersCompleteCallback());
+#endif
         }
       }
     } else {
@@ -2080,7 +2134,18 @@ bool SkiaOutputSurfaceImplOnGpu::InitializeForVulkan() {
 #if BUILDFLAG(IS_FUCHSIA)
   output_presenter =
       OutputPresenterFuchsia::Create(window_surface_.get(), dependency_);
-#else
+#elif BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  if (is_delegated_enabled_) {
+    output_presenter = OutputPresenterOHOS::Create(dependency_.get());
+  } else {
+    scoped_refptr<gl::Presenter> presenter = dependency_->CreatePresenter();
+    presenter_ = presenter.get();
+    if (presenter_) {
+      output_presenter =
+        std::make_unique<OutputPresenterGL>(std::move(presenter), dependency_);
+    }
+  }
+# else
   scoped_refptr<gl::Presenter> presenter = dependency_->CreatePresenter();
   presenter_ = presenter.get();
   if (presenter_) {
@@ -2276,6 +2341,11 @@ void SkiaOutputSurfaceImplOnGpu::SwapBuffersInternal(
   // If drawing to any render pass failed then skip presenting incorrect
   // content.
   bool skip_present = draw_render_pass_failed_;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (frame) {
+    skip_present = skip_present || frame->skip_present;
+  }
+#endif
   draw_render_pass_failed_ = false;
 
   if (!skip_present && frame) {
@@ -2416,8 +2486,13 @@ bool SkiaOutputSurfaceImplOnGpu::PresentFrame(OutputSurfaceFrame frame) {
         base::TimeTicks::Now() - start_time, kHistogramMinTime,
         kHistogramMaxTime, kHistogramTimeBuckets);
   }
-
+#if !BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
   DCHECK(!frame.sub_buffer_rect || capabilities().supports_post_sub_buffer);
+#endif
+#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+      std::to_string(frame.data.swap_trace_id), "step", "FinishBufferSwap");
+#endif
   output_device_->Present(frame.sub_buffer_rect, buffer_presented_callback_,
                           std::move(frame));
 
@@ -2831,3 +2906,7 @@ void SkiaOutputSurfaceImplOnGpu::ReadbackForTesting(
 }
 
 }  // namespace viz
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_impl_on_gpu_for_include.cc"
+#endif

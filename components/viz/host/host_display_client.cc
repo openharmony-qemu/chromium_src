@@ -82,4 +82,15 @@ void HostDisplayClient::SetPreferredRefreshRate(float refresh_rate) {
 }
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+void HostDisplayClient::DidCompleteSwapWithNewSizeOHOS(const gfx::Size& size) {
+  NOTIMPLEMENTED();
+}
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+void HostDisplayClient::NotifyFirstRealSwapBuffer() {
+  NOTIMPLEMENTED();
+}
+#endif // BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
 }  // namespace viz

@@ -1,0 +1,24 @@
+diff a/components/viz/service/display_embedder/skia_output_surface_impl_on_gpu.h b/components/viz/service/display_embedder/skia_output_surface_impl_on_gpu.h	(rejected hunks)
+@@ -87,20 +89,22 @@ namespace viz {
+ class AsyncReadResultHelper;
+ class AsyncReadResultLock;
+ class ImageContextImpl;
+ class SkiaOutputSurfaceDependency;
+ class VulkanContextProvider;
++class SkiaOutputSurfaceImplOnGpuUtils;
+ 
+ namespace copy_output {
+ struct RenderPassGeometry;
+ }  // namespace copy_output
+ 
+ // The SkiaOutputSurface implementation running on the GPU thread. This class
+ // should be created, used and destroyed on the GPU thread.
+ class SkiaOutputSurfaceImplOnGpu
+     : public gpu::SharedContextState::ContextLostObserver {
+  public:
++   friend class SkiaOutputSurfaceImplOnGpuUtils;
+   using DidSwapBufferCompleteCallback =
+       base::RepeatingCallback<void(gpu::SwapBuffersCompleteParams,
+                                    const gfx::Size& pixel_size,
+                                    gfx::GpuFenceHandle release_fence)>;
+   using BufferPresentedCallback =

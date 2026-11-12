@@ -616,6 +616,13 @@ void DirectRenderer::DrawRenderPassAndExecuteCopyRequests(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  if (IsEvictUnlockFrameEnabled() && next_frame_skips_draw_render_passes_) {
+    LOG(INFO) << "DirectRenderer::DrawRenderPassAndExecuteCopyRequests skipped";
+    return;
+  }
+#endif
+
   // Repeated draw to simulate a slower device for the evaluation of performance
   // improvements in UI effects.
   for (int i = 0; i < settings_->slow_down_compositing_scale_factor; ++i)
@@ -755,7 +762,15 @@ void DirectRenderer::DrawRenderPass(const AggregatedRenderPass* render_pass) {
   const bool is_root_render_pass =
       current_frame()->current_render_pass == current_frame()->root_render_pass;
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW) || BUILDFLAG(ARKWEB_VULKAN_INC_PRESENT)
+  bool partialFlag = features::IsUsingVulkan() ?
+                     (use_partial_swap_ &&
+                      (incPresentValue_ == static_cast<int32_t>(VulkanIncPresent::kDisable))) :
+                     (use_partial_swap_ && !skip_partial_paint_);
+  if (partialFlag) {
+#else
   if (use_partial_swap_) {
+#endif
     render_pass_scissor_in_draw_space.Intersect(
         ComputeScissorRectForRenderPass(current_frame()->current_render_pass));
   }
@@ -819,6 +834,12 @@ void DirectRenderer::DrawRenderPass(const AggregatedRenderPass* render_pass) {
       continue;
     }
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+    if (is_root_render_pass && (quad.material == DrawQuad::Material::kDebugBorder) && partial_draw_debug_) {
+      continue;
+    }
+#endif
+
     if (last_sorting_context_id != quad.shared_quad_state->sorting_context_id) {
       last_sorting_context_id = quad.shared_quad_state->sorting_context_id;
       FlushPolygons(&poly_list, render_pass_scissor_in_draw_space,
@@ -847,6 +868,19 @@ void DirectRenderer::DrawRenderPass(const AggregatedRenderPass* render_pass) {
   }
   FlushPolygons(&poly_list, render_pass_scissor_in_draw_space,
                 render_pass_is_clipped);
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  if (is_root_render_pass && !skip_partial_paint_) {
+    auto it = current_frame()->root_render_pass->quad_list.BackToFrontBegin();
+    if (it != current_frame()->root_render_pass->quad_list.BackToFrontEnd()) {
+      const DrawQuad& damage_quad = **it;
+      if (damage_quad.material == DrawQuad::Material::kDebugBorder) {
+        DoDrawQuad(&damage_quad, nullptr);
+      }
+    }
+  }
+#endif
+
   FinishDrawingRenderPass();
 
   if (!is_root_render_pass) {

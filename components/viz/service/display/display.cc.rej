@@ -1,0 +1,320 @@
+diff a/components/viz/service/display/display.cc b/components/viz/service/display/display.cc	(rejected hunks)
+@@ -14,10 +14,11 @@
+ #include <optional>
+ #include <string>
+ #include <utility>
+ #include <variant>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/check.h"
+ #include "base/containers/contains.h"
+ #include "base/containers/flat_set.h"
+ #include "base/debug/dump_without_crashing.h"
+ #include "base/metrics/histogram_macros.h"
+@@ -429,32 +451,53 @@ void Display::SetVisible(bool visible) {
+     renderer_->SetVisible(visible);
+   if (scheduler_)
+     scheduler_->SetVisible(visible);
+   visible_ = visible;
+ 
++#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
++  if (renderer_) {
++    renderer_->ResetPartialDrawState();
++  }
++#endif
++
+   if (!visible) {
+     // Damage tracker needs a full reset as renderer resources are dropped when
+     // not visible.
+     if (aggregator_ && current_surface_id_.is_valid())
+       aggregator_->SetFullDamageForSurface(current_surface_id_);
+   }
+ }
+ 
+ void Display::Resize(const gfx::Size& size) {
+   disable_swap_until_resize_ = false;
+-
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  LOG(INFO) << "Display::Resize, current size: " << current_surface_size_.ToString()
++            << ", new size: " << size.ToString();
++  TRACE_EVENT2("viz", "Display::Resize info",
++               "current size", current_surface_size_.ToString(),
++               "new size", size.ToString());
++#endif
+   if (size == current_surface_size_)
+     return;
+ 
+   // This DCHECK should probably go at the top of the function, but mac
+   // sometimes calls Resize() with 0x0 before it sets a real size. This will
+   // early out before the DCHECK fails.
+   DCHECK(!size.IsEmpty());
+   TRACE_EVENT0("viz", "Display::Resize");
+ 
++#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
++  if (renderer_) {
++    renderer_->ResetPartialDrawState();
++  }
++#endif
++
+   swapped_since_resize_ = false;
+-  current_surface_size_ = size;
++
++#if !defined(COMPONENT_BUILD) // FIXME
++  display_utils_->Resize(size);
++#endif
+ 
+   damage_tracker_->DisplayResized();
+ }
+ 
+ void Display::SetOutputSurfaceClipRect(const gfx::Rect& clip_rect) {
+@@ -490,10 +533,20 @@ void Display::DisableSwapUntilResize(
+   // There are no pending swaps for current size so immediately run callback.
+   if (no_pending_swaps_callback)
+     std::move(no_pending_swaps_callback).Run();
+ }
+ 
++#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
++void Display::ReenableSwapCheck(const SurfaceId& surface_id,
++                                int width,
++                                int height) {
++#if !defined(COMPONENT_BUILD) // FIXME
++  display_utils_->ReenableSwapCheck(surface_id, width, height);
++#endif
++}
++#endif // ARKWEB_MAXIMIZE_RESIZE
++
+ void Display::SetColorMatrix(const SkM44& matrix) {
+   if (output_surface_)
+     output_surface_->set_color_matrix(matrix);
+ 
+   // Force a redraw.
+@@ -869,10 +926,14 @@ OverdrawTracker::OverdrawTimeSeries Display::StopTrackingOverdraw() {
+   overdraw_tracker_.reset();
+ 
+   return overdraw_data;
+ }
+ 
++#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
++void AddDebugQuad(AggregatedRenderPass& last_render_pass);
++#endif
++
+ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
+   TRACE_EVENT0("viz", "Display::DrawAndSwap");
+   VIZ_HIT_PATH("DrawAndSwap");
+ #if !BUILDFLAG(IS_APPLE)
+   RecordFDUsageUMA();
+@@ -1039,46 +1100,69 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
+   if (features::ShouldLogFrameQuadInfo()) {
+     MaybeLogQuadsProperties(last_render_pass,
+                             &(frame.surface_damage_rect_list_));
+   }
+ 
++#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
++  AddDebugQuad(last_render_pass);
++#endif
++
+   // The CompositorFrame provided by the SurfaceAggregator includes the display
+   // transform while |current_surface_size_| is the pre-transform size received
+   // from the client.
+   const gfx::Transform display_transform = gfx::OverlayTransformToTransform(
+       current_display_transform, gfx::SizeF(current_surface_size_));
+   const gfx::Size current_surface_size =
+       cc::MathUtil::MapEnclosedRectWith2dAxisAlignedTransform(
+           display_transform, gfx::Rect(current_surface_size_))
+           .size();
++#if BUILDFLAG(ARKWEB_SYNC_RENDER) && !defined(COMPONENT_BUILD) // FIXME
++    display_utils_->DrawAndSwap(last_render_pass, current_surface_size, frame);
++#else
+   if (settings_.auto_resize_output_surface &&
+       last_render_pass.output_rect.size() != current_surface_size &&
+       last_render_pass.damage_rect == last_render_pass.output_rect &&
+       !current_surface_size.IsEmpty()) {
+     // Resize the |output_rect| to the |current_surface_size| so that we won't
+     // skip the draw and so that the GL swap won't stretch the output.
+     last_render_pass.output_rect.set_size(current_surface_size);
+     last_render_pass.damage_rect = last_render_pass.output_rect;
+     frame.surface_damage_rect_list_.push_back(last_render_pass.damage_rect);
+   }
++#endif
+   surface_size = last_render_pass.output_rect.size();
+   have_damage = !last_render_pass.damage_rect.size().IsEmpty();
+ 
+   bool size_matches = surface_size == current_surface_size;
+   if (!size_matches)
+     TRACE_EVENT_INSTANT0("viz", "Size mismatch.", TRACE_EVENT_SCOPE_THREAD);
+ 
+   bool should_draw = have_copy_requests || (have_damage && size_matches);
++#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE) && !defined(COMPONENT_BUILD) // FIXME
++  should_draw = display_utils_->ShouldDisableSwap(should_draw);
++#endif  // ARKWEB_MAXIMIZE_RESIZE
+   client_->DisplayWillDrawAndSwap(should_draw, &frame.render_pass_list);
+ 
+   std::optional<base::ElapsedTimer> draw_timer;
+   if (should_draw) {
+     TRACE_EVENT_BEGIN("viz,benchmark", "Graphics.Pipeline.Draw",
+                       perfetto::Track(display_trace_id));
+     base::ElapsedTimer draw_occlusion_timer;
+     occlusion_culler_->RemoveOverdrawQuads(&frame);
+     DebugDrawFrameVisible(frame);
++
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++    display_utils_->DumpSnapshotForBlankLess(frame);
++#endif
++
++#if BUILDFLAG(IS_ARKWEB_EXT) && !defined(COMPONENT_BUILD)
++    display_utils_->DumpSnapshotForSBS(frame);
++#endif
++
++#if BUILDFLAG(ARKWEB_DFX_DUMP)
++    display_utils_->DrawAndSwapDump(frame);
++#endif
+     UMA_HISTOGRAM_COUNTS_1000(
+         "Compositing.Display.Draw.Occlusion.Calculation.Time",
+         draw_occlusion_timer.Elapsed().InMicroseconds());
+ 
+     DBG_LOG("renderer.ptr", "renderer = %p%s", this,
+@@ -1088,10 +1172,15 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
+       overdraw_tracker_->EstimateAndRecordOverdraw(&frame,
+                                                    base::TimeTicks::Now());
+     }
+ 
+     OverdrawTracker::EstimateAndRecordOverdrawAsUMAMetric(&frame);
++#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
++    if (IsEvictUnlockFrameEnabled() && disable_draw_and_swap_on_next_frame_) {
++      renderer_->SetNextFrameSkipsDrawRenderPasses(true);
++    }
++#endif
+ 
+     draw_timer.emplace();
+     overlay_processor_->SetFrameSequenceNumber(frame_sequence_number_);
+     overlay_processor_->SetIsPageFullscreen(frame.page_fullscreen_mode);
+     renderer_->DrawFrame(&frame.render_pass_list, device_scale_factor_,
+@@ -1101,10 +1190,18 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
+   } else {
+     TRACE_EVENT_INSTANT0("viz", "Draw skipped.", TRACE_EVENT_SCOPE_THREAD);
+   }
+ 
+   bool should_swap = !disable_swap_until_resize_ && should_draw && size_matches;
++#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE) && !defined(COMPONENT_BUILD) // FIXME
++  should_swap = display_utils_->ShouldDisableSwap(should_swap);
++#endif  // ARKWEB_MAXIMIZE_RESIZE
++#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
++  if (IsEvictUnlockFrameEnabled()) {
++    should_swap = !disable_draw_and_swap_on_next_frame_ && should_swap;
++  }
++#endif
+   if (should_swap) {
+     PresentationGroupTiming& presentation_group_timing =
+         pending_presentation_group_timings_.emplace_back();
+ 
+     const auto& main_surfaces =
+@@ -1195,10 +1292,16 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
+ 
+     TRACE_EVENT_INSTANT("viz,benchmark", "Graphics.Pipeline.WaitForSwap",
+                         perfetto::Track(display_trace_id));
+     swapped_since_resize_ = true;
+ 
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++    for (auto& latency : frame.latency_info) {
++      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
++                        std::to_string(latency.trace_id()), "step", "STEP_DRAW_AND_SWAP");
++    }
++#endif
+     IssueDisplayRenderingStatsEvent();
+     DirectRenderer::SwapFrameData swap_frame_data;
+     swap_frame_data.latency_info = std::move(frame.latency_info);
+     swap_frame_data.seq =
+         current_surface_id_.local_surface_id().parent_sequence_number();
+@@ -1218,10 +1321,15 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
+           data->set_step(perfetto::protos::pbzero::ChromeGraphicsPipeline::
+                              StepName::STEP_SEND_BUFFER_SWAP);
+           data->set_display_trace_id(swap_trace_id);
+         });
+ 
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
++                      std::to_string(swap_frame_data.swap_trace_id), "step", "SendBufferSwap");
++#endif
++
+ #if BUILDFLAG(IS_APPLE)
+     swap_frame_data.ca_layer_error_code =
+         overlay_processor_->GetCALayerErrorCode();
+ #endif
+     swap_frame_data.is_handling_interaction = has_interactive_frame;
+@@ -1238,10 +1346,20 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
+                              pending_swaps_);
+ 
+     RecordFrameTypes(has_interactive_frame, has_animated_frame);
+ 
+     renderer_->SwapBuffers(std::move(swap_frame_data));
++#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
++    if (IsEvictUnlockFrameEnabled() && client_) {
++      client_->DisplayDidRealSwapBuffer();
++    }
++#endif
++#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
++    if (display_utils_) {
++      display_utils_->ReallocatedFrameBuffersIfNeed();
++    }
++#endif
+   } else {
+     TRACE_EVENT_INSTANT0("viz", "Swap skipped.", TRACE_EVENT_SCOPE_THREAD);
+ 
+     if (have_damage && !size_matches)
+       aggregator_->SetFullDamageForSurface(current_surface_id_);
+@@ -1306,10 +1428,15 @@ void Display::DidReceiveSwapBuffersAck(
+         data->set_step(perfetto::protos::pbzero::ChromeGraphicsPipeline::
+                            StepName::STEP_SWAP_BUFFERS_ACK);
+         data->set_display_trace_id(params.swap_trace_id);
+       });
+ 
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
++                    std::to_string(params.swap_trace_id), "step", "SwapBufferAck");
++#endif
++
+   // Both cases require full damage. That is, if buffers are recreated or
+   // non-simple overlays failed, a frame is expected to be sent again.
+   if (params.swap_response.result ==
+           gfx::SwapResult::SWAP_NAK_RECREATE_BUFFERS ||
+       params.swap_response.result ==
+@@ -1407,15 +1534,39 @@ void Display::DidReceiveCALayerParams(
+ void Display::DidSwapWithSize(const gfx::Size& pixel_size) {
+   if (client_)
+     client_->DisplayDidCompleteSwapWithSize(pixel_size);
+ }
+ 
++#if BUILDFLAG(ARKWEB_ROTATE_RESIZE) && !defined(COMPONENT_BUILD)
++void Display::DidSwapWithRotate(const gfx::Size& pixel_size) {
++  bool rotateFlag = false;
++  if ((oldWidth_ < pixel_size.width() && oldHeight_ > pixel_size.height()) ||
++      (oldWidth_ > pixel_size.width() && oldHeight_ < pixel_size.height())) {
++    LOG(DEBUG) << "DidSwapWithRotate old size info, oldWidth_: "
++               << oldWidth_ << ", oldHeight_: " << oldHeight_;
++    LOG(DEBUG) << "DidSwapWithRotate pixel size info, width: "
++               << pixel_size.width() << ", height: " << pixel_size.height();
++    rotateFlag = true;
++  }
++  oldWidth_ = pixel_size.width();
++  oldHeight_ = pixel_size.height();
++  if (client_ && rotateFlag) {
++    LOG(INFO) << "DidSwapWithRotate done, ModifyRenderFit";
++    display_utils_->ModifyRenderFit(RENDER_FIT_TYPE);
++  }
++}
++#endif  // ARKWEB_ROTATE_RESIZE
++
+ void Display::DidReceivePresentationFeedback(
+     const gfx::PresentationFeedback& feedback) {
+   if (renderer_)
+     renderer_->BuffersPresented();
+ 
++#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE) && !defined(COMPONENT_BUILD) // FIXME
++  display_utils_->RestoreRenderFit();
++#endif  // ARKWEB_MAXIMIZE_RESIZE
++
+   if (pending_presentation_group_timings_.empty()) {
+     DLOG(ERROR) << "Received unexpected PresentationFeedback";
+     return;
+   }
+   auto& presentation_group_timing = pending_presentation_group_timings_.front();

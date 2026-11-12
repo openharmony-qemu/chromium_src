@@ -28,11 +28,15 @@
 #include "components/viz/service/display_embedder/output_surface_provider.h"
 #include "components/viz/service/display_embedder/vsync_parameter_listener.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
+#include "arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.h"
 #include "components/viz/service/hit_test/hit_test_aggregator.h"
 #include "services/viz/public/mojom/compositing/layer_context.mojom.h"
 #include "third_party/abseil-cpp/absl/functional/overload.h"
 #include "ui/base/ozone_buildflags.h"
 #include "ui/gfx/geometry/skia_conversions.h"
+
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/components/viz/service/frame_sinks/root_compositor_frame_sink_impl_ext.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "components/viz/service/frame_sinks/external_begin_frame_source_android.h"
@@ -52,6 +56,14 @@
 
 #if BUILDFLAG(IS_WIN)
 #include "components/viz/service/frame_sinks/external_begin_frame_source_win.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+#include "arkweb/chromium_ext/components/viz/service/frame_sinks/external_begin_frame_source_ohos.h"
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+#include "components/viz/common/viz_utils.h"
 #endif
 
 namespace viz {
@@ -195,6 +207,10 @@ RootCompositorFrameSinkImpl::Create(
     hw_support_for_multiple_refresh_rates = true;
     external_begin_frame_source =
         std::make_unique<ExternalBeginFrameSourceIOS>(restart_id);
+#elif BUILDFLAG(IS_ARKWEB) && (BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_PERFORMANCE_JITTER))
+    external_begin_frame_source =
+        std::make_unique<ExternalBeginFrameSourceOHOS>(restart_id,
+                                                       frame_sink_manager);
 #else
 #if BUILDFLAG(IS_CHROMEOS)
     hw_support_for_multiple_refresh_rates =
@@ -275,7 +291,7 @@ RootCompositorFrameSinkImpl::Create(
 #endif
 
   // base::WrapUnique instead of std::make_unique because the ctor is private.
-  auto impl = base::WrapUnique(new RootCompositorFrameSinkImpl(
+  auto impl = base::WrapUnique(new RootCompositorFrameSinkImplExt(
       frame_sink_manager, params->frame_sink_id,
       std::move(params->compositor_frame_sink),
       std::move(params->compositor_frame_sink_client),
@@ -614,6 +630,13 @@ void RootCompositorFrameSinkImpl::DidNotProduceFrame(
   support_->DidNotProduceFrame(begin_frame_ack);
 }
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+void RootCompositorFrameSinkImpl::InitializeCompositorFrameSinkType(
+    mojom::CompositorFrameSinkType type) {
+  support_->InitializeCompositorFrameSinkType(type);
+}
+#endif
+
 void RootCompositorFrameSinkImpl::BindLayerContext(
     mojom::PendingLayerContextPtr context,
     mojom::LayerContextSettingsPtr settings) {
@@ -686,6 +709,7 @@ RootCompositorFrameSinkImpl::RootCompositorFrameSinkImpl(
   interval_decider_use_fixed_intervals_ = false;
 #endif
   UpdateFrameIntervalDeciderSettings();
+  managerImplUtils = std::make_unique<FrameSinkManagerImplUtils>(frame_sink_manager);
 }
 
 void RootCompositorFrameSinkImpl::UpdateFrameIntervalDeciderSettings() {
@@ -908,6 +932,24 @@ void RootCompositorFrameSinkImpl::DisplayWillDrawAndSwap(
   }
 }
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+void RootCompositorFrameSinkImpl::DisplayDidRealSwapBuffer() {
+  if (IsEvictUnlockFrameEnabled()) {
+    LOG(DEBUG) << "viz RootCompositorFrameSinkImpl::NotifyFirstRealSwapBuffer will notify sink_id: " <<
+      support_->frame_sink_id().ToString() << "needs_notify_first_swap_buffer: " << needs_notify_first_swap_buffer_;
+    if (display_client_ && needs_notify_first_swap_buffer_) {
+      TRACE_EVENT2("viz", "RootCompositorFrameSinkImpl::DisplayDidRealSwapBuffer",
+        "needs_notify_first_swap_buffer", needs_notify_first_swap_buffer_, " sink_id: ",
+        support_->frame_sink_id().ToString());
+      LOG(INFO) << "viz RootCompositorFrameSinkImpl::NotifyFirstRealSwapBuffer sink_id: " <<
+        support_->frame_sink_id().ToString();
+      display_client_->NotifyFirstRealSwapBuffer();
+      needs_notify_first_swap_buffer_ = false;
+    }
+  }
+}
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 base::ScopedClosureRunner RootCompositorFrameSinkImpl::GetCacheBackBufferCb() {
   return display_->GetCacheBackBufferCb();
@@ -1028,7 +1070,11 @@ void RootCompositorFrameSinkImpl::SetPreferredFrameInterval(
 #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS)
 }
 
-void RootCompositorFrameSinkImpl::DisplayDidDrawAndSwap() {}
+void RootCompositorFrameSinkImpl::DisplayDidDrawAndSwap() {
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  eviction_handler_.DisplayDidDrawAndSwap();
+#endif
+}
 
 BeginFrameSource* RootCompositorFrameSinkImpl::begin_frame_source() {
   if (external_begin_frame_source_) {
@@ -1056,5 +1102,4 @@ void RootCompositorFrameSinkImpl::SetMaxVSyncAndVrr(
 #endif  // BUILDFLAG(IS_CHROMEOS)
   UpdateFrameIntervalDeciderSettings();
 }
-
 }  // namespace viz

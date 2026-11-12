@@ -76,6 +76,9 @@ class VIZ_SERVICE_EXPORT SurfaceObserver : public base::CheckedObserver {
   // A matching `OnRemovedSurfaceReference` can be added if there are use cases.
   virtual void OnAddedSurfaceReference(const SurfaceId& parent_id,
                                        const SurfaceId& child_id) {}
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  virtual void ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) {}
+#endif // ARKWEB_MAXIMIZE_RESIZE
 };
 
 }  // namespace viz

@@ -44,6 +44,14 @@ class VIZ_SERVICE_EXPORT OutputSurfaceFrame {
   // Metadata containing information to draw a delegated ink trail using
   // platform APIs.
   std::unique_ptr<gfx::DelegatedInkMetadata> delegated_ink_metadata;
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  // ArkWeb OHOS: when true the web surface is fully occluded by an XComponent
+  // (video assistant mode) and must not be presented. The paint GPU task
+  // (FinishPaintCurrentFrame) still runs to flush the video to the native
+  // surface; only the present task is skipped. Defaults to false.
+  bool skip_present = false;
+#endif
 };
 
 }  // namespace viz

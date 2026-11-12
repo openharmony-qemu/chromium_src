@@ -1,0 +1,14 @@
+diff a/components/viz/service/frame_sinks/video_detector.h b/components/viz/service/frame_sinks/video_detector.h	(rejected hunks)
+@@ -87,11 +87,11 @@ class VIZ_SERVICE_EXPORT VideoDetector : public SurfaceObserver {
+   bool OnSurfaceDamaged(const SurfaceId& surface_id,
+                         const BeginFrameAck& ack,
+                         HandleInteraction handle_interaction) override;
+   void OnSurfaceDestroyed(const SurfaceId& surface_id) override {}
+   void OnSurfaceDamageExpected(const SurfaceId& surface_id,
+-                               const BeginFrameArgs& args) override {}
++                               const BeginFrameArgs& args) override { return false; }
+   void OnSurfaceWillBeDrawn(Surface* surface) override;
+ 
+   // True if video has been observed in the last |kVideoTimeout|.
+   bool video_is_playing_ = false;
+ 

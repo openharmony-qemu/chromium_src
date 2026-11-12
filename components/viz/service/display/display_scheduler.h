@@ -30,6 +30,7 @@ namespace viz {
 
 class HintSession;
 class HintSessionFactory;
+class DisplaySchedulerUtils;
 
 class VIZ_SERVICE_EXPORT DisplayScheduler
     : public DisplaySchedulerBase,

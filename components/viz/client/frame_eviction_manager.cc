@@ -192,6 +192,10 @@ void FrameEvictionManager::CullOldUnlockedFrames() {
           now - unlocked_frames_.back().second >= kPeriodicCullingDelay)) {
     size_t old_size = unlocked_frames_.size();
     auto* frame = unlocked_frames_.back().first;
+#if BUILDFLAG(IS_ARKWEB)
+    TRACE_EVENT0("viz", "FrameEvictionManager::CullOldUnlockedFrames, evict unlocked frame because timeout");
+    LOG(INFO) << "FrameEvictionManager::CullOldUnlockedFrames, evict unlocked frame because timeout";
+#endif
     frame->EvictCurrentFrame();
     // Should remove self from list. If it's not possible, give up and try again
     // later. This should be a rare case, so don't bother rescheduling earlier

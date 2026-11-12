@@ -1,0 +1,16 @@
+diff a/components/viz/common/BUILD.gn b/components/viz/common/BUILD.gn	(rejected hunks)
+@@ -281,10 +290,14 @@ viz_component("common") {
+     "//gpu/command_buffer/common",
+     "//mojo/public/cpp/bindings",
+     "//skia",
+   ]
+ 
++  if (enable_arkweb) {
++    deps += [ "//arkweb//build/features"]
++  }
++
+   if (enable_vulkan) {
+     public_deps += [ ":vulkan_context_provider" ]
+   }
+ }
+ 

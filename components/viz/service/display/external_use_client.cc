@@ -34,7 +34,7 @@ ExternalUseClient::ImageContext::ImageContext(
       color_space_(resource.GetColorSpace()),
       origin_(resource.GetOrigin()),
       resource_source_(resource.resource_source) {
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
   ycbcr_info_ = resource.ycbcr_info;
 #endif
 }

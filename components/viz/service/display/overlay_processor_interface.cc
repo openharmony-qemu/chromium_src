@@ -32,6 +32,12 @@
 #include "ui/ozone/public/ozone_platform.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "base/trace_event/trace_event.h"
+#include "components/viz/service/display/overlay_processor_ohos.h"
+#endif
+
 namespace viz {
 namespace {
 

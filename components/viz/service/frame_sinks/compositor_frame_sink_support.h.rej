@@ -1,0 +1,60 @@
+diff a/components/viz/service/frame_sinks/compositor_frame_sink_support.h b/components/viz/service/frame_sinks/compositor_frame_sink_support.h	(rejected hunks)
+@@ -43,12 +43,16 @@
+ namespace viz {
+ 
+ class FrameSinkManagerImpl;
+ class LatestLocalSurfaceIdLookupDelegate;
+ class LayerContextImpl;
++#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
++class RendererSettings;
++#endif
+ class Surface;
+ class SurfaceManager;
++class CompositorFrameSinkSupportUtils;
+ 
+ // Possible outcomes of MaybeSubmitCompositorFrame().
+ // These values are persisted to logs. Entries should not be renumbered and
+ // numeric values should never be reused.
+ enum class SubmitResult {
+@@ -147,11 +153,17 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
+   // If |simple_cadence_only| is true, then it will further check if the
+   // |interval| is a simple cadence and apply only if that is true. Returns true
+   // if we should throttle, otherwise false.
+   bool ThrottleBeginFrame(base::TimeDelta interval,
+                           bool simple_cadence_only = false);
+-
++#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
++  void ApplyPreferredFrameRate();
++  void InitializeCompositorFrameSinkType(mojom::CompositorFrameSinkType type);
++  mojom::CompositorFrameSinkType frame_sink_type() const {
++    return frame_sink_type_;
++  }
++#endif
+   void SetLastKnownVsync(base::TimeDelta vsync_interval);
+ 
+   // SurfaceClient implementation.
+   void OnSurfaceCommitted(Surface* surface) override;
+   void OnSurfaceActivated(Surface* surface) override;
+@@ -557,11 +588,20 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
+ 
+   // If exists, then we need to notify this callback when we have a
+   // SurfaceAnimationManager.
+   base::OnceCallback<void()> surface_animation_manager_callback_;
+ 
+-  base::WeakPtrFactory<CompositorFrameSinkSupport> weak_factory_{this};
+-};
++  #if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
++    // Track consecutive no-damage frames for throttling
++    int consecutive_no_damage_frames_ = 0;
++    static constexpr int kNoDamageThrottleThreshold = 4;
++    // Track whether frame throttling is currently active
++    bool is_throttled_ = false;
++    bool is_throttle_enabled = OHOS::NWeb::OhosAdapterHelper::GetInstance()
++                                      .GetSystemPropertiesInstance()
++                                      .GetBoolParameter("web.throttle.enabled", false);
++  #endif
++  base::WeakPtrFactory<CompositorFrameSinkSupport> weak_factory_{this};};
+ 
+ }  // namespace viz
+ 
+ #endif  // COMPONENTS_VIZ_SERVICE_FRAME_SINKS_COMPOSITOR_FRAME_SINK_SUPPORT_H_

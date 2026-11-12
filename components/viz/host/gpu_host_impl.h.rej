@@ -1,0 +1,33 @@
+diff a/components/viz/host/gpu_host_impl.h b/components/viz/host/gpu_host_impl.h	(rejected hunks)
+@@ -194,15 +202,31 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost,
+                            bool is_gpu_host,
+                            bool enable_extra_handles_validation,
+                            bool sync,
+                            EstablishChannelCallback callback);
+   void SetChannelClientPid(int client_id, base::ProcessId client_pid);
++#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
++  std::string GetSurfaceId(int32_t native_embed_id);
++  // Async overload. Avoids blocking the UI thread on a synchronous Mojo IPC. The
++  // callback receives the surface id string; an empty string indicates failure
++  // (e.g. GPU process crash, where the callback is still invoked with the
++  // default value via WrapCallbackWithDefaultInvokeIfNotRun).
++  using GetSurfaceIdCallback = base::OnceCallback<void(const std::string&)>;
++  void GetSurfaceId(int32_t native_embed_id, GetSurfaceIdCallback callback);
++  void SetTransformHint(uint32_t rotation, uint32_t window_id);
++  void DestroyNativeWindow(uint32_t native_window_id);
++  void Discard(uint32_t native_window_id);
++#endif
+   void SetChannelDiskCacheHandle(int client_id,
+                                  const gpu::GpuDiskCacheHandle& handle);
+   void RemoveChannelDiskCacheHandles(int client_id);
+   void CloseChannel(int client_id);
+ 
++#if BUILDFLAG(ARKWEB_SAFEBROWSING)
++  void RequestSnapshotOnce();
++#endif
++
+ #if BUILDFLAG(USE_VIZ_DEBUGGER)
+   // Command as a Json string that the visual debugging instance interprets as
+   // stream filtering.
+   void FilterVisualDebugStream(base::Value::Dict filter_data);
+ 

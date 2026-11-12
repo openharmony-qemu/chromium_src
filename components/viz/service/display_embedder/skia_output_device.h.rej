@@ -1,0 +1,15 @@
+diff a/components/viz/service/display_embedder/skia_output_device.h b/components/viz/service/display_embedder/skia_output_device.h	(rejected hunks)
+@@ -198,10 +229,13 @@ class VIZ_SERVICE_EXPORT SkiaOutputDevice {
+     uint64_t SwapId();
+     const gpu::SwapBuffersCompleteParams& Complete(
+         gfx::SwapCompletionResult result,
+         const std::optional<gfx::Rect>& damage_area,
+         std::vector<gpu::Mailbox> released_overlays,
++#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
++        const gpu::Mailbox& primary_plane_mailbox,
++#endif
+         int64_t swap_trace_id);
+     void CallFeedback();
+ 
+    private:
+     BufferPresentedCallback feedback_;

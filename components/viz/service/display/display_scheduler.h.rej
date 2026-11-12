@@ -1,0 +1,33 @@
+diff a/components/viz/service/display/display_scheduler.h b/components/viz/service/display/display_scheduler.h	(rejected hunks)
+@@ -70,11 +71,16 @@ class VIZ_SERVICE_EXPORT DisplayScheduler
+   base::TimeDelta GetDeadlineOffset(base::TimeDelta interval) const override;
+ 
+   // BeginFrameSource::SchedulerClient implementation.
+   void OnBeginFrameForScheduling(const BeginFrameArgs& args) override;
+ 
++#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
++  void SetShouldFrameSubmissionBeforeDraw(bool should) override;
++#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
++
+  protected:
++  friend class DisplaySchedulerUtils;
+   class BeginFrameObserver;
+   class BeginFrameRequestObserverImpl;
+ 
+   bool OnBeginFrame(const BeginFrameArgs& args);
+   void OnBeginFrameContinuation(const BeginFrameArgs& args);
+@@ -169,10 +175,14 @@ class VIZ_SERVICE_EXPORT DisplayScheduler
+     AdpfSessionState(AdpfSessionState&&);
+     ~AdpfSessionState();
+   };
+   std::vector<AdpfSessionState> session_states_;
+ 
++#if !defined(COMPONENT_BUILD) // FIXME
++  std::unique_ptr<DisplaySchedulerUtils> display_scheduler_utils_;
++#endif
++
+   base::WeakPtrFactory<DisplayScheduler> weak_ptr_factory_{this};
+ };
+ 
+ }  // namespace viz
+ 

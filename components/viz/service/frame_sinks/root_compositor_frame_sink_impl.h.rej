@@ -1,0 +1,43 @@
+diff a/components/viz/service/frame_sinks/root_compositor_frame_sink_impl.h b/components/viz/service/frame_sinks/root_compositor_frame_sink_impl.h	(rejected hunks)
+@@ -66,13 +74,18 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
+   RootCompositorFrameSinkImpl(const RootCompositorFrameSinkImpl&) = delete;
+   RootCompositorFrameSinkImpl& operator=(const RootCompositorFrameSinkImpl&) =
+       delete;
+ 
+   ~RootCompositorFrameSinkImpl() override;
+-
++#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
++  // Returns true iff it is okay to evict the root surface immediately.
++  bool WillEvictSurface(const SurfaceId& surface_id);
++  void DisplayDidRealSwapBuffer() override;
++  bool needs_notify_first_swap_buffer_ = false;
++#else
+   void DidEvictSurface(const SurfaceId& surface_id);
+-
++#endif
+   const SurfaceId& CurrentSurfaceId() const;
+ 
+   // mojom::DisplayPrivate:
+   void SetDisplayVisible(bool visible) override;
+ #if BUILDFLAG(IS_WIN)
+@@ -220,13 +247,18 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
+   bool use_preferred_interval_ = false;
+   base::TimeTicks display_frame_timebase_;
+   base::TimeDelta display_frame_interval_ = BeginFrameArgs::DefaultInterval();
+   base::TimeDelta preferred_frame_interval_;
+ 
+-#if BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11)
++#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
++  // See comments on `EvictionHandler`.
++  EvictionHandler eviction_handler_;
++#endif
++
++#if BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11) || BUILDFLAG(IS_ARKWEB)
+   gfx::Size last_swap_pixel_size_;
+-#endif  // BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11)
++#endif  // BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11) || BUILDFLAG(IS_ARKWEB)
+ 
+ #if BUILDFLAG(IS_APPLE)
+   gfx::CALayerParams last_ca_layer_params_;
+ 
+   // Used to force a call to OnDisplayReceivedCALayerParams() even if the params

@@ -1,0 +1,196 @@
+diff a/ui/touch_selection/touch_selection_controller.cc b/ui/touch_selection/touch_selection_controller.cc	(rejected hunks)
+@@ -4,17 +4,28 @@
+ 
+ #include "ui/touch_selection/touch_selection_controller.h"
+ 
+ #include <memory>
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/auto_reset.h"
+ #include "base/check_op.h"
++#include "base/memory/weak_auto_reset.h"
+ #include "base/metrics/user_metrics.h"
+ #include "base/notreached.h"
+ #include "build/build_config.h"
+ #include "ui/touch_selection/touch_selection_metrics.h"
+ 
++#if BUILDFLAG(ARKWEB_MENU)
++#include "base/logging.h"
++#endif
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/ui/touch_selection/touch_selection_controller_utils.h"
++#endif
++
+ namespace ui {
+ namespace {
+ 
+ gfx::Vector2dF ComputeLineOffsetFromBottom(const gfx::SelectionBound& bound) {
+   gfx::Vector2dF line_offset =
+@@ -61,26 +72,51 @@ TouchSelectionController::TouchSelectionController(
+       longpress_drag_selector_(this),
+       selection_handle_dragged_(false),
+       consume_touch_sequence_(false),
+       show_touch_handles_(false) {
+   DCHECK(client_);
++#if BUILDFLAG(IS_ARKWEB)
++  utils_ = std::make_unique<TouchSelectionControllerUtils>(this);
++#endif
+ }
+ 
+ TouchSelectionController::~TouchSelectionController() {
+ }
+ 
+ void TouchSelectionController::OnSelectionBoundsChanged(
+     const gfx::SelectionBound& start,
+     const gfx::SelectionBound& end) {
+-  if (start == start_ && end_ == end)
++  if (start == start_ && end_ == end) {
++#if BUILDFLAG(ARKWEB_MENU)
++    utils_->SetResetSelectionTemporarily(false);
++#endif
+     return;
++  }
+ 
+   if (!start.HasHandle() || !end.HasHandle() || !show_touch_handles_) {
++#if BUILDFLAG(ARKWEB_MENU)
++    if (auto* ext = AsTouchSelectionControllerExt()) {
++      if (ext->SelectOverImg())
++        return;
++    }
++#endif
+     HideHandles();
++#if BUILDFLAG(ARKWEB_MENU)
++    LOG(INFO) << "OnSelectionBoundsChanged show_touch_handles_: " << show_touch_handles_
++              << " start.visible: " << start.visible();
++    if (show_touch_handles_ && start.visible()) {
++      if (auto* ext = AsTouchSelectionControllerExt())
++        ext->OnInsertionChangedExt(start, end);
++    }
++#endif
+     return;
+   }
+ 
++#if BUILDFLAG(ARKWEB_MENU)
++  utils_->SetResetSelectionTemporarily(false);
++#endif
++
+   // Swap the Handles when the start and end selection points cross each other.
+   if (active_status_ == SELECTION_ACTIVE) {
+     // Bounds have the same orientation.
+     bool need_swap = (start_selection_handle_->IsActive() &&
+                       end_.edge_end() == start.edge_end()) ||
+@@ -124,12 +163,14 @@ void TouchSelectionController::OnSelectionBoundsChanged(
+   // Ensure that |response_pending_input_event_| is cleared after the method
+   // completes, while also making its current value available for the duration
+   // of the call.
+   InputEventType causal_input_event = response_pending_input_event_;
+   response_pending_input_event_ = INPUT_EVENT_TYPE_NONE;
+-  base::AutoReset<InputEventType> auto_reset_response_pending_input_event(
+-      &response_pending_input_event_, causal_input_event);
++  base::WeakAutoReset reset_response_pending_input_event(
++      weak_factory_.GetWeakPtr(),
++      &TouchSelectionController::response_pending_input_event_,
++      causal_input_event);
+ 
+   if ((start_orientation_ == TouchHandleOrientation::LEFT ||
+        start_orientation_ == TouchHandleOrientation::RIGHT) &&
+       (end_orientation_ == TouchHandleOrientation::RIGHT ||
+        end_orientation_ == TouchHandleOrientation::LEFT)) {
+@@ -195,10 +242,14 @@ void TouchSelectionController::HandleTapEvent(const gfx::PointF& location,
+ }
+ 
+ void TouchSelectionController::HandleLongPressEvent(
+     base::TimeTicks event_time,
+     const gfx::PointF& location) {
++#if BUILDFLAG(ARKWEB_VIBRATE)
++  if (auto* ext = AsTouchSelectionControllerExt())
++    ext->SetLongPressEvent(true);
++#endif  // BUILDFLAG(ARKWEB_VIBRATE)
+   longpress_drag_selector_.OnLongPressEvent(event_time, location);
+   response_pending_input_event_ = LONG_PRESS;
+   drag_selector_initiating_gesture_ = DragSelectorInitiatingGesture::kLongPress;
+ }
+ 
+@@ -372,11 +423,14 @@ bool TouchSelectionController::WillHandleTouchEventImpl(
+   show_touch_handles_ = true;
+   if (config_.enable_longpress_drag_selection &&
+       longpress_drag_selector_.WillHandleTouchEvent(event)) {
+     return true;
+   }
+-
++#if BUILDFLAG(ARKWEB_AI)
++  if (auto* ext = AsTouchSelectionControllerExt())
++    ext->SetTouchNumsForHandle(event);
++#endif
+   if (active_status_ == INSERTION_ACTIVE) {
+     DCHECK(insertion_handle_);
+     return insertion_handle_->WillHandleTouchEvent(event);
+   }
+ 
+@@ -422,10 +483,11 @@ void TouchSelectionController::OnDragBegin(
+     const gfx::PointF& drag_position) {
+   if (&draggable == insertion_handle_.get()) {
+     DCHECK_EQ(active_status_, INSERTION_ACTIVE);
+     if (config_.hide_active_handle)
+       insertion_handle_->SetTransparent();
++    is_first_drag_ = true;
+     client_->OnSelectionEvent(INSERTION_HANDLE_DRAG_STARTED);
+     anchor_drag_to_selection_start_ = true;
+     return;
+   }
+ 
+@@ -637,16 +743,24 @@ void TouchSelectionController::OnSelectionChanged() {
+ 
+ bool TouchSelectionController::ActivateInsertionIfNecessary() {
+   DCHECK_NE(SELECTION_ACTIVE, active_status_);
+ 
+   if (!insertion_handle_) {
++#if BUILDFLAG(ARKWEB_MENU)
++    insertion_handle_ = std::make_unique<TouchHandleExt>(
++#else
+     insertion_handle_ = std::make_unique<TouchHandle>(
++#endif
+         this, TouchHandleOrientation::CENTER, viewport_rect_);
+   }
+ 
++#if BUILDFLAG(ARKWEB_MENU)
++  if (active_status_ == INACTIVE || response_pending_input_event_ == LONG_PRESS) {
++#else
+   if (active_status_ == INACTIVE || response_pending_input_event_ == TAP ||
+       response_pending_input_event_ == LONG_PRESS) {
++#endif
+     active_status_ = INSERTION_ACTIVE;
+     insertion_handle_->SetEnabled(true);
+     insertion_handle_->SetViewportRect(viewport_rect_);
+     response_pending_input_event_ = INPUT_EVENT_TYPE_NONE;
+     return true;
+@@ -666,19 +780,27 @@ void TouchSelectionController::DeactivateInsertion() {
+ bool TouchSelectionController::ActivateSelectionIfNecessary() {
+   DCHECK_NE(INSERTION_ACTIVE, active_status_);
+ 
+   if (!start_selection_handle_) {
+     start_selection_handle_ =
++#if BUILDFLAG(ARKWEB_MENU)
++        std::make_unique<TouchHandleExt>(this, start_orientation_, viewport_rect_);
++#else
+         std::make_unique<TouchHandle>(this, start_orientation_, viewport_rect_);
++#endif
+   } else {
+     start_selection_handle_->SetEnabled(true);
+     start_selection_handle_->SetViewportRect(viewport_rect_);
+   }
+ 
+   if (!end_selection_handle_) {
+     end_selection_handle_ =
++#if BUILDFLAG(ARKWEB_MENU)
++        std::make_unique<TouchHandleExt>(this, end_orientation_, viewport_rect_);
++#else
+         std::make_unique<TouchHandle>(this, end_orientation_, viewport_rect_);
++#endif
+   } else {
+     end_selection_handle_->SetEnabled(true);
+     end_selection_handle_->SetViewportRect(viewport_rect_);
+   }
+ 

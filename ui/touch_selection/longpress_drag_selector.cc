@@ -64,6 +64,11 @@ bool LongPressDragSelector::WillHandleTouchEvent(const MotionEvent& event) {
     longpress_drag_start_anchor_ = position;
     return true;
   }
+#if BUILDFLAG(ARKWEB_MENU)
+  if (utils_ && utils_->PositionInSelection(position, client_->GetSelectionTop(), client_->GetSelectionEnd())) {
+    return true;
+  }
+#endif
 
   // Allow an additional slop affordance after the longpress occurs.
   gfx::Vector2dF delta = position - longpress_drag_start_anchor_;

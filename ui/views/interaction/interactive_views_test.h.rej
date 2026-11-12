@@ -1,0 +1,17 @@
+diff a/ui/views/interaction/interactive_views_test.h b/ui/views/interaction/interactive_views_test.h	(rejected hunks)
+@@ -844,11 +844,15 @@ template <typename T, typename V, typename C>
+ ui::InteractionSequence::StepBuilder InteractiveViewsTestApi::PollView(
+     ui::test::StateIdentifier<PollingViewObserver<T, V>> id,
+     ui::ElementIdentifier view_id,
+     C&& callback,
+     base::TimeDelta polling_interval) {
++#if defined(__clang__) && (__clang_major__ < 17)
++  using Cb = typename PollingViewObserver<T, V>::PollViewCallback;
++#else
+   using Cb = PollingViewObserver<T, V>::PollViewCallback;
++#endif
+   Cb cb = ui::test::internal::MaybeBindRepeating(std::forward<C>(callback));
+   auto step =
+       WithElement(ui::test::internal::kInteractiveTestPivotElementId,
+                   base::BindOnce(
+                       [](InteractiveViewsTestApi* api, ui::ElementIdentifier id,

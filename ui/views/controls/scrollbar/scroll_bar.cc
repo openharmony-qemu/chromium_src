@@ -137,6 +137,13 @@ void ScrollBar::OnGestureEvent(ui::GestureEvent* event) {
     return;
   }
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  if (event->type() == ui::EventType::kGestureDragLongPress) {
+    // For a long-press, the repeater started in tap-down should continue. So
+    // return early.
+    return;
+  }
+#endif
   repeater_.Stop();
 
   if (event->type() == ui::EventType::kGestureTap) {

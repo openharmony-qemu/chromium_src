@@ -7,6 +7,10 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
@@ -28,6 +32,9 @@ class Layer;
 namespace ui {
 
 class TouchHandle;
+#if BUILDFLAG(ARKWEB_MENU)
+class TouchHandleExt;
+#endif
 
 // Interface through which |TouchHandle| delegates rendering-specific duties.
 class UI_TOUCH_SELECTION_EXPORT TouchHandleDrawable {
@@ -59,6 +66,11 @@ class UI_TOUCH_SELECTION_EXPORT TouchHandleDrawable {
   // Returns the transparent horizontal padding ratio of the handle drawable.
   virtual float GetDrawableHorizontalPaddingRatio() const = 0;
 
+#if BUILDFLAG(ARKWEB_MENU)
+  // Sets the Selection left-handle-start or right-handle-end's edge.
+  virtual void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) = 0;
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
   virtual void OnUpdateNativeViewTree(gfx::NativeView parent_native_view,
                                       cc::slim::Layer* parent_layer) {}
@@ -76,6 +88,9 @@ class UI_TOUCH_SELECTION_EXPORT TouchHandleClient
   virtual std::unique_ptr<TouchHandleDrawable> CreateDrawable() = 0;
   virtual base::TimeDelta GetMaxTapDuration() const = 0;
   virtual bool IsAdaptiveHandleOrientationEnabled() const = 0;
+#if BUILDFLAG(ARKWEB_MENU)
+  virtual bool IsShowHandle() { return false; }
+#endif
 };
 
 // Responsible for displaying a selection or insertion handle for text
@@ -91,6 +106,11 @@ class UI_TOUCH_SELECTION_EXPORT TouchHandle : public TouchSelectionDraggable {
   TouchHandle& operator=(const TouchHandle&) = delete;
 
   ~TouchHandle() override;
+#if BUILDFLAG(ARKWEB_MENU)
+friend class TouchHandleExt;
+  virtual TouchHandleExt* AsTouchHandleExt() { return nullptr; }
+#endif
+
 
   // TouchSelectionDraggable implementation.
   bool WillHandleTouchEvent(const MotionEvent& event) override;
@@ -148,6 +168,9 @@ class UI_TOUCH_SELECTION_EXPORT TouchHandle : public TouchSelectionDraggable {
   const gfx::PointF& focus_bottom() const { return focus_bottom_; }
   TouchHandleOrientation orientation() const { return orientation_; }
   float alpha() const { return alpha_; }
+#if BUILDFLAG(ARKWEB_AI)
+  void SetTouchNums(int32_t touchNums) { continuous_touch_nums_ = touchNums; }
+#endif
 
  private:
   gfx::PointF ComputeHandleOrigin() const;
@@ -190,8 +213,15 @@ class UI_TOUCH_SELECTION_EXPORT TouchHandle : public TouchSelectionDraggable {
   bool mirror_vertical_;
   bool mirror_horizontal_;
   float handle_horizontal_padding_;
+#if BUILDFLAG(ARKWEB_AI)
+  int32_t continuous_touch_nums_ = 0;
+  bool is_show_handle_ = false;
+#endif
 };
 
 }  // namespace ui
 
+#if BUILDFLAG(ARKWEB_MENU)
+#include "arkweb/chromium_ext/ui/touch_selection/touch_handle_ext.h"
+#endif
 #endif  // UI_TOUCH_SELECTION_TOUCH_HANDLE_H_

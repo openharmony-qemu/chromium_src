@@ -11,6 +11,10 @@
 #include "ui/gfx/geometry/vector2d_f.h"
 #include "ui/touch_selection/touch_selection_draggable.h"
 #include "ui/touch_selection/ui_touch_selection_export.h"
+#if BUILDFLAG(ARKWEB_MENU)
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/ui/touch_selection/longpress_drag_selector_util.h"
+#endif
 
 namespace ui {
 
@@ -23,6 +27,9 @@ class UI_TOUCH_SELECTION_EXPORT LongPressDragSelectorClient
   virtual void OnLongPressDragActiveStateChanged() = 0;
   virtual gfx::PointF GetSelectionStart() const = 0;
   virtual gfx::PointF GetSelectionEnd() const = 0;
+#if BUILDFLAG(ARKWEB_MENU)
+  virtual gfx::PointF GetSelectionTop() const = 0;
+#endif
 };
 
 // Supports text selection via touch dragging after a longpress- or
@@ -36,6 +43,10 @@ class UI_TOUCH_SELECTION_EXPORT LongPressDragSelector
   // TouchSelectionDraggable implementation.
   bool WillHandleTouchEvent(const MotionEvent& event) override;
   bool IsActive() const override;
+
+#if BUILDFLAG(ARKWEB_MENU)
+  bool IsDragging() const override { return state_ == DRAGGING; }
+#endif
 
   // Called just prior to a longpress event being handled.
   void OnLongPressEvent(base::TimeTicks event_time,
@@ -73,6 +84,9 @@ class UI_TOUCH_SELECTION_EXPORT LongPressDragSelector
   gfx::Vector2dF longpress_drag_selection_offset_;
   gfx::PointF longpress_drag_start_anchor_;
   bool has_longpress_drag_start_anchor_;
+#if BUILDFLAG(IS_ARKWEB)
+  std::unique_ptr<LongPressDragSelectorUtils> utils_;
+#endif
 };
 
 }  // namespace ui

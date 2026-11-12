@@ -1,0 +1,49 @@
+diff a/ui/touch_selection/touch_selection_controller.h b/ui/touch_selection/touch_selection_controller.h	(rejected hunks)
+@@ -4,10 +4,11 @@
+ 
+ #ifndef UI_TOUCH_SELECTION_TOUCH_SELECTION_CONTROLLER_H_
+ #define UI_TOUCH_SELECTION_TOUCH_SELECTION_CONTROLLER_H_
+ 
+ #include "base/memory/raw_ptr.h"
++#include "base/memory/weak_ptr.h"
+ #include "base/time/time.h"
+ #include "ui/events/types/event_type.h"
+ #include "ui/gfx/geometry/point.h"
+ #include "ui/gfx/geometry/point_f.h"
+ #include "ui/gfx/geometry/rect_f.h"
+@@ -183,10 +207,14 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
+   const gfx::SelectionBound& start() const { return start_; }
+   const gfx::SelectionBound& end() const { return end_; }
+ 
+   ActiveStatus active_status() const { return active_status_; }
+ 
++#if BUILDFLAG(ARKWEB_MENU)
++  bool IsShowHandle() override;
++#endif
++
+  private:
+   friend class TouchSelectionControllerTestApi;
+ 
+   enum InputEventType { TAP, REPEATED_TAP, LONG_PRESS, INPUT_EVENT_TYPE_NONE };
+ 
+@@ -290,10 +318,20 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
+ 
+   bool show_touch_handles_;
+ 
+   // Whether a swipe-to-move-cursor gesture is activated.
+   bool swipe_to_move_cursor_activated_ = false;
++#if BUILDFLAG(ARKWEB_MENU)
++  bool is_first_drag_ = false;
++#endif
++#if BUILDFLAG(IS_ARKWEB)
++  std::unique_ptr<TouchSelectionControllerUtils> utils_;
++#endif
++  base::WeakPtrFactory<TouchSelectionController> weak_factory_{this};
+ };
+ 
+ }  // namespace ui
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/ui/touch_selection/touch_selection_controller_ext.h"
++#endif
+ #endif  // UI_TOUCH_SELECTION_TOUCH_SELECTION_CONTROLLER_H_

@@ -1,0 +1,44 @@
+diff a/chromecast/media/audio/net/audio_socket.cc b/chromecast/media/audio/net/audio_socket.cc	(rejected hunks)
+@@ -347,20 +347,25 @@ bool AudioSocket::OnMessageBuffer(scoped_refptr<net::IOBuffer> buffer,
+ }
+ 
+ bool AudioSocket::ParseAudio(char* data, size_t size) {
+   int64_t timestamp;
+   if (size < sizeof(timestamp)) {
+-    LOG(ERROR) << "Invalid audio packet size " << size << " from " << this;
++    LOG(ERROR) << "Invalid audio buffer size " << size << " from " << this;
+     delegate_->OnConnectionError();
+     return false;
+   }
+ 
+   UNSAFE_TODO(memcpy(&timestamp, data, sizeof(timestamp)));
+   UNSAFE_TODO(data += sizeof(timestamp));
+   size -= sizeof(timestamp);
+ 
+   // Handle padding bytes.
++  if (size < sizeof(int32_t)) {
++    LOG(ERROR) << "Invalid audio buffer size " << size << " from " << this;
++    delegate_->OnConnectionError();
++    return false;
++  }
+   UNSAFE_TODO(data += sizeof(int32_t));
+   size -= sizeof(int32_t);
+ 
+   return delegate_->HandleAudioData(data, size, timestamp);
+ }
+@@ -378,10 +383,15 @@ bool AudioSocket::ParseAudioBuffer(scoped_refptr<net::IOBuffer> buffer,
+   UNSAFE_TODO(memcpy(&timestamp, data, sizeof(timestamp)));
+   UNSAFE_TODO(data += sizeof(timestamp));
+   size -= sizeof(timestamp);
+ 
+   // Handle padding bytes.
++  if (size < sizeof(int32_t)) {
++    LOG(ERROR) << "Invalid audio buffer size " << size << " from " << this;
++    delegate_->OnConnectionError();
++    return false;
++  }
+   UNSAFE_TODO(data += sizeof(int32_t));
+   size -= sizeof(int32_t);
+ 
+   return delegate_->HandleAudioBuffer(std::move(buffer), data, size, timestamp);
+ }

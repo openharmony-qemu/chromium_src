@@ -1,0 +1,20 @@
+diff a/pdf/mojom/pdf.mojom b/pdf/mojom/pdf.mojom	(rejected hunks)
+@@ -65,10 +65,18 @@ interface PdfListener {
+ 
+   // Get the text contained on the given page of the PDF. `page_index` should be
+   // the range [0, # of pages).
+   GetPageText(int32 page_index) => (mojo_base.mojom.String16 text);
+ 
++  // #if BUILDFLAG(ARKWEB_PDF)
++  [EnableIf=arkweb_pdf]
++  ClearTextSelection();
++
++  [EnableIf=arkweb_pdf]
++  OnScaleChanged();
++  // #endif
++
+   // Returns the index of the most visible page. If no page is visible,
+   // returns nullopt.
+   GetMostVisiblePageIndex() => (uint32? page_index);
+ 
+   // Returns a `SaveDataBufferHandler` and the total file size to read the data

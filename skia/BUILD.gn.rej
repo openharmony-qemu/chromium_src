@@ -1,0 +1,24 @@
+diff a/skia/BUILD.gn b/skia/BUILD.gn	(rejected hunks)
+@@ -1,9 +1,10 @@
+ # Copyright 2013 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
++import("//arkweb/build/features/features.gni")
+ import("//build/buildflag_header.gni")
+ import("//build/config/avx512.gni")
+ import("//build/config/compiler/compiler.gni")
+ import("//build/config/features.gni")
+ import("//build/config/freetype/freetype.gni")
+@@ -58,10 +63,11 @@ rust_static_library("bridge_rust_side") {
+ 
+ # External-facing config for dependent code.
+ config("skia_config") {
+   defines = [
+     "SK_ENABLE_SKSL",
++    "SK_HAS_HEIF_LIBRARY",
+     "SK_UNTIL_CRBUG_1187654_IS_FIXED",
+     "SK_USER_CONFIG_HEADER=\"../../skia/config/SkUserConfig.h\"",
+     "SK_WIN_FONTMGR_NO_SIMULATIONS",
+ 
+     # Let Skia and Skia clients know whether to use `libpng`-based or

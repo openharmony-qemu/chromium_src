@@ -149,6 +149,11 @@ constexpr base::TimeDelta kFindResultCooldown = base::Milliseconds(100);
 constexpr std::string_view kChromeExtensionHost =
     "chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai/";
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+constexpr std::string_view kArkWebExtensionHost =
+    "arkweb-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai/";
+#endif
+
 // Print Preview base URL.
 constexpr std::string_view kChromePrintHost = "chrome://print/";
 
@@ -605,7 +610,11 @@ bool PdfViewWebPlugin::InitializeCommon() {
   // `pdf::CreateInternalPlugin()`), so we just `CHECK` for defense-in-depth.
   const std::string& embedder_origin = client_->GetEmbedderOriginString();
   is_print_preview_ = (embedder_origin == kChromePrintHost);
-  CHECK(IsPrintPreview() || embedder_origin == kChromeExtensionHost);
+  CHECK(IsPrintPreview() || embedder_origin == kChromeExtensionHost
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        || embedder_origin == kArkWebExtensionHost
+#endif
+  );
 
   full_frame_ = params->full_frame;
   background_color_ = params->background_color;
@@ -787,16 +796,32 @@ void PdfViewWebPlugin::UpdateGeometry(const gfx::Rect& window_rect,
 
   OnViewportChanged(window_rect, client_->DeviceScaleFactor());
 
+#if BUILDFLAG(ARKWEB_PDF)
+  if (!is_pinching_) {
   gfx::PointF scroll_position = client_->GetScrollPosition();
   // Convert back to CSS pixels.
   scroll_position.Scale(1.0f / device_scale_);
   UpdateScroll(scroll_position);
+  } else {
+    SetIsScrolling(true);
+    DoPaintAfterDelay();
+  }
+#else
+  gfx::PointF scroll_position = client_->GetScrollPosition();
+  // Convert back to CSS pixels.
+  scroll_position.Scale(1.0f / device_scale_);
+  UpdateScroll(scroll_position);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 void PdfViewWebPlugin::UpdateScroll(const gfx::PointF& scroll_position) {
   if (stop_scrolling_) {
     return;
   }
+
+#if BUILDFLAG(ARKWEB_PDF)
+  SetIsScrolling(true);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   float max_x = std::max(document_size_.width() * static_cast<float>(zoom_) -
                              plugin_dip_size_.width(),
@@ -805,6 +830,10 @@ void PdfViewWebPlugin::UpdateScroll(const gfx::PointF& scroll_position) {
                              plugin_dip_size_.height(),
                          0.0f);
 
+#if BUILDFLAG(ARKWEB_PDF)
+  NotifyPdfScrollAtBottom(scroll_position.y(), max_y);
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   gfx::PointF scaled_scroll_position(
       std::clamp(scroll_position.x(), 0.0f, max_x),
       std::clamp(scroll_position.y(), 0.0f, max_y));
@@ -812,6 +841,11 @@ void PdfViewWebPlugin::UpdateScroll(const gfx::PointF& scroll_position) {
 
   engine_->ScrolledToXPosition(scaled_scroll_position.x());
   engine_->ScrolledToYPosition(scaled_scroll_position.y());
+
+#if BUILDFLAG(ARKWEB_PDF)
+  DoPaintAfterDelay();
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
 }
 
 void PdfViewWebPlugin::UpdateFocus(bool focused,
@@ -1478,10 +1512,15 @@ PdfViewWebPlugin::SearchString(const std::u16string& needle,
 }
 
 void PdfViewWebPlugin::DocumentLoadComplete() {
+  LOG(INFO) << __func__ << ", PDF load success.";
   DCHECK_EQ(DocumentLoadState::kLoading, document_load_state_);
   document_load_state_ = DocumentLoadState::kComplete;
 
   client_->RecordComputedAction("PDF.LoadSuccess");
+
+#if BUILDFLAG(ARKWEB_PDF)
+  client_->OnPdfLoadEvent(CastFpdfErrorToPdfLoadEvent(FPDF_ERR_SUCCESS), url_);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // Clear the focus state for on-screen keyboards.
   FormFieldFocusChange(PDFiumEngineClient::FocusFieldType::kNoFocus);
@@ -1558,6 +1597,11 @@ void PdfViewWebPlugin::DocumentLoadFailed() {
 
   client_->RecordComputedAction("PDF.LoadFailure");
 
+#if BUILDFLAG(ARKWEB_PDF)
+  LOG(INFO) << "PdfViewWebPlugin::DocumentLoadFailed, last_error: " << FPDF_GetLastError();
+  client_->OnPdfLoadEvent(CastFpdfErrorToPdfLoadEvent(FPDF_GetLastError()), url_);
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   // Send a progress value of -1 to indicate a failure.
   SendLoadingProgress(-1);
 
@@ -1589,7 +1633,7 @@ void PdfViewWebPlugin::DocumentLoadProgress(uint32_t available,
           std::min(std::log(static_cast<double>(available)) / kFactor, 100.0);
     }
   }
-
+  LOG(DEBUG) << __func__ << ", PDF load progress: " << progress << "%";
   // DocumentLoadComplete() will send the 100% load progress.
   if (progress >= 100) {
     return;
@@ -1932,6 +1976,9 @@ void PdfViewWebPlugin::OnMessage(const base::DictValue& message) {
           {"setTwoUpView", &PdfViewWebPlugin::HandleSetTwoUpViewMessage},
           {"stopScrolling", &PdfViewWebPlugin::HandleStopScrollingMessage},
           {"viewport", &PdfViewWebPlugin::HandleViewportMessage},
+#if BUILDFLAG(ARKWEB_PDF)
+          {"clickBookmark", &PdfViewWebPlugin::HandleClickBookmarkMessage},
+#endif  // BUILDFLAG(ARKWEB_PDF)
       });
 
   MessageHandler handler = kMessageHandlers.at(*message.FindString("type"));
@@ -2187,6 +2234,35 @@ void PdfViewWebPlugin::HandleViewportMessage(const base::DictValue& message) {
 
   gfx::Vector2dF scroll_offset(*message.FindDouble("xOffset"),
                                *message.FindDouble("yOffset"));
+#if BUILDFLAG(ARKWEB_PDF)
+  if (!message.FindInt("pinchPhase")) {
+    LOG(ERROR) << "Viewport 'pinchPhase' is empty, message: \n" << message.DebugString();
+    return;
+  }
+  const PinchPhase pinch_phase =
+      static_cast<PinchPhase>(*message.FindInt("pinchPhase"));
+  received_viewport_message_ = true;
+  stop_scrolling_ = false;
+  if (pinch_phase == PinchPhase::kNone || pinch_phase == PinchPhase::kEnd) {
+    SetIsPinching(false);
+  } else {
+    SetIsPinching(true);
+  }
+  if (pinch_phase == PinchPhase::kStart) {
+    scroll_offset_at_last_raster_ = scroll_offset;
+    last_bitmap_smaller_ = false;
+    needs_reraster_ = false;
+    return;
+  }
+  if (!message.FindDouble("zoom")) {
+    LOG(ERROR) << "Viewport 'zoom' is empty, PinchPhase: " << static_cast<uint8_t>(pinch_phase)
+              <<  ", message: \n" << message.DebugString();
+    return;
+  }
+  double new_zoom = *message.FindDouble("zoom");
+
+  const double zoom_ratio = new_zoom / zoom_;
+#else
   double new_zoom = *message.FindDouble("zoom");
   const PinchPhase pinch_phase =
       static_cast<PinchPhase>(*message.FindInt("pinchPhase"));
@@ -2201,6 +2277,7 @@ void PdfViewWebPlugin::HandleViewportMessage(const base::DictValue& message) {
     needs_reraster_ = false;
     return;
   }
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // When zooming in, we set a layer transform to avoid unneeded rerasters.
   // Also, if we're zooming out and the last time we rerastered was when
@@ -2466,6 +2543,10 @@ void PdfViewWebPlugin::OnPaint(const std::vector<gfx::Rect>& paint_rects,
                                std::vector<gfx::Rect>& pending) {
   base::AutoReset<bool> auto_reset_in_paint(&in_paint_, true);
   DoPaint(paint_rects, ready, pending);
+#if BUILDFLAG(ARKWEB_PDF)
+  SelectionChangedAfterDelay();
+  SetScrollStoppedAfterDelay();
+#endif
 }
 
 gfx::PointF PdfViewWebPlugin::GetScrollPositionFromOffset(
@@ -2745,6 +2826,12 @@ void PdfViewWebPlugin::UpdateLayerTransform(float scale,
   snapshot_scale_ = scale;
   UpdateScaledValues();
 }
+
+#if BUILDFLAG(ARKWEB_PDF)
+gfx::Rect PdfViewWebPlugin::GetAvailableArea() {
+  return available_area_;
+}
+#endif
 
 void PdfViewWebPlugin::EnableAccessibility() {
   if (accessibility_state_ == AccessibilityState::kLoaded) {

@@ -1,0 +1,13 @@
+diff a/crypto/BUILD.gn b/crypto/BUILD.gn	(rejected hunks)
+@@ -211,10 +212,11 @@ test("crypto_unittests") {
+     "//base/test:run_all_unittests",
+     "//base/test:test_support",
+     "//components/cbor",
+     "//testing/gmock",
+     "//testing/gtest",
++    "//cef:libcef_static",
+   ]
+ 
+   if (is_win || is_mac) {
+     sources += [ "unexportable_key_metrics_unittest.cc" ]
+   }

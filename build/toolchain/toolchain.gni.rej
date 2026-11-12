@@ -1,0 +1,18 @@
+diff a/build/toolchain/toolchain.gni b/build/toolchain/toolchain.gni	(rejected hunks)
+@@ -39,11 +42,15 @@ declare_args() {
+   # this already).
+   system_headers_in_deps = !use_sysroot
+ }
+ 
+ declare_args() {
+-  clang_version = "22"
++  if (llvm_ohos_mainline) {
++    clang_version = "22"
++  } else {
++    clang_version = "22"
++  }
+ }
+ 
+ # Extension for shared library files (including leading dot).
+ if (is_apple) {
+   shlib_extension = ".dylib"

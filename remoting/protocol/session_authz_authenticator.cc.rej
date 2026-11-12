@@ -1,0 +1,40 @@
+diff a/remoting/protocol/session_authz_authenticator.cc b/remoting/protocol/session_authz_authenticator.cc	(rejected hunks)
+@@ -116,15 +116,19 @@ void SessionAuthzAuthenticator::ProcessMessage(
+ 
+   switch (session_authz_state_) {
+     case SessionAuthzState::WAITING_FOR_SESSION_TOKEN:
+       VerifySessionToken(*message, std::move(resume_callback));
+       break;
+-    case SessionAuthzState::SHARED_SECRET_FETCHED:
++    case SessionAuthzState::SHARED_SECRET_FETCHED: {
+       DCHECK_EQ(underlying_->state(), WAITING_MESSAGE);
++      auto self = weak_factory_.GetWeakPtr();
+       underlying_->ProcessMessage(message, std::move(resume_callback));
+-      StartReauthorizerIfNecessary();
++      if (self) {
++        StartReauthorizerIfNecessary();
++      }
+       break;
++    }
+     default:
+       NOTREACHED() << "Unexpected SessionAuthz state: "
+                    << static_cast<int>(session_authz_state_);
+   }
+ }
+@@ -257,12 +261,15 @@ void SessionAuthzAuthenticator::OnVerifiedSessionToken(
+   // The other side already started the SPAKE authentication.
+   underlying_ = create_base_authenticator_callback_.Run(response->shared_secret,
+                                                         WAITING_MESSAGE);
+   session_policies_ = std::move(response->session_policies);
+   verify_token_response_ = std::move(response);
++  auto self = weak_factory_.GetWeakPtr();
+   underlying_->ProcessMessage(&message, std::move(resume_callback));
+-  StartReauthorizerIfNecessary();
++  if (self) {
++    StartReauthorizerIfNecessary();
++  }
+ }
+ 
+ void SessionAuthzAuthenticator::HandleSessionAuthzError(
+     const std::string_view& action_name,
+     const HttpStatus& status) {

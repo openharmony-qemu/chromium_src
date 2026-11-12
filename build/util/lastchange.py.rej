@@ -1,0 +1,16 @@
+diff a/build/util/lastchange.py b/build/util/lastchange.py	(rejected hunks)
+@@ -462,11 +462,13 @@ def main(argv=None):
+                     help="Use repository in the given directory.")
+   parser.add_argument("--filter", metavar="REGEX",
+                     help=("Only use log entries where the commit message "
+                           "matches the supplied filter regex. Defaults to "
+                           "'^Change-Id:' to suppress local commits."),
+-                    default='^Change-Id:')
++                          # IS_ARKWEB
++                          # default='^Change-Id:')
++                          default='')
+ 
+   args, extras = parser.parse_known_args(argv[1:])
+ 
+   logging.basicConfig(level=logging.WARNING)
+ 

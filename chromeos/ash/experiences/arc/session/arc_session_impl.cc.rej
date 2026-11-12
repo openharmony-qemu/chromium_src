@@ -1,0 +1,16 @@
+diff a/chromeos/ash/experiences/arc/session/arc_session_impl.cc b/chromeos/ash/experiences/arc/session/arc_session_impl.cc	(rejected hunks)
+@@ -269,11 +269,13 @@ base::ScopedFD ArcSessionDelegateImpl::CreateSocketInternal() {
+       PLOG(ERROR) << "Could not set permissions: " << socket_dir;
+       return base::ScopedFD();
+     }
+   }
+ 
+-  auto endpoint = mojo::NamedPlatformChannel({socket_path.value()});
++  mojo::NamedPlatformChannel::Options options;
++  options.server_name = socket_path.value();
++  auto endpoint = mojo::NamedPlatformChannel(options);
+   // TODO(cmtm): use NamedPlatformChannel to bootstrap mojo connection after
+   // libchrome uprev in android.
+   base::ScopedFD socket_fd =
+       endpoint.TakeServerEndpoint().TakePlatformHandle().TakeFD();
+   if (!socket_fd.is_valid()) {

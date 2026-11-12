@@ -1,0 +1,15 @@
+diff a/buildtools/third_party/libc++/__config_site b/buildtools/third_party/libc++/__config_site	(rejected hunks)
+@@ -23,11 +23,13 @@
+ #define _LIBCPP_ABI_FORCE_ITANIUM 0
+ #define _LIBCPP_ABI_FORCE_MICROSOFT 0
+ #define _LIBCPP_HAS_THREADS 1
+ #define _LIBCPP_HAS_MONOTONIC_CLOCK 1
+ #define _LIBCPP_HAS_TERMINAL 1
++#ifndef OS_OHOS
+ #define _LIBCPP_HAS_MUSL_LIBC 0
++#endif
+ 
+ #ifdef _WIN32
+ #define _LIBCPP_HAS_THREAD_API_PTHREAD 0
+ #define _LIBCPP_HAS_THREAD_API_EXTERNAL 0
+ #define _LIBCPP_HAS_THREAD_API_WIN32 1

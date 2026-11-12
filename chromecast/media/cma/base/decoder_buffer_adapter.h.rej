@@ -1,0 +1,14 @@
+diff a/chromecast/media/cma/base/decoder_buffer_adapter.h b/chromecast/media/cma/base/decoder_buffer_adapter.h	(rejected hunks)
+@@ -46,11 +46,11 @@ class DecoderBufferAdapter : public DecoderBufferBase {
+ 
+  private:
+   ~DecoderBufferAdapter() override;
+ 
+   StreamId stream_id_;
+-  scoped_refptr<::media::DecoderBuffer> const buffer_;
++  scoped_refptr<::media::DecoderBuffer> buffer_;
+   std::unique_ptr<CastDecryptConfig> decrypt_config_;
+ };
+ 
+ }  // namespace media
+ }  // namespace chromecast

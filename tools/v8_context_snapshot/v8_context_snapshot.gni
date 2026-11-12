@@ -72,3 +72,4 @@ if (is_mac) {
 if (use_v8_context_snapshot && !v8_use_external_startup_data) {
   use_v8_context_snapshot = false
 }
+

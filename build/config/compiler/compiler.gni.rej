@@ -1,0 +1,25 @@
+diff a/build/config/compiler/compiler.gni b/build/config/compiler/compiler.gni	(rejected hunks)
+@@ -82,20 +82,21 @@ declare_args() {
+   enable_profiling = false
+ 
+   # use_debug_fission: whether to use split DWARF debug info files. This can
+   # reduce link time significantly.
+   use_debug_fission =
+-      !is_android && !is_fuchsia && !is_apple && !is_win && use_lld
++      !is_android && !is_fuchsia && !is_apple && !is_win && use_lld && !is_ohos
+ 
+   # Enables support for ThinLTO, which links 3x-10x faster than full LTO. See
+   # also http://blog.llvm.org/2016/06/thinlto-scalable-and-incremental-lto.html
+   # Use it by default on official-optimized android and Chrome OS builds, but
+   # not ARC or linux-chromeos since it's been seen to not play nicely with
+   # Chrome's clang. crbug.com/1033839
+   use_thin_lto =
+       is_cfi || (is_clang && is_official_build && chrome_pgo_phase != 1 &&
+-                 (is_linux || is_win || is_mac || (is_ios && use_lld) ||
++                 (is_linux || is_win || is_mac || is_ohos ||
++                  (is_ios && use_lld) ||
+                   (is_android && target_os != "chromeos") ||
+                   (is_chromeos && is_chromeos_device)))
+ 
+   # Whether we're using a sample profile collected on an architecture different
+   # than the one we're compiling for.

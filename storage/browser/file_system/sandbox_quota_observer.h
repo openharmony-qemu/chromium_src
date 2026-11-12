@@ -53,7 +53,7 @@ class SandboxQuotaObserver
   SandboxQuotaObserver(const SandboxQuotaObserver&) = delete;
   SandboxQuotaObserver& operator=(const SandboxQuotaObserver&) = delete;
 
-  // FileUpdateObserver and FileAccessObserver overrides.
+    // FileUpdateObserver and FileAccessObserver overrides.
   void AddRef() const override;
   void Release() const override;
 

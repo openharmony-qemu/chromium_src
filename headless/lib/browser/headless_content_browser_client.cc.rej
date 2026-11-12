@@ -1,0 +1,19 @@
+diff a/headless/lib/browser/headless_content_browser_client.cc b/headless/lib/browser/headless_content_browser_client.cc	(rejected hunks)
+@@ -53,15 +53,15 @@
+ #include "sandbox/policy/switches.h"
+ #include "third_party/blink/public/common/associated_interfaces/associated_interface_registry.h"
+ #include "ui/base/ui_base_switches.h"
+ #include "ui/gfx/switches.h"
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+ #include "components/crash/core/app/crash_switches.h"  // nogncheck
+ #include "components/crash/core/app/crashpad.h"        // nogncheck
+ #include "content/public/common/content_descriptors.h"
+-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+ 
+ #if (BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX)) && defined(HEADLESS_USE_PREFS)
+ #include "components/os_crypt/sync/os_crypt.h"  // nogncheck
+ #include "content/public/browser/network_service_util.h"
+ #endif

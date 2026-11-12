@@ -1,0 +1,18 @@
+diff a/sandbox/policy/mojom/sandbox.mojom b/sandbox/policy/mojom/sandbox.mojom	(rejected hunks)
+@@ -82,14 +82,14 @@ enum Sandbox {
+ 
+   // Like kUtility, but patches GDI during child startup in pdf_child_init.
+   [EnableIf=is_win] kPdfConversion,
+ 
+   // Interfaces with operating system print drivers.
+-  [EnableIf=is_chromeos|is_linux|is_mac|is_win] kPrintBackend,
++  [EnableIf=is_chromeos|is_linux|is_mac|is_win|is_ohos] kPrintBackend,
+ 
+   // Like kUtility but allows loading of screen AI library.
+-  [EnableIf=is_chromeos|is_linux|is_mac|is_win] kScreenAI,
++  [EnableIf=is_chromeos|is_linux|is_mac|is_win|is_ohos] kScreenAI,
+ 
+   // |kXrCompositing| hosts XR Device Service on Windows.
+   [EnableIf=is_win] kXrCompositing,
+ 
+   // Allows access to OS system proxy resolver APIs.

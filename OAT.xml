@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <oatconfig>
+        <licensefile>LICENSE</licensefile>
+        <policylist>
+            <policy name="projectPolicy" desc="Chromium upstream repository policy generated from raw OAT scan.">
+                <policyitem type="filetype" name="binary" path=".*" rule="may" group="defaultGroup" filefilter="binaryFileTypePolicyFilter" desc="Allow reviewed binary fixtures and prebuilt artifacts in upstream Chromium source."/>
+                <policyitem type="filetype" name="archive" path=".*" rule="may" group="defaultGroup" filefilter="binaryFileTypePolicyFilter" desc="Allow reviewed archive/compressed fixtures in upstream Chromium source."/>
+                <policyitem type="compatibility" name="LGPL-2.1-or-later" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 5568."/>
+                <policyitem type="compatibility" name="InvalidLicense" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 3053."/>
+                <policyitem type="compatibility" name="Unicode-TOU" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 1989."/>
+                <policyitem type="compatibility" name="LGPL-2.0+" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 1353."/>
+                <policyitem type="compatibility" name="LGPL-2.0-or-later" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 868."/>
+                <policyitem type="compatibility" name="FTL" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 561."/>
+                <policyitem type="compatibility" name="GPL-2.0-or-later" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 460."/>
+                <policyitem type="compatibility" name="GPL-2.0-only" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 420."/>
+                <policyitem type="compatibility" name="MPL-2.0" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 398."/>
+                <policyitem type="compatibility" name="Zlib" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 255."/>
+                <policyitem type="compatibility" name="IJG" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 206."/>
+                <policyitem type="compatibility" name="Public-domain" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 181."/>
+                <policyitem type="compatibility" name="SPDX:LGPL-2.1-or-later" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 166."/>
+                <policyitem type="compatibility" name="zlib-acknowledgement" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 153."/>
+                <policyitem type="compatibility" name="LGPLStyleLicense" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 76."/>
+                <policyitem type="compatibility" name="LGPL-2.1+" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 74."/>
+                <policyitem type="compatibility" name="libpng-2.0" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 52."/>
+                <policyitem type="compatibility" name="GPL-3.0-or-later" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 51."/>
+                <policyitem type="compatibility" name="libtiff" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 38."/>
+                <policyitem type="compatibility" name="MPL-1.1" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 32."/>
+                <policyitem type="compatibility" name="CC0-1.0" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 30."/>
+                <policyitem type="compatibility" name="GPLStyleLicense" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 26."/>
+                <policyitem type="compatibility" name="SPDX:Unicode-DFS-2016" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 21."/>
+                <policyitem type="compatibility" name="SPDX:HPND" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 18."/>
+                <policyitem type="compatibility" name="SGI-B-2.0" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 17."/>
+                <policyitem type="compatibility" name="APSL-1.0+" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 16."/>
+                <policyitem type="compatibility" name="CPL-1.0-with-Classpath-exception-2.0" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 15."/>
+                <policyitem type="compatibility" name="APSL-2.0" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 13."/>
+                <policyitem type="compatibility" name="MIT|GPLStyleLicense" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 13."/>
+                <policyitem type="compatibility" name="GPL-2.0-or-later-with-LLVM-exception" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 10."/>
+                <policyitem type="compatibility" name="TCL" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 10."/>
+                <policyitem type="compatibility" name="BSL-1.0" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 9."/>
+                <policyitem type="compatibility" name="OFL-1.1-no-RFN" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 6."/>
+                <policyitem type="compatibility" name="LGPL-3.0+" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 6."/>
+                <policyitem type="compatibility" name="GPL-2.0-or-later-with-Classpath-exception-2.0" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 5."/>
+                <policyitem type="compatibility" name="SunPro" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 5."/>
+                <policyitem type="compatibility" name="Apache-2.0|GPLStyleLicense" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 4."/>
+                <policyitem type="compatibility" name="SPDX:CC-BY-4.0" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 4."/>
+                <policyitem type="compatibility" name="GPL-2.0-only-with-Libtool-exception" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 4."/>
+                <policyitem type="compatibility" name="JSON" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 3."/>
+                <policyitem type="compatibility" name="Spencer-94" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 3."/>
+                <policyitem type="compatibility" name="GPL-2.0-only-with-mif-exception" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 3."/>
+                <policyitem type="compatibility" name="CC-BY-4.0" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 3."/>
+                <policyitem type="compatibility" name="MIT AND Public-domain AND X11" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 3."/>
+                <policyitem type="compatibility" name="Permission Notice" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 2."/>
+                <policyitem type="compatibility" name="EPL-1.0" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 2."/>
+                <policyitem type="compatibility" name="SPDX:LGPL-2.0-or-later" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 2."/>
+                <policyitem type="compatibility" name="ADSL" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 2."/>
+                <policyitem type="compatibility" name="BSD-3-Clause AND Public-domain" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 2."/>
+                <policyitem type="compatibility" name="SPDX:CC0-1.0                                           |" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 2."/>
+                <policyitem type="compatibility" name="SPDX:Unicode-3.0" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 2."/>
+                <policyitem type="compatibility" name="GPLWithACException" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 2."/>
+                <policyitem type="compatibility" name="BSD-3-Clause|LGPLStyleLicense" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 1."/>
+                <policyitem type="compatibility" name="Artistic-2.0" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 1."/>
+                <policyitem type="compatibility" name="CDDL-1.1" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 1."/>
+                <policyitem type="compatibility" name="BSD-3-Clause|GPLStyleLicense" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 1."/>
+                <policyitem type="compatibility" name="MIT-style|GPLStyleLicense" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 1."/>
+                <policyitem type="compatibility" name="GPL-2.0-with-bison-exception" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 1."/>
+                <policyitem type="compatibility" name="OpenSSL" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 1."/>
+                <policyitem type="compatibility" name="RequireJS 2.1.9 Copyright (c) 2010-2012, The Dojo Foundation All Rights Reserved." path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 1."/>
+                <policyitem type="compatibility" name="SPDX:HPND SPDX:HPND" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 1."/>
+                <policyitem type="compatibility" name="dtoa" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 1."/>
+                <policyitem type="compatibility" name="MIT|LGPLStyleLicense" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 1."/>
+                <policyitem type="compatibility" name="CDDL-1.0" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 1."/>
+                <policyitem type="compatibility" name="GPL-2.0-only-with-Autoconf-exception-2.0" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 1."/>
+                <policyitem type="compatibility" name="SPDX:GPL-2.0 WITH Linux-syscall-note" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 1."/>
+                <policyitem type="compatibility" name="BSD-2-Clause|GPLStyleLicense" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 1."/>
+                <policyitem type="compatibility" name="NTP" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Residual upstream license detected after resource/sysroot/test-data filters. Raw warnings: 1."/>
+                <policyitem type="license" name="*" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Accept reviewed upstream license headers in Chromium source."/>
+                <policyitem type="copyright" name="*" path=".*" rule="may" group="defaultGroup" filefilter="copyrightPolicyFilter" desc="Accept reviewed upstream copyright holders in Chromium source."/>
+            </policy>
+        </policylist>
+        <filefilterlist>
+            <filefilter name="defaultFilter" desc="Files excluded from OAT traversal/policy checks.">
+                <filteritem type="filename" name="*.png|*.PNG|*.jpg|*.jpeg|*.gif|*.bmp|*.ico|*.icns|*.svg|*.webp|*.avif|*.tif|*.tiff|*.xcf|*.ppm|*.cur|*.ani|*.pngblob" desc="Fixed image/icon assets. Raw warnings: 46423."/>
+                <filteritem type="filename" name="*.ttf|*.otf|*.ttc|*.woff|*.woff2|*.eot|*.pcf" desc="Font binaries and generated font fixtures. Raw warnings: 2955."/>
+                <filteritem type="filename" name="*.mp3|*.mp4|*.wav|*.ogg|*.oga|*.flac|*.webm|*.flv|*.avi|*.mkv|*.heic|*.ogv|*.pcm|*.yuv|*.mov|*.h264|*.hevc|*.vvc|*.ivf|*.aac|*.ac3|*.m4a|*.adts|*.y4m" desc="Media and codec test payloads. Raw warnings: 1250."/>
+                <filteritem type="filename" name="*.wasm|*.wasm.z|*.so|*.so.*|*.dylib|*.dll|*.a|*.lib|*.o|*.obj|*.exe|*.class|*.jar|*.pdb|*.spv|*.nspv|*.typelib|*.pyc|*.apk|*.keystore|*.rlib|*.msi" desc="Compiled binaries, libraries and tool outputs. Raw warnings: 58200."/>
+                <filteritem type="filename" name="*.zip|*.tar|*.gz|*.tgz|*.bz2|*.xz|*.zst|*.7z|*.rar|*.Z|*.lrz|*.lz|*.lzma|*.br" desc="Archive/compressed payloads. Raw warnings: 634."/>
+                <filteritem type="filename" name="*.pem|*.crt|*.cer|*.der|*.crl|*.key|*.sig|*.p7s|*.p7c|*.p12|*.pk8|*.snk|*.enc|*.sha1|*.sha256|*.sha512|*.md5|*.cbor" desc="Certificates, signatures, checksums and encoded crypto fixtures. Raw warnings: 2080."/>
+                <filteritem type="filename" name="*.crx|*.crx3|*.pak|*.pak.info|*.icc|*.plist|*.mobileconfig|*.bdic|*.hyb|*.icu|*.sxg|*.wbn|*.swbn|*.puff|*.pkpass" desc="Browser packages, profiles and web package fixtures. Raw warnings: 411."/>
+                <filteritem type="filename" name="*.pdf|*.doc|*.docx|*.xtb|*.po|*.tsv|*.yaml|*.har|*.srt|*.dic_delta|*.descriptor" desc="Documents, localization bundles and structured data fixtures. Raw warnings: 1512."/>
+                <filteritem type="filename" name="*.264|*.tlb|*.macho-*|*.elf|*.elf-*|*.coff-*|*.x86_64|*.i386|*.exp|*.syms|*.res|*.dmg|*.hfs|*.covmapping|*.gcda|*.gcno|*.profdata|*.bfbs|*.tflite|*.onnx|*.glb|*.flatbuffer|*.skp|*.3ds|*.nib|*.emf|*.pwg" desc="Object/debug/model/package artifacts. Raw warnings: 426."/>
+                <filteritem type="filename" name="*.rtcp|*.rtp|*.rtpdump|*.mdns|*.stun|*.strings|*.sdp|*.tokens|*.pb|*.binarypb" desc="Network/protobuf protocol fixtures. Raw warnings: 253."/>
+                <filteritem type="filename" name="*.hlsl|*.wgsl|*.glsl|*.frag|*.vert|*.comp|*.spvasm|*.sksl|*.msl|*.ll|*.mlir|*.bc|*.dxbc|*.out|*.expected|*.test|*.tests|*.headers|*.mock-http-headers|*.amber|*.angledata|*.gdef|*.nrm|*.jsv" desc="Shader, IR and golden-output files. Raw warnings: 1823."/>
+                <filteritem type="filename" name="*.bin|*.dat|*.raw|*.pickle|*.sqlite|*.db|*.dict|*.mon|*.pkm|*.t|*.fuzz|*.zz|*.ai|*.batch|*.swf" desc="Raw fixture payloads and opaque data files. Raw warnings: 1384."/>
+                <filteritem type="filepath" name="build/linux/.*-sysroot/.*" desc="Imported Linux sysroot headers, libraries and package metadata. Raw warnings: 13361."/>
+                <filteritem type="filepath" name="third_party/llvm-build/.*" desc="LLVM prebuilt toolchain files. Raw warnings: 24."/>
+                <filteritem type="filepath" name="third_party/rust/.*" desc="Vendored Rust crates. Raw warnings: 952."/>
+                <filteritem type="filepath" name="third_party/rust-toolchain/.*" desc="Vendored Rust toolchain artifacts. Raw warnings: 120."/>
+                <filteritem type="filepath" name=".*node_modules/.*" desc="Vendored npm dependencies. Raw warnings: 141."/>
+                <filteritem type="filepath" name="third_party/blink/web_tests/.*" desc="Imported WPT/web test fixtures. Raw warnings: 580."/>
+                <filteritem type="filepath" name=".*corpus/.*" desc="Fuzzing corpus inputs and minimized cases. Raw warnings: 5564."/>
+                <filteritem type="filepath" name=".*fuzzer_data/.*" desc="Fuzzing corpus inputs and minimized cases. Raw warnings: 828."/>
+                <filteritem type="filepath" name=".*fuzzing/.*" desc="Fuzzing corpus inputs and minimized cases. Raw warnings: 446."/>
+                <filteritem type="filepath" name=".*generated/.*" desc="Generated output directories. Raw warnings: 20."/>
+                <filteritem type="filepath" name=".*gen/.*" desc="Generated output directories. Raw warnings: 569."/>
+                <filteritem type="filepath" name=".*build/.*" desc="Build output and vendored build artifact directories. Raw warnings: 30."/>
+                <filteritem type="filepath" name=".*dist/.*" desc="Distribution output directories. Raw warnings: 1491."/>
+                <filteritem type="filepath" name=".*resources/.*" desc="UI/resources/localized asset directories. Raw warnings: 48."/>
+                <filteritem type="filepath" name=".*resource/.*" desc="UI/resources/localized asset directories. Raw warnings: 11."/>
+                <filteritem type="filepath" name=".*example/.*" desc="Example/demo assets and fixtures. Raw warnings: 10."/>
+                <filteritem type="filepath" name=".*examples/.*" desc="Example/demo assets and fixtures. Raw warnings: 78."/>
+                <filteritem type="filepath" name=".*demo/.*" desc="Example/demo assets and fixtures. Raw warnings: 15."/>
+                <filteritem type="filepath" name=".*demos/.*" desc="Example/demo assets and fixtures. Raw warnings: 70."/>
+                <filteritem type="filepath" name=".*sample/.*" desc="Example/demo assets and fixtures. Raw warnings: 44."/>
+                <filteritem type="filepath" name=".*samples/.*" desc="Example/demo assets and fixtures. Raw warnings: 21."/>
+                <filteritem type="filepath" name=".*Cache/.*" desc="Browser cache and session test fixtures. Raw warnings: 53."/>
+                <filteritem type="filepath" name=".*cache/.*" desc="Browser cache and session test fixtures. Raw warnings: 18."/>
+                <filteritem type="filepath" name=".*cached_data_dir/.*" desc="Browser cache and session test fixtures. Raw warnings: 30."/>
+                <filteritem type="filepath" name="chrome/test/.*" desc="Top-level Chromium component test fixtures. Raw warnings: 116."/>
+                <filteritem type="filepath" name="content/test/.*" desc="Top-level Chromium component test fixtures. Raw warnings: 29."/>
+                <filteritem type="filepath" name="components/test/.*" desc="Top-level Chromium component test fixtures. Raw warnings: 18."/>
+                <filteritem type="filepath" name="media/test/.*" desc="Top-level Chromium component test fixtures. Raw warnings: 55."/>
+                <filteritem type="filename" name="*.car|*.adm|*.arj|*.jp2|*.fbx|*.inf|*.hpack" desc="Special binary/data artifacts from residual OAT verification."/>
+                <filteritem type="filepath" name=".*data/.*" desc="Data directories contain binary fixtures and generated payloads."/>
+                <filteritem type="filepath" name=".*testdata/.*" desc="testdata directories contain binary fixtures."/>
+                <filteritem type="filepath" name=".*testcases/.*" desc="testcases directories contain archive/image/binary fixtures."/>
+                <filteritem type="filepath" name=".*seed_corpuses/.*" desc="Crash seed corpus binary fixtures."/>
+                <filteritem type="filepath" name=".*zoneinfo/.*" desc="Timezone database fixture files."/>
+                <filteritem type="filepath" name=".*third_party/ohos_nweb_hap/.*" desc="OHOS prebuilt hap/tool artifacts."/>
+                <filteritem type="filepath" name=".*third_party/test_fonts/.*" desc="Vendored test font binaries."/>
+                <filteritem type="filepath" name=".*third_party/crashpad/crashpad/third_party/xnu/.*" desc="Vendored XNU interface definitions with APSL license."/>
+                <filteritem type="filename" name="*.gpg|*.mc|*.grd|*.webarchive|*.zh" desc="Residual binary/resource formats from final OAT verification."/>
+                <filteritem type="filepath" name=".*buildtools/linux64/gn" desc="Chromium GN prebuilt tool."/>
+                <filteritem type="filepath" name=".*third_party/node/linux/node-linux-x64/bin/node" desc="Vendored Node.js prebuilt binary."/>
+                <filteritem type="filepath" name=".*third_party/libzip/src/regress/.*" desc="libzip regression binary fixtures."/>
+                <filteritem type="filepath" name=".*third_party/protobuf/objectivec/Tests/golden.*" desc="protobuf Objective-C golden binary messages."/>
+                <filteritem type="filepath" name=".*ohos_ndk/toolchains/llvm/.*" desc="OHOS NDK LLVM toolchain binaries and bundled Python stdlib."/>
+            </filefilter>
+            <filefilter name="defaultPolicyFilter" desc="Files excluded from license and compatibility policy checks.">
+                <filteritem type="filename" name="*.png|*.PNG|*.jpg|*.jpeg|*.gif|*.bmp|*.ico|*.icns|*.svg|*.webp|*.avif|*.tif|*.tiff|*.xcf|*.ppm|*.cur|*.ani|*.pngblob" desc="Fixed image/icon assets. Raw warnings: 46423."/>
+                <filteritem type="filename" name="*.ttf|*.otf|*.ttc|*.woff|*.woff2|*.eot|*.pcf" desc="Font binaries and generated font fixtures. Raw warnings: 2955."/>
+                <filteritem type="filename" name="*.mp3|*.mp4|*.wav|*.ogg|*.oga|*.flac|*.webm|*.flv|*.avi|*.mkv|*.heic|*.ogv|*.pcm|*.yuv|*.mov|*.h264|*.hevc|*.vvc|*.ivf|*.aac|*.ac3|*.m4a|*.adts|*.y4m" desc="Media and codec test payloads. Raw warnings: 1250."/>
+                <filteritem type="filename" name="*.wasm|*.wasm.z|*.so|*.so.*|*.dylib|*.dll|*.a|*.lib|*.o|*.obj|*.exe|*.class|*.jar|*.pdb|*.spv|*.nspv|*.typelib|*.pyc|*.apk|*.keystore|*.rlib|*.msi" desc="Compiled binaries, libraries and tool outputs. Raw warnings: 58200."/>
+                <filteritem type="filename" name="*.zip|*.tar|*.gz|*.tgz|*.bz2|*.xz|*.zst|*.7z|*.rar|*.Z|*.lrz|*.lz|*.lzma|*.br" desc="Archive/compressed payloads. Raw warnings: 634."/>
+                <filteritem type="filename" name="*.pem|*.crt|*.cer|*.der|*.crl|*.key|*.sig|*.p7s|*.p7c|*.p12|*.pk8|*.snk|*.enc|*.sha1|*.sha256|*.sha512|*.md5|*.cbor" desc="Certificates, signatures, checksums and encoded crypto fixtures. Raw warnings: 2080."/>
+                <filteritem type="filename" name="*.crx|*.crx3|*.pak|*.pak.info|*.icc|*.plist|*.mobileconfig|*.bdic|*.hyb|*.icu|*.sxg|*.wbn|*.swbn|*.puff|*.pkpass" desc="Browser packages, profiles and web package fixtures. Raw warnings: 411."/>
+                <filteritem type="filename" name="*.pdf|*.doc|*.docx|*.xtb|*.po|*.tsv|*.yaml|*.har|*.srt|*.dic_delta|*.descriptor" desc="Documents, localization bundles and structured data fixtures. Raw warnings: 1512."/>
+                <filteritem type="filename" name="*.264|*.tlb|*.macho-*|*.elf|*.elf-*|*.coff-*|*.x86_64|*.i386|*.exp|*.syms|*.res|*.dmg|*.hfs|*.covmapping|*.gcda|*.gcno|*.profdata|*.bfbs|*.tflite|*.onnx|*.glb|*.flatbuffer|*.skp|*.3ds|*.nib|*.emf|*.pwg" desc="Object/debug/model/package artifacts. Raw warnings: 426."/>
+                <filteritem type="filename" name="*.rtcp|*.rtp|*.rtpdump|*.mdns|*.stun|*.strings|*.sdp|*.tokens|*.pb|*.binarypb" desc="Network/protobuf protocol fixtures. Raw warnings: 253."/>
+                <filteritem type="filename" name="*.hlsl|*.wgsl|*.glsl|*.frag|*.vert|*.comp|*.spvasm|*.sksl|*.msl|*.ll|*.mlir|*.bc|*.dxbc|*.out|*.expected|*.test|*.tests|*.headers|*.mock-http-headers|*.amber|*.angledata|*.gdef|*.nrm|*.jsv" desc="Shader, IR and golden-output files. Raw warnings: 1823."/>
+                <filteritem type="filename" name="*.bin|*.dat|*.raw|*.pickle|*.sqlite|*.db|*.dict|*.mon|*.pkm|*.t|*.fuzz|*.zz|*.ai|*.batch|*.swf" desc="Raw fixture payloads and opaque data files. Raw warnings: 1384."/>
+                <filteritem type="filepath" name="build/linux/.*-sysroot/.*" desc="Imported Linux sysroot headers, libraries and package metadata. Raw warnings: 13361."/>
+                <filteritem type="filepath" name="third_party/llvm-build/.*" desc="LLVM prebuilt toolchain files. Raw warnings: 24."/>
+                <filteritem type="filepath" name="third_party/rust/.*" desc="Vendored Rust crates. Raw warnings: 952."/>
+                <filteritem type="filepath" name="third_party/rust-toolchain/.*" desc="Vendored Rust toolchain artifacts. Raw warnings: 120."/>
+                <filteritem type="filepath" name=".*node_modules/.*" desc="Vendored npm dependencies. Raw warnings: 141."/>
+                <filteritem type="filepath" name="third_party/blink/web_tests/.*" desc="Imported WPT/web test fixtures. Raw warnings: 580."/>
+                <filteritem type="filepath" name=".*corpus/.*" desc="Fuzzing corpus inputs and minimized cases. Raw warnings: 5564."/>
+                <filteritem type="filepath" name=".*fuzzer_data/.*" desc="Fuzzing corpus inputs and minimized cases. Raw warnings: 828."/>
+                <filteritem type="filepath" name=".*fuzzing/.*" desc="Fuzzing corpus inputs and minimized cases. Raw warnings: 446."/>
+                <filteritem type="filepath" name=".*generated/.*" desc="Generated output directories. Raw warnings: 20."/>
+                <filteritem type="filepath" name=".*gen/.*" desc="Generated output directories. Raw warnings: 569."/>
+                <filteritem type="filepath" name=".*build/.*" desc="Build output and vendored build artifact directories. Raw warnings: 30."/>
+                <filteritem type="filepath" name=".*dist/.*" desc="Distribution output directories. Raw warnings: 1491."/>
+                <filteritem type="filepath" name=".*resources/.*" desc="UI/resources/localized asset directories. Raw warnings: 48."/>
+                <filteritem type="filepath" name=".*resource/.*" desc="UI/resources/localized asset directories. Raw warnings: 11."/>
+                <filteritem type="filepath" name=".*example/.*" desc="Example/demo assets and fixtures. Raw warnings: 10."/>
+                <filteritem type="filepath" name=".*examples/.*" desc="Example/demo assets and fixtures. Raw warnings: 78."/>
+                <filteritem type="filepath" name=".*demo/.*" desc="Example/demo assets and fixtures. Raw warnings: 15."/>
+                <filteritem type="filepath" name=".*demos/.*" desc="Example/demo assets and fixtures. Raw warnings: 70."/>
+                <filteritem type="filepath" name=".*sample/.*" desc="Example/demo assets and fixtures. Raw warnings: 44."/>
+                <filteritem type="filepath" name=".*samples/.*" desc="Example/demo assets and fixtures. Raw warnings: 21."/>
+                <filteritem type="filepath" name=".*Cache/.*" desc="Browser cache and session test fixtures. Raw warnings: 53."/>
+                <filteritem type="filepath" name=".*cache/.*" desc="Browser cache and session test fixtures. Raw warnings: 18."/>
+                <filteritem type="filepath" name=".*cached_data_dir/.*" desc="Browser cache and session test fixtures. Raw warnings: 30."/>
+                <filteritem type="filepath" name="chrome/test/.*" desc="Top-level Chromium component test fixtures. Raw warnings: 116."/>
+                <filteritem type="filepath" name="content/test/.*" desc="Top-level Chromium component test fixtures. Raw warnings: 29."/>
+                <filteritem type="filepath" name="components/test/.*" desc="Top-level Chromium component test fixtures. Raw warnings: 18."/>
+                <filteritem type="filepath" name="media/test/.*" desc="Top-level Chromium component test fixtures. Raw warnings: 55."/>
+                <filteritem type="filename" name="*.car|*.adm|*.arj|*.jp2|*.fbx|*.inf|*.hpack" desc="Special binary/data artifacts from residual OAT verification."/>
+                <filteritem type="filepath" name=".*data/.*" desc="Data directories contain binary fixtures and generated payloads."/>
+                <filteritem type="filepath" name=".*testdata/.*" desc="testdata directories contain binary fixtures."/>
+                <filteritem type="filepath" name=".*testcases/.*" desc="testcases directories contain archive/image/binary fixtures."/>
+                <filteritem type="filepath" name=".*seed_corpuses/.*" desc="Crash seed corpus binary fixtures."/>
+                <filteritem type="filepath" name=".*zoneinfo/.*" desc="Timezone database fixture files."/>
+                <filteritem type="filepath" name=".*third_party/ohos_nweb_hap/.*" desc="OHOS prebuilt hap/tool artifacts."/>
+                <filteritem type="filepath" name=".*third_party/test_fonts/.*" desc="Vendored test font binaries."/>
+                <filteritem type="filepath" name=".*third_party/crashpad/crashpad/third_party/xnu/.*" desc="Vendored XNU interface definitions with APSL license."/>
+                <filteritem type="filename" name="*.gpg|*.mc|*.grd|*.webarchive|*.zh" desc="Residual binary/resource formats from final OAT verification."/>
+                <filteritem type="filepath" name=".*buildtools/linux64/gn" desc="Chromium GN prebuilt tool."/>
+                <filteritem type="filepath" name=".*third_party/node/linux/node-linux-x64/bin/node" desc="Vendored Node.js prebuilt binary."/>
+                <filteritem type="filepath" name=".*third_party/libzip/src/regress/.*" desc="libzip regression binary fixtures."/>
+                <filteritem type="filepath" name=".*third_party/protobuf/objectivec/Tests/golden.*" desc="protobuf Objective-C golden binary messages."/>
+                <filteritem type="filepath" name=".*ohos_ndk/toolchains/llvm/.*" desc="OHOS NDK LLVM toolchain binaries and bundled Python stdlib."/>
+            </filefilter>
+            <filefilter name="copyrightPolicyFilter" desc="Files excluded from copyright header checks.">
+                <filteritem type="filename" name="*.png|*.PNG|*.jpg|*.jpeg|*.gif|*.bmp|*.ico|*.icns|*.svg|*.webp|*.avif|*.tif|*.tiff|*.xcf|*.ppm|*.cur|*.ani|*.pngblob" desc="Fixed image/icon assets. Raw warnings: 46423."/>
+                <filteritem type="filename" name="*.ttf|*.otf|*.ttc|*.woff|*.woff2|*.eot|*.pcf" desc="Font binaries and generated font fixtures. Raw warnings: 2955."/>
+                <filteritem type="filename" name="*.mp3|*.mp4|*.wav|*.ogg|*.oga|*.flac|*.webm|*.flv|*.avi|*.mkv|*.heic|*.ogv|*.pcm|*.yuv|*.mov|*.h264|*.hevc|*.vvc|*.ivf|*.aac|*.ac3|*.m4a|*.adts|*.y4m" desc="Media and codec test payloads. Raw warnings: 1250."/>
+                <filteritem type="filename" name="*.wasm|*.wasm.z|*.so|*.so.*|*.dylib|*.dll|*.a|*.lib|*.o|*.obj|*.exe|*.class|*.jar|*.pdb|*.spv|*.nspv|*.typelib|*.pyc|*.apk|*.keystore|*.rlib|*.msi" desc="Compiled binaries, libraries and tool outputs. Raw warnings: 58200."/>
+                <filteritem type="filename" name="*.zip|*.tar|*.gz|*.tgz|*.bz2|*.xz|*.zst|*.7z|*.rar|*.Z|*.lrz|*.lz|*.lzma|*.br" desc="Archive/compressed payloads. Raw warnings: 634."/>
+                <filteritem type="filename" name="*.pem|*.crt|*.cer|*.der|*.crl|*.key|*.sig|*.p7s|*.p7c|*.p12|*.pk8|*.snk|*.enc|*.sha1|*.sha256|*.sha512|*.md5|*.cbor" desc="Certificates, signatures, checksums and encoded crypto fixtures. Raw warnings: 2080."/>
+                <filteritem type="filename" name="*.crx|*.crx3|*.pak|*.pak.info|*.icc|*.plist|*.mobileconfig|*.bdic|*.hyb|*.icu|*.sxg|*.wbn|*.swbn|*.puff|*.pkpass" desc="Browser packages, profiles and web package fixtures. Raw warnings: 411."/>
+                <filteritem type="filename" name="*.pdf|*.doc|*.docx|*.xtb|*.po|*.tsv|*.yaml|*.har|*.srt|*.dic_delta|*.descriptor" desc="Documents, localization bundles and structured data fixtures. Raw warnings: 1512."/>
+                <filteritem type="filename" name="*.264|*.tlb|*.macho-*|*.elf|*.elf-*|*.coff-*|*.x86_64|*.i386|*.exp|*.syms|*.res|*.dmg|*.hfs|*.covmapping|*.gcda|*.gcno|*.profdata|*.bfbs|*.tflite|*.onnx|*.glb|*.flatbuffer|*.skp|*.3ds|*.nib|*.emf|*.pwg" desc="Object/debug/model/package artifacts. Raw warnings: 426."/>
+                <filteritem type="filename" name="*.rtcp|*.rtp|*.rtpdump|*.mdns|*.stun|*.strings|*.sdp|*.tokens|*.pb|*.binarypb" desc="Network/protobuf protocol fixtures. Raw warnings: 253."/>
+                <filteritem type="filename" name="*.hlsl|*.wgsl|*.glsl|*.frag|*.vert|*.comp|*.spvasm|*.sksl|*.msl|*.ll|*.mlir|*.bc|*.dxbc|*.out|*.expected|*.test|*.tests|*.headers|*.mock-http-headers|*.amber|*.angledata|*.gdef|*.nrm|*.jsv" desc="Shader, IR and golden-output files. Raw warnings: 1823."/>
+                <filteritem type="filename" name="*.bin|*.dat|*.raw|*.pickle|*.sqlite|*.db|*.dict|*.mon|*.pkm|*.t|*.fuzz|*.zz|*.ai|*.batch|*.swf" desc="Raw fixture payloads and opaque data files. Raw warnings: 1384."/>
+                <filteritem type="filepath" name="build/linux/.*-sysroot/.*" desc="Imported Linux sysroot headers, libraries and package metadata. Raw warnings: 13361."/>
+                <filteritem type="filepath" name="third_party/llvm-build/.*" desc="LLVM prebuilt toolchain files. Raw warnings: 24."/>
+                <filteritem type="filepath" name="third_party/rust/.*" desc="Vendored Rust crates. Raw warnings: 952."/>
+                <filteritem type="filepath" name="third_party/rust-toolchain/.*" desc="Vendored Rust toolchain artifacts. Raw warnings: 120."/>
+                <filteritem type="filepath" name=".*node_modules/.*" desc="Vendored npm dependencies. Raw warnings: 141."/>
+                <filteritem type="filepath" name="third_party/blink/web_tests/.*" desc="Imported WPT/web test fixtures. Raw warnings: 580."/>
+                <filteritem type="filepath" name=".*corpus/.*" desc="Fuzzing corpus inputs and minimized cases. Raw warnings: 5564."/>
+                <filteritem type="filepath" name=".*fuzzer_data/.*" desc="Fuzzing corpus inputs and minimized cases. Raw warnings: 828."/>
+                <filteritem type="filepath" name=".*fuzzing/.*" desc="Fuzzing corpus inputs and minimized cases. Raw warnings: 446."/>
+                <filteritem type="filepath" name=".*generated/.*" desc="Generated output directories. Raw warnings: 20."/>
+                <filteritem type="filepath" name=".*gen/.*" desc="Generated output directories. Raw warnings: 569."/>
+                <filteritem type="filepath" name=".*build/.*" desc="Build output and vendored build artifact directories. Raw warnings: 30."/>
+                <filteritem type="filepath" name=".*dist/.*" desc="Distribution output directories. Raw warnings: 1491."/>
+                <filteritem type="filepath" name=".*resources/.*" desc="UI/resources/localized asset directories. Raw warnings: 48."/>
+                <filteritem type="filepath" name=".*resource/.*" desc="UI/resources/localized asset directories. Raw warnings: 11."/>
+                <filteritem type="filepath" name=".*example/.*" desc="Example/demo assets and fixtures. Raw warnings: 10."/>
+                <filteritem type="filepath" name=".*examples/.*" desc="Example/demo assets and fixtures. Raw warnings: 78."/>
+                <filteritem type="filepath" name=".*demo/.*" desc="Example/demo assets and fixtures. Raw warnings: 15."/>
+                <filteritem type="filepath" name=".*demos/.*" desc="Example/demo assets and fixtures. Raw warnings: 70."/>
+                <filteritem type="filepath" name=".*sample/.*" desc="Example/demo assets and fixtures. Raw warnings: 44."/>
+                <filteritem type="filepath" name=".*samples/.*" desc="Example/demo assets and fixtures. Raw warnings: 21."/>
+                <filteritem type="filepath" name=".*Cache/.*" desc="Browser cache and session test fixtures. Raw warnings: 53."/>
+                <filteritem type="filepath" name=".*cache/.*" desc="Browser cache and session test fixtures. Raw warnings: 18."/>
+                <filteritem type="filepath" name=".*cached_data_dir/.*" desc="Browser cache and session test fixtures. Raw warnings: 30."/>
+                <filteritem type="filepath" name="chrome/test/.*" desc="Top-level Chromium component test fixtures. Raw warnings: 116."/>
+                <filteritem type="filepath" name="content/test/.*" desc="Top-level Chromium component test fixtures. Raw warnings: 29."/>
+                <filteritem type="filepath" name="components/test/.*" desc="Top-level Chromium component test fixtures. Raw warnings: 18."/>
+                <filteritem type="filepath" name="media/test/.*" desc="Top-level Chromium component test fixtures. Raw warnings: 55."/>
+                <filteritem type="filename" name="*.car|*.adm|*.arj|*.jp2|*.fbx|*.inf|*.hpack" desc="Special binary/data artifacts from residual OAT verification."/>
+                <filteritem type="filepath" name=".*data/.*" desc="Data directories contain binary fixtures and generated payloads."/>
+                <filteritem type="filepath" name=".*testdata/.*" desc="testdata directories contain binary fixtures."/>
+                <filteritem type="filepath" name=".*testcases/.*" desc="testcases directories contain archive/image/binary fixtures."/>
+                <filteritem type="filepath" name=".*seed_corpuses/.*" desc="Crash seed corpus binary fixtures."/>
+                <filteritem type="filepath" name=".*zoneinfo/.*" desc="Timezone database fixture files."/>
+                <filteritem type="filepath" name=".*third_party/ohos_nweb_hap/.*" desc="OHOS prebuilt hap/tool artifacts."/>
+                <filteritem type="filepath" name=".*third_party/test_fonts/.*" desc="Vendored test font binaries."/>
+                <filteritem type="filepath" name=".*third_party/crashpad/crashpad/third_party/xnu/.*" desc="Vendored XNU interface definitions with APSL license."/>
+                <filteritem type="filename" name="*.gpg|*.mc|*.grd|*.webarchive|*.zh" desc="Residual binary/resource formats from final OAT verification."/>
+                <filteritem type="filepath" name=".*buildtools/linux64/gn" desc="Chromium GN prebuilt tool."/>
+                <filteritem type="filepath" name=".*third_party/node/linux/node-linux-x64/bin/node" desc="Vendored Node.js prebuilt binary."/>
+                <filteritem type="filepath" name=".*third_party/libzip/src/regress/.*" desc="libzip regression binary fixtures."/>
+                <filteritem type="filepath" name=".*third_party/protobuf/objectivec/Tests/golden.*" desc="protobuf Objective-C golden binary messages."/>
+                <filteritem type="filepath" name=".*ohos_ndk/toolchains/llvm/.*" desc="OHOS NDK LLVM toolchain binaries and bundled Python stdlib."/>
+            </filefilter>
+            <filefilter name="binaryFileTypePolicyFilter" desc="Resource/test-data filters used by filetype policy.">
+                <filteritem type="filename" name="*.png|*.PNG|*.jpg|*.jpeg|*.gif|*.bmp|*.ico|*.icns|*.svg|*.webp|*.avif|*.tif|*.tiff|*.xcf|*.ppm|*.cur|*.ani|*.pngblob" desc="Fixed image/icon assets. Raw warnings: 46423."/>
+                <filteritem type="filename" name="*.ttf|*.otf|*.ttc|*.woff|*.woff2|*.eot|*.pcf" desc="Font binaries and generated font fixtures. Raw warnings: 2955."/>
+                <filteritem type="filename" name="*.mp3|*.mp4|*.wav|*.ogg|*.oga|*.flac|*.webm|*.flv|*.avi|*.mkv|*.heic|*.ogv|*.pcm|*.yuv|*.mov|*.h264|*.hevc|*.vvc|*.ivf|*.aac|*.ac3|*.m4a|*.adts|*.y4m" desc="Media and codec test payloads. Raw warnings: 1250."/>
+                <filteritem type="filename" name="*.wasm|*.wasm.z|*.so|*.so.*|*.dylib|*.dll|*.a|*.lib|*.o|*.obj|*.exe|*.class|*.jar|*.pdb|*.spv|*.nspv|*.typelib|*.pyc|*.apk|*.keystore|*.rlib|*.msi" desc="Compiled binaries, libraries and tool outputs. Raw warnings: 58200."/>
+                <filteritem type="filename" name="*.zip|*.tar|*.gz|*.tgz|*.bz2|*.xz|*.zst|*.7z|*.rar|*.Z|*.lrz|*.lz|*.lzma|*.br" desc="Archive/compressed payloads. Raw warnings: 634."/>
+                <filteritem type="filename" name="*.pem|*.crt|*.cer|*.der|*.crl|*.key|*.sig|*.p7s|*.p7c|*.p12|*.pk8|*.snk|*.enc|*.sha1|*.sha256|*.sha512|*.md5|*.cbor" desc="Certificates, signatures, checksums and encoded crypto fixtures. Raw warnings: 2080."/>
+                <filteritem type="filename" name="*.crx|*.crx3|*.pak|*.pak.info|*.icc|*.plist|*.mobileconfig|*.bdic|*.hyb|*.icu|*.sxg|*.wbn|*.swbn|*.puff|*.pkpass" desc="Browser packages, profiles and web package fixtures. Raw warnings: 411."/>
+                <filteritem type="filename" name="*.pdf|*.doc|*.docx|*.xtb|*.po|*.tsv|*.yaml|*.har|*.srt|*.dic_delta|*.descriptor" desc="Documents, localization bundles and structured data fixtures. Raw warnings: 1512."/>
+                <filteritem type="filename" name="*.264|*.tlb|*.macho-*|*.elf|*.elf-*|*.coff-*|*.x86_64|*.i386|*.exp|*.syms|*.res|*.dmg|*.hfs|*.covmapping|*.gcda|*.gcno|*.profdata|*.bfbs|*.tflite|*.onnx|*.glb|*.flatbuffer|*.skp|*.3ds|*.nib|*.emf|*.pwg" desc="Object/debug/model/package artifacts. Raw warnings: 426."/>
+                <filteritem type="filename" name="*.rtcp|*.rtp|*.rtpdump|*.mdns|*.stun|*.strings|*.sdp|*.tokens|*.pb|*.binarypb" desc="Network/protobuf protocol fixtures. Raw warnings: 253."/>
+                <filteritem type="filename" name="*.hlsl|*.wgsl|*.glsl|*.frag|*.vert|*.comp|*.spvasm|*.sksl|*.msl|*.ll|*.mlir|*.bc|*.dxbc|*.out|*.expected|*.test|*.tests|*.headers|*.mock-http-headers|*.amber|*.angledata|*.gdef|*.nrm|*.jsv" desc="Shader, IR and golden-output files. Raw warnings: 1823."/>
+                <filteritem type="filename" name="*.bin|*.dat|*.raw|*.pickle|*.sqlite|*.db|*.dict|*.mon|*.pkm|*.t|*.fuzz|*.zz|*.ai|*.batch|*.swf" desc="Raw fixture payloads and opaque data files. Raw warnings: 1384."/>
+                <filteritem type="filepath" name="build/linux/.*-sysroot/.*" desc="Imported Linux sysroot headers, libraries and package metadata. Raw warnings: 13361."/>
+                <filteritem type="filepath" name="third_party/llvm-build/.*" desc="LLVM prebuilt toolchain files. Raw warnings: 24."/>
+                <filteritem type="filepath" name="third_party/rust/.*" desc="Vendored Rust crates. Raw warnings: 952."/>
+                <filteritem type="filepath" name="third_party/rust-toolchain/.*" desc="Vendored Rust toolchain artifacts. Raw warnings: 120."/>
+                <filteritem type="filepath" name=".*node_modules/.*" desc="Vendored npm dependencies. Raw warnings: 141."/>
+                <filteritem type="filepath" name="third_party/blink/web_tests/.*" desc="Imported WPT/web test fixtures. Raw warnings: 580."/>
+                <filteritem type="filepath" name=".*corpus/.*" desc="Fuzzing corpus inputs and minimized cases. Raw warnings: 5564."/>
+                <filteritem type="filepath" name=".*fuzzer_data/.*" desc="Fuzzing corpus inputs and minimized cases. Raw warnings: 828."/>
+                <filteritem type="filepath" name=".*fuzzing/.*" desc="Fuzzing corpus inputs and minimized cases. Raw warnings: 446."/>
+                <filteritem type="filepath" name=".*generated/.*" desc="Generated output directories. Raw warnings: 20."/>
+                <filteritem type="filepath" name=".*gen/.*" desc="Generated output directories. Raw warnings: 569."/>
+                <filteritem type="filepath" name=".*build/.*" desc="Build output and vendored build artifact directories. Raw warnings: 30."/>
+                <filteritem type="filepath" name=".*dist/.*" desc="Distribution output directories. Raw warnings: 1491."/>
+                <filteritem type="filepath" name=".*resources/.*" desc="UI/resources/localized asset directories. Raw warnings: 48."/>
+                <filteritem type="filepath" name=".*resource/.*" desc="UI/resources/localized asset directories. Raw warnings: 11."/>
+                <filteritem type="filepath" name=".*example/.*" desc="Example/demo assets and fixtures. Raw warnings: 10."/>
+                <filteritem type="filepath" name=".*examples/.*" desc="Example/demo assets and fixtures. Raw warnings: 78."/>
+                <filteritem type="filepath" name=".*demo/.*" desc="Example/demo assets and fixtures. Raw warnings: 15."/>
+                <filteritem type="filepath" name=".*demos/.*" desc="Example/demo assets and fixtures. Raw warnings: 70."/>
+                <filteritem type="filepath" name=".*sample/.*" desc="Example/demo assets and fixtures. Raw warnings: 44."/>
+                <filteritem type="filepath" name=".*samples/.*" desc="Example/demo assets and fixtures. Raw warnings: 21."/>
+                <filteritem type="filepath" name=".*Cache/.*" desc="Browser cache and session test fixtures. Raw warnings: 53."/>
+                <filteritem type="filepath" name=".*cache/.*" desc="Browser cache and session test fixtures. Raw warnings: 18."/>
+                <filteritem type="filepath" name=".*cached_data_dir/.*" desc="Browser cache and session test fixtures. Raw warnings: 30."/>
+                <filteritem type="filepath" name="chrome/test/.*" desc="Top-level Chromium component test fixtures. Raw warnings: 116."/>
+                <filteritem type="filepath" name="content/test/.*" desc="Top-level Chromium component test fixtures. Raw warnings: 29."/>
+                <filteritem type="filepath" name="components/test/.*" desc="Top-level Chromium component test fixtures. Raw warnings: 18."/>
+                <filteritem type="filepath" name="media/test/.*" desc="Top-level Chromium component test fixtures. Raw warnings: 55."/>
+                <filteritem type="filename" name="*.car|*.adm|*.arj|*.jp2|*.fbx|*.inf|*.hpack" desc="Special binary/data artifacts from residual OAT verification."/>
+                <filteritem type="filepath" name=".*data/.*" desc="Data directories contain binary fixtures and generated payloads."/>
+                <filteritem type="filepath" name=".*testdata/.*" desc="testdata directories contain binary fixtures."/>
+                <filteritem type="filepath" name=".*testcases/.*" desc="testcases directories contain archive/image/binary fixtures."/>
+                <filteritem type="filepath" name=".*seed_corpuses/.*" desc="Crash seed corpus binary fixtures."/>
+                <filteritem type="filepath" name=".*zoneinfo/.*" desc="Timezone database fixture files."/>
+                <filteritem type="filepath" name=".*third_party/ohos_nweb_hap/.*" desc="OHOS prebuilt hap/tool artifacts."/>
+                <filteritem type="filepath" name=".*third_party/test_fonts/.*" desc="Vendored test font binaries."/>
+                <filteritem type="filepath" name=".*third_party/crashpad/crashpad/third_party/xnu/.*" desc="Vendored XNU interface definitions with APSL license."/>
+                <filteritem type="filename" name="*.gpg|*.mc|*.grd|*.webarchive|*.zh" desc="Residual binary/resource formats from final OAT verification."/>
+                <filteritem type="filepath" name=".*buildtools/linux64/gn" desc="Chromium GN prebuilt tool."/>
+                <filteritem type="filepath" name=".*third_party/node/linux/node-linux-x64/bin/node" desc="Vendored Node.js prebuilt binary."/>
+                <filteritem type="filepath" name=".*third_party/libzip/src/regress/.*" desc="libzip regression binary fixtures."/>
+                <filteritem type="filepath" name=".*third_party/protobuf/objectivec/Tests/golden.*" desc="protobuf Objective-C golden binary messages."/>
+            </filefilter>
+            <filefilter name="licenseFileNamePolicyFilter" desc="No extra LICENSE filename filters."/>
+            <filefilter name="readmeFileNamePolicyFilter" desc="No extra README filename filters."/>
+            <filefilter name="readmeOpenSourcefileNamePolicyFilter" desc="No extra README.OpenSource filename filters."/>
+        </filefilterlist>
+        <licensematcherlist/>
+    </oatconfig>
+</configuration>

@@ -1,0 +1,124 @@
+diff a/sandbox/policy/sandbox_type.cc b/sandbox/policy/sandbox_type.cc	(rejected hunks)
+@@ -32,11 +32,11 @@ constexpr char kAudioSandbox[] = "audio";
+ constexpr char kServiceSandbox[] = "service";
+ constexpr char kServiceSandboxWithJit[] = "service_with_jit";
+ constexpr char kSpeechRecognitionSandbox[] = "speech_recognition";
+ 
+ #if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || \
+-    BUILDFLAG(IS_WIN)
++    BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+ constexpr char kPrintBackendSandbox[] = "print_backend";
+ constexpr char kScreenAISandbox[] = "screen_ai";
+ #endif
+ 
+ #if BUILDFLAG(IS_WIN)
+@@ -133,11 +133,11 @@ void SetCommandLineFlagsForSandboxType(base::CommandLine* command_line,
+     case Sandbox::kPdfConversion:
+     case Sandbox::kIconReader:
+     case Sandbox::kMediaFoundationCdm:
+     case Sandbox::kProxyResolver:
+ #endif  // BUILDFLAG(IS_WIN)
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+     case Sandbox::kShapeDetection:
+ #if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
+     case Sandbox::kHardwareVideoDecoding:
+     case Sandbox::kHardwareVideoEncoding:
+ #endif
+@@ -149,16 +149,16 @@ void SetCommandLineFlagsForSandboxType(base::CommandLine* command_line,
+ #endif  // BUILDFLAG(IS_CHROMEOS)
+ #if BUILDFLAG(IS_MAC)
+     case Sandbox::kMirroring:
+ #endif  // BUILDFLAG(IS_MAC)
+ #if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || \
+-    BUILDFLAG(IS_WIN)
++    BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+     case Sandbox::kPrintBackend:
+     case Sandbox::kScreenAI:
+ #endif
+     case Sandbox::kSpeechRecognition:
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+     case Sandbox::kOnDeviceTranslation:
+ #endif
+       DCHECK(command_line->GetSwitchValueASCII(switches::kProcessType) ==
+              switches::kUtilityProcess);
+       DCHECK(!command_line->HasSwitch(switches::kServiceSandboxType));
+@@ -244,17 +244,17 @@ std::string StringFromUtilitySandboxType(Sandbox sandbox_type) {
+     case Sandbox::kServiceWithJit:
+       return kServiceSandboxWithJit;
+     case Sandbox::kSpeechRecognition:
+       return kSpeechRecognitionSandbox;
+ #if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || \
+-    BUILDFLAG(IS_WIN)
++    BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+     case Sandbox::kPrintBackend:
+       return kPrintBackendSandbox;
+     case Sandbox::kScreenAI:
+       return kScreenAISandbox;
+ #endif
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+     case Sandbox::kOnDeviceTranslation:
+       return kOnDeviceTranslationSandbox;
+ #endif
+ #if BUILDFLAG(IS_WIN)
+     case Sandbox::kXrCompositing:
+@@ -270,22 +270,22 @@ std::string StringFromUtilitySandboxType(Sandbox sandbox_type) {
+ #endif  // BUILDFLAG(IS_WIN)
+ #if BUILDFLAG(IS_MAC)
+     case Sandbox::kMirroring:
+       return kMirroringSandbox;
+ #endif
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+     case Sandbox::kShapeDetection:
+       return kShapeDetectionSandbox;
+ #if BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+     case Sandbox::kHardwareVideoDecoding:
+       return kHardwareVideoDecodingSandbox;
+ #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+ #if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
+     case Sandbox::kHardwareVideoEncoding:
+       return kHardwareVideoEncodingSandbox;
+ #endif  // BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
+-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+ #if BUILDFLAG(IS_CHROMEOS)
+     case Sandbox::kIme:
+       return kImeSandbox;
+     case Sandbox::kTts:
+       return kTtsSandbox;
+@@ -367,29 +367,29 @@ sandbox::mojom::Sandbox UtilitySandboxTypeFromString(
+   }
+   if (sandbox_string == kSpeechRecognitionSandbox) {
+     return Sandbox::kSpeechRecognition;
+   }
+ #if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || \
+-    BUILDFLAG(IS_WIN)
++    BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+   if (sandbox_string == kPrintBackendSandbox) {
+     return Sandbox::kPrintBackend;
+   }
+   if (sandbox_string == kScreenAISandbox) {
+     return Sandbox::kScreenAI;
+   }
+ #endif
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+   if (sandbox_string == kOnDeviceTranslationSandbox) {
+     return Sandbox::kOnDeviceTranslation;
+   }
+ #endif
+ #if BUILDFLAG(IS_FUCHSIA)
+   if (sandbox_string == kVideoCaptureSandbox) {
+     return Sandbox::kVideoCapture;
+   }
+ #endif
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+   if (sandbox_string == kShapeDetectionSandbox) {
+     return Sandbox::kShapeDetection;
+   }
+ #if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
+   if (sandbox_string == kHardwareVideoDecodingSandbox) {

@@ -1,0 +1,18 @@
+diff a/sandbox/linux/BUILD.gn b/sandbox/linux/BUILD.gn	(rejected hunks)
+@@ -260,10 +264,16 @@ component("seccomp_bpf") {
+     sources += [
+       "seccomp-bpf-helpers/baseline_policy_android.cc",
+       "seccomp-bpf-helpers/baseline_policy_android.h",
+     ]
+   }
++
++  if (is_ohos) {
++    deps += [
++      "//arkweb/chromium_ext/sandbox:arkweb_sandbox"
++    ]
++  }
+ }
+ 
+ if (is_android) {
+   # This target is available even if use_seccomp_bpf is disabled, but it also
+   # works when it is enabled.

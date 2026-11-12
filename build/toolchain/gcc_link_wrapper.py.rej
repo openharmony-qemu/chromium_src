@@ -1,0 +1,36 @@
+diff a/build/toolchain/gcc_link_wrapper.py b/build/toolchain/gcc_link_wrapper.py	(rejected hunks)
+@@ -50,10 +50,15 @@ def main():
+                       required=True,
+                       help='Final output executable file',
+                       metavar='FILE')
+   parser.add_argument('command', nargs='+',
+                       help='Linking command')
++  parser.add_argument('--mini-debug',
++                      action='store_true',
++                      default=False,
++                      help='Add .gnu_debugdata section for stripped sofile')
++  parser.add_argument('--clang-base-dir', help='')
+   args = parser.parse_args()
+ 
+   # Work-around for gold being slow-by-default. http://crbug.com/632230
+   fast_env = dict(os.environ)
+   fast_env['LC_ALL'] = 'C'
+@@ -81,10 +86,18 @@ def main():
+   if dwp_proc:
+     dwp_result = dwp_proc.wait()
+     if dwp_result != 0:
+       sys.stderr.write('dwp failed with error code {}\n'.format(dwp_result))
+       return dwp_result
++  if args.mini_debug:
++    unstripped_libfile = os.path.abspath(args.unstripped_file)
++    ohos_root_path = os.path.join(os.path.dirname(__file__), '../..')
++    script_path = os.path.join(ohos_root_path, 'arkweb/build/toolchain', 'mini_debug_info.py')
++    result = subprocess.call(
++      wrapper_utils.CommandToRun(
++        ['python3', script_path, '--unstripped-path', unstripped_libfile, '--stripped-path', args.output,
++        '--root-path', ohos_root_path, '--clang-base-dir', args.clang_base_dir]))
+ 
+   return result
+ 
+ 
+ if __name__ == "__main__":

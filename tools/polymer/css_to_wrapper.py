@@ -205,6 +205,8 @@ def main(argv):
   parser.add_argument('--minify', action='store_true')
   parser.add_argument('--use_js', action='store_true')
   parser.add_argument('--is_ios', action='store_true')
+  parser.add_argument('--arkweb_as_default_scheme', action='store_true')
+   
   args = parser.parse_args(argv)
 
   in_folder = path.normpath(path.join(_CWD, args.in_folder))
@@ -297,6 +299,8 @@ def main(argv):
       scheme = 'chrome:'
     elif metadata['scheme'] == 'relative':
       scheme = ''
+    if args.arkweb_as_default_scheme and metadata['scheme'] == 'default':
+      scheme = 'arkweb:'
 
     substitutions = None
     if metadata['type'] == 'style':

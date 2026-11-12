@@ -1,0 +1,13 @@
+diff a/tools/rust/update_rust.py b/tools/rust/update_rust.py	(rejected hunks)
+@@ -124,11 +124,10 @@ def main():
+                         GetPlatformUrlPrefix)
+ 
+     platform_prefix = GetPlatformUrlPrefix(GetDefaultHostOs())
+ 
+     version = GetRustClangRevision()
+-
+     # Exit early if the existing package is up-to-date. Note that we cannot
+     # simply call DownloadAndUnpack() every time: aside from unnecessarily
+     # downloading the toolchain if it hasn't changed, it also leads to multiple
+     # versions of the same rustlibs. build/rust/std/find_std_rlibs.py chokes in
+     # this case.

@@ -1,0 +1,55 @@
+diff a/build/config/compiler/pgo/pgo.gni b/build/config/compiler/pgo/pgo.gni	(rejected hunks)
+@@ -6,15 +6,20 @@ import("//build/config/cast.gni")
+ import("//build/config/chrome_build.gni")
+ import("//build/config/chromeos/ui_mode.gni")
+ import("//build/config/cronet/config.gni")
+ import("//build/config/dcheck_always_on.gni")
+ import("//build/config/features.gni")
++import("//build/config/coverage/coverage.gni")
+ 
+ if (is_ios) {
+   import("//build/config/apple/mobile_config.gni")
+ }
+ 
++declare_args() {
++  arkweb_test = false
++}
++
+ declare_args() {
+   # Specify the current PGO phase.
+   # Here's the different values that can be used:
+   #     0 : Means that PGO is turned off.
+   #     1 : Used during the PGI (instrumentation) phase.
+@@ -22,23 +27,30 @@ declare_args() {
+   # PGO profiles are generated from `dcheck_always_on = false` builds. Mixing
+   # those profiles with `dcheck_always_on = true` builds can cause the compiler
+   # to think some code is hotter than it actually is, potentially causing very
+   # bad compile times.
+   chrome_pgo_phase = 0
+-  if (!is_cronet_build && !dcheck_always_on && is_official_build &&
++  if (is_ohos || (!is_cronet_build && !dcheck_always_on && is_official_build &&
+       # TODO(crbug.com/1336055): Update this now-outdated condition with regard
+       # to chromecast and determine whether chromeos_is_browser_only is
+       # obsolete.
+       (is_high_end_android || is_win || is_mac || is_fuchsia ||
+        (is_linux && !is_castos) ||
+-       (is_ios && use_blink && target_environment == "device"))) {
++       (is_ios && use_blink && target_environment == "device")))) {
++    if (!use_clang_coverage && !arkweb_test) {
+     chrome_pgo_phase = 2
++    print("current chrome_pgo_phase is: $chrome_pgo_phase")
++   }
+   }
+ 
+   # When using chrome_pgo_phase = 2, read profile data from this path.
+   pgo_data_path = ""
+ 
++  if (is_ohos && !arkweb_test) {
++    pgo_data_path = "//build/pgo/ohos/arkweb.profdata"
++  }
++
+   # Whether to enable temporal pgo or not (experimental).
+   temporal_pgo_profile = false
+ 
+   # Flags to override the pgo profile with a freshly created one (newer than
+   # the sha1 in the repo).

@@ -1,0 +1,13 @@
+diff a/tools/json_schema_compiler/feature_compiler.py b/tools/json_schema_compiler/feature_compiler.py	(rejected hunks)
+@@ -287,10 +287,11 @@ FEATURE_GRAMMAR = ({
+                 'chromeos': 'Feature::CHROMEOS_PLATFORM',
+                 'desktop_android': 'Feature::DESKTOP_ANDROID_PLATFORM',
+                 'linux': 'Feature::LINUX_PLATFORM',
+                 'mac': 'Feature::MACOSX_PLATFORM',
+                 'win': 'Feature::WIN_PLATFORM',
++                'ohos': 'Feature::OHOS_PLATFORM'
+             }
+         }
+     },
+     'required_buildflags': {
+         list: {

@@ -1,0 +1,13 @@
+diff a/tools/metrics/histograms/metadata/media/enums.xml b/tools/metrics/histograms/metadata/media/enums.xml	(rejected hunks)
+@@ -2288,10 +2288,11 @@ chromium-metrics-reviews@google.com.
+   <int value="27" label="vaAttachProtectedSession()"/>
+   <int value="28" label="vaDetachProtectedSession()"/>
+   <int value="29" label="vaProtectedSessionHwUpdate() (deprecated)"/>
+   <int value="30" label="kVAProtectedSessionExecute()"/>
+   <int value="31" label="Other VA functions"/>
++  <int value="32" label="vaDeriveImage()"/>
+ </enum>
+ 
+ <enum name="VideoCaptureApi">
+   <int value="0" label="UNKNOWN">UNKNOWN</int>
+   <int value="1" label="LINUX_V4L2_SINGLE_PLANE">LINUX_V4L2_SINGLE_PLANE</int>

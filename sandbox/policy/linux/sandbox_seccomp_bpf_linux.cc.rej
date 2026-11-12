@@ -1,0 +1,102 @@
+diff a/sandbox/policy/linux/sandbox_seccomp_bpf_linux.cc b/sandbox/policy/linux/sandbox_seccomp_bpf_linux.cc	(rejected hunks)
+@@ -58,21 +58,21 @@
+ #include "sandbox/policy/linux/bpf_ime_policy_linux.h"
+ #include "sandbox/policy/linux/bpf_nearby_policy_linux.h"
+ #include "sandbox/policy/linux/bpf_tts_policy_linux.h"
+ #endif  // BUILDFLAG(IS_CHROMEOS)
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+ #include "media/gpu/buildflags.h"    // nogncheck
+ #include "media/media_buildflags.h"  // nogncheck
+ #if BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+ #include "sandbox/policy/linux/bpf_hardware_video_decoding_policy_linux.h"
+ #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+ #include "sandbox/policy/linux/bpf_on_device_translation_policy_linux.h"
+-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+ 
+ using sandbox::bpf_dsl::Allow;
+ using sandbox::bpf_dsl::ResultExpr;
+ 
+ #else  // BUILDFLAG(USE_SECCOMP_BPF)
+@@ -204,11 +204,11 @@ std::unique_ptr<BPFBasePolicy> SandboxSeccompBPF::PolicyForSandboxType(
+       return std::make_unique<ServiceProcessPolicy>();
+     case sandbox::mojom::Sandbox::kServiceWithJit:
+       return std::make_unique<ServiceProcessPolicy>();
+     case sandbox::mojom::Sandbox::kSpeechRecognition:
+       return std::make_unique<SpeechRecognitionProcessPolicy>();
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+     case sandbox::mojom::Sandbox::kOnDeviceTranslation:
+       return std::make_unique<OnDeviceTranslationProcessPolicy>();
+     case sandbox::mojom::Sandbox::kScreenAI:
+       return std::make_unique<ScreenAIProcessPolicy>();
+     case sandbox::mojom::Sandbox::kShapeDetection:
+@@ -217,27 +217,31 @@ std::unique_ptr<BPFBasePolicy> SandboxSeccompBPF::PolicyForSandboxType(
+     case sandbox::mojom::Sandbox::kHardwareVideoDecoding:
+       return std::make_unique<HardwareVideoDecodingProcessPolicy>(
+           HardwareVideoDecodingProcessPolicy::ComputePolicyType(
+               options.use_amd_specific_policies));
+ #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
++#if !BUILDFLAG(IS_OHOS)
+ #if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
+     case sandbox::mojom::Sandbox::kHardwareVideoEncoding:
+       // TODO(b/255554267): we're using the GPU process sandbox policy for now
+       // as a transition step. However, we should create a policy that's tighter
+       // just for hardware video encoding.
+       return GetGpuProcessSandbox(options, MremapPolicy::kBlock);
+ #endif  // BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
+-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#endif
++#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+ #if BUILDFLAG(IS_CHROMEOS)
+     case sandbox::mojom::Sandbox::kIme:
+       return std::make_unique<ImeProcessPolicy>();
+     case sandbox::mojom::Sandbox::kTts:
+       return std::make_unique<TtsProcessPolicy>();
+     case sandbox::mojom::Sandbox::kNearby:
+       return std::make_unique<NearbyProcessPolicy>();
+ #endif  // BUILDFLAG(IS_CHROMEOS)
++#if !BUILDFLAG(IS_OHOS)
+     case sandbox::mojom::Sandbox::kZygoteIntermediateSandbox:
++#endif
+     case sandbox::mojom::Sandbox::kNoSandbox:
+       NOTREACHED();
+   }
+   NOTREACHED();
+ }
+@@ -275,24 +284,27 @@ void SandboxSeccompBPF::RunSandboxSanityChecks(
+       // We should never allow the creation of netlink sockets.
+       syscall_ret = socket(AF_NETLINK, SOCK_DGRAM, 0);
+       CHECK_EQ(-1, syscall_ret);
+       CHECK_EQ(EPERM, errno);
+ #endif  // !defined(NDEBUG)
++#endif  // !BUILDFLAG(IS_OHOS)
+       return;
+     }
+ #if BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+     case sandbox::mojom::Sandbox::kHardwareVideoDecoding:
+ #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
++#if !BUILDFLAG(IS_OHOS)
+ #if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
+     case sandbox::mojom::Sandbox::kHardwareVideoEncoding:
+ #endif  // BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
++#endif
+ #if BUILDFLAG(IS_CHROMEOS)
+     case sandbox::mojom::Sandbox::kIme:
+     case sandbox::mojom::Sandbox::kTts:
+     case sandbox::mojom::Sandbox::kNearby:
+ #endif  // BUILDFLAG(IS_CHROMEOS)
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+     case sandbox::mojom::Sandbox::kShapeDetection:
+     case sandbox::mojom::Sandbox::kScreenAI:
+     case sandbox::mojom::Sandbox::kOnDeviceTranslation:
+ #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+     case sandbox::mojom::Sandbox::kAudio:

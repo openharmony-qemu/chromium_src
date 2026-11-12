@@ -1,0 +1,14 @@
+diff a/build/config/ui.gni b/build/config/ui.gni	(rejected hunks)
+@@ -28,11 +28,11 @@ declare_args() {
+   use_aura = is_win || is_linux || is_chromeos || is_fuchsia
+ }
+ 
+ declare_args() {
+   # True means the UI is built using the "views" framework.
+-  toolkit_views = is_mac || is_win || is_linux || is_chromeos || is_fuchsia
++  toolkit_views = is_mac || is_win || is_linux || is_chromeos || is_fuchsia || is_ohos
+ 
+   use_glib =
+       is_linux && !is_castos &&
+       # Avoid the need for glib when Android is building things via secondary
+       # toolchains.

@@ -1,0 +1,37 @@
+diff a/storage/browser/file_system/sandbox_file_system_backend_delegate.cc b/storage/browser/file_system/sandbox_file_system_backend_delegate.cc	(rejected hunks)
+@@ -459,26 +459,35 @@ void SandboxFileSystemBackendDelegate::AddFileAccessObserver(
+       access_observers_[type].AddObserver(std::move(observer), task_runner);
+ }
+ 
+ const UpdateObserverList* SandboxFileSystemBackendDelegate::GetUpdateObservers(
+     FileSystemType type) const {
++#if DCHECK_IS_ON()
++  DCHECK(!is_filesystem_opened_ || io_thread_checker_.CalledOnValidThread());
++#endif
+   auto iter = update_observers_.find(type);
+   if (iter == update_observers_.end())
+     return nullptr;
+   return &iter->second;
+ }
+ 
+ const ChangeObserverList* SandboxFileSystemBackendDelegate::GetChangeObservers(
+     FileSystemType type) const {
++#if DCHECK_IS_ON()
++  DCHECK(!is_filesystem_opened_ || io_thread_checker_.CalledOnValidThread());
++#endif
+   auto iter = change_observers_.find(type);
+   if (iter == change_observers_.end())
+     return nullptr;
+   return &iter->second;
+ }
+ 
+ const AccessObserverList* SandboxFileSystemBackendDelegate::GetAccessObservers(
+     FileSystemType type) const {
++#if DCHECK_IS_ON()
++  DCHECK(!is_filesystem_opened_ || io_thread_checker_.CalledOnValidThread());
++#endif
+   auto iter = access_observers_.find(type);
+   if (iter == access_observers_.end())
+     return nullptr;
+   return &iter->second;
+ }

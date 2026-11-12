@@ -75,6 +75,8 @@ declare_args() {
   # version as `rustc` (i.e. if it can understand the LLVM-IR from the
   # compilation artifacts produced by `rustc`).  For more context please see
   # older bugs like b/299483903, https://crbug.com/40281834, or b/300937673.
+  #
+  # Disable on OHOS due to LLVM version mismatch between Rust (LLVM 22) and Clang (LLVM 19).
   toolchain_supports_rust_thin_lto = true
 
   # Any extra std rlibs in your Rust toolchain, relative to the standard
@@ -341,6 +343,19 @@ if (is_linux || is_chromeos) {
     rust_abi_target = "i686-pc-windows-msvc"
   } else {
     assert(false, "Architecture not supported")
+  }
+} else if (is_ohos) {
+  if (current_cpu == "arm64") {
+    rust_abi_target = "aarch64-unknown-linux-ohos"
+    cargo_target_abi = ""
+  } else if (current_cpu == "arm") {
+    rust_abi_target = "armv7-unknown-linux-ohos"
+    cargo_target_abi = ""
+  } else if (current_cpu == "x64") {
+    rust_abi_target = "x86_64-unknown-linux-ohos"
+    cargo_target_abi = ""
+  } else {
+    toolchain_has_rust = false
   }
 }
 

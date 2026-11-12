@@ -1,0 +1,16 @@
+diff a/pdf/pdf_view_web_plugin.cc b/pdf/pdf_view_web_plugin.cc	(rejected hunks)
+@@ -131,10 +131,14 @@
+ #include "pdf/pdf_ink_module.h"
+ #include "pdf/pdf_ink_module_client.h"
+ #include "third_party/skia/include/core/SkCanvas.h"
+ #endif
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/pdf/pdf_view_web_plugin_for_include.cc"
++#endif
++
+ namespace chrome_pdf {
+ 
+ namespace {
+ 
+ // The minimum zoom level allowed.

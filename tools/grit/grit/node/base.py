@@ -512,6 +512,12 @@ class Node:
 
       elif name == 'is_linux':
         value = target_platform == 'linux'
+      elif name == 'is_ohos':
+        value = target_platform == 'ohos'
+      elif name == 'arkweb_asan':
+        value = target_platform == 'ohos'
+      elif name == 'arkweb_test':
+        value = target_platform == 'ohos'
       elif name == 'is_chromeos':
         value = target_platform == 'chromeos'
       elif name == 'is_macosx':

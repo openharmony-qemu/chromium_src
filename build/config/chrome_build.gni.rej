@@ -1,0 +1,16 @@
+diff a/build/config/chrome_build.gni b/build/config/chrome_build.gni	(rejected hunks)
+@@ -45,10 +45,14 @@ declare_args() {
+ 
+     # Set to true to enable new logic for setting the package name and version
+     # code for standalone WebView targets.
+     enable_new_standalone_webview_settings = true
+   }
++
++  if (is_ohos) {
++    ohos_build_target = "chromium"
++  }
+ }
+ 
+ # Use this for is_chrome_branded things that live in src-internal.
+ # See: b/452971335
+ is_internal_chrome_branded = enable_src_internal && is_chrome_branded

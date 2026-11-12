@@ -1,0 +1,17 @@
+diff a/build/rust/allocator/BUILD.gn b/build/rust/allocator/BUILD.gn	(rejected hunks)
+@@ -38,11 +38,14 @@ buildflag_header("buildflags") {
+   header = "buildflags.h"
+   flags = [
+     "RUST_ALLOCATOR_USES_PARTITION_ALLOC=$rust_allocator_uses_partition_alloc",
+     "RUST_ALLOCATOR_USES_ALIGNED_MALLOC=$rust_allocator_uses_aligned_malloc",
+   ]
+-  visibility = [ ":*" ]
++  visibility = [ 
++    ":*",
++    "//arkweb/build:arkweb_prebuild_buildflags",
++  ]
+ }
+ 
+ if (toolchain_has_rust) {
+   # All targets which depend on Rust code but are not linked by rustc must
+   # depend on this. Usually, this dependency will come from a `rust_target` or

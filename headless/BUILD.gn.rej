@@ -1,0 +1,24 @@
+diff a/headless/BUILD.gn b/headless/BUILD.gn	(rejected hunks)
+@@ -595,11 +595,22 @@ test("headless_unittests") {
+     "lib/renderer/allowlist_unittest.cc",
+   ]
+ 
+   defines = []
+ 
++  if (is_ohos) {
++    defines += [
++      "HEADLESS_UNITTESTS_OHOS_ENABLE",
++    ]
++
++    sources += [
++      "//components/embedder_support/user_agent_utils.cc",
++    ]
++  }
++
+   deps = [
++    "//cef:libcef_static",
+     ":headless_non_renderer",
+     ":headless_shell_lib",
+     "//base/test:run_all_unittests",
+     "//base/test:test_support",
+     "//components/embedder_support",

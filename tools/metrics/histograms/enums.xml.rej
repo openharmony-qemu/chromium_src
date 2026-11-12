@@ -1,0 +1,27 @@
+diff a/tools/metrics/histograms/enums.xml b/tools/metrics/histograms/enums.xml	(rejected hunks)
+@@ -6289,10 +6290,25 @@ shown properly on the user-facing crash UI.
+     the currently committed page.
+   </int>
+   <int value="43" label="kDidChangeOpener">
+     A request was received to change window.opener to a frame in BFCache.
+   </int>
++  <int value="44" label="kDidCommitNavigation">
++    A request was received to finish committing a navigation within a BFCached
++    page.
++  </int>
++  <int value="45" label="kStartDragging">
++    A request was received to start dragging from within an inactive page.
++  </int>
++  <int value="47" label="kClipboard">
++    A clipboard read/write or listener registration IPC arrived for an inactive
++    frame.
++  </int>
++  <int value="48" label="kPictureInPictureService">
++    A PictureInPictureService IPC arrived for a frame in BFCache or pending
++    deletion.
++  </int>
+ </enum>
+ 
+ <enum name="IncidentType">
+   <int value="1" label="TrackedPreference"/>
+   <int value="2" label="BinaryIntegrity"/>

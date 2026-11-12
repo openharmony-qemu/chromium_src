@@ -1,0 +1,51 @@
+diff a/third_party/blink/renderer/platform/widget/input/elastic_overscroll_controller_bezier_unittest.cc b/third_party/blink/renderer/platform/widget/input/elastic_overscroll_controller_bezier_unittest.cc	(rejected hunks)
+@@ -330,45 +329,28 @@ TEST_F(ElasticOverscrollControllerBezierTest, VerifyForwardAnimationTick) {
+   // This signals that the finger has lifted off which triggers a fling.
+   const base::TimeTicks now = base::TimeTicks::Now();
+   SendGestureScrollEnd(now);
+ 
+   const int TOTAL_FRAMES = 28;
+-  const std::array<int, TOTAL_FRAMES> stretch_amount_y = {
+-      -19, -41, -55, -65, -72, -78, -82, -85, -88, -89, -78, -64, -53, -44,
+-      -37, -30, -25, -20, -16, -13, -10, -7,  -5,  -4,  -2,  -1,  -1,  0,
+-  };
+ 
+   for (int i = 0; i < TOTAL_FRAMES; i++) {
+     controller_.Animate(now + base::Milliseconds(i * 16));
+-    EXPECT_EQ(controller_.EnsureEntry(cc::ElementId()).state,
+-              (stretch_amount_y[i] == 0
+-                   ? ElasticOverscrollController::kStateInactive
+-                   : ElasticOverscrollController::kStateMomentumAnimated));
+-    ASSERT_FLOAT_EQ(helper_.StretchAmount(cc::ElementId()).y(),
+-                    stretch_amount_y[i]);
++    EXPECT_EQ(controller_.EnsureEntry(cc::ElementId()).state, ElasticOverscrollController::kStateInactive);
++    ASSERT_FLOAT_EQ(helper_.StretchAmount(cc::ElementId()).y(), 0);
+   }
+ 
+   // Test horizontal forward bounce animations.
+   SendGestureScrollBegin(PhaseState::kNonMomentum);
+   SendGestureScrollUpdate(PhaseState::kNonMomentum, Vector2dF(-50, 0));
+   controller_.EnsureEntry(cc::ElementId()).scroll_velocity =
+       gfx::Vector2dF(-3000.f, 0.f);
+   SendGestureScrollEnd(now);
+ 
+-  const std::array<int, TOTAL_FRAMES> stretch_amount_x = {
+-      -9,  -24, -34, -42, -48, -54, -58, -62, -66, -69, -62, -52, -43, -36,
+-      -30, -25, -20, -17, -13, -10, -8,  -6,  -4,  -3,  -2,  -1,  0,   0,
+-  };
+-
+   for (int i = 0; i < TOTAL_FRAMES; i++) {
+     controller_.Animate(now + base::Milliseconds(i * 16));
+-    EXPECT_EQ(controller_.EnsureEntry(cc::ElementId()).state,
+-              (stretch_amount_x[i] == 0
+-                   ? ElasticOverscrollController::kStateInactive
+-                   : ElasticOverscrollController::kStateMomentumAnimated));
+-    ASSERT_FLOAT_EQ(helper_.StretchAmount(cc::ElementId()).x(),
+-                    stretch_amount_x[i]);
++    EXPECT_EQ(controller_.EnsureEntry(cc::ElementId()).state, ElasticOverscrollController::kStateInactive);
++    ASSERT_FLOAT_EQ(helper_.StretchAmount(cc::ElementId()).x(), 0);
+   }
+ }
+ 
+ // Tests that the bounce forward animation is *not* played when the velocity is
+ // less than kIgnoreForwardBounceVelocityThreshold. This can be verified by

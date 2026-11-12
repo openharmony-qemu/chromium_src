@@ -806,11 +806,25 @@ bool KURL::CanSetPathname() const {
 }
 
 bool KURL::CanRemoveHost() const {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
+    return IsHierarchical() && !IncludesCredentials() && !HasPort();
+  }
+  return false;
+#else
   return IsHierarchical() && !IncludesCredentials() && !HasPort();
+#endif
 }
 
 bool KURL::IsHierarchical() const {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
+    return IsStandard() || (IsValid() && !HasOpaquePath());
+  }
+  return IsStandard();
+#else
   return IsStandard() || (IsValid() && !HasOpaquePath());
+#endif
 }
 
 bool KURL::IsStandard() const {

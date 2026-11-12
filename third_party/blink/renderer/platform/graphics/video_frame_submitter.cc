@@ -41,6 +41,10 @@
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 #include "ui/gfx/presentation_feedback.h"
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER) || BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#include "arkweb/chromium_ext/blink/renderer/platform/graphics/video_frame_submitter_for_include.cc"
+#endif
+
 namespace blink {
 
 namespace {
@@ -110,6 +114,10 @@ class VideoFrameSubmitter::FrameSinkBundleProxy
     bundle_->SetNeedsBeginFrame(frame_sink_id_.sink_id(), needs_begin_frame);
   }
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  void UpdateThrottleMode(bool is_enable) override { NOTREACHED(); }
+#endif
+
   // Not used by VideoFrameSubmitter.
   void SetParams(
       viz::mojom::blink::CompositorFrameSinkParamsPtr params) override {
@@ -147,6 +155,26 @@ class VideoFrameSubmitter::FrameSinkBundleProxy
 #if BUILDFLAG(IS_ANDROID)
   void SetThreads(const Vector<viz::Thread>& threads) override {
     bundle_->SetThreads(frame_sink_id_.sink_id(), threads);
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  void ReportKeyThreadIds(const Vector<int32_t>& thread_ids,
+                          int32_t process_id,
+                          bool is_created) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void OnSetBypassVsyncCondition(int32_t condition) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  void InitializeCompositorFrameSinkType(
+      viz::mojom::blink::CompositorFrameSinkType type) override {
+    if (!bundle_) {
+      return;
+    }
+    bundle_->InitializeCompositorFrameSinkType(frame_sink_id_.sink_id(), type);
   }
 #endif
 
@@ -393,6 +421,9 @@ void VideoFrameSubmitter::OnBeginFrame(
 
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   TRACE_EVENT0("media", "VideoFrameSubmitter::OnBeginFrame");
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  StopRenderingForSameLayer();
+#endif
 
   last_begin_frame_args_ = args;
 
@@ -543,6 +574,10 @@ void VideoFrameSubmitter::OnBeginFrame(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  UpdateDroppedFrameMetrics(args);
+#endif
+
   // Update the current frame, even if we haven't gotten an ack for a previous
   // frame yet. That probably signals a dropped frame, and this will let the
   // provider know that it happened, since we won't PutCurrentFrame this one.
@@ -689,6 +724,12 @@ void VideoFrameSubmitter::StartSubmitting() {
   remote_frame_sink_.set_disconnect_handler(base::BindOnce(
       &VideoFrameSubmitter::OnContextLost, base::Unretained(this)));
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  compositor_frame_sink_->InitializeCompositorFrameSinkType(
+      is_media_stream_ ? viz::mojom::CompositorFrameSinkType::kMediaStream
+                       : viz::mojom::CompositorFrameSinkType::kVideo);
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
   Vector<viz::Thread> threads;
   threads.push_back(viz::Thread{base::PlatformThread::CurrentId(),
@@ -741,10 +782,12 @@ void VideoFrameSubmitter::UpdateSubmissionState() {
     //
     // If there are any in-flight empty frame requests, this cancels them. We
     // want to wait until any group of state changes stabilizes.
+#if !BUILDFLAG(ARKWEB_MEDIA)
     empty_frame_timer_.Start(
         FROM_HERE, base::Milliseconds(500),
         base::BindOnce(&VideoFrameSubmitter::SubmitEmptyFrameIfNeeded,
                        base::Unretained(this)));
+#endif
   }
 }
 
@@ -784,9 +827,15 @@ bool VideoFrameSubmitter::SubmitFrame(
   // not building up unused remote side resources. See https://crbug.com/830828.
   //
   // Similarly we don't submit the same frame multiple times.
+#if !BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (last_frame_id_ == video_frame->unique_id()) {
     return false;
   }
+#else
+  if (last_frame_id_ == video_frame->unique_id() && !force_resubmit_) {
+    return false;
+  }
+#endif
 
   gfx::Size frame_size(video_frame->natural_size());
 
@@ -815,9 +864,17 @@ bool VideoFrameSubmitter::SubmitFrame(
 
   // We can't delay frame size changes even if we have a pending compositor ACK
   // because a relayout signal is already in flight on the main thread.
+#if !BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (waiting_for_compositor_ack_ > 0 && !frame_size_changed) {
     return false;
   }
+#else
+  if (waiting_for_compositor_ack_ > 0 && !frame_size_changed &&
+      !force_resubmit_) {
+    return false;
+  }
+  force_resubmit_ = false;
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   last_frame_id_ = video_frame->unique_id();
 
@@ -832,6 +889,9 @@ bool VideoFrameSubmitter::SubmitFrame(
     roughness_reporter_->FrameSubmitted(frame_token, *video_frame.get(),
                                         last_begin_frame_args_.interval);
   }
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  video_frame->metadata().render_video_view = render_video_view_;
+#endif
   auto compositor_frame = CreateCompositorFrame(
       frame_token, begin_frame_ack, std::move(video_frame), transform);
 
@@ -858,6 +918,9 @@ bool VideoFrameSubmitter::SubmitFrame(
   NotifyOpacityIfNeeded(new_opacity);
 
   ++waiting_for_compositor_ack_;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  StartRenderingForSameLayer();
+#endif
   return true;
 }
 
@@ -971,10 +1034,20 @@ viz::CompositorFrame VideoFrameSubmitter::CreateCompositorFrame(
   // definitely emitting a CompositorFrame that damages the entire surface.
   compositor_frame.metadata.begin_frame_ack.has_damage = true;
   compositor_frame.metadata.device_scale_factor = 1;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  if (has_native_layer_) {
+    compositor_frame.metadata.stretch_content_none_device_scale_factor = device_scale_factor_;
+  }
+#endif
   // If we're submitting frames even if we're not visible, then also turn off
   // throttling.  This is for picture in picture, which can be throttled if the
   // opener window is minimized without this.
   compositor_frame.metadata.may_throttle_if_undrawn_frames = force_submit_;
+#if BUILDFLAG(ARKWEB_PIP)
+  if (force_submit_) {
+    compositor_frame.metadata.may_throttle_if_undrawn_frames = !force_submit_;
+  }
+#endif
 
   // Specify size of shared quad state and quad lists so that RenderPass doesn't
   // allocate using the defaults of 32 and 128 since we only append one quad.
@@ -990,6 +1063,9 @@ viz::CompositorFrame VideoFrameSubmitter::CreateCompositorFrame(
     const bool is_opaque = media::IsOpaque(video_frame->format());
     resource_provider_->AppendQuads(render_pass.get(), std::move(video_frame),
                                     transform, is_opaque);
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+    SubmitDroppedFrameMetricsToMetadata(compositor_frame);
+#endif
   }
 
   compositor_frame.render_pass_list.emplace_back(std::move(render_pass));
@@ -1014,7 +1090,6 @@ void VideoFrameSubmitter::NotifyOpacityIfNeeded(Opacity new_opacity) {
   opacity_ = new_opacity;
   surface_embedder_->OnOpacityChanged(new_opacity == Opacity::kIsOpaque);
 }
-
 void VideoFrameSubmitter::ClearFrameResources() {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
 

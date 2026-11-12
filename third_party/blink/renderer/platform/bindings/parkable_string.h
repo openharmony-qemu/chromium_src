@@ -27,6 +27,9 @@
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 #include "third_party/blink/renderer/platform/wtf/thread_safe_ref_counted.h"
 #include "third_party/blink/renderer/platform/wtf/threading.h"
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/bindings/parkable_string_utils.h"
+#endif
 
 // ParkableString represents a string that may be parked in memory, that it its
 // underlying memory address may change. Its content can be retrieved with the

@@ -91,7 +91,14 @@ class VideoMockCompositorFrameSink
   VideoMockCompositorFrameSink& operator=(const VideoMockCompositorFrameSink&) =
       delete;
   ~VideoMockCompositorFrameSink() override = default;
-
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+    MOCK_METHOD3(ReportKeyThreadIds, void(const Vector<int32_t>&, int32_t, bool));
+    MOCK_METHOD0(OnVsyncReceived, void());
+    MOCK_METHOD0(TriggerVsyncImplTask, void());
+    MOCK_METHOD1(SetHandledTouchEvent, void(bool));
+    MOCK_METHOD1(OnSetBypassVsyncCondition, void(int32_t));
+    MOCK_METHOD1(UpdateThrottleMode, void(bool));
+#endif  // ARKWEB_UNITTESTS
   const viz::CompositorFrame& last_submitted_compositor_frame() const {
     return last_submitted_compositor_frame_;
   }
@@ -116,6 +123,10 @@ class VideoMockCompositorFrameSink
   MOCK_METHOD2(BindLayerContext,
                void(viz::mojom::blink::PendingLayerContextPtr,
                     viz::mojom::blink::LayerContextSettingsPtr));
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  MOCK_METHOD1(InitializeCompositorFrameSinkType,
+               void(viz::mojom::CompositorFrameSinkType));
+#endif
   MOCK_METHOD1(SetThreads, void(const Vector<viz::Thread>&));
 
  private:

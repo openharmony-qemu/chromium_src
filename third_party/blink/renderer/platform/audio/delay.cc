@@ -82,6 +82,8 @@ Delay::Delay(double max_delay_time,
 
   buffer_.Allocate(buffer_length);
   buffer_.Zero();
+
+  delayUtils_ = new DelayUtils(this);
 }
 
 size_t Delay::BufferLengthForDelay(double max_delay_time,

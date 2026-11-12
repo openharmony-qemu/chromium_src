@@ -1,0 +1,106 @@
+diff a/third_party/blink/renderer/platform/widget/input/widget_input_handler_manager.cc b/third_party/blink/renderer/platform/widget/input/widget_input_handler_manager.cc	(rejected hunks)
+@@ -339,10 +348,11 @@ WidgetInputHandlerManager::WidgetInputHandlerManager(
+         std::make_unique<SynchronousCompositorProxyRegistry>(
+             compositor_thread_default_task_runner_, io_thread_id,
+             main_thread_id);
+   }
+ #endif
++  manager_utils_ = std::make_unique<WidgetInputHandlerManagerUtils>(this);
+ }
+ 
+ void WidgetInputHandlerManager::OnFirstContentfulPaint(
+     const base::TimeTicks& first_paint_time) {
+   suppressing_input_events_state_ &=
+@@ -507,10 +517,13 @@ bool WidgetInputHandlerManager::RequestedMainFramePending() {
+ 
+ void WidgetInputHandlerManager::WillShutdown() {
+ #if BUILDFLAG(IS_ANDROID)
+   if (synchronous_compositor_registry_)
+     synchronous_compositor_registry_->DestroyProxy();
++#endif
++#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
++  manager_utils_->DestroyProxy();
+ #endif
+   input_handler_proxy_.reset();
+   dropped_event_counts_timer_.reset();
+ }
+ 
+@@ -587,10 +600,11 @@ void WidgetInputHandlerManager::AttachSynchronousCompositor(
+         std::move(compositor_request));
+   }
+ }
+ #endif
+ 
++
+ void WidgetInputHandlerManager::ObserveGestureEventOnMainThread(
+     const WebGestureEvent& gesture_event,
+     const cc::InputHandlerScrollResult& scroll_result) {
+   base::OnceClosure observe_gesture_event_closure = base::BindOnce(
+       &WidgetInputHandlerManager::ObserveGestureEventOnInputHandlingThread,
+@@ -798,10 +812,17 @@ void WidgetInputHandlerManager::DispatchEvent(
+         ~static_cast<uint16_t>(SuppressingInputEventsBits::kHidden);
+   }
+ 
+   if (suppress_input && !allow_pre_commit_input_ &&
+       !event_is_mouse_or_pointer_move) {
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++    LOG(WARNING) << "widgetInputHanderManager::DispatchEvent SUPPRESSED, "
++                 << "type:" << WebInputEvent::GetName(event_type)
++                 << ", suppress_input: " << suppress_input
++                 << ", allow_pre_commit_input_: " << allow_pre_commit_input_
++                 << ", event_is_mouse_or_pointer_move: " << event_is_mouse_or_pointer_move;
++#endif
+     SuppressEvent(suppress_input, std::move(event), std::move(callback));
+     return;
+   }
+ 
+   // If TimeTicks is not consistent across processes we cannot use the event's
+@@ -1042,10 +1067,13 @@ void WidgetInputHandlerManager::InitOnInputHandlingThread(
+   if (sync_compositing) {
+     DCHECK(synchronous_compositor_registry_);
+     synchronous_compositor_registry_->CreateProxy(input_handler_proxy_.get());
+   }
+ #endif
++#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
++  manager_utils_->CreateProxy();
++#endif
+ }
+ 
+ void WidgetInputHandlerManager::BindChannel(
+     mojo::PendingReceiver<mojom::blink::WidgetInputHandler> receiver) {
+   if (!receiver.is_valid())
+@@ -1177,11 +1209,16 @@ void WidgetInputHandlerManager::DidHandleInputEventSentToCompositor(
+                 &WidgetInputHandlerManager::SendDroppedPointerDownCounts,
+                 this));
+       }
+     }
+   }
+-
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow",
++                    "trace_id",
++                    std::to_string(event->latency_info().trace_id()), "step",
++                    "STEP_DID_HANDLE_INPUT_AND_OVERSCROLL");
++#endif
+   if (event_disposition == InputHandlerProxy::REQUIRES_MAIN_THREAD_HIT_TEST) {
+     TRACE_EVENT_INSTANT0("input", "PostingHitTestToMainThread",
+                          TRACE_EVENT_SCOPE_THREAD);
+     DCHECK_EQ(event->Event().GetType(),
+               WebInputEvent::Type::kGestureScrollBegin);
+@@ -1296,11 +1333,15 @@ void WidgetInputHandlerManager::DidHandleInputEventSentToMain(
+         base::TaskAnnotator::EmitTaskTimingDetails(ctx);
+         ui::LatencyInfo::FillTraceEvent(
+             ctx, trace_id,
+             ChromeLatencyInfo2::Step::STEP_HANDLED_INPUT_EVENT_MAIN_OR_IMPL);
+       });
+-
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow",
++                    "trace_id", std::to_string(latency_info.trace_id()), "step",
++                    "STEP_HANDLED_INPUT_EVENT_MAIN_OR_IMPL");
++#endif
+   std::optional<cc::TouchAction> touch_action_for_ack = touch_action_from_main;
+   if (!touch_action_for_ack.has_value()) {
+     TRACE_EVENT_INSTANT0("input", "Using allowed_touch_action",
+                          TRACE_EVENT_SCOPE_THREAD);
+     touch_action_for_ack = touch_action_from_compositor;

@@ -60,6 +60,12 @@ class BLINK_PLATFORM_EXPORT ResourceRequestClient
       mojo::ScopedDataPipeConsumerHandle body,
       std::optional<mojo_base::BigBuffer> cached_metadata) = 0;
 
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  virtual void OnTransferDataWithSharedMemory(
+      base::ReadOnlySharedMemoryRegion region,
+      uint64_t buffer_size) {}
+#endif
+
   // Called when the transfer size is updated. This method may be called
   // multiple times or not at all. The transfer size is the length of the
   // response (including both headers and the body) over the network.

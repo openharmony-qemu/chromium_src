@@ -1,0 +1,36 @@
+diff a/third_party/blink/renderer/platform/loader/fetch/resource_request.h b/third_party/blink/renderer/platform/loader/fetch/resource_request.h	(rejected hunks)
+@@ -683,10 +683,18 @@ class PLATFORM_EXPORT ResourceRequestHead {
+ #if DCHECK_IS_ON()
+     is_set_url_allowed_ = value;
+ #endif
+   }
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  bool GetAllowPreloadRecord() const { return allow_preload_record_; }
++  void SetAllowPreloadRecord(bool allow) { allow_preload_record_ = allow; }
++
++  const KURL& GetMainUrl() const { return main_url_; }
++  void SetMainUrl(const KURL& url) { main_url_ = url; }
++#endif
++
+   bool AllowsDeviceBoundSessionRegistration() const {
+     return allows_device_bound_session_registration_;
+   }
+ 
+   void SetAllowsDeviceBoundSessionRegistration(
+@@ -850,10 +858,15 @@ class PLATFORM_EXPORT ResourceRequestHead {
+ 
+ #if DCHECK_IS_ON()
+   bool is_set_url_allowed_ = true;
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  bool allow_preload_record_ = false;
++  KURL main_url_;
++#endif
++
+   // Whether this request is allowed to register new device bound
+   // sessions or accept challenges on device bound sessions (e.g. due to
+   // an Origin Trial)
+   bool allows_device_bound_session_registration_ = false;
+ };

@@ -73,6 +73,10 @@ class PLATFORM_EXPORT ResourceClient : public GarbageCollectedMixin {
   // Name for debugging, e.g. shown in memory-infra.
   virtual String DebugName() const = 0;
 
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+  virtual String GetArkWebCompile() const { return String(); }
+#endif
+
   void Trace(Visitor* visitor) const override;
 
  protected:

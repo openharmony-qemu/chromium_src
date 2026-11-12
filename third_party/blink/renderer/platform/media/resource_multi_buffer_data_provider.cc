@@ -254,6 +254,10 @@ void ResourceMultiBufferDataProvider::DidReceiveResponse(
   DVLOG(1) << "didReceiveResponse: HTTP/" << version << " "
            << response.HttpStatusCode();
 #endif
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  LOG(INFO) << "OhMedia, DidReceiveResponse httpStatusCode:" << response.HttpStatusCode()
+            << "(hash" << std::hex << base::FastHash(base::byte_span_from_ref(this)) << ")";
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
   DCHECK(active_loader_);
 
   if (!url_data_->url_index()) {
@@ -476,6 +480,10 @@ void ResourceMultiBufferDataProvider::DidDownloadData(uint64_t data_length) {
 
 void ResourceMultiBufferDataProvider::DidFinishLoading() {
   DVLOG(1) << "didFinishLoading";
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  LOG(INFO) << "OhMedia, DidFinishLoading"
+            << "(hash" << std::hex << base::FastHash(base::byte_span_from_ref(this)) << ")";
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
   DCHECK(active_loader_.get());
   DCHECK(!Available());
 

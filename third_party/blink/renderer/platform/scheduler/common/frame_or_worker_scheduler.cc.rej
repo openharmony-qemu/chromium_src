@@ -1,0 +1,32 @@
+diff a/third_party/blink/renderer/platform/scheduler/common/frame_or_worker_scheduler.cc b/third_party/blink/renderer/platform/scheduler/common/frame_or_worker_scheduler.cc	(rejected hunks)
+@@ -120,11 +120,11 @@ std::unique_ptr<FrameOrWorkerScheduler::LifecycleObserverHandle>
+ FrameOrWorkerScheduler::AddLifecycleObserver(
+     ObserverType type,
+     OnLifecycleStateChangedCallback callback) {
+   callback.Run(CalculateLifecycleState(type));
+   auto handle = base::WrapUnique(
+-        new LifecycleObserverHandle(this, type, std::move(callback)));
++      new LifecycleObserverHandle(this, type, std::move(callback)));
+   lifecycle_observers_.AddObserver(handle.get());
+   return handle;
+ }
+ 
+ void FrameOrWorkerScheduler::RemoveLifecycleObserver(
+@@ -134,16 +134,14 @@ void FrameOrWorkerScheduler::RemoveLifecycleObserver(
+   lifecycle_observers_.RemoveObserver(handle);
+ }
+ 
+ void FrameOrWorkerScheduler::NotifyLifecycleObservers() {
+   for (auto& observer : lifecycle_observers_) {
+-    observer.callback_.Run(CalculateLifecycleState(observer.observer_type_));
++ 	  observer.callback_.Run(CalculateLifecycleState(observer.observer_type_));
+   }
+ }
+ 
+ base::WeakPtr<FrameOrWorkerScheduler> FrameOrWorkerScheduler::GetWeakPtr() {
+   return weak_factory_.GetWeakPtr();
+ }
+ 
+-FrameOrWorkerScheduler::ObserverState::~ObserverState() = default;
+-
+ }  // namespace blink

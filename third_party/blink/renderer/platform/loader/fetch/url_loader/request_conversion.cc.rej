@@ -1,0 +1,17 @@
+diff a/third_party/blink/renderer/platform/loader/fetch/url_loader/request_conversion.cc b/third_party/blink/renderer/platform/loader/fetch/url_loader/request_conversion.cc	(rejected hunks)
+@@ -429,10 +435,15 @@ void PopulateResourceRequest(const ResourceRequestHead& src,
+ 
+   dest->shared_dictionary_writer_enabled = src.SharedDictionaryWriterEnabled();
+ 
+   dest->is_ad_tagged = src.IsAdResource();
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  dest->allow_preload_record = src.GetAllowPreloadRecord();
++  dest->main_url = GURL(src.GetMainUrl());
++#endif
++
+   dest->allows_device_bound_session_registration =
+       src.AllowsDeviceBoundSessionRegistration();
+ }
+ 
+ }  // namespace blink

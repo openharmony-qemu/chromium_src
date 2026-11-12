@@ -1,0 +1,13 @@
+diff a/third_party/blink/renderer/platform/bindings/parkable_string_manager.h b/third_party/blink/renderer/platform/bindings/parkable_string_manager.h	(rejected hunks)
+@@ -124,10 +124,11 @@ class PLATFORM_EXPORT ParkableStringManager
+   bool IsOnDiskMapForTesting(ParkableStringImpl* string);
+ 
+  private:
+   friend class ParkableString;
+   friend class ParkableStringImpl;
++  friend class ParkableStringUtils;
+ 
+   scoped_refptr<ParkableStringImpl> Add(
+       scoped_refptr<StringImpl>&&,
+       std::unique_ptr<ParkableStringImpl::SecureDigest> digest);
+ 

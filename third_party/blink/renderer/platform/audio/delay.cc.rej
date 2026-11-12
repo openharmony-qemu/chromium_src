@@ -1,0 +1,96 @@
+diff a/third_party/blink/renderer/platform/audio/delay.cc b/third_party/blink/renderer/platform/audio/delay.cc	(rejected hunks)
+@@ -25,16 +25,18 @@
+ 
+ #include "third_party/blink/renderer/platform/audio/delay.h"
+ 
+ #include <cmath>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/compiler_specific.h"
+ #include "base/notreached.h"
+ #include "build/build_config.h"
+ #include "third_party/blink/renderer/platform/audio/audio_utilities.h"
+ #include "third_party/blink/renderer/platform/audio/vector_math.h"
+ #include "third_party/blink/renderer/platform/wtf/math_extras.h"
++#include "third_party/bounds_checking_function/include/securec.h"
+ 
+ namespace blink {
+ 
+ namespace {
+ 
+@@ -53,18 +55,25 @@ void CopyToCircularBuffer(float* buffer,
+   float* write_pointer = &UNSAFE_TODO(buffer[write_index]);
+   int remainder = buffer_length - write_index;
+ 
+   // Copy the sames over, carefully handling the case where we need to wrap
+   // around to the beginning of the buffer.
++#if BUILDFLAG(ARKWEB_MEDIA_AUDIO)
++  bool need_return = MemcpyMediaAudioUtils(write_pointer, remainder, source, write_index, frames_to_process, buffer);
++  if (need_return) {
++    return;
++  }
++#else
+   UNSAFE_TODO(
+       memcpy(write_pointer, source,
+              sizeof(*write_pointer) *
+                  std::min(static_cast<int>(frames_to_process), remainder)));
+   UNSAFE_TODO(
+       memcpy(buffer, source + remainder,
+              sizeof(*write_pointer) *
+                  std::max(0, static_cast<int>(frames_to_process) - remainder)));
++#endif
+ }
+ 
+ }  // namespace
+ 
+ Delay::Delay(double max_delay_time,
+@@ -262,17 +273,24 @@ void Delay::ProcessKRate(const float* source,
+   // Now copy out the samples from the buffer, starting at the read pointer,
+   // carefully handling wrapping of the read pointer.
+   float* read_pointer = &UNSAFE_TODO(buffer[read_index1]);
+ 
+   uint32_t remainder = static_cast<uint32_t>(buffer_end - read_pointer);
++#if BUILDFLAG(ARKWEB_MEDIA_AUDIO)
++  bool need_return = delayUtils_->MemcpyMediaAudio(sample1, remainder, read_pointer, frames_to_process, read_index1, buffer);
++  if (need_return) {
++    return;
++  }
++#else
+   UNSAFE_TODO(
+       memcpy(sample1, read_pointer,
+              sizeof(*sample1) * std::min(frames_to_process, remainder)));
+   if (frames_to_process > remainder) {
+     UNSAFE_TODO(memcpy(sample1 + remainder, buffer,
+                        sizeof(*sample1) * (frames_to_process - remainder)));
+   }
++#endif
+ 
+   // If interpolation_factor = 0, we don't need to do any interpolation and
+   // sample1 contains the desried values.  We can skip the following code.
+   if (interpolation_factor != 0) {
+     DCHECK_LE(frames_to_process, temp_buffer_.size());
+@@ -280,17 +298,24 @@ void Delay::ProcessKRate(const float* source,
+     int read_index2 = (read_index1 + 1) % buffer_length;
+     float* sample2 = temp_buffer_.Data();
+ 
+     read_pointer = &UNSAFE_TODO(buffer[read_index2]);
+     remainder = static_cast<uint32_t>(buffer_end - read_pointer);
++#if BUILDFLAG(ARKWEB_MEDIA_AUDIO)
++    need_return = delayUtils_->MemcpyMediaAudioTwo(sample1, sample2, remainder, read_pointer, frames_to_process, read_index2, buffer);
++    if (need_return) {
++      return;
++    }
++#else
+     UNSAFE_TODO(
+         memcpy(sample2, read_pointer,
+                sizeof(*sample1) * std::min(frames_to_process, remainder)));
+     if (frames_to_process > remainder) {
+       UNSAFE_TODO(memcpy(sample2 + remainder, buffer,
+                          sizeof(*sample1) * (frames_to_process - remainder)));
+     }
++#endif
+ 
+     // Interpolate samples, where f = interpolation_factor
+     //   dest[k] = sample1[k] + f*(sample2[k] - sample1[k]);
+ 
+     // sample2[k] = sample2[k] - sample1[k]

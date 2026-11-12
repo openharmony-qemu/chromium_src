@@ -29,6 +29,8 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
+#include "base/logging.h"
 #include "base/synchronization/lock.h"
 #include "third_party/blink/public/platform/platform.h"
 #include "third_party/blink/renderer/platform/graphics/image_decoder_wrapper.h"
@@ -81,11 +83,15 @@ static bool UpdateYUVAInfoSubsamplingAndWidthBytes(
 ImageFrameGenerator::ImageFrameGenerator(const SkISize& full_size,
                                          bool is_multi_frame,
                                          ColorBehavior color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                                          cc::AuxImage aux_image,
+#endif
                                          Vector<SkISize> supported_sizes)
     : full_size_(full_size),
       decoder_color_behavior_(color_behavior),
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
       aux_image_(aux_image),
+#endif
       is_multi_frame_(is_multi_frame),
       supported_sizes_(std::move(supported_sizes)) {
 #if DCHECK_IS_ON()
@@ -138,7 +144,10 @@ bool ImageFrameGenerator::DecodeAndScale(
     // Lock the mutex, so only one thread can use the decoder at once.
     ClientAutoLock lock(this, client_id);
     ImageDecoderWrapper decoder_wrapper(this, data, pixmap,
-                                        decoder_color_behavior_, aux_image_,
+                                        decoder_color_behavior_,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+                                        aux_image_,
+#endif
                                         index, all_data_received, client_id);
     current_decode_succeeded =
         decoder_wrapper.Decode(image_decoder_factory_.get(), &has_alpha);
@@ -186,7 +195,10 @@ bool ImageFrameGenerator::DecodeToYUV(
   const bool all_data_received = true;
   std::unique_ptr<ImageDecoder> decoder = ImageDecoder::Create(
       data, all_data_received, ImageDecoder::kAlphaPremultiplied,
-      ImageDecoder::kDefaultBitDepth, decoder_color_behavior_, aux_image_,
+      ImageDecoder::kDefaultBitDepth, decoder_color_behavior_,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      aux_image_,
+#endif
       Platform::GetMaxDecodedImageBytes());
   // getYUVComponentSizes was already called and was successful, so
   // ImageDecoder::create must succeed.
@@ -276,7 +288,10 @@ bool ImageFrameGenerator::GetYUVAInfo(
   }
   std::unique_ptr<ImageDecoder> decoder = ImageDecoder::Create(
       data, /*data_complete=*/true, ImageDecoder::kAlphaPremultiplied,
-      ImageDecoder::kDefaultBitDepth, decoder_color_behavior_, aux_image_,
+      ImageDecoder::kDefaultBitDepth, decoder_color_behavior_,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      aux_image_,
+#endif
       Platform::GetMaxDecodedImageBytes());
   DCHECK(decoder);
 

@@ -1,0 +1,11 @@
+diff a/third_party/blink/renderer/platform/scheduler/main_thread/main_thread_scheduler_impl.cc b/third_party/blink/renderer/platform/scheduler/main_thread/main_thread_scheduler_impl.cc	(rejected hunks)
+@@ -2831,7 +2831,9 @@ void MainThreadSchedulerImpl::OnWidgetSchedulerWillShutdown(
+   if (no_widgets_expecting_frame) {
+     idle_helper_.EnableLongIdlePeriod();
+   }
+ }
+ 
++#include "arkweb/chromium_ext/third_party/blink/renderer/platform/scheduler/main_thread/main_thread_scheduler_impl_for_include.cc"
++
+ }  // namespace scheduler
+ }  // namespace blink

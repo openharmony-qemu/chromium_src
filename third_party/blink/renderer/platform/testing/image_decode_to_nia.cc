@@ -32,8 +32,10 @@
 
 #include <iostream>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/files/file_util.h"
+#include "base/logging.h"
 #include "base/task/single_thread_task_executor.h"
 #include "third_party/blink/public/platform/platform.h"
 #include "third_party/blink/renderer/platform/image-decoders/image_decoder.h"
@@ -167,7 +169,10 @@ int main(int argc, char* argv[]) {
       blink::SharedBuffer::Create(src), data_complete,
       blink::ImageDecoder::kAlphaNotPremultiplied,
       blink::ImageDecoder::kDefaultBitDepth, blink::ColorBehavior::kIgnore,
-      cc::AuxImage::kDefault, blink::Platform::GetMaxDecodedImageBytes());
+  #if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kDefault,
+#endif
+      blink::Platform::GetMaxDecodedImageBytes());
 
   const size_t frame_count = decoder->FrameCount();
   if (frame_count == 0) {

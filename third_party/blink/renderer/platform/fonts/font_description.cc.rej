@@ -1,0 +1,29 @@
+diff a/third_party/blink/renderer/platform/fonts/font_description.cc b/third_party/blink/renderer/platform/fonts/font_description.cc	(rejected hunks)
+@@ -90,10 +94,13 @@ FontDescription::FontDescription()
+     : specified_size_(0),
+       computed_size_(0),
+       adjusted_size_(0),
+       letter_spacing_(Length(0, Length::kFixed)),
+       word_spacing_(Length(0, Length::kFixed)),
++#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
++      fixed_font_size_(0),
++#endif
+       font_selection_request_(kNormalWeightValue,
+                               kNormalWidthValue,
+                               kNormalSlopeValue) {
+   fields_.orientation_ = static_cast<unsigned>(FontOrientation::kHorizontal);
+   fields_.width_variant_ = kRegularWidth;
+@@ -137,10 +144,13 @@ bool FontDescription::operator==(const FontDescription& other) const {
+          computed_size_ == other.computed_size_ &&
+          adjusted_size_ == other.adjusted_size_ &&
+          size_adjust_ == other.size_adjust_ &&
+          letter_spacing_ == other.letter_spacing_ &&
+          word_spacing_ == other.word_spacing_ &&
++#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
++         fixed_font_size_ == other.fixed_font_size_ &&
++#endif
+          font_selection_request_ == other.font_selection_request_ &&
+          fields_as_unsigned_.parts[0] == other.fields_as_unsigned_.parts[0] &&
+          fields_as_unsigned_.parts[1] == other.fields_as_unsigned_.parts[1] &&
+          (feature_settings_ == other.feature_settings_ ||
+           (feature_settings_ && other.feature_settings_ &&

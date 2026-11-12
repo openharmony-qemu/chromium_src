@@ -1,0 +1,40 @@
+diff a/third_party/blink/renderer/platform/loader/fetch/url_loader/resource_request_sender.cc b/third_party/blink/renderer/platform/loader/fetch/url_loader/resource_request_sender.cc	(rejected hunks)
+@@ -275,24 +293,37 @@ int ResourceRequestSender::SendAsync(
+                       weak_factory_.GetWeakPtr()));
+   used_code_cache_fetcher_ = !!code_cache_fetcher_;
+ 
+   // Compute a unique request_id for this renderer process.
+   int request_id = GenerateRequestId();
++#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
++  TRACE_EVENT2("loading", "ResourceRequestSender::SendAsync", "start_id",
++               request->request_id_perf_stat_, "request_id", request_id);
++#endif
++
++#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
++  request->is_sync_mode = is_sync_mode;
++  LOG(DEBUG) << "intercept ResourceRequestSender::SendAsync, request->is_sync_mode=" << request->is_sync_mode;
++#endif
+   request_info_ = std::make_unique<PendingRequestInfo>(
+       std::move(client), request->destination, KURL(request->url),
+       std::move(resource_load_info_notifier_wrapper));
+ 
++#if BUILDFLAG(ARKWEB_PERFORMANCE_TRACE)
++  request_info_->request_id_ = request_id;
++#endif
++
+   request_info_->resource_load_info_notifier_wrapper
+       ->NotifyResourceLoadInitiated(request_id, request->url, request->method,
+                                     request->referrer,
+                                     request_info_->request_destination,
+                                     request->priority, request->is_ad_tagged);
+ 
+   auto url_loader_client = std::make_unique<MojoURLLoaderClient>(
+       this, loading_task_runner, url_loader_factory->BypassRedirectChecks(),
+       request->url, std::move(evict_from_bfcache_callback),
+-      std::move(did_buffer_load_while_in_bfcache_callback));
++      std::move(did_buffer_load_while_in_bfcache_callback), request->keepalive);
+ 
+   std::vector<std::string> std_cors_exempt_header_list =
+       base::ToVector(cors_exempt_header_list,
+                      [](const String& s) { return WebString(s).Latin1(); });
+   std::unique_ptr<ThrottlingURLLoader> url_loader =

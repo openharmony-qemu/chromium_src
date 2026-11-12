@@ -1,0 +1,50 @@
+diff a/third_party/blink/renderer/platform/loader/fetch/resource.h b/third_party/blink/renderer/platform/loader/fetch/resource.h	(rejected hunks)
+@@ -460,10 +468,17 @@ class PLATFORM_EXPORT Resource : public GarbageCollected<Resource>,
+   // Sets the ResourceRequest to be tagged as an ad.
+   void SetIsAdResource();
+ 
+   void DidRemoveClientOrObserver();
+ 
++#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
++  void SetKeepAliveOn() { self_keep_alive_ = SelfKeepAlive<Resource>{this}; }
++  void SetKeepAliveOff() {
++    self_keep_alive_ = SelfKeepAlive<Resource>{nullptr};
++  }
++#endif
++
+   void SetIsPreloadedByEarlyHints() { is_preloaded_by_early_hints_ = true; }
+ 
+   bool IsPreloadedByEarlyHints() const { return is_preloaded_by_early_hints_; }
+ 
+   virtual std::unique_ptr<BackgroundResponseProcessorFactory>
+@@ -534,10 +549,15 @@ class PLATFORM_EXPORT Resource : public GarbageCollected<Resource>,
+   SharedBuffer* Data() const { return data_.get(); }
+   void ClearData();
+ 
+   virtual void SetEncoding(const String&) {}
+ 
++#if BUILDFLAG(ARKWEB_V8_COMPILE)
++  virtual String GetArkWebCompile() const { return String(); }
++  virtual void SetArkWebCompile(String arkWebCompile) {}
++#endif
++
+   // Call this when the resource is successfully retrieved from MemoryCache.
+   void IncrementMemoryCacheHitCount() { ++memory_cache_hit_count_; }
+   uint32_t MemoryCacheHitCount() const { return memory_cache_hit_count_; }
+ 
+  private:
+@@ -629,10 +649,14 @@ class PLATFORM_EXPORT Resource : public GarbageCollected<Resource>,
+ 
+   scoped_refptr<SharedBuffer> data_;
+ 
+   WebScopedVirtualTimePauser virtual_time_pauser_;
+ 
++#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
++  SelfKeepAlive<Resource> self_keep_alive_;
++#endif
++
+   MemoryPressureListenerRegistration memory_pressure_listener_registration_;
+ };
+ 
+ class ResourceFactory {
+   STACK_ALLOCATED();

@@ -1,0 +1,35 @@
+diff a/third_party/blink/renderer/platform/widget/input/elastic_overscroll_controller.cc b/third_party/blink/renderer/platform/widget/input/elastic_overscroll_controller.cc	(rejected hunks)
+@@ -181,12 +198,18 @@ void ElasticOverscrollController::UpdateVelocity(
+     const gfx::Vector2dF& event_delta,
+     const base::TimeTicks& event_timestamp) {
+   float time_delta =
+       (event_timestamp - entry.last_scroll_event_timestamp).InSecondsF();
+   if (time_delta < kScrollVelocityZeroingTimeout && time_delta > 0) {
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++    entry.scroll_velocity = gfx::Vector2dF(
++        CanScrollHorizontally(entry.target_scroller_id) ? event_delta.x() / time_delta : 0,
++        event_delta.y() / time_delta);
++#else
+     entry.scroll_velocity = gfx::Vector2dF(event_delta.x() / time_delta,
+                                            event_delta.y() / time_delta);
++#endif
+   } else {
+     entry.scroll_velocity = gfx::Vector2dF();
+   }
+   entry.last_scroll_event_timestamp = event_timestamp;
+ }
+@@ -206,10 +229,14 @@ ElasticOverscrollController::GetEntry(cc::ElementId element_id) {
+ }
+ 
+ void ElasticOverscrollController::Overscroll(
+     OverscrollEntry& entry,
+     const gfx::Vector2dF& overscroll_delta) {
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  if (!elastic_overscroll_controller_utils_->GetOverscrollMode())
++    return;
++#endif
+   gfx::Vector2dF adjusted_overscroll_delta = overscroll_delta;
+ 
+   // The effect can be dynamically disabled by setting styles to disallow user
+   // scrolling. When disabled, disallow active or momentum overscrolling, but
+   // allow any current overscroll to animate back.

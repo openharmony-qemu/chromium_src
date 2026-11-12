@@ -38,6 +38,11 @@ enum InterpolationQuality {
   kInterpolationLow = static_cast<int>(cc::PaintFlags::FilterQuality::kLow),
   kInterpolationMedium =
       static_cast<int>(cc::PaintFlags::FilterQuality::kMedium),
+#if defined(WTF_USE_LOW_QUALITY_IMAGE_INTERPOLATION)
+  kInterpolationDefault = kInterpolationLow,
+#else
+  kInterpolationDefault = kInterpolationMedium,
+#endif
 };
 
 enum AntiAliasingMode { kNotAntiAliased, kAntiAliased };

@@ -1,0 +1,77 @@
+diff a/third_party/blink/renderer/platform/image-decoders/avif/crabbyavif_image_decoder.cc b/third_party/blink/renderer/platform/image-decoders/avif/crabbyavif_image_decoder.cc
+--- a/third_party/blink/renderer/platform/image-decoders/avif/crabbyavif_image_decoder.cc
++++ b/third_party/blink/renderer/platform/image-decoders/avif/crabbyavif_image_decoder.cc
+@@ -13,10 +13,11 @@
+ #include <array>
+ #include <memory>
+ #include <optional>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/bits.h"
+ #include "base/compiler_specific.h"
+ #include "base/containers/adapters.h"
+ #include "base/functional/bind.h"
+ #include "base/logging.h"
+@@ -206,19 +207,24 @@ sk_sp<SkColorSpace> GetAltImageColorSpace(const crabbyavif::avifImage& image) {
+ 
+ CrabbyAVIFImageDecoder::CrabbyAVIFImageDecoder(
+     AlphaOption alpha_option,
+     HighBitDepthDecodingOption hbd_option,
+     ColorBehavior color_behavior,
++#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+     cc::AuxImage aux_image,
++#endif
+     wtf_size_t max_decoded_bytes,
+     AnimationOption animation_option)
+     : ImageDecoder(alpha_option,
+                    hbd_option,
+                    color_behavior,
++#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+                    aux_image,
++#endif
+                    max_decoded_bytes),
+-      animation_option_(animation_option) {}
++      animation_option_(animation_option) {
++}
+ 
+ CrabbyAVIFImageDecoder::~CrabbyAVIFImageDecoder() = default;
+ 
+ String CrabbyAVIFImageDecoder::FilenameExtension() const {
+   return "avif";
+@@ -778,13 +784,15 @@ bool CrabbyAVIFImageDecoder::UpdateDemuxer() {
+     // items. libheif v1.11.0 or older does not add the 'pixi' item property to
+     // AV1 image items. (This issue has been corrected in libheif v1.12.0.) See
+     // crbug.com/1198455.
+     decoder_->strictFlags &= ~crabbyavif::AVIF_STRICT_PIXI_REQUIRED;
+ 
++#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+     if (aux_image_ == cc::AuxImage::kGainmap) {
+       decoder_->imageContentToDecode = crabbyavif::AVIF_IMAGE_CONTENT_GAIN_MAP;
+     }
++#endif
+ 
+     avif_io_.destroy = nullptr;
+     avif_io_.read = ReadFromSegmentReader;
+     avif_io_.write = nullptr;
+     avif_io_.persistent = crabbyavif::CRABBY_AVIF_FALSE;
+@@ -1302,17 +1310,19 @@ bool CrabbyAVIFImageDecoder::GetGainmapInfoAndData(
+   out_gainmap_data = data_;
+   return true;
+ }
+ 
+ crabbyavif::avifImage* CrabbyAVIFImageDecoder::GetDecoderImage() const {
++#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+   if (aux_image_ == cc::AuxImage::kGainmap) {
+     if (!decoder_->image->gainMap) {
+       DVLOG(1) << "Attempted to access gain map image, but gainMap is nullptr";
+       return nullptr;
+     }
+     return decoder_->image->gainMap->image;
+   }
++#endif
+   return decoder_->image;
+ }
+ 
+ CrabbyAVIFImageDecoder::AvifIOData::AvifIOData() = default;
+ CrabbyAVIFImageDecoder::AvifIOData::AvifIOData(

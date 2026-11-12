@@ -1311,6 +1311,25 @@ void PaintArtifactCompositor::Update(
       root_layer_->SetNeedsCommit();
   }
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  overlay_cc_layers_ = layer_list_builder_for_video.Finalize();
+  for (const auto& video_layer : overlay_cc_layers_) {
+    layer_list_builder.Add(video_layer);
+  }
+  std::reverse(overlay_cc_layers_.begin(), overlay_cc_layers_.end());
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  native_overlay_cc_layers_ = layer_list_builder_for_overlay.Finalize();
+  for (const auto& native_overlay_layer : native_overlay_cc_layers_) {
+    layer_list_builder.Add(native_overlay_layer);
+  }
+  native_infinity_cc_layers_ = layer_list_builder_for_infinity.Finalize();
+  for (const auto& native_infinity_layer : native_infinity_cc_layers_) {
+    layer_list_builder.Add(native_infinity_layer);
+  }
+#endif
+
   root_layer_->layer_tree_host()->RegisterSelection(layer_selection);
 
   property_tree_manager.Finalize();

@@ -1,0 +1,20 @@
+diff a/third_party/blink/renderer/platform/graphics/image_decoder_wrapper.cc b/third_party/blink/renderer/platform/graphics/image_decoder_wrapper.cc	(rejected hunks)
+@@ -303,12 +309,16 @@ std::unique_ptr<ImageDecoder> ImageDecoderWrapper::CreateDecoderWithData(
+           pixmap_.colorType() == kRGBA_F16_SkColorType
+               ? ImageDecoder::kHighBitDepthToHalfFloat
+               : ImageDecoder::kDefaultBitDepth;
+ 
+   // The newly created decoder just grabbed the data.  No need to reset it.
+-  return ImageDecoder::Create(
++  std::unique_ptr<ImageDecoder> decoder = ImageDecoder::Create(
+       data_, all_data_received_, PixmapAlphaOption(pixmap_),
+-      high_bit_depth_decoding_option, decoder_color_behavior_, aux_image_,
++      high_bit_depth_decoding_option, decoder_color_behavior_,
++#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++      aux_image_,
++#endif
+       Platform::GetMaxDecodedImageBytes(), pixmap_.dimensions());
++  return decoder;
+ }
+ 
+ }  // namespace blink

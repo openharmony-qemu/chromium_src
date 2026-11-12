@@ -20,10 +20,21 @@
 #include "third_party/blink/renderer/platform/loader/fetch/url_loader/resource_request_sender.h"
 #include "third_party/blink/renderer/platform/loader/fetch/url_loader/sync_load_response.h"
 #include "third_party/blink/renderer/platform/wtf/shared_buffer.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 
 namespace blink {
 
 namespace {
+struct TestSyncLoadContextParameter {
+  network::ResourceRequest* request = nullptr;
+  SyncLoadResponse* response = nullptr;
+  SyncLoadContext** context_for_redirect = nullptr;
+  std::string expected_data;
+  base::WaitableEvent* redirect_or_response_event = nullptr;
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner = nullptr;
+  base::ReadOnlySharedMemoryRegion region;
+  uint64_t buffer_size = 0;
+};
 
 class TestSharedURLLoaderFactory : public network::TestURLLoaderFactory,
                                    public network::SharedURLLoaderFactory {
@@ -116,7 +127,11 @@ class SyncLoadContextTest : public testing::Test {
             Vector<String>() /* cors_exempt_header_list */,
             std::make_unique<ResourceLoadInfoNotifierWrapper>(
                 /*resource_load_info_notifier=*/nullptr,
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+                task_environment_.GetMainThreadTaskRunner()), nullptr));
+#else
                 task_environment_.GetMainThreadTaskRunner())));
+#endif // OHOS_UNITTESTS
   }
 
   static void RunSyncLoadContextViaDataPipe(
@@ -132,7 +147,11 @@ class SyncLoadContextTest : public testing::Test {
         response, context_for_redirect, redirect_or_response_event,
         nullptr /* terminate_sync_load_event */,
         base::Seconds(60) /* timeout */,
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+        mojo::NullRemote() /* download_to_blob_registry */, task_runner, nullptr));
+#else
         mojo::NullRemote() /* download_to_blob_registry */, task_runner));
+#endif // OHOS_UNITTESTS
 
     auto mock_resource_request_sender =
         std::make_unique<MockResourceRequestSender>();
@@ -152,6 +171,36 @@ class SyncLoadContextTest : public testing::Test {
     context->OnCompletedRequest(network::URLLoaderCompletionStatus(net::OK));
 
     mojo::BlockingCopyFromString(expected_data, producer_handle);
+  }
+
+  static void TestOnTransferDataWithSharedMemory(TestSyncLoadContextParameter& parameter) {
+    DCHECK(parameter.task_runner->BelongsToCurrentThread());
+    auto context = base::AdoptRef(new SyncLoadContext(
+        parameter.request, std::make_unique<MockPendingSharedURLLoaderFactory>(),
+        parameter.response, parameter.context_for_redirect, parameter.redirect_or_response_event,
+        nullptr /* terminate_sync_load_event */,
+        base::Seconds(60) /* timeout */,
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+        mojo::NullRemote() /* download_to_blob_registry */, parameter.task_runner, nullptr));
+#else
+        mojo::NullRemote() /* download_to_blob_registry */, parameter.task_runner));
+#endif // OHOS_UNITTESTS
+
+    auto mock_resource_request_sender =
+        std::make_unique<MockResourceRequestSender>();
+    mock_resource_request_sender->CreatePendingRequest(context);
+    context->resource_request_sender_ = std::move(mock_resource_request_sender);
+
+    mojo::ScopedDataPipeProducerHandle producer_handle;
+    mojo::ScopedDataPipeConsumerHandle consumer_handle;
+    EXPECT_EQ(MOJO_RESULT_OK,
+              mojo::CreateDataPipe(nullptr /* options */, producer_handle,
+                                   consumer_handle));
+
+    // Simulate the response.
+    context->OnTransferDataWithSharedMemory(std::move(parameter.region), parameter.buffer_size);
+
+    mojo::BlockingCopyFromString(parameter.expected_data, producer_handle);
   }
 
  protected:
@@ -216,4 +265,66 @@ TEST_F(SyncLoadContextTest, ResponseBodyViaDataPipe) {
             std::string(response.data->begin()->data(), response.data->size()));
 }
 
+TEST_F(SyncLoadContextTest, OnTransferDataWithSharedMemory_RegionIsValid) {
+  GURL expected_url = GURL("https://example.com");
+  std::string expected_data = "foobarbaz";
+
+  // Create and exercise SyncLoadContext on the |loading_thread_|.
+  auto request = std::make_unique<network::ResourceRequest>();
+  request->url = expected_url;
+  SyncLoadResponse response;
+  base::WaitableEvent redirect_or_response_event(
+      base::WaitableEvent::ResetPolicy::MANUAL,
+      base::WaitableEvent::InitialState::NOT_SIGNALED);
+  SyncLoadContext* context_for_redirect = nullptr;
+  base::ReadOnlySharedMemoryRegion region;
+  uint64_t buffer_size = 0;
+  TestSyncLoadContextParameter parameter{request.get(), &response, &context_for_redirect, expected_data,
+      &redirect_or_response_event, loading_thread_.task_runner(), std::move(region), buffer_size};
+
+  loading_thread_.task_runner()->PostTask(
+      FROM_HERE,
+      base::BindOnce(&SyncLoadContextTest::TestOnTransferDataWithSharedMemory, std::ref(parameter)));
+
+  // Wait until the response is received.
+  redirect_or_response_event.Wait();
+
+  // Check if |response| is set properly after the WaitableEvent fires.
+  EXPECT_EQ(net::ERR_FAILED, response.error_code);
+}
+
+TEST_F(SyncLoadContextTest, OnTransferDataWithSharedMemory_MappingValid) {
+  GURL expected_url = GURL("https://example.com");
+  std::string expected_data = "foobarbaz";
+
+  // Create and exercise SyncLoadContext on the |loading_thread_|.
+  auto request = std::make_unique<network::ResourceRequest>();
+  request->url = expected_url;
+  SyncLoadResponse response;
+  base::WaitableEvent redirect_or_response_event(
+      base::WaitableEvent::ResetPolicy::MANUAL,
+      base::WaitableEvent::InitialState::NOT_SIGNALED);
+  SyncLoadContext* context_for_redirect = nullptr;
+
+  auto mapping_region = base::ReadOnlySharedMemoryRegion::Create(expected_data.size());
+  if (memcpy_s(mapping_region.mapping.GetMemoryAs<uint8_t>(), expected_data.size(),
+      expected_data.c_str(), expected_data.size()) == EOK) {
+    TestSyncLoadContextParameter parameter{request.get(), &response, &context_for_redirect, expected_data,
+        &redirect_or_response_event, loading_thread_.task_runner(),
+        std::move(mapping_region.region), expected_data.size()};
+
+    loading_thread_.task_runner()->PostTask(
+        FROM_HERE,
+        base::BindOnce(&SyncLoadContextTest::TestOnTransferDataWithSharedMemory, std::ref(parameter)));
+
+    // Wait until the response is received.
+    redirect_or_response_event.Wait();
+
+    // Check if |response| is set properly after the WaitableEvent fires.
+    EXPECT_EQ(net::OK, response.error_code);
+    ASSERT_TRUE(response.data);
+    EXPECT_EQ(expected_data,
+              std::string(response.data->begin()->data(), response.data->size()));
+  }
+}
 }  // namespace blink

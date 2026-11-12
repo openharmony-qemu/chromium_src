@@ -1,0 +1,57 @@
+diff a/third_party/blink/renderer/platform/widget/input/widget_base_input_handler.cc b/third_party/blink/renderer/platform/widget/input/widget_base_input_handler.cc	(rejected hunks)
+@@ -7,10 +7,12 @@
+ #include <stddef.h>
+ #include <stdint.h>
+ 
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
++#include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/metrics/histogram_macros.h"
+ #include "base/task/common/task_annotator.h"
+ #include "base/time/time.h"
+ #include "base/tracing/protos/chrome_track_event.pbzero.h"
+@@ -424,10 +467,14 @@ void WidgetBaseInputHandler::HandleInputEvent(
+       if (callback) {
+         std::move(callback).Run(GetAckResult(processed), swap_latency_info,
+                                 std::move(handling_state.event_overscroll()),
+                                 std::move(handling_state.touch_action()));
+       }
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++      LOG(INFO) << "Input handler destroyed when:"
++                << InputEventOhos::GetWebEventName(input_event);
++#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+       return;
+     }
+   }
+ 
+   // Handling |input_event| is finished and further down, we might start
+@@ -485,18 +532,26 @@ void WidgetBaseInputHandler::HandleInputEvent(
+                             std::move(handling_state.touch_action()));
+   } else {
+     DCHECK(!handling_state.event_overscroll())
+         << "Unexpected overscroll for un-acked event";
+   }
+-
+   // Show the virtual keyboard if enabled and a user gesture triggers a focus
+   // change.
+   if ((processed != WebInputEventResult::kNotHandled &&
+        input_event.GetType() == WebInputEvent::Type::kTouchEnd) ||
+       show_virtual_keyboard_for_mouse) {
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++    widget_->utils()->SetRequestKeyboardReason(static_cast<int32_t>(mojom::RequestKeyboardReason::MOUSE));
++#endif
+     widget_->ShowVirtualKeyboard();
+   }
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  // mark event
++  if (input_event.GetType() == WebInputEvent::Type::kTouchEnd) {
++    widget_->utils()->SetRequestKeyboardReason(static_cast<int32_t>(mojom::RequestKeyboardReason::TOUCH));
++  }
++#endif
+ 
+   if (!prevent_default &&
+       WebInputEvent::IsKeyboardEventType(input_event.GetType()))
+     widget_->client()->DidHandleKeyEvent();
+ 

@@ -52,7 +52,11 @@ NT::PreferredColorScheme NativeColorScheme(
   using MCS = mojom::blink::ColorScheme;
   using NTPCS = NT::PreferredColorScheme;
   static constexpr auto kColorSchemeMap = base::MakeFixedFlatMap<MCS, NTPCS>(
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+      {{MCS::kLight, NTPCS::kLight}, {MCS::kDark, NTPCS::kDark}, {MCS::kNight, NTPCS::kDark}});
+#else
       {{MCS::kLight, NTPCS::kLight}, {MCS::kDark, NTPCS::kDark}});
+#endif
   return kColorSchemeMap.at(color_scheme);
 }
 

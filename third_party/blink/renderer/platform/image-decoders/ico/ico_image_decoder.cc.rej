@@ -1,0 +1,13 @@
+diff a/third_party/blink/renderer/platform/image-decoders/ico/ico_image_decoder.cc b/third_party/blink/renderer/platform/image-decoders/ico/ico_image_decoder.cc	(rejected hunks)
+@@ -5,10 +5,11 @@
+ #include "third_party/blink/renderer/platform/image-decoders/ico/ico_image_decoder.h"
+ 
+ #include <algorithm>
+ #include <memory>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/compiler_specific.h"
+ #include "third_party/blink/renderer/platform/image-decoders/png/png_image_decoder.h"
+ #include "third_party/blink/renderer/platform/wtf/text/atomic_string.h"
+ 
+ namespace blink {

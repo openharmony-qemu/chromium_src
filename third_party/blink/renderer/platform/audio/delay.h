@@ -112,8 +112,11 @@ class PLATFORM_EXPORT Delay final {
   AudioFloatArray temp_buffer_;
 
   float sample_rate_;
+
+  raw_ptr<DelayUtils> delayUtils_;
 };
 
 }  // namespace blink
 
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/audio/delay_utils.h"
 #endif  // THIRD_PARTY_BLINK_RENDERER_PLATFORM_AUDIO_DELAY_H_

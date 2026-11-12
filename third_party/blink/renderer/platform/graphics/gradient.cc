@@ -337,6 +337,18 @@ sk_sp<PaintShader> Gradient::CreateShaderInternal(
           color, DarkModeFilter::ElementRole::kBackground);
     }
   }
+ 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  if (is_night_mode_) {
+    for (auto& color : colors) {
+      color =
+          NightModeInverter::GetInverter()
+              .InvertElementColor(Color::FromSkColor4f(color),
+                                  NightModeInverter::ElementRole::kGradient)
+              .toSkColor4f();
+    }
+  }
+#endif
   sk_sp<PaintShader> shader = CreateShader(
       colors, pos, tile, ResolveSkInterpolation(), local_matrix, colors.back());
   DCHECK(shader);
@@ -351,6 +363,12 @@ void Gradient::ApplyToFlags(cc::PaintFlags& flags,
     is_dark_mode_enabled_ = draw_options.apply_dark_mode;
     cached_shader_.reset();
   }
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  if (is_night_mode_ != draw_options.night_mode_enabled) {
+    is_night_mode_ = draw_options.night_mode_enabled;
+    cached_shader_.reset();
+  }
+#endif
   if (!cached_shader_ || local_matrix != cached_shader_->GetLocalMatrix() ||
       flags.getColorFilter().get() != color_filter_.get()) {
     color_filter_ = flags.getColorFilter();
@@ -358,7 +376,11 @@ void Gradient::ApplyToFlags(cc::PaintFlags& flags,
     cached_shader_ = CreateShaderInternal(local_matrix);
   }
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  flags.setShader(CreateShaderInternal(local_matrix));
+#else
   flags.setShader(cached_shader_);
+#endif
 
   // Legacy behavior: gradients are always dithered.
   flags.setDither(true);

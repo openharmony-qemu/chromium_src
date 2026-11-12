@@ -13,6 +13,10 @@
 #include <string_view>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
+#include "arkweb/chromium_ext/media/base/media_player_url_params.h"
+#endif
 #include "base/cancelable_callback.h"
 #include "base/compiler_specific.h"
 #include "base/memory/raw_ptr.h"
@@ -360,6 +364,12 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
     return is_background_suspend_enabled_;
   }
 
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(bool enable) override;
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  enum DmaBufferState { kHaveExist, kHaveRecycled };
+#endif
   // Distinct states that |delegate_| can be in. (Public for testing.)
   enum class DelegateState {
     GONE,
@@ -605,7 +615,7 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
 
   // Returns true if the player's host frame is hidden or closed in the host
   // page.
-  bool IsFrameHidden() const;
+  bool IsHidden() const;
 
   bool IsPausedBecausePageHidden() const;
   bool IsPausedBecauseFrameHidden() const;

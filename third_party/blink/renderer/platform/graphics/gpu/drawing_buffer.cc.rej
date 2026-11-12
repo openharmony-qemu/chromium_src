@@ -1,0 +1,13 @@
+diff a/third_party/blink/renderer/platform/graphics/gpu/drawing_buffer.cc b/third_party/blink/renderer/platform/graphics/gpu/drawing_buffer.cc	(rejected hunks)
+@@ -32,10 +32,11 @@
+ 
+ #include <algorithm>
+ #include <memory>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/compiler_specific.h"
+ #include "base/feature_list.h"
+ #include "base/logging.h"
+ #include "base/memory/read_only_shared_memory_region.h"
+ #include "base/numerics/checked_math.h"

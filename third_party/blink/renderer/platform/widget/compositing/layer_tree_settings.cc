@@ -86,7 +86,7 @@ void InitializeScrollbarFadeAndDelay(cc::LayerTreeSettings& settings) {
   }
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_FLING)
 // With 32 bit pixels, this would mean less than 400kb per buffer. Much less
 // than required for, say, nHD.
 static const int kSmallScreenPixelThreshold = 1e5;

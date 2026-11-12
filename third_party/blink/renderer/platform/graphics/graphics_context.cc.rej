@@ -1,0 +1,56 @@
+diff a/third_party/blink/renderer/platform/graphics/graphics_context.cc b/third_party/blink/renderer/platform/graphics/graphics_context.cc	(rejected hunks)
+@@ -432,11 +435,20 @@ void GraphicsContext::DrawImage(
+   SkSamplingOptions sampling = ComputeSamplingOptions(image, dest, src);
+   DarkModeFilter* dark_mode_filter = GetDarkModeFilterForImage(auto_dark_mode);
+   ImageDrawOptions draw_options(dark_mode_filter, sampling,
+                                 should_respect_image_orientation, clamping_mode,
+                                 decode_mode, auto_dark_mode.enabled,
++                                
++#if BUILDFLAG(ARKWEB_NIGHT_MODE)
++                                paint_timing_info.image_may_be_lcp_candidate,
++                                auto_dark_mode.night_mode_enabled);
++  if (auto_dark_mode.night_mode_enabled) {
++    NightModeInverter::GetInverter().BlendColorFilterForImage(image_flags);
++  }
++#else
+                                 paint_timing_info.image_may_be_lcp_candidate);
++#endif
+   image.Draw(canvas_, image_flags, dest, src, draw_options);
+   SetImagePainted(paint_timing_info.report_paint_timing);
+ }
+ void GraphicsContext::DrawImageRRect(
+     Image& image,
+@@ -469,11 +481,16 @@ void GraphicsContext::DrawImageRRect(
+ 
+   DarkModeFilter* dark_mode_filter = GetDarkModeFilterForImage(auto_dark_mode);
+   ImageDrawOptions draw_options(dark_mode_filter, sampling, respect_orientation,
+                                 clamping_mode, decode_mode,
+                                 auto_dark_mode.enabled,
++#if BUILDFLAG(ARKWEB_NIGHT_MODE)
++                                paint_timing_info.image_may_be_lcp_candidate,
++                                auto_dark_mode.night_mode_enabled);
++#else
+                                 paint_timing_info.image_may_be_lcp_candidate);
++#endif
+ 
+   bool use_shader = (visible_src == src_rect) &&
+                     (respect_orientation == kDoNotRespectImageOrientation ||
+                      image.HasDefaultOrientation());
+   if (use_shader) {
+@@ -548,11 +570,16 @@ void GraphicsContext::DrawImageTiled(
+   SkSamplingOptions sampling = ImageSamplingOptions();
+   DarkModeFilter* dark_mode_filter = GetDarkModeFilterForImage(auto_dark_mode);
+   ImageDrawOptions draw_options(dark_mode_filter, sampling, respect_orientation,
+                                 Image::kClampImageToSourceRect,
+                                 Image::kSyncDecode, auto_dark_mode.enabled,
++#if BUILDFLAG(ARKWEB_NIGHT_MODE)
++                                paint_timing_info.image_may_be_lcp_candidate,
++                                auto_dark_mode.night_mode_enabled);
++#else
+                                 paint_timing_info.image_may_be_lcp_candidate);
++#endif
+ 
+   image.DrawPattern(*this, image_flags, dest_rect, tiling_info, draw_options);
+   SetImagePainted(paint_timing_info.report_paint_timing);
+ }
+ 

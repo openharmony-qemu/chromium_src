@@ -1,0 +1,20 @@
+diff a/third_party/blink/renderer/platform/graphics/deferred_image_decoder.cc b/third_party/blink/renderer/platform/graphics/deferred_image_decoder.cc	(rejected hunks)
+@@ -160,10 +210,18 @@ sk_sp<PaintImageGenerator> DeferredImageDecoder::CreateGenerator() {
+   can_yuv_decode_ &= !incremental_decode_needed_.value();
+ 
+   DCHECK(image_metadata_);
+   image_metadata_->all_data_received_prior_to_decode =
+       !incremental_decode_needed_.value();
++#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++  if (image_type == "heif") {
++    // Heif image only supports hardware decode now. We need to trigger the task
++    // by updating all_data_received_prior_to_decode flag even if it is not the
++    // first decoding and the task can only trigger when all data is received.
++    image_metadata_->all_data_received_prior_to_decode = all_data_received_;
++  }
++#endif
+ 
+   auto generator = DecodingImageGenerator::Create(
+       frame_generator_, info, std::move(segment_reader), std::move(frames),
+       complete_frame_content_id_, all_data_received_, can_yuv_decode_,
+       *image_metadata_);

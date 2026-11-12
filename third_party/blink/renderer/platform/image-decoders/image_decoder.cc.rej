@@ -1,0 +1,179 @@
+diff a/third_party/blink/renderer/platform/image-decoders/image_decoder.cc b/third_party/blink/renderer/platform/image-decoders/image_decoder.cc	(rejected hunks)
+@@ -22,18 +22,20 @@
+ 
+ #include <algorithm>
+ #include <array>
+ #include <memory>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/heap_array.h"
+ #include "base/containers/span.h"
+ #include "base/logging.h"
+ #include "base/numerics/byte_conversions.h"
+ #include "base/numerics/safe_conversions.h"
+ #include "base/trace_event/trace_event.h"
+ #include "build/build_config.h"
+ #include "media/media_buildflags.h"
++#include "ohos_nweb/src/sysevent/event_reporter.h"
+ #include "skia/ext/cicp.h"
+ #include "third_party/blink/public/common/buildflags.h"
+ #include "third_party/blink/public/common/features.h"
+ #include "third_party/blink/public/platform/platform.h"
+ #include "third_party/blink/renderer/platform/image-decoders/bmp/bmp_image_decoder.h"
+@@ -46,11 +48,12 @@
+ #include "third_party/skia/include/core/SkColorSpace.h"
+ #include "third_party/skia/include/private/SkExif.h"
+ #include "ui/gfx/geometry/size.h"
+ #include "ui/gfx/geometry/size_conversions.h"
+ 
+-#if BUILDFLAG(ENABLE_AV1_DECODER)
++#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++#include "arkweb/chromium_ext/blink/renderer/platform/image_decoders/heif/heif_image_decoder.h"
+ #include "third_party/blink/renderer/platform/image-decoders/avif/crabbyavif_image_decoder.h"
+ #endif
+ 
+ namespace blink {
+ 
+@@ -77,10 +80,15 @@ cc::ImageType FileExtensionToImageType(String image_extension) {
+   }
+ #if BUILDFLAG(ENABLE_AV1_DECODER)
+   if (image_extension == "avif") {
+     return cc::ImageType::kAVIF;
+   }
++#endif
++#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++  if (image_extension == "heif") {
++    return cc::ImageType::kHEIF;
++  }
+ #endif
+   return cc::ImageType::kInvalid;
+ }
+ 
+ wtf_size_t CalculateMaxDecodedBytes(
+@@ -208,10 +216,22 @@ String SniffMimeTypeInternal(scoped_refptr<SegmentReader> reader) {
+   if (CrabbyAVIFImageDecoder::MatchesAVIFSignature(fast_reader)) {
+     return "image/avif";
+   }
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++  if (HEIFImageDecoder::MatchesHeifSignature(reader->GetAsSkData())) {
++#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
++    ReportPictureDecode("image/heif");
++#endif
++    return "image/heif";
++  }
++#endif
++  
++#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
++    ReportPictureDecode("image/avif");
++#endif
+   return String();
+ }
+ 
+ // Checks to see if a mime type is an image type with lossy compression, whose
+ // size will be restricted via the 'lossy-images-max-bpp' document
+@@ -238,51 +258,63 @@ bool IsLosslessImageMIMEType(const String& mime_type) {
+ 
+ ImageDecoder::ImageDecoder(
+     AlphaOption alpha_option,
+     HighBitDepthDecodingOption high_bit_depth_decoding_option,
+     ColorBehavior color_behavior,
++#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+     cc::AuxImage aux_image,
++#endif
+     wtf_size_t max_decoded_bytes)
+     : premultiply_alpha_(alpha_option == kAlphaPremultiplied),
+       high_bit_depth_decoding_option_(high_bit_depth_decoding_option),
+       color_behavior_(color_behavior),
++#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+       aux_image_(aux_image),
++#endif
+       max_decoded_bytes_(max_decoded_bytes),
+       allow_decode_to_yuv_(false),
+-      purge_aggressively_(false) {}
++      purge_aggressively_(false) {
++}
+ 
+ ImageDecoder::~ImageDecoder() = default;
+ 
+ std::unique_ptr<ImageDecoder> ImageDecoder::Create(
+     scoped_refptr<SegmentReader> data,
+     bool data_complete,
+     AlphaOption alpha_option,
+     HighBitDepthDecodingOption high_bit_depth_decoding_option,
+     ColorBehavior color_behavior,
++#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+     cc::AuxImage aux_image,
++#endif
+     size_t platform_max_decoded_bytes,
+     const SkISize& desired_size,
+     AnimationOption animation_option) {
+   auto type = SniffMimeTypeInternal(data);
+   if (type.empty()) {
+     return nullptr;
+   }
+ 
+   return CreateByMimeType(type, std::move(data), data_complete, alpha_option,
+                           high_bit_depth_decoding_option, color_behavior,
+-                          aux_image, platform_max_decoded_bytes, desired_size,
++#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++                          aux_image,
++#endif
++                          platform_max_decoded_bytes, desired_size,
+                           animation_option);
+ }
+ 
+ std::unique_ptr<ImageDecoder> ImageDecoder::CreateByMimeType(
+     String mime_type,
+     scoped_refptr<SegmentReader> data,
+     bool data_complete,
+     AlphaOption alpha_option,
+     HighBitDepthDecodingOption high_bit_depth_decoding_option,
+     ColorBehavior color_behavior,
++#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+     cc::AuxImage aux_image,
++#endif
+     size_t platform_max_decoded_bytes,
+     const SkISize& desired_size,
+     AnimationOption animation_option) {
+   const wtf_size_t max_decoded_bytes = CalculateMaxDecodedBytes(
+       high_bit_depth_decoding_option, desired_size, platform_max_decoded_bytes);
+@@ -292,11 +324,14 @@ std::unique_ptr<ImageDecoder> ImageDecoder::CreateByMimeType(
+   std::unique_ptr<ImageDecoder> decoder;
+   mime_type = mime_type.LowerASCII();
+   if (mime_type == "image/jpeg" || mime_type == "image/pjpeg" ||
+       mime_type == "image/jpg") {
+     decoder = std::make_unique<JPEGImageDecoder>(alpha_option, color_behavior,
+-                                                 aux_image, max_decoded_bytes);
++#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++                                                 aux_image,
++#endif
++                                                 max_decoded_bytes);
+   } else if (mime_type == "image/png" || mime_type == "image/x-png" ||
+              mime_type == "image/apng") {
+     decoder = std::make_unique<PngImageDecoder>(
+         alpha_option, color_behavior, max_decoded_bytes,
+         PngImageDecoder::kNoReadingOffset, high_bit_depth_decoding_option);
+@@ -314,11 +349,20 @@ std::unique_ptr<ImageDecoder> ImageDecoder::CreateByMimeType(
+     decoder = std::make_unique<BMPImageDecoder>(alpha_option, color_behavior,
+                                                 max_decoded_bytes);
+ #if BUILDFLAG(ENABLE_AV1_DECODER)
+   } else if (mime_type == "image/avif") {
+     decoder = std::make_unique<CrabbyAVIFImageDecoder>(
+-        alpha_option, high_bit_depth_decoding_option, color_behavior, aux_image,
++        alpha_option, high_bit_depth_decoding_option, color_behavior,
++#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++        aux_image,
++#endif
++        max_decoded_bytes, animation_option);
++#endif
++#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++  } else if (mime_type == "image/heif") {
++    decoder = std::make_unique<HEIFImageDecoder>(
++        alpha_option, high_bit_depth_decoding_option, color_behavior,
+         max_decoded_bytes, animation_option);
+ #endif
+   }
+ 
+   if (decoder) {

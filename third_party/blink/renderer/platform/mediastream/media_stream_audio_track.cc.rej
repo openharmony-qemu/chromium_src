@@ -1,0 +1,16 @@
+diff a/third_party/blink/renderer/platform/mediastream/media_stream_audio_track.cc b/third_party/blink/renderer/platform/mediastream/media_stream_audio_track.cc	(rejected hunks)
+@@ -20,10 +20,14 @@
+ #include "third_party/blink/public/platform/modules/webrtc/webrtc_logging.h"
+ #include "third_party/blink/renderer/platform/mediastream/media_stream_audio_source.h"
+ #include "third_party/blink/renderer/platform/mediastream/media_stream_component.h"
+ #include "third_party/blink/renderer/platform/mediastream/media_stream_source.h"
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
++#include "arkweb/chromium_ext/third_party/blink/renderer/platform/mediastream/media_stream_audio_track_for_include.cc"
++#endif // ARKWEB_MEDIA_CAPTURE
++
+ namespace blink {
+ 
+ namespace {
+ 
+ constexpr char kTag[] = "MSAT::";

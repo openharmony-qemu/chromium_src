@@ -39,6 +39,16 @@
 #include <android/keycodes.h>
 #endif
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "arkweb/chromium_ext/third_party/blink/common/event/input_event_ohos.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+
 using perfetto::protos::pbzero::TrackEvent;
 
 namespace blink {
@@ -244,8 +254,14 @@ void WidgetBaseInputHandler::HandleInputEvent(
       weak_ptr_factory_.GetWeakPtr();
   HandlingState handling_state(weak_self, IsTouchStartOrMove(input_event));
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
   ImeEventGuard guard(widget_->GetWeakPtr());
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (InputEventOhos::FilterLogEvent(input_event)) {
+    LOG(INFO) << "WidgetBaseInputHandler::HandleInputEvent type: "
+              << InputEventOhos::GetWebEventName(input_event);
+  }
+#endif
 #endif
 
   TRACE_EVENT1("renderer,benchmark,rail,input.scrolling",
@@ -260,7 +276,11 @@ void WidgetBaseInputHandler::HandleInputEvent(
                     perfetto::protos::pbzero::ChromeLatencyInfo2::Step::
                         STEP_HANDLE_INPUT_EVENT_MAIN);
               });
-
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow",
+                    "trace_id", std::to_string(trace_id), "step",
+                    "STEP_HANDLE_INPUT_EVENT_MAIN");
+#endif
   ui::LatencyInfo swap_latency_info(coalesced_event.latency_info());
   swap_latency_info.AddLatencyNumber(
       ui::LatencyComponentType::INPUT_EVENT_LATENCY_RENDERER_MAIN_COMPONENT);
@@ -321,11 +341,32 @@ void WidgetBaseInputHandler::HandleInputEvent(
     // time that the mouse enters we always set the cursor accordingly.
     if (mouse_event.GetType() == WebInputEvent::Type::kMouseLeave)
       current_cursor_.reset();
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    // Reset the last known cursor if mouse move across frame boundaries.
+    // So next time that the mouse return last frame we can set the cursor accordingly.
+    if (mouse_event.GetType() == WebInputEvent::Type::kMouseMove &&
+        (mouse_event.GetModifiers() & WebInputEvent::Modifiers::kMoveCrossFrameTransition)) {
+      current_cursor_.reset();
+    }
+    // Only if web receives a kLeft down and a kLeft up event the keyboard
+    // should be triggered
+    if (mouse_event.button == WebPointerProperties::Button::kLeft &&
+        mouse_event.GetType() == WebInputEvent::Type::kMouseDown) {
+      is_leftdown_last_mouse_ = true;
+    }
 
+    if (mouse_event.button == WebPointerProperties::Button::kLeft &&
+        mouse_event.GetType() == WebInputEvent::Type::kMouseUp &&
+        is_leftdown_last_mouse_) {
+      show_virtual_keyboard_for_mouse = true;
+      is_leftdown_last_mouse_ = false;
+    }
+#else
     if (mouse_event.button == WebPointerProperties::Button::kLeft &&
         mouse_event.GetType() == WebInputEvent::Type::kMouseUp) {
       show_virtual_keyboard_for_mouse = true;
     }
+#endif
   }
 
 #if BUILDFLAG(IS_ANDROID)
@@ -496,6 +537,22 @@ void WidgetBaseInputHandler::HandleInputEvent(
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (processed != WebInputEventResult::kNotHandled) {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            ::switches::kEnableLoggerReport)) {
+      LOG_FEEDBACK(INFO) << "input event not handled by webkit: "
+                         << WebInputEvent::GetName(input_event.GetType())
+                         << ", processed:" << static_cast<int32_t>(processed);
+    } else {
+      LOG(INFO) << "input event handled by webkit: "
+                << InputEventOhos::GetWebEventName(input_event)
+                << ", processed:" << static_cast<int32_t>(processed);
+    }
+#endif
+  }
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   // Ensure all injected scrolls were handled or queue up - any remaining
   // injected scrolls at this point would not be processed.
   DCHECK(handling_state.injected_scroll_params().empty());

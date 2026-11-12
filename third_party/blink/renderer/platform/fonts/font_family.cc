@@ -25,6 +25,10 @@
 
 #include "third_party/blink/renderer/platform/fonts/font_family.h"
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
+#endif
 #include "third_party/blink/renderer/platform/font_family_names.h"
 #include "third_party/blink/renderer/platform/fonts/font_cache.h"
 #include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
@@ -62,6 +66,11 @@ String FontFamily::ToString() const {
 
 /*static*/ FontFamily::Type FontFamily::InferredTypeFor(
     const AtomicString& family_name) {
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  if (Cssutils::IsMathFormulaDisabledMode()) {
+    return Type::kFamilyName;
+  }
+#endif
   return (family_name == font_family_names::kCursive ||
           family_name == font_family_names::kFantasy ||
           family_name == font_family_names::kMonospace ||

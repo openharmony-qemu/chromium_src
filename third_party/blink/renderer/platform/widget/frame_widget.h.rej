@@ -1,0 +1,30 @@
+diff a/third_party/blink/renderer/platform/widget/frame_widget.h b/third_party/blink/renderer/platform/widget/frame_widget.h	(rejected hunks)
+@@ -6,10 +6,11 @@
+ #define THIRD_PARTY_BLINK_RENDERER_PLATFORM_WIDGET_FRAME_WIDGET_H_
+ 
+ #include <optional>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/time/time.h"
+ #include "base/types/optional_ref.h"
+ #include "cc/input/browser_controls_offset_tag_modifications.h"
+ #include "mojo/public/mojom/base/text_direction.mojom-blink.h"
+ #include "services/viz/public/mojom/compositing/frame_sink_id.mojom-blink.h"
+@@ -207,10 +208,16 @@ class PLATFORM_EXPORT FrameWidget {
+                           int relative_cursor_pos) = 0;
+ 
+   // This message inserts the ongoing composition.
+   virtual void FinishComposingText(bool keep_selection) = 0;
+ 
++#if BUILDFLAG(ARKWEB_MENU)
++  virtual void RegisterClippedVisualViewportSelectionBounds(
++      gfx::Rect clipped_selection_bounds) = 0;
++
++  virtual void CleanFocusCache() = 0;
++#endif
+   virtual bool IsProvisional() = 0;
+   virtual cc::ElementId GetScrollableContainerIdAt(
+       const gfx::PointF& point) = 0;
+ 
+   virtual bool ShouldHandleImeEvents() { return false; }

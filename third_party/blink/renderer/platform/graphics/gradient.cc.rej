@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/platform/graphics/gradient.cc b/third_party/blink/renderer/platform/graphics/gradient.cc	(rejected hunks)
+@@ -40,10 +40,13 @@
+ #include "third_party/skia/include/core/SkColor.h"
+ #include "third_party/skia/include/core/SkMatrix.h"
+ #include "third_party/skia/include/core/SkShader.h"
+ #include "third_party/skia/include/effects/SkGradientShader.h"
+ #include "ui/gfx/geometry/clamp_float_geometry.h"
++#if BUILDFLAG(ARKWEB_NIGHT_MODE)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/night_mode_inverter.h"
++#endif
+ 
+ namespace blink {
+ 
+ Gradient::Gradient(Type type,
+                    SpreadMethod spread_method,

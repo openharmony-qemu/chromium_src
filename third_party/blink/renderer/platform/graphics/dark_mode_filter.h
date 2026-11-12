@@ -72,6 +72,10 @@ class PLATFORM_EXPORT DarkModeFilter {
                           cc::PaintFlags* flags,
                           const SkRect& src);
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  SkColor InvertColorForNightModeIfNeeded(SkColor color, bool is_foreground);
+#endif
+
  private:
   struct ImmutableData {
     explicit ImmutableData(const DarkModeSettings& settings);

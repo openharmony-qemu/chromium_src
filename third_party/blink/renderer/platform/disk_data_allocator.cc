@@ -209,6 +209,13 @@ void DiskDataAllocator::DoRead(int64_t offset, base::span<uint8_t> data) {
   // swapping out random parts of the memory. See crbug.com/1029320 for details.
   base::ScopedAllowBlocking allow_blocking;
   std::optional<size_t> read = file_.Read(offset, data);
+#if BUILDFLAG(IS_ARKWEB)
+  if (read != data.size()) {
+    LOG(ERROR) << "DiskDataAllocator::DoRead FAILED, offset=" << offset
+    << ", expected=" << data.size()
+    << ", actual=" << (read.has_value() ? *read : -1);
+  }
+#endif
   // Can only crash, since we cannot continue without the data.
   PCHECK(read == data.size()) << "Likely file corruption.";
 }

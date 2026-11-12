@@ -1,0 +1,33 @@
+diff a/third_party/blink/renderer/platform/loader/fetch/resource_fetcher.h b/third_party/blink/renderer/platform/loader/fetch/resource_fetcher.h	(rejected hunks)
+@@ -256,10 +256,15 @@ class PLATFORM_EXPORT ResourceFetcher
+   int CountPreloads() const { return preloads_.size(); }
+   void ClearPreloads(ClearPreloadsPolicy = kClearAllPreloads);
+   void ScheduleWarnUnusedPreloads(
+       base::OnceCallback<void(Vector<KURL> unused_preloads)> callback);
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  void UpdateAllowPreloadRecord(bool allow) { allow_preload_record_ = allow; }
++  void SetMainUrl(const KURL& url) { main_url_ = url; }
++#endif
++
+   MHTMLArchive* Archive() const { return archive_.Get(); }
+ 
+   // Set the deferring state of each loader owned by this ResourceFetcher. This
+   // method must be called when the page freezing state changes.
+   // TODO(yhirano): Rename this to a more easily recognizable name.
+@@ -733,10 +738,15 @@ class PLATFORM_EXPORT ResourceFetcher
+   LcppDeferUnusedPreloadPreloadedReason
+       defer_unused_preload_preloaded_reason_for_testing_;
+   features::LcppDeferUnusedPreloadExcludedResourceType
+       defer_unused_preload_excluded_resource_type_for_testing_;
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  bool allow_preload_record_ = true;
++  KURL main_url_;
++#endif
++
+   // The accumulated time taken by `DidLoadResourceFromMemoryCache()`.
+   base::TimeDelta total_taken_time_for_did_load_resource_from_memory_cache_;
+ 
+   MemoryPressureListenerRegistration memory_pressure_listener_registration_;
+ };

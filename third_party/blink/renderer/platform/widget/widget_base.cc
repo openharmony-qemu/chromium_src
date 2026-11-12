@@ -67,9 +67,18 @@
 #include "ui/display/screen_info.h"
 #include "ui/gfx/geometry/dip_util.h"
 #include "ui/gfx/presentation_feedback.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "third_party/blink/renderer/platform/widget/compositing/android_webview/synchronous_layer_tree_frame_sink.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#include "base/ohos/sys_info_utils_ext.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #endif
 
 namespace blink {
@@ -174,7 +183,9 @@ WidgetBase::WidgetBase(
       request_animation_after_delay_timer_(
           std::move(task_runner),
           this,
-          &WidgetBase::RequestAnimationAfterDelayTimerFired) {}
+          &WidgetBase::RequestAnimationAfterDelayTimerFired) {
+  widget_base_utils_ = std::make_unique<WidgetBaseUtils>(this);
+}
 
 WidgetBase::~WidgetBase() {
   // Ensure Shutdown was called.
@@ -243,6 +254,9 @@ void WidgetBase::InitializeCompositing(
             : nullptr,
         cc::CategorizedWorkerPool::GetOrCreate(
             &BlinkCategorizedWorkerPoolDelegate::Get()));
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+    is_worker_pool_initial_ = true;
+#endif
   }
 
   screen_infos_ = screen_infos;
@@ -1108,6 +1122,11 @@ void WidgetBase::WillBeginMainFrame() {
   client_->SetSuppressFrameRequestsWorkaroundFor704763Only(true);
   client_->WillBeginMainFrame();
   UpdateSelectionBounds();
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING) && !BUILDFLAG(ARKWEB_TEST)
+  if (base::ohos::IsPcDevice() || widget_base_utils_->GetCmdValue()) {
+    widget_base_utils_->ReportForegroundThreadPool();
+  }
+#endif
 }
 
 void WidgetBase::RunPaintBenchmark(int repeat_count,
@@ -1639,6 +1658,12 @@ void WidgetBase::UpdateSelectionBounds() {
     FrameWidget* frame_widget = client_->FrameWidget();
     if (!frame_widget)
       return;
+#if BUILDFLAG(ARKWEB_MENU)
+    if (is_need_change_cursor_) {
+      frame_widget->CleanFocusCache();
+      is_need_change_cursor_ = false;
+    }
+#endif
     if (frame_widget->GetSelectionBoundsInWindow(
             &selection_focus_rect_, &selection_anchor_rect_,
             &selection_bounding_box_, &focus_dir, &anchor_dir,

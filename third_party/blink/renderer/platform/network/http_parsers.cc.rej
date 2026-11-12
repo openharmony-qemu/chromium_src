@@ -1,0 +1,106 @@
+diff a/third_party/blink/renderer/platform/network/http_parsers.cc b/third_party/blink/renderer/platform/network/http_parsers.cc	(rejected hunks)
+@@ -48,18 +48,20 @@
+ #include "services/network/public/cpp/content_security_policy/content_security_policy.h"
+ #include "services/network/public/cpp/no_vary_search_header_parser.h"
+ #include "services/network/public/cpp/parsed_headers.h"
+ #include "services/network/public/cpp/sri_message_signatures.h"
+ #include "services/network/public/cpp/timing_allow_origin_parser.h"
++#include "services/network/public/cpp/unencoded_digests.h"
+ #include "services/network/public/mojom/connection_allowlist.mojom-blink.h"
+ #include "services/network/public/mojom/integrity_policy.mojom-blink.h"
+ #include "services/network/public/mojom/no_vary_search.mojom-blink-forward.h"
+ #include "services/network/public/mojom/no_vary_search.mojom-blink.h"
+ #include "services/network/public/mojom/parsed_headers.mojom-blink.h"
+ #include "services/network/public/mojom/sri_message_signature.mojom-blink.h"
+ #include "services/network/public/mojom/supports_loading_mode.mojom-blink.h"
+ #include "services/network/public/mojom/timing_allow_origin.mojom-blink.h"
++#include "services/network/public/mojom/unencoded_digest.mojom-blink.h"
+ #include "third_party/blink/public/common/features.h"
+ #include "third_party/blink/public/common/mime_util/mime_util.h"
+ #include "third_party/blink/public/platform/web_string.h"
+ #include "third_party/blink/renderer/platform/loader/fetch/resource_response.h"
+ #include "third_party/blink/renderer/platform/network/header_field_tokenizer.h"
+@@ -111,10 +113,14 @@ blink::WebClientHintsType ConvertToBlink(WebClientHintsType in) {
+ 
+ blink::LoadingMode ConvertToBlink(LoadingMode in) {
+   return static_cast<blink::LoadingMode>(in);
+ }
+ 
++blink::UnencodedDigestIssue ConvertToBlink(UnencodedDigestIssue in) {
++  return in;
++}
++
+ // ===== Converters for other basic Blink types =====
+ ::blink::String ConvertToBlink(const std::string& in) {
+   return ::blink::String::FromUTF8(in);
+ }
+ 
+@@ -129,10 +135,15 @@ blink::LoadingMode ConvertToBlink(LoadingMode in) {
+ scoped_refptr<const ::blink::SecurityOrigin> ConvertToBlink(
+     const url::Origin& in) {
+   return ::blink::SecurityOrigin::CreateFromUrlOrigin(in);
+ }
+ 
++network::IntegrityMetadata ConvertToBlink(
++    const network::IntegrityMetadata& in) {
++  return in;
++}
++
+ // ====== Generic container converters =====
+ template <
+     typename InElement,
+     typename OutElement = decltype(ConvertToBlink(std::declval<InElement>()))>
+ ::blink::Vector<OutElement> ConvertToBlink(const std::vector<InElement>& in) {
+@@ -313,10 +324,16 @@ blink::SRIMessageSignatureComponentParameter::Type ConvertToBlink(
+ // by both the non-Blink Mojo variant and the Blink Mojo variant.
+ blink::SRIMessageSignatureError ConvertToBlink(SRIMessageSignatureError in) {
+   return in;
+ }
+ 
++blink::IntegrityMetadataPtr ConvertToBlink(const IntegrityMetadataPtr& in) {
++  CHECK(in);
++  return blink::IntegrityMetadata::New(in->algorithm,
++                                       ConvertToBlink(in->value));
++}
++
+ std::optional<::blink::Vector<uint8_t>> ConvertToBlink(
+     const std::optional<std::vector<uint8_t>>& in) {
+   if (!in) {
+     return std::nullopt;
+   }
+@@ -360,10 +377,16 @@ blink::SRIMessageSignaturesPtr ConvertToBlink(
+   CHECK(in);
+   return blink::SRIMessageSignatures::New(ConvertToBlink(in->signatures),
+                                           ConvertToBlink(in->issues));
+ }
+ 
++blink::UnencodedDigestsPtr ConvertToBlink(const UnencodedDigestsPtr& in) {
++  CHECK(in);
++  return blink::UnencodedDigests::New(ConvertToBlink(in->digests),
++                                      ConvertToBlink(in->issues));
++}
++
+ blink::ParsedHeadersPtr ConvertToBlink(const ParsedHeadersPtr& in) {
+   CHECK(in);
+   return blink::ParsedHeaders::New(
+       ConvertToBlink(in->content_security_policy),
+       ConvertToBlink(in->allow_csp_from), in->connection_allowlists,
+@@ -1133,10 +1156,18 @@ ParseSRIMessageSignaturesFromHeaders(const String& raw_headers) {
+       net::HttpUtil::AssembleRawHeaders(raw_headers.Latin1()));
+   return network::mojom::ConvertToBlink(
+       network::ParseSRIMessageSignaturesFromHeaders(*headers));
+ }
+ 
++network::mojom::blink::UnencodedDigestsPtr ParseUnencodedDigestsFromHeaders(
++    const String& raw_headers) {
++  auto headers = base::MakeRefCounted<net::HttpResponseHeaders>(
++      net::HttpUtil::AssembleRawHeaders(raw_headers.Latin1()));
++  return network::mojom::ConvertToBlink(
++      network::ParseUnencodedDigestsFromHeaders(*headers));
++}
++
+ network::mojom::blink::TimingAllowOriginPtr ParseTimingAllowOrigin(
+     const String& header_value) {
+   return network::mojom::ConvertToBlink(
+       network::ParseTimingAllowOrigin(header_value.Latin1()));
+ }

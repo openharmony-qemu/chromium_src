@@ -1,0 +1,16 @@
+diff a/third_party/blink/renderer/platform/fonts/font_cache.cc b/third_party/blink/renderer/platform/fonts/font_cache.cc	(rejected hunks)
+@@ -273,11 +273,13 @@ void FontCache::Invalidate() {
+   generation_++;
+ 
+   for (const auto& client : font_cache_clients_) {
+     client->FontCacheInvalidated();
+   }
+-
++#if BUILDFLAG(ARKWEB_CSS_FONT)
++  TypefaceCacheClear();
++#endif
+   Purge();
+ }
+ 
+ void FontCache::CrashWithFontInfo(const FontDescription* font_description) {
+   int num_families = std::numeric_limits<int>::min();

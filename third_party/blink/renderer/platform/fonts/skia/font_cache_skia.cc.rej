@@ -1,0 +1,83 @@
+diff a/third_party/blink/renderer/platform/fonts/skia/font_cache_skia.cc b/third_party/blink/renderer/platform/fonts/skia/font_cache_skia.cc	(rejected hunks)
+@@ -31,10 +31,11 @@
+ #include <unicode/locid.h>
+ 
+ #include <memory>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/check_op.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "base/notreached.h"
+ #include "build/build_config.h"
+ #include "skia/ext/font_utils.h"
+@@ -59,12 +60,15 @@
+ 
+ #if BUILDFLAG(IS_MAC)
+ #error This file should not be used by MacOS.
+ #endif
+ 
+-namespace blink {
++#if BUILDFLAG(ARKWEB_THEME_FONT)
++constexpr SkFourByteTag kWghtTag = SkSetFourByteTag('w', 'g', 'h', 't');
++#endif
+ 
++namespace blink {
+ AtomicString ToAtomicString(const SkString& str) {
+   return AtomicString::FromUTF8(std::string_view(str.begin(), str.end()));
+ }
+ 
+ namespace {
+@@ -107,10 +171,33 @@ const FontPlatformData* FontCache::CreateFontPlatformDataForCharacter(
+       GetBcp47LocaleForRequest(font_description, fallback_priority);
+   sk_sp<SkTypeface> typeface(fm->matchFamilyStyleCharacter(
+       family_name, font_description.SkiaFontStyle(), locales.data(),
+       locales.size(), c));
+ 
++#if BUILDFLAG(ARKWEB_CSS_FONT)
++  if (!typeface) {
++    return nullptr;
++  }
++  
++  FontVariantKey key = {typeface->uniqueID(), font_description.SkiaFontStyle().weight()};
++  sk_sp<SkTypeface> result;
++  {
++    base::AutoLock auto_lock(GetCacheLock());
++    TypefaceCache& typefaceCache = GetTypefaceCache();
++    auto it = typefaceCache.find(key);
++    if (it != typefaceCache.end()) {
++      result = it->value;
++    }
++  }
++  if (!result) {
++    result = ApplyWeightToVariableTypeface(typeface, font_description);
++    base::AutoLock auto_lock(GetCacheLock());
++    GetTypefaceCache().insert(key, result);
++  }
++  typeface = result;
++#endif
++
+   return CreateFontPlatformDataForTypeface(std::move(typeface),
+                                            font_description);
+ }
+ #endif
+ 
+@@ -289,12 +386,18 @@ sk_sp<SkTypeface> FontCache::CreateTypeface(
+     if (sk_sp<SkTypeface> typeface =
+             CreateLocaleSpecificTypeface(font_description, locale_family))
+       return typeface;
+   }
+ #endif  // BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_OHOS)
++  auto typeface = sk_sp<SkTypeface>(skia::DefaultFontMgr()->matchFamilyStyle(
++      name.empty() ? nullptr : name.c_str(), font_description.SkiaFontStyle()));
++  return ApplyWeightToVariableTypeface(typeface, font_description);
++#else
+   return sk_sp<SkTypeface>(skia::DefaultFontMgr()->matchFamilyStyle(
+       name.empty() ? nullptr : name.c_str(), font_description.SkiaFontStyle()));
++#endif      
+ }
+ 
+ #if !BUILDFLAG(IS_WIN)
+ const FontPlatformData* FontCache::CreateFontPlatformData(
+     const FontDescription& font_description,

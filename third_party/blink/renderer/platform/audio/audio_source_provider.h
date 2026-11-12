@@ -31,6 +31,9 @@
 
 #include <cstddef>
 #include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "base/functional/callback.h"
+#endif // ARKWEB_MEDIA_CAPTURE
 
 namespace blink {
 

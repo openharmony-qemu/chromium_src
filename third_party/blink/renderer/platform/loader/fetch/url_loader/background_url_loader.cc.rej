@@ -1,0 +1,41 @@
+diff a/third_party/blink/renderer/platform/loader/fetch/url_loader/background_url_loader.cc b/third_party/blink/renderer/platform/loader/fetch/url_loader/background_url_loader.cc	(rejected hunks)
+@@ -8,10 +8,11 @@
+ #include <cstdint>
+ #include <memory>
+ #include <variant>
+ 
+ #include "base/memory/raw_ptr.h"
++#include "base/memory/read_only_shared_memory_region.h"
+ #include "base/memory/weak_ptr.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "base/numerics/checked_math.h"
+ #include "base/task/sequenced_task_runner.h"
+ #include "base/task/single_thread_task_runner.h"
+@@ -261,10 +262,11 @@ class BackgroundURLLoader::Context
+       }
+       context_->PostTaskToMainThread(CrossThreadBindOnce(
+           &Context::OnReceivedResponse, context_, std::move(head),
+           std::move(body), std::move(cached_metadata)));
+     }
++
+     void OnTransferSizeUpdated(int transfer_size_diff) override {
+       CHECK(background_task_runner_->RunsTasksInCurrentSequence());
+       if (waiting_for_background_response_processor_) {
+         deferred_transfer_size_diff_ =
+             base::CheckAdd(deferred_transfer_size_diff_, transfer_size_diff)
+@@ -305,10 +307,15 @@ class BackgroundURLLoader::Context
+     void PostTaskToMainThread(CrossThreadOnceClosure task) override {
+       context_->PostTaskToMainThread(std::move(task));
+     }
+ 
+    private:
++#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
++    void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region,
++                                        uint64_t buffer_size) override{}
++#endif
++
+     scoped_refptr<Context> context_;
+     const scoped_refptr<base::SequencedTaskRunner> background_task_runner_;
+     std::unique_ptr<BackgroundResponseProcessor> background_response_processor_;
+ 
+     int deferred_transfer_size_diff_ = 0;

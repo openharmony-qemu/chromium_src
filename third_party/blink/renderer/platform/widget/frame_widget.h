@@ -306,6 +306,16 @@ class PLATFORM_EXPORT FrameWidget {
       const gfx::Range& replacement_range,
       int relative_cursor_pos) = 0;
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  virtual void TouchHitTest(const WebPointerEvent& event, size_t i) = 0;
+  virtual void MouseHitTest(const WebMouseEvent& event, int32_t button) = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void GetInputElementAttributes(
+      HashMap<String, String>& attributes) const = 0;
+#endif
+
   // Indicate composition is complete to plugin.
   virtual void ImeFinishComposingTextForPlugin(bool keep_selection) = 0;
 

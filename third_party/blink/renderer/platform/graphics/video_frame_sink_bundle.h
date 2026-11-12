@@ -108,6 +108,12 @@ class PLATFORM_EXPORT VideoFrameSinkBundle
       mojo::Remote<viz::mojom::blink::CompositorFrameSink>& remote);
   void RemoveClient(const viz::FrameSinkId& id);
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  void InitializeCompositorFrameSinkType(
+    uint32_t sink_id,
+    viz::mojom::blink::CompositorFrameSinkType);
+#endif
+
   // Helper methods used by VideoFrameSubmitters to communicate potentially
   // batched requests to Viz. These correspond closely to methods on the
   // CompositorFrameSink interface.

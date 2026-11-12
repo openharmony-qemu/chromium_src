@@ -1,0 +1,31 @@
+diff a/third_party/blink/renderer/platform/image-decoders/bmp/bmp_image_decoder.cc b/third_party/blink/renderer/platform/image-decoders/bmp/bmp_image_decoder.cc	(rejected hunks)
+@@ -2,10 +2,11 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "third_party/blink/renderer/platform/image-decoders/bmp/bmp_image_decoder.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "third_party/blink/renderer/platform/image-decoders/bmp/bmp_image_reader.h"
+ #include "third_party/blink/renderer/platform/image-decoders/fast_shared_buffer_reader.h"
+ #include "third_party/blink/renderer/platform/wtf/text/atomic_string.h"
+ 
+ namespace blink {
+@@ -19,13 +20,16 @@ BMPImageDecoder::BMPImageDecoder(AlphaOption alpha_option,
+                                  ColorBehavior color_behavior,
+                                  wtf_size_t max_decoded_bytes)
+     : ImageDecoder(alpha_option,
+                    ImageDecoder::kDefaultBitDepth,
+                    color_behavior,
++#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+                    cc::AuxImage::kDefault,
++#endif
+                    max_decoded_bytes),
+-      decoded_offset_(0) {}
++      decoded_offset_(0) {
++}
+ 
+ BMPImageDecoder::~BMPImageDecoder() = default;
+ 
+ String BMPImageDecoder::FilenameExtension() const {
+   return "bmp";

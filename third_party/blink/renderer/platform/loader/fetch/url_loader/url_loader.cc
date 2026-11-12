@@ -304,7 +304,12 @@ void URLLoader::Context::Start(
       base::BindRepeating(
           &BackForwardCacheLoaderHelper::DidBufferLoadWhileInBackForwardCache,
           back_forward_cache_loader_helper_,
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+          /*update_process_wide_count=*/true),
+      false);
+#else
           /*update_process_wide_count=*/true));
+#endif
 
   if (freeze_mode_ != LoaderFreezeMode::kNone) {
     resource_request_sender_->Freeze(LoaderFreezeMode::kStrict);
@@ -446,6 +451,9 @@ void URLLoader::LoadSynchronously(
     scoped_refptr<BlobDataHandle>& downloaded_blob,
     std::unique_ptr<ResourceLoadInfoNotifierWrapper>
         resource_load_info_notifier_wrapper) {
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  LOG(DEBUG) << "intercept URLLoader::LoadSynchronously+++";
+#endif
   if (!context_) {
     return;
   }
@@ -540,6 +548,9 @@ void URLLoader::LoadAsynchronously(
                   base::TimeDelta(), /*sync_load_response=*/nullptr,
                   std::move(resource_load_info_notifier_wrapper),
                   code_cache_host);
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  LOG(DEBUG) << "intercept URLLoader::LoadAsynchronously---";
+#endif
 }
 
 void URLLoader::Cancel() {

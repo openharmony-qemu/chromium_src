@@ -24,6 +24,8 @@ import("//third_party/libgav1/options.gni")
 import("//third_party/webrtc/webrtc.gni")
 import("//ui/gl/features.gni")
 import("//v8/gni/v8.gni")
+import("//arkweb/build/features/features.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 
 if (is_ios) {
   import("//build/config/ios/bundle_data_from_filelist.gni")
@@ -33,6 +35,7 @@ if (is_ios) {
 visibility = [
   ":*",
   "//:gn_all",
+  "//arkweb/build/unittests:oh_base_unittests",
   "//third_party/blink/public:all_blink",
   "//third_party/blink/renderer/platform/heap:test_support",
 ]
@@ -162,6 +165,7 @@ executable("character_data_generator") {
   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and
   # enable the diagnostic by removing this line.
   configs += [ "//build/config/compiler:no_exit_time_destructors" ]
+  ldflags = [ "-lgcc_s" ]
 }
 
 # This isn't strictly necessary since we can just add the deps to "platform",
@@ -359,6 +363,10 @@ buildflag_header("bindings_buildflags") {
     "BLINK_BINDINGS_TRACE_ENABLED=$enable_blink_bindings_tracing",
     "HAS_ZSTD_COMPRESSION=$has_zstd_compression",
   ]
+
+  if (target_os == "ohos") {
+    visibility += [ "//arkweb/build:arkweb_prebuild_buildflags" ]
+  }
 }
 
 config("blink_platform_implementation") {
@@ -432,6 +440,9 @@ source_set("image_headers") {
 component("platform") {
   visibility = []  # Allow re-assignment of list.
   visibility = [ "//third_party/blink/*" ]
+  if (is_arkweb && use_libfuzzer) {
+    visibility += [ "//arkweb/chromium_ext/ohos_test/*" ]
+  }
   output_name = "blink_platform"
 
   sources = [
@@ -1815,6 +1826,19 @@ component("platform") {
     ]
   }
 
+  if (arkweb_theme_font) {
+    sources += [
+      "fonts/android/font_cache_android.cc",
+    ]
+    if (arkweb_wpt) {
+      sources += arkweb_third_patry_blink_renderer_platform_fonts_ohos_sources
+    }
+  }
+
+  if (!enable_arkweb && arkweb_wpt) {
+    sources += arkweb_third_patry_blink_renderer_platform_fonts_cache_sources
+  }
+
   if (is_win) {
     sources += [
       "fonts/win/dwrite_font_format_support.cc",
@@ -1944,6 +1968,15 @@ component("platform") {
     "//ui/native_theme",
   ]
 
+  if (enable_arkweb) {
+    deps += [ "//arkweb//build/features"]
+    deps += [ "//cc" ]
+  }
+
+  if (enable_arkweb) {
+    public_deps += [ "//arkweb/build/features" ]
+  }
+
   if (has_zstd_compression) {
     deps += [
       "//third_party/zstd:compress",
@@ -2037,6 +2070,11 @@ component("platform") {
     sources += [ "text/apple/hyphenation_apple.cc" ]
   } else {
     sources += [ "text/hyphenation/hyphenation_null.cc" ]
+  }
+
+  if (arkweb_heif_support) {
+    import("//arkweb/chromium_ext/blink/renderer/platform/image_decoders/heif/arkweb_blink_renderer_platform_image_decoders_heif_ext.gni")
+    sources += arkweb_blink_renderer_platform_image_decoders_heif_sources
   }
 
   if (current_cpu == "x86" || current_cpu == "x64") {
@@ -2153,8 +2191,15 @@ static_library("test_support") {
     "widget/compositing/test/stub_widget_base_client.h",
   ]
 
+  if (use_libfuzzer) {
+    sources += [
+      "testing/fuzzed_data_provider.cc",
+      "testing/fuzzed_data_provider.h",
+    ]
+  }
+
   # fuzzed_data_provider may not work with a custom toolchain.
-  if (custom_toolchain == "" && is_clang) {
+  if (custom_toolchain == "" && is_clang && !is_arkweb) {
     sources += [
       "testing/fuzzed_data_provider.cc",
       "testing/fuzzed_data_provider.h",
@@ -2207,6 +2252,15 @@ static_library("test_support") {
 
   if (is_win) {
     cflags = [ "/wd4267" ]  # Truncation from size_t to int.
+  }
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
+  if (enable_arkweb) {
+    public_deps += [ "//arkweb/build/features" ]
+    visibility += [ "//arkweb/chromium_ext/ohos_test/fuzztest/*" ]
   }
 }
 
@@ -3185,4 +3239,8 @@ source_set("unit_tests") {
     "//third_party/blink/public:test_headers",
   ]
   public_deps = [ "//gpu:raster" ]
+
+  if (is_arkweb) {
+    deps += arkweb_fuzzer_test_sources
+  }
 }

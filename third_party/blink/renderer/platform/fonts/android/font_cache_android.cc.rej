@@ -1,0 +1,19 @@
+diff a/third_party/blink/renderer/platform/fonts/android/font_cache_android.cc b/third_party/blink/renderer/platform/fonts/android/font_cache_android.cc	(rejected hunks)
+@@ -137,15 +155,17 @@ const SimpleFontData* FontCache::PlatformFallbackFontForCharacter(
+   if (font_description.GenericFamily() == FontDescription::kSerifFamily)
+     generic_family_name = "serif";
+ 
+   FontFallbackPriority fallback_priority_with_emoji_text = fallback_priority;
+ 
++#if !BUILDFLAG(IS_ARKWEB)
+   if (RuntimeEnabledFeatures::SystemFallbackEmojiVSSupportEnabled() &&
+       fallback_priority == FontFallbackPriority::kText &&
+       Character::IsEmoji(c)) {
+     fallback_priority_with_emoji_text = FontFallbackPriority::kEmojiText;
+   }
++#endif
+ 
+   const FontPlatformData* font_platform_data =
+       CreateFontPlatformDataForCharacter(fm.get(), c, font_description,
+                                          generic_family_name,
+                                          fallback_priority_with_emoji_text);

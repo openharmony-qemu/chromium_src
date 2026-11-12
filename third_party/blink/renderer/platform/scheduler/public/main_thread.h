@@ -28,6 +28,9 @@ class MainThreadTaskRunnerRestricted {
   friend class ParkableImageManager;
   friend class ParkableStringManager;
   friend class RendererResourceCoordinatorImpl;
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+  friend class ResSchedReportClient;
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
   friend class SharedGpuContext;
   friend class SharedWorkerReportingProxy;
   friend class ThreadedIconLoader;

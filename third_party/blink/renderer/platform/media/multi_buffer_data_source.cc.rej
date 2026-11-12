@@ -1,0 +1,21 @@
+diff a/third_party/blink/renderer/platform/media/multi_buffer_data_source.cc b/third_party/blink/renderer/platform/media/multi_buffer_data_source.cc	(rejected hunks)
+@@ -779,6 +791,18 @@ void MultiBufferDataSource::UpdateBufferSizes() {
+     preload >>= kMetadataShift;
+   }
+   reader_->SetPreload(preload_high, preload);
+ }
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++void MultiBufferDataSource::SetMediaWebURLErrorCB(MediaWebURLErrorCB callback) {
++  if (url_data_) {
++    url_data_->SetMediaWebURLErrorCB(callback);
++  }
++}
++#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
++
+ }  // namespace blink
++
++#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
++#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/multi_buffer_data_source_for_include.cc"
++#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+\ No newline at end of file

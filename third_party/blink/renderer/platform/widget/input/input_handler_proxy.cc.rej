@@ -1,0 +1,32 @@
+diff a/third_party/blink/renderer/platform/widget/input/input_handler_proxy.cc b/third_party/blink/renderer/platform/widget/input/input_handler_proxy.cc	(rejected hunks)
+@@ -1248,11 +1305,13 @@ InputHandlerProxy::HandleGestureScrollUpdate(
+               "trace_id", trace_id, "dx",
+               -gesture_event.data.scroll_update.delta_x, "dy",
+               -gesture_event.data.scroll_update.delta_y);
+   const float provided_delta_x = gesture_event.data.scroll_update.delta_x;
+   const float provided_delta_y = gesture_event.data.scroll_update.delta_y;
+-
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  proxy_utils_->ResetNeedFlushScrollUpdateGesture();
++#endif
+   if (scroll_sequence_ignored_) {
+     TRACE_EVENT_INSTANT0("input", "Scroll Sequence Ignored",
+                          TRACE_EVENT_SCOPE_THREAD);
+     return DROP_EVENT;
+   }
+@@ -1331,10 +1390,15 @@ InputHandlerProxy::HandleGestureScrollUpdate(
+ // should end the scroll when the GSB is being handled).
+ InputHandlerProxy::EventDisposition InputHandlerProxy::HandleGestureScrollEnd(
+     const WebGestureEvent& gesture_event) {
+   TRACE_EVENT0("input", "InputHandlerProxy::HandleGestureScrollEnd");
+ 
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++  // After dragging the scrollbar by hand,
++  // we need to call MouseLeave() to make the scrollbar FADE_OUT.
++  input_handler_->MouseLeave();
++#endif  // ARKWEB_SCROLLBAR
+   const cc::ElementId latched_element_id =
+       input_handler_->LatchedScrollerElementId();
+ 
+   if (scroll_sequence_ignored_) {
+     DCHECK(!currently_active_gesture_device_.has_value());

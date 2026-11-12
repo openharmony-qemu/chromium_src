@@ -1,0 +1,25 @@
+diff a/third_party/blink/renderer/platform/loader/fetch/url_loader/code_cache_fetcher.cc b/third_party/blink/renderer/platform/loader/fetch/url_loader/code_cache_fetcher.cc	(rejected hunks)
+@@ -39,11 +42,22 @@ bool ShouldFetchCodeCache(const network::ResourceRequest& request) {
+   bool should_use_source_hash =
+       SchemeRegistry::SchemeSupportsCodeCacheWithHashing(
+           String(request.url.GetScheme())) &&
+       Platform::Current()->ShouldUseCodeCacheWithHashing(
+           WebURL(KURL(request.url)));
+-  if (!request.url.SchemeIsHTTPOrHTTPS() && !should_use_source_hash) {
++#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
++  auto protocol = KURL(request.url).Protocol();
++  bool is_protocal_support_code_cache =
++      SchemeRegistryUtils::SchemeSupportsCodeCacheWithResponseTime(protocol);
++  LOG(DEBUG) << "Resource loader if scheme:" << protocol.Utf8().c_str()
++             << " supports code cache:" << is_protocal_support_code_cache;
++#endif
++  if (!request.url.SchemeIsHTTPOrHTTPS() && !should_use_source_hash
++#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
++      && !is_protocal_support_code_cache
++#endif
++  ) {
+     return false;
+   }
+ 
+   // Supports script resource requests and shared storage worklet module
+   // requests.

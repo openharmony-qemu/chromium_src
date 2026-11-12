@@ -1,0 +1,17 @@
+diff a/third_party/blink/renderer/platform/scheduler/main_thread/main_thread_scheduler_impl.h b/third_party/blink/renderer/platform/scheduler/main_thread/main_thread_scheduler_impl.h	(rejected hunks)
+@@ -390,11 +390,14 @@ class PLATFORM_EXPORT MainThreadSchedulerImpl
+   void SetCurrentUseCaseForTest(UseCase use_case) {
+     main_thread_only().current_use_case = use_case;
+   }
+ 
+   virtual void PerformMicrotaskCheckpoint();
+-
++#if BUILDFLAG(ARKWEB_SUSPEND_ALL_TIMERS)
++  void PauseTimersForOHOSWebView() override;
++  void ResumeTimersForOHOSWebView() override;
++#endif
+  private:
+   friend class WebRenderWidgetSchedulingState;
+   friend class MainThreadMetricsHelper;
+ 
+   friend class MainThreadMetricsHelperTest;

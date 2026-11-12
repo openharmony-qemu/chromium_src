@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
 #include "base/timer/timer.h"
@@ -58,6 +59,9 @@ class InputHandlerProxyForceHandlingOnMainThread;
 class TestInputHandlerProxy;
 class UnifiedScrollingInputHandlerProxyTest;
 class InputHandlerProxyEventMetricsTest;
+#if BUILDFLAG(ARKWEB_TEST)
+class InputHandlerProxyUtilsTest;
+#endif
 }  // namespace test
 
 class CompositorThreadEventQueue;
@@ -94,6 +98,8 @@ class SynchronousInputHandler {
 class PLATFORM_EXPORT InputHandlerProxy : public cc::InputHandlerClient,
                                           public cc::SnapFlingClient {
  public:
+  friend class InputHandlerProxyUtils;
+
   InputHandlerProxy(cc::InputHandler& input_handler,
                     InputHandlerProxyClient* client);
   InputHandlerProxy(const InputHandlerProxy&) = delete;
@@ -165,6 +171,7 @@ class PLATFORM_EXPORT InputHandlerProxy : public cc::InputHandlerClient,
       std::unique_ptr<DidOverscrollParams>,
       const blink::WebInputEventAttribution&,
       std::unique_ptr<cc::EventMetrics> metrics)>;
+
   // Virtual for mocking in tests.
   virtual void HandleInputEventWithLatencyInfo(
       std::unique_ptr<blink::WebCoalescedInputEvent> event,
@@ -210,6 +217,10 @@ class PLATFORM_EXPORT InputHandlerProxy : public cc::InputHandlerClient,
   // from what was sent.
   void SynchronouslySetRootScrollOffset(
       const gfx::PointF& root_offset);
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition);
+#endif
 
   // Similar to SetRootScrollOffset above, to control the zoom level, ie scale
   // factor. Note |magnify_delta| is an incremental rather than absolute value.
@@ -277,6 +288,9 @@ class PLATFORM_EXPORT InputHandlerProxy : public cc::InputHandlerClient,
 
   // Immediately dispatches all queued events.
   void FlushQueuedEventsForTesting();
+  InputHandlerProxyUtils* proxy_utils() {
+    return proxy_utils_.get();
+  }
 
   // Returns the ElementId of the currently latched scroller, or invalid id.
   cc::ElementId LatchedScrollerElementId() const;
@@ -290,7 +304,20 @@ class PLATFORM_EXPORT InputHandlerProxy : public cc::InputHandlerClient,
   friend class test::InputHandlerProxyForceHandlingOnMainThread;
   friend class test::InputHandlerProxyEventMetricsTest;
 
-  void DispatchSingleInputEvent(std::unique_ptr<EventWithCallback>);
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class test::InputHandlerProxyUtilsTest;
+#endif
+#if BUILDFLAG(ARKWEB_TEST)
+  FRIEND_TEST_ALL_PREFIXES(InputHandlerProxyUtilsTest, SetOverscrollMode_001);
+  FRIEND_TEST_ALL_PREFIXES(InputHandlerProxyUtilsTest, GetOverScrollOffset_002);
+#endif
+
+  void DispatchSingleInputEvent(std::unique_ptr<EventWithCallback>
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+        ,
+        bool isDrop = false, bool result = false
+#endif
+  );
   void DispatchQueuedInputEvents(bool frame_aligned);
   void UpdateElasticOverscroll();
 
@@ -533,6 +560,8 @@ class PLATFORM_EXPORT InputHandlerProxy : public cc::InputHandlerClient,
       cc::InputHandlerClient::ScrollEventDispatchMode::kEnqueueScrollEvents;
 
   double scroll_deadline_ratio_ = 0.333;
+
+  std::unique_ptr<InputHandlerProxyUtils> proxy_utils_;
 
   // Used to guard against re-entrant calls to DeliverInputForDeadline.
   viz::BeginFrameId last_deadline_call_for_frame_id_;

@@ -1,0 +1,30 @@
+diff a/third_party/blink/renderer/platform/mediastream/media_stream_web_audio_source.h b/third_party/blink/renderer/platform/mediastream/media_stream_web_audio_source.h	(rejected hunks)
+@@ -36,10 +36,13 @@
+ 
+ #include "base/memory/ptr_util.h"
+ #include "third_party/blink/renderer/platform/allow_discouraged_type.h"
+ #include "third_party/blink/renderer/platform/audio/audio_source_provider.h"
+ #include "third_party/blink/renderer/platform/platform_export.h"
++#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
++#include "base/functional/callback.h"
++#endif // ARKWEB_MEDIA_CAPTURE
+ 
+ namespace blink {
+ 
+ class WebAudioSourceProvider;
+ 
+@@ -54,10 +57,14 @@ class PLATFORM_EXPORT MediaStreamWebAudioSource final
+ 
+  private:
+   // blink::AudioSourceProvider implementation.
+   void ProvideInput(AudioBus*, int frames_to_process) override;
+   void SetClient(AudioSourceProviderClient*) override {}
++#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
++  void SetOnSourcePausedChangedCallback(
++      base::RepeatingCallback<void(bool)> callback) override;
++#endif // ARKWEB_MEDIA_CAPTURE
+ 
+   std::unique_ptr<WebAudioSourceProvider> web_audio_source_provider_;
+   std::vector<float*> web_audio_data_
+       ALLOW_DISCOURAGED_TYPE("Matches WebAudioSourceProvider::ProvideInput");
+ };

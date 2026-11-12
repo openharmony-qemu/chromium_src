@@ -221,6 +221,12 @@ blink_platform_sources("loader") {
     "//third_party/blink/renderer/platform/network",
     "//third_party/blink/renderer/platform/scheduler",
   ]
+
+  # FIXME Dependency cycle
+  if (!is_component_build) {
+    deps += [ "//cef/libcef/common/mojom", ]
+  }
+  
   public_deps = [
     "//third_party/blink/public/mojom:mojom_platform_headers",
     "//third_party/blink/renderer/platform/heap",
@@ -340,6 +346,12 @@ source_set("test_support") {
     "//third_party/blink/renderer/platform/scheduler:test_support",
     "//third_party/icu",
   ]
+
+  if (arkweb_unittests) {
+    public_deps += [
+      "//content/public/renderer",
+    ]
+  }
 }
 
 blink_fuzzer_test("policy_container_utils_fuzzer") {

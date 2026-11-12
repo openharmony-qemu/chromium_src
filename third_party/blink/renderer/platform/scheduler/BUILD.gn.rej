@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/platform/scheduler/BUILD.gn b/third_party/blink/renderer/platform/scheduler/BUILD.gn	(rejected hunks)
+@@ -325,10 +328,13 @@ fuzzer_test("sequence_manager_fuzzer") {
+     "//base/test:test_support",
+     "//third_party/blink/renderer/platform",
+     "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
+     "//third_party/blink/renderer/platform:test_support",
+     "//third_party/libprotobuf-mutator",
++    "//cef:libcef_static",
++    "//ohos_nweb:cef_nweb",
++    "//ohos_nweb:nweb_sources",
+   ]
+ }
+ 
+ proto_library("sequence_manager_test_description_proto") {
+   sources = [ "test/fuzzer/proto/sequence_manager_test_description.proto" ]

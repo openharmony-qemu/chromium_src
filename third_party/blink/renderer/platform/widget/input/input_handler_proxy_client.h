@@ -15,7 +15,24 @@ class InputHandlerProxyClient {
   virtual void DidStartScrollingViewport() = 0;
   virtual void SetAllowedTouchAction(cc::TouchAction touch_action) = 0;
   virtual bool AllowsScrollResampling() = 0;
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  virtual void DidNativeEmbedEvent(blink::WebInputEvent::Type type,
+                                   std::string embedId,
+                                   int32_t id,
+                                   float x,
+                                   float y) = 0;
+  virtual void TouchHitTest(const WebPointerEvent& event, size_t i) = 0;
+  virtual void DidNativeEmbedMouseEvent(blink::WebInputEvent::Type type,
+                                  blink::WebInputEvent::Modifiers modifiers,
+                                  std::string embedId,
+                                  bool isHitNativeArea,
+                                  float x,
+                                  float y) = 0;
+  virtual void MouseHitTest(const WebMouseEvent& event, int32_t button) = 0;
+#endif
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  virtual void OnOverScrollOffsetChanged(float offset_x, float offset_y) = 0;
+#endif
  protected:
   virtual ~InputHandlerProxyClient() {}
 };

@@ -177,6 +177,9 @@ class MODULES_EXPORT MediaStream final
   bool TracksMatchDescriptor();
 
   void ScheduleDispatchEvent(Event*);
+#if BUILDFLAG(ARKWEB_MEDIA)
+  void ScheduleDispatchEvent(const AtomicString& event_type);
+#endif
   void ScheduledEventTimerFired(TimerBase*);
 
   void OnMediaStreamTrackInitialized();
@@ -193,6 +196,9 @@ class MODULES_EXPORT MediaStream final
 
   HeapTaskRunnerTimer<MediaStream> scheduled_event_timer_;
   HeapVector<Member<Event>> scheduled_events_;
+#if BUILDFLAG(ARKWEB_MEDIA)
+  Vector<AtomicString> scheduled_event_types_;
+#endif
 
   uint32_t number_of_video_tracks_initialized_ = 0;
 };

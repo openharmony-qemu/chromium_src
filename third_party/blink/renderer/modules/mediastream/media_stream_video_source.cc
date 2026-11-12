@@ -129,6 +129,7 @@ void MediaStreamVideoSource::AddTrack(
 
 void MediaStreamVideoSource::RemoveTrack(MediaStreamVideoTrack* video_track,
                                          base::OnceClosure callback) {
+  LOG(INFO) << "MediaStreamVideoSource::RemoveTrack";
   DCHECK(GetTaskRunner()->BelongsToCurrentThread());
   {
     auto it = tracks_.Find(video_track);
@@ -415,7 +416,7 @@ void MediaStreamVideoSource::UpdateNumEncodedSinks() {
 void MediaStreamVideoSource::DoChangeSource(
     const MediaStreamDevice& new_device) {
   DCHECK(GetTaskRunner()->BelongsToCurrentThread());
-  DVLOG(1) << "MediaStreamVideoSource::DoChangeSource: "
+  LOG(INFO) << "MediaStreamVideoSource::DoChangeSource: "
            << ", new device id = " << new_device.id
            << ", session id = " << new_device.session_id();
   if (state_ != STARTED && state_ != STOPPED_FOR_RESTART) {
@@ -427,7 +428,7 @@ void MediaStreamVideoSource::DoChangeSource(
 
 void MediaStreamVideoSource::DoStopSource() {
   DCHECK(GetTaskRunner()->BelongsToCurrentThread());
-  DVLOG(3) << "DoStopSource()";
+  LOG(INFO) << "DoStopSource()";
   if (state_ == ENDED)
     return;
   GetTrackAdapter()->StopFrameMonitoring();
@@ -439,7 +440,7 @@ void MediaStreamVideoSource::DoStopSource() {
 void MediaStreamVideoSource::OnStartDone(
     mojom::blink::MediaStreamRequestResult result) {
   DCHECK(GetTaskRunner()->BelongsToCurrentThread());
-  DVLOG(3) << "OnStartDone({result =" << result << "})";
+  LOG(INFO) << "OnStartDone({result =" << result << "})";
   if (state_ == ENDED) {
     OnLog(
         "MediaStreamVideoSource::OnStartDone dropping event because state_ == "
@@ -507,7 +508,7 @@ void MediaStreamVideoSource::StartFrameMonitoring() {
 void MediaStreamVideoSource::SetReadyState(
     WebMediaStreamSource::ReadyState state) {
   TRACE_EVENT("media", "MediaStreamVideoSource::SetReadyState", "state", state);
-  DVLOG(3) << "MediaStreamVideoSource::SetReadyState state " << state;
+  LOG(INFO) << "MediaStreamVideoSource::SetReadyState state " << state;
   DCHECK(GetTaskRunner()->BelongsToCurrentThread());
   if (!Owner().IsNull())
     Owner().SetReadyState(state);
@@ -516,7 +517,7 @@ void MediaStreamVideoSource::SetReadyState(
 }
 
 void MediaStreamVideoSource::SetMutedState(bool muted_state) {
-  DVLOG(3) << "MediaStreamVideoSource::SetMutedState state=" << muted_state;
+  LOG(INFO) << "MediaStreamVideoSource::SetMutedState state=" << muted_state;
   DCHECK(GetTaskRunner()->BelongsToCurrentThread());
   if (!Owner().IsNull()) {
     Owner().SetReadyState(muted_state ? WebMediaStreamSource::kReadyStateMuted

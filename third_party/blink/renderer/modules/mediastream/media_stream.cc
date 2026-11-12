@@ -250,7 +250,11 @@ MediaStream::MediaStream(ExecutionContext* context,
 MediaStream::~MediaStream() = default;
 
 bool MediaStream::HasPendingActivity() const {
-  return !scheduled_events_.empty();
+  return !scheduled_events_.empty()
+#if BUILDFLAG(ARKWEB_MEDIA)
+      || !scheduled_event_types_.empty()
+#endif
+      ;
 }
 
 bool MediaStream::EmptyOrOnlyEndedTracks() {
@@ -445,7 +449,14 @@ void MediaStream::StreamEnded() {
 
   if (active()) {
     descriptor_->SetActive(false);
+#if BUILDFLAG(ARKWEB_MEDIA)
+    // Defer Event creation to the timer callback to avoid allocating GC
+    // objects during a PreFinalizer's DisallowGC scope. See
+    // https://crbug.com/1308211.
+    ScheduleDispatchEvent(event_type_names::kInactive);
+#else
     ScheduleDispatchEvent(Event::Create(event_type_names::kInactive));
+#endif
   }
 }
 
@@ -578,6 +589,15 @@ void MediaStream::ScheduleDispatchEvent(Event* event) {
     scheduled_event_timer_.StartOneShot(base::TimeDelta(), FROM_HERE);
 }
 
+#if BUILDFLAG(ARKWEB_MEDIA)
+void MediaStream::ScheduleDispatchEvent(const AtomicString& event_type) {
+  scheduled_event_types_.push_back(event_type);
+
+  if (!scheduled_event_timer_.IsActive())
+    scheduled_event_timer_.StartOneShot(base::TimeDelta(), FROM_HERE);
+}
+#endif
+
 void MediaStream::ScheduledEventTimerFired(TimerBase*) {
   if (!GetExecutionContext())
     return;
@@ -590,6 +610,15 @@ void MediaStream::ScheduledEventTimerFired(TimerBase*) {
   }
 
   events.clear();
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+  Vector<AtomicString> event_types;
+  event_types.swap(scheduled_event_types_);
+
+  for (auto& event_type : event_types) {
+    DispatchEvent(*Event::Create(event_type));
+  }
+#endif
 }
 
 void MediaStream::Trace(Visitor* visitor) const {

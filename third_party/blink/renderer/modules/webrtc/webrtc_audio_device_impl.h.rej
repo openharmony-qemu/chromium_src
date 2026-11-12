@@ -1,0 +1,22 @@
+diff a/third_party/blink/renderer/modules/webrtc/webrtc_audio_device_impl.h b/third_party/blink/renderer/modules/webrtc/webrtc_audio_device_impl.h	(rejected hunks)
+@@ -167,14 +167,19 @@ class MODULES_EXPORT WebRtcAudioDeviceImpl
+   // A list of raw pointer of blink::WebRtcPlayoutDataSource::Sink objects which
+   // want to get the playout data, the sink need to call RemovePlayoutSink()
+   // before it goes away.
+   PlayoutDataSinkList playout_sinks_ GUARDED_BY(lock_);
+ 
++  // Protects |audio_transport_callback_| from being modified while it is in use
++  // by the audio render thread.
++  mutable base::Lock audio_transport_callback_lock_;
++
+   // Weak reference to the audio callback.
+   // The webrtc client defines |audio_transport_callback_| by calling
+   // RegisterAudioCallback().
+-  raw_ptr<webrtc::AudioTransport, DanglingUntriaged> audio_transport_callback_;
++  raw_ptr<webrtc::AudioTransport> audio_transport_callback_
++      GUARDED_BY(audio_transport_callback_lock_);
+ 
+   // Cached value of the current audio delay on the output/renderer side.
+   base::TimeDelta output_delay_ GUARDED_BY(lock_);
+ 
+   // Protects |renderer_|, |playout_sinks_|, |output_delay_|, |playing_|,

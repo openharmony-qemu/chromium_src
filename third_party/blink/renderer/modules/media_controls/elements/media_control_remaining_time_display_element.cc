@@ -26,14 +26,23 @@ MediaControlRemainingTimeDisplayElement::
 
 int MediaControlRemainingTimeDisplayElement::EstimateElementWidth() const {
   // Add extra pixel width for during display since we have an extra  "/ ".
-  return kTimeDisplayExtraCharacterWidth +
-         MediaControlTimeDisplayElement::EstimateElementWidth();
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (GetMediaControls().ShouldShowVideoControlsHM()) {
+    return MediaControlTimeDisplayElement::EstimateElementWidth();
+  }
+#endif
+  return kTimeDisplayExtraCharacterWidth + MediaControlTimeDisplayElement::EstimateElementWidth();
 }
 
 String MediaControlRemainingTimeDisplayElement::FormatTime() const {
   // For the duration display, we prepend a "/ " to deliminate the current time
   // from the duration, e.g. "0:12 / 3:45".
-  return StrCat({"/ ", MediaControlTimeDisplayElement::FormatTime()});
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (GetMediaControls().ShouldShowVideoControlsHM()) {
+    return MediaControlTimeDisplayElement::FormatTime();
+  }
+#endif
+  return "/ " + MediaControlTimeDisplayElement::FormatTime();
 }
 
 }  // namespace blink

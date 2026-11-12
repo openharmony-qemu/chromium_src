@@ -1,0 +1,69 @@
+diff a/third_party/blink/renderer/modules/accessibility/ax_object.cc b/third_party/blink/renderer/modules/accessibility/ax_object.cc	(rejected hunks)
+@@ -149,10 +149,16 @@
+ #include "ui/accessibility/ax_tree_source.h"
+ #include "ui/events/keycodes/dom/dom_code.h"
+ #include "ui/events/keycodes/dom/keycode_converter.h"
+ #include "ui/gfx/geometry/transform.h"
+ 
++#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
++#include "third_party/blink/renderer/core/editing/editor.h"
++#include "third_party/blink/renderer/core/events/input_event.h"
++#include "arkweb/chromium_ext/third_party/blink/renderer/modules/accessibility/ax_object_for_include.cc"
++#endif  // BUILDFLAG(ARKWEB_ACCESSIBILITY)
++
+ namespace blink {
+ 
+ using mojom::blink::FormControlType;
+ 
+ namespace {
+@@ -2303,13 +2315,17 @@ void AXObject::SerializeUnignoredAttributes(ui::AXNodeData* node_data,
+     }
+ 
+     // Do not send the value attribute for non-atomic text fields in order to
+     // improve the performance of the cross-process communication with the
+     // browser process, and since it can be easily computed in that process.
++#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
++    SerializeArkWebValueAttribute(node_data);
++#else
+     TruncateAndAddStringAttribute(node_data,
+                                   ax::mojom::blink::StringAttribute::kValue,
+                                   GetValueForControl());
++#endif
+ 
+     if (auto* input = DynamicTo<HTMLInputElement>(element)) {
+       String type = element->getAttribute(html_names::kTypeAttr);
+       if (type.empty()) {
+         type = "text";
+@@ -7407,11 +7423,15 @@ bool AXObject::PerformAction(const ui::AXActionData& action_data) {
+     case ax::mojom::blink::Action::kHideTooltip:
+     case ax::mojom::blink::Action::kHitTest:
+     case ax::mojom::blink::Action::kInternalInvalidateTree:
+     case ax::mojom::blink::Action::kLoadInlineTextBoxes:
+     case ax::mojom::blink::Action::kNone:
++#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+     case ax::mojom::blink::Action::kReplaceSelectedText:
++      return OnArkWebReplaceSelectedTextAction(
++          String::FromUTF8(action_data.value));
++#endif
+     case ax::mojom::blink::Action::kSetSelection:
+     case ax::mojom::blink::Action::kShowTooltip:
+     case ax::mojom::blink::Action::kSignalEndOfTest:
+     case ax::mojom::blink::Action::kResumeMedia:
+     case ax::mojom::blink::Action::kStartDuckingMedia:
+@@ -7446,10 +7466,16 @@ bool AXObject::OnNativeClickAction() {
+       mojom::blink::UserActivationNotificationType::kInteraction);
+ 
+   if (IsTextField())
+     return OnNativeFocusAction();
+ 
++#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
++  if (RoleValue() == ax::mojom::blink::Role::kVideo) {
++    OnNativeFocusAction();
++  }
++#endif
++
+   Element* element = GetClosestElement();
+ 
+   if (element) {
+     // Always set the sequential focus navigation starting point.
+     // Even if this element isn't focusable, if you press "Tab" it will

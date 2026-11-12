@@ -1,0 +1,18 @@
+diff a/third_party/blink/renderer/modules/wake_lock/wake_lock_test_utils.h b/third_party/blink/renderer/modules/wake_lock/wake_lock_test_utils.h	(rejected hunks)
+@@ -130,10 +130,16 @@ class MockPermissionService final : public mojom::blink::PermissionService {
+                          RequestPermissionCallback) override;
+   void RequestPermissions(
+       Vector<mojom::blink::PermissionDescriptorPtr> permissions,
+       bool user_gesture,
+       RequestPermissionsCallback) override;
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++  void RequestPermissionSync(
++      mojom::blink::PermissionDescriptorPtr permission,
++      bool user_gesture,
++      RequestPermissionCallback) override;
++#endif  // ARKWEB_CLIPBOARD
+   void RevokePermission(mojom::blink::PermissionDescriptorPtr permission,
+                         RevokePermissionCallback) override;
+   void AddPermissionObserver(
+       mojom::blink::PermissionDescriptorPtr permission,
+       mojom::blink::PermissionStatus last_known_status,

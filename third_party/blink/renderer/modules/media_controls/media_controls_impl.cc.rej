@@ -1,0 +1,32 @@
+diff a/third_party/blink/renderer/modules/media_controls/media_controls_impl.cc b/third_party/blink/renderer/modules/media_controls/media_controls_impl.cc	(rejected hunks)
+@@ -23,15 +23,17 @@
+  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
+ #include "third_party/blink/renderer/modules/media_controls/media_controls_impl.h"
++#if BUILDFLAG(ARKWEB_MEDIA)
++#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/media_controls_impl_utils.h"
++#endif  // BUILDFLAG(ARKWEB_MEDIA)
+ 
+ #include <array>
+ 
+ #include "base/auto_reset.h"
+-#include "media/base/media_switches.h"
+ #include "third_party/blink/public/platform/platform.h"
+ #include "third_party/blink/public/platform/task_type.h"
+ #include "third_party/blink/public/platform/user_metrics_action.h"
+ #include "third_party/blink/renderer/bindings/core/v8/v8_mutation_observer_init.h"
+ #include "third_party/blink/renderer/core/css/css_property_value_set.h"
+@@ -1096,10 +1184,11 @@ void MediaControlsImpl::MaybeShowOverlayPlayButton() {
+     overlay_play_button_->SetIsDisplayed(true);
+ }
+ 
+ void MediaControlsImpl::MakeOpaque() {
+   ShowCursor();
++  mediaControlsImplUtils_.MakeOpaqueExt();
+   panel_->MakeOpaque();
+   MaybeShowOverlayPlayButton();
+ }
+ 
+ void MediaControlsImpl::MakeOpaqueFromPointerEvent() {

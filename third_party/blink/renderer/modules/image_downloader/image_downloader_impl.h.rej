@@ -1,0 +1,16 @@
+diff a/third_party/blink/renderer/modules/image_downloader/image_downloader_impl.h b/third_party/blink/renderer/modules/image_downloader/image_downloader_impl.h	(rejected hunks)
+@@ -3,10 +3,14 @@
+ // found in the LICENSE file.
+ 
+ #ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_IMAGE_DOWNLOADER_IMAGE_DOWNLOADER_IMPL_H_
+ #define THIRD_PARTY_BLINK_RENDERER_MODULES_IMAGE_DOWNLOADER_IMAGE_DOWNLOADER_IMPL_H_
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "third_party/blink/public/mojom/image_downloader/image_downloader.mojom-blink.h"
+ #include "third_party/blink/renderer/core/execution_context/execution_context_lifecycle_observer.h"
+ #include "third_party/blink/renderer/platform/mojo/heap_mojo_receiver.h"
+ #include "third_party/blink/renderer/platform/mojo/heap_mojo_wrapper_mode.h"
+ 

@@ -6,6 +6,7 @@
 #define THIRD_PARTY_BLINK_RENDERER_MODULES_MEDIA_CONTROLS_ELEMENTS_MEDIA_CONTROL_POPUP_MENU_ELEMENT_H_
 
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_div_element.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_popup_menu_element_utils.h"
 
 namespace blink {
 
@@ -14,6 +15,8 @@ class MediaControlsImpl;
 class MediaControlPopupMenuElement : public MediaControlDivElement {
  public:
   ~MediaControlPopupMenuElement() override;
+
+  friend class MediaControlPopupMenuElementUtils;
 
   void SetIsWanted(bool) override;
 
@@ -54,8 +57,11 @@ class MediaControlPopupMenuElement : public MediaControlDivElement {
   // within the media controls popup menu, after the user finishes interacting
   // with the popup's scrollbar.
   Member<Element> last_focused_element_;
+
+  MediaControlPopupMenuElementUtils elementUtils_;
 };
 
 }  // namespace blink
 
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_popup_menu_element_utils.h"
 #endif  // THIRD_PARTY_BLINK_RENDERER_MODULES_MEDIA_CONTROLS_ELEMENTS_MEDIA_CONTROL_POPUP_MENU_ELEMENT_H_

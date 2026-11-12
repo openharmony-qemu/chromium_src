@@ -8,6 +8,7 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/location.h"
 #include "base/logging.h"
@@ -91,11 +92,18 @@ using ::payments::mojom::blink::PaymentValidationErrors;
 using ::payments::mojom::blink::PaymentValidationErrorsPtr;
 
 const char kHasEnrolledInstrumentDebugName[] = "hasEnrolledInstrument";
+#if BUILDFLAG(IS_ARKWEB)
+const char kGooglePayMethod[] = "https://x.x.x.x";
+const char kGooglePayAuthenticationMethod[] = "https://x.x.x.x";
+const char kAndroidPayMethod[] = "https://x.x.x.x";
+const char kGooglePlayBillingMethod[] = "https://x.x.x.x";
+#else
 const char kGooglePayMethod[] = "https://google.com/pay";
 const char kGooglePayAuthenticationMethod[] =
     "https://pay.google.com/authentication";
 const char kAndroidPayMethod[] = "https://android.com/pay";
 const char kGooglePlayBillingMethod[] = "https://play.google.com/billing";
+#endif
 const char kUnknownCurrency[] = "ZZZ";
 const char kAppStoreBillingLabelPlaceHolder[] = "AppStoreBillingPlaceHolder";
 const char kSecurePaymentConfirmationMethod[] = "secure-payment-confirmation";

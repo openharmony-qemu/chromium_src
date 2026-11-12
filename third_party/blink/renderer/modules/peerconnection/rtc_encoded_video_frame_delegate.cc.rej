@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/modules/peerconnection/rtc_encoded_video_frame_delegate.cc b/third_party/blink/renderer/modules/peerconnection/rtc_encoded_video_frame_delegate.cc	(rejected hunks)
+@@ -21,11 +21,12 @@
+ 
+ namespace blink {
+ 
+ static constexpr char kRTCEncodedVideoFrameDetachKey[] = "RTCEncodedVideoFrame";
+ 
+-const void* const RTCEncodedVideoFramesAttachment::kAttachmentKey = nullptr;
++const void* const RTCEncodedVideoFramesAttachment::kAttachmentKey =
++    &RTCEncodedVideoFramesAttachment::kAttachmentKey;
+ 
+ RTCEncodedVideoFrameDelegate::RTCEncodedVideoFrameDelegate(
+     std::unique_ptr<webrtc::TransformableVideoFrameInterface> webrtc_frame)
+     : webrtc_frame_(std::move(webrtc_frame)) {}
+ 

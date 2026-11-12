@@ -1,0 +1,17 @@
+diff a/third_party/blink/renderer/modules/ai/BUILD.gn b/third_party/blink/renderer/modules/ai/BUILD.gn	(rejected hunks)
+@@ -48,10 +49,15 @@ blink_modules_sources("ai") {
+     "summarizer.h",
+     "writer.cc",
+     "writer.h",
+   ]
+ 
++  if (arkweb_ai) {
++    sources += ["//arkweb/chromium_ext/third_party/blink/renderer/modules/ai/on_device_translation/language_detector_ohos.cc"]
++    sources += ["//arkweb/chromium_ext/third_party/blink/renderer/modules/ai/on_device_translation/language_detector_ohos.h"]
++  }
++
+   public_deps = [ "//third_party/blink/public/mojom:mojom_modules_blink" ]
+ 
+   deps = [
+     "//base",
+     "//components/language_detection/content/common",

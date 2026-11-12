@@ -50,8 +50,11 @@ MediaControlCastButtonElement::MediaControlCastButtonElement(
 
 void MediaControlCastButtonElement::TryShowOverlay() {
   DCHECK(is_overlay_button_);
-
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  SetIsWanted(false);
+#else
   SetIsWanted(true);
+#endif
   if (ElementFromCenter(*this) != &MediaElement()) {
     SetIsWanted(false);
   }
@@ -104,6 +107,9 @@ void MediaControlCastButtonElement::DefaultEventHandler(Event& event) {
     RemotePlayback::From(MediaElement()).PromptInternal();
     RemotePlaybackMetrics::RecordRemotePlaybackLocation(
         RemotePlaybackInitiationLocation::kHTMLMediaElement);
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+    GetMediaControls().CloseOverflowMenu();
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
   }
   MediaControlInputElement::DefaultEventHandler(event);
 }

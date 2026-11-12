@@ -225,6 +225,15 @@ class MODULES_EXPORT AXNodeObject : public AXObject {
   String SlowGetValueForControlIncludingContentEditable() const override;
   String SlowGetValueForControlIncludingContentEditable(
       AXObjectSet& visited) const override;
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  // ArkWeb: collect contenteditable value, skipping placeholder <br> to
+  // avoid phantom \n in the serialized kValue.
+  String GetContentEditableValueWithoutPlaceholderBR(Element& element) const;
+  void CollectTextWithPlaceholderNewlines(const Node& node,
+                                          StringBuilder& builder,
+                                          bool& truncated,
+                                          int depth) const;
+#endif  // BUILDFLAG(ARKWEB_ACCESSIBILITY)
   String TextFromDescendants(AXObjectSet& visited,
                              const AXObject* aria_label_or_description_root,
                              bool recursive) const override;
@@ -367,6 +376,9 @@ class MODULES_EXPORT AXNodeObject : public AXObject {
                          Vector<int>& word_ends) const override;
 
  private:
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  void SerializeArkWebHtmlAttributes(ui::AXNodeData* node_data) const;
+#endif
   // Store values that could change over the lifetime of the AXObject, but
   // are repeatedly looked up during serialization. While the tree is frozen,
   // the value remains constant. The generation ID is incremented each time

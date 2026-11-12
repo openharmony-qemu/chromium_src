@@ -15,6 +15,10 @@
 #include "mojo/public/cpp/system/platform_handle.h"
 #include "third_party/blink/renderer/platform/wtf/functional.h"
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media/audio/mojo_audio_input_ipc_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPTURE
+
 namespace blink {
 
 MojoAudioInputIPC::MojoAudioInputIPC(

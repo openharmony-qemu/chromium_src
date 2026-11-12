@@ -22,6 +22,10 @@ class MediaControlTimeDisplayElement : public MediaControlDivElement {
 
   virtual String FormatTime() const;
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void UpdateInnerText();
+#endif
+
  protected:
   explicit MediaControlTimeDisplayElement(MediaControlsImpl&);
 

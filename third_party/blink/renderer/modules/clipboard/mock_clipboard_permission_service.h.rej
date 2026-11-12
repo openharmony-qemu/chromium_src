@@ -1,0 +1,33 @@
+diff a/third_party/blink/renderer/modules/clipboard/mock_clipboard_permission_service.h b/third_party/blink/renderer/modules/clipboard/mock_clipboard_permission_service.h	(rejected hunks)
+@@ -3,10 +3,11 @@
+ // found in the LICENSE file.
+ 
+ #ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_CLIPBOARD_MOCK_CLIPBOARD_PERMISSION_SERVICE_H_
+ #define THIRD_PARTY_BLINK_RENDERER_MODULES_CLIPBOARD_MOCK_CLIPBOARD_PERMISSION_SERVICE_H_
+ 
++#include "arkweb/build/features/features.h"
+ #include "mojo/public/cpp/bindings/pending_remote.h"
+ #include "mojo/public/cpp/bindings/receiver.h"
+ #include "testing/gmock/include/gmock/gmock.h"
+ #include "third_party/blink/public/mojom/permissions/permission.mojom-blink.h"
+ 
+@@ -57,10 +58,19 @@ class MockClipboardPermissionService final
+               (Vector<mojom::blink::PermissionDescriptorPtr> permissions,
+                bool user_gesture,
+                RequestPermissionsCallback),
+               (override));
+ 
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++  MOCK_METHOD(void,
++              RequestPermissionSync,
++              (mojom::blink::PermissionDescriptorPtr permission,
++               bool user_gesture,
++               RequestPermissionCallback),
++              (override));
++#endif  // ARKWEB_CLIPBOARD
++
+   MOCK_METHOD(void,
+               RevokePermission,
+               (mojom::blink::PermissionDescriptorPtr permission,
+                RevokePermissionCallback),
+               (override));

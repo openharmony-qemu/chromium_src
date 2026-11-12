@@ -34,14 +34,25 @@ namespace {
 
 using blink::Vector;
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+Vector<SkBitmap> DecodeImageData(const std::string& data,
+                                      const std::string& mime_type,
+                                      const gfx::Size& preferred_size,
+                                      bool is_favicon = false) {
+#else
 Vector<SkBitmap> DecodeImageData(const std::string& data,
                                  const std::string& mime_type,
                                  const gfx::Size& preferred_size) {
+#endif
   // Decode the image using Blink's image decoder.
   blink::WebData buffer(base::as_byte_span(data));
   Vector<SkBitmap> bitmaps;
   if (mime_type == "image/svg+xml") {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+    SkBitmap bitmap = blink::WebImage::DecodeSVG(buffer, preferred_size, is_favicon);
+#else
     SkBitmap bitmap = blink::WebImage::DecodeSVG(buffer, preferred_size);
+#endif
     if (!bitmap.drawsNothing()) {
       bitmaps.push_back(bitmap);
     }

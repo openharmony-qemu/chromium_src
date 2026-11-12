@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/modules/mediastream/webaudio_media_stream_audio_sink.h b/third_party/blink/renderer/modules/mediastream/webaudio_media_stream_audio_sink.h	(rejected hunks)
+@@ -65,10 +68,13 @@ class MODULES_EXPORT WebAudioMediaStreamAudioSink
+ 
+   // WebAudioSourceProvider implementation.
+   void SetClient(WebAudioSourceProviderClient* client) override;
+   void ProvideInput(const std::vector<float*>& audio_data,
+                     int number_of_frames) override;
++#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
++  void OnSourcePausedChanged(bool is_paused) override;
++#endif // ARKWEB_MEDIA_CAPTURE
+ 
+  private:
+   FRIEND_TEST_ALL_PREFIXES(WebAudioMediaStreamAudioSinkFifoTest, VerifyFifo);
+ 
+   struct FifoStats {

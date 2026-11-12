@@ -136,6 +136,11 @@ void MediaControlTimelineElement::DefaultEventHandler(Event& event) {
 
   RenderBarSegments();
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  bool is_end_scrubbing_event = false;
+  bool is_used_custom_video_player = MediaElement().IsUsedCustomVideoPlayer();
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
   if (BeginScrubbingEvent(event)) {
     Platform::Current()->RecordAction(
         UserMetricsAction("Media.Controls.ScrubbingBegin"));
@@ -146,6 +151,10 @@ void MediaControlTimelineElement::DefaultEventHandler(Event& event) {
         UserMetricsAction("Media.Controls.ScrubbingEnd"));
     is_scrubbing_ = false;
     GetMediaControls().EndScrubbing();
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+    is_end_scrubbing_event = true;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
   }
 
   if (event.type() == event_type_names::kFocus)
@@ -353,6 +362,14 @@ bool MediaControlTimelineElement::EndScrubbingEvent(Event& event) {
       is_touching_ = false;
       return true;
     }
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    if (GetMediaControls().ShouldShowVideoControlsHM()) {
+      if (event.type() == event_type_names::kPointerout) {
+        is_touching_ = false;
+        return true;
+      }
+    }
+#endif
   } else if (event.type() == event_type_names::kPointerup ||
              event.type() == event_type_names::kPointercancel) {
     return IsValidPointerEvent(event);

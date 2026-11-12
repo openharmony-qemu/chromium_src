@@ -59,6 +59,14 @@ int MediaControlPictureInPictureButtonElement::GetOverflowStringId() const {
       PictureInPictureController::IsElementInPictureInPicture(
           &To<HTMLVideoElement>(MediaElement()));
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (GetMediaControls().ShouldShowVideoControlsHM()) {
+    return isInPictureInPicture
+              ? IDS_OHOS_MEDIA_OVERFLOW_MENU_EXIT_PICTURE_IN_PICTURE
+              : IDS_OHOS_MEDIA_OVERFLOW_MENU_ENTER_PICTURE_IN_PICTURE;
+  }
+#endif
+
   return isInPictureInPicture
              ? IDS_MEDIA_OVERFLOW_MENU_EXIT_PICTURE_IN_PICTURE
              : IDS_MEDIA_OVERFLOW_MENU_ENTER_PICTURE_IN_PICTURE;
@@ -108,5 +116,4 @@ void MediaControlPictureInPictureButtonElement::UpdateAriaString(
   setAttribute(html_names::kAriaLabelAttr, AtomicString(aria_string));
   UpdateAriaLabel(aria_string);
 }
-
 }  // namespace blink

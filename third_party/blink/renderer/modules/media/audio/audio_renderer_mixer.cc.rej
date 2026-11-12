@@ -1,0 +1,79 @@
+diff a/third_party/blink/renderer/modules/media/audio/audio_renderer_mixer.cc b/third_party/blink/renderer/modules/media/audio/audio_renderer_mixer.cc	(rejected hunks)
+@@ -4,21 +4,30 @@
+ 
+ #include "third_party/blink/renderer/modules/media/audio/audio_renderer_mixer.h"
+ 
+ #include <cmath>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/check_op.h"
+ #include "base/memory/ptr_util.h"
+ #include "base/time/time.h"
+ #include "base/trace_event/trace_event.h"
+ #include "media/base/audio_bus.h"
+ #include "media/base/audio_timestamp_helper.h"
+ #include "third_party/blink/renderer/modules/media/audio/audio_renderer_mixer_input.h"
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media/audio/audio_renderer_mixer_utils.h"
++#endif
++
+ namespace blink {
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
++constexpr base::TimeDelta kPauseDelay = base::Seconds(0);
++#else
+ constexpr base::TimeDelta kPauseDelay = base::Seconds(10);
++#endif
+ 
+ AudioRendererMixer::AudioRendererMixer(
+     const media::AudioParameters& output_params,
+     scoped_refptr<media::AudioRendererSink> sink)
+     : output_params_(output_params),
+@@ -33,15 +42,24 @@ AudioRendererMixer::AudioRendererMixer(
+   // If enabled we will disable the real audio output stream for muted/silent
+   // playbacks after some time elapses.
+   RenderCallback* callback = this;
+   audio_sink_->Initialize(output_params, callback);
+   audio_sink_->Start();
++  implUtils = new AudioRendererMixerUtils(this);
++#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
++  media_tid_ = base::PlatformThread::CurrentRealId();
++  implUtils->AudioRendererMixerShareInit(media_tid_);
++#endif
+ }
+ 
+ AudioRendererMixer::~AudioRendererMixer() {
+   // AudioRendererSink must be stopped before mixer is destructed.
+   audio_sink_->Stop();
++#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
++  implUtils->AudioRendererMixerShareDestroy(audio_output_tid_, media_tid_);
++#endif
++  delete implUtils;
+ 
+   // Ensure that all mixer inputs have removed themselves prior to destruction.
+   DCHECK(aggregate_converter_.empty());
+   DCHECK(converters_.empty());
+   DCHECK(error_callbacks_.empty());
+@@ -134,15 +155,21 @@ int AudioRendererMixer::Render(base::TimeDelta delay,
+ 
+   // If there are no mixer inputs and we haven't seen one for a while, pause the
+   // sink to avoid wasting resources when media elements are present but remain
+   // in the pause state.
+   const base::TimeTicks now = base::TimeTicks::Now();
++#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
++  audio_output_tid_ = base::PlatformThread::CurrentRealId();
++#endif
+   if (!aggregate_converter_.empty()) {
+     last_play_time_ = now;
+   } else if (now - last_play_time_ >= pause_delay_ && playing_) {
+     audio_sink_->Pause();
+     playing_ = false;
++#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
++    implUtils->AddMixerInputShareRender(audio_output_tid_, media_tid_);
++#endif
+   }
+ 
+   // Since AudioConverter uses uint32_t for delay calculations, we must drop
+   // negative delay values (which are incorrect anyways).
+   if (delay.is_negative()) {

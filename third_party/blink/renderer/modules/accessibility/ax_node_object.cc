@@ -1196,7 +1196,9 @@ AXObjectInclusion AXNodeObject::ShouldIncludeBasedOnSemantics(
           ax::mojom::blink::Role::kSplitter,
           ax::mojom::blink::Role::kSubscript,
           ax::mojom::blink::Role::kSuperscript,
+#if !BUILDFLAG(ARKWEB_ACCESSIBILITY)
           ax::mojom::blink::Role::kStrong,
+#endif
           ax::mojom::blink::Role::kTerm,
           ax::mojom::blink::Role::kTime,
           ax::mojom::blink::Role::kVideo,
@@ -3785,13 +3787,41 @@ String AXNodeObject::AutoComplete() const {
   return String();
 }
 
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+void AXNodeObject::SerializeArkWebHtmlAttributes(
+    ui::AXNodeData* node_data) const {
+  // Inject attributes to the HTML role, only for embed now
+  Element* element_node = DynamicTo<Element>(GetNode());
+  if (!element_node || !node_data) {
+    return;
+  }
+
+  bool is_embed = element_node->tagName() == "EMBED";
+  for (const Attribute& attr : element_node->Attributes()) {
+    std::string name = attr.GetName().LocalName().LowerASCII().Utf8();
+    if (is_embed && base::EqualsCaseInsensitiveASCII(name, "id")) {
+      std::string value = attr.Value().Utf8();
+      LOG(DEBUG) << "embed html element id: " << value;
+      node_data->html_attributes.push_back(std::make_pair(name, value));
+    }
+    if (base::EqualsCaseInsensitiveASCII(name,
+                                         "data-accessibilityDescription")) {
+      std::string value = attr.Value().Utf8();
+      node_data->html_attributes.push_back(std::make_pair(name, value));
+    }
+  }
+}
+#endif
+
 // TODO(nektar): Consider removing this method in favor of
 // AXInlineTextBox::GetDocumentMarkers, or add document markers to the tree data
 // instead of nodes objects.
 void AXNodeObject::SerializeMarkerAttributes(ui::AXNodeData* node_data) const {
   if (!GetNode() || !GetDocument() || !GetDocument()->View())
     return;
-
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  SerializeArkWebHtmlAttributes(node_data);
+#endif
   auto* text_node = DynamicTo<Text>(GetNode());
   if (!text_node)
     return;
@@ -5041,7 +5071,14 @@ String AXNodeObject::SlowGetValueForControlIncludingContentEditable(
     AXObjectSet& visited) const {
   if (IsNonAtomicTextField()) {
     Element* element = GetElement();
-    return element ? element->GetInnerTextWithoutUpdate() : String();
+    if (!element) {
+      return String();
+    }
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+    return GetContentEditableValueWithoutPlaceholderBR(*element);
+#else
+    return element->GetInnerTextWithoutUpdate();
+#endif
   }
   return GetValueForControl(visited);
 }
@@ -6896,7 +6933,7 @@ bool AXNodeObject::OnNativeFocusAction() {
     return true;
   }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_ACCESSIBILITY)
   // If this node is already the currently focused node, then calling
   // focus() won't do anything.  That is a problem when focus is removed
   // from the webpage to chrome, and then returns.  In these cases, we need
@@ -6912,7 +6949,26 @@ bool AXNodeObject::OnNativeFocusAction() {
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  WebAutofillClient* autofill_client_ = nullptr;
+  if (IsTextField() && document->GetFrame()) {
+    auto wlf = WebLocalFrameImpl::FromFrame(document->GetFrame());
+    if (wlf) {
+      autofill_client_ = wlf->AutofillClient();
+    }
+  }
+  if (autofill_client_) {
+    autofill_client_->PreSuppressKeyboardIfNeed(WebNode(node));
+  }
+#endif
+
   element->Focus(FocusParams(FocusTrigger::kUserGesture));
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  if (autofill_client_) {
+    autofill_client_->DidReceiveLeftMouseDownOrGestureTapInNode(WebNode(node));
+  }
+#endif
 
   // Calling NotifyUserActivation here allows the browser to activate features
   // that need user activation, such as showing an autofill suggestion.
@@ -8512,7 +8568,7 @@ AXObject* AXNodeObject::AccessibilityHitTest(const gfx::Point& point) const {
   DCHECK(GetLayoutObject()->IsLayoutView());
   PaintLayer* layer = To<LayoutBox>(GetLayoutObject())->Layer();
   DCHECK(layer);
-
+#if !BUILDFLAG(ARKWEB_ACCESSIBILITY)
   HitTestRequest request(HitTestRequest::kReadOnly | HitTestRequest::kActive);
   HitTestLocation location(point);
   HitTestResult hit_test_result = HitTestResult(request, location);
@@ -8522,6 +8578,38 @@ AXObject* AXNodeObject::AccessibilityHitTest(const gfx::Point& point) const {
   if (!node) {
     return nullptr;
   }
+#else
+  HitTestRequest with_flag_request(HitTestRequest::kReadOnly |
+                                   HitTestRequest::kActive |
+                                   HitTestRequest::kIgnorePointerEventsNone);
+  HitTestLocation location(point);
+  HitTestResult with_flag_result(with_flag_request, location);
+  layer->HitTest(location, with_flag_result, PhysicalRect(InfiniteIntRect()));
+  Node* node = with_flag_result.InnerNode();
+  if (!node)
+    return nullptr;
+
+  AXObject* ax_obj = node->GetLayoutObject()
+                         ? AXObjectCache().Get(node->GetLayoutObject())
+                         : nullptr;
+  auto role = ax_obj ? ax_obj->RoleValue() : ax::mojom::blink::Role::kUnknown;
+  bool use_with_flag =
+      ui::IsControlOnOHOS(role, ax_obj && ax_obj->CanSetFocusAttribute()) ||
+      role == ax::mojom::blink::Role::kStaticText;
+
+  LOG(DEBUG) << "AccessibilityHitTest with-flag: axRole="
+            << AXObject::InternalRoleName(role).Utf8()
+            << ", useWithFlag=" << use_with_flag;
+
+  if (!use_with_flag) {
+    HitTestRequest no_flag_request(HitTestRequest::kReadOnly |
+                                   HitTestRequest::kActive);
+    HitTestResult no_flag_result(no_flag_request, location);
+    layer->HitTest(location, no_flag_result, PhysicalRect(InfiniteIntRect()));
+    if (Node* no_flag_node = no_flag_result.InnerNode())
+      node = no_flag_node;
+  }
+#endif
 
   if (auto* area = DynamicTo<HTMLAreaElement>(node)) {
     return AccessibilityImageMapHitTest(area, point);

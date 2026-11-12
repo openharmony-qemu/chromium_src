@@ -18,9 +18,20 @@ class MODULES_EXPORT MediaControlScrubbingMessageElement final
   explicit MediaControlScrubbingMessageElement(MediaControlsImpl&);
 
   void SetIsWanted(bool) final;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void updateScrubbingMsg(bool);
+  void Trace(Visitor*) const override;
+#endif
 
  private:
   void PopulateChildren();
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetMsgSpan();
+  bool IsHLSLive() const;
+  Member<HTMLSpanElement> current_time_span_ = nullptr;
+  Member<HTMLSpanElement> duration_time_span_ = nullptr;
+  Member<HTMLProgressElement> duration_progress_ = nullptr;
+#endif
 };
 
 }  // namespace blink

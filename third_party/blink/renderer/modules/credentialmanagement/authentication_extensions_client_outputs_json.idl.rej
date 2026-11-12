@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/modules/credentialmanagement/authentication_extensions_client_outputs_json.idl b/third_party/blink/renderer/modules/credentialmanagement/authentication_extensions_client_outputs_json.idl	(rejected hunks)
+@@ -17,10 +17,13 @@ dictionary AuthenticationExtensionsClientOutputsJSON {
+   object largeBlob;
+ 
+   // https://fidoalliance.org/specs/fido-v2.1-rd-20201208/fido-client-to-authenticator-protocol-v2.1-rd-20201208.html#sctn-credBlob-extension
+   boolean credBlob;
+   Base64URLString getCredBlob;
++// #if BUILDFLAG(ARKWEB_FIDO)
++  object digitalShieldData;
++// #endif BUILDFLAG(ARKWEB_FIDO)
+ 
+   // https://w3c.github.io/webauthn/#sctn-supplemental-public-keys-extension
+   [RuntimeEnabled=WebAuthenticationSupplementalPubKeys] object supplementalPubKeys;
+ 
+   // https://w3c.github.io/webauthn/#prf-extension

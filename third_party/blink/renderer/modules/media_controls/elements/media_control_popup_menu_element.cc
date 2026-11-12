@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_popup_menu_element.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_popup_menu_element_utils.h"
 
 #include "third_party/blink/renderer/bindings/core/v8/v8_focus_options.h"
 #include "third_party/blink/renderer/core/css/css_property_value_set.h"
@@ -24,6 +25,10 @@
 #include "third_party/blink/renderer/modules/media_controls/media_controls_impl.h"
 #include "third_party/blink/renderer/platform/keyboard_codes.h"
 #include "third_party/blink/renderer/platform/wtf/functional.h"
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "third_party/blink/renderer/core/html/html_hr_element.h"
+#endif
 
 namespace blink {
 
@@ -110,9 +115,16 @@ class MediaControlPopupMenuElement::EventListener final
         event->SetDefaultHandled();
       }
     } else if (event->type() == event_type_names::kResize ||
-               event->type() == event_type_names::kScroll ||
-               event->type() == event_type_names::kBeforetoggle) {
+               event->type() == event_type_names::kScroll) {
       popup_menu_->SetIsWanted(false);
+    } else if (event->type() == event_type_names::kBeforetoggle) {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      if (!popup_menu_->GetMediaControls().ShouldShowVideoControlsHM()) {
+        popup_menu_->SetIsWanted(false);
+      }
+#else
+      popup_menu_->SetIsWanted(false);
+#endif
     }
   }
 
@@ -204,11 +216,13 @@ void MediaControlPopupMenuElement::Trace(Visitor* visitor) const {
   MediaControlDivElement::Trace(visitor);
   visitor->Trace(event_listener_);
   visitor->Trace(last_focused_element_);
+  visitor->Trace(elementUtils_);
 }
 
 MediaControlPopupMenuElement::MediaControlPopupMenuElement(
     MediaControlsImpl& media_controls)
-    : MediaControlDivElement(media_controls) {
+    : MediaControlDivElement(media_controls), 
+      elementUtils_(this) {
   // When clicking the scroll bar, chrome will find its first focusable parent
   // and focus on it. In order to prevent popup menu from losing focus (which
   // will close the menu), we make the popup menu focusable.
@@ -226,7 +240,6 @@ MediaControlPopupMenuElement::MediaControlPopupMenuElement(
 void MediaControlPopupMenuElement::SetPosition() {
   // The popup is positioned slightly on the inside of the bottom right
   // corner.
-  static constexpr int kPopupMenuMarginPx = 4;
   static const char kImportant[] = "important";
   static const char kPx[] = "px";
 
@@ -236,6 +249,12 @@ void MediaControlPopupMenuElement::SetPosition() {
   DCHECK(bounding_client_rect);
   DCHECK(dom_window);
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (GetMediaControls().ShouldShowVideoControlsHM()) {
+    elementUtils_.SetPopupAnchorHM(bounding_client_rect, dom_window);
+  } else {
+#endif
+  static constexpr int kPopupMenuMarginPx = 4;
   String bottom_str_value = StrCat(
       {String::Number(dom_window->innerHeight() -
                       bounding_client_rect->bottom() + kPopupMenuMarginPx),
@@ -249,9 +268,20 @@ void MediaControlPopupMenuElement::SetPosition() {
                        ASSERT_NO_EXCEPTION);
   style()->setProperty(dom_window, "right", right_str_value, kImportant,
                        ASSERT_NO_EXCEPTION);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  }
+#endif
 }
 
 Element* MediaControlPopupMenuElement::PopupAnchor() const {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (GetMediaControls().ShouldShowVideoControlsHM()) {
+    if (elementUtils_.IsOverflowMenuPopup()) {
+      return &GetMediaControls().OverflowButton();
+    }
+    return &GetMediaControls().mediaControlsImplUtils_.Playback_Speed_Button();
+  }
+#endif
   return &GetMediaControls().OverflowButton();
 }
 
@@ -277,6 +307,11 @@ void MediaControlPopupMenuElement::HideIfNotFocused() {
 bool MediaControlPopupMenuElement::FocusListItemIfDisplayed(Node* node) {
   auto* element = To<Element>(node);
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (IsA<HTMLHRElement>(element)) {
+    return false;
+  }
+#endif
   if (!element->InlineStyle() ||
       !element->InlineStyle()->HasProperty(CSSPropertyID::kDisplay)) {
     element->Focus(FocusParams(FocusTrigger::kUserGesture));

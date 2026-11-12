@@ -1,0 +1,38 @@
+diff a/third_party/blink/renderer/modules/media_controls/resources/mediaInterstitials.css b/third_party/blink/renderer/modules/media_controls/resources/mediaInterstitials.css	(rejected hunks)
+@@ -72,10 +93,36 @@ video::-internal-picture-in-picture-interstitial-message {
+     font-family: Roboto-Regular, Sans-serif, Segoe, Serif, Helvetica;
+     padding: 0px;
+     margin: 0px;
+ }
+ 
++video::-internal-media-interstitial-message-remote {
++    color: rgba(255,255,255,.54);
++    text-align: center;
++    background-color: transparent;
++    font-family: Roboto-Regular, Sans-serif, Segoe, Serif, Helvetica;
++    font-size: 16px;
++    font-weight: 400;
++    white-space: nowrap;
++    overflow: hidden;
++    text-overflow: ellipsis;
++    width: 100%;
++    margin-bottom: 8px;
++}
++
++video::-internal-media-interstitial-message-remote.sizing-small{
++    margin-bottom: 8px;
++}
++
++video::-internal-media-interstitial-message-remote.sizing-medium {
++    margin-bottom: 16px;
++}
++
++video::-internal-media-interstitial-message-remote.sizing-large {
++    margin-bottom: 16px;
++}
++
+ video::-internal-media-interstitial-message {
+     font-size: 90%;
+ }
+ 
+ video::-internal-picture-in-picture-interstitial-message {

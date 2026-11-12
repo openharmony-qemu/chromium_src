@@ -1,0 +1,19 @@
+diff a/third_party/blink/renderer/modules/filesystem/local_file_system.cc b/third_party/blink/renderer/modules/filesystem/local_file_system.cc	(rejected hunks)
+@@ -144,15 +144,13 @@ void LocalFileSystem::FileSystemAllowedInternal(
+     std::unique_ptr<FileSystemCallbacks> callbacks,
+     SynchronousType sync_type) {
+   ExecutionContext* context = execution_context_;
+   FileSystemDispatcher& dispatcher = FileSystemDispatcher::From(context);
+   if (sync_type == kSynchronous) {
+-    dispatcher.OpenFileSystemSync(context->GetSecurityOrigin(), type,
+-                                  std::move(callbacks));
++    dispatcher.OpenFileSystemSync(type, std::move(callbacks));
+   } else {
+-    dispatcher.OpenFileSystem(context->GetSecurityOrigin(), type,
+-                              std::move(callbacks));
++    dispatcher.OpenFileSystem(type, std::move(callbacks));
+   }
+ }
+ 
+ void LocalFileSystem::ResolveURLInternal(
+     const KURL& file_system_url,

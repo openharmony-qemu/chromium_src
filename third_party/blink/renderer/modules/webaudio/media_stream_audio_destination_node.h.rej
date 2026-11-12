@@ -1,0 +1,16 @@
+diff a/third_party/blink/renderer/modules/webaudio/media_stream_audio_destination_node.h b/third_party/blink/renderer/modules/webaudio/media_stream_audio_destination_node.h	(rejected hunks)
+@@ -62,10 +62,14 @@ class MODULES_EXPORT MediaStreamAudioDestinationNode final
+   MediaStreamSource* source() const { return source_.Get(); }
+ 
+   bool HasPendingActivity() const final;
+   void Trace(Visitor*) const final;
+   void Dispose();
++#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
++  // Called when a connected source track's pause state changes.
++  void OnSourcePausedChanged(bool is_paused);
++#endif // ARKWEB_MEDIA_CAPTURE
+ 
+   // InspectorHelperMixin
+   void ReportDidCreate() final;
+   void ReportWillBeDestroyed() final;
+ 

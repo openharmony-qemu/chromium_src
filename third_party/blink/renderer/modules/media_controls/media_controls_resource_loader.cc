@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/modules/media_controls/media_controls_resource_loader.h"
 
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "build/build_config.h"
 #include "third_party/blink/renderer/core/style/computed_style.h"
 #include "third_party/blink/renderer/modules/media_controls/resources/grit/media_controls_resources.h"
@@ -31,12 +32,25 @@ MediaControlsResourceLoader::MediaControlsResourceLoader()
 MediaControlsResourceLoader::~MediaControlsResourceLoader() = default;
 
 String MediaControlsResourceLoader::GetMediaControlsCSS() const {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (custom_media_player_enabled_) {
+    LOG(INFO) << "GetMediaControls load HM CSS";
+    return UncompressResourceAsString(IDR_UASTYLE_MEDIA_CONTROLS_HM_CSS);
+  }
+#endif
+  LOG(INFO) << "GetMediaControls load default CSS";
   return UncompressResourceAsString(IDR_UASTYLE_MEDIA_CONTROLS_CSS);
 }
 
 String MediaControlsResourceLoader::GetMediaControlsAndroidCSS() const {
   return UncompressResourceAsString(IDR_UASTYLE_MEDIA_CONTROLS_ANDROID_CSS);
 }
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+String MediaControlsResourceLoader::GetMediaControlsOHOSCSS() const {
+  return UncompressResourceAsString(IDR_UASTYLE_MEDIA_CONTROLS_OHOS_CSS);
+}
+#endif
 
 // static
 String MediaControlsResourceLoader::GetShadowLoadingStyleSheet() {
@@ -60,6 +74,11 @@ String MediaControlsResourceLoader::GetArrowLeftSVGImage() {
 
 // static
 String MediaControlsResourceLoader::GetScrubbingMessageStyleSheet() {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (custom_media_player_enabled_) {
+    return UncompressResourceAsString(IDR_SHADOWSTYLE_MEDIA_CONTROLS_SCRUBBING_MESSAGE_HM_CSS);
+  }
+#endif
   return UncompressResourceAsString(
       IDR_SHADOWSTYLE_MEDIA_CONTROLS_SCRUBBING_MESSAGE_CSS);
 }
@@ -76,6 +95,13 @@ String MediaControlsResourceLoader::GetMediaInterstitialsStyleSheet() {
 }
 
 String MediaControlsResourceLoader::GetUAStyleSheet() {
+#if BUILDFLAG(ARKWEB_MEDIA)
+  // On ohos, custom video css styles only work for mobile devices.
+  if (base::ohos::IsMobileDevice()) {
+    return GetMediaControlsCSS() + GetMediaControlsAndroidCSS() +
+           GetMediaControlsOHOSCSS() + GetMediaInterstitialsStyleSheet();
+  }
+#endif
   if (ShouldLoadAndroidCSS()) {
     return StrCat({GetMediaControlsCSS(), GetMediaControlsAndroidCSS(),
                    GetMediaInterstitialsStyleSheet()});
@@ -92,5 +118,14 @@ void MediaControlsResourceLoader::InjectMediaControlsUAStyleSheet() {
   if (!default_style_sheets.HasMediaControlsStyleSheetLoader())
     default_style_sheets.SetMediaControlsStyleSheetLoader(std::move(loader));
 }
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+
+bool MediaControlsResourceLoader::custom_media_player_enabled_ = false;
+
+void MediaControlsResourceLoader::SetCustomMediaPlayerEnabled(bool enable) {
+  custom_media_player_enabled_ = enable;
+}
+#endif
 
 }  // namespace blink

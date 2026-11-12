@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/modules/webcodecs/image_decoder_core.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/logging.h"
 #include "base/metrics/histogram_functions.h"
@@ -474,7 +475,10 @@ void ImageDecoderCore::Reinitialize(
       mime_type_, segment_reader_, data_complete_,
       ImageDecoder::kAlphaNotPremultiplied,
       ImageDecoder::HighBitDepthDecodingOption::kDefaultBitDepth,
-      color_behavior_, cc::AuxImage::kDefault,
+      color_behavior_,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kDefault,
+#endif
       Platform::GetMaxDecodedImageBytes(), desired_size_, animation_option_);
   DCHECK(decoder_);
 }

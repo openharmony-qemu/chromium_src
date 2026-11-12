@@ -1,0 +1,20 @@
+diff a/third_party/blink/renderer/modules/media_controls/elements/media_control_picture_in_picture_button_element.cc b/third_party/blink/renderer/modules/media_controls/elements/media_control_picture_in_picture_button_element.cc	(rejected hunks)
+@@ -12,10 +12,18 @@
+ #include "third_party/blink/renderer/core/html/media/html_video_element.h"
+ #include "third_party/blink/renderer/core/input_type_names.h"
+ #include "third_party/blink/renderer/modules/media_controls/media_controls_impl.h"
+ #include "third_party/blink/renderer/platform/text/platform_locale.h"
+ #include "ui/strings/grit/ax_strings.h"
++#if BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++#include "ohos_nweb_ex/overrides/ui/strings/grit/ohos_ex_ui_strings.h"
++#endif
++
++#if !BUILDFLAG(IS_ARKWEB_EXT)
++#define IDS_OHOS_MEDIA_OVERFLOW_MENU_EXIT_PICTURE_IN_PICTURE 62073
++#define IDS_OHOS_MEDIA_OVERFLOW_MENU_ENTER_PICTURE_IN_PICTURE 62074
++#endif
+ 
+ namespace blink {
+ 
+ MediaControlPictureInPictureButtonElement::
+     MediaControlPictureInPictureButtonElement(MediaControlsImpl& media_controls)

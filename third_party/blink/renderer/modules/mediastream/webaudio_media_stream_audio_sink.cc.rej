@@ -1,0 +1,35 @@
+diff a/third_party/blink/renderer/modules/mediastream/webaudio_media_stream_audio_sink.cc b/third_party/blink/renderer/modules/mediastream/webaudio_media_stream_audio_sink.cc	(rejected hunks)
+@@ -14,10 +14,13 @@
+ #include "media/base/audio_fifo.h"
+ #include "media/base/audio_parameters.h"
+ #include "media/base/audio_timestamp_helper.h"
+ #include "third_party/blink/public/web/web_local_frame.h"
+ #include "third_party/blink/renderer/platform/media/web_audio_source_provider_client.h"
++#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
++#include "arkweb/chromium_ext/third_party/blink/renderer/modules/mediastream/webaudio_media_stream_audio_sink_for_include.cc"
++#endif // ARKWEB_MEDIA_CAPTURE
+ 
+ namespace blink {
+ 
+ // Size of the buffer that WebAudio processes each time, it is the same value
+ // as AudioNode::ProcessingSizeInFrames in WebKit.
+@@ -43,12 +46,17 @@ WebAudioMediaStreamAudioSink::WebAudioMediaStreamAudioSink(
+   WebMediaStreamAudioSink::AddToAudioTrack(
+       this, WebMediaStreamTrack(component_.Get()));
+ }
+ 
+ WebAudioMediaStreamAudioSink::~WebAudioMediaStreamAudioSink() {
+-  if (audio_converter_.get())
+-    audio_converter_->RemoveInput(this);
++  // Use the lock to protect access to audio_converter_.
++  {
++    base::AutoLock auto_lock(lock_);
++    if (audio_converter_.get()) {
++      audio_converter_->RemoveInput(this);
++    }
++  }
+ 
+   // If the track is still active, it is necessary to notify the track before
+   // the source provider goes away.
+   if (!track_stopped_) {
+     WebMediaStreamAudioSink::RemoveFromAudioTrack(

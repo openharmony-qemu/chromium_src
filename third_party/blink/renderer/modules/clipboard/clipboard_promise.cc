@@ -48,6 +48,10 @@
 #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
 #include "ui/base/clipboard/clipboard_constants.h"
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+#include "third_party/blink/renderer/core/frame/settings.h"
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
 // There are 2 clipboard permissions defined in the spec:
 // * clipboard-read
 // * clipboard-write

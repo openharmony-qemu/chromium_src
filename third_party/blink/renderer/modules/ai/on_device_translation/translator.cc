@@ -67,6 +67,9 @@ Translator::Translator(
     String target_language,
     AbortSignal* abort_signal)
     : task_runner_(std::move(task_runner)),
+#if BUILDFLAG(ARKWEB_AI)
+      translator_remote_(ExecutionContext::From(script_state)),
+#endif
       source_language_(std::move(source_language)),
       target_language_(std::move(target_language)),
       destruction_abort_controller_(AbortController::Create(script_state)),

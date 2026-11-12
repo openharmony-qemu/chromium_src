@@ -445,6 +445,11 @@ void RecordTabLoadingSmoothness(int smoothness) {
 }
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+// Width of the window control button in the upper right corner
+const int kWindowControlButtonsWidth = 100;
+#endif
+
 // See SetDisableRevealerDelayForTesting().
 bool g_disable_revealer_delay_for_testing = false;
 

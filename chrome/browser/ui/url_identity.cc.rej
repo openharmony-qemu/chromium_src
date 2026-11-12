@@ -1,0 +1,35 @@
+diff a/chrome/browser/ui/url_identity.cc b/chrome/browser/ui/url_identity.cc	(rejected hunks)
+@@ -67,11 +67,15 @@ UrlIdentity CreateDefaultUrlIdentityFromUrl(const GURL& url,
+ 
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
+ UrlIdentity CreateChromeExtensionIdentityFromUrl(Profile* profile,
+                                                  const GURL& url,
+                                                  const FormatOptions& options) {
+-  DCHECK(url.SchemeIs(extensions::kExtensionScheme));
++  DCHECK(url.SchemeIs(extensions::kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++         || url.SchemeIs(extensions::kArkwebExtensionScheme)
++#endif
++  );
+ 
+   DCHECK(profile) << "Profile cannot be null when type is Chrome Extensions.";
+ 
+   extensions::ExtensionRegistry* extension_registry =
+       extensions::ExtensionRegistry::Get(profile);
+@@ -147,11 +151,15 @@ UrlIdentity CreateFileIdentityFromUrl(Profile* profile,
+ UrlIdentity UrlIdentity::CreateFromUrl(Profile* profile,
+                                        const GURL& url,
+                                        const TypeSet& allowed_types,
+                                        const FormatOptions& options) {
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
+-  if (url.SchemeIs(extensions::kExtensionScheme)) {
++  if (url.SchemeIs(extensions::kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      || url.SchemeIs(extensions::kArkwebExtensionScheme)
++#endif
++  ) {
+     DCHECK(allowed_types.Has(Type::kChromeExtension));
+     return CreateChromeExtensionIdentityFromUrl(profile, url, options);
+   }
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \

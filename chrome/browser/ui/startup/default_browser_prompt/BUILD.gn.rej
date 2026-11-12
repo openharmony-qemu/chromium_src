@@ -1,0 +1,27 @@
+diff a/chrome/browser/ui/startup/default_browser_prompt/BUILD.gn b/chrome/browser/ui/startup/default_browser_prompt/BUILD.gn	(rejected hunks)
+@@ -26,11 +26,11 @@ source_set("default_browser_prompt") {
+       "//components/infobars/content",
+       "//components/infobars/core",
+       "//content/public/browser",
+     ]
+   }
+-  if (is_win || is_mac || is_linux) {
++  if (is_win || is_mac || is_linux || is_ohos) {
+     sources += [ "default_browser_prompt.h" ]
+   }
+ }
+ 
+ source_set("impl") {
+@@ -63,11 +63,11 @@ source_set("impl") {
+ 
+     if (is_win) {
+       deps += [ "//chrome/installer/util:with_no_strings" ]
+     }
+   }
+-  if (is_win || is_mac || is_linux) {
++  if (is_win || is_mac || is_linux || is_ohos) {
+     sources += [ "default_browser_prompt.cc" ]
+ 
+     deps += [
+       "//chrome/browser/ui/tabs:tab_strip",
+       "//components/infobars/content",

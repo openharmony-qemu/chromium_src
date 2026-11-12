@@ -1,0 +1,14 @@
+diff a/chrome/browser/ui/download/BUILD.gn b/chrome/browser/ui/download/BUILD.gn	(rejected hunks)
+@@ -1,11 +1,11 @@
+ # Copyright 2024 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ # Download bubble UI is not used on ChromeOS.
+-assert(is_win || is_mac || is_linux)
++assert(is_win || is_mac || is_linux || is_ohos)
+ 
+ source_set("download") {
+   sources = [
+     "download_bubble_contents_view_info.h",
+     "download_bubble_info.h",

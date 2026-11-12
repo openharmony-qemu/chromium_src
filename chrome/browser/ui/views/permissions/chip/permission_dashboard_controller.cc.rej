@@ -1,0 +1,15 @@
+diff a/chrome/browser/ui/views/permissions/chip/permission_dashboard_controller.cc b/chrome/browser/ui/views/permissions/chip/permission_dashboard_controller.cc	(rejected hunks)
+@@ -493,10 +493,13 @@ void PermissionDashboardController::OnIndicatorsChipButtonPressed() {
+ 
+   GURL url = entry->GetVirtualURL();
+ 
+   if (PageInfo::IsFileOrInternalPage(url) ||
+       url.SchemeIs(content_settings::kExtensionScheme) ||
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      url.SchemeIs(content_settings::kArkwebExtensionScheme) ||
++#endif
+       url.SchemeIs(dom_distiller::kDomDistillerScheme)) {
+     ShowBubble();
+   } else {
+     ShowPageInfoDialog();
+   }

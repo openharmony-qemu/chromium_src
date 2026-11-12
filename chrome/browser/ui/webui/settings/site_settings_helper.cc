@@ -382,6 +382,9 @@ std::string GetDisplayNameForPattern(Profile* profile,
                                      const ContentSettingsPattern& pattern) {
   GURL url(pattern.ToString());
   if (url.is_valid() && (url.SchemeIs(extensions::kExtensionScheme) ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+                         url.SchemeIs(extensions::kArkwebExtensionScheme) ||
+#endif
                          url.SchemeIs(webapps::kIsolatedAppScheme))) {
     return GetDisplayNameForGURL(profile, url, /*hostname_only=*/false);
   }
@@ -897,8 +900,11 @@ std::string GetStorageAccessDisplayNameForPattern(
     Profile* profile,
     ContentSettingsPattern pattern) {
   GURL url(pattern.ToString());
-  if (url.is_valid() && (url.SchemeIs(extensions::kExtensionScheme) ||
-                         url.SchemeIs(webapps::kIsolatedAppScheme))) {
+  if (url.is_valid() && (url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+                         || url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+                         || url.SchemeIs(webapps::kIsolatedAppScheme))) {
     return GetDisplayNameForGURL(profile, url, /*hostname_only=*/false);
   }
 

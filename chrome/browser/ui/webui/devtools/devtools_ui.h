@@ -21,8 +21,10 @@ class DevToolsUI : public content::WebUIController {
 
   ~DevToolsUI() override;
 
+#if !BUILDFLAG(ARKWEB_DEVTOOLS)
  private:
   DevToolsUIBindings bindings_;
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 };
 
 #endif  // CHROME_BROWSER_UI_WEBUI_DEVTOOLS_DEVTOOLS_UI_H_

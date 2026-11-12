@@ -1,0 +1,42 @@
+diff a/chrome/browser/ui/views/page_info/page_info_security_content_view.cc b/chrome/browser/ui/views/page_info/page_info_security_content_view.cc	(rejected hunks)
+@@ -118,18 +118,26 @@ void PageInfoSecurityContentView::SetIdentityInfo(
+           IDS_PAGE_INFO_CERTIFICATE_INVALID_LINK_TOOLTIP);
+     }
+ 
+     // Add the Certificate Section.
+     const ui::ImageModel icon =
++#if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
+         base::FeatureList::IsEnabled(net::features::kVerifyQWACs)
++#else
++        false
++#endif
+             ? PageInfoViewFactory::GetImageModel(vector_icons::kStickyNote2Icon)
+             : (valid_identity ? PageInfoViewFactory::GetImageModel(
+                                     vector_icons::kCertificateIcon)
+                               : PageInfoViewFactory::GetImageModel(
+                                     vector_icons::kCertificateOffIcon));
+-    const int title_id = (valid_identity && !base::FeatureList::IsEnabled(
+-                                                net::features::kVerifyQWACs))
++    const int title_id = (valid_identity && 
++#if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)      
++                                    !base::FeatureList::IsEnabled(net::features::kVerifyQWACs))
++#else
++                                    !false)
++#endif
+                              ? IDS_PAGE_INFO_CERTIFICATE_IS_VALID
+                              : IDS_PAGE_INFO_CERTIFICATE_DETAILS;
+ 
+     std::u16string subtitle_text;
+     // Only show the EV certificate details if there are no errors or mixed
+@@ -146,10 +154,11 @@ void PageInfoSecurityContentView::SetIdentityInfo(
+             base::UTF8ToUTF16(certificate_->subject().organization_names[0]),
+             base::UTF8ToUTF16(certificate_->subject().country_name));
+       }
+     }
+ 
++#if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
+     if (base::FeatureList::IsEnabled(net::features::kVerifyQWACs)) {
+       std::u16string qwac_title =
+           l10n_util::GetStringUTF16(IDS_PAGE_INFO_QWAC_STATUS_TITLE);
+       const ui::ImageModel qwac_icon =
+           PageInfoViewFactory::GetImageModel(vector_icons::kQwacStatusIcon);

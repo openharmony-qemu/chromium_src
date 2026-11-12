@@ -1,0 +1,18 @@
+diff a/chrome/browser/ui/extensions/settings_api_bubble_helpers.cc b/chrome/browser/ui/extensions/settings_api_bubble_helpers.cc	(rejected hunks)
+@@ -172,11 +172,15 @@ void MaybeShowExtensionControlledNewTabPage(
+       web_contents->GetController().GetVisibleEntry();
+   if (!entry) {
+     return;
+   }
+   GURL active_url = entry->GetURL();
+-  if (!active_url.SchemeIs(extensions::kExtensionScheme)) {
++  if (!active_url.SchemeIs(extensions::kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      && !active_url.SchemeIs(extensions::kArkwebExtensionScheme)
++#endif
++  ) {
+     return;  // Not a URL that we care about.
+   }
+ 
+   // See if the current active URL matches a transformed NewTab URL.
+   GURL ntp_url(chrome::kChromeUINewTabURL);

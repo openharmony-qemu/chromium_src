@@ -1,0 +1,40 @@
+diff a/chrome/browser/ui/webui/print_preview/print_preview_handler.cc b/chrome/browser/ui/webui/print_preview/print_preview_handler.cc	(rejected hunks)
+@@ -659,14 +659,13 @@ void PrintPreviewHandler::HandleGetPreview(const base::Value::List& args) {
+   // when calling PrintPreviewUI::ShouldCancelRequest() on the IO thread.
+   settings.Set(kPreviewUIID,
+                print_preview_ui()->GetIDForPrintPreviewUI().value());
+ 
+   WebContents* initiator = GetInitiator();
+-  RenderFrameHost* rfh =
+-      initiator
+-          ? PrintViewManager::FromWebContents(initiator)->print_preview_rfh()
+-          : nullptr;
++  auto* manager =
++      initiator ? PrintViewManager::FromWebContents(initiator) : nullptr;
++  RenderFrameHost* rfh = manager ? manager->print_preview_rfh() : nullptr;
+   if (!rfh) {
+     ReportUserActionHistogram(UserActionBuckets::kInitiatorClosed);
+     print_preview_ui()->OnClosePrintPreviewDialog();
+     return;
+   }
+@@ -697,10 +696,12 @@ void PrintPreviewHandler::HandleGetPreview(const base::Value::List& args) {
+   if (!print_preview_ui()->IsBound()) {
+     print_render_frame_->SetPrintPreviewUI(
+         print_preview_ui()->BindPrintPreviewUI());
+   }
+   print_render_frame_->PrintPreview(settings.Clone());
++  manager->AppendPrintPreviewSettings(settings.Clone(),
++                                      rfh->GetProcess()->IsPdf());
+   last_preview_settings_ = std::move(settings);
+ }
+ 
+ void PrintPreviewHandler::HandleDoPrint(const base::Value::List& args) {
+   CHECK(args[0].is_string());
+@@ -1266,7 +1267,6 @@ void PrintPreviewHandler::HandleManagePrinters(const base::Value::List& args) {
+   local_printer_->ShowSystemPrintSettings(base::DoNothing());
+ #else
+   printing::PrinterManagerDialog::ShowPrinterManagerDialog();
+ #endif
+ }
+-
+ }  // namespace printing

@@ -163,6 +163,11 @@ std::unique_ptr<extensions::ExtensionUninstallDialog>
 extensions::ExtensionUninstallDialog::Create(Profile* profile,
                                              gfx::NativeWindow parent,
                                              Delegate* delegate) {
-  return std::make_unique<ExtensionUninstallDialogImpl>(profile, parent,
-                                                        delegate);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  return std::make_unique<ohos::ExtensionUninstallDialogOhos>(
+      profile, parent, delegate);
+#else
+  return std::make_unique<ExtensionUninstallDialogViews>(profile, parent,
+                                                         delegate);
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 }

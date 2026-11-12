@@ -1,0 +1,27 @@
+diff a/chrome/browser/ui/signin/signin_view_controller.cc b/chrome/browser/ui/signin/signin_view_controller.cc	(rejected hunks)
+@@ -498,11 +498,11 @@ void SigninViewController::ShowModalSyncConfirmationDialog(
+                               : SyncConfirmationStyle::kDefaultModal,
+           is_sync_promo),
+       GetOnModalDialogClosedCallback());
+ }
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ void SigninViewController::ShowModalHistorySyncOptInDialog(
+     bool should_close_modal_dialog,
+     HistorySyncOptinHelper::FlowCompletedCallback callback) {
+   CHECK(
+       base::FeatureList::IsEnabled(syncer::kReplaceSyncPromosWithSignInPromos));
+@@ -511,11 +511,11 @@ void SigninViewController::ShowModalHistorySyncOptInDialog(
+       SigninViewControllerDelegate::CreateSyncHistoryOptInDelegate(
+           browser_->GetBrowserForMigrationOnly(), should_close_modal_dialog,
+           HistorySyncOptinLaunchContext::kModal, std::move(callback)),
+       GetOnModalDialogClosedCallback());
+ }
+-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+ 
+ void SigninViewController::ShowModalManagedUserNoticeDialog(
+     std::unique_ptr<signin::EnterpriseProfileCreationDialogParams>
+         create_param) {
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)

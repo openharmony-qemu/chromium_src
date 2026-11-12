@@ -1,0 +1,38 @@
+diff a/chrome/browser/ui/autofill/BUILD.gn b/chrome/browser/ui/autofill/BUILD.gn	(rejected hunks)
+@@ -4,12 +4,14 @@
+ 
+ import("//build/config/chrome_build.gni")
+ import("//build/config/ui.gni")
+ import("//components/compose/features.gni")
+ import("//components/signin/features.gni")
++import("//cef/libcef/features/features.gni")
++import("//arkweb/build/features/features.gni")
+ 
+-assert(is_win || is_mac || is_linux || is_chromeos || is_android)
++assert(is_win || is_mac || is_linux || is_chromeos || is_android || is_ohos)
+ 
+ source_set("autofill") {
+   sources = [
+     "autofill_bubble_base.h",
+     "autofill_bubble_controller_base.h",
+@@ -176,10 +178,20 @@ source_set("impl") {
+     "//components/strings:components_strings_grit",
+     "//components/unified_consent",
+     "//components/variations/service",
+   ]
+ 
++#if BUILDFLAG(ARKWEB_AUTOFILL)
++  deps += [
++    "//cef/libcef/features:buildflags",
++  ]
++
++  if (enable_cef) {
++    configs += [ "//cef/libcef/features:config" ]
++  }
++#endif // BUILDFLAG(ARKWEB_AUTOFILL)
++
+   if (is_android) {
+     sources += [
+       "autofill_keyboard_accessory_controller.cc",
+       "autofill_keyboard_accessory_controller_impl.cc",
+       "autofill_snackbar_controller_impl.cc",

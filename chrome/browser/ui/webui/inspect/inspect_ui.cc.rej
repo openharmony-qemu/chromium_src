@@ -1,0 +1,17 @@
+diff a/chrome/browser/ui/webui/inspect/inspect_ui.cc b/chrome/browser/ui/webui/inspect/inspect_ui.cc	(rejected hunks)
+@@ -657,10 +669,15 @@ void InspectUI::Open(const std::string& source_id,
+   }
+ }
+ 
+ void InspectUI::Pause(const std::string& source_id,
+                       const std::string& target_id) {
++#if BUILDFLAG(ARKWEB_DEVTOOLS)
++  if (InspectInclude(source_id, target_id, "sources")) {
++    return;
++  }
++#endif // ARKWEB_DEVTOOLS
+   scoped_refptr<DevToolsAgentHost> target = FindTarget(source_id, target_id);
+   content::WebContents* web_contents = target->GetWebContents();
+   if (web_contents) {
+     DevToolsWindow::OpenDevToolsWindow(web_contents,
+                                        DevToolsToggleAction::PauseInDebugger(),

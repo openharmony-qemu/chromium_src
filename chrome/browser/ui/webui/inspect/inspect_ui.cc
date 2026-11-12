@@ -58,7 +58,10 @@
 using content::DevToolsAgentHost;
 using content::WebContents;
 using content::WebUIMessageHandler;
-
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+#include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
+#include "cef/ohos_cef_ext/libcef/browser/devtools/arkweb/request_open_devtools_handler.h"
+#endif // ARKWEB_DEVTOOLS
 namespace ui_devtools {
 
 // This class is a friend of views::Widget.
@@ -144,7 +147,11 @@ void CreateAndAddInspectUIHTMLSource(Profile* profile) {
   source->SetDefaultResource(IDR_INSPECT_INSPECT_HTML);
   source->OverrideContentSecurityPolicy(
       network::mojom::CSPDirectiveName::ScriptSrc,
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+      "script-src arkweb://resources chrome://resources chrome://webui-test 'self';");
+#else
       "script-src chrome://resources chrome://webui-test 'self';");
+#endif // ARKWEB_DEVTOOLS
 }
 
 // DevToolsFrontEndObserver ----------------------------------------
@@ -617,6 +624,11 @@ void InspectUI::InitUI() {
 
 void InspectUI::Inspect(const std::string& source_id,
                         const std::string& target_id) {
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  if (InspectInclude(source_id, target_id)) {
+    return;
+  }
+#endif // ARKWEB_DEVTOOLS
   scoped_refptr<DevToolsAgentHost> target = FindTarget(source_id, target_id);
   if (target) {
     Profile* profile = Profile::FromWebUI(web_ui());
@@ -990,3 +1002,7 @@ void InspectUI::ShowNativeUILaunchButton(bool enabled) {
 void InspectUI::SetHostVersion(const std::string& source) {
   web_ui()->CallJavascriptFunctionUnsafe("setHostVersion", base::Value(source));
 }
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/chrome/browser/ui/webui/inspect_ui_for_include.cc"
+#endif // IS_ARKWEB

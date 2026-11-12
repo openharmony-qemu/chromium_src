@@ -251,6 +251,7 @@ void PageInfoSecurityContentView::SetIdentityInfo(
             views::style::STYLE_BODY_4, kColorPageInfoSubtitleForeground);
       }
     }
+#endif
 
     // If the certificate button has been added previously, remove the old one
     // before recreating it. Re-adding it bumps it to the bottom of the

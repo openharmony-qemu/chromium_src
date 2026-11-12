@@ -1,0 +1,15 @@
+diff a/chrome/browser/ui/webui/app_home/app_home_page_handler.h b/chrome/browser/ui/webui/app_home/app_home_page_handler.h	(rejected hunks)
+@@ -21,11 +21,12 @@
+ #include "extensions/browser/extension_registry_observer.h"
+ #include "extensions/common/constants.h"
+ #include "mojo/public/cpp/bindings/receiver.h"
+ #include "mojo/public/cpp/bindings/remote.h"
+ 
+-static_assert(BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX));
++static_assert(BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) ||
++              BUILDFLAG(IS_OHOS));
+ 
+ class Browser;
+ class ExtensionEnableFlow;
+ 
+ namespace content {

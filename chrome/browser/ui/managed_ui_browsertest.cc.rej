@@ -1,0 +1,31 @@
+diff a/chrome/browser/ui/managed_ui_browsertest.cc b/chrome/browser/ui/managed_ui_browsertest.cc	(rejected hunks)
+@@ -2,10 +2,13 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "chrome/browser/ui/managed_ui.h"
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/build/features/features.h"
++#endif
+ #include "base/strings/utf_string_conversions.h"
+ #include "base/values.h"
+ #include "build/build_config.h"
+ #include "chrome/browser/enterprise/browser_management/management_service_factory.h"
+ #include "chrome/browser/profiles/profile.h"
+@@ -1150,11 +1153,15 @@ IN_PROC_BROWSER_TEST_F(ManagedUiTest, GetManagedUiWebUILabelSupervised) {
+   builder.SetIsSupervisedProfile();
+   std::unique_ptr<TestingProfile> profile = builder.Build();
+ 
+   if (ExpectManagedUiForSupervisedUsers()) {
+     EXPECT_EQ(
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++        u"Your <a href=\"https://***\">"
++#else
+         u"Your <a href=\"https://familylink.google.com/setting/resource/94\">"
++#endif
+         u"browser is managed</a> by your parent",
+         GetManagedUiWebUILabel(profile.get()));
+   } else {
+     EXPECT_TRUE(GetManagedUiWebUILabel(profile.get()).empty());
+   }

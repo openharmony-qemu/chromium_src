@@ -1,0 +1,13 @@
+diff a/chrome/browser/ui/views/commerce/price_tracking_icon_view.cc b/chrome/browser/ui/views/commerce/price_tracking_icon_view.cc
+--- a/chrome/browser/ui/views/commerce/price_tracking_icon_view.cc
++++ b/chrome/browser/ui/views/commerce/price_tracking_icon_view.cc
+@@ -1,9 +1,8 @@
+ // Copyright 2022 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+-
+ #include "chrome/browser/ui/views/commerce/price_tracking_icon_view.h"
+ 
+ #include <string_view>
+ 
+ #include "base/metrics/user_metrics.h"

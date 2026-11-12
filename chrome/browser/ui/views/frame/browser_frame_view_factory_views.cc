@@ -120,7 +120,7 @@ std::unique_ptr<BrowserFrameView> CreateBrowserFrameViewWin(
 std::unique_ptr<BrowserFrameView> CreateBrowserFrameView(
     BrowserWidget* widget,
     BrowserView* browser_view) {
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   return CreateBrowserFrameViewWin(widget, browser_view);
 #else
   return CreateBrowserFrameViewLinux(widget, browser_view);

@@ -35,7 +35,11 @@ class PortForwardingStatusSerializer;
 class InspectUIConfig : public content::DefaultWebUIConfig<InspectUI> {
  public:
   InspectUIConfig()
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+      : DefaultWebUIConfig(content::kArkWebUIScheme,
+#else
       : DefaultWebUIConfig(content::kChromeUIScheme,
+#endif // ARKWEB_DEVTOOLS
                            chrome::kChromeUIInspectHost) {}
 };
 
@@ -49,6 +53,16 @@ class InspectUI : public content::WebUIController,
 
   void InitUI();
   void Inspect(const std::string& source_id, const std::string& target_id);
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  bool InspectInclude(const std::string& source_id,
+                      const std::string& target_id,
+                      const std::string& panel = "");
+  static std::string GetTypeFromHost(const std::string& hostType);
+  static void RequestOpenDevByTargetId(const std::string& source_id,
+                                       const std::string& target_id,
+                                       const std::string& panel);
+#endif // ARKWEB_DEVTOOLS
+
   void InspectFallback(const std::string& source_id,
                        const std::string& target_id);
   void Activate(const std::string& source_id, const std::string& target_id);

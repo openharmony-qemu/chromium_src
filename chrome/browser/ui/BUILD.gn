@@ -29,6 +29,12 @@ import("//third_party/protobuf/proto_library.gni")
 import("//tools/metrics/generate_allowlist_from_histograms_file.gni")
 import("//ui/base/ui_features.gni")
 import("//ui/views/features.gni")
+import("//components/services/on_device_translation/buildflags/features.gni")
+
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+  import("//arkweb/chromium_ext/chrome/browser/ui/extensions/infobar_delegate.gni")
+}
 
 assert(enable_supervised_users)
 assert(!is_fuchsia, "Fuchsia shouldn't use anything in //chrome")

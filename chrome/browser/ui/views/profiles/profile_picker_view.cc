@@ -97,6 +97,10 @@
 #include "chrome/browser/shell_integration_linux.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "ui/display/screen.h"
+#endif
+
 namespace {
 
 ProfilePickerView* g_profile_picker_view = nullptr;

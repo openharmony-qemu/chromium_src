@@ -1,0 +1,40 @@
+diff a/chrome/browser/ui/startup/startup_browser_creator_browsertest.cc b/chrome/browser/ui/startup/startup_browser_creator_browsertest.cc	(rejected hunks)
+@@ -696,11 +696,11 @@ class StartupBrowserCreatorChromeAppShortcutTest
+     StartupBrowserCreatorTest::SetUpOnMainThread();
+   }
+ 
+   void ExpectBlockLaunch(const std::string& app_id, bool force_install_dialog) {
+     ASSERT_EQ(2u, chrome::GetBrowserCount(browser()->profile()));
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_TEST)
+     auto waiter = views::NamedWidgetShownWaiter(
+         views::test::AnyWidgetTestPasskey{},
+         force_install_dialog ? "ForceInstalledDeprecatedAppsDialogView"
+                              : "DeprecatedAppsDialogView");
+ #endif
+@@ -733,11 +733,11 @@ class StartupBrowserCreatorChromeAppShortcutTest
+     // Verify that the Deprecated Apps Dialog View also shows up.
+     EXPECT_TRUE(waiter.WaitIfNeededAndGet() != nullptr);
+ #endif
+   }
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_TEST)
+ 
+   enum class ExpectedLaunchBehavior{kLaunchAnywaysInTab, kLaunchAnywaysInWindow,
+                                     kNoLaunch};
+   void ExpectBlockLaunchWithLaunchBehavior(const std::string& app_id,
+                                            bool force_install_dialog) {
+@@ -3087,11 +3089,11 @@ IN_PROC_BROWSER_TEST_F(StartupBrowserWebAppProtocolAndFileHandlingTest,
+ 
+   app_browser->GetWindow()->Close();
+   ui_test_utils::WaitForBrowserToClose(app_browser);
+ }
+ 
+-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_TEST)
+ 
+ // These tests are not applicable to Chrome OS as neither initial preferences
+ // nor the onboarding promos exist there.
+ #if !BUILDFLAG(IS_CHROMEOS)
+ 

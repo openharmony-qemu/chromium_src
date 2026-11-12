@@ -599,7 +599,8 @@ void ManagePasswordsUIController::OnBiometricAuthenticationForFilling(
       GetState() == password_manager::ui::INACTIVE_STATE) {
     return;
   }
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
   const std::string promo_shown_counter =
       password_manager::prefs::kBiometricAuthBeforeFillingPromoShownCounter;
   // Checking GetIfBiometricAuthenticationPromoWasShown() prevents from
@@ -1192,7 +1193,8 @@ void ManagePasswordsUIController::AuthenticateUserWithMessage(
     std::move(callback).Run(true);
     return;
   }
-#if !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_WIN) && !BUILDFLAG(IS_CHROMEOS)
+#if !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_WIN) && !BUILDFLAG(IS_CHROMEOS) && \
+    !BUILDFLAG(IS_OHOS)
   std::move(callback).Run(true);
   return;
 #else

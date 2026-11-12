@@ -1,0 +1,13 @@
+diff a/chrome/browser/ui/views/certificate_selector.cc b/chrome/browser/ui/views/certificate_selector.cc	(rejected hunks)
+@@ -33,10 +33,11 @@
+ #include "ui/views/controls/button/md_text_button.h"
+ #include "ui/views/controls/scroll_view.h"
+ #include "ui/views/controls/table/table_view.h"
+ #include "ui/views/layout/box_layout.h"
+ #include "ui/views/widget/widget.h"
++#include "chrome/common/buildflags.h"
+ 
+ #if BUILDFLAG(IS_CHROMEOS)
+ #include "chrome/browser/ash/certificate_provider/certificate_provider_service.h"
+ #include "chrome/browser/ash/certificate_provider/certificate_provider_service_factory.h"
+ #include "extensions/browser/extension_registry.h"

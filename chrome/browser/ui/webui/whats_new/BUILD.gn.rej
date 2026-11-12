@@ -1,0 +1,27 @@
+diff a/chrome/browser/ui/webui/whats_new/BUILD.gn b/chrome/browser/ui/webui/whats_new/BUILD.gn	(rejected hunks)
+@@ -3,10 +3,12 @@
+ # found in the LICENSE file.
+ 
+ import("//chrome/common/features.gni")
+ import("//mojo/public/tools/bindings/mojom.gni")
+ import("//pdf/features.gni")
++import("//arkweb/build/features/features.gni")
++
+ 
+ assert(!is_android && !is_fuchsia)
+ 
+ mojom("mojo_bindings") {
+   sources = [ "whats_new.mojom" ]
+@@ -98,11 +100,11 @@ source_set("impl") {
+       deps += [ "//pdf:features" ]
+     }
+   }
+ }
+ 
+-if (is_linux || is_mac || is_win) {
++if (is_linux || is_mac || is_win || arkweb_asan) {
+   source_set("unit_tests") {
+     testonly = true
+     sources = [
+       "whats_new_handler_unittest.cc",
+       "whats_new_registrar_unittest.cc",

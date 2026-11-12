@@ -1,0 +1,28 @@
+diff a/content/browser/renderer_host/navigation_entry_impl.h b/content/browser/renderer_host/navigation_entry_impl.h	(rejected hunks)
+@@ -14,11 +14,10 @@
+ #include <vector>
+ 
+ #include "base/containers/flat_map.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/ref_counted.h"
+-#include "base/memory/safety_checks.h"
+ #include "base/time/time.h"
+ #include "build/build_config.h"
+ #include "content/browser/renderer_host/back_forward_cache_metrics.h"
+ #include "content/browser/renderer_host/frame_navigation_entry.h"
+ #include "content/browser/renderer_host/navigation_transitions/navigation_transition_data.h"
+@@ -57,14 +60,10 @@ class CONTENT_EXPORT NavigationEntryImpl : public NavigationEntry {
+   enum class ClonePolicy { kShareFrameEntries, kCloneFrameEntries };
+ 
+   // Represents a tree of FrameNavigationEntries that make up this joint session
+   // history item.
+   struct TreeNode {
+-    // TODO(https://crbug.com/495931147): Remove this macro.
+-    ADVANCED_MEMORY_SAFETY_CHECKS();
+-
+-   public:
+     TreeNode(TreeNode* parent, scoped_refptr<FrameNavigationEntry> frame_entry);
+     ~TreeNode();
+ 
+     // Returns whether this TreeNode corresponds to |frame_tree_node|.  If this
+     // is called on the root TreeNode, we only check if |frame_tree_node| is the

@@ -1,0 +1,43 @@
+diff a/content/common/BUILD.gn b/content/common/BUILD.gn	(rejected hunks)
+@@ -9,10 +9,16 @@ import("//ipc/features.gni")
+ import("//media/media_options.gni")
+ import("//mojo/public/tools/bindings/mojom.gni")
+ import("//sandbox/features.gni")
+ import("//testing/libfuzzer/fuzzer_test.gni")
+ import("features.gni")
++import("//arkweb/build/features/features.gni")
++import("//arkweb/chromium_ext/chromium_ext.gni")
++
++if (defined(is_arkweb_ext) && is_arkweb_ext) {
++  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
++}
+ 
+ # For feature flags internal to content. See content/public/common:features
+ # for feature flags that clients of contents need to know about.
+ buildflag_header("buildflags") {
+   header = "buildflags.h"
+@@ -26,11 +32,11 @@ buildflag_header("buildflags") {
+     "MBI_MODE_PER_SITE_INSTANCE=$_mbi_mode_per_site_instance",
+     "CONTENT_ENABLE_LEGACY_IPC=0",
+   ]
+ }
+ 
+-if (is_linux || is_chromeos) {
++if (is_linux || is_chromeos || arkweb_render_process_startup) {
+   source_set("sandbox_support_linux") {
+     public = [
+       "zygote/zygote_commands_linux.h",
+       "zygote/zygote_communication_linux.h",
+     ]
+@@ -213,10 +219,11 @@ source_set("common") {
+     "//build:branding_buildflags",
+     "//components/discardable_memory/common",
+     "//components/input",
+     "//components/services/filesystem/public/mojom",
+     "//components/tracing:tracing_config",
++    "//components/embedder_support:make_ohos_arkweb_version",
+     "//content:content_resources",
+     "//content/common/fetch:fetch_api_request_proto",
+     "//content/common/memory_coordinator/mojom",
+     "//content/public/common:interfaces",
+     "//content/public/common/zygote:buildflags",

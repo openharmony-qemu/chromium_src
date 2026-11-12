@@ -1,0 +1,133 @@
+diff a/content/browser/web_contents/web_contents_impl.h b/content/browser/web_contents/web_contents_impl.h	(rejected hunks)
+@@ -210,16 +226,26 @@ class CONTENT_EXPORT WebContentsImpl
+       public ui::ColorProviderSourceObserver,
+       public SlowWebPreferenceCacheObserver,
+       public input::RenderWidgetHostInputEventRouter::Delegate {
+  public:
+   class FriendWrapper;
++  friend class WebContentsImplExt;
++  friend class WebContentsImplUtils;
+ 
+   WebContentsImpl(const WebContentsImpl&) = delete;
+   WebContentsImpl& operator=(const WebContentsImpl&) = delete;
+ 
+   ~WebContentsImpl() override;
+ 
++  virtual content::WebContentsImplExt* AsWebContentsImplExt() {
++    return nullptr;
++  }
++
++  virtual base::WeakPtr<content::WebContentsImplExt> AsWebContentsImplExtWeakThis() {
++    return nullptr;
++  }
++
+   static std::unique_ptr<WebContentsImpl> CreateWithOpener(
+       const WebContents::CreateParams& params,
+       RenderFrameHostImpl* opener_rfh);
+ 
+   static std::vector<WebContentsImpl*> GetAllWebContents();
+@@ -292,11 +318,18 @@ class CONTENT_EXPORT WebContentsImpl
+ 
+   WebContentsView* GetView() const;
+ 
+   // Called on screen information changes; |is_multi_screen_changed| is true iff
+   // the plurality of connected screens changed (e.g. 1 screen <-> 2 screens).
++#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
++  void OnScreensChange(bool is_multi_screen_changed, int screen_count);
++  void DiscardCompositingResources();
++  bool IsWebContentsFocused() const;
++  bool IsSingleScreen() const;
++#else
+   void OnScreensChange(bool is_multi_screen_changed);
++#endif
+ 
+   void OnScreenOrientationChange();
+ 
+   ScreenOrientationProvider* GetScreenOrientationProviderForTesting() const {
+     return screen_orientation_provider_.get();
+@@ -672,20 +706,37 @@ class CONTENT_EXPORT WebContentsImpl
+                            navigation_handle_callback) override;
+ 
+   const blink::web_pref::WebPreferences& GetOrCreateWebPreferences() override;
+   void NotifyPreferencesChanged() override;
+   void SetWebPreferences(const blink::web_pref::WebPreferences& prefs) override;
++#if BUILDFLAG(ARKWEB_DEVTOOLS)
++  // 作用：CDP脚本执行禁用状态管理；合理性：ArkWeb的PageBroadcast不工作，需在
++  // WebContentsImpl中持久化CDP JS禁用状态以跨导航传播；必要性：删除后JS禁用无法跨导航
++  void SetCdpScriptExecutionDisabled(bool disabled);
++  bool IsCdpScriptExecutionDisabled() const;
++  void UpdateWebPreferencesAfterNavigation(NavigationHandle* navigation_handle);
++#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++  void OnWebPreferencesChanged(int32_t usage_scenario_type = 99) override;
++#else
+   void OnWebPreferencesChanged() override;
++#endif
+ 
+   void AboutToBeDiscarded(WebContents* new_contents) override;
+   void NotifyWasDiscarded() override;
+ 
+   [[nodiscard]] base::ScopedClosureRunner CreateDisallowCustomCursorScope(
+       int max_dimension_dips) override;
+ 
+   void SetOverscrollNavigationEnabled(bool enabled) override;
+ 
++#if BUILDFLAG(ARKWEB_NOT_LOAD_IFRAME)
++  void NotifyFrameGoneReason(base::TerminationStatus status, int exit_code) override;
++
++  bool GetIframeLoadingFlag() override;
++#endif  // ARKWEB_NOT_LOAD_IFRAME
++
+   // RenderFrameHostDelegate ---------------------------------------------------
+   void OnDidBlockNavigation(
+       const GURL& blocked_url,
+       const GURL& initiator_url,
+       blink::mojom::NavigationBlockedReason reason) override;
+@@ -1599,11 +1677,20 @@ class CONTENT_EXPORT WebContentsImpl
+ 
+   bool IsPopup() const override;
+ 
+   WebContents* GetDocumentPictureInPictureOpener();
+ 
++#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
++  void EvictFrameBackBuffersWhenNWebWasHidden();
++  void SetIsOfflineWebComponent();
++#endif
++
++#if BUILDFLAG(ARKWEB_TEST)
++ public:
++#else
+  private:
++#endif  // ARKWEB_TEST
+   using FrameTreeIterationCallback = base::FunctionRef<void(FrameTree&)>;
+   using RenderViewHostIterationCallback =
+       base::RepeatingCallback<void(RenderViewHostImpl*)>;
+ 
+   friend class WebContentsObserver;
+@@ -1612,10 +1699,13 @@ class CONTENT_EXPORT WebContentsImpl
+   friend class RenderFrameHostImplBeforeUnloadBrowserTest;
+   friend class WebContentsImplBrowserTest;
+   friend class TestWebContentsDestructionObserver;
+   friend class BeforeUnloadBlockingDelegate;
+   friend class TestWCDelegateForDialogsAndFullscreen;
++#if BUILDFLAG(ARKWEB_TEST)
++  friend class WebContentsImplUtilsTest;
++#endif
+ 
+   FRIEND_TEST_ALL_PREFIXES(WebContentsImplTest, CaptureHoldsWakeLock);
+   FRIEND_TEST_ALL_PREFIXES(WebContentsImplTest, NoJSMessageOnInterstitials);
+   FRIEND_TEST_ALL_PREFIXES(WebContentsImplTest, UpdateTitle);
+   FRIEND_TEST_ALL_PREFIXES(WebContentsImplTest, FindOpenerRVHWhenPending);
+@@ -1825,11 +1919,11 @@ class CONTENT_EXPORT WebContentsImpl
+ 
+    private:
+     bool is_notifying_observers_ = false;
+     base::ObserverList<WebContentsObserver> observers_;
+   };
+-
++  raw_ptr<WebContentsImplUtils> implUtils_;
+   // See WebContents::Create for a description of these parameters.
+   explicit WebContentsImpl(BrowserContext* browser_context);
+ 
+   // Covariant return type alternative for WebContents::Create(). Avoids
+   // need for casting of objects inside the content layer.

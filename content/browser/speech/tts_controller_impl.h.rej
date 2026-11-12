@@ -1,0 +1,13 @@
+diff a/content/browser/speech/tts_controller_impl.h b/content/browser/speech/tts_controller_impl.h	(rejected hunks)
+@@ -194,10 +194,11 @@ class CONTENT_EXPORT TtsControllerImpl
+   // Returns true if the utterance should be spoken.
+   bool ShouldSpeakUtterance(TtsUtterance* utterance);
+ 
+   // WebContentsObserver methods
+   void WebContentsDestroyed() override;
++  void PrimaryPageChanged(Page& page) override;
+   void OnVisibilityChanged(Visibility visibility) override;
+ 
+   // net::NetworkChangeNotifier::NetworkChangeObserver
+   void OnNetworkChanged(
+       net::NetworkChangeNotifier::ConnectionType type) override;

@@ -1,0 +1,17 @@
+diff a/content/browser/webauth/webauth_request_security_checker.cc b/content/browser/webauth/webauth_request_security_checker.cc
+--- a/content/browser/webauth/webauth_request_security_checker.cc
++++ b/content/browser/webauth/webauth_request_security_checker.cc
+@@ -112,12 +112,11 @@ WebAuthRequestSecurityChecker::RemoteValidation::Create(
+     std::move(callback).Run(
+         blink::mojom::AuthenticatorStatus::BAD_RELYING_PARTY_ID);
+     return nullptr;
+   }
+ 
+-  constexpr char well_known_url_template[] =
+-      "https://domain.com/.well-known/webauthn";
++  constexpr char well_known_url_template[] = "https://domain.com/.well-known/webauthn";
+   GURL well_known_url(well_known_url_template);
+   CHECK(well_known_url.is_valid());
+ 
+   GURL::Replacements replace_host;
+   replace_host.SetHostStr(canonicalized_domain);

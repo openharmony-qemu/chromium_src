@@ -1,0 +1,31 @@
+diff a/content/browser/renderer_host/back_forward_cache_metrics.cc b/content/browser/renderer_host/back_forward_cache_metrics.cc
+--- a/content/browser/renderer_host/back_forward_cache_metrics.cc
++++ b/content/browser/renderer_host/back_forward_cache_metrics.cc
+@@ -2,10 +2,11 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "content/browser/renderer_host/back_forward_cache_metrics.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/debug/crash_logging.h"
+ #include "base/debug/dump_without_crashing.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "base/metrics/histogram_macros.h"
+ #include "base/metrics/metrics_hashes.h"
+@@ -396,11 +397,15 @@ void BackForwardCacheMetrics::RecordHistoryNavigationUKM(
+             "This page was not restored from back/forward cache because a "
+             "content script from the extension with ID %s received a message "
+             "while the page was cached. This behavior will change shortly "
+             "which may break the extension. If you are the developer of the "
+             "extension, see "
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++            "https://x.x.x"
++#else
+             "https://developer.chrome.com/blog/"
++#endif
+             "bfcache-extension-messaging-changes.",
+             blocking_extension_id.c_str()));
+   }
+ 
+   for (const uint64_t reason :

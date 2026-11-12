@@ -1,0 +1,39 @@
+diff a/content/browser/security/dip/document_isolation_policy_reporter_unittest.cc b/content/browser/security/dip/document_isolation_policy_reporter_unittest.cc	(rejected hunks)
+@@ -176,11 +176,11 @@ TEST_F(DocumentIsolationPolicyReporterTest, BasicCorp) {
+ 
+   EXPECT_EQ(r1.type, "dip");
+   EXPECT_EQ(r1.group, "e1");
+   EXPECT_EQ(r1.url, kContextUrl);
+   EXPECT_EQ(r1.network_anonymization_key, kNetworkIsolationKey);
+-  EXPECT_EQ(r1.body, CreateBodyForCorp("https://www1.example.com/x#foo?bar=baz",
++  EXPECT_EQ(r1.body, CreateBodyForCorp("https://www1.example.com/x",
+                                        RequestDestination::kScript, "enforce"));
+   EXPECT_EQ(r2.type, "dip");
+   EXPECT_EQ(r2.group, "e2");
+   EXPECT_EQ(r2.url, kContextUrl);
+   EXPECT_EQ(r2.network_anonymization_key, kNetworkIsolationKey);
+@@ -193,16 +193,18 @@ TEST_F(DocumentIsolationPolicyReporterTest, UserAndPassForCorp) {
+   const GURL kContextUrl("https://example.com/path");
+   DocumentIsolationPolicyReporter reporter(
+       GetStoragePartition(), kContextUrl, "e1", "e2",
+       base::UnguessableToken::Create(), net::NetworkAnonymizationKey());
+ 
+-  reporter.QueueCorpViolationReport(GURL("https://u:p@www1.example.com/x"),
+-                                    RequestDestination::kImage,
+-                                    /*report_only=*/false);
+-  reporter.QueueCorpViolationReport(GURL("https://u:p@www2.example.com/y"),
+-                                    RequestDestination::kScript,
+-                                    /*report_only=*/true);
++  reporter.QueueCorpViolationReport(
++      GURL("https://u:p@www1.example.com/x#fragment"),
++      RequestDestination::kImage,
++      /*report_only=*/false);
++  reporter.QueueCorpViolationReport(
++      GURL("https://u:p@www2.example.com/y#fragment"),
++      RequestDestination::kScript,
++      /*report_only=*/true);
+ 
+   ASSERT_EQ(2u, network_context().reports().size());
+   const Report& r1 = network_context().reports()[0];
+   const Report& r2 = network_context().reports()[1];
+ 

@@ -16,6 +16,17 @@ void HttpErrorNavigationThrottle::MaybeCreateAndAdd(
     NavigationThrottleRegistry& registry) {
   // We only care about primary main frame navigations.
   if (!registry.GetNavigationHandle().IsInPrimaryMainFrame()) {
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+    WebContents* web_contents = registry.GetNavigationHandle().GetWebContents();
+    if (web_contents) {
+      const auto& prefs = web_contents->GetOrCreateWebPreferences();
+      if (prefs.error_page_enabled && prefs.subframe_error_page_enabled) {
+        registry.AddThrottle(
+            base::WrapUnique(new HttpErrorNavigationThrottle(registry)));
+        return;
+      }
+    }
+#endif // BUILDFLAG(ARKWEB_ERROR_PAGE)
     return;
   }
   registry.AddThrottle(

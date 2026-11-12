@@ -16,6 +16,7 @@
 #include "net/cert/cert_status_flags.h"
 #include "url/gurl.h"
 #include "url/scheme_host_port.h"
+#include "arkweb/build/features/features.h"
 
 namespace net {
 class SSLInfo;

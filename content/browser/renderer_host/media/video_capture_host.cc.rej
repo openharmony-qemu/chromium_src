@@ -1,0 +1,131 @@
+diff a/content/browser/renderer_host/media/video_capture_host.cc b/content/browser/renderer_host/media/video_capture_host.cc	(rejected hunks)
+@@ -4,10 +4,14 @@
+ 
+ #include "content/browser/renderer_host/media/video_capture_host.h"
+ 
+ #include <memory>
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/content/browser/renderer_host/media/video_capture_host_utils.h"
++#endif
++
+ #include "base/containers/contains.h"
+ #include "base/functional/bind.h"
+ #include "base/functional/callback_helpers.h"
+ #include "base/token.h"
+ #include "base/unguessable_token.h"
+@@ -87,19 +90,27 @@ class VideoCaptureHost::RenderFrameHostDelegateImpl
+ 
+ VideoCaptureHost::VideoCaptureHost(GlobalRenderFrameHostId render_frame_host_id,
+                                    MediaStreamManager* media_stream_manager)
+     : VideoCaptureHost(
+           std::make_unique<RenderFrameHostDelegateImpl>(render_frame_host_id),
+-          media_stream_manager) {}
++          media_stream_manager) {
++#if BUILDFLAG(IS_ARKWEB)
++  implUtils = new VideoCaptureHostUtils(this);
++#endif
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
++  implUtils->SetRenderFrameHostId(render_frame_host_id);
++#endif
++          }
+ 
+ VideoCaptureHost::VideoCaptureHost(
+     std::unique_ptr<RenderFrameHostDelegate> delegate,
+     MediaStreamManager* media_stream_manager)
+     : render_frame_host_delegate_(std::move(delegate)),
+       media_stream_manager_(media_stream_manager) {
+   DVLOG(1) << __func__;
+   DCHECK_CURRENTLY_ON(BrowserThread::IO);
++  implUtils = new VideoCaptureHostUtils(this);
+ }
+ 
+ // static
+ void VideoCaptureHost::Create(
+     GlobalRenderFrameHostId render_frame_host_id,
+@@ -249,16 +266,21 @@ void VideoCaptureHost::OnEnded(const VideoCaptureControllerID& controller_id) {
+                                 weak_factory_.GetWeakPtr(), controller_id));
+ }
+ 
+ void VideoCaptureHost::OnStarted(
+     const VideoCaptureControllerID& controller_id) {
+-  DVLOG(1) << __func__;
++  LOG(INFO) << __func__;
+   DCHECK_CURRENTLY_ON(BrowserThread::IO);
+   if (controllers_.find(controller_id) == controllers_.end()) {
+     return;
+   }
+ 
++#if BUILDFLAG(ARKWEB_WEBRTC)
++  if (implUtils) {
++    implUtils->OnCameraCaptureStarted(controller_id);
++  }
++#endif
+   auto it = device_id_to_observer_map_.find(controller_id);
+   if (it != device_id_to_observer_map_.end()) {
+     it->second->OnStateChanged(media::mojom::VideoCaptureResult::NewState(
+         media::mojom::VideoCaptureState::STARTED));
+     NotifyStreamAdded();
+@@ -271,11 +293,11 @@ void VideoCaptureHost::OnStartedUsingGpuDecode(
+ void VideoCaptureHost::Start(
+     const base::UnguessableToken& device_id,
+     const base::UnguessableToken& session_id,
+     const media::VideoCaptureParams& params,
+     mojo::PendingRemote<media::mojom::VideoCaptureObserver> observer) {
+-  DVLOG(1) << __func__ << " session_id=" << session_id
++  LOG(INFO) << __func__ << " session_id=" << session_id
+            << ", device_id=" << device_id << ", format="
+            << media::VideoCaptureFormat::ToString(params.requested_format);
+   DCHECK_CURRENTLY_ON(BrowserThread::IO);
+   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("video_and_image_capture"),
+                "VideoCaptureHost::Start");
+@@ -287,10 +309,14 @@ void VideoCaptureHost::Start(
+ 
+   DCHECK(!base::Contains(device_id_to_observer_map_, device_id));
+   auto& observer_in_map = device_id_to_observer_map_[device_id];
+   observer_in_map.Bind(std::move(observer));
+ 
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
++  implUtils->ReportStartScreenCapture();
++#endif
++
+   const VideoCaptureControllerID controller_id(device_id);
+   if (controllers_.find(controller_id) != controllers_.end()) {
+     observer_in_map->OnStateChanged(media::mojom::VideoCaptureResult::NewState(
+         media::mojom::VideoCaptureState::STARTED));
+     NotifyStreamAdded();
+@@ -302,15 +328,19 @@ void VideoCaptureHost::Start(
+                 base::BindOnce(&VideoCaptureHost::OnControllerAdded,
+                                weak_factory_.GetWeakPtr(), device_id));
+ }
+ 
+ void VideoCaptureHost::Stop(const base::UnguessableToken& device_id) {
+-  DVLOG(1) << __func__ << " " << device_id;
++  LOG(INFO) << __func__ << " " << device_id;
+   DCHECK_CURRENTLY_ON(BrowserThread::IO);
+   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("video_and_image_capture"),
+                "VideoCaptureHost::Stop");
+ 
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
++  implUtils->ReportStopScreenCapture();
++#endif
++
+   const VideoCaptureControllerID& controller_id(device_id);
+ 
+   auto it = device_id_to_observer_map_.find(device_id);
+   if (it != device_id_to_observer_map_.end()) {
+     it->second->OnStateChanged(media::mojom::VideoCaptureResult::NewState(
+@@ -582,6 +612,13 @@ void VideoCaptureHost::ConnectClient(const base::UnguessableToken session_id,
+   media_stream_manager_->video_capture_manager()->ConnectClient(
+       session_id, params, controller_id, this, std::move(origin),
+       std::move(done_cb));
+ }
+ 
++#if BUILDFLAG(ARKWEB_WEBRTC)
++void VideoCaptureHost::OnCameraCaptureStateChanged(CameraCaptureState new_state) {
++  if (implUtils) {
++    implUtils->OnCameraCaptureStateChanged(new_state);
++  }
++}
++#endif
+ }  // namespace content

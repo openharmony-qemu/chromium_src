@@ -140,7 +140,11 @@ void RenderFrameMetadataProviderImpl::OnRenderFrameMetadataChanged(
     }
   }
 
+#if BUILDFLAG(IS_ARKWEB)
+  if (base::ohos::IsMobileDevice() || metadata.local_surface_id != last_local_surface_id_) {
+#else
   if (metadata.local_surface_id != last_local_surface_id_) {
+#endif
     last_local_surface_id_ = metadata.local_surface_id;
     for (Observer& observer : observers_) {
       observer.OnLocalSurfaceIdChanged(metadata);

@@ -1,0 +1,42 @@
+diff a/content/browser/renderer_host/render_frame_host_delegate.h b/content/browser/renderer_host/render_frame_host_delegate.h	(rejected hunks)
+@@ -9,10 +9,11 @@
+ 
+ #include <optional>
+ #include <string>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/functional/callback_forward.h"
+ #include "base/i18n/rtl.h"
+ #include "base/memory/safe_ref.h"
+ #include "build/build_config.h"
+ #include "components/viz/common/surfaces/surface_id.h"
+@@ -155,10 +161,11 @@ class CONTENT_EXPORT RenderFrameHostDelegate {
+   virtual void OnDidBlockNavigation(
+       const GURL& blocked_url,
+       const GURL& initiator_url,
+       blink::mojom::NavigationBlockedReason reason) {}
+ 
++
+   // Called when blink.mojom.LocalFrameHost::DidFinishLoad() is invoked.
+   virtual void OnDidFinishLoad(RenderFrameHostImpl* render_frame_host,
+                                const GURL& url) {}
+ 
+   // Notifies that the manifest URL is updated.
+@@ -183,10 +193,16 @@ class CONTENT_EXPORT RenderFrameHostDelegate {
+   // Called when a RenderFrame for |render_frame_host| is deleted or the
+   // renderer process in which it runs it has died. Use |RenderFrameCreated| to
+   // listen for when RenderFrame objects are created.
+   virtual void RenderFrameDeleted(RenderFrameHostImpl* render_frame_host) {}
+ 
++#if BUILDFLAG(ARKWEB_NOT_LOAD_IFRAME)
++  virtual void NotifyFrameGoneReason(base::TerminationStatus status, int exit_code) {}
++
++  virtual bool GetIframeLoadingFlag() {}
++#endif  // ARKWEB_NOT_LOAD_IFRAME
++
+   // A context menu should be shown, to be built using the context information
+   // provided in the supplied params.
+   virtual void ShowContextMenu(
+       RenderFrameHostImpl& render_frame_host,
+       mojo::PendingAssociatedRemote<blink::mojom::ContextMenuClient>

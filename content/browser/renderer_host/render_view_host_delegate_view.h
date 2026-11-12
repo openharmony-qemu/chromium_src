@@ -7,6 +7,10 @@
 
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/functional/callback.h"
 #include "build/build_config.h"
 #include "content/common/content_export.h"
@@ -17,6 +21,10 @@
 #include "third_party/blink/public/mojom/input/input_event_result.mojom-shared.h"
 #include "ui/base/dragdrop/mojom/drag_drop_types.mojom-forward.h"
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+#include "ui/gfx/geometry/rect.h"
+#endif
+
 namespace blink {
 class WebGestureEvent;
 }
@@ -25,6 +33,12 @@ namespace gfx {
 class ImageSkia;
 class Rect;
 class Vector2d;
+#if BUILDFLAG(IS_OHOS)
+class Point;
+#endif
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
+class Insets;
+#endif
 }
 
 #if BUILDFLAG(IS_ANDROID)
@@ -39,6 +53,10 @@ class RenderWidgetHostImpl;
 struct ContextMenuParams;
 struct DropData;
 
+#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
+class WebContents;
+#endif
+
 // This class provides a way for the RenderViewHost to reach out to its
 // delegate's view.
 class CONTENT_EXPORT RenderViewHostDelegateView {
@@ -51,6 +69,20 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   // see https://crbug.com/1257907#c14).
   virtual void ShowContextMenu(RenderFrameHost& render_frame_host,
                                const ContextMenuParams& params) {}
+#if BUILDFLAG(ARKWEB_MENU)
+  virtual void MouseSelectMenuShow(bool show) {}
+  virtual void ChangeVisibilityOfQuickMenu() {}
+  virtual bool IsQuickMenuShow() { return false; }
+#endif
+
+#if BUILDFLAG(ARKWEB_AI)
+  virtual void CloseImageOverlaySelection() {}
+  virtual void OnOverlayZoomChanged() {}
+#endif  // BUILDFLAG(ARKWEB_AI)
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  virtual gfx::Rect GetVisibleRectToWeb() {return gfx::Rect();}
+#endif
 
   // The user started dragging content of the specified type within the
   // `blink::WebView`. Contextual information about the dragged content is
@@ -106,6 +138,21 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   // retrieved by doing a Shift-Tab.
   virtual void TakeFocus(bool reverse) {}
 
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  // Returns the height of the top controls in physical pixels (not DIPs).
+  virtual float GetTopControlsHeight();
+
+  // Returns the minimum visible height the top controls can have in physical
+  // pixels (not DIPs).
+  virtual float GetTopControlsMinHeight() const;
+
+  // Returns the height of the bottom controls in physical pixels (not DIPs).
+  virtual float GetBottomControlsHeight() const;
+
+  // Returns the minimum visible height the bottom controls can have in physical
+  // pixels (not DIPs).
+  virtual float GetBottomControlsMinHeight() const;
+#else
   // Returns the height of the top controls in physical pixels (not DIPs).
   virtual int GetTopControlsHeight() const;
 
@@ -119,6 +166,7 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   // Returns the minimum visible height the bottom controls can have in physical
   // pixels (not DIPs).
   virtual int GetBottomControlsMinHeight() const;
+#endif
 
   // Returns true if the changes in browser controls height (including min
   // height) should be animated.
@@ -153,6 +201,21 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
 
 #if BUILDFLAG(IS_ANDROID)
   virtual ui::OverscrollRefreshHandler* GetOverscrollRefreshHandler() const;
+#endif
+
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
+  virtual void OnSafeInsetsChange(const gfx::Insets& safe_insets) {}
+#endif
+
+#if BUILDFLAG(ARKWEB_AI)
+  virtual void CreateOverlay(const gfx::ImageSkia& image,
+                             const gfx::Rect& image_rect,
+                             const gfx::Point& touch_point) {}
+  virtual void OnOverlayStateChanged(const gfx::Rect& image_rect) {}
+#endif
+
+#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
+  virtual WebContents* GetWebContents() { return nullptr; }
 #endif
 
  protected:

@@ -1,0 +1,47 @@
+diff a/content/browser/renderer_host/media/video_capture_controller.cc b/content/browser/renderer_host/media/video_capture_controller.cc	(rejected hunks)
+@@ -222,11 +234,11 @@ void VideoCaptureController::AddClient(
+   string_stream << "VideoCaptureController::AddClient(): id = " << id
+                 << ", session_id = " << session_id.ToString()
+                 << ", params.requested_format = "
+                 << media::VideoCaptureFormat::ToString(params.requested_format);
+   EmitLogMessage(string_stream.str(), 1);
+-
++  LOG(INFO) << string_stream.str();
+   // Params received from a renderer will have been validated by
+   // VideoCaptureHost, so here we can just require validity.
+   DCHECK(params.IsValid());
+ 
+   // Check that requested VideoCaptureParams are supported.  If not, report an
+@@ -371,10 +386,18 @@ void VideoCaptureController::StopSession(
+ 
+   ControllerClient* client = FindClient(session_id);
+ 
+   if (client) {
+     client->session_closed = true;
++    client->opened = false;
++#if BUILDFLAG(ARKWEB_WEBRTC)
++    if (!client->event_handler) {
++      LOG(ERROR) << "client->event_handler is null.";
++      return;
++    }
++    client->event_handler->OnCameraCaptureStateChanged(CameraCaptureState::NONE);
++#endif    
+     client->event_handler->OnEnded(client->controller_id);
+   }
+ }
+ 
+ void VideoCaptureController::ReturnBuffer(
+@@ -547,10 +587,13 @@ void VideoCaptureController::OnBufferRetired(int buffer_id) {
+     buffer_context_iter->set_is_retired();
+ }
+ 
+ void VideoCaptureController::OnError(media::VideoCaptureError error) {
+   DCHECK_CURRENTLY_ON(BrowserThread::IO);
++#if BUILDFLAG(ARKWEB_WEBRTC)
++  EmitLogMessage(__func__, 1);
++#endif // BUILDFLAG(ARKWEB_WEBRTC)
+   state_ = State::kError;
+   PerformForClientsWithOpenSession(base::BindRepeating(&CallOnError, error));
+ }
+ 
+ void VideoCaptureController::OnFrameDropped(

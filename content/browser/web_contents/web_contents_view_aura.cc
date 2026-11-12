@@ -190,7 +190,8 @@ class WebDragSourceAura : public content::WebContentsObserver,
   raw_ptr<aura::Window> window_;
 };
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(IS_OHOS)
 // Fill out the OSExchangeData with a file contents, synthesizing a name if
 // necessary.
 void PrepareDragForFileContents(const DropData& drop_data,
@@ -2009,14 +2010,22 @@ void WebContentsViewAura::OnGotVirtualFilesAsTempFiles(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+float WebContentsViewAura::GetTopControlsHeight() {
+#else
 int WebContentsViewAura::GetTopControlsHeight() const {
+#endif
   WebContentsDelegate* delegate = web_contents_->GetDelegate();
   if (!delegate)
     return 0;
   return delegate->GetTopControlsHeight();
 }
 
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+float WebContentsViewAura::GetBottomControlsHeight() const {
+#else
 int WebContentsViewAura::GetBottomControlsHeight() const {
+#endif
   WebContentsDelegate* delegate = web_contents_->GetDelegate();
   if (!delegate)
     return 0;

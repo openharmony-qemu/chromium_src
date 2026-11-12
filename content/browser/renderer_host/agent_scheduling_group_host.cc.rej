@@ -1,0 +1,49 @@
+diff a/content/browser/renderer_host/agent_scheduling_group_host.cc b/content/browser/renderer_host/agent_scheduling_group_host.cc	(rejected hunks)
+@@ -22,10 +22,14 @@
+ #include "content/common/renderer.mojom.h"
+ #include "content/public/browser/render_process_host.h"
+ #include "ipc/constants.mojom.h"
+ #include "ipc/ipc_channel_factory.h"
+ #include "ipc/ipc_channel_proxy.h"
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
++#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
++#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
++#endif
+ #include "third_party/blink/public/mojom/shared_storage/shared_storage_worklet_service.mojom.h"
+ #include "third_party/blink/public/mojom/worker/worklet_global_scope_creation_params.mojom.h"
+ 
+ namespace content {
+ 
+@@ -207,11 +212,12 @@ void AgentSchedulingGroupHost::RenderProcessHostDestroyed(
+ }
+ 
+ void AgentSchedulingGroupHost::OnBadMessageReceived() {
+   // If a bad message is received, it should be treated the same as a bad
+   // message on the renderer-wide channel (i.e., kill the renderer).
+-  return process_->OnBadMessageReceived();
++  bad_message::ReceivedBadMessage(&*process_,
++                                  bad_message::RPH_DESERIALIZATION_FAILED);
+ }
+ 
+ void AgentSchedulingGroupHost::OnAssociatedInterfaceRequest(
+     const std::string& interface_name,
+     mojo::ScopedInterfaceEndpointHandle handle) {
+@@ -328,10 +334,18 @@ void AgentSchedulingGroupHost::DidUnloadRenderFrame(
+           process_->GetDeprecatedID(), frame_token)) {
+     frame_host->OnUnloadACK();
+   }
+ }
+ 
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
++void AgentSchedulingGroupHost::ReportCreateView(int32_t process_id) {
++  if (implUtils) {
++    implUtils->ReportCreateView(process_id);
++  }
++}
++#endif
++
+ void AgentSchedulingGroupHost::ResetIPC() {
+   DCHECK_EQ(state_, LifecycleState::kRenderProcessExited);
+   receiver_.reset();
+   mojo_remote_.reset();
+   remote_route_provider_.reset();

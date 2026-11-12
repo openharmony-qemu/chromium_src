@@ -1,0 +1,19 @@
+diff a/content/browser/web_contents/web_contents_view_aura.h b/content/browser/web_contents/web_contents_view_aura.h	(rejected hunks)
+@@ -250,12 +250,17 @@ class CONTENT_EXPORT WebContentsViewAura
+   void UpdateDragOperation(ui::mojom::DragOperation operation,
+                            bool document_is_handling_drag) override;
+   void GotFocus(RenderWidgetHostImpl* render_widget_host) override;
+   void LostFocus(RenderWidgetHostImpl* render_widget_host) override;
+   void TakeFocus(bool reverse) override;
++#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
++  float GetTopControlsHeight() override;
++  float GetBottomControlsHeight() const override;
++#else
+   int GetTopControlsHeight() const override;
+   int GetBottomControlsHeight() const override;
++#endif
+   bool DoBrowserControlsShrinkRendererSize() const override;
+ #if BUILDFLAG(USE_EXTERNAL_POPUP_MENU)
+   void ShowPopupMenu(
+       RenderFrameHost* render_frame_host,
+       mojo::PendingRemote<blink::mojom::PopupMenuClient> popup_client,

@@ -19,7 +19,6 @@
 #include "content/public/browser/render_process_host.h"
 #include "media/capture/mojom/video_capture_types.mojom.h"
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
-
 namespace content {
 
 VideoCaptureHost::RenderFrameHostDelegate::~RenderFrameHostDelegate() = default;
@@ -135,6 +134,12 @@ VideoCaptureHost::~VideoCaptureHost() {
   }
 
   NotifyAllStreamsRemoved();
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  implUtils->ReportStopScreenCapture();
+#endif
+#if BUILDFLAG(IS_ARKWEB)
+  delete implUtils;
+#endif
 }
 
 void VideoCaptureHost::OnError(const VideoCaptureControllerID& controller_id,

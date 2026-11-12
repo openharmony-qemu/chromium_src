@@ -1,0 +1,72 @@
+diff a/content/browser/renderer_host/delegated_frame_host.cc b/content/browser/renderer_host/delegated_frame_host.cc	(rejected hunks)
+@@ -31,10 +31,13 @@
+ #include "content/browser/gpu/compositor_util.h"
+ #include "content/public/common/content_switches.h"
+ #include "third_party/blink/public/mojom/widget/record_content_to_visible_time_request.mojom.h"
+ #include "third_party/khronos/GLES2/gl2.h"
+ #include "third_party/skia/include/core/SkColor.h"
++#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
++#include "ui/base/ui_base_features.h"
++#endif
+ #include "ui/gfx/geometry/dip_util.h"
+ 
+ namespace content {
+ namespace {
+ 
+@@ -45,19 +48,28 @@ constexpr float kFrameContentCaptureQuality = 0.4f;
+ 
+ }  // namespace
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ // DelegatedFrameHost
++#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
++bool DelegatedFrameHost::evictUnlockFrameEnabled_ = false;
++#endif
+ 
+ DelegatedFrameHost::DelegatedFrameHost(const viz::FrameSinkId& frame_sink_id,
+                                        DelegatedFrameHostClient* client,
+                                        bool should_register_frame_sink_id)
+     : frame_sink_id_(frame_sink_id),
+       client_(client),
+       should_register_frame_sink_id_(should_register_frame_sink_id),
+       host_frame_sink_manager_(GetHostFrameSinkManager()),
+       frame_evictor_(std::make_unique<viz::FrameEvictor>(this)) {
++#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
++  static int saved_frame_limit = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
++    .GetIntParameter("const.web.frame_evictor.saved_frame_limit", -1); // -1 invalid config value of saved_frame_limit
++  // if saved_frame_limit >= 0 then frame_evictor is enabled
++  evictUnlockFrameEnabled_ = saved_frame_limit >= 0 && features::IsEvictUnlockFrameEnabled();
++#endif
+   CHECK(host_frame_sink_manager_);
+   frame_evictor_->SetVisible(client_->DelegatedFrameHostIsVisible());
+ 
+   stale_content_layer_ =
+       std::make_unique<ui::Layer>(ui::LayerType::LAYER_SOLID_COLOR);
+@@ -80,10 +92,27 @@ void DelegatedFrameHost::AddObserverForTesting(Observer* observer) {
+ 
+ void DelegatedFrameHost::RemoveObserverForTesting(Observer* observer) {
+   observers_.RemoveObserver(observer);
+ }
+ 
++#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
++cc::DeadlinePolicy DelegatedFrameHost::FirstFrameDeadlinePolicy() {
++  if (evictUnlockFrameEnabled_) {
++    return cc::DeadlinePolicy::UseSpecifiedDeadline(600); // 600: deadline in frames
++  } else {
++    return cc::DeadlinePolicy::UseDefaultDeadline();
++  }
++}
++
++void DelegatedFrameHost::SetUseSpecifiedDeadlinePolicy(bool shouldUse) {
++  if (shouldUseSpecifiedPolicy_ != shouldUse) {
++    shouldUseSpecifiedPolicy_ = shouldUse;
++    LOG(INFO) << "ui DelegatedFrameHost::SetUseSpecifiedDeadlinePolicy shouldUse: " << shouldUse;
++  }
++}
++#endif
++
+ void DelegatedFrameHost::WasShown(
+     const viz::LocalSurfaceId& new_local_surface_id,
+     const gfx::Size& new_dip_size,
+     blink::mojom::RecordContentToVisibleTimeRequestPtr
+         record_tab_switch_time_request) {

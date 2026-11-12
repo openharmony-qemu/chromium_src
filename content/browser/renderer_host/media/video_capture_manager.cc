@@ -352,6 +352,15 @@ void VideoCaptureManager::ProcessDeviceStartRequestQueue() {
       observer.OnVideoCaptureStarted(device_info->descriptor.facing);
   }
 
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  std::lock_guard<std::mutex> lock(NWebIdMutex_);
+  if (nWebId_.find(request->session_id()) == nWebId_.end()) {
+    return;
+  }
+  media::VideoCaptureParams new_params = request->params();
+  new_params.is_picker_show = is_picker_show_;
+  new_params.nweb_id = nWebId_[request->session_id()];
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
   // The method CreateAndStartDeviceAsync() is going to run asynchronously.
   // Since we may be removing the controller while it is executing, we need to
   // pass it shared ownership to itself so that it stays alive while executing.
@@ -360,7 +369,12 @@ void VideoCaptureManager::ProcessDeviceStartRequestQueue() {
   // TODO(chfremer): Check if request->params() can actually be different from
   // controller->parameters, and simplify if this is not the case.
   controller->CreateAndStartDeviceAsync(
-      request->params(), static_cast<VideoCaptureDeviceLaunchObserver*>(this),
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+      new_params,
+#else
+      request->params(),
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+      static_cast<VideoCaptureDeviceLaunchObserver*>(this),
       base::BindOnce([](scoped_refptr<VideoCaptureManager>,
                         scoped_refptr<VideoCaptureController>) {},
                      scoped_refptr<VideoCaptureManager>(this),
@@ -1138,6 +1152,9 @@ void VideoCaptureManager::EmitLogMessage(const std::string& message,
                                          int verbose_log_level) {
   DVLOG(verbose_log_level) << message;
   emit_log_message_cb_.Run(message);
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  LOG(INFO) << message;
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
 }
 
 }  // namespace content

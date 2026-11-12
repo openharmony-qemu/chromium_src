@@ -52,6 +52,7 @@
 #include "ui/accessibility/ax_mode.h"
 #include "ui/base/clipboard/clipboard_metadata.h"
 #include "ui/base/window_open_disposition.h"
+#include "content/browser/renderer_host/render_frame_host_delegate_ext.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "ui/gfx/native_ui_types.h"
@@ -59,6 +60,10 @@
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_java_ref.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "arkweb/chromium_ext/content/browser/renderer_host/render_frame_host_delegate_ext.h"
 #endif
 
 #if BUILDFLAG(IS_ANDROID) || (BUILDFLAG(IS_IOS) && !BUILDFLAG(IS_IOS_TVOS))
@@ -139,7 +144,7 @@ enum class FederatedLoginResult;
 // this. This delegate interface is useful for renderer_host/ to make requests
 // to WebContentsImpl, as renderer_host/ is not permitted to know the
 // WebContents type (see //renderer_host/DEPS).
-class CONTENT_EXPORT RenderFrameHostDelegate {
+class CONTENT_EXPORT RenderFrameHostDelegate : public RenderFrameHostDelegateExt {
  public:
   // Callback used with IsClipboardPasteAllowedByPolicy() method.  If the
   // clipboard paste is allowed to proceed, the callback is called with the data
@@ -184,6 +189,9 @@ class CONTENT_EXPORT RenderFrameHostDelegate {
   virtual bool DidAddMessageToConsole(
       RenderFrameHostImpl* source_frame,
       blink::mojom::ConsoleMessageLevel log_level,
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+      blink::mojom::ConsoleMessageSource log_source,
+#endif
       const std::u16string& message,
       int32_t line_no,
       const std::u16string& source_id,

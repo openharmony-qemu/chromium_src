@@ -75,7 +75,7 @@ BASE_FEATURE(kTraceSiteInstanceGetProcessCreation,
 
 // Whether to crash if GetProcess is called on a SiteInstance without a process.
 const base::FeatureParam<bool> kCrashOnGetProcessCreation{
-    &kTraceSiteInstanceGetProcessCreation, "crash_on_creation", true};
+    &kTraceSiteInstanceGetProcessCreation, "crash_on_creation", false};
 
 }  // namespace
 

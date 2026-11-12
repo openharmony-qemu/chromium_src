@@ -1,0 +1,17 @@
+diff a/content/common/service_worker/race_network_request_url_loader_client_unittest.cc b/content/common/service_worker/race_network_request_url_loader_client_unittest.cc	(rejected hunks)
+@@ -203,10 +203,15 @@ class URLLoaderClientForFetchHandler : public network::mojom::URLLoaderClient,
+   void OnUploadProgress(int64_t current_position,
+                         int64_t total_size,
+                         base::OnceCallback<void()> callback) override {}
+   void OnTransferSizeUpdated(int32_t transfer_size_diff) override {}
+   void OnComplete(const network::URLLoaderCompletionStatus& status) override {}
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  void OnTransferDataWithSharedMemory(
++      ::base::ReadOnlySharedMemoryRegion region,
++      uint64_t buffer_size) override {}
++#endif
+ 
+  private:
+   mojo::Receiver<network::mojom::URLLoaderClient> receiver_{this};
+ };
+ 

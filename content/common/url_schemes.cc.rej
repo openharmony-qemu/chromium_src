@@ -1,0 +1,13 @@
+diff a/content/common/url_schemes.cc b/content/common/url_schemes.cc	(rejected hunks)
+@@ -7,10 +7,11 @@
+ #include <string.h>
+ 
+ #include <iterator>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/no_destructor.h"
+ #include "base/strings/string_util.h"
+ #include "build/build_config.h"
+ #include "content/public/common/content_client.h"
+ #include "content/public/common/content_features.h"

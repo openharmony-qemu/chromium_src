@@ -317,6 +317,10 @@ class CONTENT_EXPORT StoragePartitionImpl
                              int net_error,
                              const net::SSLInfo& ssl_info,
                              bool fatal,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+                             const GURL& origin_url,
+                             const std::string& referrer,
+#endif
                              OnSSLCertificateErrorCallback response) override;
   void OnCertificateRequested(
       const std::optional<base::UnguessableToken>& window_id,

@@ -6,6 +6,7 @@
 
 #include <string.h>
 
+#include "arkweb/build/features/features.h"
 #include "base/clang_profiling_buildflags.h"
 #include "base/functional/bind.h"
 #include "base/message_loop/message_pump_type.h"
@@ -39,6 +40,9 @@
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 #include "content/child/sandboxed_process_thread_type_handler.h"
+#endif
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/child/child_process_utils.h"
 #endif
 
 namespace content {
@@ -168,6 +172,9 @@ ChildProcess::~ChildProcess() {
   shutdown_event_.Signal();
 
   if (main_thread_) {  // null in unittests.
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+    implUtils->ReportIoThreadStatus(false, main_thread_->IsInBrowserProcess());
+#endif  // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
     main_thread_->Shutdown();
     if (main_thread_->ShouldBeDestroyed()) {
       main_thread_.reset();
@@ -194,7 +201,16 @@ ChildProcess::~ChildProcess() {
   // doesn't get lost if the process is fast killed.
   base::WriteClangProfilingProfile();
 #endif
+  delete implUtils;
 }
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+void ChildProcess::ReportCompositorKeyThread(bool is_created) {
+  if (implUtils) {
+    implUtils->ReportCompositorKeyThread(is_created, main_thread_->IsInBrowserProcess());
+  }
+}
+#endif // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 
 ChildThreadImpl* ChildProcess::main_thread() {
   return main_thread_.get();
@@ -202,6 +218,9 @@ ChildThreadImpl* ChildProcess::main_thread() {
 
 void ChildProcess::set_main_thread(ChildThreadImpl* thread) {
   main_thread_.reset(thread);
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  implUtils->ReportIoThreadStatus(true, main_thread_->IsInBrowserProcess());
+#endif // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 }
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)

@@ -67,7 +67,7 @@ SlowWebPreferenceCache::SlowWebPreferenceCache() {
 SlowWebPreferenceCache::~SlowWebPreferenceCache() {
 #if BUILDFLAG(IS_WIN)
   ui::InputDeviceObserverWin::GetInstance()->RemoveObserver(this);
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_INPUT_EVENTS)
   ui::DeviceDataManager::GetInstance()->RemoveObserver(this);
 #elif BUILDFLAG(IS_ANDROID)
   ui::InputDeviceObserverAndroid::GetInstance()->RemoveObserver(this);
@@ -152,6 +152,13 @@ bool SlowWebPreferenceCache::Update() {
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
   touch_enabled_default_switch = switches::kTouchEventFeatureDetectionEnabled;
 #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+
+#if BUILDFLAG(IS_ARKWEB)
+    if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kOhosDisableTouchEvent)) {
+      touch_enabled_default_switch = switches::kTouchEventFeatureDetectionEnabled;
+    }
+#endif  // BUILDFLAG(IS_ARKWEB)
   const std::string touch_enabled_switch =
       command_line.HasSwitch(switches::kTouchEventFeatureDetection)
           ? command_line.GetSwitchValueASCII(

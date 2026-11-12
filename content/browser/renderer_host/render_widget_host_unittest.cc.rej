@@ -1,0 +1,53 @@
+diff a/content/browser/renderer_host/render_widget_host_unittest.cc b/content/browser/renderer_host/render_widget_host_unittest.cc	(rejected hunks)
+@@ -256,10 +256,25 @@ class TestView : public TestRenderWidgetHostView {
+     if (use_fake_compositor_viewport_pixel_size_)
+       return mock_compositor_viewport_pixel_size_;
+     return TestRenderWidgetHostView::GetCompositorViewportPixelSize();
+   }
+ 
++  #if BUILDFLAG(ARKWEB_TEST)
++  bool IsTouchSequencePotentiallyActiveOnViz() override {
++    return false;
++  };
++
++  void RequestInputBackForDragAndDrop(
++      blink::mojom::DragDataPtr drag_data,
++      const url::Origin& source_origin,
++      blink::DragOperationsMask drag_operations_mask,
++      SkBitmap bitmap,
++      gfx::Vector2d cursor_offset_in_dip,
++      gfx::Rect drag_obj_rect_in_dip,
++      blink::mojom::DragEventSourceInfoPtr event_info) override {}  
++  #endif
++
+  protected:
+   WebMouseWheelEvent unhandled_wheel_event_;
+   int unhandled_wheel_event_count_;
+   WebTouchEvent acked_event_;
+   int acked_event_count_;
+@@ -487,11 +502,16 @@ class MockRenderWidgetHostDelegate : public RenderWidgetHostDelegate {
+     return handle_wheel_event_;
+   }
+ 
+   void RendererUnresponsive(
+       RenderWidgetHostImpl* render_widget_host,
+-      base::RepeatingClosure hang_monitor_restarter) override {
++      base::RepeatingClosure hang_monitor_restarter
++#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
++      ,
++      content::RendererIsUnresponsiveReason reason
++#endif
++    ) override {
+     unresponsive_timer_fired_ = true;
+   }
+ 
+   bool ShouldIgnoreInputEvents() override { return ignore_input_events_; }
+   bool ShouldIgnoreWebInputEvents(const blink::WebInputEvent& event) override {
+@@ -2649,6 +2669,7 @@ TEST_F(RenderWidgetHostTest, AnimateDoubleTapZoomValidBounds) {
+       .Times(1);
+ 
+   static_cast<blink::mojom::FrameWidgetHost*>(host_.get())
+       ->AnimateDoubleTapZoomInMainFrame(tap_point, valid_rect);
+ }
++
+ }  // namespace content

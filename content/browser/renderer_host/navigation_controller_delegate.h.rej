@@ -1,0 +1,16 @@
+diff a/content/browser/renderer_host/navigation_controller_delegate.h b/content/browser/renderer_host/navigation_controller_delegate.h	(rejected hunks)
+@@ -22,10 +26,14 @@ namespace content {
+ 
+ struct EntryChangedDetails;
+ struct LoadCommittedDetails;
+ struct PrunedDetails;
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++class WebContents;
++#endif
++
+ // Interface for objects embedding a NavigationController to provide the
+ // functionality NavigationController needs.
+ class NavigationControllerDelegate {
+  public:
+   virtual ~NavigationControllerDelegate() {}

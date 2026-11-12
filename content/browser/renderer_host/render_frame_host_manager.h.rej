@@ -1,0 +1,15 @@
+diff a/content/browser/renderer_host/render_frame_host_manager.h b/content/browser/renderer_host/render_frame_host_manager.h	(rejected hunks)
+@@ -239,10 +239,13 @@ class CONTENT_EXPORT RenderFrameHostManager {
+     // WebContents.
+     virtual void ReattachOuterDelegateIfNeeded() = 0;
+ 
+     // Called when a FrameTreeNode is destroyed.
+     virtual void OnFrameTreeNodeDestroyed(FrameTreeNode* node) = 0;
++#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
++    virtual const std::string& SharedRenderProcessToken() = 0;
++#endif
+ 
+    protected:
+     virtual ~Delegate() = default;
+   };
+ 

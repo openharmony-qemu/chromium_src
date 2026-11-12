@@ -1,0 +1,21 @@
+diff a/content/browser/webui/web_ui_impl.cc b/content/browser/webui/web_ui_impl.cc	(rejected hunks)
+@@ -103,13 +103,19 @@ void PopulateLocalResourceMap(
+ // sources and shared resources.
+ // TODO(crbug.com/459528908): Allow configuring this from URLDataSource.
+ bool ShouldIncludeDataSource(const url::Origin& origin,
+                              const url::Origin& current_origin) {
+   // We only support data sources that serve URLs of the form: chrome://*
++#if BUILDFLAG(ARKWEB_DEVTOOLS)
++  if (origin.scheme() != kArkWebUIScheme && origin.scheme() != kChromeUIScheme) {
++    return false;
++  }
++#else
+   if (origin.scheme() != kChromeUIScheme) {
+     return false;
+   }
++#endif // ARKWEB_DEVTOOLS
+ 
+   if (!base::FeatureList::IsEnabled(
+           features::kWebUIInProcessResourceLoadingV2)) {
+     return true;
+   }

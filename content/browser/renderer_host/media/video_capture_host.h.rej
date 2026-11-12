@@ -1,0 +1,40 @@
+diff a/content/browser/renderer_host/media/video_capture_host.h b/content/browser/renderer_host/media/video_capture_host.h	(rejected hunks)
+@@ -48,19 +49,25 @@ class CONTENT_EXPORT VideoCaptureHost
+   static void Create(
+       GlobalRenderFrameHostId render_frame_host_id,
+       MediaStreamManager* media_stream_manager,
+       mojo::PendingReceiver<media::mojom::VideoCaptureHost> receiver);
+ 
++  friend class VideoCaptureHostUtils;
++
+   // Interface for notifying RenderFrameHost instance about active video
+   // capture stream changes.
+   class CONTENT_EXPORT RenderFrameHostDelegate {
+    public:
+     virtual ~RenderFrameHostDelegate();
+     virtual void NotifyStreamAdded() = 0;
+     virtual void NotifyStreamRemoved() = 0;
+   };
+ 
++#if BUILDFLAG(ARKWEB_WEBRTC)
++  void OnCameraCaptureStateChanged(CameraCaptureState new_state) override;
++#endif
++
+  private:
+   friend class VideoCaptureTest;
+   FRIEND_TEST_ALL_PREFIXES(VideoCaptureTest, IncrementMatchesDecrementCalls);
+ 
+   // VideoCaptureControllerEventHandler implementation.
+@@ -134,10 +141,12 @@ class CONTENT_EXPORT VideoCaptureHost
+   void ConnectClient(const base::UnguessableToken session_id,
+                      const media::VideoCaptureParams& params,
+                      VideoCaptureControllerID controller_id,
+                      VideoCaptureManager::DoneCB done_cb);
+ 
++  raw_ptr<VideoCaptureHostUtils> implUtils = nullptr;
++
+   class RenderFrameHostDelegateImpl;
+   std::unique_ptr<RenderFrameHostDelegate> render_frame_host_delegate_;
+   uint32_t number_of_active_streams_ = 0;
+ 
+   const raw_ptr<MediaStreamManager> media_stream_manager_;

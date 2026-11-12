@@ -1,0 +1,17 @@
+diff a/content/browser/ssl/ssl_client_auth_handler.cc b/content/browser/ssl/ssl_client_auth_handler.cc	(rejected hunks)
+@@ -103,11 +103,15 @@ void SSLClientAuthHandler::DidGetClientCerts(
+ 
+ void SSLClientAuthHandler::DidGetClientCertsOnPostTask(
+     net::ClientCertIdentityList client_certs) {
+   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+ 
++#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
++  if (!browser_context_ || !web_contents_) {
++#else
+   if (!browser_context_) {
++#endif
+     delegate_->CancelCertificateSelection();
+     return;
+   }
+ 
+   // SelectClientCertificate() may call back into |delegate_| synchronously and

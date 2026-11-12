@@ -1,0 +1,84 @@
+diff a/content/child/child_thread_impl.cc b/content/child/child_thread_impl.cc	(rejected hunks)
+@@ -101,15 +105,27 @@
+ #include "base/files/scoped_file.h"
+ #endif
+ #if BUILDFLAG(IS_WIN)
+ #include <io.h>
+ #endif
++
+ // Function provided by libclang_rt.profile-*.a, declared and documented at:
+ // https://github.com/llvm/llvm-project/blob/master/compiler-rt/lib/profile/InstrProfiling.h
+ extern "C" void __llvm_profile_set_file_object(FILE* File, int EnableMerge);
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++#include "third_party/blink/public/web/web_view.h"
++#endif
++
++#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
++#if defined(OS_OHOS)
++#include "arkweb/chromium_ext/content/common/hicollie_freeze_reporter/hicollie_freeze_reporter.h"
++#endif  //  defined(OS_OHOS)
++#include "arkweb/chromium_ext/content/browser/dfx/appfreeze_monitor_render_impl.h"
++#endif  //  BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
++
+ namespace content {
+ namespace {
+ 
+ // How long to wait for a connection to the browser process before giving up.
+ const int kConnectionTimeoutS = 15;
+@@ -456,11 +475,11 @@ class ChildThreadImpl::IOThreadState
+     if (!logging::InitLogging(logging_settings))
+       LOG(ERROR) << "Unable to reinitialize logging";
+   }
+ #endif
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+   void OnMemoryPressure(base::MemoryPressureLevel level) override {
+     main_thread_task_runner_->PostTask(
+         FROM_HERE,
+         base::BindOnce(&ChildThreadImpl::OnMemoryPressureFromBrowserReceived,
+                        weak_main_thread_, level));
+@@ -884,11 +907,11 @@ void ChildThreadImpl::DisconnectChildProcessHost() {
+   child_process_host_.reset();
+ }
+ 
+ void ChildThreadImpl::BindServiceInterface(
+     mojo::GenericPendingReceiver receiver) {
+-  DLOG(ERROR) << "Ignoring unhandled request to bind service interface: "
++  LOG(ERROR) << "Ignoring unhandled request to bind service interface: "
+               << *receiver.interface_name();
+ }
+ 
+ void ChildThreadImpl::OnBindReceiver(mojo::GenericPendingReceiver receiver) {}
+ 
+@@ -913,11 +936,11 @@ void ChildThreadImpl::EnsureConnected(int connection_timeout) {
+ 
+ bool ChildThreadImpl::IsInBrowserProcess() const {
+   return static_cast<bool>(browser_process_io_runner_);
+ }
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+ void ChildThreadImpl::OnMemoryPressureFromBrowserReceived(
+     base::MemoryPressureLevel level) {
+   // Generate no memory pressure signals when --single-process is specified.
+   // Because we expect a signal for the browser process has been already
+   // generated.
+@@ -927,6 +950,15 @@ void ChildThreadImpl::OnMemoryPressureFromBrowserReceived(
+   // Forward the notification to the registry of MemoryPressureListeners.
+   base::MemoryPressureListener::NotifyMemoryPressure(level);
+ }
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
++void ChildThreadImpl::SetWebkitInited() {
++  ChildThreadImpl::GetIOTaskRunner()->PostTask(
++      FROM_HERE,
++      base::BindOnce(&IOThreadState::SetWebkitInited, io_thread_state_));
++}
++#endif
++
+ }  // namespace content
++

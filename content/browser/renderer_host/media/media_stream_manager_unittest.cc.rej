@@ -1,0 +1,12 @@
+diff a/content/browser/renderer_host/media/media_stream_manager_unittest.cc b/content/browser/renderer_host/media/media_stream_manager_unittest.cc	(rejected hunks)
+@@ -2130,6 +2135,10 @@ TEST_P(MediaStreamManagerCapturedSurfaceControlActionTest,
+   // TODO(crbug.com/41485502): Use a dedicated error.
+   EXPECT_EQ(result_, CapturedSurfaceControlResult::kUnknownError);
+ }
+ #endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
+ 
++#if BUILDFLAG(ARKWEB_TEST)
++#include "arkweb/chromium_ext/content/browser/renderer_host/media/media_stream_manager_ext_unittest.cc"
++#endif // ARKWEB_TEST
++
+ }  // namespace content

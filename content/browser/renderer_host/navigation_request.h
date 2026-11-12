@@ -583,6 +583,10 @@ class CONTENT_EXPORT NavigationRequest
     return *commit_params_;
   }
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  const std::string& extra_headers() const { return extra_headers_; }
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
+
   // This describes the cases where the navigation start time is adjusted to be
   // later in time, after BeforeUnloadCompleted. This enum is used in UMA
   // histograms, so existing values should be neither reordered nor removed.
@@ -1114,6 +1118,12 @@ class CONTENT_EXPORT NavigationRequest
   // NavigationRequest.
   UrlInfo GetUrlInfo();
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  void SetWasAutoReloader(bool auto_reloader) {
+    did_auto_reloader_ = auto_reloader;
+  }
+#endif
+
   bool is_overriding_user_agent() const {
     return commit_params_->is_overriding_user_agent;
   }
@@ -1570,6 +1580,15 @@ class CONTENT_EXPORT NavigationRequest
   NavigationDiscardReason GetTypeForNavigationDiscardReason();
 
   void set_force_no_https_upgrade() { force_no_https_upgrade_ = true; }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  void set_https_upgrades_policy(HttpsUpgradesPolicy policy) {
+    https_upgrades_policy_ = policy;
+  }
+  HttpsUpgradesPolicy https_upgrades_policy() const {
+    return https_upgrades_policy_;
+  }
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
 
   bool was_reset_for_cross_document_restart() const {
     return was_reset_for_cross_document_restart_;
@@ -2062,6 +2081,9 @@ class CONTENT_EXPORT NavigationRequest
   // Called from BeginNavigation(), OnPrerenderingActivationChecksComplete(),
   // or OnFencedFrameURLMappingComplete().
   void BeginNavigationImpl();
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void StartNavigationExt();
+#endif
 
   // Checks if the response requests an isolated origin via the
   // Origin-Agent-Cluster header, and if so opts in the origin to be isolated.
@@ -2131,6 +2153,9 @@ class CONTENT_EXPORT NavigationRequest
   void SelectFrameHostForOnRequestFailedInternal(
       bool exists_in_cache,
       bool skip_throttles,
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+      bool needs_reload_with_fallback_proxy,
+#endif
       const std::optional<std::string>& error_page_content);
   void SelectFrameHostForCrossDocumentNavigationWithNoUrlLoader();
 
@@ -3559,6 +3584,19 @@ class CONTENT_EXPORT NavigationRequest
   // navigation.
   std::unique_ptr<ui::CompositorLock> compositor_lock_;
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  bool did_auto_reloader_ = false;
+  bool needs_reload_with_fallback_proxy_ = false;
+  int original_error_code_ = net::OK;
+  ErrorPageReloadReason  current_reload_reason_ = ErrorPageReloadReason ::INVALID;
+  std::set<ErrorPageReloadReason > reload_reason_list_;
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  net::WebNavigationInfo web_navigation_info_;
+  GURL original_url_;
+#endif
+
   // This navigation request should swap browsing instances as part of a test
   // reset.
   bool force_new_browsing_instance_ = false;
@@ -3797,6 +3835,10 @@ class CONTENT_EXPORT NavigationRequest
   // If true, this means that this navigation request was initiated by an
   // animated transition.
   bool was_initiated_by_animated_transition_ = false;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  HttpsUpgradesPolicy https_upgrades_policy_ = HttpsUpgradesPolicy::NONE;
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
 
   // If the navigation is cancelled/discarded before it commits, the reason
   // for cancellation will be saved.

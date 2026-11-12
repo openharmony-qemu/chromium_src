@@ -1,0 +1,66 @@
+diff a/content/browser/renderer_host/media/media_stream_manager.cc b/content/browser/renderer_host/media/media_stream_manager.cc	(rejected hunks)
+@@ -1602,11 +1620,16 @@ MediaStreamManager* MediaStreamManager::GetInstance() {
+   return media_stream_manager;
+ }
+ 
+ MediaStreamManager::MediaStreamManager(media::AudioSystem* audio_system)
+     : MediaStreamManager(audio_system, nullptr) {
++#if BUILDFLAG(ARKWEB_MEDIA)
++  auto hash_value = base::FastHash(base::byte_span_from_ref(this));
++  SendLogMessage(base::StringPrintf("MediaStreamManager([hash=%016x])", hash_value));
++#else      
+   SendLogMessage(base::StringPrintf("MediaStreamManager([this=%p]))", this));
++#endif  // ARKWEB_MEDIA  
+ }
+ 
+ MediaStreamManager::MediaStreamManager(
+     media::AudioSystem* audio_system,
+     std::unique_ptr<VideoCaptureProvider> video_capture_provider)
+@@ -3346,11 +3369,16 @@ void MediaStreamManager::InitializeMaybeAsync(
+         FROM_HERE, base::BindOnce(&MediaStreamManager::InitializeMaybeAsync,
+                                   base::Unretained(this),
+                                   std::move(video_capture_provider)));
+     return;
+   }
++#if BUILDFLAG(ARKWEB_MEDIA)
++  auto hash_value = base::FastHash(base::byte_span_from_ref(this));
++  SendLogMessage(base::StringPrintf("InitializeMaybeAsync([hash=%016x])", hash_value));
++#else
+   SendLogMessage(base::StringPrintf("InitializeMaybeAsync([this=%p])", this));
++#endif  // ARKWEB_MEDIA  
+ 
+   // Store a pointer to |this| on the IO thread to avoid having to jump to
+   // the UI thread to fetch a pointer to the MSM. In particular on Android,
+   // it can be problematic to post to a UI thread from arbitrary worker
+   // threads since attaching to the VM is required and we may have to access
+@@ -3501,10 +3529,15 @@ void MediaStreamManager::Closed(
+     const base::UnguessableToken& capture_session_id) {
+   DCHECK_CURRENTLY_ON(BrowserThread::IO);
+   SendLogMessage(base::StringPrintf("Closed({stream_type=%s}, {session_id=%s})",
+                                     StreamTypeToString(stream_type),
+                                     capture_session_id.ToString().c_str()));
++
++#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
++  AsMediaStreamManagerExt()->SendScreenCaptureState(capture_session_id.ToString(), SCREEN_CAPTURE_STOPED);
++  AsMediaStreamManagerExt()->RemoveNWebIdBySession(capture_session_id);
++#endif // defined(ARKWEB_EX_SCREEN_CAPTURE)
+ }
+ 
+ void MediaStreamManager::DevicesEnumerated(
+     bool requested_audio_input,
+     bool requested_video_input,
+@@ -3552,10 +3585,14 @@ void MediaStreamManager::Aborted(
+     const base::UnguessableToken& capture_session_id) {
+   DCHECK_CURRENTLY_ON(BrowserThread::IO);
+   SendLogMessage(base::StringPrintf(
+       "Aborted({stream_type=%s}, {session_id=%s})",
+       StreamTypeToString(stream_type), capture_session_id.ToString().c_str()));
++
++#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
++  AsMediaStreamManagerExt()->SendScreenCaptureState(capture_session_id.ToString(), SCREEN_CAPTURE_ABORTED);
++#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+   StopDevice(stream_type, capture_session_id);
+ }
+ 
+ void MediaStreamManager::UseFakeUIFactoryForTests(
+     base::RepeatingCallback<std::unique_ptr<FakeMediaStreamUIProxy>(void)>

@@ -7,6 +7,9 @@
 
 #include <string>
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "build/build_config.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/size.h"
@@ -127,6 +130,15 @@ class CONTENT_EXPORT WebContentsView {
   // the platform.
   virtual BackForwardTransitionAnimationManager*
   GetBackForwardTransitionAnimationManager() = 0;
+
+#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
+  virtual void DidStopRefresh() {}
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  virtual void UpdateBrowserControlsHeight(int, bool) {}
+  virtual void SetBrowserControlsParams(float, float, float, float) {}
+#endif
 
   // Reset the above animation manager.
   virtual void DestroyBackForwardTransitionAnimationManager() = 0;

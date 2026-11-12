@@ -357,7 +357,7 @@ TEST_F(DisconnectRequestTest, Success) {
                                       OriginFromString(kProviderUrl), _));
   EXPECT_CALL(*api_permission_delegate_,
               GetApiPermissionStatus(OriginFromString(kRpUrl)))
-      .WillOnce(Return(PermissionStatus::GRANTED));
+      .WillOnce(Return(ContentPermissionStatus::GRANTED));
 
   RunDisconnectTest(config, blink::mojom::DisconnectStatus::kSuccess);
   EXPECT_TRUE(DidFetchAllEndpoints());
@@ -395,7 +395,7 @@ TEST_F(DisconnectRequestTest,
       .WillOnce(Return(true));
   EXPECT_CALL(*api_permission_delegate_,
               GetApiPermissionStatus(OriginFromString(kRpUrl)))
-      .WillOnce(Return(PermissionStatus::GRANTED));
+      .WillOnce(Return(ContentPermissionStatus::GRANTED));
 
   EXPECT_CALL(*permission_delegate_,
               RevokeSharingPermission(OriginFromString(kRpUrl),
@@ -419,7 +419,7 @@ TEST_F(DisconnectRequestTest, SameSiteIframe) {
   Config config = kValidConfig;
   EXPECT_CALL(*api_permission_delegate_,
               GetApiPermissionStatus(OriginFromString(kRpUrl)))
-      .WillOnce(Return(PermissionStatus::GRANTED));
+      .WillOnce(Return(ContentPermissionStatus::GRANTED));
   EXPECT_CALL(*permission_delegate_,
               HasSharingPermission(OriginFromString(kSameSiteIframeUrl),
                                    OriginFromString(kRpUrl),
@@ -450,7 +450,7 @@ TEST_F(DisconnectRequestTest, CrossSiteIframe) {
               ->AppendChild("cross_site_iframe"));
   EXPECT_CALL(*api_permission_delegate_,
               GetApiPermissionStatus(OriginFromString(kRpUrl)))
-      .WillOnce(Return(PermissionStatus::GRANTED));
+      .WillOnce(Return(ContentPermissionStatus::GRANTED));
   EXPECT_CALL(*permission_delegate_,
               HasSharingPermission(OriginFromString(kCrossSiteIframeUrl),
                                    OriginFromString(kRpUrl),

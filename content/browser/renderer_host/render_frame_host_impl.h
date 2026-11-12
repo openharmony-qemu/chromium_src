@@ -696,6 +696,14 @@ class CONTENT_EXPORT RenderFrameHostImpl
   // ManifestBrowserTest.GetManifestInterruptedByDestruction.
   void ReinitializeDocumentAssociatedDataForTesting();
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  bool GetUserAgentDifferentFromNavigatingFrame() const {
+    return is_useragent_different_from_navigating_frame;
+  }
+  void SetUserAgentDifferentFromNavigatingFrame(bool value) {
+    is_useragent_different_from_navigating_frame = value;
+  }
+#endif
   // Determines if a clipboard paste using |data| of type |data_type| is allowed
   // in this renderer frame.  The implementation delegates to
   // RenderFrameHostDelegate::IsClipboardPasteAllowedByPolicy().  See the
@@ -1350,6 +1358,17 @@ class CONTENT_EXPORT RenderFrameHostImpl
                                 const gfx::Rect& clip_rect);
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(IS_ARKWEB_EXT)
+  void GetImageFromCache(const std::string& url,
+                         ImageCacheCallback callback) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+  void GetAllImage(int32_t taskid, const std::string& url,
+                   AllImageCallback callback) override;
+  void GetImageByXPath(int32_t taskid, const std::string& xpath,
+                   ImageByXPathCallback callback) override;
+#endif           
   // Request a one-time snapshot of the accessibility tree without changing
   // the accessibility mode.
   void RequestAXTreeSnapshot(AXTreeSnapshotCallback callback,
@@ -1517,7 +1536,12 @@ class CONTENT_EXPORT RenderFrameHostImpl
           subresource_overrides,
       blink::mojom::ServiceWorkerContainerInfoForClientPtr container_info,
       const std::optional<blink::DocumentToken>& document_token,
-      const base::UnguessableToken& devtools_navigation_token);
+      const base::UnguessableToken& devtools_navigation_token
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+,
+      uint64_t addr_web_handle
+#endif
+      );
 
   // Indicates that a navigation failed and that this RenderFrame should display
   // an error page.
@@ -2432,10 +2456,18 @@ class CONTENT_EXPORT RenderFrameHostImpl
           blink_widget_host,
       mojo::PendingAssociatedRemote<blink::mojom::Widget> blink_widget)
       override;
+#if BUILDFLAG(ARKWEB_MENU)
+  void MouseSelectMenuShow(bool show) override;
+  void ChangeVisibilityOfQuickMenu() override;
+  void HideQuickMenu() override;
+#endif
   void ShowContextMenu(
       mojo::PendingAssociatedRemote<blink::mojom::ContextMenuClient>
           context_menu_client,
       const blink::UntrustworthyContextMenuParams& params) override;
+#if BUILDFLAG(ARKWEB_AI)
+  void CloseImageOverlaySelection() override;
+#endif  // BUILDFLAG(ARKWEB_AI)
   void DidLoadResourceFromMemoryCache(
       const GURL& url,
       const std::string& http_method,
@@ -2464,6 +2496,15 @@ class CONTENT_EXPORT RenderFrameHostImpl
       uint32_t line_no,
       const std::optional<std::u16string>& source_id,
       const std::optional<std::u16string>& untrusted_stack_trace) override;
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+  void DidAddMessageToConsoleV2(
+      blink::mojom::ConsoleMessageLevel log_level,
+      blink::mojom::ConsoleMessageSource log_source,
+      const std::u16string& message,
+      uint32_t line_no,
+      const std::optional<std::u16string>& source_id,
+      const std::optional<std::u16string>& untrusted_stack_trace) override;
+#endif
   void FrameSizeChanged(const gfx::Size& frame_size) override;
   void DidChangeSrcDoc(const blink::FrameToken& child_frame_token,
                        const std::string& srcdoc_value) override;
@@ -2919,6 +2960,10 @@ class CONTENT_EXPORT RenderFrameHostImpl
           callback);
 #endif
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  void OnClearContextMenu() override;
+#endif // BUILDFLAG(ARKWEB_DRAG_DROP)
+
   using JavaScriptResultAndTypeCallback =
       base::OnceCallback<void(blink::mojom::JavaScriptExecutionResultType,
                               base::Value)>;
@@ -3035,6 +3080,10 @@ class CONTENT_EXPORT RenderFrameHostImpl
   // used on primary main frames.
   bool IsPageReadyToBeClosed();
 
+#if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
+  bool IsJsDialogShowOrBeforeUnloadTimedOut();
+#endif // ARKWEB_DISATCH_BEFORE_UNLOAD
+
   // Retrieves the information about the cookie changes that are observed on the
   // last committed document.
   CookieChangeListener::CookieChangeInfo GetCookieChangeInfo();
@@ -3046,6 +3095,10 @@ class CONTENT_EXPORT RenderFrameHostImpl
   // Records metrics on sudden termination handlers found in this frame and
   // subframes.
   void RecordNavigationSuddenTerminationHandlers();
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void UpdateAdBlockEnabledToRender(bool site_adblock_enabled);
+#endif
 
   // Returns the devtools_navigation_token (see
   // NavigationRequest::devtools_navigation_token()) associated with the last
@@ -3529,6 +3582,10 @@ class CONTENT_EXPORT RenderFrameHostImpl
   void UpdateState(const blink::PageState& state) override;
   void OpenURL(blink::mojom::OpenURLParamsPtr params) override;
   void DidStopLoading() override;
+#if BUILDFLAG(ARKWEB_PDF)
+  void OnPdfScrollAtBottom(const std::string& url) override;
+  void OnPdfLoadEvent(int32_t result, const std::string& url) override;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // blink::mojom::AssociatedInterfaceProvider:
   void GetAssociatedInterface(
@@ -4317,6 +4374,11 @@ class CONTENT_EXPORT RenderFrameHostImpl
   // keep-alive requests a chance to resolve before timing out.
   void CleanupRenderProcessForDiscardIfPossible();
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  net::Error GetNetErrorCode() override;
+  net::Error net_error_{net::Error::OK};
+#endif // ARKWEB_READER_MODE
+
   blink::mojom::PermissionStatus GetCombinedPermissionStatus(
       blink::PermissionType permission_type);
 
@@ -4354,7 +4416,11 @@ class CONTENT_EXPORT RenderFrameHostImpl
   // some form of page context.
   scoped_refptr<RenderViewHostImpl> render_view_host_;
 
+#if BUILDFLAG(ARKWEB_TEST)
+  raw_ptr<RenderFrameHostDelegate> delegate_;
+#else
   const raw_ptr<RenderFrameHostDelegate> delegate_;
+#endif
 
   // The SiteInstance associated with this RenderFrameHost. All content drawn
   // in this RenderFrameHost is part of this SiteInstance. Cannot change over

@@ -1,0 +1,20 @@
+diff a/content/browser/renderer_host/ipc_utils.h b/content/browser/renderer_host/ipc_utils.h	(rejected hunks)
+@@ -85,8 +85,18 @@ bool VerifyCreateNewWindowParams(const RenderFrameHostImpl& current_rfh,
+ bool VerifyNavigationInitiator(
+     RenderFrameHostImpl* current_rfh,
+     const std::optional<blink::LocalFrameToken>& initiator_frame_token,
+     int initiator_process_id);
+ 
++// Verifies that |headers| are valid for a navigation request initiated by
++// |process|. For now, this always returns true, indicating that the |headers|
++// are valid. TODO(https://crbug.com/487795397): Later, after evaluating debug
++// data, this will be converted to terminate |process| and return false if
++// |headers| are invalid.
++//
++// This function has to be called on the UI thread.
++bool VerifyNavigationHeaders(RenderProcessHost* process,
++                             const std::string& headers);
++
+ }  // namespace content
+ 
+ #endif  // CONTENT_BROWSER_RENDERER_HOST_IPC_UTILS_H_

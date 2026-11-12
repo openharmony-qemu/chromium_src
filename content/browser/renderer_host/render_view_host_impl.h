@@ -224,7 +224,7 @@ class CONTENT_EXPORT RenderViewHostImpl
   // Tells the renderer process to request a page-scale animation based on the
   // specified point/rect.
   void AnimateDoubleTapZoom(const gfx::Point& point,
-                            const gfx::Rect& rect) override;
+ 	                        const gfx::Rect& rect) override;
 
   // Requests a page-scale animation based on the specified rect.
   void ZoomToFindInPageRect(const gfx::Rect& rect_to_zoom) override;

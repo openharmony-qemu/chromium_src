@@ -1,0 +1,60 @@
+diff a/content/common/child_process.mojom b/content/common/child_process.mojom	(rejected hunks)
+@@ -33,10 +33,23 @@ interface ChildProcessHost {
+ 
+   // Requests that the browser bind |receiver| on behalf of the child process.
+   // Whether or not the interface type encapsulated by |receiver| is supported
+   // depends on the process type and potentially on the Content embedder.
+   BindHostReceiver(mojo_base.mojom.GenericPendingReceiver receiver);
++
++  // Report the key threads in render process. This is used on OHOS to
++  // dynamic resource scheduling.
++  [EnableIf=arkweb_performance_scheduling]
++  ReportKeyThread(int32 status, int32 process_id, int32 thread_id, int32 role);
++  
++  // Report the key threads in render process in batches. This is used on OHOS to
++  // dynamic resource scheduling.
++  [EnableIf=arkweb_performance_scheduling]
++  ReportKeyThreadIds(int32 status, int32 process_id, array<int32> thread_ids, int32 role);
++
++  [EnableIf=arkweb_dfx_tracing]
++  ReportHisyevent(int64 block_time, string mode);
+ };
+ 
+ // A control interface the browser uses to drive the behavior of all types of
+ // Content child processes.
+ interface ChildProcess {
+@@ -118,13 +131,33 @@ interface ChildProcess {
+   // user-level memory pressure signals.
+   //
+   // This method is only for an experimental feature, and may be removed
+   // shortly. Other code should not use this method.
+   // See https://crbug.com/1393283 for details.
+-  [EnableIf=is_android]
++  [EnableIf=is_android_or_arkweb_memory_pressure_to_child]
+   OnMemoryPressure(mojo_base.mojom.MemoryPressureLevel memory_pressure_level);
+ 
+   // Asks the child process to modify its internal settings to bias towards
+   // energy efficiency because the embedder is in battery saver mode. The
+   // default is `false`.
+   SetBatterySaverMode(bool battery_saver_mode_enabled);
++  
++  [EnableIf=arkweb_renderer_anr_dump]
++  dumpCurrentJavaScriptStackInMainThread() => (string js_stack);
++
++  [EnableIf=arkweb_renderer_anr_dump]
++  InvokeRenderCrashDump();
++ 
++  [EnableIf=arkweb_renderer_anr_dump]
++  GetUid() => (int32 uid);
++
++  [EnableIf=arkweb_renderer_anr_dump]
++  ReportHicollie(string js_stack);
++ 
++  // #ifdef ARKWEB_LOGGER_REPORT
++  [EnableIf=arkweb_logger_report]
++  SetStrictLogMode(bool is_strict_log_mode);
++  // #endif
++
++  [EnableIf=arkweb_renderer_anr_dump]
++  NotifyFreezeReported();
+ };

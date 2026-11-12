@@ -1,0 +1,279 @@
+diff a/content/browser/renderer_host/render_frame_host_impl.h b/content/browser/renderer_host/render_frame_host_impl.h	(rejected hunks)
+@@ -19,10 +19,11 @@
+ #include <string>
+ #include <string_view>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/flat_map.h"
+ #include "base/containers/flat_set.h"
+ #include "base/containers/unique_ptr_adapters.h"
+ #include "base/files/file_path.h"
+ #include "base/functional/callback.h"
+@@ -505,13 +506,33 @@ class CONTENT_EXPORT RenderFrameHostImpl
+                                const std::u16string& method_name,
+                                base::Value::List arguments,
+                                JavaScriptResultCallback callback) override;
+   void ExecuteJavaScript(const std::u16string& javascript,
+                          JavaScriptResultCallback callback) override;
++#if BUILDFLAG(IS_ARKWEB)
++  void ExecuteJavaScriptExt(const int fd,
++                            const uint64_t scriptLength,
++                            JavaScriptResultCallback callback) override;
++#endif
++#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
++  void SendAccessibilityEvent(int64_t accessibilityId,
++                              int32_t eventType,
++                              const std::string& argument);
++#endif
++
++#if BUILDFLAG(ARKWEB_FLING)
++  void UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) override;
++#endif
++
+   void ExecuteJavaScriptInIsolatedWorld(const std::u16string& javascript,
+                                         JavaScriptResultCallback callback,
+                                         int32_t world_id) override;
++  bool GetWorldId(const std::string& worldName, int32_t* worldId);
++  void ExecuteJavaScriptInFrames(const std::u16string& javascript,
++                                 bool recursive,
++                                 const std::string& worldName,
++                                 JavaScriptResultCallback callback) override;
+   void ExecuteJavaScriptForTests(const std::u16string& javascript,
+                                  JavaScriptResultCallback callback,
+                                  int32_t world_id) override;
+   void ExecuteJavaScriptWithUserGestureForTests(
+       const std::u16string& javascript,
+@@ -747,10 +776,13 @@ class CONTENT_EXPORT RenderFrameHostImpl
+       base::OnceCallback<void(ui::AXPlatformTreeManager* hit_manager,
+                               ui::AXNodeID hit_node_id)> opt_callback) override;
+   gfx::NativeWindow GetTopLevelNativeWindow() override;
+   bool CanFireAccessibilityEvents() const override;
+   bool AccessibilityIsRootFrame() const override;
++#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
++  RenderFrameHostImpl* AccessibilityRenderFrameHost() override;
++#endif
+   bool ShouldSuppressAXLoadComplete() override;
+   WebContentsAccessibility* AccessibilityGetWebContentsAccessibility() override;
+   bool AccessibilityIsWebContentSource() override;
+ 
+   // ui::AXNodeIdDelegate:
+@@ -2467,10 +2515,16 @@ class CONTENT_EXPORT RenderFrameHostImpl
+   void SetVirtualKeyboardMode(ui::mojom::VirtualKeyboardMode mode) override;
+   void VisibilityChanged(blink::mojom::FrameVisibility) override;
+   void DidChangeThemeColor(std::optional<SkColor> theme_color) override;
+   void DidChangeBackgroundColor(const SkColor4f& background_color,
+                                 bool color_adjust) override;
++#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
++  void NotifyContextMenuWillShow() override;
++#endif
++#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
++  void OnOverScrollOffsetChanged(float offset_x, float offset_y) override;
++#endif
+   void DidFailLoadWithError(const GURL& url, int32_t error_code) override;
+   void DidFocusFrame() override;
+   void DidCallFocus() override;
+   void EnforceInsecureRequestPolicy(
+       blink::mojom::InsecureRequestPolicy policy) override;
+@@ -2532,10 +2586,15 @@ class CONTENT_EXPORT RenderFrameHostImpl
+   void MaybeStartOutermostMainFrameNavigation(
+       const std::vector<GURL>& urls) override;
+   void UpdateFaviconURL(
+       std::vector<blink::mojom::FaviconURLPtr> favicon_urls) override;
+   void DownloadURL(blink::mojom::DownloadURLParamsPtr params) override;
++#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
++  void DownloadURLForOverrideUA(
++      blink::mojom::DownloadURLParamsPtr& blink_parameters,
++      download::DownloadUrlParameters* parameters);
++#endif
+   void FocusedElementChanged(bool is_editable_element,
+                              bool is_richly_editable_element,
+                              const gfx::Rect& bounds_in_frame_widget,
+                              blink::mojom::FocusType focus_type) override;
+   void TextSelectionChanged(const std::u16string& text,
+@@ -2675,10 +2751,25 @@ class CONTENT_EXPORT RenderFrameHostImpl
+   void ShowCreatedWindow(const blink::LocalFrameToken& opener_frame_token,
+                          WindowOpenDisposition disposition,
+                          blink::mojom::WindowFeaturesPtr window_features,
+                          bool user_gesture,
+                          ShowCreatedWindowCallback callback) override;
++
++#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
++  void GetCreateNewWindow(const GURL& target_url,
++                          WindowOpenDisposition disposition,
++                          bool allow_popup,
++                          blink::mojom::WindowFeaturesPtr window_features,
++                          GetCreateNewWindowCallback callback) override;
++#endif
++#if BUILDFLAG(ARKWEB_PRECOMPILE)
++  void GenerateCodeCache(const std::string& url,
++                         const std::string& script,
++                         const std::shared_ptr<oh_code_cache::CacheOptions>& cacheOptions,
++                         CodeCacheCallback callback) override;
++#endif
++
+   void SetWindowRect(const gfx::Rect& bounds,
+                      SetWindowRectCallback callback) override;
+   void DidFirstVisuallyNonEmptyPaint() override;
+   void DidAccessInitialMainDocument() override;
+ #if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
+@@ -2689,10 +2780,15 @@ class CONTENT_EXPORT RenderFrameHostImpl
+ #endif
+   void DraggableRegionsChanged(
+       std::vector<blink::mojom::DraggableRegionPtr> regions) override;
+   void NotifyDocumentInteractive() override;
+   void OnFirstContentfulPaint(base::TimeDelta duration) override;
++
++#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
++  void OnDocumentEndReady() override;
++#endif
++
+   void NotifyFirstContentfulPaint();
+   void SetStorageAccessApiStatus(net::StorageAccessApiStatus status) override;
+   std::unique_ptr<download::DownloadUrlParameters> CreateDownloadUrlParameters(
+       const GURL& url,
+       const net::NetworkTrafficAnnotationTag& traffic_annotation)
+@@ -3286,10 +3394,47 @@ class CONTENT_EXPORT RenderFrameHostImpl
+   void DisableUnloadTimerForTesting();
+ 
+   bool IsFullCookieAccessAllowed() override;
+ 
+   void SimulateDiscardShutdownKeepAliveTimeoutForTesting();
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
++  void OnDetectedBlankScreen(const std::string& url,
++                             int32_t blankScreenReason,
++                             int32_t detectedContentfulNodesCount) override;
++  void DetectBlankScreen(const std::string& url);
++  void SetBlankScreenDetectionConfig(
++      bool enable,
++      const std::vector<double>& detectionTiming,
++      const std::vector<int32_t>& detectionMethods,
++      int32_t contentfulNodesCountThreshold);
++#endif
++#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
++  void OnFirstScreenPaint(const std::string& url,
++                          int64_t navigation_start_time,
++                          int64_t first_screen_paintTime) override;
++#endif
++#if BUILDFLAG(ARKWEB_ERROR_PAGE)
++  void CommitFailedNavigation(
++    mojom::NavigationClient* navigation_client,
++    NavigationRequest* navigation_request,
++    blink::mojom::CommonNavigationParamsPtr common_params,
++    blink::mojom::CommitNavigationParamsPtr commit_params,
++    bool has_stale_copy_in_cache,
++    int error_code,
++    int extended_error_code,
++    const net::ResolveErrorInfo& resolve_error_info,
++    const std::optional<std::string>& error_page_content,
++    std::unique_ptr<blink::PendingURLLoaderFactoryBundle> subresource_loaders,
++    const blink::DocumentToken& document_token,
++    const base::UnguessableToken& devtools_navigation_token,
++    blink::mojom::PolicyContainerPtr policy_container,
++    mojom::AlternativeErrorPageOverrideInfoPtr alternative_error_page_info,
++    mojom::NavigationClient::CommitFailedNavigationCallback callback);
++#endif
++#if BUILDFLAG(ARKWEB_PDF)
++  void SetIsPDF(bool is_pdf);
++#endif
+ 
+   // Returns true if no frame ancestors of a sandboxed context are cross-site
+   // with `frame_origin` (or its precursor if opaque).
+   bool AncestorsAllowSameSiteNoneCookiesOverride(
+       const url::Origin& frame_origin) const;
+@@ -3319,10 +3464,32 @@ class CONTENT_EXPORT RenderFrameHostImpl
+   // a new content/public API on RenderProcessHost. We cannot directly call the
+   // function in RenderProcessHostImpl without a public API because of the
+   // existence of the MockRenderProcessHost.
+   void SetPrerenderStateChangedCallback(
+       PrerenderStateChangedCallback prerender_state_callback);
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++  void OnCommitNavigation(
++      const GURL& url,
++      bool is_same_document,
++      const base::UnguessableToken& devtools_navigation_token);
++  void OnDidCommitNavigationInternal(
++      const GURL& url,
++      bool is_same_document,
++      NavigationRequest* navigation_request,
++      const base::UnguessableToken& devtools_navigation_token);
++  void OnResetOwnedNavigationRequests(NavigationDiscardReason reason);
++#endif
++
++#if BUILDFLAG(ARKWEB_FLING)
++  bool OnNestedScroll(float& delta_x, float& delta_y);
++
++  bool OnNestedFling(float& velocity_x, float& velocity_y);
++#endif
++
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  bool IsUrlTrustListBlocked(int64_t navigation_id);
++#endif
+ 
+  protected:
+   friend class RenderFrameHostFactory;
+ 
+   // |flags| is a combination of CreateRenderFrameFlags.
+@@ -3421,10 +3588,17 @@ class CONTENT_EXPORT RenderFrameHostImpl
+   friend class TextInputTestLocalFrame;
+   friend class WebContentsSplitCacheBrowserTest;
+   friend class RenderFrameHostManagerUnloadBrowserTest;
+   friend class NavigationBrowserTest;
+ 
++#if BUILDFLAG(ARKWEB_TEST)
++  friend class RenderFrameHostImplForIncludeTest;
++#endif
++#if BUILDFLAG(ARKWEB_USERAGENT)
++  bool is_useragent_different_from_navigating_frame = false;
++#endif  // BUILDFLAG(ARKWEB_USERAGENT)
++
+   FRIEND_TEST_ALL_PREFIXES(NavigatorTest, TwoNavigationsRacingCommit);
+   FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplBeforeUnloadBrowserTest,
+                            SubframeShowsDialogWhenMainFrameNavigates);
+   FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplBeforeUnloadBrowserTest,
+                            TimerNotRestartedBySecondDialog);
+@@ -3465,10 +3639,12 @@ class CONTENT_EXPORT RenderFrameHostImpl
+                            AttemptDuplicateRenderViewHost);
+   FRIEND_TEST_ALL_PREFIXES(SecurityExploitBrowserTest,
+                            AttemptDuplicateRenderWidgetHost);
+   FRIEND_TEST_ALL_PREFIXES(SecurityExploitBrowserTest,
+                            BindToWebUIFromWebViaMojo);
++  FRIEND_TEST_ALL_PREFIXES(SecurityExploitBrowserTest,
++                           WindowOpenDisallowedFromSandboxedFrame);
+   FRIEND_TEST_ALL_PREFIXES(SecurityExploitBrowserTest,
+                            CreateNewWindowWithInaccessibleFile);
+   FRIEND_TEST_ALL_PREFIXES(SitePerProcessBrowserTest,
+                            RenderViewHostIsNotReusedAfterDelayedUnloadACK);
+   FRIEND_TEST_ALL_PREFIXES(SitePerProcessBrowserTest,
+@@ -5553,10 +5742,17 @@ class CONTENT_EXPORT RenderFrameHostImpl
+   // is ongoing. Destroying this object cancels the validation.
+   std::unique_ptr<WebAuthRequestSecurityChecker::RemoteValidation>
+       webauthn_remote_rp_id_validation_;
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
++  bool blank_screen_detection_enable_ = false;
++  std::vector<double> blank_screen_detection_timing_;
++  std::vector<int32_t> blank_screen_detection_methods_;
++  int32_t blank_screen_threshold_ = 0;
++#endif
++
+   // Tracks the page that initiates Protected Audience auction. This is set
+   // when AdAuctionServiceImpl is constructed, which is when the first call to
+   // Protected Audience API takes place on the frame.
+   //
+   // See crbug.com/1422301 for why this is needed.
+@@ -5585,10 +5781,12 @@ class CONTENT_EXPORT RenderFrameHostImpl
+ 
+   PrerenderStateChangedCallback prerender_state_callback_;
+ 
+   base::OnceClosure on_process_before_unload_completed_for_testing_;
+ 
++  std::map<std::string, int32_t> isolated_world_;
++
+   // Tracing track used to emit async event related to lifecycle.
+   const perfetto::NamedTrack tracing_track_;
+ 
+   // WeakPtrFactories are the last members, to ensure they are destroyed before
+   // all other fields of `this`.

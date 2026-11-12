@@ -1,0 +1,66 @@
+diff a/content/browser/webid/disconnect_request_unittest.cc b/content/browser/webid/disconnect_request_unittest.cc	(rejected hunks)
+@@ -27,11 +27,11 @@
+ #include "testing/gtest/include/gtest/gtest.h"
+ #include "third_party/blink/public/mojom/webid/federated_auth_request.mojom.h"
+ #include "url/gurl.h"
+ #include "url/origin.h"
+ 
+-using PermissionStatus =
++using ContentPermissionStatus =
+     content::FederatedIdentityApiPermissionContextDelegate::PermissionStatus;
+ using ::testing::_;
+ using ::testing::NiceMock;
+ using ::testing::Return;
+ 
+@@ -477,11 +477,11 @@ TEST_F(FederatedAuthDisconnectRequestTest, CrossSiteIframe) {
+ 
+ TEST_F(FederatedAuthDisconnectRequestTest, NoAccountToDisconnect) {
+   Config config = kValidConfig;
+   EXPECT_CALL(*api_permission_delegate_,
+               GetApiPermissionStatus(OriginFromString(kRpUrl)))
+-      .WillOnce(Return(PermissionStatus::GRANTED));
++      .WillOnce(Return(ContentPermissionStatus::GRANTED));
+   EXPECT_CALL(
+       *permission_delegate_,
+       HasSharingPermission(OriginFromString(kRpUrl), OriginFromString(kRpUrl),
+                            OriginFromString(kProviderUrl)))
+       .WillOnce(Return(false));
+@@ -497,11 +497,11 @@ TEST_F(FederatedAuthDisconnectRequestTest, NoAccountToDisconnect) {
+ 
+ TEST_F(FederatedAuthDisconnectRequestTest, DisabledInSettings) {
+   Config config = kValidConfig;
+   EXPECT_CALL(*api_permission_delegate_,
+               GetApiPermissionStatus(OriginFromString(kRpUrl)))
+-      .WillOnce(Return(PermissionStatus::BLOCKED_SETTINGS));
++      .WillOnce(Return(ContentPermissionStatus::BLOCKED_SETTINGS));
+ 
+   RunDisconnectTest(config, blink::mojom::DisconnectStatus::kError);
+   EXPECT_FALSE(DidFetchAnyEndpoint());
+ 
+   ExpectDisconnectMetricsAndConsoleError(DisconnectStatus::kDisabledInSettings,
+@@ -511,11 +511,11 @@ TEST_F(FederatedAuthDisconnectRequestTest, DisabledInSettings) {
+ 
+ TEST_F(FederatedAuthDisconnectRequestTest, DisabledInFlags) {
+   Config config = kValidConfig;
+   EXPECT_CALL(*api_permission_delegate_,
+               GetApiPermissionStatus(OriginFromString(kRpUrl)))
+-      .WillOnce(Return(PermissionStatus::BLOCKED_VARIATIONS));
++      .WillOnce(Return(ContentPermissionStatus::BLOCKED_VARIATIONS));
+ 
+   RunDisconnectTest(config, blink::mojom::DisconnectStatus::kError);
+   EXPECT_FALSE(DidFetchAnyEndpoint());
+ 
+   ExpectDisconnectMetricsAndConsoleError(DisconnectStatus::kDisabledInFlags,
+@@ -527,11 +527,11 @@ TEST_F(FederatedAuthDisconnectRequestTest, DisabledInFlags) {
+ // cooldown).
+ TEST_F(FederatedAuthDisconnectRequestTest, SuccessDespiteEmbargo) {
+   Config config = kValidConfig;
+   EXPECT_CALL(*api_permission_delegate_,
+               GetApiPermissionStatus(OriginFromString(kRpUrl)))
+-      .WillOnce(Return(PermissionStatus::BLOCKED_EMBARGO));
++      .WillOnce(Return(ContentPermissionStatus::BLOCKED_EMBARGO));
+   EXPECT_CALL(
+       *permission_delegate_,
+       HasSharingPermission(OriginFromString(kRpUrl), OriginFromString(kRpUrl),
+                            OriginFromString(kProviderUrl)))
+       .WillOnce(Return(true));

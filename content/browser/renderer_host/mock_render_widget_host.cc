@@ -51,6 +51,7 @@ std::unique_ptr<MockRenderWidgetHost> MockRenderWidgetHost::Create(
 
 input::RenderInputRouter* MockRenderWidgetHost::GetRenderInputRouter() {
   return render_input_router_.get();
+
 }
 
 void MockRenderWidgetHost::NotifyNewContentRenderingTimeoutForTesting() {

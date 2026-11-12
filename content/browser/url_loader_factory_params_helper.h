@@ -17,6 +17,10 @@
 #include "services/network/public/mojom/url_loader.mojom-shared.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+#include "url/gurl.h"
+#endif
+
 namespace net {
 class IsolationInfo;
 }  // namespace net

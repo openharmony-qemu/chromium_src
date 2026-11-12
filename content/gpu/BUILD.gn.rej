@@ -1,0 +1,16 @@
+diff a/content/gpu/BUILD.gn b/content/gpu/BUILD.gn	(rejected hunks)
+@@ -80,10 +84,14 @@ target(link_target_type, "gpu_sources") {
+     "//ui/gl",
+     "//ui/gl/init",
+     "//ui/latency/ipc",
+   ]
+ 
++  if (arkweb_oop_gpu_process) {
++    deps += [ "//arkweb/build/features" ]
++  }
++
+   if (!is_chromeos || !is_chrome_branded) {
+     deps += [
+       "//services/shape_detection:lib",
+       "//services/shape_detection/public/mojom",
+     ]

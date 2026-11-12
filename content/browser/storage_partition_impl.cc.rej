@@ -1,0 +1,20 @@
+diff a/content/browser/storage_partition_impl.cc b/content/browser/storage_partition_impl.cc	(rejected hunks)
+@@ -2479,11 +2484,17 @@ void StoragePartitionImpl::OnSSLCertificateError(
+   SSLErrorDelegate* delegate =
+       new SSLErrorDelegate(std::move(response));  // deletes self
+   bool is_primary_main_frame_request = context.IsPrimaryMainFrameRequest();
+   SSLManager::OnSSLCertificateError(
+       delegate->GetWeakPtr(), is_primary_main_frame_request, url,
+-      context.navigation_or_document(), net_error, ssl_info, fatal);
++      context.navigation_or_document(), net_error, ssl_info, fatal
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++      ,
++      origin_url,
++      referrer
++#endif
++      );
+ }
+ 
+ void StoragePartitionImpl::OnLoadingStateUpdate(
+     network::mojom::LoadInfoPtr info,
+     OnLoadingStateUpdateCallback callback) {

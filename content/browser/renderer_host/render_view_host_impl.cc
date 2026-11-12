@@ -117,6 +117,10 @@
 #include "content/browser/host_zoom_map_impl.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && !defined(COMPONENT_BUILD)
+#include "extensions/browser/view_type_utils.h"
+#endif
+
 using blink::WebInputEvent;
 
 namespace content {
@@ -367,8 +371,13 @@ RenderViewHostImpl::RenderViewHostImpl(
 }
 
 RenderViewHostImpl::~RenderViewHostImpl() {
+#if BUILDFLAG(IS_ARKWEB) || BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT_INSTANT("navigation", "~RenderViewHostImpl()",
+                      "kRenderViewHost", "RenderViewHostImpl");
+#else
   TRACE_EVENT_INSTANT("navigation", "~RenderViewHostImpl()",
                       ChromeTrackEvent::kRenderViewHost, *this);
+#endif
   base::ScopedUmaHistogramTimer histogram_timer(
       "Navigation.RenderViewHostDestructor");
 
@@ -419,6 +428,9 @@ bool RenderViewHostImpl::CreateRenderView(
                "RenderViewHostImpl::CreateRenderView");
   DCHECK(!IsRenderViewLive()) << "Creating view twice";
 
+  LOG(INFO) << "[RenderPipeline] CreateRenderView: routing_id="
+ 	          << main_frame_routing_id_ << ", proxy_route_id=" << proxy_route_id
+ 	          << ", process_pid=" << GetProcess()->GetProcess().Pid();
   // The process may (if we're sharing a process with another host that already
   // initialized it) or may not (we have our own process or the old process
   // crashed) have been initialized. Calling Init() multiple times will be
@@ -780,6 +792,9 @@ RenderViewHostImpl::GetWebkitPreferencesForWidget() {
 
 void RenderViewHostImpl::RenderViewCreated(
     RenderFrameHostImpl* local_main_frame) {
+  LOG(INFO) << "[RenderPipeline] RenderViewCreated: main_frame_routing_id="
+ 	          << main_frame_routing_id_
+ 	          << ", has_local_main_frame=" << (local_main_frame != nullptr);
   renderer_view_created_ = true;
   if (local_main_frame) {
     // If there is a main frame in this RenderViewHost, then the renderer-side

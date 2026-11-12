@@ -64,6 +64,7 @@
 #include "third_party/blink/public/mojom/navigation/navigation_params.mojom.h"
 #include "url/gurl.h"
 #include "url/url_util.h"
+#include "arkweb/chromium_ext/content/browser/renderer_host/navigation_request_utils.h"
 
 namespace content {
 
@@ -351,9 +352,15 @@ Navigator::Navigator(
     NavigatorDelegate* delegate,
     NavigationControllerDelegate* navigation_controller_delegate)
     : controller_(browser_context, frame_tree, navigation_controller_delegate),
-      delegate_(delegate) {}
+      delegate_(delegate) {
+  implUtils_ = std::make_unique<NavigatorUtils>(this);
+}
 
-Navigator::~Navigator() = default;
+Navigator::~Navigator() {
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  implUtils_->StopPage();
+#endif
+}
 
 // static
 bool Navigator::CheckWebUIRendererDoesNotDisplayNormalURL(
@@ -1003,6 +1010,12 @@ std::optional<NavigationNotStartedReason> Navigator::Navigate(
     }
   }
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  const net::NetworkAnonymizationKey networkAnonymizationKey =
+      implUtils_->GetNetworkAnonymizationKey(frame_tree_node, request.get());
+  request->nav_request_utils_->StartPage(networkAnonymizationKey, reinterpret_cast<int64_t>(this));
+#endif
+
   metrics_data_ = std::make_unique<NavigationMetricsData>(
       request->common_params().navigation_start, request->common_params().url,
       GetPageUkmSourceId(*frame_tree_node->current_frame_host()),
@@ -1410,6 +1423,12 @@ void Navigator::OnBeginNavigation(
       GetPageUkmSourceId(*frame_tree_node->current_frame_host()),
       false /* is_browser_initiated_before_unload */);
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  const net::NetworkAnonymizationKey networkAnonymizationKey =
+      implUtils_->GetNetworkAnonymizationKey(frame_tree_node, navigation_request);
+  navigation_request->nav_request_utils_->StartPage(networkAnonymizationKey, reinterpret_cast<int64_t>(this));
+#endif
+
   LogRendererInitiatedBeforeUnloadTime(
       navigation_request->begin_params().before_unload_start,
       navigation_request->begin_params().before_unload_end);
@@ -1671,7 +1690,11 @@ void Navigator::RecordNavigationMetrics(
 
 NavigationEntryImpl*
 Navigator::GetNavigationEntryForRendererInitiatedNavigation(
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    blink::mojom::CommonNavigationParams& common_params,
+#else
     const blink::mojom::CommonNavigationParams& common_params,
+#endif
     FrameTreeNode* frame_tree_node,
     bool override_user_agent) {
   // With MPArch, there may be multiple main frames, but each one has its own

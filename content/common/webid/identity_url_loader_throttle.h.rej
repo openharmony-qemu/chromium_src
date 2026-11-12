@@ -1,0 +1,25 @@
+diff a/content/common/webid/identity_url_loader_throttle.h b/content/common/webid/identity_url_loader_throttle.h	(rejected hunks)
+@@ -13,10 +13,11 @@
+ #include "base/memory/weak_ptr.h"
+ #include "content/common/content_export.h"
+ #include "content/public/common/web_identity.h"
+ #include "third_party/blink/public/common/loader/url_loader_throttle.h"
+ #include "url/gurl.h"
++#include "url/origin.h"
+ 
+ namespace net {
+ class HttpResponseHeaders;
+ }  // namespace net
+ 
+@@ -57,10 +58,11 @@ class CONTENT_EXPORT IdentityUrlLoaderThrottle
+   static bool HeaderHasToken(const net::HttpResponseHeaders& headers,
+                              std::string_view header_name,
+                              std::string_view token);
+ 
+   GURL request_url_;
++  std::optional<url::Origin> request_initiator_;
+   SetIdpStatusCallback set_idp_status_cb_;
+   bool has_user_gesture_ = false;
+ 
+   base::WeakPtrFactory<IdentityUrlLoaderThrottle> weak_ptr_factory_{this};
+ };

@@ -17,8 +17,9 @@ namespace content {
 // sites have custom 404 pages). In cases where the response's body is empty,
 // however, we should display an error page if possible (instead of showing a
 // blank page, which might confuse users). This throttle will defer main frame
-// potentially-empty HTTP error navigations until we can determine if its
-// response body is empty or not.
+// and optionally subframe (when subframe_error_page_enabled) potentially-empty
+// HTTP error navigations until we can determine if its response body is empty
+// or not.
 class HttpErrorNavigationThrottle : public NavigationThrottle {
  public:
   static void MaybeCreateAndAdd(NavigationThrottleRegistry& registry);

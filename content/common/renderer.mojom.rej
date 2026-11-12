@@ -1,0 +1,17 @@
+diff a/content/common/renderer.mojom b/content/common/renderer.mojom	(rejected hunks)
+@@ -14,10 +14,15 @@ import "mojo/public/mojom/base/time.mojom";
+ import "services/network/public/mojom/network_types.mojom";
+ import "third_party/blink/public/mojom/browser_interface_broker.mojom";
+ import "third_party/blink/public/mojom/cpu_performance.mojom";
+ import "third_party/blink/public/mojom/origin_trials/origin_trials_settings.mojom";
+ import "third_party/blink/public/mojom/user_agent/user_agent_metadata.mojom";
++[EnableIf=arkweb_theme_font]
++import "mojo/public/mojom/base/file.mojom";
++
++[EnableIf=arkweb_reader_mode]
++import "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom";
+ import "url/mojom/url.mojom";
+ 
+ struct UpdateScrollbarThemeParams {
+   // TODO(avi): Update these to optional values when optional numeric types are
+   // allowed. (https://crbug.com/657632)

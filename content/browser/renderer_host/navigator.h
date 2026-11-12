@@ -46,11 +46,13 @@ class PrefetchedSignedExchangeCache;
 class RenderFrameHostImpl;
 struct LoadCommittedDetails;
 struct UrlInfo;
+class NavigatorUtils;
 
 // Navigator is responsible for performing navigations in nodes of the
 // FrameTree. Its lifetime is bound to the FrameTree.
 class CONTENT_EXPORT Navigator {
  public:
+  friend class NavigatorUtils;
   Navigator(BrowserContext* browser_context,
             FrameTree& frame_tree,
             NavigatorDelegate* delegate,
@@ -242,6 +244,7 @@ class CONTENT_EXPORT Navigator {
 
   // Holds data used to track browser side navigation metrics.
   struct NavigationMetricsData;
+  std::unique_ptr<NavigatorUtils> implUtils_;
 
   void RecordNavigationMetrics(
       const LoadCommittedDetails& details,
@@ -253,7 +256,11 @@ class CONTENT_EXPORT Navigator {
   // pending NavigationEntry to be used. Either null or a new one owned
   // NavigationController.
   NavigationEntryImpl* GetNavigationEntryForRendererInitiatedNavigation(
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      blink::mojom::CommonNavigationParams& common_params,
+#else
       const blink::mojom::CommonNavigationParams& common_params,
+#endif
       FrameTreeNode* frame_tree_node,
       bool override_user_agent);
 
@@ -267,7 +274,11 @@ class CONTENT_EXPORT Navigator {
 
   // The NavigationController that will keep track of session history for all
   // RenderFrameHost objects using this Navigator.
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  ArkWebNavigationControllerImplExt controller_;
+#else
   NavigationControllerImpl controller_;
+#endif
 
   // Used to notify the object embedding this Navigator about navigation
   // events. Can be nullptr in tests.

@@ -1,0 +1,15 @@
+diff a/content/browser/renderer_host/navigation_controller_impl.h b/content/browser/renderer_host/navigation_controller_impl.h	(rejected hunks)
+@@ -126,10 +134,13 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
+       const std::string& extra_headers) override;
+   base::WeakPtr<NavigationHandle> LoadURLWithParams(
+       const LoadURLParams& params) override;
+   void LoadIfNecessary() override;
+   void LoadOriginalRequestURL() override;
++#if BUILDFLAG(IS_ARKWEB)
++  void LoadOriginalRequestURL(bool ignore_cache) override;
++#endif
+   base::WeakPtr<NavigationHandle> LoadPostCommitErrorPage(
+       RenderFrameHost* render_frame_host,
+       const GURL& url,
+       const std::string& error_page_html) override;
+   void NavigateFrameToErrorPage(RenderFrameHost* render_frame_host,

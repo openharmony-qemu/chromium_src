@@ -1,0 +1,78 @@
+diff a/content/browser/renderer_host/ipc_utils.cc b/content/browser/renderer_host/ipc_utils.cc	(rejected hunks)
+@@ -6,10 +6,11 @@
+ 
+ #include <optional>
+ #include <utility>
+ 
+ #include "base/debug/crash_logging.h"
++#include "base/debug/dump_without_crashing.h"
+ #include "base/strings/to_string.h"
+ #include "content/browser/bad_message.h"
+ #include "content/browser/blob_storage/chrome_blob_storage_context.h"
+ #include "content/browser/child_process_security_policy_impl.h"
+ #include "content/browser/renderer_host/frame_tree_node.h"
+@@ -21,10 +22,11 @@
+ #include "content/public/browser/browser_thread.h"
+ #include "content/public/browser/child_process_host.h"
+ #include "content/public/browser/render_process_host.h"
+ #include "content/public/common/url_constants.h"
+ #include "mojo/public/cpp/system/message_pipe.h"
++#include "net/http/http_request_headers.h"
+ #include "third_party/blink/public/mojom/navigation/navigation_params.mojom.h"
+ 
+ namespace content {
+ 
+ namespace {
+@@ -243,10 +245,14 @@ bool VerifyOpenURLParams(RenderFrameHostImpl* current_rfh,
+   if (!VerifyInitiatorOrigin(process_id, params->initiator_origin, current_rfh,
+                              &params->url, &params->initiator_frame_token)) {
+     return false;
+   }
+ 
++  if (!VerifyNavigationHeaders(process, params->extra_headers)) {
++    return false;
++  }
++
+   if (params->initiator_base_url) {
+     // `initiator_base_url` should only be defined for about:blank and
+     // about:srcdoc navigations, and should never be an empty GURL (if it is not
+     // nullopt).
+     if (params->initiator_base_url->is_empty() ||
+@@ -422,6 +428,37 @@ bool VerifyNavigationInitiator(
+   }
+ 
+   return true;
+ }
+ 
++bool VerifyNavigationHeaders(RenderProcessHost* process,
++                             const std::string& headers) {
++  net::HttpRequestHeaders parsed_headers;
++  parsed_headers.AddHeadersFromString(headers);
++  for (net::HttpRequestHeaders::Iterator header(parsed_headers);
++       header.GetNext();) {
++    // Headers should be strictly allowlisted because there can be security
++    // consequences if a compromised renderer can set arbitrary headers (e.g.,
++    // for CSRF prevention).
++    //
++    // This list allowlists `Origin`, but the value of the `Origin` header is
++    // further validated in NavigationRequest::AddAdditionalRequestHeaders.
++    if (header.name() != net::HttpRequestHeaders::kUpgradeInsecureRequests &&
++        header.name() != net::HttpRequestHeaders::kOrigin &&
++        header.name() != net::HttpRequestHeaders::kContentType &&
++        header.name() != net::HttpRequestHeaders::kUserAgent &&
++        header.name() != net::HttpRequestHeaders::kSecPurpose &&
++        header.name() != net::HttpRequestHeaders::kDNT) {
++      if (base::FeatureList::IsEnabled(
++              features::kKillOnInvalidNavigationHeaders)) {
++        SCOPED_CRASH_KEY_STRING64("Bug487795397", "invalid_header",
++                                  header.name());
++        bad_message::ReceivedBadMessage(
++            process, bad_message::RFH_INVALID_NAVIGATION_HEADERS);
++        return false;
++      }
++    }
++  }
++  return true;
++}
++
+ }  // namespace content

@@ -1,0 +1,14 @@
+diff a/content/child/child_process.h b/content/child/child_process.h	(rejected hunks)
+@@ -135,10 +143,12 @@ class CONTENT_EXPORT ChildProcess {
+   std::unique_ptr<ChildThreadImpl> main_thread_;
+ 
+   // Whether this ChildProcess initialized ThreadPoolInstance.
+   bool initialized_thread_pool_ = false;
+ 
++  raw_ptr<ChildProcessUtils> implUtils;
++
+   bool is_renderer_ = false;
+   std::unique_ptr<base::TaskMonitoringScopedBoostPriority>
+       scenario_priority_boost_ = nullptr;
+ };
+ 

@@ -213,3 +213,8 @@ blink::MediaStreamDevices::iterator AudioInputDeviceManager::GetDevice(
 }
 
 }  // namespace content
+
+#ifdef BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/renderer_host/media/audio_input_device_manager_for_include.cc"
+#endif
+

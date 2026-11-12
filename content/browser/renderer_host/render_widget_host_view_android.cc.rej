@@ -1,0 +1,23 @@
+diff a/content/browser/renderer_host/render_widget_host_view_android.cc b/content/browser/renderer_host/render_widget_host_view_android.cc	(rejected hunks)
+@@ -965,15 +965,21 @@ void RenderWidgetHostViewAndroid::OnRenderFrameMetadataChangedBeforeActivation(
+   }
+ 
+   if (!gesture_listener_manager_)
+     return;
+ 
++  base::WeakPtr<RenderWidgetHostViewAndroid> weak_this =
++      weak_ptr_factory_.GetWeakPtr();
++
+   UpdateTouchSelectionController(metadata.selection, metadata.page_scale_factor,
+                                  metadata.top_controls_height,
+                                  metadata.top_controls_shown_ratio,
+                                  scrollable_viewport_size_dip);
+ 
++  if (!weak_this)
++    return;
++
+   // ViewAndroid::content_offset() must be in dip.
+   float top_content_offset_dip = top_content_offset / dip_scale;
+   view_.UpdateFrameInfo({scrollable_viewport_size_dip, top_content_offset_dip});
+   bool controls_changed = UpdateControls(
+       view_.GetDipScale(), metadata.top_controls_height,

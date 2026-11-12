@@ -7,6 +7,7 @@
 #include "base/memory/weak_ptr.h"
 #include "content/public/browser/browser_thread.h"
 #include "net/base/net_errors.h"
+#include "arkweb/build/features/features.h"
 
 using net::SSLInfo;
 

@@ -381,7 +381,11 @@ ServiceWorkerInternalsUI::ServiceWorkerInternalsUI(WebUI* web_ui)
       kChromeUIServiceWorkerInternalsHost);
   source->OverrideContentSecurityPolicy(
       network::mojom::CSPDirectiveName::ScriptSrc,
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+      "script-src arkweb://resources chrome://resources 'self';");
+#else
       "script-src chrome://resources 'self';");
+#endif // ARKWEB_DEVTOOLS
   source->OverrideContentSecurityPolicy(
       network::mojom::CSPDirectiveName::TrustedTypes,
       "trusted-types lit-html-desktop;");

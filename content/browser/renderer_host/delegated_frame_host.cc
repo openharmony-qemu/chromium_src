@@ -286,6 +286,13 @@ void DelegatedFrameHost::EmbedSurface(
     const viz::LocalSurfaceId& new_local_surface_id,
     const gfx::Size& new_dip_size,
     cc::DeadlinePolicy deadline_policy) {
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  if (shouldUseSpecifiedPolicy_) {
+    deadline_policy = FirstFrameDeadlinePolicy();
+    LOG(INFO) << "ui DelegatedFrameHost::EmbedSurface: " << "surface_id: " << new_local_surface_id.ToString() <<
+              "deadline_policy: " <<deadline_policy.ToString();
+  }
+#endif
   TRACE_EVENT2("viz", "DelegatedFrameHost::EmbedSurface", "surface_id",
                new_local_surface_id.ToString(), "deadline_policy",
                deadline_policy.ToString());
@@ -403,6 +410,22 @@ void DelegatedFrameHost::OnFrameTokenChanged(uint32_t frame_token,
                                              base::TimeTicks activation_time) {
   client_->OnFrameTokenChanged(frame_token, activation_time);
 }
+
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+void DelegatedFrameHost::RestoreRenderFit() {
+  if (client_) {
+    client_->RestoreRenderFit();
+  }
+}
+#endif // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_ROTATE_RESIZE)
+void DelegatedFrameHost::ModifyRenderFit(int32_t fitType) {
+  if (client_) {
+    client_->ModifyRenderFit(fitType);
+  }
+}
+#endif // ARKWEB_ROTATE_RESIZE
 
 // CommitPending without a target for TakeFallbackContentFrom. Since we cannot
 // guarantee that Navigation will complete, evict our surfaces which are from

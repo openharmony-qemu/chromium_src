@@ -1,0 +1,14 @@
+diff a/content/browser/renderer_host/render_widget_host_view_child_frame.cc b/content/browser/renderer_host/render_widget_host_view_child_frame.cc	(rejected hunks)
+@@ -414,11 +418,11 @@ gfx::Size RenderWidgetHostViewChildFrame::GetCompositorViewportPixelSize() {
+   if (frame_connector_)
+     return frame_connector_->local_frame_size_in_pixels();
+   return gfx::Size();
+ }
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+ bool RenderWidgetHostViewChildFrame::IsTouchSequencePotentiallyActiveOnViz() {
+   RenderWidgetHostViewBase* root_view = GetRootView();
+   if (!root_view) {
+     return false;
+   }

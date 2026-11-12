@@ -118,7 +118,11 @@ network::mojom::URLLoaderFactoryParamsPtr CreateParams(
     // --disable-web-security also disables Opaque Response Blocking (ORB).
     params->is_orb_enabled = false;
   } else if (allow_universal_access_from_file_urls &&
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
+            (origin.scheme() == url::kFileScheme || origin.scheme() == url::kResourcesScheme)) {
+#else
              origin.scheme() == url::kFileScheme) {
+#endif
     // allow_universal_access_from_file_urls disables ORB (via
     // `is_orb_enabled`) and CORS (via `disable_web_security`) for requests
     // made from a file: |origin|.
@@ -153,6 +157,11 @@ network::mojom::URLLoaderFactoryParamsPtr CreateParams(
 
   params->require_cross_site_request_for_cookies =
       require_cross_site_request_for_cookies;
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  params->main_url = main_url.spec();
+  params->addr_web_handle = addr_web_handle;
+#endif
 
   if (URLLoaderFactoryParamsHelper::IsMainFrameOriginRecentlyAccessed(
           isolation_info)) {

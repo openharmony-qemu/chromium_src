@@ -1,0 +1,37 @@
+diff a/content/browser/ssl/ssl_manager.cc b/content/browser/ssl/ssl_manager.cc	(rejected hunks)
+@@ -59,10 +64,16 @@ void OnAllowCertificate(SSLErrorHandler* handler,
+                         StoragePartition* storage_partition,
+                         SSLHostStateDelegate* state_delegate,
+                         bool record_decision,
+                         CertificateRequestResultType decision) {
+   DCHECK(handler->ssl_info().is_valid());
++#if BUILDFLAG(IS_ARKWEB_EXT)
++  bool ssl_cert_valid = handler->ssl_info().is_valid();
++  if (!ssl_cert_valid) {
++    ReportArkwebSslCertErrorInfo(handler->request_url().GetHost());
++  }
++#endif
+   switch (decision) {
+     case CERTIFICATE_REQUEST_RESULT_TYPE_CONTINUE:
+       // Note that we should not call SetMaxSecurityStyle here, because
+       // the active NavigationEntry has just been deleted (in
+       // HideInterstitialPage) and the new NavigationEntry will not be
+@@ -111,11 +126,17 @@ void SSLManager::OnSSLCertificateError(
+     bool is_primary_main_frame_request,
+     const GURL& url,
+     NavigationOrDocumentHandle* navigation_or_document,
+     int net_error,
+     const net::SSLInfo& ssl_info,
+-    bool fatal) {
++    bool fatal
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++    ,
++    const GURL& origin_url,
++    const std::string& referrer
++#endif
++    ) {
+   DCHECK(delegate.get());
+   DVLOG(1) << "OnSSLCertificateError() cert_error: " << net_error
+            << " url: " << url.spec() << " cert_status: " << std::hex
+            << ssl_info.cert_status;
+   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);

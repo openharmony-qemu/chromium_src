@@ -1,0 +1,30 @@
+diff a/content/browser/renderer_host/frame_tree.cc b/content/browser/renderer_host/frame_tree.cc	(rejected hunks)
+@@ -9,10 +9,13 @@
+ #include <algorithm>
+ #include <queue>
+ #include <set>
+ #include <utility>
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/containers/contains.h"
+ #include "base/debug/crash_logging.h"
+ #include "base/debug/dump_without_crashing.h"
+ #include "base/functional/bind.h"
+ #include "base/functional/callback.h"
+@@ -435,10 +462,14 @@ FrameTreeNode* FrameTree::AddFrame(
+       document_token, devtools_frame_token, frame_policy, frame_name,
+       frame_unique_name);
+ 
+   added_node->SetFencedFramePropertiesIfNeeded();
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  InheritAdblockEnabledFromMainFrame(added_node);
++#endif
++
+   if (browser_interface_broker_receiver.is_valid()) {
+     added_node->current_frame_host()->BindBrowserInterfaceBrokerReceiver(
+         std::move(browser_interface_broker_receiver));
+   }
+ 

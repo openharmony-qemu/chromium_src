@@ -1,0 +1,35 @@
+diff a/content/browser/renderer_host/render_widget_host_view_base.cc b/content/browser/renderer_host/render_widget_host_view_base.cc	(rejected hunks)
+@@ -287,11 +287,11 @@ void RenderWidgetHostViewBase::CopyFromExactSurface(
+ ui::FilteredGestureProvider*
+ RenderWidgetHostViewBase::GetFilteredGestureProviderForTesting() {
+   return nullptr;
+ }
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+ void RenderWidgetHostViewBase::CopyFromExactSurfaceWithIpcDelay(
+     const gfx::Rect& src_rect,
+     const gfx::Size& output_size,
+     base::OnceCallback<void(const viz::CopyOutputBitmapWithMetadata&)> callback,
+     base::TimeDelta ipc_delay) {
+@@ -989,6 +994,20 @@ void RenderWidgetHostViewBase::UpdateFrameSinkIdRegistration() {
+ void RenderWidgetHostViewBase::SetViewTransitionResources(
+     std::unique_ptr<ScopedViewTransitionResources> resources) {
+   view_transition_resources_ = std::move(resources);
+ }
+ 
++#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS) || BUILDFLAG(ARKWEB_EX_TOPCONTROLS)
++float RenderWidgetHostViewBase::GetTopControlsOffset() const {
++  return 0;
++}
++
++float RenderWidgetHostViewBase::GetTopContentOffset() const {
++  return 0;
++}
++
++float RenderWidgetHostViewBase::GetBottomContentOffset() const {
++  return 0;
++}
++#endif
++
+ }  // namespace content

@@ -1,0 +1,16 @@
+diff a/content/browser/service_worker/service_worker_new_script_fetcher.cc b/content/browser/service_worker/service_worker_new_script_fetcher.cc	(rejected hunks)
+@@ -170,10 +170,14 @@ void ServiceWorkerNewScriptFetcher::OnComplete(
+   if (status.error_code == net::OK) {
+     url_loader_client_receiver_.ReportBadMessage("SWNSF_BAD_OK");
+     // Do not continue with further script processing, but let the |callback_|
+     // hang. This renderer process would be killed soon anyways.
+     return;
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  } else {
++    LOG(INFO) << "OnComplete, status.error_code=" << status.error_code;
++#endif
+   }
+   std::move(callback_).Run(/*main_script_load_params=*/nullptr);
+ }
+ 
+ }  // namespace content

@@ -1,0 +1,55 @@
+diff a/content/browser/renderer_host/render_widget_host_impl.h b/content/browser/renderer_host/render_widget_host_impl.h	(rejected hunks)
+@@ -13,10 +13,11 @@
+ #include <optional>
+ #include <string>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/callback_list.h"
+ #include "base/containers/flat_map.h"
+ #include "base/containers/flat_set.h"
+ #include "base/functional/callback.h"
+ #include "base/gtest_prod_util.h"
+@@ -122,10 +123,11 @@ class MockRenderWidgetHostImpl;
+ class RenderWidgetHostOwnerDelegate;
+ class RenderWidgetHostFactory;
+ class SiteInstanceGroup;
+ class SyntheticGestureController;
+ class VisibleTimeRequestTrigger;
++class RenderWidgetHostImplExt;
+ 
+ // This implements the RenderWidgetHost interface that is exposed to
+ // embedders of content, and adds things only visible to content.
+ //
+ // Several core rendering primitives are mirrored between the browser and
+@@ -197,10 +200,14 @@ class CONTENT_EXPORT RenderWidgetHostImpl
+ 
+   ~RenderWidgetHostImpl() override;
+ 
+   void WillSendInputEventToRenderer(const blink::WebInputEvent& event) override;
+ 
++  virtual RenderWidgetHostImplExt* AsRenderWidgetHostImplExt() {
++    return nullptr;
++  }
++
+   // Similar to RenderWidgetHost::FromID, but returning the Impl object.
+   static RenderWidgetHostImpl* FromID(int32_t process_id, int32_t routing_id);
+ 
+   // Returns all RenderWidgetHosts including swapped out ones for
+   // internal use. The public interface
+@@ -1245,10 +1265,14 @@ class CONTENT_EXPORT RenderWidgetHostImpl
+   // has a view and is the owner for the FrameSinkId assigned to it.
+   void MaybeDispatchBufferedFrameSinkRequest();
+ 
+   raw_ptr<FrameTree> frame_tree_;
+ 
++#if BUILDFLAG(ARKWEB_MENU_HANDLE)
++  bool is_orientation_changed_= false;
++#endif // ARKWEB_MENU_HANDLE
++
+   // RenderWidgetHost are either:
+   // - Owned by RenderViewHostImpl.
+   // - Owned by RenderFrameHost, for local root iframes.
+   // - Self owned. Lifetime is managed from the renderer process, via Mojo IPC;
+   //   This is used to implement:

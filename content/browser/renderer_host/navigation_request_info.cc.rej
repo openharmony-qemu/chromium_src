@@ -1,0 +1,39 @@
+diff a/content/browser/renderer_host/navigation_request_info.cc b/content/browser/renderer_host/navigation_request_info.cc	(rejected hunks)
+@@ -36,11 +36,17 @@ NavigationRequestInfo::NavigationRequestInfo(
+         prefetch_serving_page_metrics_container,
+     bool allow_cookies_from_browser,
+     int64_t navigation_id,
+     bool shared_storage_writable_eligible,
+     bool is_ad_tagged,
+-    bool force_no_https_upgrade)
++    bool force_no_https_upgrade
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++    ,
++    bool retry_with_fallback_proxy,
++    int original_error_code
++#endif
++    )
+     : common_params(std::move(common_params)),
+       begin_params(std::move(begin_params)),
+       sandbox_flags(sandbox_flags),
+       isolation_info(isolation_info),
+       is_primary_main_frame(is_primary_main_frame),
+@@ -63,10 +69,17 @@ NavigationRequestInfo::NavigationRequestInfo(
+           std::move(prefetch_serving_page_metrics_container)),
+       allow_cookies_from_browser(allow_cookies_from_browser),
+       navigation_id(navigation_id),
+       shared_storage_writable_eligible(shared_storage_writable_eligible),
+       is_ad_tagged(is_ad_tagged),
+-      force_no_https_upgrade(force_no_https_upgrade) {}
++      force_no_https_upgrade(force_no_https_upgrade)
++#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
++      ,
++      retry_with_fallback_proxy(retry_with_fallback_proxy),
++      original_error_code(original_error_code)
++#endif
++{
++}
+ 
+ NavigationRequestInfo::~NavigationRequestInfo() {}
+ 
+ }  // namespace content

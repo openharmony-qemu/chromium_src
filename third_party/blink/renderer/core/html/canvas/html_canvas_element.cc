@@ -425,6 +425,9 @@ bool HTMLCanvasElement::SizeChangesAreAllowed(ExceptionState& exception_state) {
 
 void HTMLCanvasElement::setHeight(unsigned value,
                                   ExceptionState& exception_state) {
+#if BUILDFLAG(IS_ARKWEB)
+  LOG(INFO) << "HTMLCanvasElement::setHeight:" << value;
+#endif
   if (SizeChangesAreAllowed(exception_state)) {
     SetUnsignedIntegralAttribute(html_names::kHeightAttr, value,
                                  kDefaultCanvasHeight);
@@ -433,6 +436,9 @@ void HTMLCanvasElement::setHeight(unsigned value,
 
 void HTMLCanvasElement::setWidth(unsigned value,
                                  ExceptionState& exception_state) {
+#if BUILDFLAG(IS_ARKWEB)
+  LOG(INFO) << "HTMLCanvasElement::setWidth:" << value;
+#endif
   if (SizeChangesAreAllowed(exception_state)) {
     SetUnsignedIntegralAttribute(html_names::kWidthAttr, value,
                                  kDefaultCanvasWidth);

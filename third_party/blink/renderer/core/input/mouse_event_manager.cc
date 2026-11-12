@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/core/input/mouse_event_manager.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/metrics/histogram_functions.h"
 #include "build/build_config.h"
 #include "third_party/blink/public/platform/web_input_event_result.h"
@@ -116,6 +117,13 @@ void SetMouseEventAttributes(MouseEventInit* initializer,
 const int kDragThresholdX = 3;
 const int kDragThresholdY = 3;
 constexpr base::TimeDelta kTextDragDelay = base::Seconds(0.15);
+#elif BUILDFLAG(ARKWEB_DRAG_DROP)
+// The mouse coordinates are converted during the delivery from the system.
+// The coordinates may be offset by a maximum of 2 pixels (see DTS2026061121359),
+// the drag threshold is adjusted.
+const int kDragThresholdX = 6;
+const int kDragThresholdY = 6;
+constexpr base::TimeDelta kTextDragDelay = base::Seconds(0.0);
 #else
 const int kDragThresholdX = 4;
 const int kDragThresholdY = 4;
@@ -162,6 +170,9 @@ void MouseEventManager::Trace(Visitor* visitor) const {
   visitor->Trace(element_under_mouse_);
   visitor->Trace(mouse_press_node_);
   visitor->Trace(mousedown_element_);
+#if BUILDFLAG(IS_ARKWEB)
+  AsMouseEventManagerExt()->Trace(visitor);
+#endif
 }
 
 MouseEventManager::MouseEventBoundaryEventDispatcher::
@@ -684,6 +695,9 @@ void MouseEventManager::SetLastMousePositionAsUnknown() {
 WebInputEventResult MouseEventManager::HandleMousePressEvent(
     const MouseEventWithHitTestResults& event) {
   TRACE_EVENT0("blink", "MouseEventManager::handleMousePressEvent");
+#if BUILDFLAG(ARKWEB_AI)
+  AsMouseEventManagerExt()->StopCreateOverlayTimer();
+#endif
 
   ResetDragSource();
 
@@ -727,6 +741,10 @@ WebInputEventResult MouseEventManager::HandleMousePressEvent(
   frame_->GetDocument()->SetSequentialFocusNavigationStartingPoint(inner_node);
   drag_start_pos_in_root_frame_ =
       PhysicalOffset(gfx::ToFlooredPoint(event.Event().PositionInRootFrame()));
+
+#if BUILDFLAG(ARKWEB_AI)
+  AsMouseEventManagerExt()->CloseImageOverlayWhenMousePress(event);
+#endif
 
   mouse_pressed_ = true;
 
@@ -818,6 +836,9 @@ void MouseEventManager::FocusDocumentView() {
 WebInputEventResult MouseEventManager::HandleMouseDraggedEvent(
     const MouseEventWithHitTestResults& event) {
   TRACE_EVENT0("blink", "MouseEventManager::handleMouseDraggedEvent");
+#if BUILDFLAG(ARKWEB_AI)
+  AsMouseEventManagerExt()->HandleCreateOverlayWhenDrag(event);
+#endif
 
   bool is_pen = (event.Event().pointer_type ==
                      blink::WebPointerProperties::PointerType::kPen ||
@@ -944,10 +965,18 @@ DragHandlingResult MouseEventManager::HandleDrag(
           event.Event().TimeStamp() - mouse_down_timestamp_ < kTextDragDelay
               ? DragController::kDelayedSelectionDragResolution
               : DragController::kImmediateSelectionDragResolution;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    if (!frame_->GetSettings()->GetEnableDrag()) {
+      GetDragState().drag_src_ = nullptr;
+    } else {
+#endif
       GetDragState().drag_src_ =
           frame_->GetPage()->GetDragController().DraggableNode(
               frame_, node, mouse_down_pos_, selection_drag_policy,
               GetDragState().drag_type_);
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      }
+#endif
     } else {
       ResetDragSource();
     }
@@ -1207,6 +1236,11 @@ void MouseEventManager::ResetDragSource() {
   if (!frame_->GetPage())
     return;
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  frame_->GetPage()->GetDragController().RestoreDragLinkEffects();
+  frame_->GetPage()->GetDragController().RestoreDragTextEffects();
+  frame_->GetPage()->GetDragController().RestoreDragImageEffects();
+#endif
   Node* drag_src = GetDragState().drag_src_;
   if (!drag_src)
     return;

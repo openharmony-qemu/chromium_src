@@ -1,0 +1,58 @@
+diff a/third_party/blink/renderer/core/loader/document_loader.cc b/third_party/blink/renderer/core/loader/document_loader.cc	(rejected hunks)
+@@ -31,10 +31,13 @@
+ 
+ #include <memory>
+ #include <optional>
+ #include <utility>
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/auto_reset.h"
+ #include "base/containers/flat_map.h"
+ #include "base/containers/to_vector.h"
+ #include "base/debug/crash_logging.h"
+ #include "base/debug/dump_without_crashing.h"
+@@ -363,10 +376,13 @@ struct SameSizeAsDocumentLoader
+   std::optional<uint64_t> visited_link_salt;
+   Member<LocalFrame> frame;
+   Member<HistoryItem> history_item;
+   Member<DocumentParser> parser;
+   Member<SubresourceFilter> subresource_filter;
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  Member<SubresourceFilter> user_subresource_filter;
++#endif
+   AtomicString original_referrer;
+   ResourceResponse response;
+   mutable WrappedResourceResponse response_wrapper;
+   WebFrameLoadType load_type;
+   bool is_client_redirect;
+@@ -613,10 +632,13 @@ DocumentLoader::DocumentLoader(
+       view_transition_state_(std::move(params_->view_transition_state)),
+       storage_access_api_status_(params_->load_with_storage_access),
+       browsing_context_group_token_(params_->browsing_context_group_token),
+       modified_runtime_features_(std::move(params_->modified_runtime_features)),
+       content_settings_(std::move(params_->content_settings)),
++#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
++      custom_viewport_width_(params_->custom_viewport_width),
++#endif
+       initial_permission_statuses_(ConvertPermissionStatusFlatMapToHashMap(
+           params_->initial_permission_statuses)),
+       force_new_document_sequence_number_(
+           params_->force_new_document_sequence_number) {
+   TRACE_EVENT_WITH_FLOW0("loading", "DocumentLoader::DocumentLoader",
+@@ -1022,10 +1047,14 @@ void DocumentLoader::UpdateForSameDocumentNavigation(
+     bool should_skip_screenshot) {
+   CHECK_EQ(IsBackForwardOrRestore(type), !!history_item);
+   TRACE_EVENT1("blink", "FrameLoader::updateForSameDocumentNavigation", "url",
+                new_url.GetString().Ascii());
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  AsArkWebDocumentLoaderExt()->UpdateAllowPreloadRecord();
++#endif
++
+   bool same_item_sequence_number =
+       history_item_ && history_item &&
+       history_item_->ItemSequenceNumber() == history_item->ItemSequenceNumber();
+   if (history_item)
+     history_item_ = history_item;

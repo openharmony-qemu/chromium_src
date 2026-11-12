@@ -2,6 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 blink_core_sources_html = [
   "anchor_element_metrics.cc",
   "anchor_element_metrics.h",
@@ -643,6 +649,8 @@ blink_core_hot_sources_html = [
   "parser/html_construction_site.h",
   "parser/html_document_parser.cc",
   "parser/html_document_parser.h",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/html/parser/html_document_parser_ext.h",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/html/parser/html_document_parser_ext.cc",
   "parser/html_document_parser_fastpath.cc",
   "parser/html_document_parser_fastpath.h",
   "parser/html_document_parser_state.h",

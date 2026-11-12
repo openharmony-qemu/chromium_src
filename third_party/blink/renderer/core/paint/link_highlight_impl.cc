@@ -66,6 +66,9 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/rect_conversions.h"
 #include "ui/gfx/geometry/size_f.h"
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/night_mode_inverter.h"
+#endif
 
 namespace blink {
 
@@ -212,6 +215,12 @@ LinkHighlightImpl::LinkHighlightFragment::PaintContentsToDisplayList() {
   cc::PaintFlags flags;
   flags.setStyle(cc::PaintFlags::kFill_Style);
   flags.setAntiAlias(true);
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  if (night_mode_enabled_) {
+    color_ = NightModeInverter::GetInverter().InvertElementColor(
+        color_, NightModeInverter::ElementRole::kLinkHighlight);
+  }
+#endif
   flags.setColor(color_.Rgb());
   canvas->drawPath(path_.GetSkPath(), flags);
 
@@ -338,6 +347,10 @@ void LinkHighlightImpl::Paint(GraphicsContext& context) {
 
     DCHECK_LT(index, fragments_.size());
     auto& link_highlight_fragment = *fragments_[index];
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    link_highlight_fragment.SetNightModeEnabled(
+        object->StyleRef().NightModeEnabled());
+#endif
     link_highlight_fragment.SetColor(color);
 
     auto bounding_rect = gfx::ToEnclosingRect(new_path_builder.BoundingRect());

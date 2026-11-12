@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/core/page/context_menu_controller_test.cc b/third_party/blink/renderer/core/page/context_menu_controller_test.cc	(rejected hunks)
+@@ -2448,6 +2448,13 @@ TEST_F(InterestForTouchscreenTest, LinkWithInterestFor) {
+   link->ShowInterestNow();
+   document->UpdateStyleAndLayout(DocumentUpdateReason::kTest);
+   EXPECT_EQ(link->GetInterestState(), Element::InterestState::kFullInterest);
+ }
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/page/context_menu_controller_ext_unittest.cc"
++#define private public
++#include "third_party/blink/renderer/core/layout/hit_test_result.h"
++#undef private
++#endif
++
+ }  // namespace blink

@@ -1,0 +1,16 @@
+diff a/third_party/blink/renderer/core/html/html_head_element.h b/third_party/blink/renderer/core/html/html_head_element.h	(rejected hunks)
+@@ -34,10 +34,14 @@ class CORE_EXPORT HTMLHeadElement final : public HTMLElement {
+ 
+  public:
+   explicit HTMLHeadElement(Document&);
+ 
+   bool HasNonInBodyInsertionMode() const override { return true; }
++
++#if BUILDFLAG(ARKWEB_JSPROXY)
++  void RunScriptsAtHeadElementAvailable();
++#endif
+ };
+ 
+ }  // namespace blink
+ 
+ #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_HTML_HTML_HEAD_ELEMENT_H_

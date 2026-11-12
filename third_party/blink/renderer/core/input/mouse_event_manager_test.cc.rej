@@ -1,0 +1,12 @@
+diff a/third_party/blink/renderer/core/input/mouse_event_manager_test.cc b/third_party/blink/renderer/core/input/mouse_event_manager_test.cc	(rejected hunks)
+@@ -98,5 +98,9 @@ TEST_F(MouseEventManagerTest, HoverEffectAfterNav) {
+       b->Style()->VisitedDependentColor(GetCSSPropertyBackgroundColor());
+   EXPECT_EQ("rgb(255, 0, 0)", color.SerializeAsCSSColor());
+ }
+ 
+ }  // namespace blink
++
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/input/mouse_event_manager_ext_unittest_include.cc"
++#endif
+\ No newline at end of file

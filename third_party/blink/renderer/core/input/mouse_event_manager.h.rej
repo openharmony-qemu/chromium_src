@@ -1,0 +1,22 @@
+diff a/third_party/blink/renderer/core/input/mouse_event_manager.h b/third_party/blink/renderer/core/input/mouse_event_manager.h	(rejected hunks)
+@@ -38,16 +42,19 @@ enum class DragHandlingResult {
+   kHandledDragStarted,
+ };
+ 
+ // This class takes care of dispatching all mouse events and keeps track of
+ // positions and states of mouse.
+-class CORE_EXPORT MouseEventManager final
++class CORE_EXPORT MouseEventManager
+     : public GarbageCollected<MouseEventManager> {
++  friend class MouseEventManagerExt;
+  public:
+   MouseEventManager(LocalFrame&, ScrollManager&);
+   MouseEventManager(const MouseEventManager&) = delete;
+   MouseEventManager& operator=(const MouseEventManager&) = delete;
++  virtual MouseEventManagerExt* AsMouseEventManagerExt() { return nullptr; }
++  virtual const MouseEventManagerExt* AsMouseEventManagerExt() const { return nullptr; }
+   void Trace(Visitor*) const;
+ 
+   // Returns the DOM event that was dispatched plus the result of dispatch.
+   std::pair<MouseEvent*, WebInputEventResult> DispatchMouseEvent(
+       EventTarget*,

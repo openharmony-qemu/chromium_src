@@ -1,0 +1,18 @@
+diff a/third_party/blink/renderer/core/inspector/build.gni b/third_party/blink/renderer/core/inspector/build.gni	(rejected hunks)
+@@ -155,8 +155,16 @@ blink_core_tests_inspector = [
+   "inspector_media_context_impl_unittest.cc",
+   "inspector_session_state_test.cc",
+   "inspector_style_resolver_test.cc",
+   "invalidation_set_to_selector_map_test.cc",
+   "main_thread_debugger_test.cc",
++  "network_resources_data_test.cc",
+   "protocol_parser_test.cc",
+   "protocol_unittest.cc",
+ ]
++
++if (is_arkweb) {
++  blink_core_sources_inspector += [
++    "//arkweb/chromium_ext/third_party/blink/renderer/core/inspector/ark_web_main_thread_debugger.cc",
++    "//arkweb/chromium_ext/third_party/blink/renderer/core/inspector/ark_web_main_thread_debugger.h",
++  ]
++}

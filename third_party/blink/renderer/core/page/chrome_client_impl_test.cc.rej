@@ -1,0 +1,12 @@
+diff a/third_party/blink/renderer/core/page/chrome_client_impl_test.cc b/third_party/blink/renderer/core/page/chrome_client_impl_test.cc	(rejected hunks)
+@@ -521,6 +521,10 @@ TEST_F(AutofillChromeClientTest, NotificationsOfJavaScriptChangesDuringFill) {
+   EXPECT_EQ(select_element->GetAutofillState(), WebAutofillState::kAutofilled);
+   EXPECT_THAT(chrome_client_->GetAndResetLastEvent(),
+               ::testing::ElementsAre("select", "autofilled_select"));
+ }
+ 
++#if BUILDFLAG(ARKWEB_TEST)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/page/chrome_client_impl_ext_unittest.cc"
++#endif
++
+ }  // namespace blink

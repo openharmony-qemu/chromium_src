@@ -4,9 +4,13 @@
 
 #include "third_party/blink/renderer/core/mathml/mathml_table_cell_element.h"
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/html/parser/html_parser_idioms.h"
 #include "third_party/blink/renderer/core/html/table_constants.h"
 #include "third_party/blink/renderer/core/layout/mathml/layout_table_cell_with_anonymous_mrow.h"
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
+#endif
 
 namespace blink {
 
@@ -49,6 +53,11 @@ void MathMLTableCellElement::ParseAttribute(
 
 LayoutObject* MathMLTableCellElement::CreateLayoutObject(
     const ComputedStyle& style) {
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  if (Cssutils::IsMathFormulaDisabledMode()) {
+    return MathMLElement::CreateLayoutObject(style);
+  }
+#endif
   if (style.Display() == EDisplay::kTableCell) {
     return MakeGarbageCollected<LayoutTableCellWithAnonymousMrow>(this);
   }

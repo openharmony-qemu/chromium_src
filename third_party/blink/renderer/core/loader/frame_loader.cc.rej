@@ -1,0 +1,138 @@
+diff a/third_party/blink/renderer/core/loader/frame_loader.cc b/third_party/blink/renderer/core/loader/frame_loader.cc	(rejected hunks)
+@@ -37,10 +37,13 @@
+ #include "third_party/blink/renderer/core/loader/frame_loader.h"
+ 
+ #include <memory>
+ #include <utility>
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/auto_reset.h"
+ #include "base/notreached.h"
+ #include "base/time/time.h"
+ #include "base/trace_event/typed_macros.h"
+ #include "base/unguessable_token.h"
+@@ -139,10 +142,14 @@
+ #include "third_party/blink/renderer/platform/weborigin/security_policy.h"
+ #include "third_party/blink/renderer/platform/wtf/text/string_utf8_adaptor.h"
+ #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
+ #include "url/url_features.h"
+ 
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++#include "url/ohos/log_utils.h"
++#endif
++
+ namespace blink {
+ 
+ namespace {
+ 
+ void LogJavaScriptUrlHistogram(LocalDOMWindow* origin_window,
+@@ -225,10 +232,14 @@ FrameLoader::FrameLoader(LocalFrame* frame)
+               WebScopedVirtualTimePauser::VirtualTaskDuration::kInstant)) {
+   DCHECK(frame_);
+ 
+   TRACE_EVENT_OBJECT_CREATED_WITH_ID("loading", "FrameLoader", this);
+   TakeObjectSnapshot();
++
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++  InitFrameLoader();
++#endif
+ }
+ 
+ FrameLoader::~FrameLoader() {
+   DCHECK_EQ(state_, State::kDetached);
+ }
+@@ -257,11 +268,15 @@ void FrameLoader::Init(const DocumentToken& document_token,
+   navigation_params->document_token = document_token;
+   navigation_params->frame_policy =
+       frame_->Owner() ? frame_->Owner()->GetFramePolicy() : FramePolicy();
+   navigation_params->document_ukm_source_id = document_ukm_source_id;
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  DocumentLoader* new_document_loader = MakeGarbageCollected<ArkWebDocumentLoaderExt>(
++#else
+   DocumentLoader* new_document_loader = MakeGarbageCollected<DocumentLoader>(
++#endif
+       frame_, kWebNavigationTypeOther, std::move(navigation_params),
+       std::move(policy_container), nullptr /* extra_data */);
+ 
+   CommitDocumentLoader(new_document_loader, nullptr,
+                        CommitReason::kInitialization);
+@@ -977,11 +1032,15 @@ void FrameLoader::StartNavigation(FrameLoadRequest& request,
+       request.GetInputStartTime(), request.GetCreationTime(),
+       request.HrefTranslate().GetString(), request.Impression(),
+       request.GetInitiatorFrameToken(), request.GetSourceLocation(),
+       request.TakeInitiatorNavigationStateKeepAliveHandle(),
+       request.IsContainerInitiated(),
++#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
++      request.GetWindowFeatures().explicit_opener, is_triggered_by_js);
++#else
+       request.GetWindowFeatures().explicit_opener);
++#endif
+ }
+ 
+ static void FillStaticResponseIfNeeded(WebNavigationParams* params,
+                                        LocalFrame* frame) {
+   if (params->is_static_data)
+@@ -1209,10 +1268,16 @@ void FrameLoader::CommitNavigation(
+     // For an XSLT document, set SentDidFinishLoad now to prevent the
+     // DocumentLoader from reporting an error when detaching the pre-XSLT
+     // document.
+     if (commit_reason == CommitReason::kXSLT && document_loader_)
+       document_loader_->SetSentDidFinishLoad();
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++    LOG_FEEDBACK(INFO) << "Frame loader CommitNavigation, url: "
++                       << url::LogUtils::ConvertUrlWithMask(
++                              navigation_params->url.GetString().Utf8());
++#endif
++
+     if (!DetachDocument()) {
+       DCHECK(!is_provisional);
+       return;
+     }
+ 
+@@ -1268,11 +1333,15 @@ void FrameLoader::CommitNavigation(
+         std::move(navigation_params->policy_container));
+   }
+ 
+   // TODO(dgozman): get rid of provisional document loader and most of the code
+   // below. We should probably call DocumentLoader::CommitNavigation directly.
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  DocumentLoader* new_document_loader = MakeGarbageCollected<ArkWebDocumentLoaderExt>(
++#else
+   DocumentLoader* new_document_loader = MakeGarbageCollected<DocumentLoader>(
++#endif
+       frame_, navigation_type, std::move(navigation_params),
+       std::move(policy_container), std::move(extra_data));
+ 
+   CommitDocumentLoader(
+       new_document_loader,
+@@ -881,11 +920,27 @@ void FrameLoader::StartNavigation(FrameLoadRequest& request,
+   // Do not navigate to an invalid "javascript:" scheme URL under the standard
+   // compliant non special scheme url parsing.
+   //
+   // See wpt/url/javascript-urls.window.js test for the standard compliant
+   // behaviors.
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
++      ProtocolIsJavaScript(url.GetString()) && !url.IsValid()) {
++#else
+   if (ProtocolIsJavaScript(url.GetString()) && !url.IsValid()) {
++#endif
++    return;
++  }
++
++  // A sandboxed iframe without `allow-popups` should not be able to
++  // open a new browsing context by emulating a user gesture in JS.
++  // (e.g. Ctrl+click).
++  if (request.GetNavigationPolicy() != kNavigationPolicyCurrentTab &&
++      request.GetTriggeringEventInfo() ==
++          mojom::blink::TriggeringEventInfo::kFromUntrustedEvent &&
++      frame_->GetSecurityContext()->IsSandboxed(
++          network::mojom::blink::WebSandboxFlags::kPopups)) {
+     return;
+   }
+ 
+   if (request.GetNavigationPolicy() == kNavigationPolicyCurrentTab &&
+       (!origin_window || origin_window->GetSecurityOrigin()->CanAccess(

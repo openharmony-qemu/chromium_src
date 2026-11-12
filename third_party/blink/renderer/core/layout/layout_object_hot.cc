@@ -21,6 +21,9 @@ void LayoutObject::Trace(Visitor* visitor) const {
   visitor->Trace(previous_);
   visitor->Trace(next_);
   visitor->Trace(fragment_);
+#if BUILDFLAG(ARKWEB_MENU)
+  visitor->Trace(imp_utils_);
+#endif
   ImageResourceObserver::Trace(visitor);
   DisplayItemClient::Trace(visitor);
 }

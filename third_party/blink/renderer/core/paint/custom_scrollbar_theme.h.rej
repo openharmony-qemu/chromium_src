@@ -1,0 +1,75 @@
+diff a/third_party/blink/renderer/core/paint/custom_scrollbar_theme.h b/third_party/blink/renderer/core/paint/custom_scrollbar_theme.h	(rejected hunks)
+@@ -27,10 +27,11 @@
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_PAINT_CUSTOM_SCROLLBAR_THEME_H_
+ 
+ #include "third_party/blink/renderer/core/scroll/scrollbar_theme.h"
+ 
+ namespace blink {
++struct PaintInfo;
+ 
+ class LayoutCustomScrollbarPart;
+ class WebMouseEvent;
+ struct PhysicalRect;
+ 
+@@ -49,11 +50,11 @@ class CustomScrollbarTheme final : public ScrollbarTheme {
+ 
+   int NativeThemeMinimumThumbLength(const Scrollbar& scrollbar) {
+     return GetTheme().MinimumThumbLength(scrollbar);
+   }
+ 
+-  void PaintScrollCorner(GraphicsContext&,
++  void PaintScrollCorner(const PaintInfo&,
+                          const ScrollableArea&,
+                          const DisplayItemClient&,
+                          const gfx::Rect& corner_rect) override;
+ 
+   bool ShouldCenterOnThumb(const Scrollbar& scrollbar,
+@@ -83,11 +84,11 @@ class CustomScrollbarTheme final : public ScrollbarTheme {
+                                  int& after_size) const;
+ 
+   static CustomScrollbarTheme* GetCustomScrollbarTheme();
+ 
+   static void PaintIntoRect(const LayoutCustomScrollbarPart&,
+-                            GraphicsContext&,
++                            const PaintInfo&,
+                             const PhysicalRect&);
+ 
+  protected:
+   ScrollbarPart HitTest(const Scrollbar&, const gfx::Point&) const override;
+ 
+@@ -96,30 +97,30 @@ class CustomScrollbarTheme final : public ScrollbarTheme {
+ 
+   gfx::Rect BackButtonRect(const Scrollbar&) const override;
+   gfx::Rect ForwardButtonRect(const Scrollbar&) const override;
+   gfx::Rect TrackRect(const Scrollbar&) const override;
+ 
+-  void PaintTrackBackgroundAndButtons(GraphicsContext&,
++  void PaintTrackBackgroundAndButtons(const PaintInfo&,
+                                       const Scrollbar&,
+                                       const gfx::Rect&) override;
+-  void PaintButton(GraphicsContext&,
++  void PaintButton(const PaintInfo&,
+                    const Scrollbar&,
+                    const gfx::Rect&,
+                    ScrollbarPart) override;
+-  void PaintThumb(GraphicsContext&,
++  void PaintThumb(const PaintInfo&,
+                   const Scrollbar&,
+                   const gfx::Rect&) override;
+-  void PaintTickmarks(GraphicsContext&,
++  void PaintTickmarks(const PaintInfo&,
+                       const Scrollbar&,
+                       const gfx::Rect&) override;
+ 
+   gfx::Rect ConstrainTrackRectToTrackPieces(const Scrollbar&,
+                                             const gfx::Rect&) const override;
+ 
+  private:
+   gfx::Rect ButtonRect(const Scrollbar&, ScrollbarPart) const;
+-  void PaintPart(GraphicsContext&,
++  void PaintPart(const PaintInfo&,
+                  const Scrollbar&,
+                  const gfx::Rect&,
+                  ScrollbarPart);
+ };
+ 

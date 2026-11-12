@@ -1,0 +1,14 @@
+diff a/third_party/blink/renderer/core/page/chrome_client.h b/third_party/blink/renderer/core/page/chrome_client.h	(rejected hunks)
+@@ -23,10 +23,12 @@
+ #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_CHROME_CLIENT_H_
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_CHROME_CLIENT_H_
+ 
+ #include <memory>
+ 
++#include "absl/types/optional.h"
++#include "arkweb/build/features/features.h"
+ #include "base/gtest_prod_util.h"
+ #include "base/time/time.h"
+ #include "cc/input/event_listener_properties.h"
+ #include "cc/input/overscroll_behavior.h"
+ #include "cc/paint/draw_image.h"

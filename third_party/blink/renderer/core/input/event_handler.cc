@@ -129,6 +129,10 @@
 #include "ui/gfx/geometry/size_conversions.h"
 #include "ui/gfx/geometry/size_f.h"
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/input/event_handler_for_include.cc"
+#endif
+
 namespace blink {
 
 using mojom::blink::FormControlType;
@@ -278,7 +282,11 @@ EventHandler::EventHandler(LocalFrame& frame)
               : &frame_->LocalFrameRoot().GetEventHandlerRegistry()),
       scroll_manager_(MakeGarbageCollected<ScrollManager>(frame)),
       mouse_event_manager_(
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+          MakeGarbageCollected<MouseEventManagerExt>(frame, *scroll_manager_)),
+#else
           MakeGarbageCollected<MouseEventManager>(frame, *scroll_manager_)),
+#endif
       mouse_wheel_event_manager_(
           MakeGarbageCollected<MouseWheelEventManager>(frame,
                                                        *scroll_manager_)),
@@ -1232,7 +1240,12 @@ WebInputEventResult EventHandler::HandleMouseMoveOrLeaveEvent(
                                                             mev.InnerNode());
 
     LocalFrameView* view = frame_->View();
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    bool is_draging = mouse_event_manager_->AsMouseEventManagerExt()->IsDraging();
+    if (!is_remote_frame && view && !is_draging) {
+#else
     if (!is_remote_frame && view) {
+#endif
       std::optional<ui::Cursor> optional_cursor =
           SelectCursor(mev.GetHitTestLocation(), mev.GetHitTestResult());
       if (optional_cursor.has_value()) {
@@ -2155,6 +2168,12 @@ void EventHandler::ApplyTouchAdjustment(WebGestureEvent* gesture_event,
       break;
     case WebInputEvent::Type::kGestureShortPress:
     case WebInputEvent::Type::kGestureLongPress:
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    case WebInputEvent::Type::kGestureDragLongPress:
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+    case WebInputEvent::Type::kGestureCreateOverlay:
+#endif
     case WebInputEvent::Type::kGestureLongTap:
     case WebInputEvent::Type::kGestureTwoFingerTap:
       touch_adjustment_candiate_type =
@@ -2331,6 +2350,9 @@ WebInputEventResult EventHandler::ShowNonLocatedContextMenu(
 
   // Use the focused node as the target for hover and active.
   HitTestRequest request(HitTestRequest::kActive);
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  ShowNonLocatedContextMenuExt(source_type, request);
+#endif
   HitTestLocation location(location_in_root_frame);
   HitTestResult result(request, location);
   result.SetInnerNode(focused_element ? static_cast<Node*>(focused_element)

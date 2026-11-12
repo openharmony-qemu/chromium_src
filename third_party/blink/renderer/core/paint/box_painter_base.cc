@@ -628,6 +628,12 @@ BoxPainterBase::FillLayerInfo::FillLayerInfo(
       is_clipped_with_local_scrolling(is_scroll_container &&
                                       layer.Attachment() ==
                                           EFillAttachment::kLocal) {
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  if (style.NightModeEnabled()) {
+    color = NightModeInverter::GetInverter().InvertElementColor(
+        color, NightModeInverter::ElementRole::kBackground);
+  }
+#endif
   // When printing backgrounds is disabled or using economy mode,
   // change existing background colors and images to a solid white background.
   // If there's no bg color or image, leave it untouched to avoid affecting

@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/core/paint/timing/paint_timing_record.h b/third_party/blink/renderer/core/paint/timing/paint_timing_record.h	(rejected hunks)
+@@ -66,10 +66,13 @@ class CORE_EXPORT PaintTimingRecord
+     return soft_navigation_context_;
+   }
+   void SetSoftNavigationContext(SoftNavigationContext* context) {
+     soft_navigation_context_ = context;
+   }
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
++  LCPRectInfo* GetLCPRectInfo() const { return lcp_rect_info_.get(); }
++#endif
+ 
+   // Returns whether or not the corresponding image or text was removed from the
+   // DOM after the record was created and before getting paint timing. Used to
+   // ensure we get paint timing for such records without reporting them as LCP
+   // candidates.

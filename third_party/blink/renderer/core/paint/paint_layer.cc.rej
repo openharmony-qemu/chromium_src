@@ -1,0 +1,52 @@
+diff a/third_party/blink/renderer/core/paint/paint_layer.cc b/third_party/blink/renderer/core/paint/paint_layer.cc	(rejected hunks)
+@@ -871,11 +871,11 @@ bool PaintLayer::RequiresScrollableArea() const {
+ void PaintLayer::UpdateScrollableArea() {
+   if (RequiresScrollableArea() == !!scrollable_area_)
+     return;
+ 
+   if (!scrollable_area_) {
+-    scrollable_area_ = MakeGarbageCollected<PaintLayerScrollableArea>(*this);
++    scrollable_area_ = MakeGarbageCollected<PaintLayerScrollableAreaExt>(*this);
+     const ComputedStyle& style = GetLayoutObject().StyleRef();
+     // A newly created snap container may need to be made aware of snap areas
+     // within it which are targeted or contain a targeted element. Such a
+     // container may also change the snap areas associated with snap containers
+     // higher in the DOM.
+@@ -1443,20 +1443,37 @@ PaintLayer* PaintLayer::HitTestLayer(
+     }
+ 
+     // See if the hit test pos is inside the overflow controls of current layer.
+     // This should be done before walking child layers to avoid that the
+     // overflow controls are obscured by the positive child layers.
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++    if (scrollable_area_ && layer_fragments[0].background_rect.Intersects(
++                                recursion_data.location)) {
++      HitTestLocation location = recursion_data.location;
++      if (layout_object.IsGlobalRootScroller()) {
++        gfx::Point point =
++            scrollable_area_->ConvertFromRootFrameToVisualViewport(
++                ToRoundedPoint(recursion_data.location.Point()));
++        location = HitTestLocation(point);
++      }
++      if (GetLayoutBox()->HitTestOverflowControl(
++              result, location, layer_fragments[0].layer_offset)) {
++        return this;
++      }
++    }
++#else    
+     if (scrollable_area_ &&
+         layer_fragments[0].background_rect.Intersects(
+             recursion_data.location) &&
+         GetLayoutBox()->HitTestOverflowControl(
+             result, recursion_data.location, layer_fragments[0].layer_offset)) {
+       if (z_offset && local_transform_state) {
+         *z_offset = ComputeZOffset(*local_transform_state);
+       }
+       return this;
+     }
++#endif    
+   }
+ 
+   if (overflow_controls_only)
+     return nullptr;
+ 

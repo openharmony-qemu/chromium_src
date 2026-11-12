@@ -36,6 +36,10 @@
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 #include "third_party/blink/renderer/platform/weborigin/scheme_registry.h"
 #include "third_party/blink/renderer/platform/weborigin/security_policy.h"
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/loader/base_fetch_context_for_include.cc"
+#endif
 #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
 
 namespace blink {
@@ -401,6 +405,14 @@ BaseFetchContext::CanRequestInternal(
       return ResourceRequestBlockedReason::kSubresourceFilter;
     }
   }
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  if ((GetUserSubresourceFilter() &&
+       !GetUserSubresourceFilter()->AllowLoad(url, request_destination,
+                                              reporting_disposition))) {
+    return ResourceRequestBlockedReason::kSubresourceFilter;
+  }
+#endif
 
   return std::nullopt;
 }

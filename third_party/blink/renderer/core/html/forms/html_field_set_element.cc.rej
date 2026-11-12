@@ -1,0 +1,55 @@
+diff a/third_party/blink/renderer/core/html/forms/html_field_set_element.cc b/third_party/blink/renderer/core/html/forms/html_field_set_element.cc	(rejected hunks)
+@@ -187,12 +187,13 @@ void HTMLFieldSetElement::ChildrenChanged(const ChildrenChange& change) {
+       if (Element* element =
+               InvalidateDescendantDisabledStateAndFindFocusedOne(legend))
+         focused_element = element;
+     }
+   }
+-  if (focused_element)
++  if (!GetDocument().StatePreservingAtomicMoveInProgress() && focused_element) {
+     focused_element->blur();
++  }
+ }
+ 
+ FocusableState HTMLFieldSetElement::SupportsFocus(
+     UpdateBehavior update_behavior) const {
+   if (IsDisabledFormControl()) {
+@@ -226,14 +227,21 @@ HTMLLegendElement* HTMLFieldSetElement::Legend() const {
+ HTMLCollection* HTMLFieldSetElement::elements() {
+   return EnsureCachedCollection<HTMLCollection>(kFormControls);
+ }
+ 
+ bool HTMLFieldSetElement::IsDisabledFormControl() const {
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  if (RuntimeEnabledFeatures::SendMouseEventsDisabledFormControlsEnabled()) {
++#endif
+   // The fieldset element itself should never be considered disabled, it is
+   // only supposed to affect its descendants:
+   // https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#concept-fe-disabled
+   return false;
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  }
++  return HTMLFormControlElement::IsDisabledFormControl();
++#endif
+ }
+ 
+ void HTMLFieldSetElement::UpdateMenuItemCheckableExclusivity(
+     HTMLMenuItemElement* checked_menu_item) {
+   // If `checked_menu_item` is null, then uncheck *all* child menuitems.
+@@ -252,9 +260,16 @@ void HTMLFieldSetElement::UpdateMenuItemCheckableExclusivity(
+ // <fieldset> should never be considered disabled, but should still match the
+ // :enabled or :disabled pseudo-classes according to whether the attribute is
+ // set or not. See here for context:
+ // https://github.com/whatwg/html/issues/5886#issuecomment-1582410112
+ bool HTMLFieldSetElement::MatchesEnabledPseudoClass() const {
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  if (RuntimeEnabledFeatures::SendMouseEventsDisabledFormControlsEnabled()) {
++#endif
+   return !IsActuallyDisabled();
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  }
++  return HTMLFormControlElement::MatchesEnabledPseudoClass();
++#endif
+ }
+ 
+ }  // namespace blink

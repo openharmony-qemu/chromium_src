@@ -1,0 +1,55 @@
+diff a/third_party/blink/renderer/core/page/chrome_client_impl.cc b/third_party/blink/renderer/core/page/chrome_client_impl.cc	(rejected hunks)
+@@ -33,10 +33,11 @@
+ 
+ #include <memory>
+ #include <optional>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/debug/alias.h"
+ #include "build/build_config.h"
+ #include "cc/animation/animation_host.h"
+ #include "cc/animation/animation_timeline.h"
+ #include "cc/layers/picture_layer.h"
+@@ -1408,10 +1488,19 @@ void ChromeClientImpl::JavaScriptChangedValue(HTMLFormControlElement& element,
+                                               bool was_autofilled) {
+   Document& doc = element.GetDocument();
+   if (auto* fill_client = AutofillClientFromFrame(doc.GetFrame())) {
+     fill_client->JavaScriptChangedValue(WebFormControlElement(&element),
+                                         old_value, was_autofilled);
++#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
++  if (auto* rc = doc.GetResourceCoordinator()) {
++    rc->SetHadFormInteraction();
++    if (element.Form()) {
++      uint64_t form_id = element.Form()->UniqueRendererFormId();
++      rc->coordinator_utils_->OnFormEditingStateChanged(form_id, false);
++    }
++  }
++#endif
+   }
+ }
+ 
+ gfx::Transform ChromeClientImpl::GetDeviceEmulationTransform() const {
+   DCHECK(web_view_);
+@@ -1419,10 +1508,21 @@ gfx::Transform ChromeClientImpl::GetDeviceEmulationTransform() const {
+ }
+ 
+ void ChromeClientImpl::DidUpdateBrowserControls() const {
+   DCHECK(web_view_);
+   web_view_->DidUpdateBrowserControls();
++
++#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
++          switches::kEnableNwebExTopControls) &&
++      web_view_->MainFrameImpl()) {
++    LocalFrame* local_frame = web_view_->MainFrameImpl()->GetFrame();
++    if (local_frame && local_frame->View()) {
++      local_frame->View()->LayoutViewport()->AsPaintLayerScrollableAreaExt()->UpdateScrollbar();
++    }
++  }
++#endif
+ }
+ 
+ void ChromeClientImpl::DidUpdateLoadProgress(float progress) {
+   web_view_->DidUpdateLoadProgress(progress);
+ }

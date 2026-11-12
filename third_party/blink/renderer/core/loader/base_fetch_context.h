@@ -7,6 +7,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/types/optional_ref.h"
 #include "net/cookies/site_for_cookies.h"
 #include "services/network/public/mojom/referrer_policy.mojom-blink-forward.h"
@@ -35,6 +36,9 @@ class WebSocketHandshakeThrottle;
 // Frame. This class provides basic default implementation for some methods.
 class CORE_EXPORT BaseFetchContext : public FetchContext {
  public:
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  friend class BaseFetchContextUtil;
+#endif
   std::optional<ResourceRequestBlockedReason> CanRequest(
       ResourceType,
       const ResourceRequest&,

@@ -1,0 +1,14 @@
+diff a/third_party/blink/renderer/core/input/mouse_event_manager.cc b/third_party/blink/renderer/core/input/mouse_event_manager.cc	(rejected hunks)
+@@ -943,11 +972,11 @@ bool MouseEventManager::TryStartDrag(
+   // Clear it anyway, just to make sure it gets numbified.
+   ClearDragDataTransfer();
+ 
+   GetDragState().drag_data_transfer_ = CreateDraggingDataTransfer();
+ 
+-  DragController& drag_controller = frame_->GetPage()->GetDragController();
++  DragControllerExt& drag_controller = frame_->GetPage()->GetDragController();
+   if (!drag_controller.PopulateDragDataTransfer(frame_, GetDragState(),
+                                                 mouse_down_pos_)) {
+     return false;
+   }
+ 

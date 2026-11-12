@@ -21,6 +21,7 @@
 
 #include "third_party/blink/renderer/core/page/page.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/compiler_specific.h"
 #include "base/feature_list.h"
@@ -106,6 +107,7 @@
 #include "ui/color/color_provider.h"
 #include "ui/color/color_provider_utils.h"
 #include "ui/gfx/geometry/insets_conversions.h"
+#include "third_party/blink/renderer/core/page/page_utils.h"
 
 namespace blink {
 
@@ -252,10 +254,14 @@ Page::Page(base::PassKey<Page>,
       autoscroll_controller_(MakeGarbageCollected<AutoscrollController>(*this)),
       chrome_client_(&chrome_client),
       drag_caret_(MakeGarbageCollected<DragCaret>()),
-      drag_controller_(MakeGarbageCollected<DragController>(this)),
+      drag_controller_(MakeGarbageCollected<DragControllerExt>(this)),
       focus_controller_(MakeGarbageCollected<FocusController>(this)),
       context_menu_controller_(
+#if BUILDFLAG(ARKWEB_MENU)
+          MakeGarbageCollected<ContextMenuControllerExt>(this)),
+#else
           MakeGarbageCollected<ContextMenuController>(this)),
+#endif  // ARKWEB_MENU
       page_scale_constraints_set_(
           MakeGarbageCollected<PageScaleConstraintsSet>(this)),
       pointer_lock_controller_(
@@ -300,6 +306,7 @@ Page::Page(base::PassKey<Page>,
             "HistoryNavigation",
             WebScopedVirtualTimePauser::VirtualTaskDuration::kInstant);
   }
+  page_utils_ = MakeGarbageCollected<PageUtils>(this);
   UpdateColorProviders(color_provider_colors &&
                                !color_provider_colors->IsEmpty()
                            ? *color_provider_colors
@@ -735,7 +742,11 @@ void Page::SetDefaultPageScaleLimits(float min_scale, float max_scale) {
   new_defaults.minimum_scale = min_scale;
   new_defaults.maximum_scale = max_scale;
 
+#if BUILDFLAG(IS_ARKWEB)
+  if (page_utils_->IsNotPageScaleLimits(new_defaults))
+#else
   if (new_defaults == GetPageScaleConstraintsSet().DefaultConstraints())
+#endif
     return;
 
   GetPageScaleConstraintsSet().SetDefaultConstraints(new_defaults);

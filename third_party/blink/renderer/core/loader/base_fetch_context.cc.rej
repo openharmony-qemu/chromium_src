@@ -1,0 +1,41 @@
+diff a/third_party/blink/renderer/core/loader/base_fetch_context.cc b/third_party/blink/renderer/core/loader/base_fetch_context.cc	(rejected hunks)
+@@ -73,11 +77,16 @@ BaseFetchContext::CanRequestBasedOnSubresourceFilterOnly(
+                               type);
+     }
+     return ResourceRequestBlockedReason::kSubresourceFilter;
+   }
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  return BaseFetchContextUtil::CanRequestBasedOnSubresourceFilterOnlyForInclude(
++      this, type, resource_request, url, options, reporting_disposition);
++#else
+   return std::nullopt;
++#endif
+ }
+ 
+ bool BaseFetchContext::CalculateIfAdSubresource(
+     const ResourceRequestHead& request,
+     base::optional_ref<const KURL> alias_url,
+@@ -87,13 +96,22 @@ bool BaseFetchContext::CalculateIfAdSubresource(
+   // A derived class should override this if they have more signals than just
+   // the SubresourceFilter.
+   SubresourceFilter* filter = GetSubresourceFilter();
+   const KURL& url = alias_url.has_value() ? alias_url.value() : request.Url();
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  SubresourceFilter* user_filter = GetUserSubresourceFilter();
++  return request.IsAdResource() ||
++         (filter &&
++          filter->IsAdResource(url, request.GetRequestDestination(), out_rule)) ||
++         (user_filter &&
++          user_filter->IsAdResource(url, request.GetRequestDestination(), out_rule));
++#else
+   return request.IsAdResource() ||
+          (filter &&
+           filter->IsAdResource(url, request.GetRequestDestination(), out_rule));
++#endif
+ }
+ 
+ void BaseFetchContext::PrintAccessDeniedMessage(const KURL& url) const {
+   if (url.IsNull()) {
+     return;

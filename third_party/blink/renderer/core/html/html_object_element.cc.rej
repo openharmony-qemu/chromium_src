@@ -1,0 +1,17 @@
+diff a/third_party/blink/renderer/core/html/html_object_element.cc b/third_party/blink/renderer/core/html/html_object_element.cc	(rejected hunks)
+@@ -253,10 +264,15 @@ void HTMLObjectElement::RemovedFrom(ContainerNode& insertion_point) {
+   ListedElement::RemovedFrom(insertion_point);
+ }
+ 
+ void HTMLObjectElement::ChildrenChanged(const ChildrenChange& change) {
+   HTMLPlugInElement::ChildrenChanged(change);
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  if (IsNativeType()) {
++    HandleParamAlterations(change);
++  }
++#endif
+   if (isConnected() && !UseFallbackContent()) {
+     SetNeedsPluginUpdate(true);
+     ReattachOnPluginChangeIfNeeded();
+   }
+ }

@@ -81,6 +81,12 @@ namespace ui {
 class Cursor;
 }
 
+#if BUILDFLAG(IS_OHOS)
+namespace gfx {
+class PointF;
+}  // namespace gfx
+#endif
+
 namespace viz {
 class FrameTimingDetails;
 }
@@ -112,6 +118,9 @@ class PagePopupClient;
 class PopupOpeningObserver;
 class WebDragData;
 class WebViewImpl;
+#if BUILDFLAG(IS_ARKWEB)
+class ChromeClientExt;
+#endif
 
 enum class FullscreenRequestType;
 
@@ -127,6 +136,10 @@ class CORE_EXPORT ChromeClient : public GarbageCollected<ChromeClient> {
   ChromeClient(const ChromeClient&) = delete;
   ChromeClient& operator=(const ChromeClient&) = delete;
   virtual ~ChromeClient() = default;
+#if BUILDFLAG(IS_ARKWEB)
+  friend class ChromeClientExt;
+  virtual ChromeClientExt* AsChromeClientExt() { return nullptr; }
+#endif
 
   virtual WebViewImpl* GetWebView() const = 0;
 
@@ -457,7 +470,16 @@ class CORE_EXPORT ChromeClient : public GarbageCollected<ChromeClient> {
 
   virtual void EnterFullscreen(LocalFrame&,
                                const FullscreenOptions*,
-                               FullscreenRequestType) {}
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                               bool overlay_fullscreen,
+#endif // ARKWEB_VIDEO_ASSISTANT
+                               FullscreenRequestType
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
+                               ,
+                               const absl::optional<gfx::Size>&
+#endif  // BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
+  ) {
+  }
   virtual void ExitFullscreen(LocalFrame&) {}
   virtual void FullscreenElementChanged(Element* old_element,
                                         Element* new_element,
@@ -685,4 +707,7 @@ class CORE_EXPORT ChromeClient : public GarbageCollected<ChromeClient> {
 
 }  // namespace blink
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/page/chrome_client_ext.h"
+#endif
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_CHROME_CLIENT_H_

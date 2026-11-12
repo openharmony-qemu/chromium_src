@@ -1,0 +1,514 @@
+diff a/third_party/blink/renderer/core/html/media/html_media_element.cc b/third_party/blink/renderer/core/html/media/html_media_element.cc	(rejected hunks)
+@@ -23,16 +23,20 @@
+  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
+ #include "third_party/blink/renderer/core/html/media/html_media_element.h"
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/media/html_media_element_utils.h"
+ 
+ #include <algorithm>
+ #include <limits>
+ #include <utility>
+ #include <variant>
+ 
++#include "arkweb/build/features/features.h"
++#include "base/hash/hash.h"
++#include "base/command_line.h"
+ #include "base/auto_reset.h"
+ #include "base/feature_list.h"
+ #include "base/memory/ptr_util.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "base/strings/to_string.h"
+@@ -135,18 +150,25 @@
+ // Default to not logging status of official time because it adds a fair amount
+ // of overhead and logging.
+ #define LOG_OFFICIAL_TIME_STATUS 0
+ #endif
+ 
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/media/html_media_element_for_include.cc"
++
+ namespace blink {
+ 
+ using WeakMediaElementSet = GCedHeapHashSet<WeakMember<HTMLMediaElement>>;
+ using DocumentElementSetMap =
+     HeapHashMap<WeakMember<Document>, Member<WeakMediaElementSet>>;
+ 
+ namespace {
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++const base::TimeDelta kVideoFreezeTimeThresholdDefault =
++    base::Milliseconds(100);
++#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
++
+ // When enabled, CSS media queries are supported in <source> elements.
+ BASE_FEATURE(kVideoSourceMediaQuerySupport, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // This enum is used to record histograms. Do not reorder.
+ enum class MediaControlsShow {
+@@ -477,13 +514,25 @@ HTMLMediaElement::HTMLMediaElement(const QualifiedName& tag_name,
+       audio_source_node_(nullptr),
+       speech_synthesis_(nullptr),
+       autoplay_policy_(MakeGarbageCollected<AutoplayPolicy>(this)),
+       media_controls_(nullptr),
+       controls_list_(MakeGarbageCollected<HTMLMediaElementControlsList>(this)),
+-      lazy_load_intersection_observer_(nullptr) {
++      html_media_element_utils_(this),
++      lazy_load_intersection_observer_(nullptr)
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++      ,
++      video_experience_reporter_(nullptr)
++#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE 
++{
+   DVLOG(1) << "HTMLMediaElement(" << *this << ")";
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableNwebEx)) {
++    is_logger_export_ = true;
++  }
++  LOG(INFO) << "OhMedia, is_logger_export_[" << is_logger_export_ << "]";
++#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+   ResetMojoState();
+ 
+   LocalFrame* frame = document.GetFrame();
+   if (frame) {
+     remote_playback_client_ =
+@@ -492,17 +541,35 @@ HTMLMediaElement::HTMLMediaElement(const QualifiedName& tag_name,
+ 
+   SetHasCustomStyleCallbacks();
+   AddElementToDocumentMap(this, &document);
+ 
+   UseCounter::Count(document, WebFeature::kHTMLMediaElement);
++
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
++          switches::kEnableVideoAssistant)) {
++    video_assistant_enabled_ = true;
++  }
++  LOG(INFO) << "video_assistant_enabled_[" << video_assistant_enabled_ << "]";
++#endif  // ARKWEB_VIDEO_ASSISTANT
++
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++  html_media_element_utils_.freeze_time_recorder_.SetThreshold(kVideoFreezeTimeThresholdDefault);
++#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+ }
+ 
+ HTMLMediaElement::~HTMLMediaElement() {
+   DVLOG(1) << "~HTMLMediaElement(" << *this << ")";
+ }
+ 
+ void HTMLMediaElement::Dispose() {
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++  if (is_logger_export_ && !html_media_element_utils_.IsFeedsPage()) {
++    LOG(INFO) << "OhMedia, Dispose report video experience";
++    ReportVideoExperienceToBI();
++  }
++#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+   // Destroying the player may cause a resource load to be canceled,
+   // which could result in LocalDOMWindow::dispatchWindowLoadEvent() being
+   // called via ResourceFetch::didLoadResource(), then
+   // FrameLoader::checkCompleted(). But it's guaranteed that the load event
+   // doesn't get dispatched during the object destruction.
+@@ -707,10 +778,14 @@ void HTMLMediaElement::AttachToNewFrame() {
+   ResetMojoState();
+   InvokeLoadAlgorithm();
+ }
+ 
+ void HTMLMediaElement::ResetMojoState() {
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  LOG(INFO) << "ResetMojoState";
++  NotifyVideoDestroyed();
++#endif  // ARKWEB_VIDEO_ASSISTANT
+   if (media_player_host_remote_)
+     media_player_host_remote_->Value().reset();
+   media_player_host_remote_ = MakeGarbageCollected<DisallowNewWrapper<
+       HeapMojoAssociatedRemote<media::mojom::blink::MediaPlayerHost>>>(
+       GetExecutionContext());
+@@ -805,10 +892,14 @@ void HTMLMediaElement::ParseAttribute(
+       web_media_player_->SetLatencyHint(latencyHint());
+   } else if (name == html_names::kMutedAttr) {
+     if (params.reason == AttributeModificationReason::kByParser) {
+       muted_ = true;
+     }
++#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
++  } else if (name == html_names::kTitleAttr) {
++    SetMediaTitle();
++#endif  // ARKWEB_MEDIA_AVSESSION
+   } else {
+     HTMLElement::ParseAttribute(params);
+   }
+ }
+ 
+@@ -912,10 +1005,14 @@ void HTMLMediaElement::ScheduleEvent(Event* event) {
+ 
+ void HTMLMediaElement::LoadTimerFired(TimerBase*) {
+   if (pending_action_flags_ & kLoadTextTrackResource)
+     HonorUserPreferencesForAutomaticTextTrackSelection();
+ 
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++  media_format_ = "";
++#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
++
+   if (pending_action_flags_ & kLoadMediaResource) {
+     if (load_state_ == kLoadingFromSourceElement)
+       LoadNextSourceChild();
+     else
+       LoadInternal();
+@@ -1640,10 +1741,14 @@ void HTMLMediaElement::StartPlayerLoad() {
+   web_media_player_->SetPoster(PosterImageURL());
+ 
+   const auto preload = EffectivePreloadType();
+   web_media_player_->SetPreload(preload);
+ 
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++  web_media_player_->SetInitialPreload(static_cast<uint32_t>(PreloadType()));
++#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
++
+   web_media_player_->RequestRemotePlaybackDisabled(
+       FastHasAttribute(html_names::kDisableremoteplaybackAttr));
+ 
+   if (RuntimeEnabledFeatures::
+           MediaPlaybackWhileNotVisiblePermissionPolicyEnabled(
+@@ -2613,10 +2744,16 @@ bool HTMLMediaElement::IsEncrypted() const {
+ 
+ bool HTMLMediaElement::seeking() const {
+   return seeking_;
+ }
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
++void HTMLMediaElement::SetHtmlPlayEnabled(bool enabled) {
++  is_enabled_HTML_play_ = enabled;
++}
++#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
++
+ // https://www.w3.org/TR/html51/semantics-embedded-content.html#earliest-possible-position
+ // The earliest possible position is not explicitly exposed in the API; it
+ // corresponds to the start time of the first range in the seekable attribute’s
+ // TimeRanges object, if any, or the current playback position otherwise.
+ double HTMLMediaElement::EarliestPossiblePosition() const {
+@@ -2893,10 +3042,13 @@ ScriptPromise<IDLUndefined> HTMLMediaElement::playForBindings(
+   auto* resolver =
+       MakeGarbageCollected<ScriptPromiseResolver<IDLUndefined>>(script_state);
+   auto promise = resolver->Promise();
+   play_promise_resolvers_.push_back(resolver);
+ 
++#if BUILDFLAG(ARKWEB_MEDIA)
++  LOG(INFO) << "OhMedia::playForBindings(hash" << std::hex << base::FastHash(base::byte_span_from_ref(this)) << ")";
++#endif // ARKWEB_MEDIA
+   std::optional<DOMExceptionCode> code = Play();
+   if (code) {
+     DCHECK(!play_promise_resolvers_.empty());
+     play_promise_resolvers_.pop_back();
+ 
+@@ -2919,10 +3071,16 @@ ScriptPromise<IDLUndefined> HTMLMediaElement::playForBindings(
+ }
+ 
+ std::optional<DOMExceptionCode> HTMLMediaElement::Play() {
+   DVLOG(2) << "play(" << *this << ")";
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
++  if (!is_enabled_HTML_play_) {
++    return std::nullopt;
++  }
++#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
++
+   std::optional<DOMExceptionCode> exception_code =
+       autoplay_policy_->RequestPlay();
+ 
+   if (exception_code == DOMExceptionCode::kNotAllowedError) {
+     if (IsFrameHidden() && web_media_player_ &&
+@@ -2995,18 +3153,24 @@ void HTMLMediaElement::PlayInternal() {
+   }
+ 
+   can_autoplay_ = false;
+ 
+   OnPlay();
++#if BUILDFLAG(ARKWEB_PIP)
++  OnPictureInPictureStateChanged(content::PIP_STATE_PLAY, 0, 0);
++#endif
+ 
+   SetIgnorePreloadNone();
+   UpdatePlayState();
+ }
+ 
+ void HTMLMediaElement::pause() {
+   DVLOG(2) << "pause(" << *this << ")";
+ 
++#if BUILDFLAG(ARKWEB_MEDIA)
++  LOG(WARNING) << "OhMedia::pause(hash" << std::hex << base::FastHash(base::byte_span_from_ref(this)) << ")";
++#endif // ARKWEB_MEDIA
+   // When updating pause, be sure to update PauseToLetDescriptionFinish().
+   autoplay_policy_->StopAutoplayMutedWhenVisible();
+   PauseInternal(WebMediaPlayer::PauseReason::kPauseCalled);
+ }
+ 
+@@ -3019,10 +3183,13 @@ void HTMLMediaElement::PauseToLetDescriptionFinish() {
+   PauseInternal(WebMediaPlayer::PauseReason::kLetAudioDescriptionFinish);
+ }
+ 
+ void HTMLMediaElement::PauseInternal(WebMediaPlayer::PauseReason pause_reason) {
+   DVLOG(3) << "pauseInternal(" << *this << ")";
++#if BUILDFLAG(ARKWEB_PIP)
++  OnPictureInPictureStateChanged(content::PIP_STATE_PAUSE, 0, 0);
++#endif
+ 
+   if (network_state_ == kNetworkEmpty)
+     InvokeResourceSelectionAlgorithm();
+ 
+   can_autoplay_ = false;
+@@ -3200,15 +3371,25 @@ void HTMLMediaElement::setMuted(bool muted) {
+   if (muted_ == muted)
+     return;
+ 
+   muted_ = muted;
+ 
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  if (HasAudio()) {
++    html_media_element_utils_.MutedChangedOverlay(muted_);
++  }
++#endif
++
+   ScheduleNamedEvent(event_type_names::kVolumechange);
+ 
+   // If it is unmute and AutoplayPolicy doesn't want the playback to continue,
+   // pause the playback.
+-  if (EffectiveMediaVolume() && !autoplay_policy_->RequestAutoplayUnmute())
++  if (EffectiveMediaVolume() && !autoplay_policy_->RequestAutoplayUnmute()
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++     && !IsCustomMediaPlayerEnabled()
++#endif // ARKWEB_VIDEO_ASSISTANT
++  )
+     pause();
+ 
+   // If playback was not paused by the autoplay policy and got unmuted, the
+   // element is marked as being allowed to play unmuted.
+   if (EffectiveMediaVolume() && PotentiallyPlaying())
+@@ -3625,10 +3806,14 @@ KURL HTMLMediaElement::SelectNextSourceChild(
+     // 4. Let urlRecord be the result of encoding-parsing a URL given
+     // candidate's src attribute's value, relative to candidate's node document
+     // when the src attribute was last changed.
+     media_url = source->GetDocument().CompleteURL(src_value);
+ 
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++    media_format_ = GetFormatFromType(source->type().Latin1());
++#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
++
+     // 5. If urlRecord is failure, then end the synchronous section, and jump
+     // down to the failed with elements step below.
+     if (!IsSafeToLoadURL(media_url, action_if_invalid)) {
+       goto checkAgain;
+     }
+@@ -3994,18 +4197,61 @@ void HTMLMediaElement::UpdatePlayState(
+            << ", isPlaying = " << base::ToString(is_playing);
+ 
+   if (should_be_playing && !muted_)
+     was_always_muted_ = false;
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
++  auto media_player = GetWebMediaPlayer();
++  if (!base::ohos::IsPcDevice() && media_player &&
++      media_player->IsFrameHidden() && IsHTMLVideoElement()) {
++    if (should_be_playing && media_player->HasVideo()) {
++      should_be_playing = false;
++      PauseInternal(WebMediaPlayer::PauseReason::kPageHidden);
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++      LOG_FEEDBACK(INFO) << "UpdatePlayState document is hidden, video do not "
++                            "be allow to play";
++#endif
++    }
++  }
++  LOG(WARNING) << "OhMedia::UpdatePlayState(hash"
++               << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "), should_be_playing = "
++               << should_be_playing << ", is_playing" << is_playing;
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++  LOG_FEEDBACK(WARNING) << "OhMedia::UpdatePlayState should_be_playing = "
++                        << should_be_playing << ",is_playing = " << is_playing;
++#endif
++#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
++#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
++  if (html_media_element_utils_.IsUseVideoLoadOptimization()) {
++    html_media_element_utils_.SetVideoIsPlaying(!paused_);
++  }
++#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
++
+   if (should_be_playing) {
+     if (!is_playing) {
+       // Set rate, muted before calling play in case they were set before the
+       // media engine was setup.  The media engine should just stash the rate
+       // and muted values since it isn't already playing.
+       web_media_player_->SetRate(playbackRate());
+       web_media_player_->SetVolume(EffectiveMediaVolume());
++
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++      RequestExitFullscreenIfNeeded();
++#endif  // ARKWEB_VIDEO_ASSISTANT
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++      if (played_by_custom_mp_) {
++        web_media_player_->PlayWithReason(media::ActionReason::kCustomRenderer);
++      } else {
++      web_media_player_->Play();
++      }
++#else
+       web_media_player_->Play();
++#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
++
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++      html_media_element_utils_.UpdatePlayStateOverlay(HTMLMediaElementUtils::PlayState::kPlay);
++#endif
+       if (::features::IsTextBasedAudioDescriptionEnabled())
+         SpeechSynthesis()->Resume();
+ 
+       // These steps should not be necessary, but if `play()` is called before
+       // a source change, we may get into a state where `paused_ == false` and
+@@ -4025,13 +4271,26 @@ void HTMLMediaElement::UpdatePlayState(
+       if (web_media_player_ && ready_state_ >= kHaveMetadata) {
+         if (pause_reason == WebMediaPlayer::PauseReason::kFrameHidden) {
+           RecordMediaPlaybackInterruptionType(
+               MediaPlaybackInterruptionType::kFrameHiddenWhilePlaying);
+         }
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++        if (played_by_custom_mp_) {
++          web_media_player_->PauseWithReason(
++              media::ActionReason::kCustomRenderer);
++        } else {
++          web_media_player_->Pause(pause_reason.value());
++        }
++#else
+         web_media_player_->Pause(pause_reason.value());
++#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+       }
+ 
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++      html_media_element_utils_.UpdatePlayStateOverlay(HTMLMediaElementUtils::PlayState::kPause);
++#endif
++
+       if ((pause_reason ==
+            WebMediaPlayer::PauseReason::kLetAudioDescriptionFinish) &&
+           is_playing && ::features::IsTextBasedAudioDescriptionEnabled()) {
+         SpeechSynthesis()->Pause();
+       }
+@@ -4067,10 +4326,15 @@ void HTMLMediaElement::StopPeriodicTimers() {
+   }
+ }
+ 
+ void HTMLMediaElement::
+     ClearMediaPlayerAndAudioSourceProviderClientWithoutLocking() {
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  LOG(INFO) << "ClearMediaPlayerAndAudioSourceProviderClientWithoutLocking";
++  NotifyVideoDestroyed();
++#endif  // ARKWEB_VIDEO_ASSISTANT
++
+   GetAudioSourceProvider().SetClient(nullptr);
+   if (web_media_player_) {
+     audio_source_provider_.Wrap(nullptr);
+     web_media_player_.reset();
+     // Do not clear `opener_document_` here; new players might still use it.
+@@ -4537,15 +4821,24 @@ void HTMLMediaElement::Trace(Visitor* visitor) const {
+   visitor->Trace(audio_source_node_);
+   visitor->Trace(speech_synthesis_);
+   visitor->Trace(load_timer_);
+   visitor->Trace(audio_tracks_timer_);
+   visitor->Trace(removed_from_document_timer_);
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  visitor->Trace(notify_video_playing_timer_);
++#endif // ARKWEB_VIDEO_ASSISTANT
+   visitor->Trace(played_time_ranges_);
+   visitor->Trace(async_event_queue_);
+   visitor->Trace(error_);
+   visitor->Trace(current_source_node_);
+   visitor->Trace(next_child_node_to_consider_);
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++  visitor->Trace(next_retry_child_node_);
++#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++  visitor->Trace(video_experience_reporter_);
++#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+   visitor->Trace(deferred_load_timer_);
+   visitor->Trace(media_source_tracer_);
+   visitor->Trace(audio_tracks_);
+   visitor->Trace(video_tracks_);
+   visitor->Trace(cue_timeline_);
+@@ -4564,10 +4857,11 @@ void HTMLMediaElement::Trace(Visitor* visitor) const {
+   visitor->Trace(media_player_host_remote_);
+   visitor->Trace(media_player_observer_remote_set_);
+   visitor->Trace(media_player_receiver_set_);
+   visitor->Trace(opener_document_);
+   visitor->Trace(opener_context_observer_);
++  visitor->Trace(html_media_element_utils_);
+   visitor->Trace(audio_output_device_controller_);
+   visitor->Trace(html_media_element_encrypted_media_);
+   visitor->Trace(remote_playback_controller_);
+   HTMLElement::Trace(visitor);
+   ExecutionContextLifecycleStateObserver::Trace(visitor);
+@@ -4595,10 +4889,19 @@ void HTMLMediaElement::SetNetworkState(NetworkState state,
+     return;
+ 
+   network_state_ = state;
+   if (update_media_controls && GetMediaControls())
+     GetMediaControls()->NetworkStateChanged();
++
++#if BUILDFLAG(ARKWEB_ACCESSIBILITY) && !defined(COMPONENT_BUILD)
++  Document &document = GetDocument();
++  AXObjectCacheImpl *cache = static_cast<AXObjectCacheImpl *>(document.ExistingAXObjectCache());
++  if (cache) {
++    AXObject *obj = cache->Get(this);
++    cache->MarkAXObjectDirty(obj);
++  }
++#endif
+ }
+ 
+ void HTMLMediaElement::VideoWillBeDrawnToCanvas() const {
+   DCHECK(IsHTMLVideoElement());
+   UseCounter::Count(GetDocument(), WebFeature::kVideoInCanvas);
+@@ -4889,10 +5224,16 @@ void HTMLMediaElement::DidMediaMetadataChange(
+     bool is_encrypted_media) {
+   for (auto& observer : media_player_observer_remote_set_->Value()) {
+     observer->OnMediaMetadataChanged(has_audio, has_video, media_content_type);
+   }
+ 
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  if (HasAudio()) {
++    html_media_element_utils_.MutedChangedOverlay(muted_);
++  }
++#endif // ARKWEB_VIDEO_ASSISTANT
++
+   video_codec_ = has_video ? std::make_optional(video_codec) : std::nullopt;
+   audio_codec_ = has_audio ? std::make_optional(audio_codec) : std::nullopt;
+ 
+   is_encrypted_media_ = is_encrypted_media;
+   OnRemotePlaybackMetadataChange();
+@@ -4958,10 +5303,11 @@ HTMLMediaElement::AddMediaPlayerObserverAndPassReceiver() {
+       std::move(observer),
+       GetDocument().GetTaskRunner(TaskType::kInternalMedia));
+   return observer_receiver;
+ }
+ 
++
+ void HTMLMediaElement::RequestPlay() {
+   LocalFrame* frame = GetDocument().GetFrame();
+   if (frame) {
+     LocalFrame::NotifyUserActivation(
+         frame, mojom::blink::UserActivationNotificationType::kInteraction);
+@@ -4983,16 +5329,22 @@ void HTMLMediaElement::RequestPause(bool triggered_by_user) {
+                     : WebMediaPlayer::PauseReason::kPauseRequestedInternally);
+ }
+ 
+ void HTMLMediaElement::RequestSeekForward(base::TimeDelta seek_time) {
+   double seconds = seek_time.InSecondsF();
++#if BUILDFLAG(ARKWEB_PIP)
++  LOG(INFO) << "Pip RequestSeekForward " << seconds << " seconds";
++#endif
+   DCHECK_GE(seconds, 0) << "Attempted to seek by a negative number of seconds";
+   setCurrentTime(currentTime() + seconds);
+ }
+ 
+ void HTMLMediaElement::RequestSeekBackward(base::TimeDelta seek_time) {
+   double seconds = seek_time.InSecondsF();
++#if BUILDFLAG(ARKWEB_PIP)
++  LOG(INFO) << "Pip RequestSeekBackward " << seconds << " seconds";
++#endif
+   DCHECK_GE(seconds, 0) << "Attempted to seek by a negative number of seconds";
+   setCurrentTime(currentTime() - seconds);
+ }
+ 
+ void HTMLMediaElement::RequestSeekTo(base::TimeDelta seek_time) {

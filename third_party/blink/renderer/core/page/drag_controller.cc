@@ -1203,7 +1203,9 @@ gfx::Rect DragRectForLink(const DragImage* link_image,
   return gfx::Rect(gfx::ToRoundedPoint(image_offset), image_size);
 }
 
+#if !BUILDFLAG(ARKWEB_DRAG_DROP)
 }  // namespace
+#endif
 
 // static
 gfx::RectF DragController::ClippedSelection(const LocalFrame& frame) {

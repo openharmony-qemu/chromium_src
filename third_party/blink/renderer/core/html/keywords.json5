@@ -241,6 +241,7 @@
     "nofullscreen",
     "noplaybackrate",
     "noremoteplayback",
+    "nofullscreentitle",
 
     // <meta> name attribute
     // https://html.spec.whatwg.org/C/#standard-metadata-names

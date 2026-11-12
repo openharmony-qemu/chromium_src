@@ -97,14 +97,22 @@ bool HasImageSourceURL(const Node& node) {
 HitTestResult::HitTestResult()
     : hit_test_request_(HitTestRequest::kReadOnly | HitTestRequest::kActive),
       cacheable_(true),
-      is_over_embedded_content_view_(false) {}
+      is_over_embedded_content_view_(false) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  imp_utils_ = std::make_unique<HitTestResultUtils>(this);
+#endif
+}
 
 HitTestResult::HitTestResult(const HitTestRequest& other_request,
                              const HitTestLocation& location)
     : hit_test_request_(other_request),
       cacheable_(true),
       point_in_inner_node_frame_(location.Point()),
-      is_over_embedded_content_view_(false) {}
+      is_over_embedded_content_view_(false) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  imp_utils_ = std::make_unique<HitTestResultUtils>(this);
+#endif
+}
 
 HitTestResult::HitTestResult(const HitTestResult& other)
     : hit_test_request_(other.hit_test_request_),
@@ -124,6 +132,9 @@ HitTestResult::HitTestResult(const HitTestResult& other)
       other.list_based_test_result_
           ? MakeGarbageCollected<NodeSet>(*other.list_based_test_result_)
           : nullptr;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  imp_utils_ = std::make_unique<HitTestResultUtils>(this);
+#endif
 }
 
 HitTestResult::~HitTestResult() = default;

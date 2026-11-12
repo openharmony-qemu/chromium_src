@@ -291,6 +291,10 @@ class CORE_EXPORT LayoutObject : public GarbageCollected<LayoutObject>,
                                  public ImageResourceObserver,
                                  public DisplayItemClient {
   friend class LayoutObjectChildList;
+#if BUILDFLAG(ARKWEB_MENU)
+  friend class LayoutObjectUtils;
+  Member<LayoutObjectUtils> imp_utils_ = nullptr;
+#endif
   FRIEND_TEST_ALL_PREFIXES(LayoutObjectTest, MutableForPaintingClearPaintFlags);
   FRIEND_TEST_ALL_PREFIXES(
       LayoutObjectTest,
@@ -4284,5 +4288,7 @@ struct SpaceTrait<
   using Space = blink::LayoutObjectSpace;
 };
 }  // namespace cppgc
-
+#if BUILDFLAG(ARKWEB_MENU)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/layout/layout_object_utils.h"
+#endif
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_LAYOUT_LAYOUT_OBJECT_H_

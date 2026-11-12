@@ -36,6 +36,13 @@
     readonly attribute unsigned long videoHeight;
     [CEReactions, Reflect, URL, Measure] attribute DOMString poster;
 
+    // arkweb_ext_video_load_optimization
+    attribute unsigned short hbsPreloadTime;
+    attribute unsigned short hbsMaxCacheTime;
+    attribute unsigned short hbsMinCacheTime;
+    attribute unsigned short hbsBitrate;
+    attribute unsigned short hbsMoovSize;
+
     // The number of frames that have been decoded and made available for
     // playback.
     [MeasureAs=PrefixedVideoDecodedFrameCount] readonly attribute unsigned long webkitDecodedFrameCount;

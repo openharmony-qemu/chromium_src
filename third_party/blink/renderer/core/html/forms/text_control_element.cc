@@ -24,6 +24,7 @@
 
 #include "third_party/blink/renderer/core/html/forms/text_control_element.h"
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/mojom/input/focus_type.mojom-blink.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_selection_mode.h"
 #include "third_party/blink/renderer/core/accessibility/ax_object_cache.h"

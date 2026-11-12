@@ -33,6 +33,10 @@
 #include "ui/gfx/geometry/skia_conversions.h"
 #include "ui/native_theme/native_theme.h"
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/night_mode_inverter.h"
+#endif
+
 namespace blink {
 
 namespace {

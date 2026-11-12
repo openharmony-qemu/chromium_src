@@ -415,5 +415,10 @@
     "width",
     "wrap",
     "writingsuggestions",
+    "hbspreloadtime",
+    "hbsmaxcachetime",
+    "hbsmincachetime",
+    "hbsbitrate",
+    "hbsmoovsize",    
   ],
 }

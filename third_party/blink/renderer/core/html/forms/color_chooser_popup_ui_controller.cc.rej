@@ -1,0 +1,31 @@
+diff a/third_party/blink/renderer/core/html/forms/color_chooser_popup_ui_controller.cc b/third_party/blink/renderer/core/html/forms/color_chooser_popup_ui_controller.cc	(rejected hunks)
+@@ -118,10 +129,13 @@ void ColorChooserPopupUIController::WriteColorPickerDocument(
+       "window.dialogArguments = {\n",
+       data);
+   PagePopupClient::AddProperty(
+       "selectedColor", client_->CurrentColor().SerializeAsCSSColor(), data);
+   AddProperty("anchorRectInScreen", anchor_rect_in_screen, data);
++#if BUILDFLAG(IS_ARKWEB)
++  PopupUtils::AddAvailRectInWebToData(frame_, data);
++#endif
+   AddProperty("zoomFactor", ScaledZoomFactor(), data);
+   AddProperty("shouldShowColorSuggestionPicker", false, data);
+   AddProperty("isEyeDropperEnabled", ::features::IsEyeDropperEnabled(), data);
+ #if BUILDFLAG(IS_MAC)
+   AddProperty("isBorderTransparent", true, data);
+@@ -240,11 +254,15 @@ void ColorChooserPopupUIController::OpenPopup() {
+   DCHECK(!popup_);
+   popup_ = chrome_client_->OpenPagePopup(this);
+ }
+ 
+ void ColorChooserPopupUIController::CancelPopup() {
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  if (!popup_ || eye_dropper_chooser_)
++#else
+   if (!popup_)
++#endif
+     return;
+   chrome_client_->ClosePagePopup(popup_);
+ }
+ 
+ PagePopupController* ColorChooserPopupUIController::CreatePagePopupController(

@@ -1,0 +1,61 @@
+diff a/third_party/blink/renderer/core/html/media/media_remoting_interstitial.h b/third_party/blink/renderer/core/html/media/media_remoting_interstitial.h	(rejected hunks)
+@@ -47,17 +69,59 @@ class MediaRemotingInterstitial final : public HTMLDivElement {
+ 
+   HTMLVideoElement& GetVideoElement() const { return *video_element_; }
+ 
+   void Trace(Visitor*) const override;
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAST)
++  void OnStopCastingClicked();
++  void OnSwitchDeviceClicked();
++  void OnPlayPauseClicked();
++  void AddMediaCastBackGround();
++  void ProgressBarAddEvent();
++  void DurationAndFullScreenAddEvent();
++
++  // Progress Bar Related Methods
++  void OnProgressBarClicked(double percentage);
++  void OnProgressDragStart();
++  void OnProgressDragging(double percentage);
++  void OnProgressDragEnd(double percentage);
++  void OnProgressDragCancel();
++  // about full screen
++  void OnFullscreenClicked();
++
++  // Remote status and playback position synchronized to the UI
++  void UpdateUiPlayState(bool is_playing);
++  void UpdateUiPlayPosition(int64_t position);
++  
++  // Ui synchronizes remote playback status and position
++  void UpdateRemotePlayState(bool is_playing);
++  void UpdateRemotePlayPosition(int64_t position);
++  bool GetPlayingState() {return is_playing_;}
++  void NotifyRemoteInterstitial(MediaControlsSizingClass sizing_class);
++#if !defined(COMPONENT_BUILD)
++  void UpdateRemoteFullScreenCss(bool is_fullscreen);
++#endif // COMPONENT_BUILD
++  HTMLDivElement& GetMediaRemotingProgressBar() { return *progress_bar_; }
++#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
++
+  private:
+   // Node override.
+   bool IsMediaRemotingInterstitial() const override { return true; }
+   void DidMoveToNewDocument(Document&) override;
+ 
+   void ToggleInterstitialTimerFired(TimerBase*);
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAST)
++  void EnterFullscreen();
++  void ExitFullscreen();
++  String FormatTime(double time);
++  void UpdateProgressUI();
++  void ParseMediaCastControl();
++  void UpdatePlayButtonUI();
++  void InitializeMediaRemotingInterstitial();
++#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
++
+   // Indicates whether the interstitial should be visible. It is set/changed
+   // when Show()/Hide() is called.
+   enum State {
+     kHidden,   // The interstitial is currently not showing.
+     kVisible,  // The interstitial is currently visible except the toast.

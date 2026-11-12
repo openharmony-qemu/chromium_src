@@ -289,6 +289,11 @@ bool LayoutView::CanHaveChildren() const {
 
 bool LayoutView::ShouldPlaceBlockDirectionScrollbarOnLogicalLeft() const {
   NOT_DESTROYED();
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (ScrollbarLayoutPolicy() == LayoutPolicy::kSystem) {
+    return IsSystemRtlEnable();
+  }
+#endif
   LocalFrame& frame = GetFrameView()->GetFrame();
   // See crbug.com/249860
   if (frame.IsOutermostMainFrame()) {
@@ -687,6 +692,9 @@ void LayoutView::CalculateScrollbarModes(
       disable_scrollbars = false;
     }
 #endif
+#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
+    disable_scrollbars = false;
+#endif
     if (disable_scrollbars) {
       RETURN_SCROLLBAR_MODE(mojom::blink::ScrollbarMode::kAlwaysOff);
     }
@@ -754,6 +762,7 @@ void LayoutView::CalculateScrollbarModes(
         frame->IsMainFrame())
       should_ignore_overflow_hidden = true;
   }
+
   if (!should_ignore_overflow_hidden) {
     if (overflow_x == EOverflow::kHidden || overflow_x == EOverflow::kClip)
       h_mode = mojom::blink::ScrollbarMode::kAlwaysOff;

@@ -1,0 +1,27 @@
+diff a/third_party/blink/renderer/core/page/context_menu_controller.h b/third_party/blink/renderer/core/page/context_menu_controller.h	(rejected hunks)
+@@ -24,10 +24,11 @@
+  */
+ 
+ #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_CONTEXT_MENU_CONTROLLER_H_
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_CONTEXT_MENU_CONTROLLER_H_
+ 
++#include "arkweb/build/features/features.h"
+ #include "third_party/blink/public/common/input/web_menu_source_type.h"
+ #include "third_party/blink/public/mojom/context_menu/context_menu.mojom-blink.h"
+ #include "third_party/blink/renderer/core/core_export.h"
+ #include "third_party/blink/renderer/core/layout/hit_test_result.h"
+ #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+@@ -40,10 +41,13 @@ class Document;
+ class LocalFrame;
+ class MouseEvent;
+ class Page;
+ struct ContextMenuData;
+ struct Impression;
++#if BUILDFLAG(IS_ARKWEB)
++class ContextMenuControllerExt;
++#endif
+ 
+ // This class is not final to allow customization by embedders
+ class CORE_EXPORT ContextMenuController
+     : public GarbageCollected<ContextMenuController>,
+       public mojom::blink::ContextMenuClient {

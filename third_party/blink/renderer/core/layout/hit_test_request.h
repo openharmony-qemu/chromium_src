@@ -25,6 +25,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "third_party/blink/renderer/core/dom/dom_node_ids.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
@@ -98,6 +99,9 @@ class HitTestRequest {
     hit_node_cb_ = std::move(hit_node_cb);
   }
 
+#if BUILDFLAG(ARKWEB_MENU)
+  bool OnDoHitTest() const { return request_type_ & kOnDoHitTest; }
+#endif  // BUILDFLAG(ARKWEB_MENU)
   bool ReadOnly() const { return request_type_ & kReadOnly; }
   bool Active() const { return request_type_ & kActive; }
   bool Move() const { return request_type_ & kMove; }

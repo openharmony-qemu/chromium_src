@@ -1,0 +1,16 @@
+diff a/third_party/blink/renderer/core/paint/paint_flags.h b/third_party/blink/renderer/core/paint/paint_flags.h	(rejected hunks)
+@@ -36,10 +38,14 @@ enum : unsigned {
+   kPaintingSVGMask = 1 << 5,
+ 
+   // Used to suppress painting of PII and other sensitive content, allowing
+   // the result to be used in WebGL, WebGPU and 2D Canvas.
+   kPrivacyPreserving = 1 << 6,
++
++#if BUILDFLAG(ARKWEB_DRAG_DROP)
++  kGlobalPaintDragSelection = 1 << 7,
++#endif
+ };
+ }  // namespace PaintFlag
+ 
+ // Combination of bits under PaintFlag.
+ using PaintFlags = unsigned;

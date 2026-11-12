@@ -1,0 +1,48 @@
+diff a/third_party/blink/renderer/core/loader/empty_clients.h b/third_party/blink/renderer/core/loader/empty_clients.h	(rejected hunks)
+@@ -29,10 +29,14 @@
+ #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_LOADER_EMPTY_CLIENTS_H_
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_LOADER_EMPTY_CLIENTS_H_
+ 
+ #include <memory>
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/notreached.h"
+ #include "base/time/time.h"
+ #include "cc/paint/paint_canvas.h"
+ #include "cc/trees/paint_holding_reason.h"
+ #include "mojo/public/cpp/bindings/pending_remote.h"
+@@ -366,11 +379,16 @@ class CORE_EXPORT EmptyLocalFrameClient : public LocalFrameClient {
+       const std::optional<Impression>&,
+       const LocalFrameToken* initiator_frame_token,
+       SourceLocation*,
+       mojo::PendingRemote<mojom::blink::NavigationStateKeepAliveHandle>,
+       bool is_container_initiated,
++#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
++      bool has_rel_opener,
++      bool is_triggered_by_js = false) override;
++#else      
+       bool has_rel_opener) override;
++#endif
+ 
+   void DispatchWillSendSubmitEvent(HTMLFormElement*) override;
+ 
+   void DidStartLoading() override {}
+   void DidStopLoading() override {}
+@@ -422,10 +440,14 @@ class CORE_EXPORT EmptyLocalFrameClient : public LocalFrameClient {
+   void DocumentElementAvailable() override {}
+   void RunScriptsAtDocumentElementAvailable() override {}
+   void RunScriptsAtDocumentReady(bool) override {}
+   void RunScriptsAtDocumentIdle() override {}
+ 
++#if BUILDFLAG(ARKWEB_JSPROXY)
++  void RunScriptsAtHeadElementAvailable() override {}
++#endif
++
+   void DidCreateScriptContext(v8::Local<v8::Context>,
+                               int32_t world_id) override {}
+   void WillReleaseScriptContext(v8::Local<v8::Context>,
+                                 int32_t world_id) override {}
+   bool AllowScriptExtensions() override { return false; }

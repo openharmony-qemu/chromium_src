@@ -18,6 +18,12 @@
 #include "third_party/blink/renderer/platform/weborigin/kurl.h"
 #include "third_party/blink/renderer/platform/weborigin/reporting_disposition.h"
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "third_party/blink/renderer/core/page/page.h"
+#include "third_party/blink/renderer/platform/timer.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/loader/arkweb_subresource_filter_ext.h"
+#endif
+
 namespace blink {
 
 class ExecutionContext;
@@ -33,9 +39,14 @@ class CORE_EXPORT SubresourceFilter final
                     std::unique_ptr<WebDocumentSubresourceFilter>);
   ~SubresourceFilter();
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  Member<ArkWebSubresourceFilterExt> utils;
+#endif
+
   bool AllowLoad(const KURL& resource_url,
                  network::mojom::RequestDestination,
                  ReportingDisposition);
+
   bool AllowWebSocketConnection(const KURL&);
   bool AllowWebTransportConnection(const KURL&);
 
@@ -47,6 +58,11 @@ class CORE_EXPORT SubresourceFilter final
   void Trace(Visitor*) const;
 
  private:
+  friend class ArkWebSubresourceFilterExt;
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void SendStatistics(TimerBase*);
+#endif
+
   void ReportLoad(const KURL& resource_url,
                   WebDocumentSubresourceFilter::LoadPolicy);
   void ReportLoadAsync(const KURL& resource_url,
@@ -64,6 +80,10 @@ class CORE_EXPORT SubresourceFilter final
   std::pair<std::pair<KURL, network::mojom::RequestDestination>,
             ResourceCheckResult>
       last_resource_check_result_;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  HeapTaskRunnerTimer<SubresourceFilter> statistics_timer_;
+#endif
 };
 
 }  // namespace blink

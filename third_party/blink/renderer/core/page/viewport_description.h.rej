@@ -1,0 +1,32 @@
+diff a/third_party/blink/renderer/core/page/viewport_description.h b/third_party/blink/renderer/core/page/viewport_description.h	(rejected hunks)
+@@ -89,10 +89,14 @@ struct CORE_EXPORT ViewportDescription {
+         min_zoom(kValueAuto),
+         max_zoom(kValueAuto),
+         user_zoom(true),
+         orientation(kValueAuto),
+         deprecated_target_density_dpi(kValueAuto),
++#if BUILDFLAG(ARKWEB_FLING)
++        max_fling_velocity_x(std::numeric_limits<float>::max()),
++        max_fling_velocity_y(std::numeric_limits<float>::max()),
++#endif
+         zoom_is_explicit(false),
+         min_zoom_is_explicit(false),
+         max_zoom_is_explicit(false),
+         user_zoom_is_explicit(false) {}
+ 
+@@ -112,10 +116,15 @@ struct CORE_EXPORT ViewportDescription {
+   float max_zoom;
+   bool user_zoom;
+   float orientation;
+   float deprecated_target_density_dpi;  // Only used for Android WebView
+ 
++#if BUILDFLAG(ARKWEB_FLING)
++  float max_fling_velocity_x;
++  float max_fling_velocity_y;
++#endif
++
+   // Whether the computed value was explicitly specified rather than being
+   // inferred.
+   bool zoom_is_explicit;
+   bool min_zoom_is_explicit;
+   bool max_zoom_is_explicit;

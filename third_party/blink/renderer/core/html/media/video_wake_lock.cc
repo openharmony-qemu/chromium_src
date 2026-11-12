@@ -208,7 +208,7 @@ void VideoWakeLock::UpdateWakeLockService() {
 
   if (!wake_lock_service_)
     return;
-
+  LOG(INFO) << "OhMedia::UpdateWakeLockService active? " << active_;
   if (active_) {
     wake_lock_service_->RequestWakeLock();
   } else {

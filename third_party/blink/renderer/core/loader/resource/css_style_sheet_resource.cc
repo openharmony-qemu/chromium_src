@@ -26,6 +26,7 @@
 
 #include "third_party/blink/renderer/core/loader/resource/css_style_sheet_resource.h"
 
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/loader/resource/css_style_sheet_resource_utils.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/trace_event/trace_event.h"
@@ -84,7 +85,12 @@ CSSStyleSheetResource::CSSStyleSheetResource(
     : TextResource(resource_request,
                    ResourceType::kCSSStyleSheet,
                    options,
-                   decoder_options) {}
+                   decoder_options)
+{
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+  cssStyleSheetResourceUtils = MakeGarbageCollected<CSSStyleSheetResourceUtils>(this);
+#endif
+}
 
 CSSStyleSheetResource::~CSSStyleSheetResource() = default;
 
@@ -102,6 +108,9 @@ void CSSStyleSheetResource::SetParsedStyleSheetCache(
 
 void CSSStyleSheetResource::Trace(Visitor* visitor) const {
   visitor->Trace(parsed_style_sheet_cache_);
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+  visitor->Trace(cssStyleSheetResourceUtils);
+#endif
   TextResource::Trace(visitor);
 }
 

@@ -5,6 +5,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_INPUT_MOUSE_EVENT_MANAGER_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_INPUT_MOUSE_EVENT_MANAGER_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/time/time.h"
 #include "third_party/blink/public/common/input/pointer_id.h"
 #include "third_party/blink/public/common/input/web_mouse_event.h"
@@ -26,6 +27,9 @@ class HitTestResult;
 class InputDeviceCapabilities;
 class LocalFrame;
 class ScrollManager;
+#if BUILDFLAG(IS_ARKWEB)
+class MouseEventManagerExt;
+#endif
 
 enum class DragHandlingResult {
   // The event was not handled and callers should try to use the mouse event for
@@ -269,4 +273,5 @@ class CORE_EXPORT MouseEventManager final
 
 }  // namespace blink
 
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/input/mouse_event_manager_ext.h"
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_INPUT_MOUSE_EVENT_MANAGER_H_

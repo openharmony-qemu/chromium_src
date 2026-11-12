@@ -1,0 +1,16 @@
+diff a/third_party/blink/renderer/core/html/html_param_element.h b/third_party/blink/renderer/core/html/html_param_element.h	(rejected hunks)
+@@ -33,10 +33,14 @@ class HTMLParamElement final : public HTMLElement {
+  public:
+   explicit HTMLParamElement(Document&);
+ 
+   const AtomicString& GetName() const;
+   const AtomicString& Value() const;
++
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  void AttributeChanged(const AttributeModificationParams&) override;
++#endif
+ };
+ 
+ }  // namespace blink
+ 
+ #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_HTML_HTML_PARAM_ELEMENT_H_

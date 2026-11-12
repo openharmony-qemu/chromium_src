@@ -1,0 +1,15 @@
+diff a/third_party/blink/renderer/core/script/classic_pending_script.h b/third_party/blink/renderer/core/script/classic_pending_script.h	(rejected hunks)
+@@ -134,10 +138,13 @@ class CORE_EXPORT ClassicPendingScript final
+   const bool is_external_;
+   ReadyState ready_state_;
+ 
+   // The request is intervened by document.write() intervention.
+   bool intervened_ = false;
++#if BUILDFLAG(ARKWEB_V8_COMPILE)
++  String arkWebCompile_ = String();
++#endif
+ };
+ 
+ }  // namespace blink
+ 
+ #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_SCRIPT_CLASSIC_PENDING_SCRIPT_H_

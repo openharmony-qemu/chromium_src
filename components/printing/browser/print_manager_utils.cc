@@ -60,9 +60,13 @@ void RenderParamsFromPrintSettings(const PrintSettings& settings,
   params->display_header_footer = settings.display_header_footer();
   params->title = settings.title();
   params->url = settings.url();
+#if BUILDFLAG(ARKWEB_PRINT)
+  params->printed_doc_type = mojom::SkiaDocumentType::kPDF;
+#else
   params->printed_doc_type = IsOopifEnabled() && settings.is_modifiable()
                                  ? mojom::SkiaDocumentType::kMSKP
                                  : mojom::SkiaDocumentType::kPDF;
+#endif
   params->pages_per_sheet = settings.pages_per_sheet();
 }
 

@@ -1,0 +1,13 @@
+diff a/components/password_manager/core/browser/leak_detection/leak_detection_check_impl.h b/components/password_manager/core/browser/leak_detection/leak_detection_check_impl.h	(rejected hunks)
+@@ -7,10 +7,11 @@
+ 
+ #include <memory>
+ #include <optional>
+ #include <string>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/scoped_refptr.h"
+ #include "base/memory/weak_ptr.h"
+ #include "components/password_manager/core/browser/leak_detection/leak_detection_check.h"
+ #include "components/password_manager/core/browser/leak_detection/leak_detection_delegate_interface.h"

@@ -1,0 +1,14 @@
+diff a/components/policy/core/browser/policy_pref_mapping_test.cc b/components/policy/core/browser/policy_pref_mapping_test.cc	(rejected hunks)
+@@ -438,10 +438,12 @@ class PolicyTestCase {
+     const std::string os("mac");
+ #elif BUILDFLAG(IS_WIN)
+     const std::string os("win");
+ #elif BUILDFLAG(IS_FUCHSIA)
+     const std::string os("fuchsia");
++#elif BUILDFLAG(IS_OHOS)
++    const std::string os("OHOS");
+ #else
+ #error "Unknown platform"
+ #endif
+     return base::Contains(supported_os_, os);
+   }

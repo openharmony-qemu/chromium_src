@@ -93,6 +93,11 @@ class ClosuresForMojoResponse
   void SetScriptedPrintPreviewQuitClosure(base::OnceClosure quit_print_preview);
   bool HasScriptedPrintPreviewQuitClosure() const;
   void RunScriptedPrintPreviewQuitClosure();
+#if BUILDFLAG(ARKWEB_PRINT)
+  void SetPrintRequestedPreviewQuitClosure(
+      base::OnceClosure quit_print_preview);
+  void RunPrintRequestedPreviewQuitClosure();
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 
  private:
   friend class base::RefCounted<ClosuresForMojoResponse>;
@@ -100,6 +105,9 @@ class ClosuresForMojoResponse
 
   // Stores quit closure for the runloop that is waiting for a Mojo reply.
   base::OnceClosure scripted_print_preview_quit_closure_;
+#if BUILDFLAG(ARKWEB_PRINT)
+  base::OnceClosure print_requested_preview_quit_closure_;
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 };
 
 // PrintRenderFrameHelper handles most of the printing grunt work for
@@ -697,6 +705,11 @@ class PrintRenderFrameHelper
   PreviewDocumentTestCallback preview_document_test_callback_;
 
   base::WeakPtrFactory<PrintRenderFrameHelper> weak_ptr_factory_{this};
+
+#if BUILDFLAG(ARKWEB_PRINT)
+  static base::WeakPtr<PrintRenderFrameHelper> static_helper_weak_;
+  static blink::WebLocalFrame* static_web_frame_;
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 };
 
 }  // namespace printing

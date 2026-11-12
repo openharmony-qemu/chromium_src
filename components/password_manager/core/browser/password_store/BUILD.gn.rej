@@ -1,0 +1,13 @@
+diff a/components/password_manager/core/browser/password_store/BUILD.gn b/components/password_manager/core/browser/password_store/BUILD.gn	(rejected hunks)
+@@ -179,10 +179,11 @@ source_set("unit_tests") {
+     "//components/password_manager/core/browser/sync",
+     "//components/password_manager/core/common",
+     "//components/prefs",
+     "//components/prefs:test_support",
+     "//components/sync/model",
++    "//content/test:test_support",
+     "//sql",
+     "//sql:test_support",
+     "//testing/gmock",
+     "//testing/gtest",
+     "//url",

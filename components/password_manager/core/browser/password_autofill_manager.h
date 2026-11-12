@@ -48,9 +48,15 @@ class PasswordManagerDriver;
 class PasswordManualFallbackMetricsRecorder;
 class PasswordSuggestionGenerator;
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+class PasswordAutofillManagerExt;
+#endif
 // This class is responsible for filling password forms.
 class PasswordAutofillManager : public autofill::AutofillSuggestionDelegate,
                                 public autofill::PasswordManagerDelegate {
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  friend class PasswordAutofillManagerExt;
+#endif
  public:
   PasswordAutofillManager(PasswordManagerDriver* password_manager_driver,
                           autofill::AutofillClient* autofill_client,
@@ -61,6 +67,9 @@ class PasswordAutofillManager : public autofill::AutofillSuggestionDelegate,
 
   ~PasswordAutofillManager() override;
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  virtual PasswordAutofillManagerExt* AsWebPasswordAutofillManagerExt() { return nullptr; }
+#endif
   // PasswordManagerDelegate:
 #if BUILDFLAG(IS_ANDROID)
   void ShowKeyboardReplacingSurface(
@@ -332,5 +341,7 @@ class PasswordAutofillManager : public autofill::AutofillSuggestionDelegate,
 };
 
 }  // namespace password_manager
-
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "arkweb/chromium_ext/components/password_manager/core/browser/password_autofill_manager_ext.h"
+#endif
 #endif  // COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_AUTOFILL_MANAGER_H_

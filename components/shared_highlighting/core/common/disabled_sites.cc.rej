@@ -1,0 +1,21 @@
+diff a/components/shared_highlighting/core/common/disabled_sites.cc b/components/shared_highlighting/core/common/disabled_sites.cc	(rejected hunks)
+@@ -66,13 +66,19 @@ bool ShouldOfferLinkToText(const GURL& url) {
+   }
+   return true;
+ }
+ 
+ bool SupportsLinkGenerationInIframe(GURL main_frame_url) {
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++  const std::unordered_set<std::string> good_hosts = {
++      "x.x.x.x", "x.x.x.x", "x.x.x.x",
++      "x.x.x.x", "x.x.x.x", "x.x.x.x"};
++#else
+   const std::unordered_set<std::string> good_hosts = {
+       "www.google.com", "m.google.com", "mobile.google.com",
+       "www.bing.com",   "m.bing.com",   "mobile.bing.com"};
++#endif
+ 
+   return main_frame_url.SchemeIs(url::kHttpsScheme) &&
+          good_hosts.find(main_frame_url.GetHost()) != good_hosts.end() &&
+          base::StartsWith(main_frame_url.GetPath(), "/amp/");
+ }

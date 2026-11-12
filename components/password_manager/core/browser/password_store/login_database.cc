@@ -68,6 +68,16 @@
 #include "url/origin.h"
 #include "url/url_constants.h"
 
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+#include "base/ohos/nweb_engine_event_logger.h"
+#include "base/ohos/nweb_engine_event_logger_code.h"
+#include "chrome/browser/browser_process.h"
+#include "cef/libcef/browser/prefs/browser_prefs.h"
+#include "components/os_crypt/sync/os_crypt_linux_for_include.h"
+#include "components/prefs/pref_service.h"
+#include "content/public/browser/browser_thread.h"
+#endif
+
 #if BUILDFLAG(IS_IOS)
 #import <Security/Security.h>
 #endif  // BUILDFLAG(IS_IOS)

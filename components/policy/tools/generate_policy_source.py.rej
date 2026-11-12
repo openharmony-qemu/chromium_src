@@ -1,0 +1,16 @@
+diff a/components/policy/tools/generate_policy_source.py b/components/policy/tools/generate_policy_source.py	(rejected hunks)
+@@ -37,12 +37,13 @@ PLATFORM_STRINGS = {
+     'ios': ['ios'],
+     'fuchsia': ['fuchsia'],
+     'chrome.win': ['win'],
+     'chrome.linux': ['linux'],
+     'chrome.mac': ['mac'],
+-    'chrome.*': ['win', 'mac', 'linux'],
++    'chrome.*': ['win', 'mac', 'linux', 'ohos'],
+     'chrome.win7': ['win'],
++    'chrome.ohos': ['ohos'],
+ }
+ 
+ 
+ class PolicyDetails:
+   """Parses a policy template and caches all its details."""

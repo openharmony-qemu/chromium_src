@@ -108,4 +108,10 @@ int SecurityInterstitialPage::GetHTMLTemplateId() {
   return IDR_SECURITY_INTERSTITIAL_HTML;
 }
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+bool SecurityInterstitialPage::IsUrlTrustListBlocked() const {
+  return false;
+}
+#endif
+
 }  // security_interstitials

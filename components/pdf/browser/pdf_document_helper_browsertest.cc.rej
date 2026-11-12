@@ -1,0 +1,16 @@
+diff a/components/pdf/browser/pdf_document_helper_browsertest.cc b/components/pdf/browser/pdf_document_helper_browsertest.cc	(rejected hunks)
+@@ -49,10 +49,14 @@ class FakePdfListener : public pdf::mojom::PdfListener {
+               (override));
+   MOCK_METHOD(void,
+               GetPageText,
+               (int32_t, GetPageTextCallback callback),
+               (override));
++#if BUILDFLAG(ARKWEB_PDF)
++  MOCK_METHOD(void, ClearTextSelection, (), (override));
++  MOCK_METHOD(void, OnScaleChanged, (), (override));
++#endif  // BUILDFLAG(ARKWEB_PDF)
+   MOCK_METHOD(void,
+               GetMostVisiblePageIndex,
+               (GetMostVisiblePageIndexCallback callback),
+               (override));
+ #if BUILDFLAG(ENABLE_PDF_SAVE_TO_DRIVE)

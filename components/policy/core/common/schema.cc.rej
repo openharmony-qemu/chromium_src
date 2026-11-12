@@ -1,0 +1,36 @@
+diff a/components/policy/core/common/schema.cc b/components/policy/core/common/schema.cc	(rejected hunks)
+@@ -672,11 +677,17 @@ Schema::InternalStorage::ParseSchema(const base::Value::Dict& schema) {
+       sizes.required_properties != storage->required_properties_.size() ||
+       sizes.int_enums != storage->int_enums_.size() ||
+       sizes.string_enums != storage->string_enums_.size()) {
+     return base::unexpected(
+         "Failed to parse the schema due to a Chrome bug. Please file a "
+-        "new issue at http://crbug.com");
++        "new issue at "
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++        "https://x.x.x"
++#else
++        "http://crbug.com"
++#endif
++    );
+   }
+ 
+   std::string error;
+   if (!ResolveReferences(references_and_ids, &error)) {
+     return base::unexpected(error);
+@@ -1466,10 +1477,15 @@ bool CompareKeys(const PropertyNode& node, const std::string& key) {
+ 
+ }  // namespace
+ 
+ Schema Schema::GetKnownProperty(const std::string& key) const {
+   CHECK(valid());
++#if BUILDFLAG(ARKWEB_NETWORK_BASE)
++  if (base::Value::Type::DICT != type()) {
++    LOG(INFO) << "Schema::GetKnownProperty current-type is :" << type();
++  }
++#endif
+   CHECK_EQ(base::Value::Type::DICT, type());
+   const PropertiesNode* node = storage_->properties(node_->extra);
+   if (node->begin == kInvalid || node->end == kInvalid)
+     return Schema();
+   const PropertyNode* begin = storage_->property(node->begin);

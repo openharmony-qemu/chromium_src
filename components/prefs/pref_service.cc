@@ -320,6 +320,11 @@ const base::Value* PrefService::GetDefaultPrefValue(
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   // Lookup the preference in the default store.
   const base::Value* value = nullptr;
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+  if (!pref_registry_->defaults()) {
+    return nullptr;
+  }
+#endif
   bool has_value = pref_registry_->defaults()->GetValue(path, &value);
   DCHECK(has_value) << "Default value missing for pref: " << path;
   return value;
@@ -502,6 +507,11 @@ base::Value* PrefService::GetMutableUserPref(std::string_view path,
 
   // If no user preference of the correct type exists, clone default value.
   const base::Value* default_value = nullptr;
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+  if (!pref_registry_->defaults()) {
+    return nullptr;
+  }
+#endif
   pref_registry_->defaults()->GetValue(path, &default_value);
   DCHECK_EQ(default_value->type(), type);
   user_pref_store_->SetValueSilently(path, default_value->Clone(),
@@ -666,6 +676,16 @@ bool PrefService::Preference::IsExtensionModifiable() const {
 const base::Value* PrefService::GetPreferenceValue(
     std::string_view path) const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+  if (!pref_registry_ || !pref_registry_->defaults()) {
+    return nullptr;
+  }
+
+  if (!pref_value_store_) {
+    return nullptr;
+  }
+#endif
 
   const base::Value* default_value = nullptr;
   CHECK(pref_registry_->defaults()->GetValue(path, &default_value))

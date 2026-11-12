@@ -1,0 +1,113 @@
+diff a/components/password_manager/core/browser/form_parsing/form_data_parser.cc b/components/password_manager/core/browser/form_parsing/form_data_parser.cc	(rejected hunks)
+@@ -13,10 +13,14 @@
+ #include <string>
+ #include <string_view>
+ #include <utility>
+ #include <vector>
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
++#include "arkweb/build/features/features.h"
+ #include "base/containers/contains.h"
+ #include "base/feature_list.h"
+ #include "base/i18n/case_conversion.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/raw_ptr_exclusion.h"
+@@ -34,10 +38,16 @@
+ #include "components/password_manager/core/browser/features/password_features.h"
+ #include "components/password_manager/core/browser/password_form.h"
+ #include "components/password_manager/core/common/password_manager_constants.h"
+ #include "components/password_manager/core/common/password_manager_features.h"
+ #include "components/password_manager/core/common/password_manager_util.h"
++
++#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
++#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
++#include "base/base_switches.h"
++#include "base/command_line.h"
++#endif
+ #include "services/metrics/public/cpp/ukm_builders.h"
+ 
+ using autofill::FieldGlobalId;
+ using autofill::FieldPropertiesFlags;
+ using autofill::FieldRendererId;
+@@ -1009,36 +1019,52 @@ void SetFields(const SignificantFields& significant_fields,
+   if (significant_fields.username) {
+     password_form->username_element = significant_fields.username->name();
+     password_form->username_value = GetFieldValue(*significant_fields.username);
+     password_form->username_element_renderer_id =
+         significant_fields.username->renderer_id();
++#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
++    LOG(INFO) << "[Autofill] username renderer_id:"
++              << *password_form->username_element_renderer_id;
++#endif
+   }
+ 
+   if (significant_fields.password) {
+     password_form->password_element = significant_fields.password->name();
+     password_form->password_value = GetFieldValue(*significant_fields.password);
+     password_form->password_element_renderer_id =
+         significant_fields.password->renderer_id();
++#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
++    LOG(INFO) << "[Autofill] password renderer_id:"
++              << *password_form->password_element_renderer_id;
++#endif
+   }
+ 
+   if (significant_fields.new_password) {
+     password_form->new_password_element =
+         significant_fields.new_password->name();
+     password_form->new_password_value =
+         GetFieldValue(*significant_fields.new_password);
+     password_form->new_password_element_renderer_id =
+         significant_fields.new_password->renderer_id();
++#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
++    LOG(INFO) << "[Autofill] new-password renderer_id:"
++              << *password_form->new_password_element_renderer_id;
++#endif
+   }
+ 
+   if (significant_fields.confirmation_password) {
+     DCHECK(significant_fields.new_password)
+         << "Lone confirmation field (no new password field)"
+         << significant_fields;
+     password_form->confirmation_password_element =
+         significant_fields.confirmation_password->name();
+     password_form->confirmation_password_element_renderer_id =
+         significant_fields.confirmation_password->renderer_id();
++#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
++    LOG(INFO) << "[Autofill] confirmation-password renderer_id:"
++              << *password_form->confirmation_password_element_renderer_id;
++#endif
+   }
+ }
+ 
+ // For each relevant field of |fields| computes additional data useful for
+ // parsing and wraps that in a ProcessedField. Returns the vector of all those
+@@ -1478,11 +1532,10 @@ FormParsingResult FormDataParser::ParseAndReturnParsingResult(
+                                   significant_fields.new_password &&
+                                   FieldMaxLengthAllowsPasswordGeneration(
+                                       *significant_fields.new_password) &&
+                                   new_password_found_before_heuristic;
+ 
+-
+   base::UmaHistogramEnumeration("PasswordManager.UsernameDetectionMethod",
+                                 method);
+ 
+   // OTPs and PIN codes are usually split across several 1-digit fields.
+   // Don't automatically show Save/Update prompt in such case.
+@@ -1490,10 +1543,14 @@ FormParsingResult FormDataParser::ParseAndReturnParsingResult(
+       ((!significant_fields.new_password &&
+         FieldValueIsTooShortForSaving(significant_fields.password)) ||
+        FieldValueIsTooShortForSaving(significant_fields.new_password))) {
+     significant_fields.is_fallback = true;
+   }
++#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
++  LOG(INFO) << "[Autofill] Username detection method:"
++            << static_cast<int>(method);
++#endif
+   return FormParsingResult(
+       AssemblePasswordForm(
+           form_data, significant_fields, std::move(all_alternative_passwords),
+           std::move(all_alternative_usernames), server_predictions_),
+       method, is_new_password_reliable, suggestion_banned_fields,

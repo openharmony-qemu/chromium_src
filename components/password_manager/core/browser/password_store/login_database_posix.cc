@@ -68,8 +68,12 @@ EncryptionResult LoginDatabase::DecryptedString(
   }
 #endif  // !BUILDFLAG(IS_FUCHSIA)
 
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  bool decryption_success = OSCrypt::DecryptString16ForMigrate(cipher_text, plain_text);
+#else
   bool decryption_success =
       encryptor_ && encryptor_->DecryptString16(cipher_text, plain_text);
+#endif
 #if BUILDFLAG(IS_CHROMEOS)
   // If decryption failed, we assume it was because the value was actually a
   // plain-text password which started with "v10".

@@ -35,6 +35,9 @@ namespace password_manager {
 class PasswordAutofillManager;
 class PasswordGenerationFrameHelper;
 class PasswordManagerInterface;
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+class PasswordManagerDriverExt;
+#endif
 
 // Interface that allows PasswordManager core code to interact with its driver
 // (i.e., obtain information from it and give information to it).
@@ -252,4 +255,7 @@ class PasswordManagerDriver {
 
 }  // namespace password_manager
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "arkweb/chromium_ext/components/password_manager/core/browser/password_manager_driver_ext.h"
+#endif
 #endif  // COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_MANAGER_DRIVER_H_

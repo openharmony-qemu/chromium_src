@@ -1,0 +1,29 @@
+diff a/components/safe_search_api/stub_url_checker.cc b/components/safe_search_api/stub_url_checker.cc	(rejected hunks)
+@@ -4,10 +4,11 @@
+ 
+ #include "components/safe_search_api/stub_url_checker.h"
+ 
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/json/json_writer.h"
+ #include "base/values.h"
+ #include "components/safe_search_api/safe_search/safe_search_url_checker_client.h"
+ #include "components/safe_search_api/url_checker.h"
+ #include "net/traffic_annotation/network_traffic_annotation_test_helper.h"
+@@ -19,11 +20,15 @@
+ namespace safe_search_api {
+ 
+ namespace {
+ 
+ constexpr char kSafeSearchApiUrl[] =
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++    "https://xxx";
++#else
+     "https://safesearch.googleapis.com/v1:classify";
++#endif
+ 
+ std::string BuildResponse(bool is_porn) {
+   base::Value::Dict dict;
+   base::Value::Dict classification_dict;
+   if (is_porn)

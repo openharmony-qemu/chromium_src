@@ -22,9 +22,12 @@ using url::Origin;
 
 namespace {
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr char kGoogleChangePasswordSignonRealm[] = "https://x.x.x.x/";
+#else
 constexpr char kGoogleChangePasswordSignonRealm[] =
     "https://myaccount.google.com/";
-
+#endif
 }  // namespace
 
 namespace password_manager {

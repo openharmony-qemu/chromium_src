@@ -1,0 +1,69 @@
+diff a/components/printing/renderer/print_render_frame_helper.h b/components/printing/renderer/print_render_frame_helper.h	(rejected hunks)
+@@ -276,10 +284,14 @@ class PrintRenderFrameHelper
+   void PrintFrameContent(mojom::PrintFrameContentParamsPtr params,
+                          PrintFrameContentCallback callback) override;
+   void PrintingDone(bool success) override;
+   void ConnectToPdfRenderer() override;
+   void PrintNodeUnderContextMenu() override;
++#if BUILDFLAG(ARKWEB_PRINT)
++  void DidDispatchPrintEvent(bool isBefore) override;
++  void ApplicationPrintRequestedPages() override;
++#endif  // BUILDFLAG(ARKWEB_PRINT)
+ 
+   // Update |ignore_css_margins_| based on settings.
+   void UpdateFrameMarginsCssInfo(const base::Value::Dict& settings);
+ 
+ #if BUILDFLAG(ENABLE_PRINT_PREVIEW)
+@@ -343,16 +355,16 @@ class PrintRenderFrameHelper
+ 
+ #if BUILDFLAG(ENABLE_PRINT_PREVIEW)
+   // Set options for print preset from source PDF document.
+   mojom::OptionsFromDocumentParamsPtr SetOptionsFromPdfDocument();
+ 
+-  // Update the current print settings with new |passed_job_settings|.
+-  // |passed_job_settings| dictionary contains print job details such as printer
+-  // name, number of copies, page range, etc.
++  // Update the current print settings with new `job_settings`.
++  // `job_settings` contains print job details such as printer name, number of
++  // copies, page range, etc.
+   bool UpdatePrintSettings(blink::WebLocalFrame* frame,
+                            const blink::WebNode& node,
+-                           base::Value::Dict passed_job_settings);
++                           const base::Value::Dict& job_settings);
+ #endif  // BUILDFLAG(ENABLE_PRINT_PREVIEW)
+ 
+   // Returns final print settings from the user.
+   // WARNING: |this| may be gone after this method returns.
+   mojom::PrintPagesParamsPtr GetPrintSettingsFromUser(
+@@ -421,10 +433,14 @@ class PrintRenderFrameHelper
+ 
+   // Called when the connection with the |preview_ui_| goes away.
+   void OnPreviewDisconnect();
+ #endif  // BUILDFLAG(ENABLE_PRINT_PREVIEW)
+ 
++#if BUILDFLAG(ARKWEB_PRINT)
++  bool CheckCancel();
++#endif // BUILDFLAG(ARKWEB_PRINT)
++
+   // `settings` must be valid.
+   void SetPrintPagesParams(const mojom::PrintPagesParams& settings);
+ 
+   // Quits active runloop waiting for Mojo reply. It's called when
+   // |print_manager_host_| is disconnected before the replies.
+@@ -636,10 +652,16 @@ class PrintRenderFrameHelper
+     int count_ = 0;
+   };
+ 
+   void SetupOnStopLoadingTimeout();
+   void PrintRequestedPagesInternal(bool already_notified_frame);
++  bool PrintQuitLoop(blink::WebLocalFrame* web_frame);
++  void ArkWebPrintNode(const blink::WebNode& node);
++#if BUILDFLAG(ARKWEB_PRINT)
++  blink::WebLocalFrame* ArkWebUpdateFrame(blink::WebLocalFrame* web_frame);
++  bool IsExtensionPopupPrint(blink::WebLocalFrame* web_frame);
++#endif  // BUILDFLAG(ARKWEB_PRINT)
+ 
+   ScriptingThrottler scripting_throttler_;
+ 
+   bool print_in_progress_ = false;
+   PrintPreviewContext print_preview_context_;

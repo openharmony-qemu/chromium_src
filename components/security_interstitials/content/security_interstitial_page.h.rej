@@ -1,0 +1,17 @@
+diff a/components/security_interstitials/content/security_interstitial_page.h b/components/security_interstitials/content/security_interstitial_page.h	(rejected hunks)
+@@ -70,10 +70,15 @@ class SecurityInterstitialPage {
+   SecurityInterstitialControllerClient* controller() const;
+ 
+   // Return the interstitial type for testing.
+   virtual TypeID GetTypeForTesting();
+ 
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  // Returns whether this interstitial is a URL Trust List blocking page.
++  virtual bool IsUrlTrustListBlocked() const;
++#endif
++
+  protected:
+   // Populates the strings used to generate the HTML from the template.
+   virtual void PopulateInterstitialStrings(
+       base::Value::Dict& load_time_data) = 0;
+ 

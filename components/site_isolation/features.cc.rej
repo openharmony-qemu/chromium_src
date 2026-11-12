@@ -1,0 +1,14 @@
+diff a/components/site_isolation/features.cc b/components/site_isolation/features.cc	(rejected hunks)
+@@ -64,11 +64,11 @@ BASE_FEATURE(kSiteIsolationMemoryThresholdsAndroid,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ const char kStrictSiteIsolationMemoryThresholdParamName[] =
+     "strict_site_isolation_threshold_mb";
+ const char kPartialSiteIsolationMemoryThresholdParamName[] =
+     "partial_site_isolation_threshold_mb";
+-#endif  // BUILDFLAG(IS_ANDROID)
++#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_SITE_ISOLATION)
+ 
+ // In order to have broader support for JavaScript optimizer exceptions, we'll
+ // apply origin isolation on navigation for URLs that match rules in the
+ // JAVASCRIPT_OPTIMIZER content setting that don't match the default setting.
+ // TODO(crbug.com/413695645): we want this feature to start isolating any origin

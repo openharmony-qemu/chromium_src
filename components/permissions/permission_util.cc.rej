@@ -1,0 +1,35 @@
+diff a/components/permissions/permission_util.cc b/components/permissions/permission_util.cc	(rejected hunks)
+@@ -424,11 +424,11 @@ bool PermissionUtil::DoesStoreTemporaryGrantsInHcsm(ContentSettingsType type) {
+ 
+ // Due to dependency issues, this method is duplicated in
+ // content/browser/permissions/permission_util.cc.
+ GURL PermissionUtil::GetLastCommittedOriginAsURL(
+     content::RenderFrameHost* render_frame_host) {
+-  DCHECK(render_frame_host);
++  CHECK(render_frame_host);
+ 
+   content::WebContents* web_contents =
+       content::WebContents::FromRenderFrameHost(render_frame_host);
+ #if BUILDFLAG(IS_ANDROID)
+   // If `allow_universal_access_from_file_urls` flag is enabled, a file:/// can
+@@ -443,16 +443,17 @@ GURL PermissionUtil::GetLastCommittedOriginAsURL(
+   } else {
+     base::UmaHistogramBoolean(kIsFileURLHistogram, false);
+   }
+ #endif
+ 
+-  if (render_frame_host->GetLastCommittedOrigin().GetURL().is_empty()) {
++  GURL origin = render_frame_host->GetLastCommittedOrigin().GetURL();
++  if (origin.is_empty() && render_frame_host->IsInPrimaryMainFrame()) {
+     if (!web_contents->GetVisibleURL().is_empty()) {
+-      return web_contents->GetVisibleURL();
++      origin = web_contents->GetVisibleURL();
+     }
+   }
+-  return render_frame_host->GetLastCommittedOrigin().GetURL();
++  return origin;
+ }
+ 
+ ContentSettingsType PermissionUtil::PermissionTypeToContentSettingsTypeSafe(
+     PermissionType permission) {
+   switch (permission) {

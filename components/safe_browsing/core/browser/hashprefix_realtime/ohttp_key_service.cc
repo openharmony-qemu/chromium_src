@@ -4,6 +4,7 @@
 
 #include "components/safe_browsing/core/browser/hashprefix_realtime/ohttp_key_service.h"
 
+#include "arkweb/build/features/features.h"
 #include <optional>
 #include <string>
 #include <utility>

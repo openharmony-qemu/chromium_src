@@ -1,0 +1,12 @@
+diff a/components/services/on_device_translation/buildflags/features.gni b/components/services/on_device_translation/buildflags/features.gni
+--- a/components/services/on_device_translation/buildflags/features.gni
++++ b/components/services/on_device_translation/buildflags/features.gni
+@@ -3,7 +3,7 @@
+ # found in the LICENSE file.
+ 
+ declare_args() {
+   # On Device Translation is still not supported on other platforms.
+   # TODO(crbug.com/364795294): Support other platforms.
+-  enable_on_device_translation = is_mac || is_win || is_linux || is_chromeos
++  enable_on_device_translation = is_mac || is_win || is_linux || is_chromeos || is_ohos
+ }

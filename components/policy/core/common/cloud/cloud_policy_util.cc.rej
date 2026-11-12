@@ -1,0 +1,28 @@
+diff a/components/policy/core/common/cloud/cloud_policy_util.cc b/components/policy/core/common/cloud/cloud_policy_util.cc	(rejected hunks)
+@@ -82,11 +82,11 @@
+ namespace policy {
+ 
+ namespace em = enterprise_management;
+ 
+ std::string GetMachineName() {
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_FUCHSIA)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+   char hostname[HOST_NAME_MAX];
+   if (gethostname(hostname, HOST_NAME_MAX) == 0)  // Success.
+     return hostname;
+   return std::string();
+ #elif BUILDFLAG(IS_IOS)
+@@ -190,10 +190,13 @@ std::string GetOSUsername() {
+   return user->GetAccountId().GetUserEmail();
+ #elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
+   // TODO(crbug.com/40200780): This should be fully implemented when there is
+   // support in fuchsia.
+   return std::string();
++#elif BUILDFLAG(IS_OHOS)
++  // need to call ets to get ohos username
++  return std::string("ohos-anonymous");
+ #else
+   NOTREACHED();
+ #endif
+ }
+ 

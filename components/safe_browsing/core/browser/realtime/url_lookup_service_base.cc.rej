@@ -1,0 +1,14 @@
+diff a/components/safe_browsing/core/browser/realtime/url_lookup_service_base.cc b/components/safe_browsing/core/browser/realtime/url_lookup_service_base.cc	(rejected hunks)
+@@ -3,10 +3,12 @@
+ // found in the LICENSE file.
+ 
+ #include "components/safe_browsing/core/browser/realtime/url_lookup_service_base.h"
+ 
+ #include <memory>
++
++#include "arkweb/build/features/features.h"
+ #include <optional>
+ #include <string>
+ 
+ #include "base/base64url.h"
+ #include "base/functional/callback_helpers.h"

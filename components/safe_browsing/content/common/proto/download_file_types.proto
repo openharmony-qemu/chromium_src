@@ -43,6 +43,7 @@ message DownloadFileType {
     PLATFORM_TYPE_MAC = 4;
     PLATFORM_TYPE_WINDOWS = 5;
     // Deprecated: PLATFORM_TYPE_FUCHSIA = 6;
+    PLATFORM_TYPE_OHOS = 7;
   }
 
   // Next id: 6

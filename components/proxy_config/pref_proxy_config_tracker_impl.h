@@ -55,6 +55,13 @@ class ProxyConfigServiceImpl : public net::ProxyConfigService,
                          ProxyPrefs::ConfigState initial_config_state,
                          const net::ProxyConfigWithAnnotation& initial_config);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && !defined(COMPONENT_BUILD)
+  ProxyConfigServiceImpl(std::unique_ptr<net::ProxyConfigService> base_service,
+                         ProxyPrefs::ConfigState initial_config_state,
+                         const net::ProxyConfigWithAnnotation& initial_config,
+                         Profile* profile);
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
   ProxyConfigServiceImpl(const ProxyConfigServiceImpl&) = delete;
   ProxyConfigServiceImpl& operator=(const ProxyConfigServiceImpl&) = delete;
 
@@ -140,6 +147,12 @@ class PROXY_CONFIG_EXPORT PrefProxyConfigTrackerImpl
   // PrefProxyConfigTracker implementation:
   std::unique_ptr<net::ProxyConfigService> CreateTrackingProxyConfigService(
       std::unique_ptr<net::ProxyConfigService> base_service) override;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && !defined(COMPONENT_BUILD)
+  std::unique_ptr<net::ProxyConfigService> CreateTrackingProxyConfigService(
+      std::unique_ptr<net::ProxyConfigService> base_service,
+      Profile* profile) override;
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
   // Notifies the tracker that the pref service passed upon construction is
   // about to go away. This must be called from the UI thread.

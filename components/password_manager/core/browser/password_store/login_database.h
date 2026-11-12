@@ -410,6 +410,9 @@ class LoginDatabase : public EncryptDecryptInterface {
   std::string created_statement_;
   std::string blocklisted_statement_;
   std::string id_and_password_statement_;
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  std::string update_display_name_statement_;
+#endif
 };
 
 #if BUILDFLAG(IS_IOS)

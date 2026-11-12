@@ -1,0 +1,30 @@
+diff a/components/password_manager/core/browser/password_store/login_database_async_helper.h b/components/password_manager/core/browser/password_store/login_database_async_helper.h	(rejected hunks)
+@@ -3,10 +3,14 @@
+ // found in the LICENSE file.
+ 
+ #ifndef COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_STORE_LOGIN_DATABASE_ASYNC_HELPER_H_
+ #define COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_STORE_LOGIN_DATABASE_ASYNC_HELPER_H_
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/cancelable_callback.h"
+ #include "base/memory/scoped_refptr.h"
+ #include "base/memory/weak_ptr.h"
+ #include "base/sequence_checker.h"
+ #include "base/task/sequenced_task_runner.h"
+@@ -66,10 +70,13 @@ class LoginDatabaseAsyncHelper : public PasswordStoreSync {
+       const std::vector<PasswordFormDigest>& forms,
+       bool include_psl);
+ 
+   PasswordChangesOrError AddLogin(const PasswordForm& form);
+   PasswordChangesOrError UpdateLogin(const PasswordForm& form);
++#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
++  void UpdateLoginDisplayName(const PasswordForm& form);
++#endif
+   PasswordChangesOrError RemoveLogin(const base::Location& location,
+                                      const PasswordForm& form);
+   PasswordChangesOrError RemoveLoginsCreatedBetween(
+       const base::Location& location,
+       base::Time delete_begin,

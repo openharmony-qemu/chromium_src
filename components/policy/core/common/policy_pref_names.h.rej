@@ -1,0 +1,15 @@
+diff a/components/policy/core/common/policy_pref_names.h b/components/policy/core/common/policy_pref_names.h	(rejected hunks)
+@@ -92,10 +93,13 @@ extern const char kForcePermissionPolicyUnloadDefaultEnabled[];
+ extern const char kDownloadRestrictions[];
+ #if BUILDFLAG(IS_CHROMEOS)
+ extern const char kAlwaysOnVpnPreConnectUrlAllowlist[];
+ extern const char kFloatingWorkspaceEnabled[];
+ #endif
++#if BUILDFLAG(ARKWEB_EDM_POLICY)
++extern const char kBrowserPolicyVersion[];
++#endif
+ extern const char kBuiltInAIAPIsEnabled[];
+ }  // namespace policy_prefs
+ }  // namespace policy
+ 
+ #endif  // COMPONENTS_POLICY_CORE_COMMON_POLICY_PREF_NAMES_H_

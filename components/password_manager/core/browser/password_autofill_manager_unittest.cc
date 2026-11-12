@@ -2737,5 +2737,9 @@ TEST_F(PasswordAutofillManagerTest, UpdatePopupIsNoOpForOtherManager) {
   pam1.OnAddPasswordFillData(data);
 }
 
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/components/password_manager/core/browser/password_autofill_manager_ext_unittest.cc"
+#endif
+
 }  // namespace
 }  // namespace password_manager

@@ -392,6 +392,7 @@ bool ProxyConfigServiceImpl::UsesPolling() {
   return base_service_ && base_service_->UsesPolling();
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) || defined(COMPONENT_BUILD)
 void ProxyConfigServiceImpl::UpdateProxyConfig(
     ProxyPrefs::ConfigState config_state,
     const net::ProxyConfigWithAnnotation& config) {
@@ -419,6 +420,7 @@ void ProxyConfigServiceImpl::UpdateProxyConfig(
     }
   }
 }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 void ProxyConfigServiceImpl::OnProxyConfigChanged(
     const net::ProxyConfigWithAnnotation& config,
@@ -811,6 +813,7 @@ bool PrefProxyConfigTrackerImpl::PrefConfigToNetConfig(
   }
   NOTREACHED() << "Unknown proxy mode, falling back to system settings.";
 }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 void PrefProxyConfigTrackerImpl::OnProxyPrefChanged() {
   DCHECK(thread_checker_.CalledOnValidThread());

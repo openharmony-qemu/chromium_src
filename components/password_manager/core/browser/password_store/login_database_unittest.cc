@@ -50,6 +50,9 @@
 #include "components/sync/base/data_type.h"
 #include "components/sync/model/metadata_batch.h"
 #include "components/sync/protocol/entity_metadata.pb.h"
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+#include "content/public/test/browser_task_environment.h"
+#endif
 #include "google_apis/gaia/gaia_id.h"
 #include "sql/database.h"
 #include "sql/statement.h"
@@ -314,7 +317,11 @@ class LoginDatabaseTestBase : public testing::Test {
   // SingleThreadTaskEnvironment because on iOS,
   // password_manager::DeletePasswordsDirectory() which calls
   // base::ThreadPool::PostTask().
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  content::BrowserTaskEnvironment task_environment_;
+#else
   base::test::TaskEnvironment task_environment_;
+#endif
   std::unique_ptr<os_crypt_async::OSCryptAsync> test_oscrypt_async_;
 };
 

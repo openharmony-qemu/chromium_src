@@ -28,6 +28,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/files/file_path.h"
 #include "base/files/scoped_file.h"
@@ -62,7 +63,8 @@
 #include "handler/linux/cros_crash_report_exception_handler.h"
 #endif
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
 #include <unistd.h>
 
 #include "handler/linux/crash_report_exception_handler.h"
@@ -164,7 +166,7 @@ void Usage(const base::FilePath& me) {
 "      --no-rate-limit         don't rate limit crash uploads\n"
 "      --no-upload-gzip        don't use gzip compression when uploading\n"
   // clang-format on
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
       // clang-format off
 "      --no-write-minidump-to-database\n"
 "                              don't write minidump to database\n"
@@ -181,7 +183,8 @@ void Usage(const base::FilePath& me) {
 "                              reset the server's exception handler to default\n"
   // clang-format on
 #endif  // BUILDFLAG(IS_APPLE)
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
       // clang-format off
 "      --sanitization-information=SANITIZATION_INFORMATION_ADDRESS\n"
 "                              the address of a SanitizationInformation struct.\n"
@@ -211,11 +214,19 @@ void Usage(const base::FilePath& me) {
 "                              checks\n"
   // clang-format on
 #endif  // BUILDFLAG(IS_CHROMEOS)
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
       // clang-format off
 "      --write-minidump-to-log write minidump to log\n"
   // clang-format on
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+      // clang-format off
+"      --snapshot-only         snapshot mode only\n"
+"      --snapshot-fd=FD        snapshot file descriptor\n"
+"      --target-pid=PID        target process ID\n"
+"      --socket-fd=FD          socket file descriptor\n"
+  // clang-format on
+#endif  // BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
       // clang-format off
 "      --help                  display this help and exit\n"
 "      --version               output version information and exit\n",
@@ -235,12 +246,15 @@ struct Options {
   std::string mach_service;
   int handshake_fd;
   bool reset_own_crash_exception_port_to_system_default;
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   VMAddress exception_information_address;
   VMAddress sanitization_information_address;
   int initial_client_fd;
   bool shared_client_connection;
-#if BUILDFLAG(IS_ANDROID)
+  std::string happen_time;
+  std::string bundle_name;
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   bool write_minidump_to_log;
   bool write_minidump_to_database;
 #endif  // BUILDFLAG(IS_ANDROID)
@@ -264,6 +278,12 @@ struct Options {
 #if defined(ATTACHMENTS_SUPPORTED)
   std::vector<base::FilePath> attachments;
 #endif  // ATTACHMENTS_SUPPORTED
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+  bool snapshot_only;
+  int snapshot_fd;
+  int target_pid;
+  int socket_fd;
+#endif  // BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
 };
 
 // Splits |key_value| on '=' and inserts the resulting key and value into |map|.
@@ -328,7 +348,7 @@ class CallMetricsRecordNormalExit {
 };
 
 #if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_ANDROID)
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
 void HandleCrashSignal(int sig, siginfo_t* siginfo, void* context) {
   MetricsRecordExit(Metrics::LifetimeMilestone::kCrashed);
@@ -509,7 +529,7 @@ void MonitorSelf(const Options& options) {
   // instance of crashpad_handler to be writing metrics at a time, and it should
   // be the primary instance.
   CrashpadClient crashpad_client;
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   if (!crashpad_client.StartHandlerAtCrash(executable_path,
                                            options.database,
                                            base::FilePath(),
@@ -619,7 +639,7 @@ int HandlerMain(int argc,
     kOptionNoPeriodicTasks,
     kOptionNoRateLimit,
     kOptionNoUploadGzip,
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
     kOptionNoWriteMinidumpToDatabase,
 #endif  // BUILDFLAG(IS_ANDROID)
 #if BUILDFLAG(IS_WIN)
@@ -628,10 +648,13 @@ int HandlerMain(int argc,
 #if BUILDFLAG(IS_APPLE)
     kOptionResetOwnCrashExceptionPortToSystemDefault,
 #endif  // BUILDFLAG(IS_APPLE)
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
     kOptionSanitizationInformation,
     kOptionSharedClientConnection,
     kOptionTraceParentWithException,
+    kOptionHappenTime,
+    kOptionBundleName,
 #endif
     kOptionURL,
     kOptionMaxUploads,
@@ -642,9 +665,15 @@ int HandlerMain(int argc,
     kOptionMinidumpDirForTests,
     kOptionAlwaysAllowFeedback,
 #endif  // BUILDFLAG(IS_CHROMEOS)
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
     kOptionWriteMinidumpToLog,
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+    kOptionSnapshotOnly,
+    kOptionSnapshotFd,
+    kOptionTargetPid,
+    kOptionSocketFd,
+#endif  // BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
 
     // Standard options.
     kOptionHelp = -2,
@@ -666,7 +695,8 @@ int HandlerMain(int argc,
      nullptr,
      kOptionInitialClientData},
 #endif  // BUILDFLAG(IS_APPLE)
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
     {"initial-client-fd", required_argument, nullptr, kOptionInitialClientFD},
 #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) ||
         // BUILDFLAG(IS_CHROMEOS)
@@ -690,7 +720,7 @@ int HandlerMain(int argc,
     {"no-periodic-tasks", no_argument, nullptr, kOptionNoPeriodicTasks},
     {"no-rate-limit", no_argument, nullptr, kOptionNoRateLimit},
     {"no-upload-gzip", no_argument, nullptr, kOptionNoUploadGzip},
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
     {"no-write-minidump-to-database",
      no_argument,
      nullptr,
@@ -705,7 +735,8 @@ int HandlerMain(int argc,
      nullptr,
      kOptionResetOwnCrashExceptionPortToSystemDefault},
 #endif  // BUILDFLAG(IS_APPLE)
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
     {"sanitization-information",
      required_argument,
      nullptr,
@@ -718,6 +749,8 @@ int HandlerMain(int argc,
      required_argument,
      nullptr,
      kOptionTraceParentWithException},
+    {"happen-time", required_argument, nullptr, kOptionHappenTime},
+    {"bundle-name", required_argument, nullptr, kOptionBundleName},
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
         // BUILDFLAG(IS_ANDROID)
     {"url", required_argument, nullptr, kOptionURL},
@@ -730,11 +763,23 @@ int HandlerMain(int argc,
      required_argument,
      nullptr,
      kOptionMinidumpDirForTests},
-    {"always-allow-feedback", no_argument, nullptr, kOptionAlwaysAllowFeedback},
+    {"always-allow-feedback",
+      no_argument,
+      nullptr,
+      kOptionAlwaysAllowFeedback},
 #endif  // BUILDFLAG(IS_CHROMEOS)
-#if BUILDFLAG(IS_ANDROID)
-    {"write-minidump-to-log", no_argument, nullptr, kOptionWriteMinidumpToLog},
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+    {"write-minidump-to-log",
+       no_argument,
+       nullptr,
+       kOptionWriteMinidumpToLog},
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+    {"snapshot-only", no_argument, nullptr, kOptionSnapshotOnly},
+    {"snapshot-fd", required_argument, nullptr, kOptionSnapshotFd},
+    {"target-pid", required_argument, nullptr, kOptionTargetPid},
+    {"socket-fd", required_argument, nullptr, kOptionSocketFd},
+#endif  // BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
     {"help", no_argument, nullptr, kOptionHelp},
     {"version", no_argument, nullptr, kOptionVersion},
     {"max-uploads", required_argument, nullptr, kOptionMaxUploads},
@@ -748,14 +793,21 @@ int HandlerMain(int argc,
   options.handshake_fd = -1;
 #endif
   options.identify_client_via_url = true;
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
   options.initial_client_fd = kInvalidFileHandle;
 #endif
   options.periodic_tasks = true;
   options.rate_limit = true;
   options.upload_gzip = true;
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   options.write_minidump_to_database = true;
+#endif
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+  options.snapshot_only = false;
+  options.snapshot_fd = -1;
+  options.target_pid = -1;
+  options.socket_fd = -1;
 #endif
 
   int opt;
@@ -804,7 +856,8 @@ int HandlerMain(int argc,
         break;
       }
 #endif  // BUILDFLAG(IS_WIN)
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
       case kOptionInitialClientFD: {
         if (!base::StringToInt(optarg, &options.initial_client_fd)) {
           ToolSupport::UsageHint(me, "failed to parse --initial-client-fd");
@@ -851,7 +904,7 @@ int HandlerMain(int argc,
         options.upload_gzip = false;
         break;
       }
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
       case kOptionNoWriteMinidumpToDatabase: {
         options.write_minidump_to_database = false;
         break;
@@ -869,7 +922,8 @@ int HandlerMain(int argc,
         break;
       }
 #endif  // BUILDFLAG(IS_APPLE)
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
       case kOptionSanitizationInformation: {
         if (!StringToNumber(optarg,
                             &options.sanitization_information_address)) {
@@ -889,6 +943,16 @@ int HandlerMain(int argc,
               me, "failed to parse --trace-parent-with-exception");
           return ExitFailure();
         }
+        break;
+      }
+      case kOptionHappenTime: {
+        options.happen_time = optarg;
+        g_happen_time = options.happen_time;
+        break;
+      }
+      case kOptionBundleName: {
+        options.bundle_name = optarg;
+        g_bundle_name = options.bundle_name;
         break;
       }
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
@@ -933,12 +997,39 @@ int HandlerMain(int argc,
         break;
       }
 #endif  // BUILDFLAG(IS_CHROMEOS)
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
       case kOptionWriteMinidumpToLog: {
         options.write_minidump_to_log = true;
         break;
       }
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+      case kOptionSnapshotOnly: {
+        options.snapshot_only = true;
+        break;
+      }
+      case kOptionSnapshotFd: {
+        if (!base::StringToInt(optarg, &options.snapshot_fd)) {
+          ToolSupport::UsageHint(me, "failed to parse --snapshot-fd");
+          return ExitFailure();
+        }
+        break;
+      }
+      case kOptionTargetPid: {
+        if (!base::StringToInt(optarg, &options.target_pid)) {
+          ToolSupport::UsageHint(me, "failed to parse --target-pid");
+          return ExitFailure();
+        }
+        break;
+      }
+      case kOptionSocketFd: {
+        if (!base::StringToInt(optarg, &options.socket_fd)) {
+          ToolSupport::UsageHint(me, "failed to parse --socket-fd");
+          return ExitFailure();
+        }
+        break;
+      }
+#endif  // BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
       case kOptionHelp: {
         Usage(me);
         MetricsRecordExit(Metrics::LifetimeMilestone::kExitedEarly);
@@ -957,6 +1048,19 @@ int HandlerMain(int argc,
   }
   argc -= optind;
   argv += optind;
+
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+  if (options.snapshot_only) {
+    if (crashpad::HandleMemorySnapshot(
+            options.target_pid, options.snapshot_fd, options.socket_fd)) {
+      LOG(INFO) << "HandleMemorySnapshot sucessfully";
+      return EXIT_SUCCESS;
+    } else {
+      LOG(ERROR) << "HandleMemorySnapshot failed";
+      return ExitFailure();
+    }
+  }
+#endif  // BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
 
 #if BUILDFLAG(IS_APPLE)
   if (options.handshake_fd < 0 && options.mach_service.empty()) {
@@ -979,7 +1083,8 @@ int HandlerMain(int argc,
         me, "--initial-client-data and --pipe-name are incompatible");
     return ExitFailure();
   }
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   if (!options.exception_information_address &&
       options.initial_client_fd == kInvalidFileHandle) {
     ToolSupport::UsageHint(
@@ -999,7 +1104,7 @@ int HandlerMain(int argc,
         me, "--shared-client-connection requires --initial-client-fd");
     return ExitFailure();
   }
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   if (!options.write_minidump_to_log && !options.write_minidump_to_database) {
     ToolSupport::UsageHint(me,
                            "--no_write_minidump_to_database is required to use "
@@ -1084,7 +1189,8 @@ int HandlerMain(int argc,
     upload_thread.Get()->Start();
   }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
   std::unique_ptr<ExceptionHandlerServer::Delegate> exception_handler;
 #else
   std::unique_ptr<CrashReportExceptionHandler> exception_handler;
@@ -1124,7 +1230,7 @@ int HandlerMain(int argc,
 #if defined(ATTACHMENTS_SUPPORTED)
       &options.attachments,
 #endif  // ATTACHMENTS_SUPPORTED
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
       options.write_minidump_to_database,
       options.write_minidump_to_log,
 #endif  // BUILDFLAG(IS_ANDROID)
@@ -1135,7 +1241,8 @@ int HandlerMain(int argc,
       user_stream_sources);
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
   if (options.exception_information_address) {
     ExceptionHandlerProtocol::ClientInformation info;
     info.exception_information_address = options.exception_information_address;
@@ -1216,7 +1323,8 @@ int HandlerMain(int argc,
   if (!options.pipe_name.empty()) {
     exception_handler_server.SetPipeName(base::UTF8ToWide(options.pipe_name));
   }
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   ExceptionHandlerServer exception_handler_server;
 #endif  // BUILDFLAG(IS_APPLE)
 
@@ -1238,7 +1346,8 @@ int HandlerMain(int argc,
     exception_handler_server.InitializeWithInheritedDataForInitialClient(
         options.initial_client_data, exception_handler.get());
   }
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   if (options.initial_client_fd == kInvalidFileHandle ||
       !exception_handler_server.InitializeWithClient(
           ScopedFileHandle(options.initial_client_fd),

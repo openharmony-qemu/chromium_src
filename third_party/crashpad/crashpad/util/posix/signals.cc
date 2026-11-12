@@ -23,7 +23,7 @@
 #include "base/logging.h"
 #include "build/build_config.h"
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_CRASHPAD)
 #include <sys/syscall.h>
 #endif
 
@@ -40,6 +40,9 @@ namespace {
 // linux-4.4.52/include/linux/signal.h sig_kernel_coredump(): signals in
 // SIG_KERNEL_COREDUMP_MASK are in the set.
 constexpr int kCrashSignals[] = {
+#if BUILDFLAG(IS_OHOS)
+    SIGINT, // get dump render restored by RestoreHandlerAndReraiseSignalOnReturn
+#endif
     SIGABRT,
     SIGBUS,
     SIGFPE,
@@ -318,7 +321,7 @@ void Signals::RestoreHandlerAndReraiseSignalOnReturn(
   // signals that do not re-raise autonomously), such as signals delivered via
   // kill() and asynchronous hardware faults such as SEGV_MTEAERR, which would
   // otherwise be lost when re-raising the signal via raise().
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_CRASHPAD)
   int retval = syscall(SYS_rt_tgsigqueueinfo,
                        getpid(),
                        syscall(SYS_gettid),

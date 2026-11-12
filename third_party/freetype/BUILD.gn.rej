@@ -1,0 +1,13 @@
+diff a/third_party/freetype/BUILD.gn b/third_party/freetype/BUILD.gn	(rejected hunks)
+@@ -4,10 +4,11 @@
+ 
+ import("//build/config/cast.gni")
+ import("//build/config/freetype/freetype.gni")
+ import("//build/config/sanitizers/sanitizers.gni")
+ import("//third_party/harfbuzz-ng/harfbuzz.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ assert(enable_freetype)
+ assert(!use_system_freetype, "Not used when using system freetype.")
+ 
+ visibility = [ ":*" ]

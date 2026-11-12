@@ -1,0 +1,61 @@
+diff a/third_party/crashpad/crashpad/client/crashpad_client_linux.cc b/third_party/crashpad/crashpad/client/crashpad_client_linux.cc	(rejected hunks)
+@@ -46,10 +46,20 @@
+ #include "util/misc/address_sanitizer.h"
+ #include "util/misc/from_pointer_cast.h"
+ #include "util/posix/scoped_mmap.h"
+ #include "util/posix/signals.h"
+ #include "util/posix/spawn_subprocess.h"
++#include "arkweb/chromium_ext/third_party/crashpad/crashpad/handler/linux/crashpad_client_linux_utils.h"
++
++#if BUILDFLAG(ARKWEB_CRASHPAD)
++#include "third_party/crashpad/crashpad/util/linux/crashpad_dfx.h"
++#endif
++
++#if BUILDFLAG(ARKWEB_CRASHPAD)
++std::string g_happen_time = "";
++std::string g_bundle_name = "";
++#endif
+ 
+ namespace crashpad {
+ 
+ namespace {
+ 
+@@ -692,11 +731,22 @@ bool CrashpadClient::StartHandlerAtCrash(
+     const std::vector<std::string>& arguments,
+     const std::vector<base::FilePath>& attachments) {
+   std::vector<std::string> argv = BuildHandlerArgvStrings(
+       handler, database, metrics_dir, url, annotations, arguments, attachments);
+ 
++#if BUILDFLAG(ARKWEB_CRASHPAD)
++  LOG(INFO) << "crashpad CrashpadClient::StartHandlerAtCrash enter";
++  CrashpadClientUtils::AddCrashpadArguments(argv, g_happen_time);
++#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
+   auto signal_handler = LaunchAtCrashHandler::Get();
++  for (auto sig : unhandled_signals_) {
++#if BUILDFLAG(ARKWEB_CRASHPAD)
++    LOG(INFO)
++        << "crashpad CrashpadClient::StartHandlerAtCrash, unhandled signals = "
++        << sig;
++#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
++  }
+   return signal_handler->Initialize(&argv, nullptr, &unhandled_signals_);
+ }
+ 
+ // static
+ bool CrashpadClient::StartHandlerForClient(
+@@ -710,10 +760,15 @@ bool CrashpadClient::StartHandlerForClient(
+   std::vector<std::string> argv = BuildHandlerArgvStrings(
+       handler, database, metrics_dir, url, annotations, arguments);
+ 
+   argv.push_back(FormatArgumentInt("initial-client-fd", socket));
+ 
++#if BUILDFLAG(ARKWEB_CRASHPAD)
++
++  CrashpadClientUtils::AddCrashpadArguments(argv, g_happen_time);
++#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
++
+   return SpawnSubprocess(argv, nullptr, socket, true, nullptr);
+ }
+ 
+ // static
+ void CrashpadClient::DumpWithoutCrash(NativeCPUContext* context) {

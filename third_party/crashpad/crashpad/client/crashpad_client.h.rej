@@ -1,0 +1,27 @@
+diff a/third_party/crashpad/crashpad/client/crashpad_client.h b/third_party/crashpad/crashpad/client/crashpad_client.h	(rejected hunks)
+@@ -132,11 +134,11 @@ class CrashpadClient {
+                     bool restartable,
+                     bool asynchronous_start,
+                     const std::vector<base::FilePath>& attachments = {});
+ 
+ #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+-    DOXYGEN
++    DOXYGEN || BUILDFLAG(IS_OHOS)
+   //! \brief Retrieve the socket and process ID for the handler.
+   //!
+   //! `StartHandler()` must have successfully been called before calling this
+   //!     method.
+   //!
+@@ -350,11 +352,11 @@ class CrashpadClient {
+       const std::vector<std::string>& arguments,
+       int socket);
+ #endif  // BUILDFLAG(IS_ANDROID) || DOXYGEN
+ 
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS) || \
+-    DOXYGEN
++    DOXYGEN || BUILDFLAG(IS_OHOS)
+   //! \brief Installs a signal handler to launch a handler process in reponse to
+   //!     a crash.
+   //!
+   //! The handler process will create a crash dump for this process and exit.
+   //!

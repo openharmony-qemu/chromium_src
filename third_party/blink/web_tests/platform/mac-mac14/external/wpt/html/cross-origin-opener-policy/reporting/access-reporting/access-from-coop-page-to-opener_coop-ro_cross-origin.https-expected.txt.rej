@@ -1,0 +1,9 @@
+diff a/third_party/blink/web_tests/platform/mac-mac14/external/wpt/html/cross-origin-opener-policy/reporting/access-reporting/access-from-coop-page-to-opener_coop-ro_cross-origin.https-expected.txt b/third_party/blink/web_tests/platform/mac-mac14/external/wpt/html/cross-origin-opener-policy/reporting/access-reporting/access-from-coop-page-to-opener_coop-ro_cross-origin.https-expected.txt
+--- a/third_party/blink/web_tests/platform/mac-mac14/external/wpt/html/cross-origin-opener-policy/reporting/access-reporting/access-from-coop-page-to-opener_coop-ro_cross-origin.https-expected.txt
++++ b/third_party/blink/web_tests/platform/mac-mac14/external/wpt/html/cross-origin-opener-policy/reporting/access-reporting/access-from-coop-page-to-opener_coop-ro_cross-origin.https-expected.txt
+@@ -1,4 +1,5 @@
+ This is a testharness.js-based test.
+ [FAIL] access-from-coop-page-to-opener, cross-origin
+   assert_equals: expected (string) "coop" but got (undefined) undefined
+ Harness: the test ran to completion.
++

@@ -27,10 +27,17 @@
 #include "base/memory/page_size.h"
 #include "base/posix/eintr_wrapper.h"
 #include "third_party/lss/lss.h"
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "base/logging.h"
+#include "arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/proc_info_ohos.h"
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
+
 #include "util/linux/scoped_ptrace_attach.h"
 #include "util/misc/memory_sanitizer.h"
 #include "util/posix/scoped_mmap.h"
 
+#include "arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/ptrace_broker_utils.h"
 namespace crashpad {
 
 namespace {
@@ -123,6 +130,19 @@ PtraceBroker::PtraceBroker(int sock, pid_t pid, bool is_64_bit)
 
   DCHECK_LT(root_length, sizeof(file_root_buffer_));
   file_root_buffer_[root_length] = '\0';
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  ProcInfo proc;
+  if (GetProcStatusByPid(pid, proc)) {
+    is_in_pid_ns_ = proc.ns;
+    LOG(INFO) << "crashpad PtraceBroker::PtraceBroker, pid " << pid
+              << ", in pid namespace = " << is_in_pid_ns_;
+  }
+
+  if (is_in_pid_ns_) {
+    (void)GetTidMapByPid(pid, tid_nstid_map_);
+  }
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
 }
 
 PtraceBroker::~PtraceBroker() = default;
@@ -143,15 +163,33 @@ int PtraceBroker::RunImpl(AttachmentsArray* attachments) {
   while (true) {
     Request request = {};
     if (!ReadFileExactly(sock_, &request, sizeof(request))) {
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+      LOG(ERROR)
+          << "crashpad PtraceBroker::RunImpl, read request msg failed, errno = "
+          << errno;
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
       return errno;
     }
 
     if (request.version != Request::kVersion) {
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+      LOG(ERROR) << "crashpad PtraceBroker::RunImpl, read request msg failed, "
+                    "version no match, reqeust version = "
+                 << request.version;
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
       return EINVAL;
     }
 
     switch (request.type) {
       case Request::kTypeAttach: {
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+        pid_t ns_tid = PtraceBrokerUtils::ConvertRealtidToNstid(request.tid, this);
+        LOG(DEBUG) << "crashpad PtraceBroker::RunImpl, received request msg = "
+                      "kTypeAttach, tid = "
+                   << request.tid << ", convert ns tid = " << ns_tid;
+        request.tid = ns_tid;
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
+
         ExceptionHandlerProtocol::Bool status =
             attachments->Attach(request.tid)
                 ? ExceptionHandlerProtocol::kBoolTrue
@@ -182,6 +220,14 @@ int PtraceBroker::RunImpl(AttachmentsArray* attachments) {
       }
 
       case Request::kTypeGetThreadInfo: {
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+        pid_t ns_tid = PtraceBrokerUtils::ConvertRealtidToNstid(request.tid, this);
+        LOG(DEBUG) << "crashpad PtraceBroker::RunImpl, received request msg = "
+                      "kTypeGetThreadInfo, tid = "
+                   << request.tid << ", convert ns tid = " << ns_tid;
+        request.tid = ns_tid;
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
+
         GetThreadInfoResponse response;
         response.success = ptracer_.GetThreadInfo(request.tid, &response.info)
                                ? ExceptionHandlerProtocol::kBoolTrue
@@ -201,11 +247,22 @@ int PtraceBroker::RunImpl(AttachmentsArray* attachments) {
       }
 
       case Request::kTypeReadFile: {
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+        LOG(DEBUG) << "crashpad PtraceBroker::RunImpl, received request msg = "
+                      "kTypeReadFile, tid = "
+                   << request.tid;
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
         ScopedFileHandle handle;
         int result = ReceiveAndOpenFilePath(request.path.path_length,
                                             /* is_directory= */ false,
                                             &handle);
         if (result != 0) {
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+          LOG(ERROR) << "crashpad PtraceBroker::RunImpl, received request msg "
+                        "= kTypeReadFile, tid = "
+                     << request.tid
+                     << ", received file path failed, errno = " << errno;
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
           return result;
         }
 
@@ -325,7 +382,13 @@ int PtraceBroker::SendMemory(pid_t pid, VMAddress address, VMSize size) {
     return SendReadError(kReadErrorAccessDenied);
   }
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  // todo: use TryOpeningMemFile when pread bugfix.
+  pid = PtraceBrokerUtils::ConvertRealtidToNstid(pid, this);
+#else
   TryOpeningMemFile();
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
+
   auto read_memory = [this, pid](VMAddress address, size_t size, char* buffer) {
     return this->memory_file_.is_valid()
                ? HANDLE_EINTR(

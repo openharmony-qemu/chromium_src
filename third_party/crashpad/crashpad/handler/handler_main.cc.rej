@@ -1,0 +1,60 @@
+diff a/third_party/crashpad/crashpad/handler/handler_main.cc b/third_party/crashpad/crashpad/handler/handler_main.cc	(rejected hunks)
+@@ -92,16 +94,20 @@
+ 
+ #if BUILDFLAG(ENABLE_CEF)
+ #include "cef/libcef/common/cef_crash_report_upload_thread.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_CRASHPAD)
++extern std::string g_happen_time;
++extern std::string g_bundle_name;
++#endif
+ namespace crashpad {
+ 
+ namespace {
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+-    BUILDFLAG(IS_ANDROID)
++    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+ #define ATTACHMENTS_SUPPORTED 1
+ #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
+         // BUILDFLAG(IS_ANDROID)
+ 
+ void Usage(const base::FilePath& me) {
+@@ -575,11 +599,10 @@ void InitCrashpadLogging() {
+ 
+ int HandlerMain(int argc,
+                 char* argv[],
+                 const UserStreamDataSources* user_stream_sources) {
+   InitCrashpadLogging();
+-
+   InstallCrashHandler();
+   CallMetricsRecordNormalExit metrics_record_normal_exit;
+ 
+   const base::FilePath argv0(
+       ToolSupport::CommandLineArgumentToFilePathStringType(argv[0]));
+@@ -588,21 +611,22 @@ int HandlerMain(int argc,
+   enum OptionFlags {
+     // Long options without short equivalents.
+     kOptionLastChar = 255,
+     kOptionAnnotation,
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+-    BUILDFLAG(IS_ANDROID)
++    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+     kOptionAttachment,
+ #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX)
+     kOptionDatabase,
+ #if BUILDFLAG(IS_APPLE)
+     kOptionHandshakeFD,
+ #endif  // BUILDFLAG(IS_APPLE)
+ #if BUILDFLAG(IS_WIN)
+     kOptionInitialClientData,
+ #endif  // BUILDFLAG(IS_WIN)
+-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
++    BUILDFLAG(IS_OHOS)
+     kOptionInitialClientFD,
+ #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) ||
+         // BUILDFLAG(IS_CHROMEOS)
+ #if BUILDFLAG(IS_APPLE)
+     kOptionMachService,

@@ -13,15 +13,17 @@
 // limitations under the License.
 
 #include "handler/linux/crash_report_exception_handler.h"
-
+#include "arkweb/chromium_ext/third_party/crashpad/crashpad/handler/linux/crash_report_exception_handler_utils.h"
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "base/logging.h"
 #include "build/build_config.h"
 #include "client/settings.h"
 #include "handler/linux/capture_snapshot.h"
 #include "minidump/minidump_file_writer.h"
+
 #include "snapshot/linux/process_snapshot_linux.h"
 #include "snapshot/sanitized/process_snapshot_sanitized.h"
 #include "util/file/file_helper.h"
@@ -162,6 +164,7 @@ bool CrashReportExceptionHandler::HandleExceptionWithBroker(
       &client, info, client_uid, 0, nullptr, local_report_id);
 }
 
+
 bool CrashReportExceptionHandler::HandleExceptionWithConnection(
     PtraceConnection* connection,
     const ExceptionHandlerProtocol::ClientInformation& info,
@@ -188,11 +191,22 @@ bool CrashReportExceptionHandler::HandleExceptionWithConnection(
     process_snapshot->SetClientID(client_id);
   }
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  UserStreamDataSources extendedUserStream;
+  CrashReportExceptionHandlerUtils::InitExtendedUserStream(connection,
+    &extendedUserStream);
+#endif
+
   return write_minidump_to_database_
              ? WriteMinidumpToDatabase(process_snapshot.get(),
                                        sanitized_snapshot.get(),
                                        write_minidump_to_log_,
+#if !BUILDFLAG(ARKWEB_CRASHPAD)
                                        local_report_id)
+#else
+                                       local_report_id,
+                                       &extendedUserStream)
+#endif
              : WriteMinidumpToLog(process_snapshot.get(),
                                   sanitized_snapshot.get());
 }
@@ -201,7 +215,12 @@ bool CrashReportExceptionHandler::WriteMinidumpToDatabase(
     ProcessSnapshotLinux* process_snapshot,
     ProcessSnapshotSanitized* sanitized_snapshot,
     bool write_minidump_to_log,
+#if !BUILDFLAG(ARKWEB_CRASHPAD)
     UUID* local_report_id) {
+#else
+    UUID* local_report_id,
+    UserStreamDataSources* extendedUserStream) {
+#endif {
   std::unique_ptr<CrashReportDatabase::NewReport> new_report;
   CrashReportDatabase::OperationStatus database_status =
       database_->PrepareNewCrashReport(&new_report);
@@ -221,6 +240,10 @@ bool CrashReportExceptionHandler::WriteMinidumpToDatabase(
   MinidumpFileWriter minidump;
   minidump.InitializeFromSnapshot(snapshot);
   AddUserExtensionStreams(user_stream_data_sources_, snapshot, &minidump);
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  AddUserExtensionStreams(extendedUserStream, snapshot, &minidump);
+#endif
 
   if (!minidump.WriteEverything(new_report->Writer())) {
     LOG(ERROR) << "WriteEverything failed";
@@ -302,5 +325,64 @@ bool CrashReportExceptionHandler::WriteMinidumpToLog(
   }
   return writer.Flush();
 }
+
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+bool HandleMemorySnapshot(pid_t target_pid, int snapshot_fd, int socket) {
+  LOG(DEBUG) << "[HandleMemorySnapshot] pid=" << target_pid
+            << ", snapshot_fd=" << snapshot_fd << ",socket="<<socket;
+  if (snapshot_fd < 0) {
+    LOG(ERROR) << "[MemorySnapshot] Invalid fd";
+    if (socket >= 0) {
+      close(socket);
+    }
+    return false;
+  }
+  if (socket < 0) {
+    LOG(ERROR) << "[MemorySnapshot] Invalid socket";
+    if (snapshot_fd >= 0) {
+      close(snapshot_fd);
+    }
+    return false;
+  }
+
+  constexpr size_t kBufferSize = 1 * 1024 * 1024;
+  std::vector<char> buf(kBufferSize);
+
+  // read snapshot data
+  uint32_t write_bytes = 0;
+  while (true) {
+    ssize_t n = TEMP_FAILURE_RETRY(read(socket, buf.data(), buf.size()));
+    if (n < 0) {
+      LOG(ERROR) << "[HandleMemorySnapshot]read() failed";
+      close(snapshot_fd);
+      close(socket);
+      return false;
+    }
+    if (n == 0) {
+      break;
+    }
+
+    // write snapshot data
+    const char* p = buf.data();
+    size_t left = static_cast<size_t>(n);
+    while (left > 0) {
+      ssize_t w = TEMP_FAILURE_RETRY(write(snapshot_fd, p, left));
+      if (w <= 0) {
+        close(snapshot_fd);
+        close(socket);
+        return false;
+      }
+      p += w;
+      left -= static_cast<size_t>(w);
+    }
+    write_bytes += n;
+  }
+
+  close(socket);
+  close(snapshot_fd);
+  LOG(INFO) << "[HandleMemorySnapshot] end " << write_bytes;
+  return true;
+}
+#endif
 
 }  // namespace crashpad

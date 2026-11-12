@@ -1,0 +1,31 @@
+diff a/third_party/libaddressinput/BUILD.gn b/third_party/libaddressinput/BUILD.gn	(rejected hunks)
+@@ -27,17 +28,29 @@ grit_strings("strings") {
+ 
+   outputs = [
+     "messages.h",
+     "en_messages.cc",
+   ]
++
++  #ifdef arkweb_i18n
++  if (arkweb_i18n) {
++    locales = all_chrome_locales + extra_locales
++  }
++
++  #endif
++
+   output_prefix = "address_input_strings_"
+ 
+   configs = [ ":internal_config" ]
+ }
+ 
+ config("libaddressinput_config") {
++  if (arkweb_privacy_compliance) {
++    defines = [ "I18N_ADDRESS_VALIDATION_DATA_URL=\"https://x.x.x.x/\"" ]
++  } else {
+   defines = [ "I18N_ADDRESS_VALIDATION_DATA_URL=\"https://chromium-i18n.appspot.com/ssl-aggregate-address/\"" ]
++  }
+   include_dirs = [ "src/cpp/include" ]
+ }
+ 
+ # This target provides basic functionality which is cooked into the build.
+ static_library("util") {

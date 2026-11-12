@@ -169,4 +169,8 @@ component("freetype") {
   public_configs = [ ":freetype_config" ]
 
   deps = [ "//third_party/zlib" ]
+
+  if (arkweb_css_font) {
+    deps += [ "//third_party/libpng" ]
+  }
 }

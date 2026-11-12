@@ -1,0 +1,53 @@
+diff a/third_party/crashpad/crashpad/util/posix/spawn_subprocess.cc b/third_party/crashpad/crashpad/util/posix/spawn_subprocess.cc	(rejected hunks)
+@@ -18,10 +18,14 @@
+ #include <spawn.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <sys/wait.h>
+ #include <unistd.h>
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(ARKWEB_CRASHPAD_FORK)
++#include <sys/syscall.h>
++#endif
+ 
+ #include "base/check.h"
+ #include "base/check_op.h"
+ #include "base/logging.h"
+ #include "base/posix/eintr_wrapper.h"
+@@ -197,13 +205,34 @@ bool SpawnSubprocess(const std::vector<std::string>& argv,
+ 
+     CloseMultipleNowOrOnExec(STDERR_FILENO + 1, preserve_fd);
+ 
+     auto execve_fp = use_path ? execvpe : execve;
+     execve_fp(argv_for_spawn[0], argv_for_spawn, envp_for_spawn);
+-    PLOG(FATAL) << (use_path ? "execvpe" : "execve") << " "
+-                << argv_for_spawn[0];
++    PLOG(FATAL) << (use_path ? "execvpe" : "execve");
+ #else
++
++#if BUILDFLAG(ARKWEB_CRASHPAD_FORK)
++    pid = syscall(SYS_clone, SIGCHLD, nullptr);
++    if (pid < 0) {
++      PLOG(FATAL) << "fork";
++    }
++
++    if (pid > 0) {
++      // Child process.
++
++      // _exit() instead of exit(), because fork() was called.
++      _exit(EXIT_SUCCESS);
++    }
++
++    // Grandchild process.
++
++    auto execve_fp = use_path ? execvpe : execve;
++    execve_fp(argv_for_spawn[0], argv_for_spawn, envp_for_spawn);
++    PLOG(ERROR) << (use_path ? "execvpe" : "execve");
++    _exit(EXIT_FAILURE);
++#else
++
+ #if BUILDFLAG(IS_APPLE)
+     PosixSpawnAttr attr;
+     attr.SetFlags(POSIX_SPAWN_CLOEXEC_DEFAULT);
+ 
+     PosixSpawnFileActions file_actions;

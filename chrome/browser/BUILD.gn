@@ -53,6 +53,14 @@ if (is_arkweb) {
   import("//arkweb/chromium_ext/chromium_ext.gni")
 }
 
+_colors_info_tool =
+    "//chrome/browser/new_tab_page/chrome_colors:generate_colors_info"
+if (is_ohos) {
+  # Build-time generators run on the host, not inside the OHOS guest.
+  _colors_info_tool =
+      "//chrome/browser/new_tab_page/chrome_colors:generate_colors_info($host_toolchain)"
+}
+
 assert(enable_supervised_users)
 
 # //build/config/android/rules.gni imports //tools/grit/grit_rule.gni, which
@@ -8809,7 +8817,7 @@ static_library("browser_generated_files") {
     public_deps += [
       "//chrome/browser/lens/core/mojom:mojo_bindings",
       "//chrome/browser/new_tab_page/chrome_colors:generate_chrome_colors_info",
-      "//chrome/browser/new_tab_page/chrome_colors:generate_colors_info",
+      _colors_info_tool,
       "//chrome/browser/new_tab_page/modules/file_suggestion:mojo_bindings",
       "//chrome/browser/new_tab_page/modules/safe_browsing:mojo_bindings",
       "//chrome/browser/new_tab_page/modules/v2/authentication:mojo_bindings",
@@ -8935,7 +8943,7 @@ static_library("browser_generated_files") {
 
   if (is_win || is_mac || is_linux) {
     public_deps +=
-        [ "//chrome/browser/new_tab_page/chrome_colors:generate_colors_info" ]
+        [ _colors_info_tool ]
   }
 
   if (is_win || is_linux || is_android || is_chromeos) {

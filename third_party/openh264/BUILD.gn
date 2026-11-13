@@ -216,3 +216,11 @@ source_set("decoder") {
     ":processing",
   ]
 }
+
+# A separate C ABI library for the fixed OHOS AVCodec software wrapper.
+# It is not a default Chromium build dependency or a mock encoder.
+if (target_os == "ohos") {
+  group("qemu_avc_backend") {
+    deps = [ "//ohos/qemu_avc:avcenc_ohos" ]
+  }
+}

@@ -47,7 +47,7 @@ declare_args() {
   if (llvm_ohos_mainline) {
     clang_version = "22"
   } else {
-    clang_version = "22"
+    clang_version = "15.0.4"
   }
 }
 

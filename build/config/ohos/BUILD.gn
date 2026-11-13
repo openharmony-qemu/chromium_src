@@ -39,6 +39,16 @@ config("compiler") {
     "HAVE_SYS_UIO_H",
   ]
   
+  # JSVM is built by the OpenHarmony toolchain, whose libc++ ABI namespace is
+  # __h. v8_shared exposes standard-library types in its public C++ symbols,
+  # so the target-side Chromium libc++ must use the same namespace.
+  if (use_custom_libcxx) {
+    defines += [
+      "_LIBCPP_ABI_NAMESPACE=__h",
+      "_LIBCPP_ABI_VERSION=1",
+    ]
+  }
+
   if (is_arkweb) {
     defines += [ "IS_ARKWEB_TRUE" ]
   }
@@ -151,7 +161,21 @@ config("runtime_library") {
   } else {
     defines = [ "__BUILD_LINUX_WITH_CLANG" ]
   }
+
+  # Chromium's mainline Clang treats linux-ohos as a generic Linux target and
+  # otherwise injects crtbegin/crtend and compiler-rt from its own resource
+  # directory. The API 26 SDK supplies the OHOS runtime explicitly below.
+  if (llvm_ohos_mainline) {
+    ldflags += [
+      "-nostartfiles",
+      "-nodefaultlibs",
+      "-lm",
+      "-lunwind",
+      "-lc",
+    ]
+  }
   if (use_musl) {
+    llvm_version = "15.0.4"
     dynamic_linker = "/lib/ld-musl-arm.so.1"
     if (current_cpu == "arm") {
       ldflags += [ "-L" + rebase_path("$ohos_sysroot/usr/lib/arm-linux-ohos",
@@ -161,24 +185,24 @@ config("runtime_library") {
                                root_build_dir) ]
       ldflags +=
           [ "-L" + rebase_path(
-                "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos",
+                "$ohos_toolchain_root/lib/clang/$llvm_version/lib/arm-linux-ohos",
                 root_build_dir) ]
 
-      libclang_rt_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.builtins.a"
+      libclang_rt_file = "$ohos_toolchain_root/lib/clang/$llvm_version/lib/arm-linux-ohos/libclang_rt.builtins.a"
 
       if (is_asan && arkweb_asan) {
-        libasan_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.asan.so"
+        libasan_file = "$ohos_toolchain_root/lib/clang/$llvm_version/lib/arm-linux-ohos/libclang_rt.asan.so"
         libs += [ rebase_path(libasan_file) ]
         dynamic_linker = "/lib/ld-musl-arm-asan.so.1"
       }
 
       if (is_hwasan && arkweb_asan) {
-        libasan_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.hwasan.so"
+        libasan_file = "$ohos_toolchain_root/lib/clang/$llvm_version/lib/arm-linux-ohos/libclang_rt.hwasan.so"
         libs += [ rebase_path(libasan_file) ]
         dynamic_linker = "/lib/ld-musl-arm-asan.so.1"
       }
       if (using_sanitizer) {
-        libasan_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.ubsan_standalone.so"
+        libasan_file = "$ohos_toolchain_root/lib/clang/$llvm_version/lib/arm-linux-ohos/libclang_rt.ubsan_standalone.so"
         libs += [ rebase_path(libasan_file) ]
       }
     }
@@ -193,7 +217,6 @@ config("runtime_library") {
       ldflags += [ "-L" + rebase_path(
                        "$ohos_toolchain_root/lib/aarch64-linux-ohos",
                        root_build_dir) ]
-      llvm_version = "22"
       ldflags +=
           [ "-L" + rebase_path(
                 "$ohos_toolchain_root/lib/clang/$llvm_version/lib/aarch64-linux-ohos",
@@ -222,9 +245,9 @@ config("runtime_library") {
                                root_build_dir) ]
       ldflags +=
           [ "-L" + rebase_path(
-                "$ohos_toolchain_root/lib/clang/current/lib/x86_64-linux-ohos",
+                "$ohos_toolchain_root/lib/clang/$llvm_version/lib/x86_64-linux-ohos",
                 root_build_dir) ]
-      libclang_rt_file = "$ohos_toolchain_root/lib/clang/current/lib/x86_64-linux-ohos/libclang_rt.builtins.a"
+      libclang_rt_file = "$ohos_toolchain_root/lib/clang/$llvm_version/lib/x86_64-linux-ohos/libclang_rt.builtins.a"
     }
 
     ldflags += [ "-Wl,--dynamic-linker,$dynamic_linker" ]

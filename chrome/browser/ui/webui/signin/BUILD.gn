@@ -5,6 +5,14 @@
 import("//chrome/common/features.gni")
 import("//components/signin/features.gni")
 
+_colors_info_tool =
+    "//chrome/browser/new_tab_page/chrome_colors:generate_colors_info"
+if (is_ohos) {
+  # Build-time generators run on the host, not inside the OHOS guest.
+  _colors_info_tool =
+      "//chrome/browser/new_tab_page/chrome_colors:generate_colors_info($host_toolchain)"
+}
+
 assert(!is_fuchsia && !is_android)
 
 # Removes circular dep between |login| and |signin|.
@@ -290,7 +298,7 @@ source_set("login_impl") {
     deps += [
       ":signin",
       ":signin_utils",
-      "//chrome/browser/new_tab_page/chrome_colors:generate_colors_info",
+      _colors_info_tool,
       "//chrome/browser/password_manager/factories",
       "//chrome/browser/profiles",
       "//chrome/browser/signin:signin_promo",

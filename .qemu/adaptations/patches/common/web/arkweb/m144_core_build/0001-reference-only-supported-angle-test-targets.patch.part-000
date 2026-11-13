@@ -1,0 +1,26 @@
+diff --git a/src/BUILD.gn b/src/BUILD.gn
+--- a/src/BUILD.gn
++++ b/src/BUILD.gn
+@@ -114,9 +114,7 @@ group("gn_all") {
+       "//services/service_manager/public/cpp",
+       "//skia:skia_unittests",
+       "//sql:sql_unittests",
+       "//testing/libfuzzer/tests",
+-      "//third_party/angle/src/tests:angle_end2end_tests",
+       "//third_party/angle/src/tests:angle_unittests",
+-      "//third_party/angle/src/tests:angle_white_box_tests",
+       "//third_party/flatbuffers:flatbuffers_unittests",
+       "//third_party/highway:highway_tests",
+@@ -134,5 +132,12 @@ group("gn_all") {
+       "//url:url_unittests",
+     ]
+ 
++    if (!is_ohos) {
++      deps += [
++        "//third_party/angle/src/tests:angle_end2end_tests",
++        "//third_party/angle/src/tests:angle_white_box_tests",
++      ]
++    }
++
+     #if BUILDFLAG(ARKWEB_NWEB_EX)
+     if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {

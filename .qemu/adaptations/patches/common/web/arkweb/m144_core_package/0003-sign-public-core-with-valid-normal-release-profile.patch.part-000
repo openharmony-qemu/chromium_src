@@ -1,0 +1,12 @@
+diff --git a/src/third_party/ohos_nweb_hap/dependencies/rk/signature/UnsgnedReleasedProfileTemplate.json b/src/third_party/ohos_nweb_hap/dependencies/rk/signature/UnsgnedReleasedProfileTemplate.json
+--- a/src/third_party/ohos_nweb_hap/dependencies/rk/signature/UnsgnedReleasedProfileTemplate.json
++++ b/src/third_party/ohos_nweb_hap/dependencies/rk/signature/UnsgnedReleasedProfileTemplate.json
+@@ -5,7 +5,7 @@
+     "uuid": "5027b99e-5f9e-465d-9508-a9e0134ffe18",
+     "validity": {
+         "not-before": 1594865258,
+-        "not-after": 1689473258
++        "not-after": 2208988800
+     },
+     "type": "release",
+     "bundle-info": {

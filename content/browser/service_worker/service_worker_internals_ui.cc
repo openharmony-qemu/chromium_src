@@ -664,7 +664,18 @@ void ServiceWorkerInternalsHandler::HandleInspectWorker(
     std::move(callback).Run(blink::ServiceWorkerStatusCode::kErrorNotFound);
     return;
   }
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  RequestOpenDevToolsParams params = {
+    .type = InspectUI::GetTypeFromHost(agent_host->GetType()),
+    .source_id = agent_host->GetURL().spec(),
+    .target_id = agent_host->GetId(),
+    .extension_id = "",
+    .panel = "source"
+  };
+  RequestOpenDevToolsHandler::GetInstance()->OnRequestOpenDevTools(params);
+#else
   agent_host->Inspect();
+#endif // ARKWEB_DEVTOOLS
   std::move(callback).Run(blink::ServiceWorkerStatusCode::kOk);
 }
 

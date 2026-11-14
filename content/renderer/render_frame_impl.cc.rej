@@ -12,34 +12,6 @@ diff a/content/renderer/render_frame_impl.cc b/content/renderer/render_frame_imp
        commit_params.can_load_local_resources;
  #else
    DCHECK(!commit_params.can_load_local_resources);
-@@ -1578,19 +1610,27 @@ RenderFrameImpl* RenderFrameImpl::CreateMainFrame(
-     bool is_for_nested_main_frame,
-     bool is_for_scalable_page,
-     blink::mojom::FrameReplicationStatePtr replication_state,
-     const base::UnguessableToken& devtools_frame_token,
-     mojom::CreateLocalMainFrameParamsPtr params,
-+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-+    bool is_offscreen,
-+#endif
-     const blink::WebURL& base_url) {
-   // A main frame RenderFrame must have a RenderWidget.
-   DCHECK_NE(IPC::mojom::kRoutingIdNone, params->widget_params->routing_id);
- 
-   RenderFrameImpl* render_frame = RenderFrameImpl::Create(
-       agent_scheduling_group, params->frame_token, params->routing_id,
-       std::move(params->frame),
-       std::move(params->associated_interface_provider_remote),
-       devtools_frame_token, is_for_nested_main_frame);
-+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-+  if (render_frame) {
-+    render_frame->is_offscreen_ = is_offscreen;
-+  }
-+#endif
- 
-   WebLocalFrame* web_frame = WebLocalFrame::CreateMainFrame(
-       web_view, render_frame, render_frame->blink_interface_registry_.get(),
-       std::move(params->interface_broker), params->frame_token,
-       params->document_token,
 @@ -1928,10 +1968,11 @@ RenderFrameImpl::RenderFrameImpl(CreateParams params)
        media_factory_(
            this,

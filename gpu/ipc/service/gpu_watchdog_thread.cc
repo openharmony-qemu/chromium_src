@@ -40,6 +40,10 @@
 #include "base/check.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/gpu/ipc/service/gpu_hang_adapter.h"
+#endif
+
 namespace gpu {
 
 base::TimeDelta GetGpuWatchdogTimeout(bool software_rendering) {

@@ -67,17 +67,3 @@ diff a/content/browser/preloading/prerender/prerender_host_registry.cc b/content
    for (FrameTreeNodeId host_id : frame_tree_node_ids) {
      if (CancelHostInternal(host_id, reason) ||
          CancelNewTabHostInternal(host_id, reason)) {
-@@ -1186,10 +1220,13 @@ FrameTreeNodeId PrerenderHostRegistry::FindPotentialHostToActivate(
-     return FrameTreeNodeId();
-   }
-   // Use the first match. This prioritizes the exact match or No-Vary-Search
-   // header match than No-Vary-Search hint match.
-   PrerenderHost* host = *matchable_hosts.begin();
-+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-+  LOG(DEBUG) << "Found a Prerender host.";
-+#endif
- 
-   base::UmaHistogramCounts100(
-       "Prerender.Experimental.MatchableHostCountOnActivation",
-       matchable_hosts.size());
-   // Cannot activate if prerendering navigation has not started yet.

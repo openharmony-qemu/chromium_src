@@ -1,19 +1,4 @@
 diff a/services/audio/input_controller.cc b/services/audio/input_controller.cc	(rejected hunks)
-@@ -41,10 +41,14 @@
- 
- #if BUILDFLAG(CHROME_WIDE_ECHO_CANCELLATION)
- #include "services/audio/audio_processor_handler.h"
- #endif
- 
-+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
-+#include "arkweb/chromium_ext/services/audio/input_controller_for_include.cc"
-+#endif // ARKWEB_MEDIA_CAPTURE
-+
- namespace audio {
- namespace {
- 
- using OpenOutcome = media::AudioInputStream::OpenOutcome;
- 
 @@ -708,10 +712,16 @@ void InputController::DoCreate(
                               base::BindRepeating(&InputController::OnData,
                                                   base::Unretained(this)));

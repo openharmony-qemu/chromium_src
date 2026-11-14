@@ -29,6 +29,10 @@
 #include "content/public/common/content_client.h"
 #include "content/public/common/content_features.h"
 
+#if BUILDFLAG(ARKWEB_WARMUP_SPARE_RENDER_PROCESS)
+#include "arkweb/chromium_ext/content/public/browser/spare_render_process_manager_ohos.h"
+#endif
+
 namespace content {
 
 // Enables killing spare renders when memory pressure signal is received.

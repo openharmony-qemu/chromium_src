@@ -104,6 +104,9 @@ constexpr char kConnect[] = "runtime.connect";
 constexpr char kConnectNative[] = "runtime.connectNative";
 constexpr char kSendMessage[] = "runtime.sendMessage";
 constexpr char kSendNativeMessage[] = "runtime.sendNativeMessage";
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+constexpr char kSendBrowserMessage[] = "runtime.sendBrowserMessage";
+#endif
 constexpr char kGetBackgroundPage[] = "runtime.getBackgroundPage";
 constexpr char kGetPackageDirectoryEntry[] = "runtime.getPackageDirectoryEntry";
 constexpr char kMarkListenerRegistrationComplete[] =
@@ -422,6 +425,9 @@ RequestResult RuntimeHooksDelegate::HandleRequest(
       {&RuntimeHooksDelegate::HandleGetVersion, kGetVersion},
       {&RuntimeHooksDelegate::HandleConnectNative, kConnectNative},
       {&RuntimeHooksDelegate::HandleSendNativeMessage, kSendNativeMessage},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+      {&RuntimeHooksDelegate::HandleSendBrowserMessage, kSendBrowserMessage},
+#endif
       {&RuntimeHooksDelegate::HandleGetBackgroundPage, kGetBackgroundPage},
       {&RuntimeHooksDelegate::HandleGetPackageDirectoryEntryCallback,
        kGetPackageDirectoryEntry},

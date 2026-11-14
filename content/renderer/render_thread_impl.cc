@@ -174,6 +174,10 @@
 #include "ui/native_theme/native_theme.h"
 #include "v8/include/v8-extension.h"
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "arkweb/chromium_ext/content/browser/dfx/memory_monitor_render_impl.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 #include <cpu-features.h>
 #include "media/base/android/media_codec_util.h"
@@ -892,6 +896,11 @@ void RenderThreadImpl::InitializeRenderer(
     blink::OriginTrialsSettingsProvider::Get()->SetSettings(
         std::move(origin_trials_settings));
   }
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+  if (!base::ohos::IsMobileDevice()) {
+    skia::DefaultFontMgr().get()->PrepareFontConfig();
+  }
+#endif
 }
 
 void RenderThreadImpl::RegisterSchemes() {

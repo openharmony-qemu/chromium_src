@@ -42,6 +42,12 @@
 #include "rlz/lib/machine_id.h"  // nogncheck crbug.com/40147906
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "base/uuid.h"
+#include "extensions/common/extension_urls.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace {

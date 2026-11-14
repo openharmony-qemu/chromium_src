@@ -44,6 +44,11 @@
 #include "services/network/public/mojom/url_loader_factory.mojom.h"
 #include "ui/base/l10n/l10n_util.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/browser/custom_handler.h"
+#include "extensions/common/extension_urls.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace extensions {
@@ -478,6 +483,10 @@ void InstallVerifier::BeginFetch() {
   ExtensionIdSet ids_to_sign;
   if (signature_.get()) {
     ids_to_sign.insert(signature_->ids.begin(), signature_->ids.end());
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    ids_to_sign.insert(signature_->invalid_ids.begin(),
+                       signature_->invalid_ids.end());
+#endif
   }
   if (operation.type == InstallVerifier::REMOVE) {
     for (const std::string& id : operation.ids) {

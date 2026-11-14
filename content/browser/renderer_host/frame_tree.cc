@@ -474,6 +474,10 @@ FrameTreeNode* FrameTree::AddFrame(
 
   added_node->SetFencedFramePropertiesIfNeeded();
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  InheritAdblockEnabledFromMainFrame(added_node);
+#endif
+
   if (browser_interface_broker_receiver.is_valid()) {
     added_node->current_frame_host()->BindBrowserInterfaceBrokerReceiver(
         std::move(browser_interface_broker_receiver));

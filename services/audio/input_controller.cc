@@ -48,6 +48,10 @@
 #include "services/audio/ml_model_manager.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "arkweb/chromium_ext/services/audio/input_controller_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPTURE
+
 namespace audio {
 namespace {
 

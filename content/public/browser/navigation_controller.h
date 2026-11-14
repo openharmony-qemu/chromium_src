@@ -58,6 +58,9 @@ class BrowserContext;
 class NavigationEntry;
 class RenderFrameHost;
 class NavigationHandle;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+class NavigationControllerDelegate;
+#endif
 struct OpenURLParams;
 
 // Represents the reason why no navigation is in flight after a call to

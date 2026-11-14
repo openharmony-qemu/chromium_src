@@ -637,6 +637,10 @@ class NET_EXPORT SpdySession
   SpdySessionInitiator spdy_session_initiator() const {
     return spdy_session_initiator_;
   }
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  const ResolveInfo GetResolveInfo() const;
+  const ConnectionAttempts GetExtraConnectionAttempts() const;
+#endif
 
  private:
   friend class base::RefCounted<SpdySession>;

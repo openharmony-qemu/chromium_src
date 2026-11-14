@@ -17,6 +17,11 @@
 #include "net/dns/dns_util.h"
 #include "url/url_canon.h"
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 namespace net {
 
 namespace {

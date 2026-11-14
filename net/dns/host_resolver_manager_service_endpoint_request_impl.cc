@@ -351,6 +351,10 @@ int HostResolverManager::ServiceEndpointRequestImpl::DoResolveLocally() {
   manager_->InitializeJobKeyAndIPAddress(
       network_anonymization_key_, parameters_, net_log_, *job_key_, ip_address);
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  int dns_status = kDnsResolvedUndefined;
+#endif
+
   const bool only_ipv6_reachable = false;
   const bool stale_allowed_while_refreshing =
       parameters_.cache_usage ==

@@ -16,6 +16,9 @@
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
+#if BUILDFLAG(ARKWEB_PDF)
+#include "base/logging.h"
+#endif
 #include "base/numerics/safe_math.h"
 #include "base/strings/string_util.h"
 #include "net/http/http_content_disposition.h"
@@ -463,6 +466,9 @@ void DocumentLoaderImpl::ReadComplete() {
     }
   }
   loader_.reset();
+#if BUILDFLAG(ARKWEB_PDF)
+  buffer_.resize(kReadBufferSize);
+#endif
   if (IsDocumentComplete()) {
     client_->OnDocumentComplete();
   } else {

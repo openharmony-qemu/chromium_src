@@ -13,28 +13,6 @@ diff a/net/quic/quic_session_pool.h b/net/quic/quic_session_pool.h	(rejected hun
  // Manages a pool of QuicChromiumClientSessions.
  class NET_EXPORT_PRIVATE QuicSessionPool
      : public NetworkChangeNotifier::IPAddressObserver,
-@@ -542,10 +553,21 @@ class NET_EXPORT_PRIVATE QuicSessionPool
-     return session_attempt_manager_.get();
-   }
- 
-   struct QuicCryptoClientConfigKey;
- 
-+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
-+  void SetDnsResolveInfo(const ResolveInfo& resolve_info) {
-+    resolve_info_ = resolve_info;
-+  }
-+  std::optional<ResolveInfo> TakeDnsResolveInfo() {
-+    std::optional<ResolveInfo> resolve_info = std::move(resolve_info_);
-+    resolve_info_ = std::nullopt;
-+    return resolve_info;
-+  }
-+#endif
-+
-  private:
-   class Job;
-   class DirectJob;
-   class ProxyJob;
-   class QuicCryptoClientConfigOwner;
 @@ -924,10 +946,14 @@ class NET_EXPORT_PRIVATE QuicSessionPool
  
    std::unique_ptr<QuicSessionAttemptManager> session_attempt_manager_;

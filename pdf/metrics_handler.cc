@@ -47,6 +47,23 @@ void MetricsHandler::RecordDocumentMetrics(const DocumentMetadata& metadata) {
   base::UmaHistogramEnumeration(
       "PDF.HasAttachment", metadata.has_attachments ? PdfHasAttachment::kYes
                                                     : PdfHasAttachment::kNo);
+#if BUILDFLAG(ARKWEB_PDF)
+  // The range of PdfVersion is 0-10, and it can be converted.
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetHiSysEventAdapterInstance()
+      .Write(PDF_VERSION, OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+             {VERSION, std::to_string(static_cast<int8_t>(metadata.version))});
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetHiSysEventAdapterInstance()
+      .Write(PDF_PAGE_COUNT, OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+             {PAGE_COUNT,
+              std::to_string(static_cast<uint32_t>(metadata.page_count))});
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetHiSysEventAdapterInstance()
+      .Write(PDF_HAS_ATTACHMENT,
+             OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+             {HAS_ATTACHMENT, (metadata.has_attachments ? "true" : "false")});
+#endif
   base::UmaHistogramEnumeration("PDF.FormType", metadata.form_type);
 }
 

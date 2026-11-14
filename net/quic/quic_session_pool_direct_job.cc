@@ -158,6 +158,13 @@ int QuicSessionPool::DirectJob::DoResolveHost() {
 int QuicSessionPool::DirectJob::DoResolveHostComplete(int rv) {
   host_resolution_finished_ = true;
   dns_resolution_end_time_ = base::TimeTicks::Now();
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  for (QuicSessionRequest* request : requests()) {
+    request->SetDnsResolveInfo(resolve_host_request_->GetResolveInfo());
+  }
+#endif
+
   if (rv != OK) {
     return rv;
   }

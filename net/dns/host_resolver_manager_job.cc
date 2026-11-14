@@ -761,6 +761,10 @@ void HostResolverManager::Job::StartSystemTask() {
   DCHECK_EQ(1, num_occupied_job_slots_);
   DCHECK(HasAddressType(key_.query_types));
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  dns_status_ = kDnsResolvedBySystemDns;
+#endif
+
   std::optional<HostResolverSystemTask::CacheParams> cache_params;
   if (key_.resolve_context->host_resolver_cache()) {
     cache_params.emplace(*key_.resolve_context->host_resolver_cache(),

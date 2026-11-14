@@ -13,22 +13,6 @@ diff a/pdf/pdfium/pdfium_engine.h b/pdf/pdfium/pdfium_engine.h	(rejected hunks)
    // orientation, has changed.
    void InvalidateAllPages();
  
-@@ -1108,10 +1128,15 @@ class PDFiumEngine : public DocumentLoader::Client,
- #if BUILDFLAG(ENABLE_PDF_INK2)
-   std::vector<FPDF_PAGEOBJECT> GetActiveInkPageObjectsForPage(
-       int page_index) const;
- #endif
- 
-+#if BUILDFLAG(ARKWEB_PDF)
-+  // Converts a page position (e.g. the location of a bookmark) to a screen position.
-+  gfx::PointF ConverPageToScreen(int page_index, gfx::PointF point);
-+#endif  // BUILDFLAG(ARKWEB_PDF)
-+
-   const raw_ptr<PDFiumEngineClient> client_;
- 
-   // The current document layout.
-   DocumentLayout layout_;
- 
 @@ -1402,15 +1435,24 @@ class PDFiumEngine : public DocumentLoader::Client,
    // Key: ID to identify a shape.
    // Value: The PDFium page object associated with the shape.

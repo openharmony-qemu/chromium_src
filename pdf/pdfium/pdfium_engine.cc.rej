@@ -149,20 +149,6 @@ diff a/pdf/pdfium/pdfium_engine.cc b/pdf/pdfium/pdfium_engine.cc	(rejected hunks
  
    // Don't trust PDFium to handle circular bookmarks.
    constexpr unsigned int kMaxDepth = 128;
-@@ -3095,10 +3204,13 @@ gfx::Size PDFiumEngine::plugin_size() const {
-   DUMP_WILL_BE_NOTREACHED();
-   return gfx::Size();
- }
- 
- void PDFiumEngine::LoadDocument() {
-+#if BUILDFLAG(ARKWEB_PDF)
-+  TRACE_EVENT0("media", "PDFiumEngine::LoadDocument");
-+#endif
-   // Check if the document is ready for loading. If it isn't just bail for now,
-   // we will call LoadDocument() again later.
-   if (!doc() && !doc_loader_->IsDocumentComplete()) {
-     FX_DOWNLOADHINTS& download_hints = document_->download_hints();
-     if (!FPDFAvail_IsDocAvail(fpdf_availability(), &download_hints)) {
 @@ -4570,25 +4740,39 @@ void PDFiumEngine::MoveRangeSelectionExtent(const gfx::Point& extent) {
    if (!PageIndexInBounds(point_data.page_index) || point_data.char_index < 0) {
      return;

@@ -3638,6 +3638,9 @@ bool PDFiumEngine::ForEachPageUntilTrue(
 }
 
 void PDFiumEngine::LoadDocument() {
+#if BUILDFLAG(ARKWEB_PDF)
+  TRACE_EVENT0("media", "PDFiumEngine::LoadDocument");
+#endif
   // Check if the document is ready for loading. If it isn't just bail for now,
   // we will call LoadDocument() again later.
   if (!doc() && !doc_loader_->IsDocumentComplete()) {

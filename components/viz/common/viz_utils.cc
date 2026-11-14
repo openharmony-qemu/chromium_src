@@ -24,6 +24,11 @@
 #include <sys/resource.h>
 #endif
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+#include "components/viz/common/features.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+
 namespace viz {
 
 

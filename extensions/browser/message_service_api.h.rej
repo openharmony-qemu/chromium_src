@@ -1,16 +1,4 @@
 diff a/extensions/browser/message_service_api.h b/extensions/browser/message_service_api.h	(rejected hunks)
-@@ -5,10 +5,11 @@
- #ifndef EXTENSIONS_BROWSER_MESSAGE_SERVICE_API_H_
- #define EXTENSIONS_BROWSER_MESSAGE_SERVICE_API_H_
- 
- #include <variant>
- 
-+#include "arkweb/build/features/features.h"
- #include "extensions/browser/service_worker/worker_id.h"
- #include "extensions/common/api/messaging/port_id.h"
- #include "extensions/common/mojom/message_port.mojom-forward.h"
- 
- namespace content {
 @@ -43,10 +44,19 @@ class MessageServiceApi {
        const PortId& source_port_id,
        const std::string& native_app_name,

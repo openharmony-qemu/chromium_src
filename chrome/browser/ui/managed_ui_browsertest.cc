@@ -4,6 +4,9 @@
 
 #include "chrome/browser/ui/managed_ui.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/build/features/features.h"
+#endif
 #include "base/strings/utf_string_conversions.h"
 #include "base/values.h"
 #include "build/build_config.h"

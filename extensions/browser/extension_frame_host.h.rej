@@ -23,21 +23,3 @@ diff a/extensions/browser/extension_frame_host.h b/extensions/browser/extension_
  
  namespace extensions {
  
-@@ -78,10 +84,17 @@ class ExtensionFrameHost : public mojom::LocalFrameHost {
-       const std::string& native_app_name,
-       const PortId& port_id,
-       mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
-       mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
-           port_host) override;
-+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
-+  void OpenChannelToBrowser(
-+      const PortId& port_id,
-+      mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
-+      mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
-+          port_host) override;
-+#endif
-   void OpenChannelToTab(
-       int32_t tab_id,
-       int32_t frame_id,
-       const std::optional<std::string>& document_id,
-       extensions::mojom::ChannelType channel_type,

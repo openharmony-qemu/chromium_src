@@ -98,6 +98,12 @@ class ContentSettingsPref {
   // Callback for changes in the pref with the same name.
   void OnPrefChanged();
 
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+  // Deferred read callback for OTR instances to coalesce rapid-fire
+  // notifications into a single re-read.
+  void OnOTRDeferredRead();
+#endif
+
   // Update the preference that stores content settings exceptions and syncs the
   // value to the obsolete preference. When calling this function, |lock_|
   // should not be held, since this function will send out notifications of

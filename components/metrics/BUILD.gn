@@ -338,6 +338,17 @@ if (!is_cronet_build || is_ios) {
       "//url",
     ]
 
+    if (is_arkweb) {
+      deps += [ "//arkweb/build/features" ]
+    }
+
+    if (arkweb_histogram_dfx) {
+      sources += [
+        "//arkweb/chromium_ext/components/metrics/arkweb_histogram_filter.h",
+        "//arkweb/chromium_ext/components/metrics/arkweb_histogram_filter.cc"
+      ]
+    }
+
     if (is_android) {
       sources += [
         "android_metrics_provider.cc",

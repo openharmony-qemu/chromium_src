@@ -1,18 +1,4 @@
 diff a/components/viz/client/frame_evictor.cc b/components/viz/client/frame_evictor.cc	(rejected hunks)
-@@ -8,10 +8,13 @@
- 
- #include "base/containers/contains.h"
- #include "base/feature_list.h"
- #include "build/buildflag.h"
- #include "components/viz/common/features.h"
-+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
-+#include "components/viz/common/viz_utils.h"
-+#endif
- 
- namespace viz {
- 
- FrameEvictorClient::EvictIds::EvictIds() = default;
- FrameEvictorClient::EvictIds::~EvictIds() = default;
 @@ -46,13 +49,24 @@ void FrameEvictor::SetVisible(bool visible) {
      else
        FrameEvictionManager::GetInstance()->UnlockFrame(this);

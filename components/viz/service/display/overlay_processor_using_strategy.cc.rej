@@ -1,19 +1,4 @@
 diff a/components/viz/service/display/overlay_processor_using_strategy.cc b/components/viz/service/display/overlay_processor_using_strategy.cc	(rejected hunks)
-@@ -42,10 +42,14 @@
- #include "components/viz/service/display/overlay_strategy_underlay.h"
- #include "ui/gfx/geometry/rect.h"
- #include "ui/gfx/geometry/rect_conversions.h"
- #include "ui/gfx/geometry/transform.h"
- 
-+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
-+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
-+#endif
-+
- namespace viz {
- namespace {
- 
- // These values are persisted to logs. Entries should not be renumbered and
- // numeric values should never be reused.
 @@ -829,14 +833,24 @@ bool OverlayProcessorUsingStrategy::AttemptWithStrategies(
    for (auto&& candidate : proposed_candidates) {
      if (candidate.candidate.requires_overlay) {

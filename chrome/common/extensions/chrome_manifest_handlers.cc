@@ -26,6 +26,10 @@
 #include "chrome/common/extensions/api/file_browser_handlers/file_browser_handler.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/browser/custom_handler.h"
+#endif
+
 namespace extensions {
 
 void RegisterChromeManifestHandlers(ManifestHandlerRegistry* registry) {

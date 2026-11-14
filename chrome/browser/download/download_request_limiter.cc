@@ -34,6 +34,10 @@
 #include "ui/base/page_transition_types.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+#include "arkweb/chromium_ext/chrome/browser/download/download_request_limiter_for_include.cc"
+#endif
+
 using content::BrowserThread;
 using content::NavigationController;
 using content::NavigationEntry;

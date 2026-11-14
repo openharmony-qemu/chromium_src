@@ -101,7 +101,11 @@ static constexpr char kEligibilityResponseAccountMismatchHistogramName[] =
     "Omnibox.AimEligibility.EligibilityResponseAccountMismatch";
 
 static constexpr char kRequestPath[] = "/async/folae";
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+static constexpr char kRequestQuery[] = "***=***";
+#else
 static constexpr char kRequestQuery[] = "async=_fmt:pb";
+#endif
 static constexpr char kAuthUserQueryKey[] = "authuser";
 
 // Reflects the default value for the `kAIModeSettings` pref; 0 = allowed, 1 =

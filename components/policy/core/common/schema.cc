@@ -697,7 +697,13 @@ Schema::InternalStorage::ParseSchema(const base::DictValue& schema) {
           storage->case_insensitive_lookup_.size()) {
     return base::unexpected(
         "Failed to parse the schema due to a Chrome bug. Please file a "
-        "new issue at http://crbug.com");
+        "new issue at "
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+        "https://x.x.x"
+#else
+        "http://crbug.com"
+#endif
+    );
   }
 
   std::string error;

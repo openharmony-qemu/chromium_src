@@ -179,6 +179,10 @@
 #include "components/keep_alive_registry/scoped_keep_alive.h"
 #endif  // !BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_HISTOGRAM_DFX)
+#include "arkweb/chromium_ext/components/metrics/arkweb_histogram_filter.h"
+#endif
+
 namespace metrics {
 namespace {
 

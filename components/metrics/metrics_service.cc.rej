@@ -1,19 +1,4 @@
 diff a/components/metrics/metrics_service.cc b/components/metrics/metrics_service.cc	(rejected hunks)
-@@ -175,10 +176,14 @@
- #include "components/keep_alive_registry/keep_alive_registry.h"
- #include "components/keep_alive_registry/keep_alive_types.h"
- #include "components/keep_alive_registry/scoped_keep_alive.h"
- #endif  // !BUILDFLAG(IS_ANDROID)
- 
-+#if BUILDFLAG(ARKWEB_HISTOGRAM_DFX)
-+#include "arkweb/chromium_ext/components/metrics/arkweb_histogram_filter.h"
-+#endif
-+
- namespace metrics {
- namespace {
- 
- // Used to write histogram data to a log. Does not take ownership of the log.
- class IndependentFlattener : public base::HistogramFlattener {
 @@ -1023,11 +1028,15 @@ MetricsService::MetricsLogHistogramWriter::MetricsLogHistogramWriter(
  
  MetricsService::MetricsLogHistogramWriter::MetricsLogHistogramWriter(

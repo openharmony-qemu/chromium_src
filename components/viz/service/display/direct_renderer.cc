@@ -423,7 +423,15 @@ void DirectRenderer::DrawFrame(
 
   // Draw all non-root render passes except for the root render pass.
   total_pixels_rendered_this_frame_ = 0;
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  bool has_copy_requests = false;
+#endif
   for (const auto& pass : *render_passes_in_draw_order) {
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+    if (!pass->copy_requests.empty()) {
+      has_copy_requests = true;
+    }
+#endif
     if (pass.get() == root_render_pass)
       break;
     DrawRenderPassAndExecuteCopyRequests(pass.get(), tracked_element_rects);
@@ -488,6 +496,9 @@ void DirectRenderer::DrawFrame(
   backdrop_filter_output_rects_.clear();
   has_pixel_moving_foreground_filters_ = false;
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  SetNextFrameSkipsDrawRenderPasses(false);
+#endif
   current_frame_valid_ = false;
 }
 

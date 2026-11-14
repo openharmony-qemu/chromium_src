@@ -18,6 +18,9 @@
 #include "third_party/skia/include/core/SkPathBuilder.h"
 #include "third_party/skia/include/core/SkPathEffect.h"
 #include "third_party/skia/include/core/SkPathUtils.h"
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+#include "arkweb/chromium_ext/cc/paint/paint_flags_for_include.cc"
+#endif
 
 namespace {
 

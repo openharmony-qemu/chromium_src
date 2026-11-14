@@ -114,6 +114,14 @@ OverlayProcessorInterface::CreateOverlayProcessor(
   // If we are offscreen, we don't have overlay support.
   // TODO(vasilyt): WebView would have a kNullSurfaceHandle. Make sure when
   // overlay for WebView is enabled, this check still works.
+
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+  if (base::ohos::IsDelegatedCompositingEnabledOhos()) {
+    TRACE_EVENT0("viz", "create OverlayProcessorOhos");
+    return std::make_unique<OverlayProcessorOhos>();
+  }
+#endif
+
   if (surface_handle == gpu::kNullSurfaceHandle)
     return std::make_unique<OverlayProcessorStub>();
 

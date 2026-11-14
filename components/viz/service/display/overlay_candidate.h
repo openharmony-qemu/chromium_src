@@ -215,6 +215,12 @@ class VIZ_SERVICE_EXPORT OverlayCandidate {
   float desired_brightness_ratio = 1.f;
 #endif
 
+#if BUILDFLAG(ARKWEB_AI_HDR)
+  // ArkWeb OHOS: when true, the video frame has been processed by VPE
+  // (Video Processing Engine) for AI HDR enhancement.
+  bool is_ai_hdr_active = false;
+#endif
+
   // Stacking order of the overlay plane relative to the main surface,
   // which is 0. Signed to allow for "underlays".
   int plane_z_order = 0;

@@ -829,8 +829,11 @@ void FrameSinkManagerImpl::RegisterCompositorFrameSinkSupport(
   UpdateThrottlingRecursively(frame_sink_id);
 
   if (frame_counter_) {
-    frame_counter_->AddFrameSink(frame_sink_id, support->is_root(),
-                                 GetFrameSinkDebugLabel(frame_sink_id));
+    frame_counter_->AddFrameSink(frame_sink_id,
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+                                support->frame_sink_type(),
+#endif
+                                support->is_root(), GetFrameSinkDebugLabel(frame_sink_id));
   }
 }
 

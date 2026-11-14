@@ -173,22 +173,6 @@ diff a/components/viz/service/display/display.cc b/components/viz/service/displa
          draw_occlusion_timer.Elapsed().InMicroseconds());
  
      DBG_LOG("renderer.ptr", "renderer = %p%s", this,
-@@ -1088,10 +1172,15 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
-       overdraw_tracker_->EstimateAndRecordOverdraw(&frame,
-                                                    base::TimeTicks::Now());
-     }
- 
-     OverdrawTracker::EstimateAndRecordOverdrawAsUMAMetric(&frame);
-+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
-+    if (IsEvictUnlockFrameEnabled() && disable_draw_and_swap_on_next_frame_) {
-+      renderer_->SetNextFrameSkipsDrawRenderPasses(true);
-+    }
-+#endif
- 
-     draw_timer.emplace();
-     overlay_processor_->SetFrameSequenceNumber(frame_sequence_number_);
-     overlay_processor_->SetIsPageFullscreen(frame.page_fullscreen_mode);
-     renderer_->DrawFrame(&frame.render_pass_list, device_scale_factor_,
 @@ -1101,10 +1190,18 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
    } else {
      TRACE_EVENT_INSTANT0("viz", "Draw skipped.", TRACE_EVENT_SCOPE_THREAD);

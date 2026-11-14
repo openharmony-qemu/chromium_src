@@ -889,6 +889,13 @@ void RootCompositorFrameSinkImpl::DisplayWillDrawAndSwap(
   CHECK(support_->GetHitTestAggregator());
   support_->GetHitTestAggregator()->Aggregate(display_->CurrentSurfaceId());
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  if (IsEvictUnlockFrameEnabled() && will_draw_and_swap &&
+      eviction_handler_.GetNextEvictLocalSurfaceId().is_valid()) {
+    display_->disable_draw_and_swap_on_next_frame_ = true;
+  }
+#endif
+
   if (external_begin_frame_source_ &&
       external_begin_frame_source_->last_begin_frame_args().IsValid() &&
       base::ShouldRecordSubsampledMetric(0.001)) {

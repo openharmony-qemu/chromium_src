@@ -563,6 +563,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       "enableUserPermittedSites",
       base::FeatureList::IsEnabled(
           extensions_features::kExtensionsMenuAccessControlWithPermittedSites));
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  source->AddBoolean("blacklistReviewShowReviewPanel", true);
+#else
+  source->AddBoolean("blacklistReviewShowReviewPanel", false);
+#endif
   source->AddBoolean(
       "safetyHubThreeDotDetails",
       base::FeatureList::IsEnabled(features::kSafetyHubThreeDotDetails));

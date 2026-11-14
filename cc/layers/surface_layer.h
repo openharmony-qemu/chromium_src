@@ -116,6 +116,12 @@ class CC_EXPORT SurfaceLayer : public Layer {
 
  protected:
   SurfaceLayer();
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  SurfaceLayer(UpdateSubmissionStateCB updateSubmissionStateCB,
+                                          RectChangeCallback callback,
+                                          RectVisibilityChangeCallback visibilitycallback,
+                                          LayerRemovedVisibilityCallback layerRemovedCallback);
+#endif
   explicit SurfaceLayer(UpdateSubmissionStateCB);
   bool HasDrawableContent() const override;
 

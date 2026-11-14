@@ -226,6 +226,13 @@ void HashRealTimeService::StartLookupInternal(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    lookup_completer->CompleteLookup(/*is_lookup_successful=*/false,
+                                     /*sb_threat_type=*/std::nullopt,
+                                     OperationOutcome::kHttpError);
+    return;
+#endif
+
   // If the service is in backoff mode, don't send a request.
   bool in_backoff = backoff_operator_->IsInBackoffMode();
   base::UmaHistogramBoolean("SafeBrowsing.HPRT.BackoffState", in_backoff);

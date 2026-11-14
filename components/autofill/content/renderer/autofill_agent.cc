@@ -2266,6 +2266,12 @@ void AutofillAgent::HandleFocusChangeComplete(
 
   if (auto focused_control = focused_element.DynamicTo<WebFormControlElement>();
       form_util::IsTextAreaElementOrTextInput(focused_control)) {
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+    if (AsAutofillAgentExt()->MaybeDeferPositionRequest(
+            focused_control, focused_node_was_last_clicked)) {
+      return;
+    }
+#endif
     std::optional<PasswordSuggestionRequest> password_request;
     if (auto input_element = focused_control.DynamicTo<WebInputElement>()) {
       password_request = password_autofill_agent_

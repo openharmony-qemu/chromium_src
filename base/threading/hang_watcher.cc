@@ -360,7 +360,14 @@ constexpr base::FeatureParam<int> kUIThreadLogLevel{
 constexpr base::FeatureParam<int> kThreadPoolLogLevel{
     &kEnableHangWatcher, kBrowserProcessThreadPoolLogLevelParam,
     static_cast<int>(LoggingLevel::kUmaOnly)};
-
+#if BUILDFLAG(IS_ARKWEB)
+constexpr base::FeatureParam<int> kCompositorGpuThreadLogLevel{
+    &kEnableHangWatcher, "compositor_gpu_thread_log_level",
+    static_cast<int>(LoggingLevel::kUmaOnly)};
+constexpr base::FeatureParam<int> kInProcessGpuThreadLogLevel{
+    &kEnableHangWatcher, "in_process_gpu_thread_log_level",
+    static_cast<int>(LoggingLevel::kUmaOnly)};
+#endif
 // GPU process.
 // Note: Do not use the prepared macro as of no need for a local cache.
 const char kGpuProcessIoThreadLogLevelParam[] =

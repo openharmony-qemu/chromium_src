@@ -22,6 +22,10 @@ source_set("network_impl") {
     "//services/network/public/cpp",
     "//url",
   ]
+
+  if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
+    deps += [ "//components/embedder_support:user_agent" ]
+  }
 }
 
 source_set("in_process_unzipper") {

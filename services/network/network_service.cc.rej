@@ -58,11 +58,3 @@ diff a/services/network/network_service.cc b/services/network/network_service.cc
           dns_config_overrides_set_by_ ==
               FunctionTag::ConfigureStubHostResolver);
    dns_config_overrides_set_by_ = FunctionTag::ConfigureStubHostResolver;
-@@ -1205,6 +1244,7 @@ NetworkService* NetworkService::GetNetworkServiceForTesting() {
- 
- void NetworkService::SetTpcdMetadataGrants(
-     const std::vector<ContentSettingPatternSource>& settings) {
-   tpcd_metadata_manager_->SetGrants(settings);
- }
-+
- }  // namespace network

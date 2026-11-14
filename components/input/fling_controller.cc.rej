@@ -96,15 +96,3 @@ diff a/components/input/fling_controller.cc b/components/input/fling_controller.
    // scheduled even when the last delta to scroll was zero.
    if (fling_curve_) {
      ScheduleFlingProgress();
-@@ -401,11 +451,10 @@ bool FlingController::UpdateCurrentFlingState(
-   } else {
-     // To maintain a smooth, continuous transition from a drag scroll to a fling
-     // scroll, the animation should begin at the time of the last update.
-     current_fling_parameters_.start_time = last_seen_scroll_update_;
-   }
--
-   if (velocity.IsZero() && fling_start_event.SourceDevice() !=
-                                blink::WebGestureDevice::kSyntheticAutoscroll) {
-     fling_booster_.Reset();
-     EndCurrentFling(fling_start_event.TimeStamp());
-     return false;

@@ -41,18 +41,6 @@ diff a/third_party/blink/renderer/core/frame/web_frame_widget_impl.h b/third_par
    void Close(DetachReason detach_reason);
  
    // Returns the WebFrame that this widget is attached to. It will be a local
-@@ -331,11 +340,10 @@ class CORE_EXPORT WebFrameWidgetImpl
-   const cc::LayerTreeDebugState* GetLayerTreeDebugState() override;
-   void SetLayerTreeDebugState(const cc::LayerTreeDebugState& state) override;
-   void SetMayThrottleIfUndrawnFrames(
-       bool may_throttle_if_undrawn_frames) override;
-   int GetVirtualKeyboardResizeHeight() const override;
--
-   void OnTaskCompletedForFrame(base::TimeTicks start_time,
-                                base::TimeTicks end_time,
-                                LocalFrame*) override;
-   void SetVirtualKeyboardResizeHeightForTesting(int);
-   bool GetMayThrottleIfUndrawnFramesForTesting();
 @@ -755,10 +763,13 @@ class CORE_EXPORT WebFrameWidgetImpl
    void RequestViewportScreenshot(const base::UnguessableToken& token);
  

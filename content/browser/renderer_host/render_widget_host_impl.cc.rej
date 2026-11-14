@@ -38,18 +38,6 @@ diff a/content/browser/renderer_host/render_widget_host_impl.cc b/content/browse
                                    hidden, /*renderer_initiated_creation=*/true);
  }
  
-@@ -411,11 +425,10 @@ RenderWidgetHostImpl::RenderWidgetHostImpl(
-   base::ScopedUmaHistogramTimer histogram_timer(
-       "Navigation.RenderWidgetHostConstructor");
- 
-   // The page should be hidden during prerendering.
-   CHECK(!frame_tree_ || !frame_tree_->is_prerendering() || hidden);
--
-   CHECK(delegate_);
-   CHECK_NE(IPC::mojom::kRoutingIdNone, routing_id_);
-   CHECK(base::ThreadPoolInstance::Get());
- 
-   AddInputEventObserver(BrowserAccessibilityStateImpl::GetInstance());
 @@ -2491,27 +2525,46 @@ void RenderWidgetHostImpl::Destroy(bool also_delete) {
    }
  }
@@ -115,16 +103,3 @@ diff a/content/browser/renderer_host/render_widget_host_impl.cc b/content/browse
  input::RenderWidgetHostViewInput* RenderWidgetHostImpl::GetPointerLockView() {
    return delegate()->GetPointerLockWidget()->GetView();
  }
-@@ -3979,11 +4059,11 @@ void RenderWidgetHostImpl::AnimateDoubleTapZoomInMainFrame(
-   }
- 
-   gfx::Rect view_local_bounds(view_->GetViewBounds().size());
-   if (!view_local_bounds.IsEmpty() &&
-       (!view_local_bounds.Contains(point) ||
--       !view_local_bounds.Intersects(rect_to_zoom))) {
-+      !view_local_bounds.Intersects(rect_to_zoom))) {
-     return;
-   }
- 
-   auto* root_view = view_->GetRootView();
-   gfx::Point transformed_point(point);

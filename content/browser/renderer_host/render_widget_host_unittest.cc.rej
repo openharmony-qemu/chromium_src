@@ -43,11 +43,3 @@ diff a/content/browser/renderer_host/render_widget_host_unittest.cc b/content/br
  
    bool ShouldIgnoreInputEvents() override { return ignore_input_events_; }
    bool ShouldIgnoreWebInputEvents(const blink::WebInputEvent& event) override {
-@@ -2649,6 +2669,7 @@ TEST_F(RenderWidgetHostTest, AnimateDoubleTapZoomValidBounds) {
-       .Times(1);
- 
-   static_cast<blink::mojom::FrameWidgetHost*>(host_.get())
-       ->AnimateDoubleTapZoomInMainFrame(tap_point, valid_rect);
- }
-+
- }  // namespace content

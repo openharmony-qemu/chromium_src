@@ -477,18 +477,6 @@ diff a/third_party/blink/renderer/core/html/media/html_media_element.cc b/third_
  
    is_encrypted_media_ = is_encrypted_media;
    OnRemotePlaybackMetadataChange();
-@@ -4958,10 +5303,11 @@ HTMLMediaElement::AddMediaPlayerObserverAndPassReceiver() {
-       std::move(observer),
-       GetDocument().GetTaskRunner(TaskType::kInternalMedia));
-   return observer_receiver;
- }
- 
-+
- void HTMLMediaElement::RequestPlay() {
-   LocalFrame* frame = GetDocument().GetFrame();
-   if (frame) {
-     LocalFrame::NotifyUserActivation(
-         frame, mojom::blink::UserActivationNotificationType::kInteraction);
 @@ -4983,16 +5329,22 @@ void HTMLMediaElement::RequestPause(bool triggered_by_user) {
                      : WebMediaPlayer::PauseReason::kPauseRequestedInternally);
  }

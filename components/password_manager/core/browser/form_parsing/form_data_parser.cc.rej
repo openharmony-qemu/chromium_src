@@ -84,18 +84,6 @@ diff a/components/password_manager/core/browser/form_parsing/form_data_parser.cc
  
  // For each relevant field of |fields| computes additional data useful for
  // parsing and wraps that in a ProcessedField. Returns the vector of all those
-@@ -1478,11 +1532,10 @@ FormParsingResult FormDataParser::ParseAndReturnParsingResult(
-                                   significant_fields.new_password &&
-                                   FieldMaxLengthAllowsPasswordGeneration(
-                                       *significant_fields.new_password) &&
-                                   new_password_found_before_heuristic;
- 
--
-   base::UmaHistogramEnumeration("PasswordManager.UsernameDetectionMethod",
-                                 method);
- 
-   // OTPs and PIN codes are usually split across several 1-digit fields.
-   // Don't automatically show Save/Update prompt in such case.
 @@ -1490,10 +1543,14 @@ FormParsingResult FormDataParser::ParseAndReturnParsingResult(
        ((!significant_fields.new_password &&
          FieldValueIsTooShortForSaving(significant_fields.password)) ||

@@ -20,18 +20,6 @@ diff a/chrome/browser/download/chrome_download_manager_delegate.cc b/chrome/brow
  ChromeDownloadManagerDelegate::~ChromeDownloadManagerDelegate() {
    // If a DownloadManager was set for this, Shutdown() must be called.
    DCHECK(!download_manager_);
-@@ -972,10 +986,11 @@ bool ChromeDownloadManagerDelegate::IsDownloadReadyForCompletion(
-     return false;
-   }
- 
- #endif  // BUILDFLAG(SAFE_BROWSING_DOWNLOAD_PROTECTION)
-   return true;
-+  
- }
- 
- #if BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
- void ChromeDownloadManagerDelegate::OnDeobfuscationComplete(
-     base::OnceClosure callback,
 @@ -1007,21 +1022,25 @@ void ChromeDownloadManagerDelegate::ShouldCompleteDownloadInternal(
  }
  

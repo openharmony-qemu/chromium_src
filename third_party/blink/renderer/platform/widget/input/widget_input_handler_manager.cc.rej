@@ -25,18 +25,6 @@ diff a/third_party/blink/renderer/platform/widget/input/widget_input_handler_man
    dropped_event_counts_timer_.reset();
  }
  
-@@ -587,10 +600,11 @@ void WidgetInputHandlerManager::AttachSynchronousCompositor(
-         std::move(compositor_request));
-   }
- }
- #endif
- 
-+
- void WidgetInputHandlerManager::ObserveGestureEventOnMainThread(
-     const WebGestureEvent& gesture_event,
-     const cc::InputHandlerScrollResult& scroll_result) {
-   base::OnceClosure observe_gesture_event_closure = base::BindOnce(
-       &WidgetInputHandlerManager::ObserveGestureEventOnInputHandlingThread,
 @@ -1042,10 +1067,13 @@ void WidgetInputHandlerManager::InitOnInputHandlingThread(
    if (sync_compositing) {
      DCHECK(synchronous_compositor_registry_);

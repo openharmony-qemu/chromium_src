@@ -26,16 +26,3 @@ diff a/gpu/ipc/service/shared_image_stub.cc b/gpu/ipc/service/shared_image_stub.
    channel_->scheduler()->DestroySequence(sequence_);
    if (factory_ && factory_->HasImages()) {
      // Some of the backings might require a current GL context to be destroyed.
-@@ -278,11 +284,11 @@ void SharedImageStub::OnDestroySharedImagePool(
- void SharedImageStub::OnCreateSharedImageWithData(
-     mojom::CreateSharedImageWithDataParamsPtr params) {
-   TRACE_EVENT2("gpu", "SharedImageStub::OnCreateSharedImageWithData", "width",
-                params->si_info->meta.size.width(), "height",
-                params->si_info->meta.size.height());
--
-+  
-   auto& metadata = params->si_info->meta;
- 
-   bool needs_gl = HasGLES2ReadOrWriteUsage(metadata.usage);
-   if (!MakeContextCurrent(needs_gl)) {
-     OnError();

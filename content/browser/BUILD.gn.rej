@@ -75,18 +75,6 @@ diff a/content/browser/BUILD.gn b/content/browser/BUILD.gn	(rejected hunks)
      "//media/mojo/mojom:remoting",
      "//skia:skia_switches",
      "//third_party/blink/public/mojom:embedded_frame_sink_mojo_bindings",
-@@ -813,10 +850,11 @@ source_set("browser") {
-     "closewatcher/close_listener_manager.h",
-     "code_cache/generated_code_cache.cc",
-     "code_cache/generated_code_cache.h",
-     "code_cache/generated_code_cache_context.cc",
-     "code_cache/generated_code_cache_context.h",
-+    "code_cache/oh_code_cache.h",
-     "code_cache/simple_lru_cache.cc",
-     "code_cache/simple_lru_cache.h",
-     "compositor/surface_utils.cc",
-     "compositor/surface_utils.h",
-     "contacts/contacts_manager_impl.cc",
 @@ -1378,10 +1416,25 @@ source_set("browser") {
      "media/capture/desktop_capture_device_uma_types.cc",
      "media/capture/desktop_capture_device_uma_types.h",

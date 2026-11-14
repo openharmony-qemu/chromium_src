@@ -23,18 +23,6 @@ diff a/chrome/app/resources/chromium_strings_tr.xtb b/chrome/app/resources/chrom
  <translation id="3651803019964686660"><ph name="ORIGIN" /> sitesinden Android telefonunuza numara göndermek için iki cihazdan da Chromium'da oturum açın.</translation>
  <translation id="3667616615096815454">Uygulama, sunucu tarafından bilinmediği için yüklenemedi.</translation>
  <translation id="3675854891107786059">Google Hesabınızdaki tüm Chrome verilerini şifrelemek için <ph name="BEGIN_LINK" />kendi parolanızı<ph name="END_LINK" /> kullanın. Google Pay'deki ödeme yöntemleri ve adresler şifrelenmez. Chromium'daki tarama geçmişi senkronize edilmez.</translation>
-@@ -336,10 +338,11 @@
- <translation id="4759645701210484457">Chromium'a sor</translation>
- <translation id="4771701986670315895">Son zamanlarda ziyaret etmediniz. Chromium; <ph name="PERMISSION_1" /> ve <ph name="PERMISSION_2" /> izni ile birlikte <ph name="COUNT" /> izni daha kaldırdı.</translation>
- <translation id="4788777615168560705">Chromium, şifrelerinizi kontrol edemiyor. 24 saat sonra tekrar deneyin veya <ph name="BEGIN_LINK" />şifreleri Google Hesabınızda kontrol edin<ph name="END_LINK" />.</translation>
- <translation id="479167709087336770">Bu işlev, Google Arama'da kullanılan yazım denetiminin aynısını kullanır. Tarayıcıda yazdığınız metin Google'a gönderilir. Bu davranışı istediğiniz zaman ayarlardan değiştirebilirsiniz.</translation>
- <translation id="4814736265800133385">Chromium'u hesap olmadan kullan</translation>
-+<translation id="483739396253020185">Tarayıcı bu uzantının nereden geldiğini doğrulayamıyor ve uzantı güvenli olmayabilir. Kişisel bilgileriniz de dahil olmak üzere ziyaret ettiğiniz sitelerdeki verilerinizi artık görememesi veya değiştirememesi için Tarayıcı'dan kaldırın.</translation>
- <translation id="4888717733111232871">Chromium'un mDNS trafiğine izin vermeyi sağlayan gelen trafik kuralı.</translation>
- <translation id="4893347770495441059">&amp;Chromium'u Güncellemek İçin Yeniden Başlat</translation>
- <translation id="4918844574251943176">Resim kopyalandı</translation>
- <translation id="4943838377383847465">Chromium arka plan modunda.</translation>
- <translation id="494490797786467921">Chromium'da oturum açma iletişim kutusunu kapatmak için tıklayın</translation>
 @@ -510,10 +513,11 @@ Bazı özellikler kullanılamayabilir. Lütfen farklı bir profil dizini belirti
  <translation id="6857782730669500492">Chromium - <ph name="PAGE_TITLE" /></translation>
  <translation id="6859580922007887573">Devam etmek için sekmeye basın</translation>

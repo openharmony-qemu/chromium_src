@@ -23,18 +23,6 @@ diff a/chrome/app/resources/chromium_strings_ms.xtb b/chrome/app/resources/chrom
  <translation id="3651803019964686660">Untuk menghantar nombor daripada <ph name="ORIGIN" /> ke telefon Android anda, log masuk ke Chromium pada kedua-dua peranti.</translation>
  <translation id="3667616615096815454">Tidak dapat memasang, aplikasi tidak dikenali oleh pelayan.</translation>
  <translation id="3675854891107786059">Gunakan <ph name="BEGIN_LINK" />ungkapan laluan anda sendiri<ph name="END_LINK" /> untuk menyulitkan data Chromium dalam Google Account anda. Kaedah pembayaran dan alamat daripada Google Pay tidak akan disulitkan. Sejarah penyemakan imbas daripada Chromium tidak akan disegerakkan.</translation>
-@@ -339,10 +341,11 @@ peranti Bluetooth. <ph name="IDS_SERIAL_DEVICE_CHOOSER_AUTHORIZE_BLUETOOTH_LINK"
- <translation id="4759645701210484457">Tanya Chromium</translation>
- <translation id="4771701986670315895">Anda belum melawati laman web ini baru-baru ini. Chromium mengalih keluar <ph name="PERMISSION_1" />, <ph name="PERMISSION_2" /> dan <ph name="COUNT" /> lagi.</translation>
- <translation id="4788777615168560705">Chromium tidak dapat menyemak kata laluan anda. Cuba lagi selepas 24 jam atau <ph name="BEGIN_LINK" />semak kata laluan dalam Google Account anda<ph name="END_LINK" />.</translation>
- <translation id="479167709087336770">Ini menggunakan penyemak ejaan yang sama seperti yang digunakan dalam carian Google. Teks yang anda taip dalam penyemak imbas akan dihantar kepada Google. Anda boleh menukar gelagat ini dalam tetapan pada bila-bila masa.</translation>
- <translation id="4814736265800133385">Gunakan Chromium tanpa akaun</translation>
-+<translation id="483739396253020185">Pelayar tidak boleh mengesahkan sumber sambungan ini, dan ia mungkin tidak selamat. Keluarkan dari Pelayar supaya ia tidak boleh melihat atau mengubah lagi data anda pada laman yang anda lawati, termasuk maklumat peribadi anda.</translation>
- <translation id="4888717733111232871">Peraturan masuk bagi Chromium untuk membolehkan trafik mDNS.</translation>
- <translation id="4893347770495441059">Lancarkan Semula untuk Mengemas Kini &amp;Chromium</translation>
- <translation id="4918844574251943176">Imej disalin</translation>
- <translation id="4943838377383847465">Chromium dalam mod latar belakang.</translation>
- <translation id="494490797786467921">Klik untuk menutup dialog log masuk Chromium</translation>
 @@ -513,10 +516,11 @@ Beberapa ciri mungkin tidak tersedia. Sila nyatakan direktori profil yang berbez
  <translation id="6857782730669500492">Chromium - <ph name="PAGE_TITLE" /></translation>
  <translation id="6859580922007887573">Tab untuk meneruskan proses</translation>

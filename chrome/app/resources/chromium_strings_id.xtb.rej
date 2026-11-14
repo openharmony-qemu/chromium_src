@@ -23,18 +23,6 @@ diff a/chrome/app/resources/chromium_strings_id.xtb b/chrome/app/resources/chrom
  <translation id="3651803019964686660">Untuk mengirimkan nomor dari <ph name="ORIGIN" /> ke ponsel Android Anda, login ke Chromium di kedua perangkat.</translation>
  <translation id="3667616615096815454">Tidak dapat menginstal, aplikasi tidak dikenali oleh server.</translation>
  <translation id="3675854891107786059">Gunakan <ph name="BEGIN_LINK" />frasa sandi Anda sendiri<ph name="END_LINK" /> untuk mengenkripsi semua data Chromium di Akun Google Anda. Metode pembayaran dan alamat dari Google Pay tidak akan dienkripsi. Histori penjelajahan dari Chromium tidak akan disinkronkan.</translation>
-@@ -339,10 +341,11 @@
- <translation id="4759645701210484457">Tanya Chromium</translation>
- <translation id="4771701986670315895">Anda tidak membuka situs ini baru-baru ini. Chromium menghapus izin <ph name="PERMISSION_1" />, <ph name="PERMISSION_2" />, dan <ph name="COUNT" /> lainnya.</translation>
- <translation id="4788777615168560705">Chromium tidak dapat memeriksa sandi Anda. Coba lagi setelah 24 jam atau <ph name="BEGIN_LINK" />periksa sandi di Akun Google Anda<ph name="END_LINK" />.</translation>
- <translation id="479167709087336770">Tindakan ini akan menggunakan pemeriksa ejaan yang sama dengan yang digunakan di penelusuran Google. Teks yang Anda ketikkan di browser dikirim ke Google. Anda dapat mengubah perilaku ini di setelan.</translation>
- <translation id="4814736265800133385">Gunakan Chromium tanpa akun</translation>
-+<translation id="483739396253020185">Browser tidak dapat memverifikasi asal ekstensi ini, dan mungkin ekstensi ini tidak aman. Hapus dari Browser agar ekstensi ini tidak lagi dapat melihat atau mengubah data pada situs yang Anda kunjungi, termasuk informasi pribadi Anda.</translation>
- <translation id="4888717733111232871">Inbound rule untuk Chromium guna mengizinkan lalu lintas mDNS.</translation>
- <translation id="4893347770495441059">Luncurkan kembali untuk Mengupdate &amp;Chromium</translation>
- <translation id="4918844574251943176">Gambar disalin</translation>
- <translation id="4943838377383847465">Chromium berjalan di mode latar belakang.</translation>
- <translation id="494490797786467921">Klik untuk menutup dialog login Chromium</translation>
 @@ -513,10 +516,11 @@ Sebagian fitur mungkin tidak tersedia. Tentukan direktori profil yang berbeda at
  <translation id="6857782730669500492">Chromium - <ph name="PAGE_TITLE" /></translation>
  <translation id="6859580922007887573">Tab untuk melanjutkan</translation>

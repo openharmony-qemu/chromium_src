@@ -23,18 +23,6 @@ diff a/chrome/app/resources/chromium_strings_lo.xtb b/chrome/app/resources/chrom
  <translation id="3651803019964686660">ເພື່ອສົ່ງເບີຈາກ <ph name="ORIGIN" /> ໃຫ້ໂທລະສັບ Android ຂອງທ່ານ, ກະລຸນາເຂົ້າສູ່ລະບົບ Chromium ຢູ່ໃນທັງສອງອຸປະກອນ.</translation>
  <translation id="3667616615096815454">ບໍ່ສາມາດຕິດຕັ້ງໄດ້, ເຊີບເວີບໍ່ຮູ້ຈັກແອັບພລິເຄຊັນ.</translation>
  <translation id="3675854891107786059">ໃຊ້ <ph name="BEGIN_LINK" />ລະຫັດຜ່ານຂອງທ່ານເອງ<ph name="END_LINK" /> ໃນການເຂົ້າລະຫັດຂໍ້ມູນ Chromium ທັງໝົດໃນບັນຊີ Google ຂອງທ່ານ. ວິທີການຈ່າຍເງິນ ແລະ ທີ່ຢູ່ຈາກ Google Pay ຈະບໍ່ໄດ້ຖືກເຂົ້າລະຫັດໄວ້. ປະຫວັດການທ່ອງເວັບຈາກ Chromium ຈະບໍ່ຊິ້ງ.</translation>
-@@ -341,10 +343,11 @@
- <translation id="4759645701210484457">ຖາມ Chromium</translation>
- <translation id="4771701986670315895">ທ່ານບໍ່ໄດ້ເຂົ້າເບິ່ງເມື່ອບໍ່ດົນມານີ້. Chromium ໄດ້ລຶບ <ph name="PERMISSION_1" />, <ph name="PERMISSION_2" /> ແລະ ອີກ <ph name="COUNT" /> ລາຍການອອກແລ້ວ.</translation>
- <translation id="4788777615168560705">Chromium ບໍ່ສາມາດກວດລະຫັດຜ່ານຂອງທ່ານໄດ້. ລອງໃໝ່ຫຼັງຈາກ 24 ຊົ່ວໂມງ ຫຼື <ph name="BEGIN_LINK" />ກວດລະຫັດຜ່ານໃນບັນຊີ Google ຂອງທ່ານ<ph name="END_LINK" />.</translation>
- <translation id="479167709087336770">ນີ້ໃຊ້ຕົວກວດການສະກົດຄໍາດຽວກັນກັບທີ່ໃຊ້ໃນ Google ຊອກຫາ. ຂໍ້ຄວາມທີ່ທ່ານພິມໃນໂປຣແກຣມທ່ອງເວັບຖືກສົ່ງໃຫ້ Google. ທ່ານສາມາດປ່ຽນລັກສະນະການນໍາໃຊ້ນີ້ໄດ້ສະເໝີໃນການຕັ້ງຄ່າ.</translation>
- <translation id="4814736265800133385">ໃຊ້ Chromium ໂດຍບໍ່ມີບັນຊີ</translation>
-+<translation id="483739396253020185">ບຣາວເຊີບໍ່ສາມາດກວດສອບໄດ້ວ່າສ່ວນຂະຫຍາຍນີ້ມາຈາກໃສ ແລະ ມັນອາດບໍ່ປອດໄພ. ເອົາມັນອອກຈາກບຣາວເຊີ ເພື່ອໃຫ້ມັນບໍ່ສາມາດເຫັນ ຫຼື ປ່ຽນແປງຂໍ້ມູນຂອງທ່ານໃນເວັບໄຊທີ່ທ່ານເຂົ້າເບິ່ງ, ລວມທັງຂໍ້ມູນສ່ວນຕົວຂອງທ່ານ.</translation>
- <translation id="4888717733111232871">ກົດລະບຽບຂາເຂົ້າສໍາລັບ Chromium ເພື່ອອະນຸຍາດການຈາລະຈອນ mDNS.</translation>
- <translation id="4893347770495441059">ເລີ່ມເປີດໃຊ້ໃໝ່ເພື່ອອັບເດດ &amp;Chromium</translation>
- <translation id="4918844574251943176">ສຳເນົາຮູບແລ້ວ</translation>
- <translation id="4943838377383847465">Chromium ຢູ່ໃນໂໝດພື້ນຫຼັງ.</translation>
- <translation id="494490797786467921">ຄລິກເພື່ອປິດກ່ອງໂຕ້ຕອບການເຂົ້າສູ່ລະບົບ Chromium</translation>
 @@ -515,10 +518,11 @@
  <translation id="6857782730669500492">Chromium - <ph name="PAGE_TITLE" /></translation>
  <translation id="6859580922007887573">ແຕະເພື່ອສືບຕໍ່</translation>

@@ -35,18 +35,6 @@ diff a/chrome/app/resources/generated_resources_zh-CN.xtb b/chrome/app/resources
  <translation id="1173036203040243666">此标签页已连接到蓝牙设备</translation>
  <translation id="1173332155861271669">Passpoint 来源详细信息</translation>
  <translation id="1173894706177603556">重命名</translation>
-@@ -309,10 +312,11 @@
- <translation id="1193927020065025187">此网站可能正试图诱骗您允许显示侵扰性通知</translation>
- <translation id="11947597112837849">邮箱</translation>
- <translation id="1195210374336998651">转到应用设置</translation>
- <translation id="1195447618553298278">未知错误。</translation>
- <translation id="1195558154361252544">除您允许的网站外，已自动阻止所有其他网站显示通知</translation>
-+<translation id="1195805062734778374">打开开发者模式，可安装和管理第三方扩展程序，这些扩展程序未经过安全检测，可能存在风险。确定打开？</translation>
- <translation id="1197088940767939838">橙色</translation>
- <translation id="11978075283960463">存储在应用中的数据量：<ph name="APP_SIZE" /></translation>
- <translation id="1198066799963193307">低视力语音工具</translation>
- <translation id="119944043368869598">全部清除</translation>
- <translation id="1199814941632954229">正在为这些证书资料配置证书</translation>
 @@ -603,10 +607,11 @@
  <translation id="1405779994569073824">已崩溃。</translation>
  <translation id="1406500794671479665">正在验证...</translation>
@@ -301,18 +289,6 @@ diff a/chrome/app/resources/generated_resources_zh-CN.xtb b/chrome/app/resources
  <translation id="4565377596337484307">隐藏密码</translation>
  <translation id="4565917129334815774">存储系统日志</translation>
  <translation id="4566170377336116390">若想在注册后切换，您需为相应设备恢复出厂设置（对设备执行 Powerwash 操作）。</translation>
-@@ -5527,10 +5552,11 @@
- <translation id="4773253008034797668">允许连接到本地网络上的任何设备</translation>
- <translation id="477548766361111120">允许扩展程序读取和更改此网站的数据</translation>
- <translation id="4775646243557794597">已删除<ph name="TIME_PERIOD" />的浏览记录</translation>
- <translation id="4776311127346151860">已连接<ph name="DEVICE_NAME" /></translation>
- <translation id="4776594120007763294">如需添加某个页面以供日后阅读，请点击此按钮</translation>
-+<translation id="477727212864867766">获取您的电子邮件地址</translation>
- <translation id="4777458362738635055">此设备的其他用户可以使用该网络</translation>
- <translation id="4777813841994368231">已开启 • 此扩展程序已被其开发者取消发布</translation>
- <translation id="4777825441726637019">Play 商店</translation>
- <translation id="4777866634702576038">要删除标签页分组吗？</translation>
- <translation id="4777943778632837590">配置网络域名服务器</translation>
 @@ -5944,10 +5970,11 @@
  <translation id="5067399438976153555">始终启用</translation>
  <translation id="5067867186035333991">当 <ph name="HOST" /> 想要使用麦克风时询问我</translation>
@@ -373,18 +349,6 @@ diff a/chrome/app/resources/generated_resources_zh-CN.xtb b/chrome/app/resources
  <translation id="7267044199012331848">无法安装此虚拟机。请重试，或与您的管理员联系。错误代码：<ph name="ERROR_CODE" />。</translation>
  <translation id="7267875682732693301">不时地移开手指，以便传感器更完整地记录您的指纹</translation>
  <translation id="7267898843336437186">选择允许此网站查看的文件夹</translation>
-@@ -9134,10 +9165,11 @@
- <translation id="7304030187361489308">高</translation>
- <translation id="7305123176580523628">USB 打印机已连接</translation>
- <translation id="730515362922783851">与本地网络或互联网中的任何设备交换数据</translation>
- <translation id="7306521477691455105">请打开“设置”以将 <ph name="USB_DEVICE_NAME" /> 连接到 <ph name="USB_VM_NAME" /></translation>
- <translation id="7307129035224081534">已暂停</translation>
-+<translation id="7307138455910007225">查找您的本地网络中的设备，例如打印机</translation>
- <translation id="7308643132139167865">网站语言</translation>
- <translation id="7309214454733221756">要创建通行密钥以便登录“<ph name="APP_NAME" />”吗？</translation>
- <translation id="7311005168897771689">在离线状态下访问您的 Google 云端硬盘文件</translation>
- <translation id="7311244614769792472">找不到任何结果</translation>
- <translation id="7312040805247765153">无法安装应用</translation>
 @@ -9196,10 +9228,11 @@
  <translation id="7348093485538360975">屏幕键盘</translation>
  <translation id="734813941605705678">需要同步</translation>
@@ -470,18 +434,6 @@ diff a/chrome/app/resources/generated_resources_zh-CN.xtb b/chrome/app/resources
  <translation id="8294476140219241086">标签页整理工具</translation>
  <translation id="8295449579927246485">实时翻译</translation>
  <translation id="8295450130892483256">安装 Microsoft 365</translation>
-@@ -10662,10 +10700,11 @@
- <translation id="8323317289166663449">读取和更改您在自己的计算机上以及在所有网站上的所有数据</translation>
- <translation id="8323518750352551353">是否单独浏览？</translation>
- <translation id="8323744572398547859">要访问您从其他设备打开的标签页，请登录并同步历史记录。登录后，您还可在自己的所有设备上使用保存的密码等信息。您可以随时在设置中停止同步。Google 可能会根据您的历史记录，在 Google 搜索及其他服务中提供个性化的体验。</translation>
- <translation id="8324158725704657629">别再询问</translation>
- <translation id="8325413836429495820">不允许查看您的剪贴板</translation>
-+<translation id="832618879023665598">此扩展程序未通过安全合规性验证，已被自动禁用</translation>
- <translation id="8326478304147373412">PKCS #7，证书链</translation>
- <translation id="8327386430364625757">数学字体</translation>
- <translation id="8327490658947427005">所选内容不是<ph name="LANGUAGE" /></translation>
- <translation id="8327544198829180337">关闭此视图</translation>
- <translation id="8327676037044516220">权限和内容设置</translation>
 @@ -10700,10 +10740,11 @@
  <translation id="8349826889576450703">启动器</translation>
  <translation id="8350789879725387295">在 Dock 中显示触控笔工具</translation>

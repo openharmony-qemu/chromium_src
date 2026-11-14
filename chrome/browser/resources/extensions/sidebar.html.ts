@@ -9,7 +9,7 @@ import type {ExtensionsSidebarElement} from './sidebar.js';
 export function getHtml(this: ExtensionsSidebarElement) {
   // clang-format off
   return html`<!--_html_template_start_-->
-<cr-menu-selector id="sectionMenu" selected-attribute="selected"
+<cr-menu-selector id="sectionMenu" hidden=true selected-attribute="selected"
     attr-for-selected="data-path" .selected="${this.selectedPath_}">
   <!-- Values for "data-path" attribute must match the "Page" enum. -->
   <a role="menuitem" class="cr-nav-menu-item" id="sectionsExtensions" href="/"

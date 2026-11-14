@@ -677,18 +677,6 @@ diff a/chrome/app/resources/generated_resources_lo.xtb b/chrome/app/resources/ge
  <translation id="8139440916039659819">ການເລັ່ງຄວາມໄວຂອງເຄີເຊີ</translation>
  <translation id="8140070492745508800"><ph name="FIRST_DEVICE" />, <ph name="SECOND_DEVICE" /></translation>
  <translation id="8140108728130537923"><ph name="BEGIN_LINK" />ໂປຣແກຣມທ່ອງເວັບຂອງທ່ານຖືກຈັດການ<ph name="END_LINK" /> ໂດຍ <ph name="BROWSER_DOMAIN" /> ແລະ <ph name="BEGIN_LINK" />ໂປຣໄຟລ໌ຂອງທ່ານຖືກຈັດການ<ph name="END_LINK" /> ໂດຍ <ph name="PROFILE_DOMAIN" /></translation>
-@@ -10686,10 +10705,11 @@
- <translation id="8323317289166663449">ອ່ານ ແລະ ປ່ຽນຂໍ້ມູນທັງໝົດຂອງທ່ານຢູ່ຄອມພິວເຕີ ແລະ ທຸກເວັບໄຊ</translation>
- <translation id="8323518750352551353">ແຍກການເລືອກເບິ່ງບໍ?</translation>
- <translation id="8323744572398547859">ເພື່ອຮັບແຖບຂອງທ່ານຈາກອຸປະກອນອື່ນໆ, ໃຫ້ເຂົ້າສູ່ລະບົບ ແລະ ຊິ້ງປະຫວັດ. ນອກຈາກນີ້, ທ່ານຍັງຈະຮັບລະຫັດຜ່ານ ແລະ ຂໍ້ມູນອື່ນໆໃນອຸປະກອນທຸກເຄື່ອງຂອງທ່ານໄດ້ນຳ. ທ່ານສາມາດຢຸດການຊິ້ງໄດ້ທຸກເວລາໃນການຕັ້ງຄ່າ. Google ອາດປັບແຕ່ງການຊອກຫາ ແລະ ບໍລິການອື່ນໆໃຫ້ເປັນແບບສ່ວນຕົວໂດຍອີງຕາມປະຫວັດຂອງທ່ານ.</translation>
- <translation id="8324158725704657629">ຢ່າຖາມອີກ</translation>
- <translation id="8325413836429495820">ບໍ່ໄດ້ຮັບອະນຸຍາດໃຫ້ເຫັນຄລິບບອດຂອງທ່ານ</translation>
-+<translation id="832618879023665598">ສ່ວນຂະຫຍາຍນີ້ບໍ່ຜ່ານການກວດເບິ່ງການປະຕິບັດຕາມຄວາມປອດໄພ ແລະ ໄດ້ຖືກປິດໃຊ້ງານໂດຍອັດຕະໂນມັດແລ້ວ.</translation>
- <translation id="8326478304147373412">PKCS #7, ຕ່ອງ​ໂສ້​ໃບຢັ້ງ​ຢືນ</translation>
- <translation id="8327386430364625757">ຟອນກ່ຽວກັບຄະນິດສາດ</translation>
- <translation id="8327490658947427005">ການເລືອກບໍ່ຢູ່ໃນ <ph name="LANGUAGE" /></translation>
- <translation id="8327544198829180337">ປິດມຸມມອງນີ້</translation>
- <translation id="8327676037044516220">ການອະນຸຍາດ ແລະ ການຕັ້ງຄ່າເນື້ອຫາ</translation>
 @@ -11271,10 +11292,11 @@
  <translation id="8719665168401479425">ໃຊ້ການສະແດງສີໜ້າເພື່ອດຳເນີນການຕ່າງໆ</translation>
  <translation id="8720200012906404956">ກຳລັງຊອກຫາເຄືອຂ່າຍມືຖືຢູ່. <ph name="BEGIN_LINK" />ສຶກສາເພີ່ມເຕີມ<ph name="END_LINK" /></translation>

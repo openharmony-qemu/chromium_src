@@ -520,18 +520,6 @@ diff a/chrome/app/resources/generated_resources_ms.xtb b/chrome/app/resources/ge
  <translation id="8139440916039659819">Pecutan kursor</translation>
  <translation id="8140070492745508800"><ph name="FIRST_DEVICE" />, <ph name="SECOND_DEVICE" /></translation>
  <translation id="8140108728130537923"><ph name="BEGIN_LINK" />Penyemak imbas anda diuruskan<ph name="END_LINK" /> oleh <ph name="BROWSER_DOMAIN" /> dan <ph name="BEGIN_LINK" />profil anda diuruskan<ph name="END_LINK" /> oleh <ph name="PROFILE_DOMAIN" /></translation>
-@@ -10691,10 +10711,11 @@ Simpan fail kunci anda di tempat selamat. Anda akan memerlukannya untuk mencipta
- <translation id="8323317289166663449">Baca dan ubah semua data anda pada komputer anda dan semua laman web</translation>
- <translation id="8323518750352551353">Asingkan Penyemakan Imbas?</translation>
- <translation id="8323744572398547859">Untuk mendapatkan tab anda daripada peranti anda yang lain, log masuk dan segerakkan sejarah. Anda juga akan mendapat kata laluan anda dan pelbagai lagi pada semua peranti anda. Anda boleh menghentikan penyegerakan pada bila-bila masa dalam tetapan ini. Google mungkin memeribadikan Search dan perkhidmatan lain berdasarkan sejarah anda.</translation>
- <translation id="8324158725704657629">Jangan tanya lagi</translation>
- <translation id="8325413836429495820">Tidak dibenarkan untuk melihat papan keratan anda</translation>
-+<translation id="832618879023665598">Sambungan ini gagal pemeriksaan pematuhan keselamatan dan sudah dinyahdayakan secara automatik.</translation>
- <translation id="8326478304147373412">PKCS #7, rantaian sijil</translation>
- <translation id="8327386430364625757">Fon matematik</translation>
- <translation id="8327490658947427005">Pilihan Bukan dalam bahasa <ph name="LANGUAGE" /></translation>
- <translation id="8327544198829180337">Tutup paparan ini</translation>
- <translation id="8327676037044516220">Kebenaran dan tetapan kandungan</translation>
 @@ -11277,10 +11299,11 @@ perubahan ini berlaku, anda mungkin tidak mahukannya.</translation>
  <translation id="8719665168401479425">Gunakan gerak isyarat wajah untuk melakukan tindakan</translation>
  <translation id="8720200012906404956">Mencari rangkaian mudah alih. <ph name="BEGIN_LINK" />Ketahui lebih lanjut<ph name="END_LINK" /></translation>

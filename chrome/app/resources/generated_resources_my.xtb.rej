@@ -786,18 +786,6 @@ diff a/chrome/app/resources/generated_resources_my.xtb b/chrome/app/resources/ge
  <translation id="8139440916039659819">ကာဆာ အရှိန်</translation>
  <translation id="8140070492745508800"><ph name="FIRST_DEVICE" />၊ <ph name="SECOND_DEVICE" /></translation>
  <translation id="8140108728130537923"><ph name="BROWSER_DOMAIN" /> က သင့် <ph name="BEGIN_LINK" />ဘရောင်ဇာကို စီမံခန့်ခွဲ<ph name="END_LINK" /> ပြီး <ph name="PROFILE_DOMAIN" /> က သင့် <ph name="BEGIN_LINK" />ပရိုဖိုင်ကို စီမံခန့်ခွဲသည်<ph name="END_LINK" /></translation>
-@@ -10685,10 +10704,11 @@
- <translation id="8323317289166663449">သင့်ကွန်ပျူတာနှင့် ဝဘ်ဆိုက်အားလုံးပေါ်ရှိ ဒေတာအားလုံးကို ဖတ်ရှုခြင်းနှင့် ပြောင်းခြင်း</translation>
- <translation id="8323518750352551353">သီးခြားကြည့်မလား။</translation>
- <translation id="8323744572398547859">အခြားစက်များမှ သင်၏တဘ်များ ရယူရန် လက်မှတ်ထိုးဝင်ပြီး မှတ်တမ်းကို စင့်ခ်လုပ်ပါ။ သင့်စက်အားလုံးတွင် စကားဝှက်နှင့် အခြားအရာများကိုလည်း ရရှိပါမည်။ စင့်ခ်လုပ်ခြင်းကို ဆက်တင်များတွင် အချိန်မရွေး ရပ်နိုင်သည်။ Google က Search နှင့် အခြားဝန်ဆောင်မှုများကို သင့်မှတ်တမ်းပေါ်မူတည်၍ ပုဂ္ဂိုလ်ရေးသီးသန့် ပြုလုပ်နိုင်သည်။</translation>
- <translation id="8324158725704657629">ထပ်မမေးပါနှင့်</translation>
- <translation id="8325413836429495820">သင့်ကလစ်ဘုတ်ကို ကြည့်ရန် ခွင့်ပြုမထားပါ</translation>
-+<translation id="832618879023665598">ဤ Extension သည် လုံခြုံရေးဆိုင်ရာ စည်းကမ်းလိုက်နာမှု စစ်ဆေးချက် မအောင်မြင်ပါ၊ ၎င်းကို အော်တိုပိတ်ထားပါသည်။</translation>
- <translation id="8326478304147373412">PKCS #7၊ လက်မှတ် ကွင်းဆက်</translation>
- <translation id="8327386430364625757">သင်္ချာဖောင့်</translation>
- <translation id="8327490658947427005"><ph name="LANGUAGE" /> ဖြင့် မဟုတ်သော ရွေးချယ်မှု</translation>
- <translation id="8327544198829180337">ဤမြင်ကွင်းကို ပိတ်ရန်</translation>
- <translation id="8327676037044516220">ခွင့်ပြုချက်များနှင့် အကြောင်းအရာ ဆက်တင်များ</translation>
 @@ -11252,11 +11273,11 @@
  <translation id="8709368517685334931">Chrome Web Store တွင် အရောင်ဟောင်းများကို ရှာနိုင်သည်</translation>
  <translation id="8710414664106871428">စိတ်ကူးယဉ်</translation>

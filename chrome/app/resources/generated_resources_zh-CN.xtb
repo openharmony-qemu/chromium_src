@@ -291,6 +291,7 @@
 <translation id="1195210374336998651">转到应用设置</translation>
 <translation id="1195447618553298278">未知错误。</translation>
 <translation id="1195558154361252544">除您允许的网站外，已自动阻止所有其他网站显示通知</translation>
+<translation id="1195805062734778374">打开开发者模式，可安装和管理第三方扩展程序，这些扩展程序未经过安全检测，可能存在风险。确定打开？</translation>
 <translation id="1197088940767939838">橙色</translation>
 <translation id="11978075283960463">存储在应用中的数据量：<ph name="APP_SIZE" /></translation>
 <translation id="1198066799963193307">低视力语音工具</translation>
@@ -4992,6 +4993,7 @@
 <translation id="4775646243557794597">已删除<ph name="TIME_PERIOD" />的浏览记录</translation>
 <translation id="4776311127346151860">已连接<ph name="DEVICE_NAME" /></translation>
 <translation id="4776594120007763294">如需添加某个页面以供日后阅读，请点击此按钮</translation>
+<translation id="477727212864867766">获取您的电子邮件地址</translation>
 <translation id="4777458362738635055">此设备的其他用户可以使用该网络</translation>
 <translation id="4777813841994368231">已开启 • 此扩展程序已被其开发者取消发布</translation>
 <translation id="4777825441726637019">Play 商店</translation>
@@ -8261,6 +8263,7 @@
 <translation id="730515362922783851">与本地网络或互联网中的任何设备交换数据</translation>
 <translation id="7306521477691455105">请打开“设置”以将 <ph name="USB_DEVICE_NAME" /> 连接到 <ph name="USB_VM_NAME" /></translation>
 <translation id="7307129035224081534">已暂停</translation>
+<translation id="7307138455910007225">查找您的本地网络中的设备，例如打印机</translation>
 <translation id="7308643132139167865">网站语言</translation>
 <translation id="7309214454733221756">要创建通行密钥以便登录“<ph name="APP_NAME" />”吗？</translation>
 <translation id="7309517920862730287">任务列表</translation>
@@ -9628,6 +9631,7 @@
 <translation id="8323744572398547859">要访问您从其他设备打开的标签页，请登录并同步历史记录。登录后，您还可在自己的所有设备上使用保存的密码等信息。您可以随时在设置中停止同步。Google 可能会根据您的历史记录，在 Google 搜索及其他服务中提供个性化的体验。</translation>
 <translation id="8324158725704657629">别再询问</translation>
 <translation id="8325413836429495820">不允许查看您的剪贴板</translation>
+<translation id="832618879023665598">此扩展程序未通过安全合规性验证，已被自动禁用</translation>
 <translation id="8326478304147373412">PKCS #7，证书链</translation>
 <translation id="8327386430364625757">数学字体</translation>
 <translation id="8327490658947427005">所选内容不是<ph name="LANGUAGE" /></translation>

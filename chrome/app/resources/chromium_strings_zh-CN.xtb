@@ -366,6 +366,7 @@
 <translation id="4786083865378785874">如果 Chromium 中的 Gemini 已打开，则在创建新标签页时，侧边栏会保持打开状态</translation>
 <translation id="479167709087336770">这项服务会使用 Google 搜索所用的拼写检查工具。您在浏览器中输入的文字会被发送给 Google。您随时可在“设置”中更改此行为。</translation>
 <translation id="4814736265800133385">在不登录账号的情况下使用 Chromium</translation>
+<translation id="483739396253020185">浏览器无法验证此扩展程序的来源，它可能不安全。请将其从浏览器中移除，这样它便无法再查看和更改您在所访问的网站上的数据，包括个人信息。</translation>
 <translation id="4888717733111232871">Chromium的入站规则，允许mDNS流量。</translation>
 <translation id="4893347770495441059">重新启动以更新 Chromium(&amp;C)</translation>
 <translation id="4918086044614829423">接受</translation>

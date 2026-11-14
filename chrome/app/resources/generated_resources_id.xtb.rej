@@ -534,18 +534,6 @@ diff a/chrome/app/resources/generated_resources_id.xtb b/chrome/app/resources/ge
  <translation id="8139440916039659819">Akselerasi kursor</translation>
  <translation id="8140070492745508800"><ph name="FIRST_DEVICE" />, <ph name="SECOND_DEVICE" /></translation>
  <translation id="8140108728130537923"><ph name="BEGIN_LINK" />Browser Anda dikelola<ph name="END_LINK" /> oleh <ph name="BROWSER_DOMAIN" /> dan <ph name="BEGIN_LINK" />profil Anda dikelola<ph name="END_LINK" /> oleh <ph name="PROFILE_DOMAIN" /></translation>
-@@ -10690,10 +10709,11 @@ Simpan file kunci Anda di tempat yang aman. Anda akan membutuhkannya untuk membu
- <translation id="8323317289166663449">Membaca dan mengubah semua data Anda di komputer dan semua situs</translation>
- <translation id="8323518750352551353">Pisahkan Penjelajahan?</translation>
- <translation id="8323744572398547859">Untuk mengakses tab Anda dari perangkat lain, login dan sinkronkan histori. Anda juga akan mendapatkan sandi dan info Anda yang lain di semua perangkat Anda. Anda dapat berhenti menyinkronkan kapan saja di setelan. Google dapat mempersonalisasi Penelusuran dan layanan lainnya berdasarkan histori Anda.</translation>
- <translation id="8324158725704657629">Jangan tanya lagi</translation>
- <translation id="8325413836429495820">Tidak diizinkan melihat papan klip Anda</translation>
-+<translation id="832618879023665598">Ekstensi ini gagal dalam pemeriksaan kepatuhan keamanan dan telah dinonaktifkan secara otomatis.</translation>
- <translation id="8326478304147373412">PKCS #7, rantai sertifikat</translation>
- <translation id="8327386430364625757">Font matematika</translation>
- <translation id="8327490658947427005">Pilihan Tidak dalam Bahasa <ph name="LANGUAGE" /></translation>
- <translation id="8327544198829180337">Tutup tampilan ini</translation>
- <translation id="8327676037044516220">Izin dan setelan konten</translation>
 @@ -11275,10 +11296,11 @@ Simpan file kunci Anda di tempat yang aman. Anda akan membutuhkannya untuk membu
  <translation id="8719665168401479425">Gunakan gestur wajah untuk melakukan tindakan</translation>
  <translation id="8720200012906404956">Mencari jaringan seluler. <ph name="BEGIN_LINK" />Pelajari lebih lanjut<ph name="END_LINK" /></translation>

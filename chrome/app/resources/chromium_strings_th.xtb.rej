@@ -23,18 +23,6 @@ diff a/chrome/app/resources/chromium_strings_th.xtb b/chrome/app/resources/chrom
  <translation id="3651803019964686660">หากต้องการส่งหมายเลขจาก <ph name="ORIGIN" /> ไปยังโทรศัพท์ Android ให้ลงชื่อเข้าใช้ Chromium ในอุปกรณ์ทั้งสองเครื่อง</translation>
  <translation id="3667616615096815454">ติดตั้งไม่ได้เนื่องจากเซิร์ฟเวอร์ไม่รู้จักแอปพลิเคชัน</translation>
  <translation id="3675854891107786059">ใช้<ph name="BEGIN_LINK" />รหัสผ่านของคุณเอง<ph name="END_LINK" />ในการเข้ารหัสข้อมูล Chromium ทั้งหมดในบัญชี Google ที่อยู่และวิธีการชำระเงินจาก Google Pay จะไม่มีการเข้ารหัส ประวัติการท่องเว็บจาก Chromium จะไม่ซิงค์</translation>
-@@ -338,10 +340,11 @@
- <translation id="4759645701210484457">ถาม Chromium</translation>
- <translation id="4771701986670315895">คุณไม่ได้เข้าชมเมื่อเร็วๆ นี้ Chromium นำสิทธิ์เข้าถึง<ph name="PERMISSION_1" /> <ph name="PERMISSION_2" /> และอีก <ph name="COUNT" /> รายการออกแล้ว</translation>
- <translation id="4788777615168560705">Chromium ตรวจสอบรหัสผ่านของคุณไม่ได้ โปรดรอ 24 ชั่วโมงแล้วลองอีกครั้งหรือ<ph name="BEGIN_LINK" />ตรวจสอบรหัสผ่านในบัญชี Google<ph name="END_LINK" /></translation>
- <translation id="479167709087336770">การดำเนินการนี้จะใช้โปรแกรมตรวจตัวสะกดแบบเดียวกับใน Google Search ข้อความที่คุณพิมพ์ในเบราว์เซอร์จะส่งไปยัง Google คุณปรับเปลี่ยนลักษณะการทำงานนี้ได้ทุกเมื่อในการตั้งค่า</translation>
- <translation id="4814736265800133385">ใช้ Chromium โดยไม่มีบัญชี</translation>
-+<translation id="483739396253020185">เบราว์เซอร์ไม่สามารถยืนยันที่มาของส่วนขยายนี้ได้ และอาจไม่ปลอดภัย ลบออกจากเบราว์เซอร์เพื่อไม่ให้สามารถเข้าถึงหรือแก้ไขข้อมูลของคุณบนเว็บไซต์ที่คุณเข้าชมได้อีกต่อไป ซึ่งรวมถึงข้อมูลส่วนตัวของคุณด้วย</translation>
- <translation id="4888717733111232871">กฎขาเข้าสำหรับ Chromium เพื่ออนุญาตการเข้าชมแบบ mDNS</translation>
- <translation id="4893347770495441059">เปิดอีกครั้งเพื่ออัปเดต Chromium</translation>
- <translation id="4918844574251943176">คัดลอกรูปภาพแล้ว</translation>
- <translation id="4943838377383847465">Chromium กำลังอยู่ในโหมดทำงานในพื้นหลัง</translation>
- <translation id="494490797786467921">คลิกเพื่อปิดกล่องโต้ตอบการลงชื่อเข้าใช้ Chromium</translation>
 @@ -512,10 +515,11 @@
  <translation id="6857782730669500492">Chromium - <ph name="PAGE_TITLE" /></translation>
  <translation id="6859580922007887573">แตะเพื่อดำเนินการต่อ</translation>

@@ -48,18 +48,6 @@ diff a/chrome/app/resources/generated_resources_zh-HK.xtb b/chrome/app/resources
  <translation id="1173036203040243666">此分頁已連線至藍牙裝置</translation>
  <translation id="1173332155861271669">Passpoint 供應商詳情</translation>
  <translation id="1173894706177603556">重新命名</translation>
-@@ -309,10 +312,11 @@
- <translation id="1193927020065025187">此網站可能會試圖誘騙您允許滋擾性通知</translation>
- <translation id="11947597112837849">電郵地址</translation>
- <translation id="1195210374336998651">前往應用程式設定</translation>
- <translation id="1195447618553298278">未知的錯誤。</translation>
- <translation id="1195558154361252544">系統已自動封鎖所有網站的通知，但您允許的網站除外</translation>
-+<translation id="1195805062734778374">啟用開發者模式，可安裝和管理第三方擴展程式，這些擴展程式未經過安全性測試，可能存在風險。確定啟用？</translation>
- <translation id="1197088940767939838">橙色</translation>
- <translation id="11978075283960463">儲存在應用程式中的資料大小：<ph name="APP_SIZE" /></translation>
- <translation id="1198066799963193307">低視力語音工具</translation>
- <translation id="119944043368869598">全部清除</translation>
- <translation id="1199814941632954229">正在為這些憑證設定檔佈建憑證</translation>
 @@ -603,10 +607,11 @@
  <translation id="1405779994569073824">已當機。</translation>
  <translation id="1406500794671479665">驗證中…</translation>
@@ -84,19 +72,6 @@ diff a/chrome/app/resources/generated_resources_zh-HK.xtb b/chrome/app/resources
  <translation id="1464258312790801189">您的帳戶</translation>
  <translation id="1464597059227482327">如果要與未設定為聯絡人的 Chromebook 分享內容，請確認該 Chromebook 已啟用「咫尺共享」分享設定。如要開啟「咫尺共享」分享設定，請選取右下角，然後選取開啟「咫尺共享」分享設定。<ph name="LINK_BEGIN" />瞭解詳情<ph name="LINK_END" /></translation>
  <translation id="1464781208867302907">如要開啟裝置偏好設定，請前往「設定」。</translation>
-@@ -890,11 +896,11 @@
- <translation id="1596780725094407793">- 包括子網域</translation>
- <translation id="1597806446183714225">改善音質，讓語音聽起來更自然清晰。</translation>
- <translation id="1598163867407640634">透過 <ph name="SITE_ETLD_PLUS_ONE" /> 支付 <ph name="IDENTITY_PROVIDER_ETLD_PLUS_ONE" /> 費用</translation>
- <translation id="1598233202702788831">您的管理員已停用更新功能。</translation>
- <translation id="1598293830962835699">在需要時迅速建立分割檢視畫面</translation>
--<translation id="1600857548979126453">存取網頁偵錯工具後端</translation>
-+<translation id="1600857548979126453">存取頁面偵錯程式後端</translation>
- <translation id="1601481906560916994">排除網站</translation>
- <translation id="1601560923496285236">套用</translation>
- <translation id="1602085790802918092">正在啟動虛擬機器</translation>
- <translation id="1603116295689434284">Chrome 系統資料</translation>
- <translation id="1603411913360944381">清除「<ph name="DEVICE_NAME" />」</translation>
 @@ -1264,11 +1270,11 @@
  <translation id="1833059747301212935">輕鬆存取最近使用的文件和近期日曆活動</translation>
  <translation id="183445248400150852">網站會使用此功能來取代鍵盤輸入，例如遊戲或遠端桌面應用程式</translation>
@@ -258,19 +233,6 @@ diff a/chrome/app/resources/generated_resources_zh-HK.xtb b/chrome/app/resources
  <translation id="274029851662193272">內凹</translation>
  <translation id="2740531572673183784">確定</translation>
  <translation id="2740876196999178364">這些密鑰只會儲存在此裝置上，並不會儲存至您的 Google 帳戶。</translation>
-@@ -2741,11 +2750,11 @@
- <translation id="2832124733806557606">子女可使用 PIN 來登入裝置或裝置解鎖。</translation>
- <translation id="2833144527504272627">使用文字游標瀏覽</translation>
- <translation id="2833727845850279275">此檔案包含惡意軟件，或來自可疑網站。</translation>
- <translation id="2835177225987815960">系統將會重設目前的掃瞄設定，包括任何已指派的按鈕裝置和自動掃瞄速度偏好設定。</translation>
- <translation id="2835547721736623118">語音識別服務</translation>
--<translation id="2835761321523638096">讀取及變更閱讀清單中的項目</translation>
-+<translation id="2835761321523638096">讀取和變更閱讀清單中的條目</translation>
- <translation id="2836112522909777958">如要刪除資料，請關閉所有無痕式視窗</translation>
- <translation id="2836269494620652131">當機</translation>
- <translation id="283669119850230892">如要使用 <ph name="NETWORK_ID" /> 網絡，請先在下方連線至互聯網。</translation>
- <translation id="2837436785711770027">{NUM_GROUPS,plural, =1{刪除群組}other{刪除群組}}</translation>
- <translation id="2838379631617906747">正在安裝</translation>
 @@ -2857,11 +2866,11 @@
  <translation id="2912247081180973411">關閉視窗</translation>
  <translation id="2915102088417824677">查看活動記錄</translation>
@@ -391,19 +353,6 @@ diff a/chrome/app/resources/generated_resources_zh-HK.xtb b/chrome/app/resources
  <translation id="3562423906127931518">此程序可能需時幾分鐘。正在設定 Linux 容器。</translation>
  <translation id="3562655211539199254">查看最近透過手機開啟的 Chrome 分頁</translation>
  <translation id="356268274299520831">到網站更改</translation>
-@@ -3905,11 +3919,11 @@
- <translation id="3653160965917900914">網絡檔案共用</translation>
- <translation id="3653227677390502622">回應迅速</translation>
- <translation id="3653241190370117833">閒置分頁新外觀登場</translation>
- <translation id="3653887973853407813">您無法使用此擴充程式，因為您的家長或監護人已關閉 Chrome 的「網站、應用程式和擴充程式權限」。</translation>
- <translation id="3653999333232393305">繼續允許 <ph name="HOST" /> 存取您的麥克風</translation>
--<translation id="3654045516529121250">讀取您的協助工具設定</translation>
-+<translation id="3654045516529121250">讀取您的無障礙設定</translation>
- <translation id="3654682977761834281">來自嵌入網站的資料</translation>
- <translation id="3656328935986149999">游標速度</translation>
- <translation id="3656701180077048004">在按下按鍵與啟動按鍵間加入延遲時間</translation>
- <translation id="3658871634334445293">TrackPoint 加速</translation>
- <translation id="3659483399659250379">加入分頁和其他項目</translation>
 @@ -4214,11 +4228,11 @@
  <translation id="3834728400518755610">Linux 需要關閉，麥克風設定的變更才會生效。關閉 Linux 即可繼續。</translation>
  <translation id="3834775135533257713">「<ph name="TO_INSTALL_APP_NAME" />」應用程式和「<ph name="INSTALLED_APP_NAME" />」發生衝突，因此無法新增。</translation>
@@ -705,19 +654,6 @@ diff a/chrome/app/resources/generated_resources_zh-HK.xtb b/chrome/app/resources
  <translation id="623755660902014047">閱讀模式</translation>
  <translation id="6238767809035845642">從其他裝置分享的文字</translation>
  <translation id="6238923052227198598">在上鎖畫面上顯示最新筆記</translation>
-@@ -7780,11 +7805,11 @@
- <translation id="6336194758029258346">應用程式語言</translation>
- <translation id="6337543438445391085">資料仍可能會包含部分個人資料，請務必檢查已匯出的檔案。</translation>
- <translation id="6338968693068997776">新增 USB 裝置</translation>
- <translation id="6339668969738228384">為 <ph name="USER_EMAIL_ADDRESS" /> 建立新的個人檔案</translation>
- <translation id="6340071272923955280">Internet Printing Protocol (IPPS)</translation>
--<translation id="6341850831632289108">偵測您的實際位置</translation>
-+<translation id="6341850831632289108">偵測您所在的地理位置</translation>
- <translation id="6342069812937806050">剛剛完成</translation>
- <translation id="6343003829431264373">只列印雙數頁面</translation>
- <translation id="6343262564968371601">透過搜尋 Google、檔案、應用程式等地方，尋找所需內容</translation>
- <translation id="6343981313228733146">視窗移咗去右上方</translation>
- <translation id="6344170822609224263">存取網絡連線清單</translation>
 @@ -7824,11 +7849,11 @@
  <translation id="6367853307713830174">Gemini 會顯示正在執行的步驟，並在採取敏感操作前請你確認。你可隨時停止操作或接手。</translation>
  <translation id="6367985768157257101">要透過咫尺共享接收嗎？</translation>
@@ -796,19 +732,6 @@ diff a/chrome/app/resources/generated_resources_zh-HK.xtb b/chrome/app/resources
  <translation id="6788210894632713004">已解除壓縮的擴充程式</translation>
  <translation id="6789592661892473991">水平分割</translation>
  <translation id="6789665473250283877">移除<ph name="TOOL_NAME" /></translation>
-@@ -8674,11 +8699,11 @@
- <translation id="6963772203726867701">無法偵測</translation>
- <translation id="6963872466817251924">文字游標突顯工具</translation>
- <translation id="6964239097707154771">是 Chrome 的外掛程式，可助你事半功倍</translation>
- <translation id="6964390816189577014">英雄</translation>
- <translation id="6964760285928603117">從群組中移除</translation>
--<translation id="6965382102122355670">確定</translation>
-+<translation id="6965382102122355670">確認</translation>
- <translation id="6965607054907047032">根據分頁的閒置狀態釋出記憶體</translation>
- <translation id="6965648386495488594">連接埠</translation>
- <translation id="6965978654500191972">裝置</translation>
- <translation id="6967112302799758487">系統將會移除此裝置上所有透過 Chromebook 版 Steam (Beta 版本) 安裝的應用程式和遊戲。系統亦會移除與這些應用程式和遊戲關聯的資料。在解除安裝之前，請確保您已備份已儲存的應用程式和遊戲。</translation>
- <translation id="6967430741871315905">無法檢查裝置是否已獲准</translation>
 @@ -8711,11 +8736,11 @@
  <translation id="6983507711977005608">解除連接「即時網絡共享」網絡</translation>
  <translation id="6983783921975806247">已註冊的 OID</translation>
@@ -870,22 +793,6 @@ diff a/chrome/app/resources/generated_resources_zh-HK.xtb b/chrome/app/resources
  <translation id="7267044199012331848">無法安裝虛擬機器。請再試一次，或聯絡您的管理員。錯誤代碼：<ph name="ERROR_CODE" />。</translation>
  <translation id="7267875682732693301">覆按壓指紋感應器，以建立完整的指紋檔案</translation>
  <translation id="7267898843336437186">選取此網站可以查看的資料夾</translation>
-@@ -9149,13 +9175,14 @@
- <translation id="7303281435234579599">糟糕！設定示範模式時發生問題。</translation>
- <translation id="7303485269821975179">設定 <ph name="DEVICE_TYPE" /> 密碼</translation>
- <translation id="7303900363563182677">此網站被禁止查看複製到剪貼簿的文字和圖片</translation>
- <translation id="7304030187361489308">高</translation>
- <translation id="7305123176580523628">已連接 USB 列印機</translation>
--<translation id="730515362922783851">與區域網絡或互聯網中的任何裝置交換數據</translation>
-+<translation id="730515362922783851">與本地網絡或互聯網中的任何裝置交換數據</translation>
- <translation id="7306521477691455105">開啟「設定」即可將 <ph name="USB_DEVICE_NAME" /> 連接至 <ph name="USB_VM_NAME" /></translation>
- <translation id="7307129035224081534">已暫停</translation>
-+<translation id="7307138455910007225">尋找您的本地網絡中的裝置，例如打印機</translation>
- <translation id="7308643132139167865">網站語言</translation>
- <translation id="7309214454733221756">要建立密鑰以登入 <ph name="APP_NAME" /> 嗎？</translation>
- <translation id="7311005168897771689">在離線狀態下存取「Google 雲端硬碟」檔案</translation>
- <translation id="7311244614769792472">找不到任何結果</translation>
- <translation id="7312040805247765153">無法安裝應用程式</translation>
 @@ -9214,10 +9241,11 @@
  <translation id="7348093485538360975">螢幕小鍵盤</translation>
  <translation id="734813941605705678">需要同步</translation>
@@ -974,19 +881,6 @@ diff a/chrome/app/resources/generated_resources_zh-HK.xtb b/chrome/app/resources
  <translation id="8037801708772278989">剛檢查過</translation>
  <translation id="8038111231936746805">(預設)</translation>
  <translation id="8039151841428107077">{NUM_OF_FILES,plural, =1{正在將 1 個檔案複製至 <ph name="CLOUD_PROVIDER" />}other{正在將 {NUM_OF_FILES} 個檔案複製至 <ph name="CLOUD_PROVIDER" />}}</translation>
-@@ -10372,11 +10402,11 @@
- <translation id="8118276691321086429"><ph name="PASSWORD_MANAGER_BRAND" />會記住您的登入方式，並盡可能自動登入。停用此功能後，系統每次都會詢問您是否要登入。</translation>
- <translation id="8118362518458010043">Chrome 已停用這個擴充程式。這個擴充程式可能不安全。</translation>
- <translation id="8118448640060360549">{EXTENSIONS_COUNT,plural, =1{# 個書籤}other{# 個書籤}}</translation>
- <translation id="8118488170956489476">您的<ph name="BEGIN_LINK" />瀏覽器由您的組織管理<ph name="END_LINK" /></translation>
- <translation id="8118515372935001629">螢幕重新整理頻率</translation>
--<translation id="8118860139461251237">管理下載內容</translation>
-+<translation id="8118860139461251237">管理您的下載內容</translation>
- <translation id="8119438628456698432">正在產生記錄檔案…</translation>
- <translation id="811994229154425014">按空白鍵兩下插入句號</translation>
- <translation id="8120505434908124087">安裝 eSIM 卡設定檔</translation>
- <translation id="8121537075864592453">已停用全螢幕</translation>
- <translation id="8121750884985440809">您目前正在投放螢幕畫面</translation>
 @@ -10393,11 +10423,11 @@
  <translation id="8133297578569873332">可以接受 - FM</translation>
  <translation id="8133676275609324831">在資料夾中顯示(&amp;S)</translation>
@@ -1037,18 +931,6 @@ diff a/chrome/app/resources/generated_resources_zh-HK.xtb b/chrome/app/resources
  <translation id="8294476140219241086">分頁整理工具</translation>
  <translation id="8295449579927246485">即時翻譯</translation>
  <translation id="8295450130892483256">安裝 Microsoft 365</translation>
-@@ -10677,10 +10709,11 @@
- <translation id="8323317289166663449">讀取及變更您在電腦及所有網站上的資料</translation>
- <translation id="8323518750352551353">要另外建立新個人檔案嗎？</translation>
- <translation id="8323744572398547859">如要查看其他裝置上的分頁，請登入並同步記錄。你也可在你的所有裝置上取得密碼和其他資料。你可在設定中隨時停止同步。Google 可能會根據你的記錄，提供個人化「搜尋」和其他服務。</translation>
- <translation id="8324158725704657629">不要再詢問</translation>
- <translation id="8325413836429495820">不允許查看剪貼簿</translation>
-+<translation id="832618879023665598">此擴展程式未通過安全合規性驗證，已被自動禁用</translation>
- <translation id="8326478304147373412">PKCS #7，憑證鏈結</translation>
- <translation id="8327386430364625757">數學字型</translation>
- <translation id="8327490658947427005">所選內容不是<ph name="LANGUAGE" /></translation>
- <translation id="8327544198829180337">關閉此檢視畫面</translation>
- <translation id="8327676037044516220">權限和內容設定</translation>
 @@ -10715,14 +10749,15 @@
  <translation id="8349826889576450703">啟動器</translation>
  <translation id="8350789879725387295">Dock 中的觸控筆工具</translation>
@@ -1066,19 +948,6 @@ diff a/chrome/app/resources/generated_resources_zh-HK.xtb b/chrome/app/resources
  <translation id="8356409598322585307">您已註冊此裝置，因此無需再註冊。</translation>
  <translation id="8357388086258943206">安裝 Linux 時發生錯誤</translation>
  <translation id="8358685469073206162">您要還原網頁嗎？</translation>
-@@ -11159,11 +11194,11 @@
-        你可透過資訊卡選單管理設定，或前往「自訂 Chrome」查看更多選項。</translation>
- <translation id="8661290697478713397">在無痕式視窗中開啟連結(&amp;G)</translation>
- <translation id="8662474268934425487">登入 <ph name="SITE_ETLD_PLUS_ONE" /></translation>
- <translation id="8662671328352114214">加入 <ph name="TYPE" /> 網絡</translation>
- <translation id="8662795692588422978">使用者</translation>
--<translation id="8662911384982557515">將您的首頁變更為：<ph name="HOME_PAGE" /></translation>
-+<translation id="8662911384982557515">將您的主頁變更為：<ph name="HOME_PAGE" /></translation>
- <translation id="8662978096466608964">Chrome 無法設定桌布。</translation>
- <translation id="8663099077749055505">永遠禁止在 <ph name="HOST" /> 自動下載多個檔案</translation>
- <translation id="8664389313780386848">檢視網頁原始碼(&amp;V)</translation>
- <translation id="8665110742939124773">您輸入不正確的存取碼。請再試一次。</translation>
- <translation id="8665180165765946056">備份完成</translation>
 @@ -11244,11 +11279,11 @@
  <translation id="8709368517685334931">你可在 Chrome 網上應用程式商店找到舊版色彩主題</translation>
  <translation id="8710414664106871428">奇幻</translation>

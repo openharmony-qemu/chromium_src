@@ -474,18 +474,6 @@ diff a/chrome/app/resources/generated_resources_ko.xtb b/chrome/app/resources/ge
  <translation id="8139440916039659819">커서 가속</translation>
  <translation id="8140070492745508800"><ph name="FIRST_DEVICE" />, <ph name="SECOND_DEVICE" /></translation>
  <translation id="8140108728130537923"><ph name="BROWSER_DOMAIN" />에서 <ph name="BEGIN_LINK" />브라우저를 관리<ph name="END_LINK" />하고 <ph name="PROFILE_DOMAIN" />에서 <ph name="BEGIN_LINK" />프로필을 관리<ph name="END_LINK" />합니다.</translation>
-@@ -10692,10 +10711,11 @@ https://support.google.com/chromebook/?p=sm</translation>
- <translation id="8323317289166663449">컴퓨터 및 모든 웹사이트의 전체 데이터 읽기 및 변경</translation>
- <translation id="8323518750352551353">방문 기록을 별도로 유지하시겠습니까?</translation>
- <translation id="8323744572398547859">다른 기기에서 탭을 가져오려면 로그인하고 방문 기록을 동기화하세요. 이렇게 하면 사용 중인 모든 기기에서 비밀번호 등을 사용할 수도 있습니다. 언제든지 설정에서 동기화를 중지할 수 있습니다. Google에서는 사용자의 방문 기록을 기반으로 Google 검색 및 기타 서비스를 맞춤설정할 수 있습니다.</translation>
- <translation id="8324158725704657629">다시 묻지 않음</translation>
- <translation id="8325413836429495820">클립보드 확인이 허용되지 않음</translation>
-+<translation id="832618879023665598">이 확장 프로그램은 보안 준수 검사에 실패하여 자동으로 종료되었습니다.</translation>
- <translation id="8326478304147373412">PKCS #7, 인증서 체인</translation>
- <translation id="8327386430364625757">산술 글꼴</translation>
- <translation id="8327490658947427005">선택 항목이 <ph name="LANGUAGE" />로 제공되지 않음</translation>
- <translation id="8327544198829180337">이 뷰 닫기</translation>
- <translation id="8327676037044516220">권한 및 콘텐츠 설정</translation>
 @@ -11277,10 +11298,11 @@ https://support.google.com/chromebook/?p=sm</translation>
  <translation id="8719665168401479425">얼굴 동작을 사용하여 작업 수행</translation>
  <translation id="8720200012906404956">모바일 네트워크를 찾고 있습니다. <ph name="BEGIN_LINK" />자세히 알아보기<ph name="END_LINK" /></translation>

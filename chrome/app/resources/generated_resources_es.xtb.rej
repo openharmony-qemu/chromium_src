@@ -492,18 +492,6 @@ diff a/chrome/app/resources/generated_resources_es.xtb b/chrome/app/resources/ge
  <translation id="8139440916039659819">Aceleración de cursor</translation>
  <translation id="8140070492745508800"><ph name="FIRST_DEVICE" />, <ph name="SECOND_DEVICE" /></translation>
  <translation id="8140108728130537923"><ph name="BROWSER_DOMAIN" /> <ph name="BEGIN_LINK" />gestiona tu navegador<ph name="END_LINK" />, y <ph name="PROFILE_DOMAIN" /> <ph name="BEGIN_LINK" />gestiona tu perfil<ph name="END_LINK" /></translation>
-@@ -10676,10 +10695,11 @@ Guarda tu archivo de clave en un lugar seguro, ya que lo necesitarás para crear
- <translation id="8323317289166663449">Leer y cambiar todos tus datos en tu ordenador y en todos los sitios web</translation>
- <translation id="8323518750352551353">¿Navegar de forma independiente?</translation>
- <translation id="8323744572398547859">Para ver las pestañas de tus otros dispositivos, inicia sesión y sincroniza tu historial. También tendrás tus contraseñas y otra información en todos tus dispositivos. Puedes detener la sincronización en cualquier momento desde la configuración. Google puede personalizar la Búsqueda y otros servicios en función de tu historial.</translation>
- <translation id="8324158725704657629">No volver a preguntar</translation>
- <translation id="8325413836429495820">No puede ver tu portapapeles</translation>
-+<translation id="832618879023665598">Esta extensión no ha superado la inspección de requisitos de seguridad y se ha deshabilitado automáticamente.</translation>
- <translation id="8326478304147373412">PKCS #7, cadena de certificados</translation>
- <translation id="8327386430364625757">Fuente matemática</translation>
- <translation id="8327490658947427005">La selección no está en <ph name="LANGUAGE" /></translation>
- <translation id="8327544198829180337">Cerrar esta vista</translation>
- <translation id="8327676037044516220">Permisos y configuración de contenido</translation>
 @@ -11261,10 +11282,11 @@ Guarda tu archivo de clave en un lugar seguro, ya que lo necesitarás para crear
  <translation id="8719665168401479425">Usa gestos faciales para realizar acciones</translation>
  <translation id="8720200012906404956">Se está buscando una red móvil. <ph name="BEGIN_LINK" />Más información<ph name="END_LINK" /></translation>

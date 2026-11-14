@@ -23,18 +23,6 @@ diff a/chrome/app/resources/chromium_strings_de.xtb b/chrome/app/resources/chrom
  <translation id="3651803019964686660">Wenn du eine Nummer von <ph name="ORIGIN" /> an dein Android-Smartphone senden möchtest, musst du dich auf beiden Geräten in Chromium anmelden.</translation>
  <translation id="3667616615096815454">Installation nicht möglich. Die App ist dem Server nicht bekannt.</translation>
  <translation id="3675854891107786059">Verwende deine <ph name="BEGIN_LINK" />eigene Passphrase<ph name="END_LINK" /> für die Verschlüsselung aller Chromium-Daten in deinem Google-Konto. Zahlungsmethoden und Adressen bei Google Pay werden nicht verschlüsselt. Der Chromium-Browserverlauf wird nicht synchronisiert.</translation>
-@@ -338,10 +340,11 @@ Diese Aktion wirkt sich nicht auf Lesezeichen, gespeicherte Passwörter und den
- <translation id="4759645701210484457">Chromium fragen</translation>
- <translation id="4771701986670315895">Du hast diese Website in letzter Zeit nicht besucht. Chromium hat „<ph name="PERMISSION_1" />“, „<ph name="PERMISSION_2" />“ und <ph name="COUNT" /> weitere Berechtigungen entfernt.</translation>
- <translation id="4788777615168560705">Chromium kann deine Passwörter nicht prüfen. Versuche es in 24 Stunden noch einmal oder <ph name="BEGIN_LINK" />prüfe die Passwörter in deinem Google-Konto<ph name="END_LINK" />.</translation>
- <translation id="479167709087336770">Es wird dieselbe Rechtschreibprüfung wie in der Google Suche verwendet. Der in den Browser eingegebene Text wird an Google gesendet. Du kannst dies jederzeit in den Einstellungen ändern.</translation>
- <translation id="4814736265800133385">Chromium ohne Konto verwenden</translation>
-+<translation id="483739396253020185">Der Browser kann die Herkunft dieser Erweiterung nicht überprüfen und sie ist möglicherweise nicht sicher. Entfernen Sie sie aus dem Browser, damit sie Ihre Daten auf den von Ihnen besuchten Websites – einschließlich Ihrer persönlichen Daten – nicht mehr einsehen oder ändern kann.</translation>
- <translation id="4888717733111232871">Eingangsregel für die Zulassung von mDNS-Verkehr in Chromium</translation>
- <translation id="4893347770495441059">Neu starten, um &amp;Chromium zu aktualisieren</translation>
- <translation id="4918844574251943176">Bild kopiert</translation>
- <translation id="4943838377383847465">Chromium wird im Hintergrundmodus ausgeführt.</translation>
- <translation id="494490797786467921">Klicken, um Dialogfeld zur Anmeldung in Chromium zu schließen</translation>
 @@ -512,10 +515,11 @@ Einige Funktionen stehen möglicherweise nicht zur Verfügung. Gib bitte ein and
  <translation id="6857782730669500492">Chromium – <ph name="PAGE_TITLE" /></translation>
  <translation id="6859580922007887573">Drücke die Tabulatortaste zum Fortfahren</translation>

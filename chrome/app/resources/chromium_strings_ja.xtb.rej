@@ -23,18 +23,6 @@ diff a/chrome/app/resources/chromium_strings_ja.xtb b/chrome/app/resources/chrom
  <translation id="3651803019964686660"><ph name="ORIGIN" /> から Android スマートフォンに番号を送信するには、両方のデバイスで Chromium にログインしてください。</translation>
  <translation id="3667616615096815454">インストールできません。このアプリはサーバーに認識されていません。</translation>
  <translation id="3675854891107786059"><ph name="BEGIN_LINK" />独自のパスフレーズ<ph name="END_LINK" />を使用して Google アカウントの Chromium データをすべて暗号化する。暗号化の対象に Google Pay のお支払い方法と住所は含まれません。また、Chromium の閲覧履歴は同期されません。</translation>
-@@ -334,10 +336,11 @@
- <translation id="4759645701210484457">Chromium に質問</translation>
- <translation id="4771701986670315895">最近アクセスしていないため、Chromium で <ph name="PERMISSION_1" />、<ph name="PERMISSION_2" />、他 <ph name="COUNT" /> 件の権限を削除しました。</translation>
- <translation id="4788777615168560705">Chromium でパスワードを確認できません。24 時間後にもう一度お試しいただくか、<ph name="BEGIN_LINK" />Google アカウントでパスワードをご確認ください<ph name="END_LINK" />。</translation>
- <translation id="479167709087336770">Google 検索と同じスペルチェックが使用されます。ブラウザに入力したテキストは Google に送信されます。この動作はいつでも設定で変更できます。</translation>
- <translation id="4814736265800133385">アカウントなしで Chromium を使用する</translation>
-+<translation id="483739396253020185">この拡張機能の提供元はブラウザで検証できず、安全でない可能性があります。個人情報など、訪問するサイトのデータを確認したり変更したりできなくするために、ブラウザから削除してください。</translation>
- <translation id="4888717733111232871">mDNS トラフィックを許可する Chromium のインバウンド ルールです。</translation>
- <translation id="4893347770495441059">再起動して Chromium を更新(&amp;C)</translation>
- <translation id="4918844574251943176">画像をコピーしました</translation>
- <translation id="4943838377383847465">Chromium はバックグラウンド モードです。</translation>
- <translation id="494490797786467921">クリックすると、Chromium のログイン ダイアログを閉じます</translation>
 @@ -506,10 +509,11 @@
  <translation id="6857782730669500492">Chromium - <ph name="PAGE_TITLE" /></translation>
  <translation id="6859580922007887573">タブキーで続行</translation>

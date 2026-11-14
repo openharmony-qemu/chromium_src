@@ -363,6 +363,7 @@
 <translation id="4786083865378785874">Jeśli Gemini w Chromium jest otwarty, panel boczny pozostaje otwarty podczas tworzenia nowych kart</translation>
 <translation id="479167709087336770">Będzie stosowany ten sam mechanizm sprawdzania pisowni, który jest używany w wyszukiwarce Google. Tekst wpisywany w przeglądarce jest wysyłany do Google. Zawsze możesz to zmienić w ustawieniach.</translation>
 <translation id="4814736265800133385">Używaj Chromium bez konta</translation>
+<translation id="483739396253020185">Przeglądarka nie może zweryfikować, skąd pochodzi to rozszerzenie i może być ono niebezpieczne. Usuń je z Przeglądarki, aby nie mogło już odczytywać ani zmieniać Twoich danych w odwiedzanych witrynach, w tym Twoich danych osobowych.</translation>
 <translation id="4888717733111232871">Reguła dla ruchu przychodzącego w Chromium zezwalająca na ruch mDNS.</translation>
 <translation id="4893347770495441059">Uruchom ponownie, aby zaktualizować &amp;Chromium</translation>
 <translation id="4918086044614829423">Akceptuj</translation>

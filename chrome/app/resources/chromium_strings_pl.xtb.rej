@@ -23,18 +23,6 @@ diff a/chrome/app/resources/chromium_strings_pl.xtb b/chrome/app/resources/chrom
  <translation id="3651803019964686660">Aby wysłać numer z <ph name="ORIGIN" /> na swój telefon z Androidem, zaloguj się w Chromium na obu urządzeniach.</translation>
  <translation id="3667616615096815454">Nie można zainstalować aplikacji. Serwer jej nie rozpoznaje.</translation>
  <translation id="3675854891107786059">Używaj <ph name="BEGIN_LINK" />własnego hasła<ph name="END_LINK" /> do szyfrowania wszystkich danych Chrome na koncie Google Formy płatności ani adresy z Google Pay nie będą szyfrowane. Historia przeglądania z Chromium nie będzie synchronizowana.</translation>
-@@ -336,10 +338,11 @@
- <translation id="4759645701210484457">Zapytaj Chromium</translation>
- <translation id="4771701986670315895">Od jakiegoś czasu nie odwiedzasz tej witryny. Przeglądarka Chromium usunęła te uprawnienia: <ph name="PERMISSION_1" />, <ph name="PERMISSION_2" /> i jeszcze <ph name="COUNT" />.</translation>
- <translation id="4788777615168560705">Chromium nie może sprawdzić Twoich haseł. Spróbuj ponownie za 24 godziny lub <ph name="BEGIN_LINK" />sprawdź hasła na koncie Google<ph name="END_LINK" />.</translation>
- <translation id="479167709087336770">Będzie stosowany ten sam mechanizm sprawdzania pisowni, który jest używany w wyszukiwarce Google. Tekst wpisywany w przeglądarce jest wysyłany do Google. Zawsze możesz to zmienić w ustawieniach.</translation>
- <translation id="4814736265800133385">Używaj Chromium bez konta</translation>
-+<translation id="483739396253020185">Przeglądarka nie może zweryfikować, skąd pochodzi to rozszerzenie i może być ono niebezpieczne. Usuń je z Przeglądarki, aby nie mogło już odczytywać ani zmieniać Twoich danych w odwiedzanych witrynach, w tym Twoich danych osobowych.</translation>
- <translation id="4888717733111232871">Reguła dla ruchu przychodzącego w Chromium zezwalająca na ruch mDNS.</translation>
- <translation id="4893347770495441059">Uruchom ponownie, aby zaktualizować &amp;Chromium</translation>
- <translation id="4918844574251943176">Zdjęcie zostało skopiowane</translation>
- <translation id="4943838377383847465">Chromium jest w trybie działania w tle</translation>
- <translation id="494490797786467921">Kliknij, aby zamknąć okno logowania się w Chromium</translation>
 @@ -510,10 +513,11 @@ Niektóre funkcje mogą być niedostępne. Podaj inny katalog z profilem lub uż
  <translation id="6857782730669500492">Chromium – <ph name="PAGE_TITLE" /></translation>
  <translation id="6859580922007887573">Kliknij, aby kontynuować</translation>

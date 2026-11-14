@@ -464,6 +464,7 @@ void TouchSelectionController::OnDragBegin(
     DCHECK_EQ(active_status_, ActiveStatus::kInsertionActive);
     if (config_.hide_active_handle)
       insertion_handle_->SetTransparent();
+    is_first_drag_ = true;
     client_->OnSelectionEvent(INSERTION_HANDLE_DRAG_STARTED);
     anchor_drag_to_selection_start_ = true;
     return;

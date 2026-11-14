@@ -492,18 +492,6 @@ diff a/chrome/app/resources/generated_resources_pl.xtb b/chrome/app/resources/ge
  <translation id="8139440916039659819">Przyspieszenie kursora</translation>
  <translation id="8140070492745508800"><ph name="FIRST_DEVICE" />, <ph name="SECOND_DEVICE" /></translation>
  <translation id="8140108728130537923">Twoją <ph name="BEGIN_LINK" />przeglądarką zarządza<ph name="END_LINK" /> <ph name="BROWSER_DOMAIN" />, a Twoim <ph name="BEGIN_LINK" />profilem<ph name="END_LINK" /> <ph name="PROFILE_DOMAIN" /></translation>
-@@ -10656,10 +10675,11 @@ Przechowuj plik klucza w bezpiecznym miejscu. Będzie on potrzebny do utworzenia
- <translation id="8323317289166663449">Odczytywanie i zmienianie wszystkich Twoich danych na komputerze i we wszystkich witrynach</translation>
- <translation id="8323518750352551353">Oddzielne przeglądanie?</translation>
- <translation id="8323744572398547859">Aby zobaczyć karty z innych urządzeń, zaloguj się i zsynchronizuj historię. Będziesz też mieć dostęp do haseł i innych danych na wszystkich swoich urządzeniach. Synchronizację możesz wyłączyć w każdej chwili w ustawieniach. Google może korzystać z Twojej historii, aby dostosowywać działanie wyszukiwarki i innych usług.</translation>
- <translation id="8324158725704657629">Nie pytaj ponownie</translation>
- <translation id="8325413836429495820">Nie zezwolono na wyświetlanie schowka</translation>
-+<translation id="832618879023665598">To rozszerzenie nie przeszło kontroli zgodności z zabezpieczeniami i zostało wyłączone automatycznie.</translation>
- <translation id="8326478304147373412">PKCS #7, łańcuch certyfikatów</translation>
- <translation id="8327386430364625757">Czcionka matematyczna</translation>
- <translation id="8327490658947427005">Wybrany element jest niedostępny w tym języku (<ph name="LANGUAGE" />)</translation>
- <translation id="8327544198829180337">Zamknij ten widok</translation>
- <translation id="8327676037044516220">Uprawnienia i ustawienia treści</translation>
 @@ -10753,11 +10774,11 @@ Przechowuj plik klucza w bezpiecznym miejscu. Będzie on potrzebny do utworzenia
      <ph name="BEGIN_PARAGRAPH2" />Dodatkową pomoc znajdziesz na: g.co/flex/InstallErrors<ph name="END_PARAGRAPH2" /></translation>
  <translation id="8383614331548401927">Podsumowanie ostatnich działań</translation>

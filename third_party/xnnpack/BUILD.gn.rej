@@ -361,25 +361,6 @@ diff a/third_party/xnnpack/BUILD.gn b/third_party/xnnpack/BUILD.gn	(rejected hun
          "src/include/xnnpack.h",
          "src/src/pqs8-qc8w-gemm/pqs8-qc8w-gemm-1x32c4-minmax-neonsme2.c",
          "src/src/pqs8-qc8w-gemm/pqs8-qc8w-gemm-32x32c4-minmax-neonsme2.c",
-@@ -42385,11 +43037,17 @@ if (current_cpu == "arm64") {
-     }
-   }
- 
-   if (build_with_chromium) {
-     source_set("qd8-f32-qc2w-gemm_arch=armv8.2-a+dotprod") {
--      cflags = [ "-march=armv8.2-a+dotprod" ]
-+      if (!enable_cfi_protection) {
-+        cflags = [ "-march=armv8.2-a+dotprod" ]
-+      } else {
-+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
-+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
-+      }
-+
- 
-       sources = [
-         "src/include/xnnpack.h",
-         "src/src/qd8-f32-qc2w-gemm/qd8-f32-qc2w-gemm-1x16c4-minmax-neondot.c",
-         "src/src/qd8-f32-qc2w-gemm/qd8-f32-qc2w-gemm-4x16c4-minmax-neondot.c",
 @@ -42412,11 +43070,17 @@ if (current_cpu == "arm64") {
    }
  

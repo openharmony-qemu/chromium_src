@@ -1,18 +1,4 @@
 diff a/third_party/blink/renderer/core/paint/theme_painter_default.cc b/third_party/blink/renderer/core/paint/theme_painter_default.cc	(rejected hunks)
-@@ -258,10 +269,13 @@ gfx::Rect ProgressValueRectFor(const LayoutProgress& layout_progress,
- 
- std::optional<SkColor> GetAccentColor(const ComputedStyle& style,
-                                       const Document& document) {
-   std::optional<Color> accent_color = style.AccentColorResolved();
-   mojom::blink::ColorScheme color_scheme = style.UsedColorScheme();
-+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
-+  color_scheme = GetColorScheme(style);
-+#endif
-   LayoutTheme& layout_theme = LayoutTheme::GetTheme();
- 
-   // We should not allow the system accent color to be rendered in image
-   // contexts because it could be read back by the page and used for
-   // fingerprinting.
 @@ -428,10 +451,13 @@ bool ThemePainterDefault::PaintTextField(const Element& element,
        DynamicTo<HTMLFormControlElement>(element)->IsAutofilled() ||
        DynamicTo<HTMLFormControlElement>(element)->IsPreviewed();

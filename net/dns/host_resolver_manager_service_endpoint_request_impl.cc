@@ -95,6 +95,10 @@ int HostResolverManager::ServiceEndpointRequestImpl::Start(Delegate* delegate) {
   CHECK(!delegate_);
   CHECK(manager_);
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  resolve_info_.query_host = host_.ToString();
+#endif
+
   if (!resolve_context_) {
     error_info_ = ResolveErrorInfo(ERR_CONTEXT_SHUT_DOWN);
     return HostResolver::SquashErrorCode(ERR_CONTEXT_SHUT_DOWN);

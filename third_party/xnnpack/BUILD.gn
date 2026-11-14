@@ -49536,7 +49536,13 @@ if (current_cpu == "arm64") {
 
   if (build_with_chromium) {
     source_set("qd8-f32-qc2w-gemm_arch=armv8.2-a+dotprod") {
-      cflags = [ "-march=armv8.2-a+dotprod" ]
+      if (!enable_cfi_protection) {
+        cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
+
 
       sources = [
         "src/include/xnnpack.h",

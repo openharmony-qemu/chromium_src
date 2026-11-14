@@ -283,6 +283,9 @@ std::optional<SkColor> GetAccentColor(
     ClampingBehavior clamping_behavior = ClampingBehavior::kNoClamping) {
   std::optional<Color> accent_color = style.AccentColorResolved();
   mojom::blink::ColorScheme color_scheme = style.UsedColorScheme();
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  color_scheme = GetColorScheme(style);
+#endif
   LayoutTheme& layout_theme = LayoutTheme::GetTheme();
 
   // We should not allow the system accent color to be rendered in image

@@ -13,21 +13,6 @@ diff a/net/dns/host_resolver_manager_service_endpoint_request_impl.cc b/net/dns/
  #include "base/no_destructor.h"
  #include "base/notreached.h"
  #include "base/types/optional_util.h"
-@@ -82,10 +89,14 @@ HostResolverManager::ServiceEndpointRequestImpl::~ServiceEndpointRequestImpl() {
- int HostResolverManager::ServiceEndpointRequestImpl::Start(Delegate* delegate) {
-   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-   CHECK(!delegate_);
-   CHECK(manager_);
- 
-+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
-+  resolve_info_.query_host = host_.ToString();
-+#endif
-+
-   if (!resolve_context_) {
-     error_info_ = ResolveErrorInfo(ERR_CONTEXT_SHUT_DOWN);
-     return ERR_CONTEXT_SHUT_DOWN;
-   }
- 
 @@ -203,15 +214,32 @@ void HostResolverManager::ServiceEndpointRequestImpl::AssignJob(
    job_ = job;
  }

@@ -14,29 +14,6 @@ diff a/content/browser/preloading/prerender/prerender_host_registry.cc b/content
  namespace {
  
  bool IsBackground(Visibility visibility) {
-@@ -536,10 +542,22 @@ void PrerenderHostRegistry::RemoveObserver(Observer* observer) {
- }
- 
- FrameTreeNodeId PrerenderHostRegistry::CreateAndStartHost(
-     const PrerenderAttributes& attributes,
-     PreloadingAttempt* attempt) {
-+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-+  if (attributes.trigger_type != PreloadingTriggerType::kEmbedder) {
-+    RecordFailedPrerenderFinalStatus(
-+        PrerenderCancellationReason(PrerenderFinalStatus::kPreloadingDisabled),
-+        attributes);
-+    if (attempt) {
-+      attempt->SetEligibility(PreloadingEligibility::kPreloadingDisabled);
-+    }
-+    return FrameTreeNodeId();
-+  }
-+#endif
-+
-   std::string recorded_url =
-       attributes.initiator_origin.has_value()
-           ? attributes.initiator_origin.value().GetURL().spec()
-           : "(empty_url)";
- 
 @@ -985,13 +1003,29 @@ std::set<FrameTreeNodeId> PrerenderHostRegistry::CancelHosts(
      const std::vector<FrameTreeNodeId>& frame_tree_node_ids,
      const PrerenderCancellationReason& reason) {

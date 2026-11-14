@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "base/compiler_specific.h"
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/strings/stringprintf.h"
 #include "base/trace_event/named_trigger.h"

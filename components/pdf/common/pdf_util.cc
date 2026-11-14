@@ -10,7 +10,9 @@
 #include "extensions/buildflags/buildflags.h"
 #include "pdf/buildflags.h"
 #include "url/origin.h"
-
+#if BUILDFLAG(ARKWEB_PDF)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
 #if BUILDFLAG(ENABLE_EXTENSIONS)
 #include "extensions/common/constants.h"  // nogncheck
 #endif  // BUILDFLAG(ENABLE_EXTENSIONS)

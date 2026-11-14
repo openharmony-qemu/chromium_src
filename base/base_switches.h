@@ -8,6 +8,7 @@
 #define BASE_BASE_SWITCHES_H_
 
 #include "build/build_config.h"
+#include "arkweb/build/features/features.h"
 
 namespace switches {
 

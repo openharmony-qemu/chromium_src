@@ -1,16 +1,4 @@
 diff a/extensions/browser/updater/extension_downloader.cc b/extensions/browser/updater/extension_downloader.cc	(rejected hunks)
-@@ -7,10 +7,11 @@
- #include <stddef.h>
- 
- #include <string_view>
- #include <utility>
- 
-+#include "arkweb/build/features/features.h"
- #include "base/command_line.h"
- #include "base/files/file_path.h"
- #include "base/functional/bind.h"
- #include "base/location.h"
- #include "base/logging.h"
 @@ -857,50 +864,50 @@ ExtensionDownloader::GetUpdateAvailability(
    if (!is_extension_pending) {
      // If we're not installing pending extension, we can only update

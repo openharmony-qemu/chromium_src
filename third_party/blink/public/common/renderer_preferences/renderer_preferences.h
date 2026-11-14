@@ -20,6 +20,10 @@
 #include "ui/events/keycodes/keyboard_codes.h"
 #include "ui/gfx/font_render_params.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace blink {
 
 // Note: these must match the values in renderer_preferences.mojom.

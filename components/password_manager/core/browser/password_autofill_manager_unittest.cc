@@ -11,6 +11,7 @@
 #include <variant>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/base64.h"
 #include "base/containers/span.h"
 #include "base/feature_list.h"

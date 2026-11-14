@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/i18n/rtl.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"

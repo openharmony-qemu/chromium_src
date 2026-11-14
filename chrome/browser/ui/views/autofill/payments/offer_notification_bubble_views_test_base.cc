@@ -6,6 +6,9 @@
 
 #include <string_view>
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/build/features/features.h"
+#endif
 #include "chrome/browser/autofill/autofill_uitest_util.h"
 #include "chrome/browser/autofill/personal_data_manager_factory.h"
 #include "chrome/browser/profiles/profile.h"

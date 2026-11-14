@@ -8,6 +8,7 @@
 #include <optional>
 #include <variant>
 
+#include "arkweb/build/features/features.h"
 #include "extensions/browser/service_worker/worker_id.h"
 #include "extensions/common/api/messaging/port_id.h"
 #include "extensions/common/api/messaging/signing_certificate.h"

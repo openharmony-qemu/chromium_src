@@ -551,18 +551,6 @@ diff a/chrome/app/resources/generated_resources_ru.xtb b/chrome/app/resources/ge
  <translation id="8139440916039659819">Ускорение указателя</translation>
  <translation id="8140070492745508800"><ph name="FIRST_DEVICE" />, <ph name="SECOND_DEVICE" /></translation>
  <translation id="8140108728130537923">Вашим <ph name="BEGIN_LINK" />браузером управляет<ph name="END_LINK" /> <ph name="BROWSER_DOMAIN" />, а <ph name="BEGIN_LINK" />профилем<ph name="END_LINK" /> – <ph name="PROFILE_DOMAIN" />.</translation>
-@@ -10684,10 +10703,11 @@
- <translation id="8323317289166663449">Просмотр и изменение ваших данных на компьютере и всех сайтах</translation>
- <translation id="8323518750352551353">Разделить просмотр?</translation>
- <translation id="8323744572398547859">Чтобы стали доступны вкладки с других ваших устройств, войдите в аккаунт и синхронизируйте историю. Пароли и другие данные также появятся на всех ваших устройствах. Синхронизацию можно в любой момент отключить в настройках. На основе вашей истории Google может персонализировать Поиск и другие сервисы.</translation>
- <translation id="8324158725704657629">Больше не спрашивать</translation>
- <translation id="8325413836429495820">Запретить сайтам просматривать буфер обмена</translation>
-+<translation id="832618879023665598">Это расширение не прошло проверку соответствия стандартам безопасности и было автоматически выключено.</translation>
- <translation id="8326478304147373412">PKCS #7, цепочка сертификатов</translation>
- <translation id="8327386430364625757">Математический шрифт</translation>
- <translation id="8327490658947427005">Язык выбранного текста не <ph name="LANGUAGE" /></translation>
- <translation id="8327544198829180337">Закрыть эту вкладку</translation>
- <translation id="8327676037044516220">Разрешения и настройки контента</translation>
 @@ -11269,10 +11290,11 @@
  <translation id="8719665168401479425">Использовать мимические жесты для выполнения действий на экране</translation>
  <translation id="8720200012906404956">Идет поиск мобильной сети. <ph name="BEGIN_LINK" />Подробнее…<ph name="END_LINK" /></translation>

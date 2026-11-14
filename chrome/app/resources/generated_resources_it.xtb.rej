@@ -435,18 +435,6 @@ diff a/chrome/app/resources/generated_resources_it.xtb b/chrome/app/resources/ge
  <translation id="8139440916039659819">Accelerazione del cursore</translation>
  <translation id="8140070492745508800"><ph name="FIRST_DEVICE" />, <ph name="SECOND_DEVICE" /></translation>
  <translation id="8140108728130537923">Il tuo <ph name="BEGIN_LINK" />browser è gestito<ph name="END_LINK" /> da <ph name="BROWSER_DOMAIN" /> e il tuo <ph name="BEGIN_LINK" />profilo è gestito<ph name="END_LINK" /> da <ph name="PROFILE_DOMAIN" /></translation>
-@@ -10674,10 +10693,11 @@ Conserva il file di chiave in un luogo sicuro. Ti servirà per creare nuove vers
- <translation id="8323317289166663449">Leggere e modificare tutti i tuoi dati sul computer e su tutti i siti web</translation>
- <translation id="8323518750352551353">Separare la navigazione?</translation>
- <translation id="8323744572398547859">Accedi e sincronizza la cronologia per recuperare le schede dagli altri tuoi dispositivi. Potrai anche usare le password e altri dati su tutti i tuoi dispositivi. Puoi interrompere la sincronizzazione in qualsiasi momento nelle impostazioni. Google potrebbe personalizzare la Ricerca e altri servizi in base alla tua cronologia.</translation>
- <translation id="8324158725704657629">Non chiedermelo più</translation>
- <translation id="8325413836429495820">Non possono accedere agli appunti</translation>
-+<translation id="832618879023665598">Questa estensione non ha superato la verifica di conformità di sicurezza ed è stata disabilitata automaticamente.</translation>
- <translation id="8326478304147373412">PKCS #7, catena di certificati</translation>
- <translation id="8327386430364625757">Carattere matematico</translation>
- <translation id="8327490658947427005">Selezione non in lingua: <ph name="LANGUAGE" /></translation>
- <translation id="8327544198829180337">Chiudi questa visualizzazione</translation>
- <translation id="8327676037044516220">Autorizzazioni e impostazioni contenuti</translation>
 @@ -10696,10 +10716,11 @@ Conserva il file di chiave in un luogo sicuro. Ti servirà per creare nuove vers
  <translation id="8337020675372081178">{HOURS,plural, =1{Questo dispositivo verrà salvato per 1 ora e la prossima volta potrai connetterti senza un codice. Questa impostazione è stata configurata dal tuo amministratore.}other{Questo dispositivo verrà salvato per {HOURS} ore e la prossima volta potrai connetterti senza un codice. Questa impostazione è stata configurata dal tuo amministratore.}}</translation>
  <translation id="8337399713761067085">Al momento sei offline.</translation>

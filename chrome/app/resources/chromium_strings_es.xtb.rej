@@ -23,18 +23,6 @@ diff a/chrome/app/resources/chromium_strings_es.xtb b/chrome/app/resources/chrom
  <translation id="3651803019964686660">Para enviar un número desde <ph name="ORIGIN" /> a tu teléfono Android, inicia sesión en Chromium con ambos dispositivos.</translation>
  <translation id="3667616615096815454">No se puede realizar la instalación porque se trata de una aplicación desconocida para el servidor.</translation>
  <translation id="3675854891107786059">Usar tu <ph name="BEGIN_LINK" />propia frase de contraseña<ph name="END_LINK" /> para cifrar todos los datos de Chromium en tu cuenta de Google. Los métodos de pago y las direcciones de Google Pay no se cifrarán. El historial de navegación de Chromium no se sincronizará.</translation>
-@@ -341,10 +343,11 @@ Es posible que algunas funciones no estén disponibles y que no se guarden los c
- <translation id="4759645701210484457">Preguntar a Chromium</translation>
- <translation id="4771701986670315895">No has visitado el sitio recientemente. Chromium ha eliminado <ph name="PERMISSION_1" />, <ph name="PERMISSION_2" /> y <ph name="COUNT" /> más.</translation>
- <translation id="4788777615168560705">Chromium no puede comprobar tus contraseñas. Vuelve a intentarlo en 24 horas o <ph name="BEGIN_LINK" />comprueba las contraseñas en tu cuenta de Google<ph name="END_LINK" />.</translation>
- <translation id="479167709087336770">Utiliza el mismo corrector ortográfico que se usa en la Búsqueda de Google. El texto que escribas en el navegador se enviará a Google. Puedes cambiar esta opción en cualquier momento desde los ajustes.</translation>
- <translation id="4814736265800133385">Usar Chromium sin una cuenta</translation>
-+<translation id="483739396253020185">El navegador no puede verificar de dónde proviene esta extensión y podría ser insegura. Elimínala del Navegador para que ya no pueda ver ni modificar los datos de los sitios que visites, incluida tu información personal.</translation>
- <translation id="4888717733111232871">Regla entrante para que Chromium permita tráfico mDNS.</translation>
- <translation id="4893347770495441059">Reiniciar para actualizar &amp;Chromium</translation>
- <translation id="4918844574251943176">Imagen copiada</translation>
- <translation id="4943838377383847465">Chromium está en modo de segundo plano.</translation>
- <translation id="494490797786467921">Haz clic para cerrar el cuadro de diálogo de inicio de sesión de Chromium</translation>
 @@ -515,10 +518,11 @@ Es posible que algunas funciones no estén disponibles. Especifica un directorio
  <translation id="6857782730669500492">Chromium - <ph name="PAGE_TITLE" /></translation>
  <translation id="6859580922007887573">Toca para continuar</translation>

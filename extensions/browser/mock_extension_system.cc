@@ -10,6 +10,7 @@
 #include "extensions/browser/state_store.h"
 #include "extensions/common/extension_id.h"
 #include "extensions/common/extension_set.h"
+#include "extensions/browser/management_policy.h"
 
 namespace extensions {
 

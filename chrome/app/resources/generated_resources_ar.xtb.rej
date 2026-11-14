@@ -603,18 +603,6 @@ diff a/chrome/app/resources/generated_resources_ar.xtb b/chrome/app/resources/ge
  <translation id="8139440916039659819">تسريع المؤشر</translation>
  <translation id="8140070492745508800"><ph name="FIRST_DEVICE" /> و<ph name="SECOND_DEVICE" /></translation>
  <translation id="8140108728130537923"><ph name="BEGIN_LINK" />تتم إدارة متصفِّحك<ph name="END_LINK" /> من خلال <ph name="BROWSER_DOMAIN" /> و<ph name="BEGIN_LINK" />تتم إدارة ملفك الشخصي<ph name="END_LINK" /> من خلال <ph name="PROFILE_DOMAIN" />.</translation>
-@@ -10690,10 +10709,11 @@
- <translation id="8323317289166663449">الاطّلاع على جميع بياناتك وتغييرها على جهاز الكمبيوتر وجميع المواقع الإلكترونية</translation>
- <translation id="8323518750352551353">هل تريد التصفّح بشكلٍ منفصل؟</translation>
- <translation id="8323744572398547859">‏للحصول على علامات التبويب من أجهزتك الأخرى، يُرجى تسجيل الدخول ومزامنة السجلّ. بإمكانك أيضًا الوصول إلى كلمات المرور وغيرها من البيانات على جميع أجهزتك. ويمكنك إيقاف المزامنة في أي وقت من خلال الإعدادات. وقد تستخدم Google السجلّ لتخصيص "بحث Google" والخدمات الأخرى.</translation>
- <translation id="8324158725704657629">عدم السؤال مرة أخرى</translation>
- <translation id="8325413836429495820">المواقع الإلكترونية التي لا يُسمح لها بالاطّلاع على الحافظة</translation>
-+<translation id="832618879023665598">فشلت هذه الإضافة في اجتياز فحص الامتثال الأمني، وتم إيقافها تلقائيًا.</translation>
- <translation id="8326478304147373412">‏PKCS #7، سلسلة شهادات</translation>
- <translation id="8327386430364625757">الخط الرياضي</translation>
- <translation id="8327490658947427005">النص المُحدَّد ليس باللغة <ph name="LANGUAGE" /></translation>
- <translation id="8327544198829180337">إغلاق هذا العرض</translation>
- <translation id="8327676037044516220">إعدادات المحتوى والأذونات</translation>
 @@ -11275,10 +11296,11 @@
  <translation id="8719665168401479425">استخدام إيماءات الوجه لتنفيذ الإجراءات</translation>
  <translation id="8720200012906404956">البحث عن شبكة جوال <ph name="BEGIN_LINK" />مزيد من المعلومات<ph name="END_LINK" /></translation>

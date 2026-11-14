@@ -23,18 +23,6 @@ diff a/chrome/app/resources/chromium_strings_ar.xtb b/chrome/app/resources/chrom
  <translation id="3651803019964686660">‏لإرسال رقم من <ph name="ORIGIN" /> إلى هاتفك الذي يعمل بنظام التشغيل Android، يُرجى تسجيل الدخول إلى Chromium على الجهازَين.</translation>
  <translation id="3667616615096815454">يتعذّر تثبيت التطبيق لأنّه غير معروف لدى الخادم.</translation>
  <translation id="3675854891107786059">‏لتشفير جميع بيانات Chromium في حسابك على Google، يمكنك استخدام <ph name="BEGIN_LINK" />عبارة المرور الخاصة بك<ph name="END_LINK" />. لن يتم تشفير طُرق الدفع والعناوين من Google Pay. ولن تتم مزامنة سجلّ التصفُّح من Chromium.</translation>
-@@ -339,10 +341,11 @@
- <translation id="4759645701210484457">‏طرح سؤال في Chromium</translation>
- <translation id="4771701986670315895">‏لم تتم زيارة هذا الموقع الإلكتروني مؤخرًا، لذلك أزال Chromium إذنَي <ph name="PERMISSION_1" /> و<ph name="PERMISSION_2" /> وأذونات أخرى (<ph name="COUNT" />).</translation>
- <translation id="4788777615168560705">‏يتعذّر على Chromium التحقُّق من كلمات المرور. يُرجى إعادة المحاولة بعد 24 ساعة أو <ph name="BEGIN_LINK" />التحقُّق من كلمات المرور في حسابك على Google<ph name="END_LINK" />.</translation>
- <translation id="479167709087336770">‏يستخدم ذلك المدقق الإملائي نفسه الذي يتم استخدامه في "بحث Google". ويتم إرسال النص الذي تكتبه في المتصفّح إلى Google. يمكنك دائمًا تغيير هذا السلوك في الإعدادات.</translation>
- <translation id="4814736265800133385">‏استخدام Chromium بدون حساب</translation>
-+<translation id="483739396253020185">يتعذر على المتصفح التحقق من مصدر هذا الامتداد، وقد يكون غير آمن. يُرجى إزالته من المتصفح حتى لا يتمكن بعد الآن من الاطلاع على بياناتك أو تغييرها على المواقع التي تزورها، بما في ذلك معلوماتك الشخصية.</translation>
- <translation id="4888717733111232871">‏قاعدة الوارد إلى Chromium للسماح بحركة مرور mDNS.</translation>
- <translation id="4893347770495441059">‏إعادة تشغيل متصفِّح Chromium لتحديثه</translation>
- <translation id="4918844574251943176">تم نسخ الصورة.</translation>
- <translation id="4943838377383847465">‏Chromium في وضع الخلفية.</translation>
- <translation id="494490797786467921">‏انقر لإغلاق مربّع حوار تسجيل الدخول إلى Chromium</translation>
 @@ -513,10 +516,11 @@
  <translation id="6857782730669500492">Chromium - <ph name="PAGE_TITLE" /></translation>
  <translation id="6859580922007887573">‏يجب النقر على مفتاح Tab للمتابعة</translation>

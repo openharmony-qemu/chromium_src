@@ -547,18 +547,6 @@ diff a/chrome/app/resources/generated_resources_vi.xtb b/chrome/app/resources/ge
  <translation id="8139440916039659819">Tăng tốc độ của con trỏ</translation>
  <translation id="8140070492745508800"><ph name="FIRST_DEVICE" />, <ph name="SECOND_DEVICE" /></translation>
  <translation id="8140108728130537923"><ph name="BEGIN_LINK" />Trình duyệt của bạn<ph name="END_LINK" /> do <ph name="BROWSER_DOMAIN" /> quản lý, còn <ph name="BEGIN_LINK" />hồ sơ của bạn<ph name="END_LINK" /> do <ph name="PROFILE_DOMAIN" /> quản lý</translation>
-@@ -10693,10 +10712,11 @@ Giữ tệp khóa của bạn ở nơi an toàn. Bạn sẽ cần tệp khóa đ
- <translation id="8323317289166663449">Đọc và thay đổi tất cả dữ liệu trên mọi trang web và trên máy tính của bạn</translation>
- <translation id="8323518750352551353">Tách riêng hoạt động duyệt web?</translation>
- <translation id="8323744572398547859">Để truy cập các thẻ mà bạn mở trên những thiết bị khác, hãy đăng nhập và đồng bộ hoá nhật ký. Bạn cũng có thể sử dụng mật khẩu và nhiều dữ liệu khác trên mọi thiết bị của mình. Bạn có thể dừng đồng bộ hoá bất cứ lúc nào trong phần cài đặt. Google có thể cá nhân hoá dịch vụ Tìm kiếm và các dịch vụ khác dựa trên nhật ký của bạn.</translation>
- <translation id="8324158725704657629">Không hỏi lại</translation>
- <translation id="8325413836429495820">Không được phép xem bảng nhớ tạm của bạn</translation>
-+<translation id="832618879023665598">Tiện ích mở rộng này không vượt qua kiểm tra tuân thủ bảo mật và đã tự động bị vô hiệu hóa.</translation>
- <translation id="8326478304147373412">PKCS #7, chuỗi chứng chỉ</translation>
- <translation id="8327386430364625757">Phông chữ toán học</translation>
- <translation id="8327490658947427005">Nội dung đã chọn không phải bằng <ph name="LANGUAGE" /></translation>
- <translation id="8327544198829180337">Đóng dạng xem này</translation>
- <translation id="8327676037044516220">Các chế độ cài đặt nội dung và quyền</translation>
 @@ -11260,11 +11281,11 @@ Giữ tệp khóa của bạn ở nơi an toàn. Bạn sẽ cần tệp khóa đ
  <translation id="8709368517685334931">Bạn có thể tìm các màu cũ hơn trong Cửa hàng Chrome trực tuyến</translation>
  <translation id="8710414664106871428">Giả tưởng</translation>

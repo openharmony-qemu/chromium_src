@@ -52,18 +52,6 @@ diff a/chrome/app/resources/chromium_strings_zh-CN.xtb b/chrome/app/resources/ch
  <translation id="3651803019964686660">若要从 <ph name="ORIGIN" /> 向您的 Android 手机发送电话号码，请在这两部设备上分别登录 Chromium。</translation>
  <translation id="3667616615096815454">无法安装，服务器无法识别该应用。</translation>
  <translation id="3675854891107786059">使用您<ph name="BEGIN_LINK" />自己的口令<ph name="END_LINK" />加密您 Google 账号中的所有 Chromium 数据。系统不会加密 Google Pay 中的支付方式和地址，也不会同步 Chromium 中的浏览记录。</translation>
-@@ -338,10 +343,11 @@
- <translation id="4759645701210484457">问问 Chromium</translation>
- <translation id="4771701986670315895">您近期未访问过该网站，因此 Chromium 撤消了该网站的<ph name="PERMISSION_1" />权限、<ph name="PERMISSION_2" />权限和另外 <ph name="COUNT" /> 项权限。</translation>
- <translation id="4788777615168560705">Chromium 无法检查您的密码。请过 24 小时再试，或者<ph name="BEGIN_LINK" />检查您的 Google 账号中的密码<ph name="END_LINK" />。</translation>
- <translation id="479167709087336770">这项服务会使用 Google 搜索所用的拼写检查工具。您在浏览器中输入的文字会被发送给 Google。您随时可在“设置”中更改此行为。</translation>
- <translation id="4814736265800133385">在不登录账号的情况下使用 Chromium</translation>
-+<translation id="483739396253020185">浏览器无法验证此扩展程序的来源，它可能不安全。请将其从浏览器中移除，这样它便无法再查看和更改您在所访问的网站上的数据，包括个人信息。</translation>
- <translation id="4888717733111232871">Chromium的入站规则，允许mDNS流量。</translation>
- <translation id="4893347770495441059">重新启动以更新 Chromium(&amp;C)</translation>
- <translation id="4918844574251943176">已复制图片</translation>
- <translation id="4943838377383847465">Chromium处于后台运行模式。</translation>
- <translation id="494490797786467921">点击即可关闭 Chromium 登录对话框</translation>
 @@ -512,10 +518,11 @@
  <translation id="6857782730669500492">Chromium - <ph name="PAGE_TITLE" /></translation>
  <translation id="6859580922007887573">按 Tab 键即可继续</translation>

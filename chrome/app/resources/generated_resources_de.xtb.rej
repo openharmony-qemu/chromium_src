@@ -448,18 +448,6 @@ diff a/chrome/app/resources/generated_resources_de.xtb b/chrome/app/resources/ge
  <translation id="8139440916039659819">Cursorbeschleunigung</translation>
  <translation id="8140070492745508800">„<ph name="FIRST_DEVICE" />“, „<ph name="SECOND_DEVICE" />“</translation>
  <translation id="8140108728130537923">Dein <ph name="BEGIN_LINK" />Browser wird verwaltet<ph name="END_LINK" /> von <ph name="BROWSER_DOMAIN" /> und dein <ph name="BEGIN_LINK" />Profil wird verwaltet<ph name="END_LINK" /> von <ph name="PROFILE_DOMAIN" /></translation>
-@@ -10668,10 +10687,11 @@ Speichere deine Schlüsseldatei an einem sicheren Ort. Du benötigst die Datei,
- <translation id="8323317289166663449">Alle deine Daten auf deinem Computer und allen Websites lesen und ändern</translation>
- <translation id="8323518750352551353">Getrenntes Surfen?</translation>
- <translation id="8323744572398547859">Wenn du deine Tabs von deinen anderen Geräten abrufen möchtest, melde dich an und synchronisiere deinen Verlauf. Du kannst dann auch auf allen deinen Geräten auf deine Passwörter und weitere Daten zugreifen. Du kannst die Synchronisierung jederzeit in den Einstellungen beenden. Google kann die Google Suche und andere Dienste anhand deines Verlaufs personalisieren.</translation>
- <translation id="8324158725704657629">Nicht mehr fragen</translation>
- <translation id="8325413836429495820">Dürfen nicht auf meine Zwischenablage zugreifen</translation>
-+<translation id="832618879023665598">Diese Erweiterung hat die Sicherheitskonformitätsprüfung nicht bestanden und wurde automatisch deaktiviert.</translation>
- <translation id="8326478304147373412">PKCS #7, Zertifikatkette</translation>
- <translation id="8327386430364625757">Mathematische Schriftart</translation>
- <translation id="8327490658947427005">Auswahl nicht auf <ph name="LANGUAGE" /> verfügbar</translation>
- <translation id="8327544198829180337">Diese Ansicht schließen</translation>
- <translation id="8327676037044516220">Berechtigungen und Inhaltseinstellungen</translation>
 @@ -11235,11 +11256,11 @@ Speichere deine Schlüsseldatei an einem sicheren Ort. Du benötigst die Datei,
  <translation id="8709368517685334931">Ältere Farben findest du im Chrome Web Store</translation>
  <translation id="8710414664106871428">Fantasy</translation>

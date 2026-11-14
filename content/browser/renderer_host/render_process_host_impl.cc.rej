@@ -480,19 +480,6 @@ diff a/content/browser/renderer_host/render_process_host_impl.cc b/content/brows
      // done in response to OnRenderProcessHostCreated; see below) preempt
      // already queued messages.
      if (ShouldPauseChannelUntilProcessLaunched()) {
-@@ -5876,10 +6150,12 @@ void RenderProcessHostImpl::OnProcessLaunched() {
- 
-   if (IsReady()) {
-     DCHECK(!sent_render_process_ready_);
-     sent_render_process_ready_ = true;
-     // Send RenderProcessReady only if the channel is already connected.
-+    LOG(INFO) << "[RenderPipeline] RenderProcessReady (from OnProcessLaunched): pid="
-+ 	            << GetProcess().Pid() << ", GetID()=" << GetID();
-     for (auto& observer : observers_)
-       observer.RenderProcessReady(this);
- 
- #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
-     // Provide /proc/{renderer pid}/status and statm files for
 @@ -6153,11 +6429,11 @@ void RenderProcessHostImpl::ProvideSwapFileForRenderer() {
                allocator->ProvideTemporaryFile(std::move(file));
            },

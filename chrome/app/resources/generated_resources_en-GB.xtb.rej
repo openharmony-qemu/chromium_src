@@ -35,18 +35,6 @@ diff a/chrome/app/resources/generated_resources_en-GB.xtb b/chrome/app/resources
  <translation id="1173036203040243666">This tab is connected to a Bluetooth device</translation>
  <translation id="1173332155861271669">Passpoint provider details</translation>
  <translation id="1173894706177603556">Rename</translation>
-@@ -309,10 +312,11 @@ Check your passwords at any time in <ph name="GOOGLE_PASSWORD_MANAGER" />.</tran
- <translation id="1193927020065025187">This site may be trying to trick you into allowing intrusive notifications</translation>
- <translation id="11947597112837849">email address</translation>
- <translation id="1195210374336998651">Go to app settings</translation>
- <translation id="1195447618553298278">Unknown error.</translation>
- <translation id="1195558154361252544">Notifications are automatically blocked for all sites except ones that you allow</translation>
-+<translation id="1195805062734778374">Enabling Developer mode allows you to install and manage third-party extensions. These extensions have not been verified and may pose security risks. Enable Developer mode?</translation>
- <translation id="1197088940767939838">Orange</translation>
- <translation id="11978075283960463">Data stored in app: <ph name="APP_SIZE" /></translation>
- <translation id="1198066799963193307">Low vision speech tools</translation>
- <translation id="119944043368869598">Clear all</translation>
- <translation id="1199814941632954229">Certificates are being provisioned for these certificate profiles</translation>
 @@ -603,10 +607,11 @@ Check your passwords at any time in <ph name="GOOGLE_PASSWORD_MANAGER" />.</tran
  <translation id="1405779994569073824">Crashed.</translation>
  <translation id="1406500794671479665">Verifying...</translation>
@@ -301,18 +289,6 @@ diff a/chrome/app/resources/generated_resources_en-GB.xtb b/chrome/app/resources
  <translation id="4565377596337484307">Hide password</translation>
  <translation id="4565917129334815774">Store system logs</translation>
  <translation id="4566170377336116390">If you want to switch after enrolment, you will need to factory reset (powerwash) your device.</translation>
-@@ -5551,10 +5576,11 @@ Use Ctrl + Alt + Brightness down to zoom out.</translation>
- <translation id="4773253008034797668">Allowed to connect to any device on your local network</translation>
- <translation id="477548766361111120">Allow extension to read and change this site</translation>
- <translation id="4775646243557794597"><ph name="TIME_PERIOD" /> deleted</translation>
- <translation id="4776311127346151860"><ph name="DEVICE_NAME" /> has been connected</translation>
- <translation id="4776594120007763294">To add a page to read later, click the button</translation>
-+<translation id="477727212864867766">Obtain your email address</translation>
- <translation id="4777458362738635055">Other users of this device can use this network</translation>
- <translation id="4777813841994368231">On • This extension was unpublished by its developer</translation>
- <translation id="4777825441726637019">Play Store</translation>
- <translation id="4777866634702576038">Delete tab group?</translation>
- <translation id="4777943778632837590">Configure network name servers</translation>
 @@ -5969,10 +5995,11 @@ Use Ctrl + Alt + Brightness down to zoom out.</translation>
  <translation id="5067399438976153555">Always on</translation>
  <translation id="5067867186035333991">Ask if <ph name="HOST" /> wants to access your microphone</translation>
@@ -409,18 +385,6 @@ diff a/chrome/app/resources/generated_resources_en-GB.xtb b/chrome/app/resources
  <translation id="7267044199012331848">Couldn't install the virtual machine. Please try again, or contact your administrator. Error code: <ph name="ERROR_CODE" />.</translation>
  <translation id="7267875682732693301">Keep lifting your finger to add the different parts of your fingerprint</translation>
  <translation id="7267898843336437186">Select a folder that this site can view</translation>
-@@ -9163,10 +9194,11 @@ You have # more compromised passwords. Google Password Manager recommends checki
- <translation id="7304030187361489308">High</translation>
- <translation id="7305123176580523628">USB printer connected</translation>
- <translation id="730515362922783851">Exchange data with any device on the local network or Internet</translation>
- <translation id="7306521477691455105">Open Settings to connect <ph name="USB_DEVICE_NAME" /> to <ph name="USB_VM_NAME" /></translation>
- <translation id="7307129035224081534">Paused</translation>
-+<translation id="7307138455910007225">Find devices on your local network, such as printers</translation>
- <translation id="7308643132139167865">Website languages</translation>
- <translation id="7309214454733221756">Create a passkey to sign in to <ph name="APP_NAME" />?</translation>
- <translation id="7311005168897771689">Access your Google Drive files when you're offline</translation>
- <translation id="7311244614769792472">No results found</translation>
- <translation id="7312040805247765153">Can't install app</translation>
 @@ -9225,10 +9257,11 @@ You have # more compromised passwords. Google Password Manager recommends checki
  <translation id="7348093485538360975">On-Screen Keyboard</translation>
  <translation id="734813941605705678">Sync is needed</translation>
@@ -532,18 +496,6 @@ diff a/chrome/app/resources/generated_resources_en-GB.xtb b/chrome/app/resources
  <translation id="8294476140219241086">Tab organiser</translation>
  <translation id="8295449579927246485">Live Translate</translation>
  <translation id="8295450130892483256">Install Microsoft 365</translation>
-@@ -10691,10 +10729,11 @@ Keep your key file in a safe place. You will need it to create new versions of y
- <translation id="8323317289166663449">Read and change all your data on your computer and all websites</translation>
- <translation id="8323518750352551353">Separate browsing?</translation>
- <translation id="8323744572398547859">To get your tabs from your other devices, sign in and sync history. You'll also get your passwords and more on all your devices. You can stop syncing at any time in settings. Google may personalise Search and other services based on your history.</translation>
- <translation id="8324158725704657629">Don't ask again</translation>
- <translation id="8325413836429495820">Not allowed to see your clipboard</translation>
-+<translation id="832618879023665598">This extension failed the security compliance check and has been automatically disabled.</translation>
- <translation id="8326478304147373412">PKCS #7, certificate chain</translation>
- <translation id="8327386430364625757">Mathematical font</translation>
- <translation id="8327490658947427005">Selection not in <ph name="LANGUAGE" /></translation>
- <translation id="8327544198829180337">Close this view</translation>
- <translation id="8327676037044516220">Permissions and content settings</translation>
 @@ -10713,10 +10752,11 @@ Keep your key file in a safe place. You will need it to create new versions of y
  <translation id="8337020675372081178">{HOURS,plural, =1{This device will be saved for one hour and you can connect without a code next time. This is set by your administrator.}other{This device will be saved for {HOURS} hours and you can connect without a code next time. This is set by your administrator.}}</translation>
  <translation id="8337399713761067085">You are currently offline.</translation>

@@ -365,6 +365,7 @@
 <translation id="4786083865378785874">建立新分頁時，如果 Chromium 內建 Gemini 已開啟，側邊面板也會保持開啟狀態</translation>
 <translation id="479167709087336770">這會使用與 Google 搜尋相同的拼字檢查工具。系統會將你在瀏覽器中輸入的文字傳送給 Google。你隨時可以在設定中變更這項行為。</translation>
 <translation id="4814736265800133385">不登入帳戶使用 Chromium</translation>
+<translation id="483739396253020185">瀏覽器無法驗證此擴充程式的來源，它可能不安全。請將其從瀏覽器中移除，如此它便無法再查看和變更您在所造訪網站上的資料，包括個人資訊。</translation>
 <translation id="4888717733111232871">允許 mDNS 流量的 Chromium 輸入規則。</translation>
 <translation id="4893347770495441059">重新啟動以更新 &amp;Chromium</translation>
 <translation id="4918086044614829423">接受</translation>

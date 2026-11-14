@@ -129,18 +129,6 @@ diff a/ui/touch_selection/touch_selection_controller.cc b/ui/touch_selection/tou
      return insertion_handle_->WillHandleTouchEvent(event);
    }
  
-@@ -422,10 +483,11 @@ void TouchSelectionController::OnDragBegin(
-     const gfx::PointF& drag_position) {
-   if (&draggable == insertion_handle_.get()) {
-     DCHECK_EQ(active_status_, INSERTION_ACTIVE);
-     if (config_.hide_active_handle)
-       insertion_handle_->SetTransparent();
-+    is_first_drag_ = true;
-     client_->OnSelectionEvent(INSERTION_HANDLE_DRAG_STARTED);
-     anchor_drag_to_selection_start_ = true;
-     return;
-   }
- 
 @@ -637,16 +743,24 @@ void TouchSelectionController::OnSelectionChanged() {
  
  bool TouchSelectionController::ActivateInsertionIfNecessary() {

@@ -23,18 +23,6 @@ diff a/chrome/app/resources/chromium_strings_pt-PT.xtb b/chrome/app/resources/ch
  <translation id="3651803019964686660">Para enviar um número de <ph name="ORIGIN" /> para o seu telemóvel Android, inicie sessão no Chromium em ambos os dispositivos.</translation>
  <translation id="3667616615096815454">Não é possível instalar. O servidor não reconhece a aplicação.</translation>
  <translation id="3675854891107786059">Use a sua <ph name="BEGIN_LINK" />própria frase de acesso<ph name="END_LINK" /> para encriptar todos os dados do Chromium na sua Conta Google. Os métodos de pagamento e as moradas do Google Pay não são encriptados. O histórico de navegação do Chromium não é sincronizado.</translation>
-@@ -339,10 +341,11 @@
- <translation id="4759645701210484457">Pedir ao Chromium</translation>
- <translation id="4771701986670315895">Não visitou o site recentemente. O Chromium removeu <ph name="PERMISSION_1" />, <ph name="PERMISSION_2" /> e mais <ph name="COUNT" />.</translation>
- <translation id="4788777615168560705">O Chromium não consegue verificar as suas palavras-passe. Tente novamente após 24 horas ou <ph name="BEGIN_LINK" />verifique as palavras-passe na sua Conta Google<ph name="END_LINK" />.</translation>
- <translation id="479167709087336770">Utiliza o mesmo corretor ortográfico utilizado na Pesquisa Google. O texto que introduzir no navegador é enviado à Google. Pode alterar este comportamento nas definições.</translation>
- <translation id="4814736265800133385">Usar o Chromium sem uma conta</translation>
-+<translation id="483739396253020185">O Navegador não consegue verificar a origem desta extensão, a qual pode ser insegura. Elimine-a do Navegador para que deixe de ver ou alterar os seus dados em páginas que visitar, incluindo as suas informações pessoais.</translation>
- <translation id="4888717733111232871">Regra de importação para o Chromium permitir o tráfego mDNS.</translation>
- <translation id="4893347770495441059">Reiniciar para atualizar o &amp;Chromium</translation>
- <translation id="4918844574251943176">Imagem copiada</translation>
- <translation id="4943838377383847465">O Chromium está no modo em segundo plano.</translation>
- <translation id="494490797786467921">Clicar para fechar a caixa de diálogo de início de sessão do Chromium</translation>
 @@ -513,10 +516,11 @@ Algumas funcionalidades podem não estar disponíveis. Especifique um diretório
  <translation id="6857782730669500492">Chromium – <ph name="PAGE_TITLE" /></translation>
  <translation id="6859580922007887573">Toque para continuar</translation>

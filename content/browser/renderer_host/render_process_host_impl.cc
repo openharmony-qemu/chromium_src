@@ -6379,6 +6379,8 @@ void RenderProcessHostImpl::OnProcessLaunched() {
     CHECK(!sent_render_process_ready_, base::NotFatalUntil::M152);
     sent_render_process_ready_ = true;
     // Send RenderProcessReady only if the channel is already connected.
+    LOG(INFO) << "[RenderPipeline] RenderProcessReady (from OnProcessLaunched): pid="
+              << GetProcess().Pid() << ", GetID()=" << GetID();
     for (auto& observer : observers_)
       observer.RenderProcessReady(this);
 

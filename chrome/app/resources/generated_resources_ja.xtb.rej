@@ -544,18 +544,6 @@ diff a/chrome/app/resources/generated_resources_ja.xtb b/chrome/app/resources/ge
  <translation id="8139440916039659819">カーソル アクセラレーション</translation>
  <translation id="8140070492745508800"><ph name="FIRST_DEVICE" />、<ph name="SECOND_DEVICE" /></translation>
  <translation id="8140108728130537923">お使いの<ph name="BEGIN_LINK" />ブラウザは <ph name="BROWSER_DOMAIN" /><ph name="END_LINK" /> によって、<ph name="BEGIN_LINK" />プロフィールは <ph name="PROFILE_DOMAIN" /> によって管理<ph name="END_LINK" />されています</translation>
-@@ -10660,10 +10679,11 @@
- <translation id="8323317289166663449">自分のパソコンとすべてのウェブサイト上にある自分の全データの読み取りと変更</translation>
- <translation id="8323518750352551353">ブラウジングを切り分け？</translation>
- <translation id="8323744572398547859">他のデバイスと同じタブを使用するには、ログインして履歴を同期します。同期すると、すべてのデバイスでパスワードなどの設定も使用できるようになります。 同期は [設定] でいつでも停止できます。Google では、履歴に基づいて検索やその他のサービスをパーソナライズすることがあります。</translation>
- <translation id="8324158725704657629">次回から表示しない</translation>
- <translation id="8325413836429495820">クリップボードの読み取りを許可しないサイト</translation>
-+<translation id="832618879023665598">この拡張機能はセキュリティコンプライアンスチェックに失敗したため、自動的に無効化されました。</translation>
- <translation id="8326478304147373412">PKCS #7、証明書チェーン</translation>
- <translation id="8327386430364625757">数字フォント</translation>
- <translation id="8327490658947427005">選択内容が <ph name="LANGUAGE" /> ではない場合</translation>
- <translation id="8327544198829180337">このビューを閉じる</translation>
- <translation id="8327676037044516220">権限とコンテンツの設定</translation>
 @@ -11227,11 +11248,11 @@
  <translation id="8709368517685334931">以前の色は Chrome ウェブストアから入手できます</translation>
  <translation id="8710414664106871428">ファンタジー</translation>

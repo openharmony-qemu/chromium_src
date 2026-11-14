@@ -551,18 +551,6 @@ diff a/chrome/app/resources/generated_resources_pt-PT.xtb b/chrome/app/resources
  <translation id="8139440916039659819">Aceleração do cursor</translation>
  <translation id="8140070492745508800"><ph name="FIRST_DEVICE" />, <ph name="SECOND_DEVICE" /></translation>
  <translation id="8140108728130537923">O <ph name="BEGIN_LINK" />navegador é gerido<ph name="END_LINK" /> por <ph name="BROWSER_DOMAIN" /> e o <ph name="BEGIN_LINK" />perfil é gerido<ph name="END_LINK" /> por <ph name="PROFILE_DOMAIN" /></translation>
-@@ -10680,10 +10699,11 @@ Mantenha o seu ficheiro de chave num local seguro, pois irá precisar dele para
- <translation id="8323317289166663449">Ler e alterar todos os seus dados no seu computador e em todos os Websites</translation>
- <translation id="8323518750352551353">Separar a navegação?</translation>
- <translation id="8323744572398547859">Para ver os separadores dos seus outros dispositivos, inicie sessão e sincronize o histórico. Também tem acesso às suas palavras-passe e muito mais em todos os seus dispositivos. Pode parar a sincronização em qualquer altura nas definições. A Google pode personalizar a Pesquisa e outros serviços com base no seu histórico.</translation>
- <translation id="8324158725704657629">Não perguntar novamente</translation>
- <translation id="8325413836429495820">Sem autorização para ver a sua área de transferência</translation>
-+<translation id="832618879023665598">Esta extensão não passou na verificação de conformidade de segurança e foi automaticamente desativada.</translation>
- <translation id="8326478304147373412">PKCS #7, cadeia de certificados</translation>
- <translation id="8327386430364625757">Tipo de letra matemático</translation>
- <translation id="8327490658947427005">Seleção não disponível em <ph name="LANGUAGE" /></translation>
- <translation id="8327544198829180337">Fechar esta vista</translation>
- <translation id="8327676037044516220">Definições de conteúdo e autorizações</translation>
 @@ -11265,10 +11286,11 @@ Mantenha o seu ficheiro de chave num local seguro, pois irá precisar dele para
  <translation id="8719665168401479425">Use gestos faciais para realizar ações</translation>
  <translation id="8720200012906404956">À procura de uma rede móvel… <ph name="BEGIN_LINK" />Saiba mais<ph name="END_LINK" /></translation>

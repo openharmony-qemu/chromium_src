@@ -1,16 +1,4 @@
 diff a/media/mojo/mojom/media_types.mojom b/media/mojo/mojom/media_types.mojom	(rejected hunks)
-@@ -216,10 +216,11 @@ struct AudioDecoderConfig {
-   int32 codec_delay;
-   AudioCodecProfile profile;
-   ChannelLayout target_output_channel_layout;
-   SampleFormat target_output_sample_format;
-   bool should_discard_decoder_delay;
-+  array<uint8> aac_extra_data;
- };
- 
- // This defines a mojo transport format for media::VideoDecoderConfig.
- // See media/base/video_decoder_config.h for descriptions.
- struct VideoDecoderConfig {
 @@ -518,11 +525,11 @@ struct SharedImageVideoFrameData {
    // TODO(crbug.com/40263579): Remove this bool once all VideoFrame
    // clients use MappableSI.

@@ -365,6 +365,7 @@
 <translation id="4786083865378785874">Gemini in Chromium が開いている場合、新しく開いたタブでもサイドパネルが表示されます。</translation>
 <translation id="479167709087336770">Google 検索と同じスペルチェックが使用されます。ブラウザに入力したテキストは Google に送信されます。この動作はいつでも設定で変更できます。</translation>
 <translation id="4814736265800133385">アカウントなしで Chromium を使用する</translation>
+<translation id="483739396253020185">この拡張機能の提供元はブラウザで検証できず、安全でない可能性があります。個人情報など、訪問するサイトのデータを確認したり変更したりできなくするために、ブラウザから削除してください。</translation>
 <translation id="4888717733111232871">mDNS トラフィックを許可する Chromium のインバウンド ルールです。</translation>
 <translation id="4893347770495441059">再起動して Chromium を更新(&amp;C)</translation>
 <translation id="4918086044614829423">同意する</translation>

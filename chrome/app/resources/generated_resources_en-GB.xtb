@@ -291,6 +291,7 @@ Check your passwords at any time in <ph name="GOOGLE_PASSWORD_MANAGER" />.</tran
 <translation id="1195210374336998651">Go to app settings</translation>
 <translation id="1195447618553298278">Unknown error.</translation>
 <translation id="1195558154361252544">Notifications are automatically blocked for all sites except ones that you allow</translation>
+<translation id="1195805062734778374">Enabling Developer mode allows you to install and manage third-party extensions. These extensions have not been verified and may pose security risks. Enable Developer mode?</translation>
 <translation id="1197088940767939838">Orange</translation>
 <translation id="11978075283960463">Data stored in app: <ph name="APP_SIZE" /></translation>
 <translation id="1198066799963193307">Low vision speech tools</translation>
@@ -5008,6 +5009,7 @@ Use Ctrl + Alt + Brightness down to zoom out.</translation>
 <translation id="4775646243557794597"><ph name="TIME_PERIOD" /> deleted</translation>
 <translation id="4776311127346151860"><ph name="DEVICE_NAME" /> has been connected</translation>
 <translation id="4776594120007763294">To add a page to read later, click the button</translation>
+<translation id="477727212864867766">Obtain your email address</translation>
 <translation id="4777458362738635055">Other users of this device can use this network</translation>
 <translation id="4777813841994368231">On • This extension was unpublished by its developer</translation>
 <translation id="4777825441726637019">Play Store</translation>
@@ -8282,6 +8284,7 @@ You have # more compromised passwords. Google Password Manager recommends checki
 <translation id="730515362922783851">Exchange data with any device on the local network or Internet</translation>
 <translation id="7306521477691455105">Open Settings to connect <ph name="USB_DEVICE_NAME" /> to <ph name="USB_VM_NAME" /></translation>
 <translation id="7307129035224081534">Paused</translation>
+<translation id="7307138455910007225">Find devices on your local network, such as printers</translation>
 <translation id="7308643132139167865">Website languages</translation>
 <translation id="7309214454733221756">Create a passkey to sign in to <ph name="APP_NAME" />?</translation>
 <translation id="7309517920862730287">Task list</translation>
@@ -9649,6 +9652,7 @@ Keep your key file in a safe place. You will need it to create new versions of y
 <translation id="8323744572398547859">To get your tabs from your other devices, sign in and sync history. You'll also get your passwords and more on all your devices. You can stop syncing at any time in settings. Google may personalise Search and other services based on your history.</translation>
 <translation id="8324158725704657629">Don't ask again</translation>
 <translation id="8325413836429495820">Not allowed to see your clipboard</translation>
+<translation id="832618879023665598">This extension failed the security compliance check and has been automatically disabled.</translation>
 <translation id="8326478304147373412">PKCS #7, certificate chain</translation>
 <translation id="8327386430364625757">Mathematical font</translation>
 <translation id="8327490658947427005">Selection not in <ph name="LANGUAGE" /></translation>

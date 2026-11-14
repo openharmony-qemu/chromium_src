@@ -357,18 +357,6 @@ diff a/chrome/app/resources/generated_resources_tr.xtb b/chrome/app/resources/ge
  <translation id="8139440916039659819">İmleç hızlandırması</translation>
  <translation id="8140070492745508800"><ph name="FIRST_DEVICE" />, <ph name="SECOND_DEVICE" /></translation>
  <translation id="8140108728130537923"><ph name="BEGIN_LINK" />Tarayıcınız<ph name="END_LINK" /> <ph name="BROWSER_DOMAIN" /> ve <ph name="BEGIN_LINK" />profiliniz<ph name="END_LINK" /> <ph name="PROFILE_DOMAIN" /> tarafından yönetiliyor</translation>
-@@ -10673,10 +10692,11 @@ Anahtar dosyanızı güvenli bir yerde saklayın. Uzantınızın yeni sürümler
- <translation id="8323317289166663449">Bilgisayarınızda ve web sitelerinde tüm verilerinizi okuma ve değiştirme</translation>
- <translation id="8323518750352551353">Tarama İşlemleri Ayrılsın mı?</translation>
- <translation id="8323744572398547859">Diğer cihazlarınızdaki sekmeleri görmek için oturum açın ve geçmişi senkronize edin. Ayrıca, şifrelerinize ve diğer öğelerinize tüm cihazlarınızdan erişebilirsiniz. Senkronizasyonu istediğiniz zaman Ayarlar'dan durdurabilirsiniz. Google, geçmişinize dayalı olarak Arama'yı ve diğer hizmetleri kişiselleştirebilir.</translation>
- <translation id="8324158725704657629">Tekrar sorma</translation>
- <translation id="8325413836429495820">Panonuzu görmesine izin verilmeyenler</translation>
-+<translation id="832618879023665598">Bu uzantı, güvenlik uyumluluğu denetimini geçemedi ve otomatik olarak devre dışı bırakıldı.</translation>
- <translation id="8326478304147373412">PKCS #7, sertifika zinciri</translation>
- <translation id="8327386430364625757">Matematiksel yazı tipi</translation>
- <translation id="8327490658947427005">Seçim <ph name="LANGUAGE" /> değil</translation>
- <translation id="8327544198829180337">Bu görünümü kapat</translation>
- <translation id="8327676037044516220">İzinler ve içerik ayarları</translation>
 @@ -11258,10 +11279,11 @@ Anahtar dosyanızı güvenli bir yerde saklayın. Uzantınızın yeni sürümler
  <translation id="8719665168401479425">İşlem yapmak için yüz hareketlerini kullan</translation>
  <translation id="8720200012906404956">Bir mobil ağ aranıyor. <ph name="BEGIN_LINK" />Daha fazla bilgi<ph name="END_LINK" /></translation>

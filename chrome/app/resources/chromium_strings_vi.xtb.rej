@@ -23,18 +23,6 @@ diff a/chrome/app/resources/chromium_strings_vi.xtb b/chrome/app/resources/chrom
  <translation id="3651803019964686660">Để gửi số điện thoại từ <ph name="ORIGIN" /> đến điện thoại Android của bạn, hãy đăng nhập vào Chromium trên cả hai thiết bị.</translation>
  <translation id="3667616615096815454">Không thể cài đặt, máy chủ không xác định được ứng dụng.</translation>
  <translation id="3675854891107786059">Sử dụng <ph name="BEGIN_LINK" />cụm mật khẩu của riêng bạn<ph name="END_LINK" /> để mã hoá tất cả dữ liệu Chrome trong Tài khoản Google Các địa chỉ và phương thức thanh toán từ Google Pay sẽ không được mã hoá. Nhật ký duyệt web trên Chromium sẽ không đồng bộ hoá.</translation>
-@@ -339,10 +341,11 @@
- <translation id="4759645701210484457">Hỏi Chromium</translation>
- <translation id="4771701986670315895">Gần đây bạn không truy cập trang web này. Chromium đã xoá <ph name="PERMISSION_1" />, <ph name="PERMISSION_2" /> và <ph name="COUNT" /> quyền khác.</translation>
- <translation id="4788777615168560705">Chromium không thể kiểm tra mật khẩu của bạn. Hãy thử lại sau 24 giờ hoặc <ph name="BEGIN_LINK" />kiểm tra các mật khẩu trong Tài khoản Google của bạn<ph name="END_LINK" />.</translation>
- <translation id="479167709087336770">Dịch vụ này sử dụng cùng một trình kiểm tra chính tả dùng trong Google Tìm kiếm. Thông tin bạn nhập vào trình duyệt sẽ được gửi tới Google. Bạn luôn có thể thay đổi hành động này trong phần cài đặt.</translation>
- <translation id="4814736265800133385">Dùng Chromium mà không cần tài khoản</translation>
-+<translation id="483739396253020185">Trình duyệt không thể xác minh nguồn gốc của tiện ích mở rộng này, vì vậy tiện ích này có thể không an toàn. Gỡ tiện ích này khỏi Trình duyệt để tiện ích không còn xem hoặc thay đổi được dữ liệu của bạn trên các trang web bạn truy cập, bao gồm cả thông tin cá nhân.</translation>
- <translation id="4888717733111232871">Quy tắc kết nối để Chromium cho phép lưu lượng truy cập mDNS.</translation>
- <translation id="4893347770495441059">Chạy lại để cập nhật &amp;Chromium</translation>
- <translation id="4918844574251943176">Đã sao chép hình ảnh</translation>
- <translation id="4943838377383847465">Chromium đang chạy trong nền.</translation>
- <translation id="494490797786467921">Nhấp để đóng hộp thoại đăng nhập vào Chromium</translation>
 @@ -513,10 +516,11 @@ Một số tính năng có thể không khả dụng. Hãy chỉ định thư m
  <translation id="6857782730669500492">Chromium - <ph name="PAGE_TITLE" /></translation>
  <translation id="6859580922007887573">Nhấn phím Tab để tiếp tục</translation>

@@ -23,18 +23,6 @@ diff a/chrome/app/resources/chromium_strings_it.xtb b/chrome/app/resources/chrom
  <translation id="3651803019964686660">Per inviare un numero da <ph name="ORIGIN" /> al tuo telefono Android, accedi a Chromium su entrambi i dispositivi.</translation>
  <translation id="3667616615096815454">Impossibile installare l'applicazione. Applicazione sconosciuta al server.</translation>
  <translation id="3675854891107786059">Usa la <ph name="BEGIN_LINK" />tua passphrase<ph name="END_LINK" /> per criptare tutti i dati di Chromium nel tuo Account Google. I metodi di pagamento e gli indirizzi memorizzati su Google Pay non verranno criptati. La cronologia di navigazione di Chromium non verrà sincronizzata.</translation>
-@@ -338,10 +340,11 @@
- <translation id="4759645701210484457">Chiedi a Chromium</translation>
- <translation id="4771701986670315895">Non hai visitato il sito di recente. Chromium ha rimosso <ph name="PERMISSION_1" />, <ph name="PERMISSION_2" /> e altre <ph name="COUNT" /> autorizzazioni.</translation>
- <translation id="4788777615168560705">Chromium non può controllare le tue password. Riprova tra 24 ore oppure <ph name="BEGIN_LINK" />controlla le password nel tuo Account Google<ph name="END_LINK" />.</translation>
- <translation id="479167709087336770">Viene usato lo stesso controllo ortografico utilizzato nella Ricerca Google. Il testo che digiti nel browser viene inviato a Google. Puoi modificare questo comportamento in qualsiasi momento nelle impostazioni.</translation>
- <translation id="4814736265800133385">Utilizza Chromium senza un account</translation>
-+<translation id="483739396253020185">Browser non è in grado di verificare la provenienza di questa estensione e potrebbe non essere sicura. Rimuovila da Browser in modo che non possa più visualizzare o modificare i dati sui siti visitati, incluse le tue informazioni personali.</translation>
- <translation id="4888717733111232871">Regola inbound per consentire il traffico mDNS in Chromium.</translation>
- <translation id="4893347770495441059">Riavvia per aggiornare &amp;Chromium</translation>
- <translation id="4918844574251943176">Immagine copiata</translation>
- <translation id="4943838377383847465">Chromium è in modalità background.</translation>
- <translation id="494490797786467921">Fai clic per chiudere la finestra di dialogo di accesso a Chromium</translation>
 @@ -512,10 +515,11 @@ Alcune funzioni potrebbero non essere disponibili. Specifica un'altra directory
  <translation id="6857782730669500492">Chromium - <ph name="PAGE_TITLE" /></translation>
  <translation id="6859580922007887573">Tocca per continuare</translation>

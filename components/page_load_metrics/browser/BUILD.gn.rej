@@ -1,19 +1,4 @@
 diff a/components/page_load_metrics/browser/BUILD.gn b/components/page_load_metrics/browser/BUILD.gn	(rejected hunks)
-@@ -2,10 +2,14 @@
- # Use of this source code is governed by a BSD-style license that can be
- # found in the LICENSE file.
- 
- import("//testing/test.gni")
- 
-+if (is_arkweb) {
-+  import("//arkweb/chromium_ext/chromium_ext.gni")
-+}
-+
- source_set("browser") {
-   sources = [
-     "features.cc",
-     "features.h",
-     "layout_shift_normalization.cc",
 @@ -105,10 +109,15 @@ source_set("browser") {
      "//net",
      "//services/metrics/public/cpp:ukm_builders",

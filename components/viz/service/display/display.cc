@@ -1005,6 +1005,11 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     }
 
     OverdrawTracker::EstimateAndRecordOverdrawAsUMAMetric(&frame);
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+    if (IsEvictUnlockFrameEnabled() && disable_draw_and_swap_on_next_frame_) {
+      renderer_->SetNextFrameSkipsDrawRenderPasses(true);
+    }
+#endif
 
     draw_timer.emplace();
     overlay_processor_->SetFrameSequenceNumber(frame_sequence_number_);

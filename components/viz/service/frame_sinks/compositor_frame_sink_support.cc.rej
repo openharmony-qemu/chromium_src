@@ -125,22 +125,6 @@ diff a/components/viz/service/frame_sinks/compositor_frame_sink_support.cc b/com
  
    base::ScopedClosureRunner frame_rejected_callback(
        base::BindOnce(&CompositorFrameSinkSupport::DidRejectCompositorFrame,
-@@ -831,11 +965,14 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
-         local_surface_id.ToString());
- 
-     SurfaceId surface_id(frame_sink_id_, local_surface_id);
-     SurfaceInfo surface_info(surface_id, frame.device_scale_factor(),
-                              frame.size_in_pixels());
--
-+#if BUILDFLAG(ARKWEB_SAME_LAYER)
-+    surface_info.set_stretch_content_none_device_scale_factor(
-+        frame.stretch_content_none_device_scale_factor());
-+#endif
-     // LocalSurfaceIds should be monotonically increasing. This ID is used
-     // to determine the freshness of a surface at aggregation time.
-     const LocalSurfaceId& last_created_local_surface_id =
-         last_created_surface_id_.local_surface_id();
- 
 @@ -992,15 +1129,23 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
      case Surface::QueueFrameResult::ACCEPTED_ACTIVE:
        // Nothing to do here.

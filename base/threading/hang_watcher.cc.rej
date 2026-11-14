@@ -12,26 +12,6 @@ diff a/base/threading/hang_watcher.cc b/base/threading/hang_watcher.cc	(rejected
               FEATURE_DISABLED_BY_DEFAULT
  #endif
  );
-@@ -263,11 +356,18 @@ constexpr base::FeatureParam<int> kUIThreadLogLevel{
-     &kEnableHangWatcher, kBrowserProcessUiThreadLogLevelParam,
-     static_cast<int>(LoggingLevel::kUmaOnly)};
- constexpr base::FeatureParam<int> kThreadPoolLogLevel{
-     &kEnableHangWatcher, kBrowserProcessThreadPoolLogLevelParam,
-     static_cast<int>(LoggingLevel::kUmaOnly)};
--
-+#if BUILDFLAG(IS_ARKWEB)
-+constexpr base::FeatureParam<int> kCompositorGpuThreadLogLevel{
-+    &kEnableHangWatcher, "compositor_gpu_thread_log_level",
-+    static_cast<int>(LoggingLevel::kUmaOnly)};
-+constexpr base::FeatureParam<int> kInProcessGpuThreadLogLevel{
-+    &kEnableHangWatcher, "in_process_gpu_thread_log_level",
-+    static_cast<int>(LoggingLevel::kUmaOnly)};
-+#endif
- // GPU process.
- // Note: Do not use the prepared macro as of no need for a local cache.
- const char kGpuProcessIoThreadLogLevelParam[] =
-     "gpu_process_io_thread_log_level";
- const char kGpuProcessMainThreadLogLevelParam[] =
 @@ -484,11 +584,18 @@ void HangWatcher::InitializeOnMainThread(ProcessType process_type,
            std::memory_order_relaxed);
        g_main_thread_log_level.store(

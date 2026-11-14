@@ -43,6 +43,10 @@
 #include "ui/gfx/geometry/rect_conversions.h"
 #include "ui/gfx/geometry/transform.h"
 
+#if BUILDFLAG(ARKWEB_DELEGATE_COMPOSITING)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 namespace viz {
 namespace {
 

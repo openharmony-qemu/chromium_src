@@ -16,6 +16,9 @@ namespace {
 ReportingServiceSettings::ReportingServiceSettings(
     const base::Value& settings_value,
     const ServiceProviderConfig& service_provider_config) {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  return;
+#endif
   if (!settings_value.is_dict())
     return;
   const base::DictValue& settings_dict = settings_value.GetDict();

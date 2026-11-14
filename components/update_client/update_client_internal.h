@@ -87,6 +87,10 @@ class UpdateClientImpl : public UpdateClient {
 
   SEQUENCE_CHECKER(sequence_checker_);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  bool is_enabled_ = true;
+#endif
+
   // True if `Stop()` has been called.
   bool is_stopped_ = false;
 

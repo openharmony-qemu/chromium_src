@@ -14,18 +14,3 @@ diff a/components/subresource_filter/core/common/BUILD.gn b/components/subresour
  static_library("test_support") {
    testonly = true
    sources = [
-@@ -84,10 +90,14 @@ source_set("unit_tests") {
-     "ruleset_dealer_unittest.cc",
-     "scoped_timers_unittest.cc",
-     "time_measurements_unittest.cc",
-     "unindexed_ruleset_unittest.cc",
-   ]
-+
-+  if (arkweb_adblock) {
-+    sources += arkweb_document_subresource_filter_unittest_sources
-+  }
-   deps = [
-     ":common",
-     ":test_support",
-     "//base",
-     "//base/test:test_support",

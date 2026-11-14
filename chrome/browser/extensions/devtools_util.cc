@@ -66,6 +66,10 @@ void InspectServiceWorkerBackgroundHelper(
 }  // namespace
 
 // Helper to inspect a service worker after it has been started.
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+void OnRequestOpenDevTools(const scoped_refptr<content::DevToolsAgentHost>& host,
+                           const Extension* extension);
+#endif // ARKWEB_DEVTOOLS
 void InspectServiceWorkerBackground(const Extension* extension,
                                     Profile* profile,
                                     DevToolsOpenedByAction opened_by) {

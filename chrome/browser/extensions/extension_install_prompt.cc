@@ -128,6 +128,17 @@ void ExtensionInstallPrompt::ShowDialog(
   custom_permissions_ = std::move(custom_permissions);
   show_dialog_callback_ = show_dialog_callback;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  /*If it has already been set to be from huawei webstore, there is no need to
+   * set it again. Otherwise, it is necessary to determine whether it is from
+   * huawei webstore based on the extension information.*/
+  if (!prompt_->is_from_webstore()) {
+    bool is_from_huawei_webstore =
+        extensions::CustomData::IsFromHuaweiWebStore(extension);
+    prompt_->set_is_from_webstore(is_from_huawei_webstore);
+  }
+#endif
+
   // We special-case themes to not show any confirm UI. Instead they are
   // immediately installed, and then we show an infobar (see OnInstallSuccess)
   // to allow the user to revert if they don't like it.

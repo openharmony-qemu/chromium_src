@@ -4,6 +4,10 @@
 
 import("//testing/test.gni")
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 source_set("browser") {
   sources = [
     "features.cc",

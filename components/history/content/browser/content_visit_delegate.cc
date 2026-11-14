@@ -19,6 +19,10 @@
 #include "third_party/blink/public/common/features.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "services/network/public/cpp/features.h"
+#endif
+
 namespace history {
 namespace {
 

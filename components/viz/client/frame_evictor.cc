@@ -11,6 +11,9 @@
 #include "base/feature_list.h"
 #include "build/buildflag.h"
 #include "components/viz/common/features.h"
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+#include "components/viz/common/viz_utils.h"
+#endif
 
 namespace viz {
 

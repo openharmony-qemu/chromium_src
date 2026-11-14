@@ -169,22 +169,6 @@ diff a/chrome/browser/ui/webui/extensions/extensions_ui.cc b/chrome/browser/ui/w
         IDS_EXTENSIONS_ITEM_SOURCE_INSTALLED_BY_DEFAULT},
        {"itemSourcePolicy", IDS_EXTENSIONS_ITEM_SOURCE_POLICY},
        {"itemSourceSideloaded", IDS_EXTENSIONS_ITEM_SOURCE_SIDELOADED},
-@@ -480,10 +598,15 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
-       extension_permissions_constants::kShowAccessRequestsInToolbarHelpURL);
-   source->AddBoolean(
-       "enableUserPermittedSites",
-       base::FeatureList::IsEnabled(
-           extensions_features::kExtensionsMenuAccessControlWithPermittedSites));
-+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-+  source->AddBoolean("blacklistReviewShowReviewPanel", true);
-+#else
-+  source->AddBoolean("blacklistReviewShowReviewPanel", false);
-+#endif
-   source->AddBoolean(
-       "safetyHubThreeDotDetails",
-       base::FeatureList::IsEnabled(features::kSafetyHubThreeDotDetails));
- 
-   // MV2 deprecation.
 @@ -543,10 +671,15 @@ ExtensionsUI::ExtensionsUI(content::WebUI* web_ui) : WebUIController(web_ui) {
    // Need to allow <object> elements so that the <extensionoptions> browser
    // plugin can be loaded within chrome://extensions.

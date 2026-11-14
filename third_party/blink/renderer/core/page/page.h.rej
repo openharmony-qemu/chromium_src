@@ -36,18 +36,6 @@ diff a/third_party/blink/renderer/core/page/page.h b/third_party/blink/renderer/
    // Any pages not owned by a web view should be created using this method.
    static Page* CreateNonOrdinary(
        ChromeClient& chrome_client,
-@@ -198,11 +200,10 @@ class CORE_EXPORT Page final : public GarbageCollected<Page>,
-     color_provider_colors_ = color_provider_colors;
-   }
- 
-   void InitialStyleChanged();
-   void UpdateAcceleratedCompositingSettings();
--
-   ViewportDescription GetViewportDescription() const;
- 
-   // Returns the plugin data.
-   PluginData* GetPluginData();
- 
 @@ -612,10 +613,14 @@ class CORE_EXPORT Page final : public GarbageCollected<Page>,
      suspend_capture_observer_ = suspend_capture_observer;
    }

@@ -108,18 +108,6 @@ diff a/chrome/browser/prefs/browser_prefs.cc b/chrome/browser/prefs/browser_pref
  #if BUILDFLAG(ENABLE_SESSION_SERVICE)
    RegisterSessionServiceLogProfilePrefs(registry);
    SessionDataService::RegisterProfilePrefs(registry);
-@@ -1741,10 +1798,11 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry,
- #endif  // BUILDFLAG(ENABLE_EXTENSIONS_CORE)
- 
- #if BUILDFLAG(ENABLE_EXTENSIONS)
-   RegisterAnimationPolicyPrefs(registry);
-   extensions::AudioAPI::RegisterUserPrefs(registry);
-+
-   // TODO(devlin): This would be more inline with the other calls here if it
-   // were nested in either a class or separate namespace with a simple
-   // Register[Profile]Prefs() name.
-   extensions::RegisterSettingsOverriddenUiPrefs(registry);
- #endif  // BUILDFLAG(ENABLE_EXTENSIONS)
 @@ -1765,10 +1823,15 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry,
  
  #if BUILDFLAG(ENABLE_RLZ)

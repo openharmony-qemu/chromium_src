@@ -30,11 +30,3 @@ diff a/chrome/browser/ui/webui/print_preview/print_preview_handler.cc b/chrome/b
  
  void PrintPreviewHandler::HandleDoPrint(const base::Value::List& args) {
    CHECK(args[0].is_string());
-@@ -1266,7 +1267,6 @@ void PrintPreviewHandler::HandleManagePrinters(const base::Value::List& args) {
-   local_printer_->ShowSystemPrintSettings(base::DoNothing());
- #else
-   printing::PrinterManagerDialog::ShowPrinterManagerDialog();
- #endif
- }
--
- }  // namespace printing

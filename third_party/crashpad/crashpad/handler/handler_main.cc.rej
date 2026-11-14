@@ -21,18 +21,6 @@ diff a/third_party/crashpad/crashpad/handler/handler_main.cc b/third_party/crash
          // BUILDFLAG(IS_ANDROID)
  
  void Usage(const base::FilePath& me) {
-@@ -575,11 +599,10 @@ void InitCrashpadLogging() {
- 
- int HandlerMain(int argc,
-                 char* argv[],
-                 const UserStreamDataSources* user_stream_sources) {
-   InitCrashpadLogging();
--
-   InstallCrashHandler();
-   CallMetricsRecordNormalExit metrics_record_normal_exit;
- 
-   const base::FilePath argv0(
-       ToolSupport::CommandLineArgumentToFilePathStringType(argv[0]));
 @@ -588,21 +611,22 @@ int HandlerMain(int argc,
    enum OptionFlags {
      // Long options without short equivalents.

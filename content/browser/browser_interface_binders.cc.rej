@@ -158,16 +158,3 @@ diff a/content/browser/browser_interface_binders.cc b/content/browser/browser_in
  void PopulateBinderMapWithContext(
      RenderFrameHostImpl* host,
      mojo::BinderMapWithContext<RenderFrameHost*>* map) {
-@@ -1028,11 +1109,11 @@ void PopulateBinderMapWithContext(
-       &EmptyBinderForFrame<blink::mojom::AnchorElementMetricsHost>);
-   map->Add<blink::mojom::CredentialManager>(
-       &EmptyBinderForFrame<blink::mojom::CredentialManager>);
-   map->Add<blink::mojom::LCPCriticalPathPredictorHost>(
-       &EmptyBinderForFrame<blink::mojom::LCPCriticalPathPredictorHost>);
--  // Currently defined in content/shell/common/shell_switches.h which we cannot
-+   // Currently defined in content/shell/common/shell_switches.h which we cannot
-   // have a DEPS on.
-   constexpr char kExposeInternalsForTesting[] = "expose-internals-for-testing";
-   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-           kExposeInternalsForTesting)) {
-     map->Add<blink::mojom::FrameWidgetHost>(base::BindRepeating(

@@ -50,11 +50,3 @@ diff a/third_party/blink/renderer/core/paint/text_painter.cc b/third_party/blink
    }
    if (shadow_mode != TextPainter::kShadowsOnly) {
      draw_looper_builder.AddUnmodifiedContent();
-@@ -757,7 +810,6 @@ AffineTransform& TextPainter::SvgTextPaintState::EnsureShaderTransform() {
- 
- const AffineTransform* TextPainter::SvgTextPaintState::GetShaderTransform()
-     const {
-   return base::OptionalToPtr(shader_transform_);
- }
--
- }  // namespace blink

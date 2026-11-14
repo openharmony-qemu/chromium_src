@@ -29,15 +29,3 @@ diff a/third_party/blink/renderer/core/page/page.cc b/third_party/blink/renderer
    visitor->Trace(no_state_prefetch_client_);
    visitor->Trace(audio_graph_tracer_);
    visitor->Trace(internal_settings_);
-@@ -1587,10 +1605,11 @@ void Page::UpdateBrowsingContextGroup(
- void Page::SetAttributionSupport(
-     network::mojom::AttributionSupport attribution_support) {
-   attribution_support_ = attribution_support;
- }
- 
-+
- // static
- void Page::PrepareForLeakDetection() {
-   // Internal settings are ScriptWrappable and thus may retain documents
-   // depending on whether the garbage collector(s) are able to find the settings
-   // object through the Page supplement. Prepares for leak detection by removing

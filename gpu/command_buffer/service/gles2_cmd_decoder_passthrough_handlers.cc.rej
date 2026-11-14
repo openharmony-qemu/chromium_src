@@ -69,18 +69,3 @@ diff a/gpu/command_buffer/service/gles2_cmd_decoder_passthrough_handlers.cc b/gp
  error::Error GLES2DecoderPassthroughImpl::HandleCompressedTexSubImage3DBucket(
      uint32_t immediate_data_size, const volatile void* cmd_data) {
    if (!feature_info_->IsWebGL2OrES3OrHigherContext()) {
-@@ -2567,12 +2564,12 @@ error::Error GLES2DecoderPassthroughImpl::HandleCompressedTexSubImage3D(
-       err != error::kNoError) {
-     return err;
-   }
- 
-   return DoCompressedTexSubImage3D(target, level, xoffset, yoffset, zoffset,
--                                  width, height, depth, format, image_size,
--                                  data_size, data.data());
-+                                   width, height, depth, format, image_size,
-+                                   data_size, data.data());
- }
- 
- error::Error GLES2DecoderPassthroughImpl::HandleCreateGpuFenceINTERNAL(
-     uint32_t immediate_data_size,
-     const volatile void* cmd_data) {

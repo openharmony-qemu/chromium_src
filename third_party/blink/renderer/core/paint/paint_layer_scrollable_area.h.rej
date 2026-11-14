@@ -1,16 +1,4 @@
 diff a/third_party/blink/renderer/core/paint/paint_layer_scrollable_area.h b/third_party/blink/renderer/core/paint/paint_layer_scrollable_area.h	(rejected hunks)
-@@ -789,10 +815,11 @@ class CORE_EXPORT PaintLayerScrollableArea final
-                                           Scrollbar* scrollbar,
-                                           bool& previously_was_overlay,
-                                           bool& previously_might_be_composited,
-                                           gfx::Rect& visual_rect);
- 
-+
-   void DelayableClampScrollOffsetAfterOverflowChange();
-   void ClampScrollOffsetAfterOverflowChangeInternal();
-   Element* GetElementForScrollStart() const;
- 
-   void SetShouldCheckForPaintInvalidation();
 @@ -894,10 +921,13 @@ class CORE_EXPORT PaintLayerScrollableArea final
  
    gfx::PointF last_cull_rect_update_scroll_position_;

@@ -38,11 +38,3 @@ diff a/ui/native_theme/BUILD.gn b/ui/native_theme/BUILD.gn	(rejected hunks)
        "native_theme_mac_unittest.mm",
        "scrollbar_animator_mac_unittest.cc",
      ]
-@@ -158,6 +172,7 @@ test("native_theme_unittests") {
-   }
- 
-   if (is_win) {
-     sources += [ "caption_style_win_unittest.cc" ]
-   }
-+
- }

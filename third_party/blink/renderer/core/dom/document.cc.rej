@@ -16,18 +16,6 @@ diff a/third_party/blink/renderer/core/dom/document.cc b/third_party/blink/rende
  namespace blink {
  
  namespace {
-@@ -528,11 +534,10 @@ bool IsSyntheticSelect(Element& element) {
-          IsAriaHasPopupListbox(element);
- }
- 
- // The sampling rate for UKM.
- constexpr double kUkmSamplingRate = 0.001;
--
- }  // namespace
- 
- static const unsigned kCMaxWriteRecursionDepth = 21;
- 
- // This amount of time must have elapsed before we will even consider scheduling
 @@ -3314,10 +3319,14 @@ void Document::Initialize() {
    GetFrame()->DidAttachDocument();
    lifecycle_.AdvanceTo(DocumentLifecycle::kStyleClean);

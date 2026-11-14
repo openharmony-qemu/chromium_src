@@ -1,16 +1,4 @@
 diff a/net/dns/host_resolver_dns_task.cc b/net/dns/host_resolver_dns_task.cc	(rejected hunks)
-@@ -209,11 +217,10 @@ std::vector<IPEndPoint> ExtractAddressResultsForSort(
-       timed_expiration, HostResolverInternalResult::Source::kDns,
-       ERR_NAME_NOT_RESOLVED));
- 
-   return endpoints_to_sort;
- }
--
- }  // namespace
- 
- HostResolverDnsTask::SingleTransactionResults::SingleTransactionResults(
-     DnsQueryType query_type,
-     ResultRefs results)
 @@ -271,19 +281,27 @@ HostResolverDnsTask::HostResolverDnsTask(
        delegate_(delegate),
        net_log_(job_net_log),

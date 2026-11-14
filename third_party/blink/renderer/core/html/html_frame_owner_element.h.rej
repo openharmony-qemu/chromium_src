@@ -37,15 +37,3 @@ diff a/third_party/blink/renderer/core/html/html_frame_owner_element.h b/third_p
  
    DOMWindow* contentWindow() const;
    Document* contentDocument() const;
-@@ -174,10 +177,11 @@ class CORE_EXPORT HTMLFrameOwnerElement : public HTMLElement,
-   void SetSandboxFlags(network::mojom::blink::WebSandboxFlags);
- 
-   bool LoadOrRedirectSubframe(const KURL&,
-                               const AtomicString& frame_name,
-                               bool replace_current_item);
-+
-   bool IsKeyboardFocusableSlow(
-       UpdateBehavior update_behavior =
-           UpdateBehavior::kStyleAndLayout) const override;
-   void FrameOwnerPropertiesChanged() override;
- 

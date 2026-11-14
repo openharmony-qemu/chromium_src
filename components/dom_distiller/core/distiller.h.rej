@@ -24,18 +24,6 @@ diff a/components/dom_distiller/core/distiller.h b/components/dom_distiller/core
        base::OnceCallback<void(std::unique_ptr<DistilledArticleProto>)>;
    using DistillationUpdateCallback =
        base::RepeatingCallback<void(const ArticleDistillationUpdate&)>;
-@@ -111,10 +123,11 @@ class DistillerImpl : public Distiller {
-                         DistillerURLFetcher* url_fetcher,
-                         const std::string& id,
-                         const std::string& original_url,
-                         const std::string& response);
- 
-+
-   void OnPageDistillationFinished(
-       int page_num,
-       const GURL& page_url,
-       std::unique_ptr<proto::DomDistillerResult> distilled_page,
-       bool distillation_successful);
 @@ -187,10 +200,12 @@ class DistillerImpl : public Distiller {
  
    size_t max_pages_in_article_;

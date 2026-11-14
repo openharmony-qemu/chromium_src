@@ -35,23 +35,6 @@ diff a/content/browser/loader/navigation_url_loader_impl.cc b/content/browser/lo
  
    // TODO(crbug.com/382291442): Remove feature guarding once launched.
    if (base::FeatureList::IsEnabled(
-@@ -1546,10 +1584,16 @@ void NavigationURLLoaderImpl::CheckPluginAndCallOnReceiveResponse(
-   PluginService::GetInstance()->GetPlugins();
-   bool has_plugin = PluginService::GetInstance()->HasPlugin(
-       browser_context_, resource_request_->url, head->mime_type);
- 
-   bool is_download = !has_plugin;
-+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-+  LOG_FEEDBACK(INFO, kNavigation)
-+      << "OnReceiveResponse isDownload:" << is_download
-+      << " mimeType:" << head->mime_type
-+      << " url:" << url::LogUtils::ConvertUrlWithMask(url_.spec());
-+#endif
-   CallOnReceivedResponse(std::move(head),
-                          std::move(url_loader_client_endpoints), is_download);
- }
- #endif
- 
 @@ -1614,11 +1658,21 @@ void NavigationURLLoaderImpl::OnReceiveRedirect(
        // TODO(https://crbug.com/434182226): Turn this to `CHECK()`.
        DUMP_WILL_BE_CHECK_EQ(loader_holder_.state(),

@@ -14,20 +14,6 @@ diff a/content/public/browser/navigation_controller.h b/content/public/browser/n
  #include "content/common/content_export.h"
  #include "content/public/browser/child_process_host.h"
  #include "content/public/browser/global_request_id.h"
-@@ -47,10 +58,13 @@ namespace content {
- class BackForwardCache;
- class BrowserContext;
- class NavigationEntry;
- class RenderFrameHost;
- class NavigationHandle;
-+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-+class NavigationControllerDelegate;
-+#endif
- struct OpenURLParams;
- 
- // A NavigationController manages session history, i.e., a back-forward list
- // of navigation entries.
- //
 @@ -135,11 +157,17 @@ class NavigationController {
        std::optional<GURL> initiator_base_url,
        ui::PageTransition transition,

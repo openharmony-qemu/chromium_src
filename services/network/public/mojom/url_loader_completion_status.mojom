@@ -12,6 +12,9 @@ import "services/network/public/mojom/network_param.mojom";
 import "services/network/public/mojom/ssl_info.mojom";
 import "services/network/public/mojom/trust_tokens.mojom";
 
+[EnableIf=arkweb_ext_navigation]
+import "arkweb/chromium_ext/services/network/public/mojom/navigation_info.mojom";
+
 // Unlike structs, enums are not nullable, so we wrap this enum in a struct.
 struct BlockedByResponseReasonWrapper {
   // More detailed reason for failing the response with

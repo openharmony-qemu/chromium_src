@@ -26,6 +26,10 @@
 #include "services/tracing/public/cpp/tracing_features.h"
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 
+#if BUILDFLAG(IS_ARKWEB) || BUILDFLAG(ARKWEB_DFX_TRACING)
+#include "arkweb/chromium_ext/base/trace_event/hitrace_export_oh.h"
+#endif
+
 #if BUILDFLAG(IS_WIN)
 #include "components/tracing/common/etw_export_win.h"
 #endif

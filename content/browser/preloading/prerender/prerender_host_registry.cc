@@ -1196,6 +1196,9 @@ PrerenderHostId PrerenderHostRegistry::FindPotentialHostToActivate(
   // Use the first match. This prioritizes the exact match or No-Vary-Search
   // header match than No-Vary-Search hint match.
   PrerenderHost* host = *matchable_hosts.begin();
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  LOG(DEBUG) << "Found a Prerender host.";
+#endif
 
   base::UmaHistogramCounts100(
       "Prerender.Experimental.MatchableHostCountOnActivation",

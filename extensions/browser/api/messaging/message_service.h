@@ -126,6 +126,14 @@ class MessageService : public BrowserContextKeyedAPI,
       mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
       mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
           port_host);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+  void OpenChannelToBrowser(
+      const ChannelEndpoint& source,
+      const PortId& source_port_id,
+      mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
+      mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
+          port_host);
+#endif
   void OpenChannelToTab(
       const ChannelEndpoint& source,
       const PortId& source_port_id,
@@ -205,6 +213,14 @@ class MessageService : public BrowserContextKeyedAPI,
       mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
       mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
           port_host);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+  void OpenChannelToBrowserImpl(
+      const ChannelEndpoint& source,
+      const PortId& source_port_id,
+      mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
+      mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
+          port_host);
+#endif
   void OpenPortImpl(const PortId& port_id,
                     int process_id,
                     const PortContext& port_context);

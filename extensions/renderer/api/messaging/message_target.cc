@@ -42,6 +42,12 @@ MessageTarget MessageTarget::ForNativeApp(
   return target;
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+MessageTarget MessageTarget::ForBrowser() {
+  return MessageTarget(BROWSER);
+}
+#endif
+
 MessageTarget::MessageTarget(MessageTarget&& other) = default;
 MessageTarget::MessageTarget(const MessageTarget& other) = default;
 MessageTarget::~MessageTarget() = default;

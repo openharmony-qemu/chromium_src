@@ -19,6 +19,9 @@
 #include "ui/gl/gl_implementation.h"
 #include "ui/gl/progress_reporter.h"
 
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+
 namespace gpu {
 namespace {
 

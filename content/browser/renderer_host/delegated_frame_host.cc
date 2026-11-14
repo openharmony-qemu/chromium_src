@@ -34,6 +34,9 @@
 #include "third_party/blink/public/common/page/content_to_visible_time_request.h"
 #include "third_party/khronos/GLES2/gl2.h"
 #include "third_party/skia/include/core/SkColor.h"
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+#include "ui/base/ui_base_features.h"
+#endif
 #include "ui/gfx/geometry/dip_util.h"
 
 namespace content {
@@ -89,6 +92,23 @@ void DelegatedFrameHost::AddObserverForTesting(Observer* observer) {
 void DelegatedFrameHost::RemoveObserverForTesting(Observer* observer) {
   observers_.RemoveObserver(observer);
 }
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+cc::DeadlinePolicy DelegatedFrameHost::FirstFrameDeadlinePolicy() {
+  if (evictUnlockFrameEnabled_) {
+    return cc::DeadlinePolicy::UseSpecifiedDeadline(600); // 600: deadline in frames
+  } else {
+    return cc::DeadlinePolicy::UseDefaultDeadline();
+  }
+}
+
+void DelegatedFrameHost::SetUseSpecifiedDeadlinePolicy(bool shouldUse) {
+  if (shouldUseSpecifiedPolicy_ != shouldUse) {
+    shouldUseSpecifiedPolicy_ = shouldUse;
+    LOG(INFO) << "ui DelegatedFrameHost::SetUseSpecifiedDeadlinePolicy shouldUse: " << shouldUse;
+  }
+}
+#endif
 
 void DelegatedFrameHost::WasShown(
     const viz::LocalSurfaceId& new_local_surface_id,

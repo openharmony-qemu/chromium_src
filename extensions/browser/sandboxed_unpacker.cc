@@ -1024,6 +1024,10 @@ std::optional<base::DictValue> SandboxedUnpacker::RewriteManifestFile(
   base::DictValue final_manifest = manifest.Clone();
   final_manifest.Set(manifest_keys::kPublicKey, public_key_);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  CustomData::SetStoreType(webstore_type_, &final_manifest);
+#endif
+
   {
     std::string differential_fingerprint;
     if (base::ReadFileToStringWithMaxSize(

@@ -46,6 +46,10 @@
 #include "extensions/common/switches.h"
 #include "third_party/blink/public/common/service_worker/service_worker_status_code.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/browser/extension_log_reporter.h"
+#endif
+
 using content::DevToolsAgentHost;
 using extensions::mojom::ManifestLocation;
 

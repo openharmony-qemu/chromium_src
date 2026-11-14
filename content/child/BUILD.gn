@@ -27,6 +27,11 @@ target(link_target_type, "child") {
     "//content/renderer/*",
     "//content/utility/*",
   ]
+
+  if (arkweb_fuzz_compile_error_fix) {
+    visibility += [ "//arkweb/chromium_ext/ohos_test/fuzztest/chromium_ext/content/child/child_process_utils_fuzzer:child_process_utils_fuzzer" ]
+  }
+
   if (is_android) {
     # See comment in content/app/BUILD.gn above content_app_deps.
     visibility += [ "//content/app:*" ]

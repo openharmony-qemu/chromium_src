@@ -377,19 +377,3 @@ diff a/content/browser/web_contents/web_contents_impl.cc b/content/browser/web_c
    if (old_state == LifecycleState::kActive && !render_frame_host->GetParent()) {
      // TODO(sreejakshetty): Remove this reset when ColorChooserHolder becomes
      // per-frame.
-@@ -12182,10 +12598,15 @@ std::unique_ptr<PrerenderHandle> WebContentsImpl::StartPrerendering(
-   attributes.additional_headers = std::move(additional_headers);
- #else
-   CHECK(additional_headers.IsEmpty())
-       << "additional_headers is supported only on Android WebView.";
- #endif  // BUILDFLAG(IS_ANDROID)
-+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-+  if (extra_headers) {
-+    attributes.extra_headers = extra_headers;
-+  }
-+#endif
-   attributes.holdback_status_override = holdback_status_override;
- 
-   FrameTreeNodeId frame_tree_node_id =
-       GetPrerenderHostRegistry()->CreateAndStartHost(attributes,
-                                                      preloading_attempt);

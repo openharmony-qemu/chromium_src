@@ -13630,6 +13630,11 @@ std::unique_ptr<PrerenderHandle> WebContentsImpl::StartPrerendering(
   CHECK(additional_headers.IsEmpty())
       << "additional_headers is supported only on Android WebView.";
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (extra_headers) {
+    attributes.extra_headers = extra_headers;
+  }
+#endif
   attributes.holdback_status_override = holdback_status_override;
 
   PrerenderHostId prerender_host_id =

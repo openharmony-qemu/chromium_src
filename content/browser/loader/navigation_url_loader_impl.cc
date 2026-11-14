@@ -1578,6 +1578,12 @@ void NavigationURLLoaderImpl::CheckPluginAndCallOnReceiveResponse(
       browser_context_, resource_request().url, head->mime_type);
 
   bool is_download = !has_plugin;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  LOG_FEEDBACK(INFO, kNavigation)
+      << "OnReceiveResponse isDownload:" << is_download
+      << " mimeType:" << head->mime_type
+      << " url:" << url::LogUtils::ConvertUrlWithMask(url_.spec());
+#endif
   CallOnReceivedResponse(std::move(head),
                          std::move(url_loader_client_endpoints), is_download);
 }

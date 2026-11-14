@@ -135,6 +135,9 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
   LoadURLWithParamsForResult(const LoadURLParams& params) override;
   void LoadIfNecessary() override;
   void LoadOriginalRequestURL() override;
+#if BUILDFLAG(IS_ARKWEB)
+  void LoadOriginalRequestURL(bool ignore_cache) override;
+#endif
   base::WeakPtr<NavigationHandle> LoadPostCommitErrorPage(
       RenderFrameHost* render_frame_host,
       const GURL& url,

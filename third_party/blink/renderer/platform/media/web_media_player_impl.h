@@ -466,6 +466,9 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
                                 const std::vector<uint8_t>& init_data) override;
   void MakeDemuxerThreadDumper(media::Demuxer* demuxer) override;
   bool CouldPlayIfEnoughData() override;
+  #if BUILDFLAG(ARKWEB_MEDIA_HLS)
+  void UpdateMediaPlayerUrlType(media::MediaPlayerUrlType type) override;
+  #endif
   void StopForDemuxerReset() override;
   void RestartForHls() override;
   void UpdateLoadedUrl(const GURL& url) override;

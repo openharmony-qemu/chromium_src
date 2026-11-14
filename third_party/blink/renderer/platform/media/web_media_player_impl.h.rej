@@ -56,20 +56,6 @@ diff a/third_party/blink/renderer/platform/media/web_media_player_impl.h b/third
    void OnIdleTimeout() override;
  
    void RequestRemotePlaybackDisabled(bool disabled) override;
-@@ -436,10 +468,13 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
-   void OnProgress() override;
-   void OnEncryptedMediaInitData(media::EmeInitDataType init_data_type,
-                                 const std::vector<uint8_t>& init_data) override;
-   void MakeDemuxerThreadDumper(media::Demuxer* demuxer) override;
-   bool CouldPlayIfEnoughData() override;
-+  #if BUILDFLAG(ARKWEB_MEDIA_HLS)
-+  void UpdateMediaPlayerUrlType(media::MediaPlayerUrlType type) override;
-+  #endif
-   void StopForDemuxerReset() override;
-   void RestartForHls() override;
-   void UpdateLoadedUrl(const GURL& url) override;
-   void DemuxerRequestsSeek(base::TimeDelta seek_time) override;
- 
 @@ -1125,10 +1160,42 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
    base::TimeTicks last_frame_request_time_;
  

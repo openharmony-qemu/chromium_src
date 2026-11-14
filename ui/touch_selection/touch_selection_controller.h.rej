@@ -1,19 +1,4 @@
 diff a/ui/touch_selection/touch_selection_controller.h b/ui/touch_selection/touch_selection_controller.h	(rejected hunks)
-@@ -183,10 +207,14 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
-   const gfx::SelectionBound& start() const { return start_; }
-   const gfx::SelectionBound& end() const { return end_; }
- 
-   ActiveStatus active_status() const { return active_status_; }
- 
-+#if BUILDFLAG(ARKWEB_MENU)
-+  bool IsShowHandle() override;
-+#endif
-+
-  private:
-   friend class TouchSelectionControllerTestApi;
- 
-   enum InputEventType { TAP, REPEATED_TAP, LONG_PRESS, INPUT_EVENT_TYPE_NONE };
- 
 @@ -290,10 +318,20 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
  
    bool show_touch_handles_;

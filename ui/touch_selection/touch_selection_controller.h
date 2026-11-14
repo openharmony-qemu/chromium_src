@@ -212,6 +212,10 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
 
   ActiveStatus active_status() const { return active_status_; }
 
+#if BUILDFLAG(ARKWEB_MENU)
+  bool IsShowHandle() override;
+#endif
+
  private:
   friend class TouchSelectionControllerTestApi;
 

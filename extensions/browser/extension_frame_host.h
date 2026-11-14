@@ -86,6 +86,13 @@ class ExtensionFrameHost : public mojom::LocalFrameHost {
       mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
       mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
           port_host) override;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+  void OpenChannelToBrowser(
+      const PortId& port_id,
+      mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
+      mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
+          port_host) override;
+#endif
   void OpenChannelToTab(
       int32_t tab_id,
       int32_t frame_id,

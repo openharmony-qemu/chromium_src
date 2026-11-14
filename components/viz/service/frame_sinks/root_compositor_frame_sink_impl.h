@@ -76,9 +76,14 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
       delete;
 
   ~RootCompositorFrameSinkImpl() override;
-
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  // Returns true iff it is okay to evict the root surface immediately.
+  bool WillEvictSurface(const SurfaceId& surface_id);
+  void DisplayDidRealSwapBuffer() override;
+  bool needs_notify_first_swap_buffer_ = false;
+#else
   void DidEvictSurface(const SurfaceId& surface_id);
-
+#endif
   const SurfaceId& CurrentSurfaceId() const;
 
   // mojom::DisplayPrivate:

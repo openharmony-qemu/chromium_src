@@ -60,6 +60,10 @@ class PLATFORM_EXPORT MediaStreamWebAudioSource final
   // blink::AudioSourceProvider implementation.
   void ProvideInput(AudioBus*, int frames_to_process) override;
   void SetClient(AudioSourceProviderClient*) override {}
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  void SetOnSourcePausedChangedCallback(
+      base::RepeatingCallback<void(bool)> callback) override;
+#endif // ARKWEB_MEDIA_CAPTURE
 
   std::unique_ptr<WebAudioSourceProvider> web_audio_source_provider_;
 

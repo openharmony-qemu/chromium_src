@@ -309,18 +309,6 @@ diff a/chrome/app/resources/generated_resources_zh-HK.xtb b/chrome/app/resources
  <translation id="3282210178675490297">正在與 <ph name="APP_NAME" /> 共用此標籤</translation>
  <translation id="328265255303378234">無法恢復工作階段</translation>
  <translation id="3283148363895519428">按照手機上的指示繼續設定。請確認手機在附近且已開啟藍牙。</translation>
-@@ -3385,10 +3396,11 @@
- <translation id="32991397311664836">裝置：</translation>
- <translation id="3301554464236215299">此檔案不是常見的下載項目，可能含有危險內容</translation>
- <translation id="3301996560342889673">要同步記錄嗎？</translation>
- <translation id="33022249435934718">GDI 控制代碼</translation>
- <translation id="3302388252085547855">輸入原因…</translation>
-+<translation id="330270904988027475">在合作的原生應用程式請求時在背景運行</translation>
- <translation id="3303795387212510132">要允許應用程式開啟「<ph name="PROTOCOL_SCHEME" />」連結嗎？</translation>
- <translation id="3303818374450886607">份數</translation>
- <translation id="3303855915957856445">找不到任何搜尋結果</translation>
- <translation id="3304212451103136496"><ph name="DISCOUNT_AMOUNT" /> 折扣</translation>
- <translation id="3305389145870741612">格式化程序可能需要幾秒鐘，請稍候。</translation>
 @@ -3698,10 +3710,11 @@
  <translation id="3513019849832307207">加入並開啟</translation>
  <translation id="3513563267917474897">色調滑桿由 <ph name="MIN_VALUE" /> 至 <ph name="MAX_VALUE" /></translation>
@@ -516,18 +504,6 @@ diff a/chrome/app/resources/generated_resources_zh-HK.xtb b/chrome/app/resources
  <translation id="4619615317237390068">在其他裝置上開啟的分頁</translation>
  <translation id="4620757807254334872">滑鼠</translation>
  <translation id="4620809267248568679">這項設定是由擴充功能執行。</translation>
-@@ -5545,10 +5565,11 @@
- <translation id="4773253008034797668">允許連線至區域網絡上的任何裝置</translation>
- <translation id="477548766361111120">允許擴充程式讀取並變更此網站</translation>
- <translation id="4775646243557794597">已刪除<ph name="TIME_PERIOD" />的資料</translation>
- <translation id="4776311127346151860">連接咗<ph name="DEVICE_NAME" /></translation>
- <translation id="4776594120007763294">如要新增頁面以便稍後閱讀，請按一下按鈕</translation>
-+<translation id="477727212864867766">讀取您最常存取的網站清單</translation>
- <translation id="4777458362738635055">此裝置的其他使用者可使用此網絡</translation>
- <translation id="4777813841994368231">已開啟 • 開發人員已取消發佈此擴充程式</translation>
- <translation id="4777825441726637019">Play 商店</translation>
- <translation id="4777866634702576038">要刪除分頁群組嗎？</translation>
- <translation id="4777943778632837590">設定網絡域名伺服器</translation>
 @@ -5907,11 +5928,11 @@
  <translation id="5024992827689317672">資料已刪除</translation>
  <translation id="5026492829171796515">登入即可新增 Google 帳戶</translation>

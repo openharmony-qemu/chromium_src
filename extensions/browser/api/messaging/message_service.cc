@@ -405,6 +405,20 @@ class MessageServiceFactory
         android_certificates, std::move(port), std::move(port_host));
   }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && BUILDFLAG(IS_ARKWEB_EXT)
+  void OpenChannelToBrowser(
+      content::BrowserContext* context,
+      Source source,
+      const PortId& source_port_id,
+      mojo::PendingAssociatedRemote<extensions::mojom::MessagePort> port,
+      mojo::PendingAssociatedReceiver<extensions::mojom::MessagePortHost>
+          port_host) override {
+    MessageService::Get(context)->OpenChannelToBrowser(
+        GetEndpoint(context, source), source_port_id, std::move(port),
+        std::move(port_host));
+  }
+#endif
+
   void OpenChannelToTab(
       content::BrowserContext* context,
       Source source,

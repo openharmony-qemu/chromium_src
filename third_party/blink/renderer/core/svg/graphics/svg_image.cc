@@ -502,10 +502,20 @@ std::optional<PaintRecord> SVGImage::PaintRecordForCurrentFrame(
   return view->GetPaintRecord(cull_rect);
 }
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+static bool DrawNeedsLayer(const cc::PaintFlags& flags,
+                           const bool night_mode_enabled) {
+#else
 static bool DrawNeedsLayer(const cc::PaintFlags& flags) {
+#endif
   if (SkColorGetA(flags.getColor()) < 255)
     return true;
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  if (night_mode_enabled) {
+    return true;
+  }
+#endif
   // This is needed to preserve the dark mode filter that
   // has been set in GraphicsContext.
   if (flags.getColorFilter())

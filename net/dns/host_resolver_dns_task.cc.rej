@@ -92,46 +92,6 @@ diff a/net/dns/host_resolver_dns_task.cc b/net/dns/host_resolver_dns_task.cc	(re
        DCHECK((transaction_info.error_behavior ==
                    TransactionErrorBehavior::kFatalOrEmpty &&
                !fatal_error) ||
-@@ -549,15 +600,21 @@ void HostResolverDnsTask::OnDnsTransactionComplete(
-           host_.GetHostnameWithoutBrackets(), transaction_info.type);
-       response = &fake_response.value();
-     }
-   }
- 
-+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-+  DCHECK(anycast_fallback_used || response);
-+
-+  if (!anycast_fallback_used) {
-+#else
-   DCHECK(response);
- 
-   DnsResponseResultExtractor::ResultsOrError results;
-   {
-     // Scope the extractor to ensure it is destroyed before `response`.
-+#endif
-     DnsResponseResultExtractor extractor(*response);
-     results = extractor.ExtractDnsResults(
-         transaction_info.type,
-         /*original_domain_name=*/host_.GetHostnameWithoutBrackets(),
-         request_port);
-@@ -578,11 +635,16 @@ void HostResolverDnsTask::OnDnsTransactionComplete(
-       // IsFatalTransactionExtractionError() function.
-       DCHECK(!fatal_error);
-       DCHECK_EQ(transaction_info.type, DnsQueryType::HTTPS);
-       results = Results();
-     } else {
--      OnFailure(ERR_DNS_MALFORMED_RESPONSE, /*allow_fallback=*/true);
-+      OnFailure(ERR_DNS_MALFORMED_RESPONSE, /*allow_fallback=*/true
-+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-+                ,
-+                nullptr, transaction_info.type
-+#endif
-+      );
-       return;
-     }
-   }
-   CHECK(results.has_value());
-   net_log_.AddEvent(NetLogEventType::HOST_RESOLVER_DNS_TASK_EXTRACTION_RESULTS,
 @@ -833,11 +895,16 @@ void HostResolverDnsTask::HandleTransactionResults(
    if (transaction_info.type == DnsQueryType::HTTPS &&
        ShouldTriggerHttpToHttpsUpgrade(transaction_results)) {

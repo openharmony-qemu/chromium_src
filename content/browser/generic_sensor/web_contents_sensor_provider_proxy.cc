@@ -113,6 +113,13 @@ void WebContentsSensorProviderProxy::RemoveObserver(Observer* observer) {
   observers_.RemoveObserver(observer);
 }
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+bool WebContentsSensorProviderProxy::HasVirtualSensorOverrideForDevTools(
+    device::mojom::SensorType type) const {
+  return virtual_sensor_types_for_devtools_.contains(type);
+}
+#endif  // BUILDFLAG(ARKWEB_DEVTOOLS)
+
 void WebContentsSensorProviderProxy::GetSensor(
     SensorType type,
     mojo::PendingReceiver<device::mojom::SensorClientController> controller,

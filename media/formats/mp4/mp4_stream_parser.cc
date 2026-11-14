@@ -735,6 +735,9 @@ bool MP4StreamParser::ParseMoov(BoxReader* reader) {
       if (codec == AudioCodec::kAAC) {
         audio_config.disable_discard_decoder_delay();
         audio_config.set_profile(profile);
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+        audio_config.set_aac_extra_data(std::move(aac_extra_data));
+#endif
       }
 #endif  // BUILDFLAG(USE_PROPRIETARY_CODECS)
 #if BUILDFLAG(ENABLE_PLATFORM_IAMF_AUDIO) || BUILDFLAG(ENABLE_IAMF_TOOLS)

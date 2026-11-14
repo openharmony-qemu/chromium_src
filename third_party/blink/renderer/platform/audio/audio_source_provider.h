@@ -57,6 +57,13 @@ class AudioSourceProvider {
   // If a client is set, we call it back when the audio format is available or
   // changes.
   virtual void SetClient(AudioSourceProviderClient*) = 0;
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  // Sets a callback to invoke when the source pause state changes.
+  // Default implementation does nothing.
+  virtual void SetOnSourcePausedChangedCallback(
+      base::RepeatingCallback<void(bool)> callback) {}
+#endif // ARKWEB_MEDIA_CAPTURE
 };
 
 }  // namespace blink

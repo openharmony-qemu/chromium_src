@@ -599,11 +599,17 @@ void HostResolverDnsTask::OnDnsTransactionComplete(
     }
   }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  DCHECK(anycast_fallback_used || response);
+
+  if (!anycast_fallback_used) {
+#else
   DCHECK(response);
 
   DnsResponseResultExtractor::ResultsOrError results;
   {
     // Scope the extractor to ensure it is destroyed before `response`.
+#endif
     DnsResponseResultExtractor extractor(*response);
     results = extractor.ExtractDnsResults(
         transaction_info->type,
@@ -628,7 +634,12 @@ void HostResolverDnsTask::OnDnsTransactionComplete(
       DCHECK_EQ(transaction_info->type, DnsQueryType::HTTPS);
       results = Results();
     } else {
-      OnFailure(ERR_DNS_MALFORMED_RESPONSE, /*allow_fallback=*/true);
+      OnFailure(ERR_DNS_MALFORMED_RESPONSE, /*allow_fallback=*/true
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+                ,
+                nullptr, transaction_info->type
+#endif
+      );
       return;
     }
   }

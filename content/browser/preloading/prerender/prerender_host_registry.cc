@@ -541,6 +541,18 @@ void PrerenderHostRegistry::RemoveObserver(Observer* observer) {
 PrerenderHostId PrerenderHostRegistry::CreateAndStartHost(
     const PrerenderAttributes& attributes,
     PreloadingAttempt* attempt) {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (attributes.trigger_type != PreloadingTriggerType::kEmbedder) {
+    RecordFailedPrerenderFinalStatus(
+        PrerenderCancellationReason(PrerenderFinalStatus::kPreloadingDisabled),
+        attributes);
+    if (attempt) {
+      attempt->SetEligibility(PreloadingEligibility::kPreloadingDisabled);
+    }
+    return PrerenderHostId();
+  }
+#endif
+
   std::string recorded_url =
       attributes.initiator_origin.has_value()
           ? attributes.initiator_origin.value().GetURL().spec()

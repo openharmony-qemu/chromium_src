@@ -1263,6 +1263,11 @@ class PDFiumEngine : public DocumentLoader::Client,
   void UpdateTextActiveAndInvalidateHelper(InkTextData& data, bool active);
 #endif
 
+#if BUILDFLAG(ARKWEB_PDF)
+  // Converts a page position (e.g. the location of a bookmark) to a screen position.
+  gfx::PointF ConverPageToScreen(int page_index, gfx::PointF point);
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   const raw_ptr<PDFiumEngineClient> client_;
 
   // The current document layout.

@@ -607,6 +607,17 @@ class NET_EXPORT_PRIVATE QuicSessionPool
 
   struct QuicCryptoClientConfigKey;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  void SetDnsResolveInfo(const ResolveInfo& resolve_info) {
+    resolve_info_ = resolve_info;
+  }
+  std::optional<ResolveInfo> TakeDnsResolveInfo() {
+    std::optional<ResolveInfo> resolve_info = std::move(resolve_info_);
+    resolve_info_ = std::nullopt;
+    return resolve_info;
+  }
+#endif
+
  private:
   class Job;
   class AsyncDnsJob;

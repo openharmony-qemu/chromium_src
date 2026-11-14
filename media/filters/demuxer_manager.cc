@@ -80,6 +80,9 @@ DemuxerManager::DemuxerManager(
       security_origin_(std::move(security_origin)),
       demuxer_override_(std::move(demuxer_override)) {
   DCHECK(client_);
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  media_info_ = base::MakeRefCounted<media::MediaReportInfo>();
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 }
 
 DemuxerManager::~DemuxerManager() {
@@ -414,6 +417,9 @@ std::unique_ptr<Demuxer> DemuxerManager::CreateChunkDemuxer() {
       base::BindPostTaskToCurrentDefault(
           base::BindRepeating(&DemuxerManager::OnEncryptedMediaInitData,
                               weak_factory_.GetWeakPtr())),
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+      media_info_,
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
       media_log_.get());
 }
 
@@ -429,6 +435,9 @@ std::unique_ptr<Demuxer> DemuxerManager::CreateFFmpegDemuxer() {
       base::BindPostTaskToCurrentDefault(
           base::BindRepeating(&DemuxerManager::OnFFmpegMediaTracksUpdated,
                               weak_factory_.GetWeakPtr())),
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+      media_info_,
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
       media_log_.get(), IsLocalFile(loaded_url_));
 }
 

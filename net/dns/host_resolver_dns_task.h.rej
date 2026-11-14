@@ -59,20 +59,6 @@ diff a/net/dns/host_resolver_dns_task.h b/net/dns/host_resolver_dns_task.h	(reje
      virtual ~Delegate() = default;
    };
  
-@@ -97,10 +111,13 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
-                       SecureDnsMode secure_dns_mode,
-                       Delegate* delegate,
-                       const NetLogWithSource& job_net_log,
-                       const base::TickClock* tick_clock,
-                       bool fallback_available,
-+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-+                      bool secure_fallback,
-+#endif
-                       const HostResolver::HttpsSvcbOptions& https_svcb_options);
-   ~HostResolverDnsTask();
- 
-   HostResolverDnsTask(const HostResolverDnsTask&) = delete;
-   HostResolverDnsTask& operator=(const HostResolverDnsTask&) = delete;
 @@ -113,12 +130,24 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
      return base::checked_cast<int>(transactions_in_progress_.size());
    }

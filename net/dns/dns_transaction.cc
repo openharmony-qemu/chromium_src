@@ -301,6 +301,10 @@ class DnsOverHttpsProbeRunner : public DnsProbeRunner {
                      base::TimeTicks query_start_time,
                      int rv) {
     bool success = false;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "probe complete, attempt number " << attempt_number
+                       << ", server index " << doh_server_index << ", rv" << rv;
+#endif
     while (probe_stats && session_ && context_) {
       if (rv != OK) {
         // The DoH probe queries don't go through the standard DnsAttempt path,

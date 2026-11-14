@@ -33,21 +33,3 @@ diff a/net/shared_dictionary/shared_dictionary_network_transaction.cc b/net/shar
    shared_dictionary_used_response_info_.reset();
    return network_transaction_->RestartIgnoringLastError(
        base::BindOnce(&SharedDictionaryNetworkTransaction::OnStartCompleted,
-@@ -474,10 +486,17 @@ void SharedDictionaryNetworkTransaction::
- ConnectionAttempts SharedDictionaryNetworkTransaction::GetConnectionAttempts()
-     const {
-   return network_transaction_->GetConnectionAttempts();
- }
- 
-+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
-+ConnectionAttempts
-+SharedDictionaryNetworkTransaction::GetExtraConnectionAttempts() const {
-+  return network_transaction_->GetExtraConnectionAttempts();
-+}
-+#endif
-+
- void SharedDictionaryNetworkTransaction::CloseConnectionOnDestruction() {
-   network_transaction_->CloseConnectionOnDestruction();
- }
- 
- bool SharedDictionaryNetworkTransaction::IsMdlMatchForMetrics() const {

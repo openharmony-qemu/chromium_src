@@ -20,20 +20,6 @@ diff a/media/filters/demuxer_manager.cc b/media/filters/demuxer_manager.cc	(reje
  // numeric values should never be reused.
  enum class MimeType {
    kOtherMimeType = 0,
-@@ -116,10 +121,13 @@ DemuxerManager::DemuxerManager(
-     : client_(client),
-       media_task_runner_(std::move(media_task_runner)),
-       media_log_(log->Clone()),
-       demuxer_override_(std::move(demuxer_override)) {
-   DCHECK(client_);
-+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
-+  media_info_ = base::MakeRefCounted<media::MediaReportInfo>();
-+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
- }
- 
- DemuxerManager::~DemuxerManager() {
-   // ManifestDemuxer has multiple outstanding weak pointers bound to the media
-   // thread, and needs to be deleted there.
 @@ -136,19 +144,53 @@ void DemuxerManager::RestartClientForHLS() {
    if (client_ && fallback_allowed_) {
      client_->RestartForHls();
@@ -130,31 +116,3 @@ diff a/media/filters/demuxer_manager.cc b/media/filters/demuxer_manager.cc	(reje
    if (!needs_first_frame) {
      suspended_mode = Pipeline::StartType::kSuspendAfterMetadata;
    }
-@@ -441,10 +505,13 @@ std::unique_ptr<Demuxer> DemuxerManager::CreateChunkDemuxer() {
-       base::BindPostTaskToCurrentDefault(base::BindRepeating(
-           &DemuxerManager::OnProgress, weak_factory_.GetWeakPtr())),
-       base::BindPostTaskToCurrentDefault(
-           base::BindRepeating(&DemuxerManager::OnEncryptedMediaInitData,
-                               weak_factory_.GetWeakPtr())),
-+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
-+      media_info_,
-+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
-       media_log_.get());
- }
- 
- #if BUILDFLAG(ENABLE_FFMPEG)
- std::unique_ptr<Demuxer> DemuxerManager::CreateFFmpegDemuxer() {
-@@ -455,10 +522,13 @@ std::unique_ptr<Demuxer> DemuxerManager::CreateFFmpegDemuxer() {
-           base::BindRepeating(&DemuxerManager::OnEncryptedMediaInitData,
-                               weak_factory_.GetWeakPtr())),
-       base::BindPostTaskToCurrentDefault(
-           base::BindRepeating(&DemuxerManager::OnFFmpegMediaTracksUpdated,
-                               weak_factory_.GetWeakPtr())),
-+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
-+      media_info_,
-+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
-       media_log_.get(), IsLocalFile(loaded_url_));
- }
- #endif  // BUILDFLAG(ENABLE_FFMPEG)
- 
- #if BUILDFLAG(ENABLE_HLS_DEMUXER)

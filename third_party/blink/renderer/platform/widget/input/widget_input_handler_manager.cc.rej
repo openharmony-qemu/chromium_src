@@ -37,24 +37,6 @@ diff a/third_party/blink/renderer/platform/widget/input/widget_input_handler_man
      const cc::InputHandlerScrollResult& scroll_result) {
    base::OnceClosure observe_gesture_event_closure = base::BindOnce(
        &WidgetInputHandlerManager::ObserveGestureEventOnInputHandlingThread,
-@@ -798,10 +812,17 @@ void WidgetInputHandlerManager::DispatchEvent(
-         ~static_cast<uint16_t>(SuppressingInputEventsBits::kHidden);
-   }
- 
-   if (suppress_input && !allow_pre_commit_input_ &&
-       !event_is_mouse_or_pointer_move) {
-+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-+    LOG(WARNING) << "widgetInputHanderManager::DispatchEvent SUPPRESSED, "
-+                 << "type:" << WebInputEvent::GetName(event_type)
-+                 << ", suppress_input: " << suppress_input
-+                 << ", allow_pre_commit_input_: " << allow_pre_commit_input_
-+                 << ", event_is_mouse_or_pointer_move: " << event_is_mouse_or_pointer_move;
-+#endif
-     SuppressEvent(suppress_input, std::move(event), std::move(callback));
-     return;
-   }
- 
-   // If TimeTicks is not consistent across processes we cannot use the event's
 @@ -1042,10 +1067,13 @@ void WidgetInputHandlerManager::InitOnInputHandlingThread(
    if (sync_compositing) {
      DCHECK(synchronous_compositor_registry_);

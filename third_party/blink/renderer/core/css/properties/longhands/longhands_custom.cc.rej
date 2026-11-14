@@ -49,21 +49,6 @@ diff a/third_party/blink/renderer/core/css/properties/longhands/longhands_custom
    }
    return result.Resolve(style.GetCurrentColor(), style.UsedColorScheme(),
                          is_current_color);
-@@ -2702,10 +2761,14 @@ void ColorScheme::ApplyInitial(StyleResolverState& state) const {
- void ColorScheme::ApplyInherit(StyleResolverState& state) const {
-   ComputedStyleBuilder& builder = state.StyleBuilder();
-   builder.SetColorScheme(state.ParentStyle()->ColorScheme());
-   builder.SetDarkColorScheme(state.ParentStyle()->DarkColorScheme());
-   builder.SetColorSchemeForced(state.ParentStyle()->ColorSchemeForced());
-+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
-+  builder.SetNightModeEnabled(state.ParentStyle()->NightModeEnabled());
-+  builder.SetNightColorScheme(state.ParentStyle()->NightColorScheme());
-+#endif
- }
- 
- void ColorScheme::ApplyValue(StyleResolverState& state,
-                              const CSSValue& value,
-                              ValueMode) const {
 @@ -3858,10 +3921,15 @@ static bool IsDisplayOutside(CSSValueID id) {
  
  static bool IsDisplayInside(CSSValueID id) {

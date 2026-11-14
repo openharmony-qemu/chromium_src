@@ -2696,6 +2696,10 @@ void ColorScheme::ApplyInherit(StyleResolverState& state) const {
   builder.SetColorScheme(state.ParentStyle()->ColorScheme());
   builder.SetDarkColorScheme(state.ParentStyle()->DarkColorScheme());
   builder.SetColorSchemeForced(state.ParentStyle()->ColorSchemeForced());
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  builder.SetNightModeEnabled(state.ParentStyle()->NightModeEnabled());
+  builder.SetNightColorScheme(state.ParentStyle()->NightColorScheme());
+#endif
 }
 
 void ColorScheme::ApplyValue(StyleResolverState& state,

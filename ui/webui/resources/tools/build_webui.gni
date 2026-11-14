@@ -70,6 +70,14 @@ template("build_webui") {
 
   forward_variables_from(invoker, [ "grd_prefix" ])
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (arkweb_arkweb_extensions) {
+    if (invoker.grd_prefix == "extensions") {
+      scheme_replaced_dir = "${target_gen_dir}/scheme_replaced"
+    }
+  }
+#endif
+
   preprocess_dir = "${target_gen_dir}/preprocessed"
 
   ts_out_dir = "${target_gen_dir}/tsc"

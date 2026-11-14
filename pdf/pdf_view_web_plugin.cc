@@ -133,6 +133,10 @@
 #include "third_party/skia/include/core/SkCanvas.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/pdf/pdf_view_web_plugin_for_include.cc"
+#endif
+
 namespace chrome_pdf {
 
 namespace {

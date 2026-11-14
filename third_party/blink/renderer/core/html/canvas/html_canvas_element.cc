@@ -142,7 +142,9 @@
 #include "ui/gfx/geometry/size_conversions.h"
 #include "ui/gfx/geometry/skia_conversions.h"
 #include "v8/include/v8.h"
-
+#if BUILDFLAG(IS_ARKWEB)
+#include "base/logging.h"
+#endif
 namespace blink {
 
 namespace {
@@ -244,6 +246,9 @@ HTMLCanvasElement::HTMLCanvasElement(Document& document)
       context_creation_was_blocked_(false),
       origin_clean_(true),
       surface_layer_bridge_(nullptr) {
+#if BUILDFLAG(IS_ARKWEB)
+  LOG(INFO) << "HTMLCanvasElement::HTMLCanvasElement";
+#endif
   UseCounter::Count(document, WebFeature::kHTMLCanvasElement);
   // Create supplements now, as they may be needed at a
   // time when garbage collected objects can not be created.

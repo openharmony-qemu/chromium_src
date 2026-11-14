@@ -1508,6 +1508,15 @@ void TransportClientSocketPool::TryToCloseSocketsInLayeredPools() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+void TransportClientSocketPool::SetSocketIdleTimeout(int32_t timeout) {
+  if (arkweb_used_idle_socket_timeout_.InSeconds() != timeout) {
+    arkweb_used_idle_socket_timeout_ = base::Seconds(timeout);
+    CleanupIdleSockets(false, nullptr /* net_log_reason_utf8 */);
+  }
+}
+#endif
+
 TransportClientSocketPool::GroupMap::iterator
 TransportClientSocketPool::RefreshGroup(GroupMap::iterator it,
                                         const base::TimeTicks& now,

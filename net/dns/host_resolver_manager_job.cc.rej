@@ -30,21 +30,6 @@ diff a/net/dns/host_resolver_manager_job.cc b/net/dns/host_resolver_manager_job.
        break;
      case TaskType::INSECURE_CACHE_LOOKUP:
        InsecureCacheLookup();
-@@ -613,10 +633,14 @@ void HostResolverManager::Job::Start() {
- void HostResolverManager::Job::StartSystemTask() {
-   DCHECK(dispatched_);
-   DCHECK_EQ(1, num_occupied_job_slots_);
-   DCHECK(HasAddressType(key_.query_types));
- 
-+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
-+  dns_status_ = kDnsResolvedBySystemDns;
-+#endif
-+
-   std::optional<HostResolverSystemTask::CacheParams> cache_params;
-   if (key_.resolve_context->host_resolver_cache()) {
-     cache_params.emplace(*key_.resolve_context->host_resolver_cache(),
-                          key_.network_anonymization_key);
-   }
 @@ -685,31 +747,50 @@ void HostResolverManager::Job::InsecureCacheLookup() {
    std::optional<HostCache::EntryStaleness> stale_info;
    std::optional<HostCache::Entry> resolved = resolver_->MaybeServeFromCache(

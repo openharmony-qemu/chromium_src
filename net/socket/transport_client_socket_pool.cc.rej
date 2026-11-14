@@ -170,23 +170,3 @@ diff a/net/socket/transport_client_socket_pool.cc b/net/socket/transport_client_
    InvokeUserCallbackLater(request->handle(), request->release_callback(),
                            result, request->socket_tag());
    if (!bound_request)
-@@ -1495,10 +1577,19 @@ void TransportClientSocketPool::TryToCloseSocketsInLayeredPools() {
-     if (!CloseOneIdleConnectionInHigherLayeredPool())
-       return;
-   }
- }
- 
-+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
-+void TransportClientSocketPool::SetSocketIdleTimeout(int32_t timeout) {
-+  if (arkweb_used_idle_socket_timeout_.InSeconds() != timeout) {
-+    arkweb_used_idle_socket_timeout_ = base::Seconds(timeout);
-+    CleanupIdleSockets(false, nullptr /* net_log_reason_utf8 */);
-+  }
-+}
-+#endif
-+
- TransportClientSocketPool::GroupMap::iterator
- TransportClientSocketPool::RefreshGroup(GroupMap::iterator it,
-                                         const base::TimeTicks& now,
-                                         const char* net_log_reason_utf8) {
-   Group* group = it->second;

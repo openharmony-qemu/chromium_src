@@ -1,19 +1,4 @@
 diff a/third_party/blink/renderer/core/paint/box_painter_base.cc b/third_party/blink/renderer/core/paint/box_painter_base.cc	(rejected hunks)
-@@ -45,10 +45,14 @@
- #include "third_party/blink/renderer/platform/graphics/paint_generated_image.h"
- #include "third_party/blink/renderer/platform/graphics/scoped_image_rendering_settings.h"
- #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
- #include "ui/gfx/geometry/rect_conversions.h"
- 
-+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
-+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/night_mode_inverter.h"
-+#endif
-+
- namespace blink {
- 
- using CompositedPaintStatus = ElementAnimations::CompositedPaintStatus;
- 
- void BoxPainterBase::PaintFillLayers(
 @@ -290,10 +294,15 @@ void BoxPainterBase::PaintNormalBoxShadow(
                    context.GetDarkModeFilter()->InvertColorIfNeeded(
                        resolved_shadow_color.toSkColor4f(),

@@ -1,19 +1,4 @@
 diff a/net/spdy/spdy_session.h b/net/spdy/spdy_session.h	(rejected hunks)
-@@ -614,10 +622,14 @@ class NET_EXPORT SpdySession
-   bool IsBrokenConnectionDetectionEnabled() const;
- 
-   SpdySessionInitiator spdy_session_initiator() const {
-     return spdy_session_initiator_;
-   }
-+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
-+  const ResolveInfo GetResolveInfo() const;
-+  const ConnectionAttempts GetExtraConnectionAttempts() const;
-+#endif
- 
-  private:
-   friend class test::SpdyStreamTest;
-   friend class base::RefCounted<SpdySession>;
-   friend class HttpNetworkTransactionTest;
 @@ -626,10 +638,12 @@ class NET_EXPORT SpdySession
    friend class SpdyNetworkTransactionTest;
    friend class SpdyProxyClientSocketTest;

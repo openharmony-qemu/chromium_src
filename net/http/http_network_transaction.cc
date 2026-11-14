@@ -894,7 +894,12 @@ void HttpNetworkTransaction::CloseConnectionOnDestruction() {
 }
 
 void HttpNetworkTransaction::OnStreamReady(const ProxyInfo& used_proxy_info,
-                                           std::unique_ptr<HttpStream> stream) {
+                                           std::unique_ptr<HttpStream> stream
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                                           ,
+                                           const ResolveInfo resolve_info
+#endif
+) {
   DCHECK_EQ(STATE_CREATE_STREAM_COMPLETE, next_state_);
   DCHECK(stream_request_.get());
 

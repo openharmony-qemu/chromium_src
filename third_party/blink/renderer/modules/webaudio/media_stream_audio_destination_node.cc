@@ -39,6 +39,9 @@
 #include "third_party/blink/renderer/platform/wtf/text/format.h"
 #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
 #include "third_party/blink/renderer/platform/wtf/uuid.h"
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/webaudio/media_stream_audio_destination_node_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPTURE
 
 namespace blink {
 

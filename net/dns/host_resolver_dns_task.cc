@@ -273,6 +273,9 @@ HostResolverDnsTask::HostResolverDnsTask(
     const NetLogWithSource& job_net_log,
     const base::TickClock* tick_clock,
     bool fallback_available,
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    bool secure_fallback,
+#endif
     const HostResolver::HttpsSvcbOptions& https_svcb_options)
     : client_(client),
       host_(std::move(host)),

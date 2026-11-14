@@ -1,17 +1,4 @@
 diff a/net/dns/BUILD.gn b/net/dns/BUILD.gn	(rejected hunks)
-@@ -463,10 +485,12 @@ source_set("tests") {
-       "dns_config_service_android_unittest.cc",
-       "platform_dns_query_executor_android_unittest.cc",
-     ]
-   } else if (is_linux) {
-     sources += [ "dns_config_service_linux_unittest.cc" ]
-+  } else if (is_ohos) {
-+    # dns_config_service_ohos_unittest.cc is added via arkweb_net_dns_unittest_sources
-   } else if (is_posix) {
-     sources += [ "dns_config_service_posix_unittest.cc" ]
-   }
- 
-   if (enable_built_in_dns) {
 @@ -492,10 +516,16 @@ source_set("tests") {
      "//net:test_support",
      "//testing/gmock",

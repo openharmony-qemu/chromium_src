@@ -51,6 +51,10 @@
 #include "third_party/skia/include/pathops/SkPathOps.h"
 #include "ui/gfx/geometry/rect_conversions.h"
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/night_mode_inverter.h"
+#endif
+
 namespace blink {
 
 using CompositedPaintStatus = ElementAnimations::CompositedPaintStatus;

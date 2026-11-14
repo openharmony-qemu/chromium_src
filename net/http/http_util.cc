@@ -31,6 +31,10 @@
 #include "third_party/abseil-cpp/absl/container/flat_hash_set.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_DFX_LOGGING)
+#include "arkweb/chromium_ext/net/http/http_util_for_include.cc"
+#endif
+
 namespace net {
 
 namespace {

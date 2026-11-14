@@ -156,18 +156,6 @@ diff a/chrome/app/resources/generated_resources_zh-CN.xtb b/chrome/app/resources
  <translation id="3282210178675490297">正在与 <ph name="APP_NAME" /> 分享某个标签页</translation>
  <translation id="328265255303378234">无法恢复会话</translation>
  <translation id="3283148363895519428">按照手机上的说明继续设置。确保您的手机就在附近且已开启蓝牙。</translation>
-@@ -3365,10 +3378,11 @@
- <translation id="32991397311664836">设备：</translation>
- <translation id="3301554464236215299">此文件不常被下载，可能具有危险性</translation>
- <translation id="3301996560342889673">要同步历史记录吗？</translation>
- <translation id="33022249435934718">GDI 句柄</translation>
- <translation id="3302388252085547855">输入理由…</translation>
-+<translation id="330270904988027475">在合作的原生应用请求时在后台运行</translation>
- <translation id="3303795387212510132">允许应用打开 <ph name="PROTOCOL_SCHEME" /> 链接？</translation>
- <translation id="3303818374450886607">份数</translation>
- <translation id="3303855915957856445">未找到任何搜索结果</translation>
- <translation id="3304212451103136496">直降 <ph name="DISCOUNT_AMOUNT" /></translation>
- <translation id="3305389145870741612">格式化过程可能需要几秒钟的时间，请稍候。</translation>
 @@ -3678,10 +3692,11 @@
  <translation id="3513019849832307207">加入并打开</translation>
  <translation id="3513563267917474897">色调滑块从 <ph name="MIN_VALUE" /> 移动到 <ph name="MAX_VALUE" /></translation>

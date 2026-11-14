@@ -309,18 +309,6 @@ diff a/chrome/app/resources/generated_resources_zh-TW.xtb b/chrome/app/resources
  <translation id="3282210178675490297">正在與 <ph name="APP_NAME" /> 共用這個分頁</translation>
  <translation id="328265255303378234">無法繼續執行工作階段</translation>
  <translation id="3283148363895519428">按照手機上的操作說明繼續設定。請確認手機在附近且已開啟藍牙。</translation>
-@@ -3372,10 +3383,11 @@
- <translation id="32991397311664836">裝置：</translation>
- <translation id="3301554464236215299">這個檔案不是常見的下載項目，可能含有危險內容</translation>
- <translation id="3301996560342889673">要同步歷史記錄嗎？</translation>
- <translation id="33022249435934718">GDI 控制代碼</translation>
- <translation id="3302388252085547855">輸入理由...</translation>
-+<translation id="330270904988027475">合作的原生應用程式要求時在背景執行</translation>
- <translation id="3303795387212510132">要允許應用程式開啟「<ph name="PROTOCOL_SCHEME" />」連結嗎？</translation>
- <translation id="3303818374450886607">份數</translation>
- <translation id="3303855915957856445">找不到相符的搜尋結果</translation>
- <translation id="3304212451103136496">現折 <ph name="DISCOUNT_AMOUNT" /></translation>
- <translation id="3305389145870741612">格式化程序可能需要幾秒鐘，請稍候。</translation>
 @@ -3685,10 +3697,11 @@
  <translation id="3513019849832307207">加入並開啟</translation>
  <translation id="3513563267917474897">色調滑桿，最小值為 <ph name="MIN_VALUE" />，最大值為 <ph name="MAX_VALUE" /></translation>

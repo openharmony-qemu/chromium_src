@@ -156,18 +156,6 @@ diff a/chrome/app/resources/generated_resources_en-GB.xtb b/chrome/app/resources
  <translation id="3282210178675490297">Sharing a tab to <ph name="APP_NAME" /></translation>
  <translation id="328265255303378234">Can't resume session</translation>
  <translation id="3283148363895519428">Follow the instructions on your phone to continue setup. Make sure your phone is nearby and Bluetooth is turned on</translation>
-@@ -3388,10 +3401,11 @@ You can manage this account’s settings by installing the Family Link app on yo
- <translation id="32991397311664836">Devices:</translation>
- <translation id="3301554464236215299">This file isn't commonly downloaded and it may be dangerous</translation>
- <translation id="3301996560342889673">Sync history?</translation>
- <translation id="33022249435934718">GDI Handles</translation>
- <translation id="3302388252085547855">Enter justification…</translation>
-+<translation id="330270904988027475">Run in the background when requested by a cooperating native app</translation>
- <translation id="3303795387212510132">Allow app to open <ph name="PROTOCOL_SCHEME" /> links?</translation>
- <translation id="3303818374450886607">Copies</translation>
- <translation id="3303855915957856445">No search results found</translation>
- <translation id="3304212451103136496"><ph name="DISCOUNT_AMOUNT" /> off</translation>
- <translation id="3305389145870741612">The formatting process can take a couple of seconds. Please wait.</translation>
 @@ -3701,10 +3715,11 @@ You can manage this account’s settings by installing the Family Link app on yo
  <translation id="3513019849832307207">Join and open</translation>
  <translation id="3513563267917474897">Hue slider from <ph name="MIN_VALUE" /> to <ph name="MAX_VALUE" /></translation>
